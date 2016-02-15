@@ -1,0 +1,61 @@
+
+<div class="view-mode-menu">
+    <ul style="padding-left: 0">
+
+        <li class="view-mode-menu-btn">
+            <span ng-click="go('/grid')" check-active="/grid">
+                <span class="glyphicon glyphicon-th"></span> <span class="view-mode-menu-text" translate>VIEW_MODE_GRID</span>
+            </span>
+        </li>
+
+        <li class="view-mode-menu-btn">
+            <span ng-click="go('/details')" check-active="/details">
+                <span class="glyphicon glyphicon-th-list"></span> <span class="view-mode-menu-text" translate>VIEW_MODE_DETAILS</span>
+            </span>
+        </li>
+
+        <li class="view-mode-menu-btn">
+            <span ng-click="go('/table')" check-active="/table">
+                <span class="glyphicon glyphicon-align-justify"></span> <span class="view-mode-menu-text" translate>VIEW_MODE_TABLE</span>
+            </span>
+        </li>
+
+        <li class="view-mode-menu-btn">
+            <span ng-click="go('/map')" check-active="/map">
+                <span class="glyphicon glyphicon-globe"></span> <span class="view-mode-menu-text" translate>VIEW_MODE_MAP</span>
+            </span>
+        </li>
+
+        <li class="dropdown view-mode-menu-btn" style="padding: 0 10px">
+            <span class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-filter"></span>
+                <span class="view-mode-menu-text" translate>MENU_FILTER</span>
+                <span class="caret"></span>
+            </span>
+            <ul class="dropdown-menu">
+                <li ng-repeat="name in filterNames">
+                    <a ng-click="enableFilter(name, true)" href ng-bind-html="'MENU_FILTER_' + name | uppercase | translate"></a>
+                </li>
+                <li role="separator" class="divider" ng-if="namedFilters.length > 0"></li>
+                <li ng-repeat="filter in namedFilters">
+                    <a href><span ng-click="applyNamedFilter(filter)">{{filter.name}}</span> <span class="pull-right glyphicon glyphicon-trash" ng-click="removeNamedFilter(filter)"></span></a>
+                </li>
+                <li role="separator" class="divider"></li>
+                <li><a ng-click="clearAllFilters()" href translate>MENU_FILTER_CLEAR</a></li>
+                <li><a ng-click="saveNamedFilter()" href translate>MENU_FILTER_SAVE</a></li>
+            </ul>
+        </li>
+
+        <li class="dropdown view-mode-menu-btn" style="padding: 0 10px">
+            <span class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-cog"></span>
+                <span class="view-mode-menu-text" translate>MENU_ACTION</span>
+                <span class="caret"></span>
+            </span>
+            <ul class="dropdown-menu">
+                <li><a href translate>MENU_ACTION_PDF</a></li>
+            </ul>
+        </li>
+
+    </ul>
+</div>

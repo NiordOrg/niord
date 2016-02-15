@@ -1,0 +1,162 @@
+
+<div class="gj-editor {{class}}">
+
+    <div class="viewer">
+        <ol-map class="osm-water-bg full-size" readonly="true">
+            <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
+            <map-gj-layer name="Locations" visible="true" layer-switcher="false" feature-collection="featureCollection" fit-extent="true" max-zoom="14"></map-gj-layer>
+            <div class="open-editor text-center">
+                <button class="btn btn-sm btn-primary" style="opacity: 0.7"  ng-click="openEditor()">
+                    <span class="glyphicon glyphicon-map-marker"></span>
+                    {{openEditorMessage}}
+                </button>
+            </div>
+        </ol-map>
+    </div>
+
+    <div class="editor" ng-if="mode == 'editor'">
+        <div>
+            <div class="btn-panel">
+
+                <div class="editor-tools">
+                    <span class="btn-group">
+                        <label class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'point'"
+                               uib-tooltip="Add points" tooltip-placement="bottom">
+                            <img src="/img/editor/drawPoint.png"/>
+                        </label>
+                        <label class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'polyline'"
+                               uib-tooltip="Add paths" tooltip-placement="bottom">
+                            <img src="/img/editor/drawPath.png"/>
+                        </label>
+                        <label class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'polygon'"
+                               uib-tooltip="Add polygons" tooltip-placement="bottom">
+                            <img src="/img/editor/drawPolygon.png"/>
+                        </label>
+                    </span>
+                    <span class="btn-group">
+                        <label class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'select'"
+                               uib-tooltip="Modify" tooltip-placement="bottom">
+                            <img src="/img/editor/selectFeature.png"/>
+                        </label>
+                        <label class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'remove'"
+                               uib-tooltip="Delete" tooltip-placement="bottom">
+                            <img src="/img/editor/deleteFeature.png"/>
+                        </label>
+                    </span>
+                </div>
+
+                <div style="text-align: center; margin: 10px;">
+                    <button class="btn btn-sm btn-primary" ng-click="exitEditor(false)">Cancel</button>
+
+                    <button class="btn btn-sm btn-primary" ng-click="exitEditor(true)">Save</button>
+
+                    <span class="dropdown">
+                        <button type="button" class="btn btn-sm btn-primary" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                            <span class="glyphicon glyphicon-cog"></span> <span class="caret"></span>
+                        </button>
+                        <ul uib-dropdown-menu class="dropdown-menu" role="menu" aria-labelledby="single-button">
+                            <li role="menuitem"><a href ng-click="clearAll()">Clear all</a></li>
+                            <li role="menuitem"><a href ng-click="zoomToExtent()">Zoom to extent</a></li>
+                            <li role="menuitem"><a href="alert('TBD')">Import...</a></li>
+                            <li class="divider"></li>
+                            <li role="menuitem"><a href ng-click="merge()">Merge</a></li>
+                            <li role="menuitem"><a href ng-click="split()">Split</a></li>
+                            <li role="menuitem"><a href ng-click="difference()">Subtract</a></li>
+                        </ul>
+                    </span>
+
+                    <button class="btn btn-sm btn-default pull-right" ng-click="showFeatureData = !showFeatureData">
+                        <span class="glyphicon" ng-class="{'glyphicon-chevron-up': showFeatureData, 'glyphicon-chevron-down': !showFeatureData}"></span>
+                    </button>
+                </div>
+            </div>
+
+            <div ng-if="showFeatureData" class="feature-collection-panel">
+                <div ng-repeat="featureCtx in featureContexts" class="feature-panel">
+                    <div class="feature-panel-header">
+                        <span>
+                            <input type="checkbox" ng-model="featureCtx.selected" ng-change="selectionUpdated(featureCtx)">
+                            Location #{{$index + 1}} &nbsp;
+                            <a href ng-click="zoomFeature(featureCtx.id)"><i class="glyphicon glyphicon-arrow-right"></i></a>
+                        </span>
+                        <span class="pull-right">
+                            <a href ng-click="deleteFeature(featureCtx.id)"><i class="glyphicon glyphicon-trash"></i></a>
+                            <a href ng-click="moveFeatureUp(featureCtx)"><i class="glyphicon glyphicon-arrow-up"></i></a>
+                            <a href ng-click="moveFeatureDown(featureCtx)"><i class="glyphicon glyphicon-arrow-down"></i></a>
+                        </span>
+                    </div>
+                    <div class="feature-panel-info">
+                        <div style="text-align: center; font-size: 11px; padding: 5px 0 5px 0;">
+                            <div class="btn-group btn-group-justified">
+                                <label class="btn btn-default btn-xs" ng-model="featureCtx.showName" uib-btn-checkbox >Name</label>
+                                <label class="btn btn-default btn-xs" ng-model="featureCtx.showRadius" uib-btn-checkbox >Radius</label>
+                                <label class="btn btn-default btn-xs" ng-model="featureCtx.showRestriction" uib-btn-checkbox >Restriction</label>
+                                <label class="btn btn-default btn-xs" ng-model="featureCtx.showAtoN" uib-btn-checkbox >AtoN</label>
+                            </div>
+                        </div>
+                        <table>
+                            <tr ng-show="featureCtx.showName">
+                                <td width="60">Name</td>
+                                <td width="*">
+                                    <div ng-repeat="lang in languages">
+                                        <input type="text" bg-flag="lang" ng-model="featureCtx['name#' + lang]" ng-change='nameUpdated(featureCtx)'
+                                               ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"
+                                               autocomplete="off" spellcheck="false" placeholder="Name">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr ng-show="featureCtx.showRadius">
+                                <td width="60">Radius</td>
+                                <td width="*">
+                                    <input type="number" step="any" ng-model="featureCtx.bufferRadius" ng-change='radiusUpdated(featureCtx)'
+                                           ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"
+                                           placeholder="Radius" style="width: 80px;">
+                                    <span class="btn-group">
+                                        <label class="btn btn-default btn-xs" ng-model="featureCtx.bufferRadiusType" ng-change='radiusUpdated(featureCtx)' uib-btn-radio="'nm'">nm</label>
+                                        <label class="btn btn-default btn-xs" ng-model="featureCtx.bufferRadiusType" ng-change='radiusUpdated(featureCtx)' uib-btn-radio="'km'">km</label>
+                                        <label class="btn btn-default btn-xs" ng-model="featureCtx.bufferRadiusType" ng-change='radiusUpdated(featureCtx)' uib-btn-radio="'m'">m</label>
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr ng-show="featureCtx.showRestriction">
+                                <td width="60" style="padding-top: 10px">Restriction</td>
+                                <td width="*">
+                                    <select class="form-control input-sm" ng-model="featureCtx.restriction"  ng-change='restrictionUpdated(featureCtx)'>
+                                        <option value=""></option>
+                                        <option value="affected">Affected Area</option>
+                                        <option value="restricted">Restricted Area</option>
+                                        <option value="prohibited">Prohibited Area</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr ng-show="featureCtx.showAtoN">
+                                <td width="60">AtoN ID</td>
+                                <td width="*">
+                                    <input type="text" ng-model="featureCtx.atonUid" ng-change='atonUpdated(featureCtx)'
+                                           placeholder="Aid-to-Navigation ID">
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="feature-geometry-tree">
+                        <ol-editor-tree feature="features[$index]" tabindex="-1"></ol-editor-tree>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <ol-map class="osm-water-bg full-size">
+            <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
+            <map-tile-layer name="WMS" visible="false" layer-switcher="true" source="WMS"
+                            source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
+            <map-aton-layer name="AtoN" visible="false" layer-switcher="true"></map-aton-layer>
+            <map-ol-editor-layer name="Locations" visible="true" layer-switcher="false"
+                                 features="features" buffer-features="bufferFeatures" draw-control="drawControl"></map-ol-editor-layer>
+            <map-position-tooltip></map-position-tooltip>
+            <map-layer-switcher></map-layer-switcher>
+
+        </ol-map>
+    </div>
+
+</div>

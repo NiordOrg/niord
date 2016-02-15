@@ -1,0 +1,10 @@
+{
+  "realm": "niord",
+  "realm-public-key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmE6UuNE052RhqWA09ZcZxzbOtfYlZO6qjel0yo3n1eBNOsuiruMOjUwOKFFPrXqSzu5XOxlV7BbKC4EhNQU5WWDpPXTD7WGmzM1tUp0fiO8ngg2IpCzocKkxszdf3x4PsqzIaqCJgurGys6c/QJD1s88n4/Wg7qNbPpTrAdWHHKwsfQsszDByIV52iD0r+iIZQnb6SbKOUqgWkNLi8BILHM3Q3LETL+xqGxct2rwkpV1NpJN4mMTku1BAT7GxwsC43Vy1vcM+fr8CBnWCNB71BAifMTpRIhJcldvH0P9RDvgxpn6SRSP41R5ocTsXzqelsY0cUTZngH4mtJlkFbRTwIDAQAB",
+  "auth-server-url": "http://localhost:8090/auth",
+  "ssl-required": "external",
+  "resource": "niord",
+  "credentials": {
+    "secret": "4d92acde-f347-4496-aa1c-890b92c2029c"
+  }
+}

@@ -1,0 +1,29 @@
+
+<div class="atons">
+
+    <div class="selection-panel">
+        <div class="selection-panel-header">
+            <span style="color: white">Search Result</span>
+            <button class="btn btn-xs btn-default pull-right" ng-click="showMapSelection = !showMapSelection">
+                <span class="glyphicon" ng-class="{'glyphicon-chevron-up': showMapSelection, 'glyphicon-chevron-down': !showMapSelection}"></span>
+            </button>
+        </div>
+        <div ng-if="showMapSelection" class="selection-panel-atons">
+            <div ng-if="atons.length == 0" style="text-align: center">
+                <h4>Please update the search filter</h4>
+            </div>
+            <div ng-repeat="aton in atons">
+                <aton-list-details aton="aton" selection="selection" zoom-btn="true"></aton-list-details>
+            </div>
+        </div>
+    </div>
+
+    <ol-map class="atons-map" map-state="state.map">
+        <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
+        <map-tile-layer name="WMS" visible="false" layer-switcher="true" source="WMS"
+                        source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
+        <map-aton-layer atons="atons" selection="selection" name="AtoN" visible="true" layer-switcher="false"></map-aton-layer>
+        <map-layer-switcher></map-layer-switcher>
+    </ol-map>
+
+</div>

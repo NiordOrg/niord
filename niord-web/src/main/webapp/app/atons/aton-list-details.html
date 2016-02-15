@@ -1,0 +1,34 @@
+
+<div class="aton-grid-item">
+    <table>
+        <tr>
+            <td ng-if="showDndBtn" width="24" class="move-btn">
+                <span class="glyphicon glyphicon-move"></span>
+            </td>
+            <td width="26" align="center" valign="middle">
+                <img ng-src="{{aton.iconUrl}}" width="16" ng-class="{'changed' : iconChanged()}">
+            </td>
+            <td style="padding-left: 10px; position:relative;">
+                <div style="margin: 2px 0 3px 0;">
+                    <strong>{{aton.atonUid}}:</strong> {{aton.name}}
+                </div>
+                <div class="small-text">
+                    <span class="glyphicon glyphicon-info-sign"></span> {{aton.description}}
+                </div>
+                <div class="small-text">
+                    <span class="glyphicon glyphicon-map-marker"></span>
+                    <span ng-class="{'changed' : posChanged()}">{{aton | lonlat:{ decimals : 2, pp: true } }}</span>
+                    &nbsp;<a href ng-click="zoomToAton(aton)" ng-if="showZoomBtn"><span class="glyphicon glyphicon-arrow-right"></span></a>
+                </div>
+                <button ng-if="showEditBtn" ng-click="editAton(aton)" class="btn btn-xs aton-edit-btn"
+                        ng-class="{'changed' : changed()}">
+                    <span class="glyphicon glyphicon-pencil"></span>
+                </button>
+            </td>
+            <td width="30" class="select-btn"
+                ng-click="toggleSelectAton(aton)" ng-class="{'aton-selected' : isSelected(aton)}">
+                <span class="glyphicon glyphicon-star"></span>
+            </td>
+        </tr>
+    </table>
+</div>

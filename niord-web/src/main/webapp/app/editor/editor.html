@@ -1,0 +1,17 @@
+
+<div>
+    <h1>Editor</h1>
+
+    <div ng-repeat="fc in featureCollections">
+        <div>
+            <a href ng-click="editFeatureCollection($index)">Open</a>
+            <a href ng-click="updateFeatureCollection(fc)">Update</a>
+            <a href ng-click="newFeatureCollection(fc)">Save Copy</a>
+            <a href ng-click="openThumbnail(fc)">Image</a>
+        </div>
+
+        <gj-editor id="gj-editor-{{$index}}" class="editor-locations" feature-collection="fc"></gj-editor>
+
+    </div>
+
+</div>

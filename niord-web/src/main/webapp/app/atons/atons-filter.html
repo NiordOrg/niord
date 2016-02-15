@@ -1,0 +1,69 @@
+
+<div class="view-mode-filter" ng-show="showFilter">
+
+    <div class="row">
+
+        <!-- Map Filter -->
+        <view-mode-filter-panel state="state" filter-name="map" closable="false" class="col-xs-11 col-sm-8 col-md-5 col-lg-5">
+            <div class="map-extent">
+                <span>&swarr; {{extentBottomLeft() | lonlat:{ decimals : 2, pp: true } }}</span>
+                &nbsp;
+                <span>&nearr; {{extentTopRight() | lonlat:{ decimals : 2, pp: true } }}</span>
+            </div>
+        </view-mode-filter-panel>
+
+
+        <!-- Text Filter -->
+        <view-mode-filter-panel state="state" filter-name="text" clear-filter="clearFilter(name)" class="col-xs-11 col-sm-8 col-md-5 col-lg-5">
+            <div class="btn-group full-width">
+                <input id="query" type="search" class="form-control input-sm" placeholder="Search Terms" ng-model="state.text.query"
+                       ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"
+                       autocomplete="off" spellcheck="false">
+                <span class="glyphicon glyphicon-remove clear-input"
+                      ng-click="state.text.query = ''" ng-show="state.text.query != ''"></span>
+            </div>
+        </view-mode-filter-panel>
+
+
+        <!-- Chart Filter -->
+        <view-mode-filter-panel state="state" filter-name="chart" clear-filter="clearFilter(name)" class="col-xs-11 col-sm-8 col-md-5 col-lg-5">
+            <ui-select multiple id="charts" ng-model="state.chart.charts" >
+                <ui-select-match placeholder="Select charts">
+                    {{$item.chartNumber}}
+                    <span ng-if="$item.internationalNumber">(INT {{$item.internationalNumber}})</span>
+                </ui-select-match>
+                <ui-select-choices repeat="chart in charts"
+                                   refresh="refreshCharts($select.search)"
+                                   refresh-delay="100">
+                    <div>
+                        <span ng-bind-html="chart.chartNumber | highlight: $select.search"></span>
+                        <span ng-if="chart.internationalNumber">(INT {{chart.internationalNumber}})</span>
+                        <small ng-bind-html="chart.name | highlight: $select.search"></small>
+                    </div>
+
+                </ui-select-choices>
+            </ui-select>
+        </view-mode-filter-panel>
+
+
+        <!-- Area Filter -->
+        <view-mode-filter-panel state="state" filter-name="area" clear-filter="clearFilter(name)" class="col-xs-11 col-sm-8 col-md-5 col-lg-5">
+            <ui-select multiple id="areas" ng-model="state.area.areas" >
+                <ui-select-match placeholder="Select areas">
+                    {{$item.descs[0].name}}
+                </ui-select-match>
+                <ui-select-choices repeat="area in areas"
+                                   refresh="refreshAreas($select.search)"
+                                   refresh-delay="100">
+                    <div>
+                        <span ng-bind-html="area.descs[0].name | highlight: $select.search"></span>
+                        <small ng-if="area.parent">({{formatParents(area.parent)}})</small>
+                    </div>
+
+                </ui-select-choices>
+            </ui-select>
+        </view-mode-filter-panel>
+
+    </div>
+
+</div>

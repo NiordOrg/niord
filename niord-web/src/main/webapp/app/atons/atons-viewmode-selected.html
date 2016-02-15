@@ -1,0 +1,76 @@
+
+<div class="atons">
+
+    <div class="aton-selection container-fluid">
+
+        <div class="row">
+
+            <!-- Selection List -->
+            <div class="col-xs-12 col-sm-12 col-md-6 col-lg-8"  style="padding: 10px">
+
+                <div ng-if="featureCollection.features.length == 0" style="text-align: center">
+                    <h4>No AtoN's selected</h4>
+                </div>
+
+                <div ng-repeat="feature in featureCollection.features">
+                    <div class="aton-feature-panel" ng-class="{'invalid-aton-feature' : !feature.properties.valid}">
+                        <div class="aton-feature-panel-header">
+                            <span class="pull-left">
+                                <select class="input-xs" ng-model="feature.geometry.type" style="color: #333"
+                                        ng-change='updateFeatureCollectionCoords()'>
+                                    <option value="Point">Point</option>
+                                    <option value="MultiPoint">MultiPoint</option>
+                                    <option value="LineString">LineString</option>
+                                    <option value="Polygon">Polygon</option>
+                                </select>
+                            </span>
+                            <span>
+                                <span class="hidden-xs">Template&nbsp;</span>
+                                <select class="input-xs" ng-model="feature.geometry.template" style="color: #333">
+                                    <option value=""></option>
+                                    <option value="1">Buoy unlit</option>
+                                    <option value="2">Buoy missing</option>
+                                    <option value="2">Buoy off station</option>
+                                    <option value="3">Buoy off withdrawn</option>
+                                </select>
+                            </span>
+                            <span class="pull-right">
+                                <a href ng-click="deleteFeature(feature)"><i class="glyphicon glyphicon-trash"></i></a>
+                                <a href ng-click="moveFeatureUp(feature)"><i class="glyphicon glyphicon-arrow-up"></i></a>
+                                <a href ng-click="moveFeatureDown(feature)"><i class="glyphicon glyphicon-arrow-down"></i></a>
+                            </span>
+                        </div>
+                        <div ng-sortable="atonSortableCfg" >
+                            <span class="feature-aton" ng-repeat="aton in feature.properties.atons">
+                                <aton-list-details aton="aton" selection="selection" editable="true"></aton-list-details>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- Selection Map -->
+            <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4" style="padding: 10px;">
+
+                <div class="aton-btn-panel">
+                    <button class="btn btn-sm btn-primary">New NW</button>
+                    <button class="btn btn-sm btn-primary">New NM</button>
+                </div>
+
+                <ol-map class="aton-selection-map">
+                    <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
+                    <map-tile-layer name="WMS" visible="false" layer-switcher="true" source="WMS"
+                                    source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
+                    <map-message-details-layer name="Messages" visible="true" layer-switcher="false" message="featureCollection" fit-extent="true"></map-message-details-layer>
+                    <map-layer-switcher></map-layer-switcher>
+                </ol-map>
+
+            </div>
+
+        </div>
+    </div>
+
+    <div ng-include="'/app/layout/footer.html'"></div>
+</div>

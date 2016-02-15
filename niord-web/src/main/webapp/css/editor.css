@@ -1,0 +1,184 @@
+
+body {
+    background-color: white;
+}
+
+.page-content {
+    background-color: white;
+}
+
+
+.editor-locations {
+    width: 200px;
+    height: 100px;
+    box-shadow: 2px 2px 4px rgba(50, 50, 50, 0.5);
+    margin-bottom: 10px;
+}
+
+/** Editor -> GeoJson Editor directive **/
+
+.gj-editor .viewer {
+    width: 100%;
+    height: 100%;
+}
+
+.gj-editor .viewer .open-editor {
+    position: absolute;
+    bottom: 0;
+    margin: 5px;
+    z-index: 100;
+    width: 100%;
+}
+
+.gj-editor .editor {
+    z-index: 1000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+.gj-editor .editor .ol-zoom {
+    top: auto;
+    bottom: 10px;
+}
+
+.gj-editor .btn-panel {
+    background-color: white;
+    z-index: 210;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height:100px;
+    box-shadow: 0 2px 4px rgba(50, 50, 50, 0.5);
+}
+
+.gj-editor .editor-tools {
+    text-align: center;
+    padding: 10px;
+    background-color: #646;
+    background: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#646), to(#757));
+    background: -webkit-linear-gradient(top, #646, #757);
+    background: -moz-linear-gradient(top, #646, #757);
+    background: -ms-linear-gradient(top, #646, #757);
+    border-bottom: 1px solid #646;
+}
+
+.gj-editor .feature-collection-panel {
+    background-color: white;
+    z-index: 200;
+    opacity: 0.9;
+    position: absolute;
+    top: 100px;
+    left: 0;
+    width: 100%;
+    bottom: 0;
+    padding-top: 5px;
+    overflow: hidden;
+    overflow-y: scroll;
+    border-top: 1px solid lightgray;
+    box-shadow: 0px 2px 4px rgba(50, 50, 50, 0.5);
+}
+
+.gj-editor .feature-panel {
+    font-size: 11px;
+    margin: 5px 15px 5px 5px;
+    border: 1px solid #646;
+}
+
+.gj-editor .feature-panel-header {
+    padding: 5px;
+    background-color: #757;
+    color: white;
+}
+
+.gj-editor .feature-panel-header a {
+    color: white;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.gj-editor .feature-panel-info {
+    padding: 0 5px 0 5px;
+}
+
+.gj-editor .feature-panel-info table {
+    width: 100%;
+}
+
+.gj-editor .feature-panel-info table td {
+    vertical-align: top;
+    padding-top: 5px;
+}
+
+.gj-editor .feature-panel-info table td:first-child {
+    padding-top: 8px;
+}
+
+.gj-editor .feature-panel-info input {
+    outline: none;
+    width: 100%;
+}
+
+.gj-editor .feature-panel-info select {
+    font-size: 11px;
+    height: 24px;
+}
+
+.gj-editor .feature-panel-info label {
+    font-size: 11px;
+}
+
+@media (min-width: 600px) {
+    .gj-editor .editor {
+        top: 20px;
+        left: 20px;
+        bottom: 20px;
+        right: 20px;
+        box-shadow: 4px 4px 10px #000;
+    }
+
+    .gj-editor .map-layer-switcher {
+        right: 10px;
+        top: 10px;
+        left: auto;
+        bottom: auto;
+    }
+
+    .gj-editor .btn-panel {
+        width: 320px;
+    }
+
+    .gj-editor .feature-collection-panel {
+        width: 320px;
+    }
+}
+
+.gj-editor .feature-geometry-tree .fancytree-icon {
+    width: 12px;
+    height: 12px;
+    margin-left: 0;
+}
+
+.gj-editor .feature-geometry-tree ul.fancytree-container {
+    font-size: 11px;
+    outline: none;
+    margin: 0 0 5px 5px;
+    border-left: 1px dotted lightgray;
+    border-top: none;
+    border-bottom: none;
+    border-right: none;
+}
+
+.gj-editor .feature-geometry-tree .fancytree-node {
+    overflow: hidden;
+/* Fix Firefox placement of node button:
+    white-space: normal;
+*/
+}
+
+.gj-editor .feature-geometry-tree .node-btns {
+    font-size: 10px;
+}

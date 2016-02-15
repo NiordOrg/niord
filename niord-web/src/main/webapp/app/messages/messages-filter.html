@@ -1,0 +1,160 @@
+
+<div class="view-mode-filter">
+
+    <div class="row">
+
+        <!-- Text Filter -->
+        <view-mode-filter-panel state="state" filter-name="text" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
+            <div class="btn-group full-width">
+                <input id="query" type="search" class="form-control input-sm" placeholder="Search Terms" ng-model="state.text.query"
+                        ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"
+                        autocomplete="off" spellcheck="false">
+                <span class="glyphicon glyphicon-remove clear-input"
+                      ng-click="state.text.query = ''" ng-show="state.text.query != ''"></span>
+            </div>
+        </view-mode-filter-panel>
+
+        <!-- Type Filter -->
+        <view-mode-filter-panel state="state" filter-name="type" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
+            <div class="btn-group" style="margin-right: 20px">
+                <label class="btn btn-default btn-sm" ng-model="state.type.mainType" uib-btn-radio="''">All</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.mainType" uib-btn-radio="'NW'">NW</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.mainType" uib-btn-radio="'NM'">NM</label>
+            </div>
+            <div class="btn-group" ng-if="state.type.mainType == 'NW'">
+                <label class="btn btn-default btn-sm" ng-model="state.type.nwType" uib-btn-radio="''">All</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.nwType" uib-btn-radio="'LOCAL'">Local</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.nwType" uib-btn-radio="'COASTAL'">Coastal</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.nwType" uib-btn-radio="'SUBAREA'">Subarea</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.nwType" uib-btn-radio="'NAVAREA'">Navarea</label>
+            </div>
+            <div class="btn-group" ng-if="state.type.mainType == 'NM'">
+                <label class="btn btn-default btn-sm" ng-model="state.type.nmType" uib-btn-radio="''">All</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.nmType" uib-btn-radio="'TEMP'">Temp.</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.nmType" uib-btn-radio="'PRELIM'">Prelim.</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.nmType" uib-btn-radio="'PERM'">Perm.</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.nmType" uib-btn-radio="'MISC'">Misc.</label>
+            </div>
+        </view-mode-filter-panel>
+
+        <!-- Status Filter -->
+        <view-mode-filter-panel state="state" filter-name="status" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
+            <div class="btn-group">
+                <label class="btn btn-default btn-sm" ng-model="state.status.PUBLISHED" uib-btn-checkbox>Published</label>
+                <label class="btn btn-default btn-sm" ng-model="state.status.DRAFT" uib-btn-checkbox>Draft</label>
+                <label class="btn btn-default btn-sm" ng-model="state.status.VERIFIED" uib-btn-checkbox>Verified</label>
+                <label class="btn btn-default btn-sm" ng-model="state.status.CANCELLED" uib-btn-checkbox>Cancelled</label>
+                <label class="btn btn-default btn-sm" ng-model="state.status.EXPIRED" uib-btn-checkbox>Expired</label>
+                <label class="btn btn-default btn-sm" ng-model="state.status.DELETED" uib-btn-checkbox>Deleted</label>
+            </div>
+        </view-mode-filter-panel>
+
+        <!-- Tag Filter -->
+        <view-mode-filter-panel state="state" filter-name="tag" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
+            <ui-select multiple id="tags" ng-model="state.tag.tags" >
+                <ui-select-match placeholder="Select Tags">
+                    {{$item.uid}}
+                    <span ng-if="$item.name">{{$item.uid}}</span>
+                </ui-select-match>
+                <ui-select-choices repeat="tag in tags"
+                                   refresh="refreshTags($select.search)"
+                                   refresh-delay="100">
+                    <div>
+                        <span ng-bind-html="tag.uid | highlight: $select.search"></span>
+                    </div>
+
+                </ui-select-choices>
+            </ui-select>
+        </view-mode-filter-panel>
+
+        <!-- AtoN Filter -->
+        <view-mode-filter-panel state="state" filter-name="aton" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
+            <ui-select multiple id="atons" ng-model="state.aton.atons" >
+                <ui-select-match placeholder="Select AtoNs">
+                    {{$item.atonUid}}
+                    <span ng-if="$item.name">{{$item.name}}</span>
+                </ui-select-match>
+                <ui-select-choices repeat="aton in atons"
+                                   refresh="refreshAtons($select.search)"
+                                   refresh-delay="100">
+                    <div>
+                        <span ng-bind-html="aton.atonUid | highlight: $select.search"></span>
+                        <small ng-bind-html="aton.name | highlight: $select.search"></small>
+                    </div>
+
+                </ui-select-choices>
+            </ui-select>
+        </view-mode-filter-panel>
+
+        <!-- Chart Filter -->
+        <view-mode-filter-panel state="state" filter-name="chart" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
+            <ui-select multiple id="charts" ng-model="state.chart.charts" >
+                <ui-select-match placeholder="Select charts">
+                    {{$item.chartNumber}}
+                    <span ng-if="$item.internationalNumber">(INT {{$item.internationalNumber}})</span>
+                </ui-select-match>
+                <ui-select-choices repeat="chart in charts"
+                                   refresh="refreshCharts($select.search)"
+                                   refresh-delay="100">
+                    <div>
+                        <span ng-bind-html="chart.chartNumber | highlight: $select.search"></span>
+                        <span ng-if="chart.internationalNumber">(INT {{chart.internationalNumber}})</span>
+                        <small ng-bind-html="chart.name | highlight: $select.search"></small>
+                    </div>
+
+                </ui-select-choices>
+            </ui-select>
+        </view-mode-filter-panel>
+
+        <!-- Area Filter -->
+        <view-mode-filter-panel state="state" filter-name="area" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
+            <ui-select multiple id="areas" ng-model="state.area.areas" >
+                <ui-select-match placeholder="Select areas">
+                    {{$item.descs[0].name}}
+                </ui-select-match>
+                <ui-select-choices repeat="area in areas"
+                                   refresh="refreshAreas($select.search)"
+                                   refresh-delay="100">
+                    <div>
+                        <span ng-bind-html="area.descs[0].name | highlight: $select.search"></span>
+                        <small ng-if="area.parent">({{formatParents(area.parent)}})</small>
+                    </div>
+
+                </ui-select-choices>
+            </ui-select>
+        </view-mode-filter-panel>
+
+        <!-- Category Filter -->
+        <view-mode-filter-panel state="state" filter-name="category" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
+            <ui-select multiple id="categories" ng-model="state.category.categories" >
+                <ui-select-match placeholder="Select categories">
+                    {{$item.descs[0].name}}
+                </ui-select-match>
+                <ui-select-choices repeat="category in categories"
+                                   refresh="refreshCategories($select.search)"
+                                   refresh-delay="100">
+                    <div>
+                        <span ng-bind-html="category.descs[0].name | highlight: $select.search"></span>
+                        <small ng-if="category.parent">({{formatParents(category.parent)}})</small>
+                    </div>
+
+                </ui-select-choices>
+            </ui-select>
+        </view-mode-filter-panel>
+
+        <!-- Date Filter -->
+        <view-mode-filter-panel state="state" filter-name="date" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
+            <div class="row">
+                <div class="col-lg-6">
+                    <date-time-picker id="fromDate" ng-model="state.date.fromDate" placeholder="From date" format="l"></date-time-picker>
+                </div>
+                <div class="col-lg-6">
+                    <date-time-picker id="toDate" ng-model="state.date.toDate" placeholder="To date" format="l"></date-time-picker>
+                </div>
+            </div>
+        </view-mode-filter-panel>
+
+
+    </div>
+
+</div>

@@ -1,0 +1,52 @@
+
+<div>
+    <div class="modal-header" style="text-align: center">
+        <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
+        <h4><img ng-src="{{aton.iconUrl}}" width="20"> &nbsp; Aid to Navigation</h4>
+    </div>
+
+    <div class="modal-body">
+
+        <form name="execute_form">
+
+            <div class="form-controls" style="font-size: 12px">
+
+                <table class="aton-details">
+                    <tr>
+                        <th>id</th>
+                        <td>{{aton.atonUid}}</td>
+                    </tr>
+                    <tr>
+                        <th>name</th>
+                        <td>{{aton.name}}</td>
+                    </tr>
+                    <tr>
+                        <th>description</th>
+                        <td>{{aton.description}}</td>
+                    </tr>
+                    <tr>
+                        <th>owner</th>
+                        <td>{{aton.owner}}</td>
+                    </tr>
+                    <tr>
+                        <th>code</th>
+                        <td>{{aton.code}}</td>
+                    </tr>
+                    <tr>
+                        <th>position</th>
+                        <td>{{aton | lonlat:{ decimals:3, pp:true } }}</td>
+                    </tr>
+                </table>
+
+
+            </div>
+
+            <div class="form-group">
+                <div style="margin-top: 24px">
+                    <button class="btn btn-sm" ng-click="$dismiss('aborted')">Close</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+

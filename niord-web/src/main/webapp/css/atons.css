@@ -1,0 +1,228 @@
+
+body {
+    background-color: white;
+}
+
+.page-content {
+    background-color: white;
+}
+
+div.map-extent {
+    font-size: 12px; 
+    margin: 8px 0 0 5px;
+}
+
+div.map-extent span {
+    white-space:nowrap;
+    display: inline-block;
+}
+
+div.map-extent span::first-letter {
+    color: darkgray;
+}
+
+.view-mode-menu-btn .badge {
+    background-color:darkred;
+    color: lightgray;
+}
+
+.view-mode-menu-btn .active .badge {
+    color: white;
+}
+
+/** View mode **/
+
+.atons {
+    background-color: lightgray;
+}
+
+/** View mode -> Grid **/
+
+.aton-grid-item {
+    min-width: 280px;
+    height: 60px;
+    margin: 10px 5px 5px 5px;
+    background-color: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    font-size: 12px;
+}
+
+.aton-grid-item table {
+    width: 100%;
+    height: 100%;
+    table-layout: fixed; /** Ensures that text overflow works **/
+}
+
+.aton-grid-item div {
+    white-space:nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.aton-grid-item .small-text {
+    font-size: 10px;
+    color: #666;
+}
+
+.aton-grid-item td.select-btn {
+    font-size: 12px;
+    vertical-align: middle;
+    text-align: center;
+    padding-top: 3px;
+    border-left: 1px dotted lightgray;
+    cursor: pointer;
+}
+
+.aton-grid-item td.move-btn {
+    font-size: 12px;
+    color: lightgray;
+    vertical-align: middle;
+    text-align: center;
+    padding-top: 3px;
+    border-right: 1px dotted lightgray;
+    cursor: move;
+    cursor: -webkit-grabbing;
+}
+
+.aton-edit-btn {
+    color: gray;
+    background: sotransparent;
+    border: 1px solid lightgray;
+    position: absolute;
+    bottom: 5px;
+    right: 10px
+}
+
+.aton-edit-btn:hover {
+    background: lightgray;
+}
+
+.aton-selected {
+    color: white;
+    background-color: darkred;
+}
+
+/** View mode -> Selection **/
+
+.aton-selection {
+    background-color: white;
+}
+
+.aton-btn-panel {
+    border: 1px solid rgba(100, 50, 100, 0.3);
+    text-align: center;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+.aton-feature-panel {
+    width: 100%;
+    font-size: 11px;
+    margin-bottom: 5px;
+    border: 1px solid #646;
+    background-color: lightgray;
+}
+
+.aton-feature-panel .aton-grid-item {
+    margin: 4px 0 0 4px;
+}
+
+.aton-feature-panel-header {
+    text-align: center;
+    padding: 5px;
+    background-color: #757;
+    color: white;
+}
+
+.aton-feature-panel-header a {
+    color: white;
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+.aton-feature-panel .feature-aton {
+    display: inline-block;
+    width: 280px;
+}
+
+.invalid-aton-feature {
+    background-color: red;
+}
+
+.aton-selection-map {
+    width: 100%;
+    height: 200px;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+@media (min-width: 600px) {
+    .aton-selection-map {
+        height: 300px;
+    }
+
+    .aton-feature-panel .feature-aton {
+        width: 320px;
+    }
+}
+
+/** View mode -> Map **/
+
+.atons .selection-panel {
+    position: relative;
+    z-index: 100;
+    width: 100%;
+    background-color: lightgray;
+}
+
+.atons .selection-panel-header {
+    text-align: center;
+    font-size: 12px;
+    line-height: 24px;
+    background-color: #666;
+    height: 34px;
+    padding: 5px;
+    box-shadow: 0 2px 4px rgba(50, 50, 50, 0.5);
+}
+
+.atons .selection-panel-atons {
+    -webkit-padding-end: 15px; /** NB: Only safari needs this, not chrome **/
+    max-height: 300px;
+    overflow-y: scroll;
+    box-shadow: 0 2px 4px rgba(50, 50, 50, 0.5);
+}
+
+@media (min-width: 600px) {
+    .atons .selection-panel {
+        width: 340px;
+        margin: 10px 0 0 10px;
+    }
+
+    .atons .selection-panel-atons {
+        max-height: 500px;
+    }
+}
+
+.atons-map {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-color: #b5d0d0;
+}
+
+.atons-map .ol-zoom {
+    top: auto;
+    bottom: 10px;
+}
+
+/** AtoN Details Editor **/
+
+div.aton-details-editor {
+    font-size: 12px;
+}
+
+div.aton-details-editor table td, div.aton-details-editor table th {
+    padding-bottom: 5px;
+    padding-right: 5px;
+}

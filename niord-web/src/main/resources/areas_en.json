@@ -1,0 +1,2037 @@
+[{
+  "descs": [{
+    "lang": "en",
+    "name": "Denmark"
+  }
+  ],
+  "id": -10,
+  "children": [{
+    "descs": [{
+      "lang": "en",
+      "name": "Baltic"
+    }
+    ],
+    "id": -115,
+    "parent": {
+      "id": -10,
+      "sortOrder": 0.0
+    },
+    "children": [{
+      "descs": [{
+        "lang": "en",
+        "name": "ES D 140 Bornholm W."
+      }
+      ],
+      "id": 1686,
+      "parent": {
+        "id": -115,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 10.51975841825608
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "ES D 139 Bornholm E."
+      }
+      ],
+      "id": 1702,
+      "parent": {
+        "id": -115,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 15.519758418256082
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "ES D 138 Bornholm N."
+      }
+      ],
+      "id": 1694,
+      "parent": {
+        "id": -115,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 20.51975841825608
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK D 395 Raghammer"
+      }
+      ],
+      "id": 1710,
+      "parent": {
+        "id": -115,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 40.51975841825608
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK D 396 Hullebaek"
+      }
+      ],
+      "id": 1720,
+      "parent": {
+        "id": -115,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 50.51975841825608
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK D 371 Marstal Bugt"
+      }
+      ],
+      "id": 1926,
+      "parent": {
+        "id": -115,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 60.51975841825608
+    }
+    ],
+    "sortOrder": -19.038817863745905
+  }, {
+    "descs": [{
+      "lang": "en",
+      "name": "The Sound"
+    }
+    ],
+    "id": -29,
+    "parent": {
+      "id": -10,
+      "sortOrder": 0.0
+    },
+    "children": [{
+      "descs": [{
+        "lang": "en",
+        "name": "Køge Harbour E, N and S"
+      }
+      ],
+      "id": 125,
+      "parent": {
+        "id": -29,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Pier established"
+        }
+        ],
+        "id": 128,
+        "parent": {
+          "id": 125,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "en",
+            "name": "Prohibited   areas to be changed"
+          }
+          ],
+          "id": 131,
+          "parent": {
+            "id": 128,
+            "sortOrder": 0.0
+          },
+          "children": [{
+            "descs": [{
+              "lang": "en",
+              "name": "Buoyage to be changed"
+            }
+            ],
+            "id": 134,
+            "parent": {
+              "id": 131,
+              "sortOrder": 0.0
+            },
+            "children": [{
+              "descs": [{
+                "lang": "en",
+                "name": "Lights to be lit"
+              }
+              ],
+              "id": 137,
+              "parent": {
+                "id": 134,
+                "sortOrder": 0.0
+              },
+              "sortOrder": 0.2151162654953791
+            }
+            ],
+            "sortOrder": 0.023218524169168364
+          }
+          ],
+          "sortOrder": 0.7578510807482467
+        }
+        ],
+        "sortOrder": 0.4263618689293488
+      }, {
+        "descs": [{
+          "lang": "en",
+          "name": "Prohibited areas changed"
+        }
+        ],
+        "id": 2231,
+        "parent": {
+          "id": 125,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "en",
+            "name": "Buoyage changed"
+          }
+          ],
+          "id": 2234,
+          "parent": {
+            "id": 2231,
+            "sortOrder": 0.0
+          },
+          "children": [{
+            "descs": [{
+              "lang": "en",
+              "name": "Lights lit"
+            }
+            ],
+            "id": 2237,
+            "parent": {
+              "id": 2234,
+              "sortOrder": 0.0
+            },
+            "sortOrder": 0.03924655934184329
+          }
+          ],
+          "sortOrder": 0.6517904287106656
+        }
+        ],
+        "sortOrder": 10.426361868929348
+      }
+      ],
+      "sortOrder": 0.6493991400445557
+    }, {
+      "descs": [{
+        "lang": "da",
+        "name": "Skovshoved Havn"
+      }
+      ],
+      "id": 2169,
+      "parent": {
+        "id": -29,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "da",
+          "name": "Anlægsarbejde"
+        }
+        ],
+        "id": 2171,
+        "parent": {
+          "id": 2169,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "da",
+            "name": "Havn åben for anløb"
+          }
+          ],
+          "id": 2173,
+          "parent": {
+            "id": 2171,
+            "sortOrder": 0.0
+          },
+          "sortOrder": 0.07144016141897125
+        }
+        ],
+        "sortOrder": 0.7787486580309054
+      }
+      ],
+      "sortOrder": 10.649399140044556
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Copenhagen Harbour"
+      }
+      ],
+      "id": 2200,
+      "parent": {
+        "id": -29,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Inderhavnen"
+        }
+        ],
+        "id": 2203,
+        "parent": {
+          "id": 2200,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "en",
+            "name": "Nyhavn"
+          }
+          ],
+          "id": 2206,
+          "parent": {
+            "id": 2203,
+            "sortOrder": 0.0
+          },
+          "sortOrder": 0.06701771125004874
+        }
+        ],
+        "sortOrder": 0.7197377397860865
+      }
+      ],
+      "sortOrder": 20.649399140044558
+    }, {
+      "descs": [{
+        "lang": "da",
+        "name": "Køge Bugt"
+      }
+      ],
+      "id": 2218,
+      "parent": {
+        "id": -29,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "da",
+          "name": "Ishøj Lystbådehavn"
+        }
+        ],
+        "id": 2220,
+        "parent": {
+          "id": 2218,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "da",
+            "name": "Opfyldning"
+          }
+          ],
+          "id": 2222,
+          "parent": {
+            "id": 2220,
+            "sortOrder": 0.0
+          },
+          "sortOrder": 0.3978353444039635
+        }
+        ],
+        "sortOrder": 0.9727209650069745
+      }
+      ],
+      "sortOrder": 30.649399140044558
+    }
+    ],
+    "sortOrder": -9.038817863745905
+  }, {
+    "descs": [{
+      "lang": "en",
+      "name": "Waters south of Sealand"
+    }
+    ],
+    "id": -1615,
+    "parent": {
+      "id": -10,
+      "sortOrder": 0.0
+    },
+    "children": [{
+      "descs": [{
+        "lang": "da",
+        "name": "Grønsund"
+      }
+      ],
+      "id": 205,
+      "parent": {
+        "id": -1615,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "da",
+          "name": "Indsejlingen til Hårbølle Havn"
+        }
+        ],
+        "id": 207,
+        "parent": {
+          "id": 205,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.9947287906941011
+      }
+      ],
+      "sortOrder": 0.8023480330976194
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Guldborg Sund"
+      }
+      ],
+      "id": 2304,
+      "parent": {
+        "id": -1615,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Nykøbing Falster    Harbour"
+        }
+        ],
+        "id": 2307,
+        "parent": {
+          "id": 2304,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.23871272797333265
+      }
+      ],
+      "sortOrder": 10.80234803309762
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Lolland N -Fejø"
+      }
+      ],
+      "id": 2317,
+      "parent": {
+        "id": -1615,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Fejø -Femø"
+        }
+        ],
+        "id": 2320,
+        "parent": {
+          "id": 2317,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.13855234647718506
+      }
+      ],
+      "sortOrder": 20.80234803309762
+    }
+    ],
+    "sortOrder": -6.538817863745905
+  }, {
+    "descs": [{
+      "lang": "en",
+      "name": "Great Belt"
+    }
+    ],
+    "id": -45,
+    "parent": {
+      "id": -10,
+      "sortOrder": 0.0
+    },
+    "children": [{
+      "descs": [{
+        "lang": "en",
+        "name": "Storebæltsbroen"
+      }
+      ],
+      "id": 216,
+      "parent": {
+        "id": -45,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "West-bridge"
+        }
+        ],
+        "id": 219,
+        "parent": {
+          "id": 216,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "en",
+            "name": "Maintenance works"
+          }
+          ],
+          "id": 222,
+          "parent": {
+            "id": 219,
+            "sortOrder": 0.0
+          },
+          "sortOrder": 0.7186840699582971
+        }
+        ],
+        "sortOrder": 0.6524063852528699
+      }, {
+        "descs": [{
+          "lang": "en",
+          "name": "East bridge"
+        }
+        ],
+        "id": 2336,
+        "parent": {
+          "id": 216,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "en",
+            "name": "Sprogø N"
+          }
+          ],
+          "id": 2339,
+          "parent": {
+            "id": 2336,
+            "sortOrder": 0.0
+          },
+          "sortOrder": 0.46167858869017675
+        }, {
+          "descs": [{
+            "lang": "en",
+            "name": "Maintenance work"
+          }
+          ],
+          "id": 2351,
+          "parent": {
+            "id": 2336,
+            "sortOrder": 0.0
+          },
+          "sortOrder": 10.461678588690177
+        }
+        ],
+        "sortOrder": 10.65240638525287
+      }
+      ],
+      "sortOrder": 0.7740054192657834
+    }, {
+      "descs": [{
+        "lang": "da",
+        "name": "Korsør Lystbådehavn"
+      }
+      ],
+      "id": 235,
+      "parent": {
+        "id": -45,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 10.774005419265784
+    }, {
+      "descs": [{
+        "lang": "da",
+        "name": "Nakskov Fjord"
+      }
+      ],
+      "id": 2364,
+      "parent": {
+        "id": -45,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "da",
+          "name": "Den gravede rende til Tårs Færgehavn"
+        }
+        ],
+        "id": 2366,
+        "parent": {
+          "id": 2364,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "da",
+            "name": "Fyrpæl ødelagt"
+          }
+          ],
+          "id": 2368,
+          "parent": {
+            "id": 2366,
+            "sortOrder": 0.0
+          },
+          "children": [{
+            "descs": [{
+              "lang": "da",
+              "name": "Sejladshindring"
+            }
+            ],
+            "id": 2370,
+            "parent": {
+              "id": 2368,
+              "sortOrder": 0.0
+            },
+            "sortOrder": 0.6839352849286315
+          }
+          ],
+          "sortOrder": 0.39575703206281665
+        }
+        ],
+        "sortOrder": 0.1548115719366413
+      }
+      ],
+      "sortOrder": 20.774005419265784
+    }
+    ],
+    "sortOrder": -4.038817863745905
+  }, {
+    "descs": [{
+      "lang": "en",
+      "name": "Waters south of Funen"
+    }
+    ],
+    "id": -1686,
+    "parent": {
+      "id": -10,
+      "sortOrder": 0.0
+    },
+    "sortOrder": 9.711182136254095
+  }, {
+    "descs": [{
+      "lang": "en",
+      "name": "Little Belt"
+    }
+    ],
+    "id": -588,
+    "parent": {
+      "id": -10,
+      "sortOrder": 0.0
+    },
+    "children": [{
+      "descs": [{
+        "lang": "da",
+        "name": "Middelfart WNW"
+      }
+      ],
+      "id": 244,
+      "parent": {
+        "id": -588,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "da",
+          "name": "Kongebro Havn"
+        }
+        ],
+        "id": 246,
+        "parent": {
+          "id": 244,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.30445034460430753
+      }
+      ],
+      "sortOrder": 0.9565653363693887
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Bredningen -Assens N and Lyø W -Kegnæs E"
+      }
+      ],
+      "id": 255,
+      "parent": {
+        "id": -588,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 10.956565336369389
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Als SE"
+      }
+      ],
+      "id": 284,
+      "parent": {
+        "id": -588,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Pøls Rev E"
+        }
+        ],
+        "id": 287,
+        "parent": {
+          "id": 284,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.05137371402917923
+      }
+      ],
+      "sortOrder": 20.956565336369387
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK R 44 Halk"
+      }
+      ],
+      "id": 1729,
+      "parent": {
+        "id": -588,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Firing exercise"
+        }
+        ],
+        "id": 2392,
+        "parent": {
+          "id": 1729,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.5188698616784475
+      }
+      ],
+      "sortOrder": 30.956565336369387
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "14 Hyby Faelled"
+      }
+      ],
+      "id": 1743,
+      "parent": {
+        "id": -588,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 40.95656533636939
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Snævringen"
+      }
+      ],
+      "id": 2378,
+      "parent": {
+        "id": -588,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Fredericia Harbour"
+        }
+        ],
+        "id": 2381,
+        "parent": {
+          "id": 2378,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.43873057507472835
+      }
+      ],
+      "sortOrder": 50.95656533636939
+    }
+    ],
+    "sortOrder": 23.461182136254095
+  }, {
+    "descs": [{
+      "lang": "en",
+      "name": "Kattegat"
+    }
+    ],
+    "id": -219,
+    "parent": {
+      "id": -10,
+      "sortOrder": 0.0
+    },
+    "children": [{
+      "descs": [{
+        "lang": "da",
+        "name": "Isefjord"
+      }
+      ],
+      "id": 318,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "da",
+          "name": "Nykøbing Bugt"
+        }
+        ],
+        "id": 320,
+        "parent": {
+          "id": 318,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "da",
+            "name": "Vibehage"
+          }
+          ],
+          "id": 322,
+          "parent": {
+            "id": 320,
+            "sortOrder": 0.0
+          },
+          "sortOrder": 0.11413522913976348
+        }
+        ],
+        "sortOrder": 0.11642566074984195
+      }
+      ],
+      "sortOrder": 0.6880121284742566
+    }, {
+      "descs": [{
+        "lang": "da",
+        "name": "Samsø E-kyst"
+      }
+      ],
+      "id": 330,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "da",
+          "name": "Ballen Havn"
+        }
+        ],
+        "id": 332,
+        "parent": {
+          "id": 330,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "da",
+            "name": "Anlægsarbejde"
+          }
+          ],
+          "id": 334,
+          "parent": {
+            "id": 332,
+            "sortOrder": 0.0
+          },
+          "sortOrder": 0.23095416277828884
+        }
+        ],
+        "sortOrder": 0.18283383908404083
+      }
+      ],
+      "sortOrder": 10.688012128474256
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Odense fjord"
+      }
+      ],
+      "id": 349,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Gabet"
+        }
+        ],
+        "id": 352,
+        "parent": {
+          "id": 349,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "en",
+            "name": "Enebærodde E"
+          }
+          ],
+          "id": 355,
+          "parent": {
+            "id": 352,
+            "sortOrder": 0.0
+          },
+          "sortOrder": 0.6644550622431217
+        }
+        ],
+        "sortOrder": 0.7360062729789648
+      }, {
+        "descs": [{
+          "lang": "en",
+          "name": "Gabet -Odense Havneterminal"
+        }
+        ],
+        "id": 2401,
+        "parent": {
+          "id": 349,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 10.736006272978965
+      }, {
+        "descs": [{
+          "lang": "en",
+          "name": "Feds Middelgrund N"
+        }
+        ],
+        "id": 2418,
+        "parent": {
+          "id": 349,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 20.736006272978965
+      }
+      ],
+      "sortOrder": 20.688012128474256
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK D 352 Lysegrund N."
+      }
+      ],
+      "id": 1753,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 30.688012128474256
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK D 353 Lysegrund S."
+      }
+      ],
+      "id": 1762,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 40.688012128474256
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK R 18 Jaegerspris"
+      }
+      ],
+      "id": 1771,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 50.688012128474256
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "11 Bredetved"
+      }
+      ],
+      "id": 1781,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 60.688012128474256
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK R 11 Sjaellands Odde W."
+      }
+      ],
+      "id": 1790,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 70.68801212847426
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK R 12 Gniben"
+      }
+      ],
+      "id": 1799,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 80.68801212847426
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK R 13 Sjaellands Rev"
+      }
+      ],
+      "id": 1809,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 90.68801212847426
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK R 14 Sjaellands Odde E."
+      }
+      ],
+      "id": 1818,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 100.68801212847426
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK D 350 Yderflak"
+      }
+      ],
+      "id": 1828,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 110.68801212847426
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK D 351 Schultz Grund"
+      }
+      ],
+      "id": 1836,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 120.68801212847426
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "13 Seden"
+      }
+      ],
+      "id": 1844,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 130.68801212847427
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK R 45 Hevring"
+      }
+      ],
+      "id": 1854,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 140.68801212847427
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK R 15 Sejeroe E."
+      }
+      ],
+      "id": 1909,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 150.68801212847427
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK R 16 Sejeroe W."
+      }
+      ],
+      "id": 1917,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 160.68801212847427
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK R 17 Isefjord"
+      }
+      ],
+      "id": 1935,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 170.68801212847427
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Endelave S"
+      }
+      ],
+      "id": 2429,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Buoyed marine farm"
+        }
+        ],
+        "id": 2432,
+        "parent": {
+          "id": 2429,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.8924396143882352
+      }
+      ],
+      "sortOrder": 180.68801212847427
+    }, {
+      "descs": [{
+        "lang": "da",
+        "name": "Horsens Fjord"
+      }
+      ],
+      "id": 2443,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "da",
+          "name": "Horsens Havn"
+        }
+        ],
+        "id": 2445,
+        "parent": {
+          "id": 2443,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "da",
+            "name": "Spunsvæg etableret"
+          }
+          ],
+          "id": 2447,
+          "parent": {
+            "id": 2445,
+            "sortOrder": 0.0
+          },
+          "sortOrder": 0.4518800203817205
+        }
+        ],
+        "sortOrder": 0.23485087923747983
+      }
+      ],
+      "sortOrder": 190.68801212847427
+    }, {
+      "descs": [{
+        "lang": "da",
+        "name": "Hirsholmene"
+      }
+      ],
+      "id": 2459,
+      "parent": {
+        "id": -219,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "da",
+          "name": "Hirsholm Havn"
+        }
+        ],
+        "id": 2461,
+        "parent": {
+          "id": 2459,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "da",
+            "name": "Vrag fjernet"
+          }
+          ],
+          "id": 2463,
+          "parent": {
+            "id": 2461,
+            "sortOrder": 0.0
+          },
+          "sortOrder": 0.5121209947718001
+        }
+        ],
+        "sortOrder": 0.28112040119365034
+      }
+      ],
+      "sortOrder": 200.68801212847427
+    }
+    ],
+    "sortOrder": 37.211182136254095
+  }, {
+    "descs": [{
+      "lang": "en",
+      "name": "Liimfiord"
+    }
+    ],
+    "id": -232,
+    "parent": {
+      "id": -10,
+      "sortOrder": 0.0
+    },
+    "children": [{
+      "descs": [{
+        "lang": "en",
+        "name": "Aalborg NE"
+      }
+      ],
+      "id": 365,
+      "parent": {
+        "id": -232,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Tall Ships Race Aalborg 2015"
+        }
+        ],
+        "id": 368,
+        "parent": {
+          "id": 365,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "en",
+            "name": "Temporary   fairway cancelled"
+          }
+          ],
+          "id": 371,
+          "parent": {
+            "id": 368,
+            "sortOrder": 0.0
+          },
+          "sortOrder": 0.21332330795784593
+        }
+        ],
+        "sortOrder": 0.44135082281865357
+      }
+      ],
+      "sortOrder": 0.08560989600548863
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Aggersund"
+      }
+      ],
+      "id": 390,
+      "parent": {
+        "id": -232,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Aggersundbroen E"
+        }
+        ],
+        "id": 393,
+        "parent": {
+          "id": 390,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "en",
+            "name": "Masts removed"
+          }
+          ],
+          "id": 396,
+          "parent": {
+            "id": 393,
+            "sortOrder": 0.0
+          },
+          "children": [{
+            "descs": [{
+              "lang": "en",
+              "name": "Prohibited area cancelled"
+            }
+            ],
+            "id": 399,
+            "parent": {
+              "id": 396,
+              "sortOrder": 0.0
+            },
+            "sortOrder": 0.5999214620824981
+          }
+          ],
+          "sortOrder": 0.5656182797894176
+        }
+        ],
+        "sortOrder": 0.8859846411747923
+      }
+      ],
+      "sortOrder": 10.085609896005488
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Aggersundbroen"
+      }
+      ],
+      "id": 2471,
+      "parent": {
+        "id": -232,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Maintenance work"
+        }
+        ],
+        "id": 2474,
+        "parent": {
+          "id": 2471,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.40724368191049687
+      }
+      ],
+      "sortOrder": 20.085609896005487
+    }, {
+      "descs": [{
+        "lang": "da",
+        "name": "Fur Sund"
+      }
+      ],
+      "id": 2484,
+      "parent": {
+        "id": -232,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "da",
+          "name": "Fur -Branden"
+        }
+        ],
+        "id": 2486,
+        "parent": {
+          "id": 2484,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.7773020988878028
+      }
+      ],
+      "sortOrder": 30.085609896005487
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Oddesund"
+      }
+      ],
+      "id": 2502,
+      "parent": {
+        "id": -232,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Oddesund Nord Lystbåde-og    Fiskerihavn"
+        }
+        ],
+        "id": 2505,
+        "parent": {
+          "id": 2502,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "en",
+            "name": "Breakwater to be established"
+          }
+          ],
+          "id": 2508,
+          "parent": {
+            "id": 2505,
+            "sortOrder": 0.0
+          },
+          "sortOrder": 0.7678187549164445
+        }
+        ],
+        "sortOrder": 0.47396807675114705
+      }
+      ],
+      "sortOrder": 40.08560989600549
+    }, {
+      "descs": [{
+        "lang": "da",
+        "name": "Nissum Bredning N"
+      }
+      ],
+      "id": 2521,
+      "parent": {
+        "id": -232,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "da",
+          "name": "Helligsø S"
+        }
+        ],
+        "id": 2523,
+        "parent": {
+          "id": 2521,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "da",
+            "name": "Afmærket  bølgeenergianlæg etableret"
+          }
+          ],
+          "id": 2525,
+          "parent": {
+            "id": 2523,
+            "sortOrder": 0.0
+          },
+          "sortOrder": 0.9332299947724736
+        }
+        ],
+        "sortOrder": 0.780784310764524
+      }
+      ],
+      "sortOrder": 50.08560989600549
+    }
+    ],
+    "sortOrder": 70.9611821362541
+  }, {
+    "descs": [{
+      "lang": "en",
+      "name": "Skagerak"
+    }
+    ],
+    "id": -13,
+    "parent": {
+      "id": -10,
+      "sortOrder": 0.0
+    },
+    "children": [{
+      "descs": [{
+        "lang": "en",
+        "name": "EK D 389 Skagen N."
+      }
+      ],
+      "id": 1863,
+      "parent": {
+        "id": -13,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 0.8307862909453261
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK R 48 Tranum S."
+      }
+      ],
+      "id": 1871,
+      "parent": {
+        "id": -13,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 10.830786290945326
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK D 370 Blokhus"
+      }
+      ],
+      "id": 1880,
+      "parent": {
+        "id": -13,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 20.830786290945326
+    }
+    ],
+    "sortOrder": 110.9611821362541
+  }, {
+    "descs": [{
+      "lang": "en",
+      "name": "North Sea"
+    }
+    ],
+    "id": -58,
+    "parent": {
+      "id": -10,
+      "sortOrder": 0.0
+    },
+    "children": [{
+      "descs": [{
+        "lang": "en",
+        "name": "15 Nymindegab"
+      }
+      ],
+      "id": 440,
+      "parent": {
+        "id": -58,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Firing exercises"
+        }
+        ],
+        "id": 443,
+        "parent": {
+          "id": 440,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.22001490236841037
+      }
+      ],
+      "sortOrder": 0.7204080135253732
+    }, {
+      "descs": [{
+        "lang": "da",
+        "name": "Nymindegab S"
+      }
+      ],
+      "id": 453,
+      "parent": {
+        "id": -58,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 10.720408013525374
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Horns Rev N"
+      }
+      ],
+      "id": 462,
+      "parent": {
+        "id": -58,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 20.720408013525372
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK R 33 Vejers, EK D 380 Kallesmærsk E and    EK D 381 Kallesmærsk W"
+      }
+      ],
+      "id": 475,
+      "parent": {
+        "id": -58,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Firing exercises"
+        }
+        ],
+        "id": 478,
+        "parent": {
+          "id": 475,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.9380754803566295
+      }
+      ],
+      "sortOrder": 30.720408013525372
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Lister Dyb"
+      }
+      ],
+      "id": 507,
+      "parent": {
+        "id": -58,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Buoyage  to be moved"
+        }
+        ],
+        "id": 510,
+        "parent": {
+          "id": 507,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.8261843893771851
+      }
+      ],
+      "sortOrder": 40.72040801352537
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK R 38 Roemoe E."
+      }
+      ],
+      "id": 1889,
+      "parent": {
+        "id": -58,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Firing exercises"
+        }
+        ],
+        "id": 2609,
+        "parent": {
+          "id": 1889,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.2663967880114869
+      }
+      ],
+      "sortOrder": 50.72040801352537
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "EK D 373 Roemoe W."
+      }
+      ],
+      "id": 1900,
+      "parent": {
+        "id": -58,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 60.72040801352537
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Lille Fisker Banke W"
+      }
+      ],
+      "id": 2538,
+      "parent": {
+        "id": -58,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 70.72040801352537
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Stine Field SE"
+      }
+      ],
+      "id": 2548,
+      "parent": {
+        "id": -58,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 80.72040801352537
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Hanstholm Light"
+      }
+      ],
+      "id": 2557,
+      "parent": {
+        "id": -58,
+        "sortOrder": 0.0
+      },
+      "sortOrder": 90.72040801352537
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Thorsminde S"
+      }
+      ],
+      "id": 2568,
+      "parent": {
+        "id": -58,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Husby Klit"
+        }
+        ],
+        "id": 2571,
+        "parent": {
+          "id": 2568,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.9859579530086335
+      }
+      ],
+      "sortOrder": 100.72040801352537
+    }, {
+      "descs": [{
+        "lang": "en",
+        "name": "Port of Esbjerg"
+      }
+      ],
+      "id": 2597,
+      "parent": {
+        "id": -58,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Trafikhavn"
+        }
+        ],
+        "id": 2600,
+        "parent": {
+          "id": 2597,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.7919560609152497
+      }
+      ],
+      "sortOrder": 110.72040801352537
+    }
+    ],
+    "sortOrder": 120.9611821362541
+  }, {
+    "descs": [{
+      "lang": "en",
+      "name": "Skagerrak"
+    }
+    ],
+    "id": 421,
+    "parent": {
+      "id": -10,
+      "sortOrder": 0.0
+    },
+    "children": [{
+      "descs": [{
+        "lang": "en",
+        "name": "Hirtshals WNW"
+      }
+      ],
+      "id": 424,
+      "parent": {
+        "id": 421,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Wreck"
+        }
+        ],
+        "id": 427,
+        "parent": {
+          "id": 424,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "en",
+            "name": "Adjusted position"
+          }
+          ],
+          "id": 430,
+          "parent": {
+            "id": 427,
+            "sortOrder": 0.0
+          },
+          "sortOrder": 0.9316710366328654
+        }
+        ],
+        "sortOrder": 0.504169292762197
+      }
+      ],
+      "sortOrder": 0.4289405465399029
+    }
+    ],
+    "sortOrder": 130.96118213625408
+  }
+  ],
+  "sortOrder": 0.0
+}, {
+  "descs": [{
+    "lang": "en",
+    "name": "Canarias"
+  }
+  ],
+  "id": 12489,
+  "children": [{
+    "descs": [{
+      "lang": "en",
+      "name": "Gulf of Guinea"
+    }
+    ],
+    "id": 12492,
+    "parent": {
+      "id": 12489,
+      "sortOrder": 0.0
+    },
+    "sortOrder": 0.4099720757451447
+  }
+  ],
+  "sortOrder": 0.0
+}, {
+  "descs": [{
+    "lang": "en",
+    "name": "Greenland"
+  }
+  ],
+  "id": 2806,
+  "children": [{
+    "descs": [{
+      "lang": "en",
+      "name": "West coast"
+    }
+    ],
+    "id": 2809,
+    "parent": {
+      "id": 2806,
+      "sortOrder": 0.0
+    },
+    "sortOrder": 0.8276462226988116
+  }, {
+    "descs": [{
+      "lang": "en",
+      "name": "East coast"
+    }
+    ],
+    "id": 2828,
+    "parent": {
+      "id": 2806,
+      "sortOrder": 0.0
+    },
+    "sortOrder": 10.827646222698812
+  }
+  ],
+  "sortOrder": 0.0
+}, {
+  "descs": [{
+    "lang": "en",
+    "name": "Sweden"
+  }
+  ],
+  "id": -8712,
+  "sortOrder": 10.0
+}, {
+  "descs": [{
+    "lang": "en",
+    "name": "Norway"
+  }
+  ],
+  "id": -8709,
+  "sortOrder": 20.0
+}, {
+  "descs": [{
+    "lang": "en",
+    "name": "UK"
+  }
+  ],
+  "id": -8718,
+  "sortOrder": 30.0
+}, {
+  "descs": [{
+    "lang": "en",
+    "name": "Netherlands"
+  }
+  ],
+  "id": -8721,
+  "sortOrder": 40.0
+}, {
+  "descs": [{
+    "lang": "en",
+    "name": "Germany"
+  }
+  ],
+  "id": -8715,
+  "sortOrder": 50.0
+}, {
+  "descs": [{
+    "lang": "en",
+    "name": "Estonia"
+  }
+  ],
+  "id": 1143,
+  "children": [{
+    "descs": [{
+      "lang": "en",
+      "name": "Gulf of Finland"
+    }
+    ],
+    "id": 1146,
+    "parent": {
+      "id": 1143,
+      "sortOrder": 0.0
+    },
+    "sortOrder": 0.08558820817299129
+  }, {
+    "descs": [{
+      "lang": "en",
+      "name": "Bornholm NE -SW"
+    }
+    ],
+    "id": 101,
+    "parent": {
+      "id": 1143,
+      "sortOrder": 0.0
+    },
+    "children": [{
+      "descs": [{
+        "lang": "en",
+        "name": "Gas pipeline"
+      }
+      ],
+      "id": 104,
+      "parent": {
+        "id": 101,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Survey"
+        }
+        ],
+        "id": 107,
+        "parent": {
+          "id": 104,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.21129909023358573
+      }
+      ],
+      "sortOrder": 0.39841588517217164
+    }
+    ],
+    "sortOrder": 10.085588208172991
+  }
+  ],
+  "sortOrder": 100.0
+}, {
+  "descs": [{
+    "lang": "en",
+    "name": "Germany"
+  }
+  ],
+  "id": 488,
+  "children": [{
+    "descs": [{
+      "lang": "en",
+      "name": "The North Sea"
+    }
+    ],
+    "id": 491,
+    "parent": {
+      "id": 488,
+      "sortOrder": 0.0
+    },
+    "children": [{
+      "descs": [{
+        "lang": "en",
+        "name": "Lister Dyb"
+      }
+      ],
+      "id": 494,
+      "parent": {
+        "id": 491,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Salzsand N"
+        }
+        ],
+        "id": 497,
+        "parent": {
+          "id": 494,
+          "sortOrder": 0.0
+        },
+        "sortOrder": 0.3540630843087449
+      }
+      ],
+      "sortOrder": 0.5901140852119156
+    }
+    ],
+    "sortOrder": 0.16272341974309257
+  }, {
+    "descs": [{
+      "lang": "en",
+      "name": "Baltic"
+    }
+    ],
+    "id": 296,
+    "parent": {
+      "id": 488,
+      "sortOrder": 0.0
+    },
+    "children": [{
+      "descs": [{
+        "lang": "en",
+        "name": "The Little Belt"
+      }
+      ],
+      "id": 299,
+      "parent": {
+        "id": 296,
+        "sortOrder": 0.0
+      },
+      "children": [{
+        "descs": [{
+          "lang": "en",
+          "name": "Flensburg Fiord"
+        }
+        ],
+        "id": 302,
+        "parent": {
+          "id": 299,
+          "sortOrder": 0.0
+        },
+        "children": [{
+          "descs": [{
+            "lang": "en",
+            "name": "Sønderhav -Okseøer -  Glücksburg"
+          }
+          ],
+          "id": 305,
+          "parent": {
+            "id": 302,
+            "sortOrder": 0.0
+          },
+          "sortOrder": 0.8157684662467186
+        }
+        ],
+        "sortOrder": 0.18388935063303968
+      }
+      ],
+      "sortOrder": 0.6371466260532881
+    }
+    ],
+    "sortOrder": 10.162723419743093
+  }
+  ],
+  "sortOrder": 140.96118213625408
+}
+]
+

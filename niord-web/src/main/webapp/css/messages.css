@@ -1,0 +1,25 @@
+
+body {
+    background-color: white;
+}
+
+.page-content {
+    background-color: white;
+}
+
+/** View mode -> Map **/
+
+.message-list-map {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-color: #b5d0d0;
+}
+
+.message-list-map .ol-zoom {
+    top: auto;
+    bottom: 10px;
+}
+

@@ -1,0 +1,56 @@
+body {
+    background-color: black;
+}
+
+.page-content {
+    background-color: black;
+}
+
+/** Footer Panel **/
+
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    right: 0;
+}
+
+/** Home -> Panel **/
+
+.home-panel {
+    text-align: center;
+    margin-top: 20px;
+    padding: 10px;
+    background-color: rgba(160, 160, 160, .7);
+    border-radius: 10px;
+}
+
+.home-panel h2 {
+    font-size: 20px;
+    margin: 5px 0;
+    color: lightgray;
+    text-shadow: 2px 2px rgba(64, 64, 64, .5);
+}
+
+@keyframes flash-abbrev {
+    0%   {color: lightgray;}
+    50%  {color: #840061;}
+    100% {color: lightgray;}
+}
+
+.home-panel h2:hover .abbrev {
+    animation-name: flash-abbrev;
+    animation-duration: 1s;
+}
+
+/** Home -> Map **/
+
+.home-map {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    bottom: 50px;
+    right: 0;
+    z-index: -100;
+}
+

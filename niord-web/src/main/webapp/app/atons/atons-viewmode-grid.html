@@ -1,0 +1,16 @@
+
+<div class="atons">
+
+    <div class="atons-grid container-fluid">
+        <div class="row">
+            <div ng-if="atons.length == 0" style="text-align: center">
+                <h4>Please update the search filter</h4>
+            </div>
+            <div ng-repeat="aton in atons" class="col-xs-11 col-sm-6 col-md-4 col-lg-3">
+                <aton-list-details aton="aton" selection="selection"></aton-list-details>
+            </div>
+        </div>
+    </div>
+
+    <div ng-include="'/app/layout/footer.html'"></div>
+</div>
