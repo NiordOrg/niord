@@ -156,7 +156,7 @@ public class TestRestService {
     @Path("/xxx")
     @Produces("application/json;charset=UTF-8")
     @NoCache
-    @RolesAllowed("user")
+    @RolesAllowed("clientuser")
     public String test() {
         return System.currentTimeMillis() + "";
     }
