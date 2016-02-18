@@ -215,7 +215,133 @@ angular.module('niord.common')
                 });
             }
         };
+    }])
+
+    /**
+     * File upload, based on:
+     * https://github.com/nervgh/angular-file-upload
+     * <p>
+     * The directive takes the following attributes:
+     * <ul>
+     *   <li>url: The url to upload the file to. Mandatory.</li>
+     *   <li>multiple: Support single or multiple file upload. Defaults to false.</li>
+     *   <li>auto-upload: Automatically start upload. Defaults to false.</li>
+     *   <li>remove-after-upload: Remove file from queue once uploaded. Defaults to false.</li>
+     *   <li>success(result): Success callback function. Optional.</li>
+     *   <li>error(status, statusText): Error callback function. Optional.</li>
+     * </ul>
+     */
+    .directive('fileUpload', ['FileUploader', 'Auth', function (FileUploader, Auth) {
+        'use strict';
+
+        return {
+            restrict: 'AE',
+
+            transclude: true,
+
+            templateUrl: '/app/common/file-upload.html',
+
+            scope: {
+                url:                '=',
+                multiple:           '=',
+                dropText:           '@',
+                fileTypes:          '=',
+                autoUpload:         '=',
+                removeAfterUpload:  '=',
+                data:               '=',
+                success:            '&',
+                error:              '&'
+            },
+
+            compile: function(element, attrs) {
+
+                if (attrs.dropText == undefined) {
+                    attrs.$set("dropText", (attrs.multiple) ? 'or drop files here' : 'or drop file here');
+                }
+
+                // Return link function
+                return {
+                    pre: function (scope, element, attrs) {
+                        // create a uploader with options
+                        scope.uploader = new FileUploader({
+                            scope: scope,
+                            url: scope.url,
+                            data: { uploadData: scope.data },
+                            filters: []
+                        });
+                    },
+
+                    post: function (scope) {
+
+                        scope.extension = function (txt) {
+                            return txt.substr((~-txt.lastIndexOf(".") >>> 0) + 2);
+                        };
+
+                        if (scope.data) {
+                            scope.uploader.onBeforeUploadItem = function (item) {
+                                item.formData.push({ data: JSON.stringify(scope.data) });
+                            };
+                        }
+
+                        // Check if file-types are defined
+                        if (scope.fileTypes) {
+                            scope.uploader.filters.push({
+                                name: 'filterName',
+                                fn: function (item, options) {
+                                    var ext = scope.extension(item.name).toLowerCase();
+                                    return (ext && $.inArray(ext, scope.fileTypes.toLowerCase().split(",")) > -1);
+                                }});
+                        }
+
+                        // Auto-upload
+                        if (scope.autoUpload) {
+                            scope.uploader.autoUpload = scope.autoUpload;
+                        }
+
+                        // Remove after upload
+                        if (scope.removeAfterUpload) {
+                            scope.uploader.removeAfterUpload = scope.removeAfterUpload;
+                        }
+
+                        // Handle authenticaiton
+                        if (Auth.loggedIn) {
+                            scope.uploader.headers.Authorization = 'bearer ' + Auth.keycloak.token;
+                        }
+
+                        scope.cancelOrRemove = function (item) {
+                            if (item.isUploading) {
+                                item.cancel();
+                            } else {
+                                item.remove();
+                            }
+                        };
+
+                        scope.$watch(function () {
+                            return scope.url;
+                        }, function (value) {
+                            scope.uploader.url = value;
+                        }, true);
+
+                        // Success call-back
+                        if (scope.success) {
+                            scope.uploader.onSuccessItem = function (item, response, status, headers) {
+                                scope.success({ result: response});
+                            };
+                        }
+
+                        // Error call-back
+                        if (scope.error) {
+                            scope.uploader.onErrorItem = function (item, response, status, headers) {
+                                scope.error({ status: status, statusText: response.statusText });
+                            };
+                        }
+                    }
+                }
+            }
+
+        }
     }]);
+
 
 
 

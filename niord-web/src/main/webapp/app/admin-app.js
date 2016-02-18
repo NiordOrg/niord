@@ -11,7 +11,7 @@ angular.module('niord.map', []);
 
 
 var app = angular.module('niord.admin', [
-        'ngRoute', 'ngSanitize', 'ui.bootstrap', 'ui.select', 'pascalprecht.translate', 'angular-growl',
+        'ngRoute', 'ngSanitize', 'ui.bootstrap', 'ui.select', 'pascalprecht.translate', 'angular-growl', 'angularFileUpload',
         'niord.common', 'niord.auth', 'niord.conf', 'niord.map' ])
 
     .config(['$routeProvider', '$httpProvider', function ($routeProvider, $httpProvider) {
