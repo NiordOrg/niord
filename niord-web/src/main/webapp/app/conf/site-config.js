@@ -8,7 +8,7 @@ angular.module('niord.conf')
     .run(['$rootScope', '$window', '$translate', 'LangService', 'AppSpaceService',
         function ($rootScope, $window, $translate, LangService, AppSpaceService) {
 
-        $rootScope.LEGACY_ADMIN_PAGE = false;
+        $rootScope.adminIntegrationPageEnabled = false;
 
             // Map settings
         $rootScope.mapDefaultZoomLevel = 6;

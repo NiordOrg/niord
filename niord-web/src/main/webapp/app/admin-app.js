@@ -28,6 +28,9 @@ var app = angular.module('niord.admin', [
         }).when('/areas', {
             templateUrl: 'app/admin/admin-page-areas.html',
             reloadOnSearch: false
+        }).when('/integration', {
+            templateUrl: 'app/admin/admin-page-integration.html',
+            reloadOnSearch: false
         }).otherwise({
             redirectTo: '/overview'
         });

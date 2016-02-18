@@ -14,8 +14,8 @@
         <dt><a href ng-click="go('/categories');">Categories</a></dt>
         <dd>Manage the list of categories used for grouping NW and NM messages.</dd>
 
-        <dt ng-if="LEGACY_ADMIN_PAGE && hasRole('admin')"><a href ng-click="go('/legacy');">Integration</a></dt>
-        <dd ng-if="LEGACY_ADMIN_PAGE && hasRole('admin')">Handle integration with the legacy systems.</dd>
+        <dt ng-if="adminIntegrationPageEnabled && hasRole('admin')"><a href ng-click="go('/integration');">Integration</a></dt>
+        <dd ng-if="adminIntegrationPageEnabled && hasRole('admin')">Handle integration with the legacy systems.</dd>
 
         <dt ng-if="hasRole('admin')"><a href ng-click="go('/settings');">Settings</a></dt>
         <dd ng-if="hasRole('admin')">Manage the system settings.</dd>

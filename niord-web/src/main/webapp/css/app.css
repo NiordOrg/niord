@@ -111,6 +111,17 @@ input.ng-invalid-messageId {
     display: inline;
 }
 
+.framed-tabs .tab-content {
+    border-left: 1px solid #DDDDDD;
+    border-right: 1px solid #DDDDDD;
+    border-bottom: 1px solid #DDDDDD;
+    padding: 10px;
+}
+
+.framed-tabs li a {
+    padding: 5px 10px;
+}
+
 /** Disable modal dialog animation **/
 
 .modal.fade {
