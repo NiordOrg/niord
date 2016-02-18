@@ -217,6 +217,6 @@ angular.module('niord.common')
         };
     }]);
 
-;
+
 
 

@@ -8,7 +8,9 @@ angular.module('niord.conf')
     .run(['$rootScope', '$window', '$translate', 'LangService', 'AppSpaceService',
         function ($rootScope, $window, $translate, LangService, AppSpaceService) {
 
-        // Map settings
+        $rootScope.LEGACY_ADMIN_PAGE = false;
+
+            // Map settings
         $rootScope.mapDefaultZoomLevel = 6;
         $rootScope.mapDefaultLatitude  = 56;
         $rootScope.mapDefaultLongitude = 11;

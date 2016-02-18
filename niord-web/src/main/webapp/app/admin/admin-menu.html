@@ -1,0 +1,11 @@
+
+<div>
+    <ul class="nav admin-nav-sidebar">
+        <li check-active="/overview"><a href ng-click="go('/overview');">Overview</a></li>
+        <li check-active="/charts"><a href ng-click="go('/charts');">Charts</a></li>
+        <li check-active="/areas"><a href ng-click="go('/areas');">Areas</a></li>
+        <li check-active="/categories"><a href ng-click="go('/categories');">Categories</a></li>
+        <li check-active="/legacy" ng-if="LEGACY_ADMIN_PAGE && hasRole('admin')"><a href ng-click="go('/legacy');">Integration</a></li>
+        <li check-active="/settings" ng-if="hasRole('admin')"><a href ng-click="go('/settings');">Settings</a></li>
+    </ul>
+</div>
