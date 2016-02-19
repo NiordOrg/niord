@@ -1,6 +1,5 @@
 package org.niord.model.vo.aton;
 
-import com.sun.xml.internal.txw2.annotation.XmlElement;
 import org.apache.commons.lang.StringUtils;
 import org.niord.model.IJsonSerializable;
 
@@ -33,7 +32,6 @@ import javax.xml.bind.annotation.XmlAttribute;
  *     &lt;/node&gt;
  * </pre>
  */
-@XmlElement()
 public class AtonTagVo implements IJsonSerializable {
 
     String k;

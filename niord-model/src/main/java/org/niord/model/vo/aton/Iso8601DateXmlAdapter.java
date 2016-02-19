@@ -35,6 +35,10 @@ public class Iso8601DateXmlAdapter extends XmlAdapter<String, Date> {
 
     @Override
     public String marshal(Date d) throws Exception {
+        if (d == null) {
+            return null;
+        }
+
         return format.format(d);
     }
 

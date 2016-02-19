@@ -16,6 +16,7 @@
 package org.niord.core.service;
 
 import org.niord.core.model.Aton;
+import org.niord.core.model.AtonNode;
 import org.niord.core.model.Extent;
 import org.niord.model.PagedSearchResultVo;
 import org.apache.commons.lang.StringUtils;
@@ -43,6 +44,51 @@ public class AtonService extends BaseService {
 
     @Inject
     private Logger log;
+
+    /*************************/
+    /** NEW Aton Model      **/
+    /*************************/
+
+
+
+
+    /**
+     * Replaces the AtoN DB
+     * @param atons the new AtoNs
+     */
+    @Lock(LockType.WRITE)
+    public void replaceAtons(List<AtonNode> atons) {
+
+        // Delete old AtoNs
+        int deleted = em
+                .createNamedQuery("AtonNode.deleteAll")
+                .executeUpdate();
+
+        log.info("Deleted " + deleted + " AtoNs");
+        em.flush();
+
+        // Persist new list of AtoNs
+        long t0 = System.currentTimeMillis();
+        int x = 0;
+        for (AtonNode aton : atons) {
+            em.persist(aton);
+
+            if (x++ % 100 == 0) {
+                em.flush();
+            }
+        }
+        log.info("Persisted " + atons.size() + " AtoNs in " +
+                (System.currentTimeMillis() - t0) + " ms");
+    }
+
+
+
+
+
+    /*************************/
+    /** OLD Aton Model      **/
+    /*************************/
+
 
     private List<Aton> atons = new ArrayList<>();
 
@@ -80,7 +126,7 @@ public class AtonService extends BaseService {
      * @param atons the new AtoNs
      */
     @Lock(LockType.WRITE)
-    public void replaceAtons(List<Aton> atons) {
+    public void replaceAtonsOld(List<Aton> atons) {
 
         // Delete old AtoNs
         int deleted = em.createNamedQuery("Aton.deleteAll").executeUpdate();

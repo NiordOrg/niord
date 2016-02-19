@@ -20,9 +20,9 @@ import java.io.Serializable;
 /**
  * Interface for all entities
  */
-public interface IEntity extends Serializable {
+public interface IEntity<ID> extends Serializable {
 
-    Integer getId();
+    ID getId();
 
     boolean isNew();
 

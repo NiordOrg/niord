@@ -36,7 +36,8 @@ import java.util.UUID;
         @NamedQuery(name  = "Feature.hits",
                 query = "select f from Feature f where within(:pt, f.geometry) = true")
 })
-public class Feature extends BaseEntity {
+@SuppressWarnings("unused")
+public class Feature extends BaseEntity<Integer> {
     public final static int WGS84_SRID = 4326;
 
     @Column(unique = true)
@@ -135,6 +136,7 @@ public class Feature extends BaseEntity {
  * as a simple string-based name-value table. It still allow us to join over and make interesting queries, unlike
  * if the properties had been persisted as JSON.
  */
+@SuppressWarnings("unused")
 class FeaturePropertiesHandler {
     final static List<String> PROPERTY_NAME_PREFIXES =
             Arrays.asList("name", "restriction",

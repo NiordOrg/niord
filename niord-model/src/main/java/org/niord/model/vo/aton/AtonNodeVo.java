@@ -54,11 +54,11 @@ import java.util.Date;
 @XmlRootElement(name = "node")
 public class AtonNodeVo implements IJsonSerializable {
 
-    long id;
+    int id;
     double lat;
     double lon;
     String user;
-    long uid;
+    int uid;
     boolean visible;
     int version;
     int changeset;
@@ -123,11 +123,11 @@ public class AtonNodeVo implements IJsonSerializable {
     /*************************/
 
     @XmlAttribute
-    public long getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(int id) {
         this.id = id;
     }
 
@@ -159,11 +159,11 @@ public class AtonNodeVo implements IJsonSerializable {
     }
 
     @XmlAttribute
-    public long getUid() {
+    public int getUid() {
         return uid;
     }
 
-    public void setUid(long uid) {
+    public void setUid(int uid) {
         this.uid = uid;
     }
 

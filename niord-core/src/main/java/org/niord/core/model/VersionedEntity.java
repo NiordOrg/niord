@@ -16,6 +16,7 @@
 package org.niord.core.model;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -24,7 +25,7 @@ import java.util.Date;
  * The created and updated fields will automatically be updated upon persisting the entity.
  */
 @MappedSuperclass
-public abstract class VersionedEntity extends BaseEntity {
+public abstract class VersionedEntity<ID extends Serializable> extends BaseEntity<ID> {
 
     @Version
     @Column(name="version")

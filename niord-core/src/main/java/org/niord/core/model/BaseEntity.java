@@ -22,20 +22,20 @@ import java.io.Serializable;
  * Base class for all entity beans
  */
 @MappedSuperclass
-public abstract class BaseEntity<K extends Serializable> implements IEntity {
+public abstract class BaseEntity<ID extends Serializable> implements IEntity<ID> {
 
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(unique = true, nullable = false)
-    protected Integer id;
+    protected ID id;
 
-    public Integer getId() {
+    public ID getId() {
         return this.id;
     }
 
-    public void setId(Integer id) {
+    public void setId(ID id) {
         this.id = id;
     }
 

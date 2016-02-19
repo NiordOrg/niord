@@ -36,7 +36,8 @@ import javax.validation.constraints.NotNull;
         @NamedQuery(name  = "Aton.deleteAll",
                 query = "delete from Aton")
 })
-public class Aton extends BaseEntity {
+@SuppressWarnings("unused")
+public class Aton extends BaseEntity<Integer> {
 
     @NotNull
     @Column(unique = true)
