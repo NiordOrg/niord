@@ -375,8 +375,8 @@ angular.module('niord.map')
                             }),
                             geometry: function(feature) {
                                 // Place the label in the corner of the map extent
-                                var point = feature.getGeometry().getFirstCoordinate();
-                                return new ol.geom.Point(point);
+                                var extent = feature.getGeometry().getExtent();
+                                return new ol.geom.Point([extent[0], extent[1]]);
                             }
                         }));
                         return styles;
