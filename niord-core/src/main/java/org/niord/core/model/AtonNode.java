@@ -125,6 +125,10 @@ public class AtonNode extends BaseEntity<Integer> {
      * @return the updated tag
      */
     public AtonTag updateTag(String k, String v) {
+        if (v == null) {
+            return null;
+        }
+
         AtonTag tag = getTag(k);
         if (tag == null) {
             tag = new AtonTag(k, v);
