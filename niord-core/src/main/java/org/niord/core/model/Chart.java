@@ -134,11 +134,13 @@ public class Chart extends VersionedEntity<Integer> {
 
         int sortKey = 0;
         if (indexInternationalNumber != -1) {
-            sortKey += indexInternationalNumber;
-        } else if (indexName != -1) {
-            sortKey += 5 * indexName;
-        } else if (indexChartNumber != -1) {
-            sortKey += 10 * indexChartNumber;
+            sortKey += 100 - indexInternationalNumber;
+        }
+        if (indexName != -1) {
+            sortKey += 500 - indexName;
+        }
+        if (indexChartNumber != -1) {
+            sortKey += 1000 - indexChartNumber;
         }
         return -sortKey;
     }

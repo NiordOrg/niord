@@ -51,7 +51,7 @@ public class ChartService extends BaseService {
                     .setParameter("term", "%" + term + "%")
                     .getResultList()
                     .stream()
-                    .sorted((c1, c2) -> -Integer.compare(c1.computeSearchSortKey(term), c2.computeSearchSortKey(term)))
+                    .sorted((c1, c2) -> Integer.compare(c1.computeSearchSortKey(term), c2.computeSearchSortKey(term)))
                     .limit(limit)
                     .collect(Collectors.toList());
        }
