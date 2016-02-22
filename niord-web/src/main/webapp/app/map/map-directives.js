@@ -389,17 +389,9 @@ angular.module('niord.map')
                         if (scope.charts && scope.charts.length > 0) {
                             angular.forEach(scope.charts, function (chart) {
 
-                                if (chart['lowerLeftLatitude'] && chart['lowerLeftLongitude'] &&
-                                    chart['upperRightLatitude'] && chart['upperRightLongitude']) {
+                                if (chart.geometry) {
 
-                                    var lonLatExtent = [
-                                        chart['lowerLeftLongitude'],
-                                        chart['lowerLeftLatitude'],
-                                        chart['upperRightLongitude'],
-                                        chart['upperRightLatitude']
-                                    ];
-                                    var xyExtent = MapService.fromLonLatExtent(lonLatExtent);
-                                    var geometry = ol.geom.Polygon.fromExtent(xyExtent);
+                                    var geometry = MapService.gjToOlGeometry(chart.geometry);
                                     var feature = new ol.Feature();
                                     feature.setGeometry(geometry);
                                     feature.setStyle(scope.stylesForChart(feature, chart));

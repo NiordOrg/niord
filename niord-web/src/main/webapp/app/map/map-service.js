@@ -286,7 +286,7 @@ angular.module('niord.map')
                     });
                 }
 
-                // ol.format.GeoJSON doea not properly convert the coordinates of a 'GeometryCollection'
+                // ol.format.GeoJSON does not properly convert the coordinates of a 'GeometryCollection'
                 // Handle geometry collections manually instead.
                 var gc = {
                     type: 'GeometryCollection',
@@ -316,6 +316,15 @@ angular.module('niord.map')
                 }
 
                 return gjFeature;
+            };
+
+
+            /** Converts a GeoJSON geometry to an OL geometry **/
+            this.gjToOlGeometry = function (g) {
+                return geoJsonFormat.readGeometry(g, {
+                    dataProjection: proj4326,
+                    featureProjection: projMercator
+                });
             };
 
 
