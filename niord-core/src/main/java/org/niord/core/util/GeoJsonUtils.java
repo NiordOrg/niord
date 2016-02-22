@@ -51,7 +51,9 @@ public class GeoJsonUtils {
      * @return the corresponding JTS geometry
      */
     public static Geometry toJts(GeometryVo g) {
-        if (g instanceof PointVo) {
+        if (g == null) {
+            return null;
+        } if (g instanceof PointVo) {
             return factory.createPoint(toJtsCoords(((PointVo)g).getCoordinates()));
         } else if (g instanceof LineStringVo) {
             return factory.createLineString(toJtsCoords(((LineStringVo)g).getCoordinates()));
@@ -77,6 +79,10 @@ public class GeoJsonUtils {
      * @return the corresponding GeoJson geometry
      */
     public static GeometryVo fromJts(Geometry g) {
+        if (g == null) {
+            return null;
+        }
+
         Class<? extends Geometry> c = g.getClass();
         if (c.equals(Point.class)) {
             return new PointVo(fromJtsCoords(g.getCoordinate()));

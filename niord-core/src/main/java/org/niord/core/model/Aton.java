@@ -77,6 +77,10 @@ public class Aton extends BaseEntity<Integer> {
         return vo;
     }
 
+    /*************************/
+    /** Getters and Setters **/
+    /*************************/
+
     public String getAtonUid() {
         return atonUid;
     }

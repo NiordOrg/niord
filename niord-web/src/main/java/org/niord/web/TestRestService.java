@@ -2,16 +2,19 @@ package org.niord.web;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jboss.resteasy.annotations.GZIP;
+import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.model.Chart;
 import org.niord.core.model.Extent;
-import org.niord.model.vo.geojson.FeatureCollectionVo;
 import org.niord.core.model.FeatureCollection;
+import org.niord.core.service.ChartService;
 import org.niord.core.service.FeatureService;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 import org.niord.model.ILocalizedDesc;
-import org.jboss.resteasy.annotations.GZIP;
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.security.annotation.SecurityDomain;
+import org.niord.model.vo.ChartVo;
+import org.niord.model.vo.geojson.FeatureCollectionVo;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.security.PermitAll;
@@ -21,10 +24,24 @@ import javax.ejb.Startup;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -46,7 +63,9 @@ public class TestRestService {
     @Inject
     FeatureService featureService;
 
-    List<Chart> charts;
+    @Inject
+    ChartService chartService;
+
     List<Area> areas;
     List<Category> categories;
 
@@ -87,10 +106,6 @@ public class TestRestService {
     public void init() {
         try {
             ObjectMapper mapper = new ObjectMapper();
-
-            // Load charts
-            charts = mapper.readValue(getClass().getResource("/charts.json"), new TypeReference<List<Chart>>(){});
-            System.out.println("**** LOADED " + charts.size() + " charts");
 
             // Load areas
             List<Area> areasDa = mapper.readValue(getClass().getResource("/areas_da.json"), new TypeReference<List<Area>>(){});
@@ -167,14 +182,11 @@ public class TestRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<Chart> searchCharts(@QueryParam("name") @DefaultValue("") String name,
-                                    @QueryParam("limit") @DefaultValue("1000") int limit) {
-        return charts.stream()
-                .filter(c -> name.isEmpty()
-                        || c.getName().toLowerCase().contains(name.toLowerCase())
-                        || c.getChartNumber().toLowerCase().contains(name.toLowerCase()))
-                .sorted((c1, c2) -> c1.getName().toLowerCase().compareTo(c2.getName().toLowerCase()))
+    public List<ChartVo> searchCharts(@QueryParam("name") @DefaultValue("") String name,
+                                      @QueryParam("limit") @DefaultValue("1000") int limit) {
+        return chartService.searchCharts(name, limit).stream()
                 .limit(limit)
+                .map(Chart::toVo)
                 .collect(Collectors.toList());
     }
 
@@ -183,23 +195,25 @@ public class TestRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<Chart> getCharts(@PathParam("chartIds") String chartIds,
+    public List<ChartVo> getCharts(@PathParam("chartIds") String chartIds,
                                  @QueryParam("limit") @DefaultValue("1000") int limit) {
-        Set<String> ids = new HashSet<>(Arrays.asList(chartIds.split(",")));
-        return charts.stream()
-                .filter(c -> ids.contains(c.getChartNumber()))
+        return chartService.findByChartNumbers(chartIds.split(",")).stream()
                 .limit(limit)
+                .map(Chart::toVo)
                 .collect(Collectors.toList());
     }
 
     public List<Extent> getChartExtents(String[] chartIds) {
+
+        return null;
+        /**
         if (chartIds == null) {
             return null;
         }
         List<Extent> result = new ArrayList<>();
         Arrays.stream(chartIds)
                 .forEach(c -> {
-                    Chart chart = searchCharts(c, 1).get(0);
+                    ChartVo chart = searchCharts(c, 1).get(0);
                     if (chart.getLowerLeftLatitude() != null) {
                         result.addAll(new Extent(
                                 chart.getLowerLeftLatitude(),
@@ -209,6 +223,7 @@ public class TestRestService {
                     }
                 });
         return result;
+         */
     }
 
     @GET
@@ -278,96 +293,6 @@ public class TestRestService {
     }
 
 
-    public static class Chart implements IJsonSerializable {
-        Integer id;
-        String chartNumber;
-        Integer internationalNumber;
-        String horizontalDatum;
-        Integer scale;
-        String name;
-        Double lowerLeftLatitude, lowerLeftLongitude;
-        Double upperRightLatitude, upperRightLongitude;
-
-        public Integer getId() {
-            return id;
-        }
-
-        public void setId(Integer id) {
-            this.id = id;
-        }
-
-        public String getChartNumber() {
-            return chartNumber;
-        }
-
-        public void setChartNumber(String chartNumber) {
-            this.chartNumber = chartNumber;
-        }
-
-        public Integer getInternationalNumber() {
-            return internationalNumber;
-        }
-
-        public void setInternationalNumber(Integer internationalNumber) {
-            this.internationalNumber = internationalNumber;
-        }
-
-        public String getHorizontalDatum() {
-            return horizontalDatum;
-        }
-
-        public void setHorizontalDatum(String horizontalDatum) {
-            this.horizontalDatum = horizontalDatum;
-        }
-
-        public Integer getScale() {
-            return scale;
-        }
-
-        public void setScale(Integer scale) {
-            this.scale = scale;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public Double getLowerLeftLatitude() {
-            return lowerLeftLatitude;
-        }
-
-        public void setLowerLeftLatitude(Double lowerLeftLatitude) {
-            this.lowerLeftLatitude = lowerLeftLatitude;
-        }
-
-        public Double getLowerLeftLongitude() {
-            return lowerLeftLongitude;
-        }
-
-        public void setLowerLeftLongitude(Double lowerLeftLongitude) {
-            this.lowerLeftLongitude = lowerLeftLongitude;
-        }
-
-        public Double getUpperRightLatitude() {
-            return upperRightLatitude;
-        }
-
-        public void setUpperRightLatitude(Double upperRightLatitude) {
-            this.upperRightLatitude = upperRightLatitude;
-        }
-
-        public Double getUpperRightLongitude() {
-            return upperRightLongitude;
-        }
-
-        public void setUpperRightLongitude(Double upperRightLongitude) {
-            this.upperRightLongitude = upperRightLongitude;
-        }
-    }
 
     public abstract static class HierarchicalData<T,TD extends ILocalizedDesc> implements ILocalizable<TD>, IJsonSerializable {
         Integer id;

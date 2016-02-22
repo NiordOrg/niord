@@ -114,4 +114,19 @@ public abstract class BaseService {
         cq.from(entityType);
         return em.createQuery(cq).getResultList();
     }
+
+    /**
+     * Counts all entities with the given class
+     *
+     * @param entityType the class
+     * @return the number of entities with the given class
+     */
+    public <E extends IEntity> long count(Class<E> entityType) {
+        em.clear();
+
+        CriteriaBuilder qb = em.getCriteriaBuilder();
+        CriteriaQuery<Long> cq = qb.createQuery(Long.class);
+        cq.select(qb.count(cq.from(entityType)));
+        return em.createQuery(cq).getSingleResult();
+    }
 }
