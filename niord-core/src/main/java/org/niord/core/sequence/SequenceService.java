@@ -17,7 +17,10 @@ package org.niord.core.sequence;
 
 import org.slf4j.Logger;
 
-import javax.ejb.*;
+import javax.ejb.Lock;
+import javax.ejb.LockType;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import java.util.Objects;
@@ -25,7 +28,6 @@ import java.util.Objects;
 /**
  * Provides an interface for managing sequences
  */
-@Singleton
 @Lock(LockType.READ)
 public class SequenceService {
 
@@ -40,7 +42,6 @@ public class SequenceService {
      * @param sequence the sequence
      * @return the next value
      */
-    @Lock(LockType.WRITE)
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public long getNextValue(Sequence sequence) {
         Objects.requireNonNull(sequence, "No sequence specified");
