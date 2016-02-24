@@ -15,11 +15,12 @@
  */
 package org.niord.core.service;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.model.Aton;
 import org.niord.core.model.AtonNode;
+import org.niord.core.model.AtonTag;
 import org.niord.core.model.Extent;
 import org.niord.model.PagedSearchResultVo;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 
 import javax.annotation.PostConstruct;
@@ -33,13 +34,14 @@ import java.util.List;
 
 /**
  * Interface for handling AtoNs
- *
+ * <p>
  * TODO: Make it a singleton and cache the list of AtoNs
  * or create a Lucene index with AtoNs
  */
 @Singleton
 @Startup
 @Lock(LockType.READ)
+@SuppressWarnings("unused")
 public class AtonService extends BaseService {
 
     @Inject
@@ -49,7 +51,32 @@ public class AtonService extends BaseService {
     /** NEW Aton Model      **/
     /*************************/
 
+    /**
+     * Returns the AtoNs with the given tag key-value
+     *
+     * @param key   the tag key
+     * @param value the tag value
+     * @return the AtoNs with the given tag key-value or null if not found
+     */
+    public List<AtonNode> findByTag(String key, String value) {
+        return em
+                .createNamedQuery("AtonNode.findByTag", AtonNode.class)
+                .setParameter("key", key)
+                .setParameter("value", value)
+                .getResultList();
+    }
 
+
+    /**
+     * Returns the AtoNs with the given AtoN UID
+     * @param atonUid the AtoN UID
+     * @return the AtoNs with the given AtoN UID or null if not found
+     */
+    public AtonNode findByAtonUid(String atonUid) {
+        return findByTag(AtonTag.CUST_TAG_ATON_UID, atonUid).stream()
+                .findFirst()
+                .orElse(null);
+    }
 
 
     /**
@@ -57,30 +84,35 @@ public class AtonService extends BaseService {
      * @param atons the new AtoNs
      */
     @Lock(LockType.WRITE)
-    public void replaceAtons(List<AtonNode> atons) {
-
-        // Delete old AtoNs
-        int deleted = em
-                .createNamedQuery("AtonNode.deleteAll")
-                .executeUpdate();
-
-        log.info("Deleted " + deleted + " AtoNs");
-        em.flush();
+    public void updateAtons(List<AtonNode> atons) {
 
         // Persist new list of AtoNs
         long t0 = System.currentTimeMillis();
-        int x = 0;
+        int created = 0, updated = 0, unchanged = 0;
         for (AtonNode aton : atons) {
-            em.persist(aton);
 
-            if (x++ % 100 == 0) {
+            AtonNode orig = findByAtonUid(aton.getAtonUid());
+            if (orig == null) {
+                em.persist(aton);
+                created++;
+
+            } else if (orig.hasChanged(aton)) {
+                orig.updateNode(aton);
+                em.persist(orig);
+                updated++;
+
+            } else {
+                unchanged++;
+            }
+            log.info("XX " + aton);
+
+            if ((created + updated + unchanged) % 100 == 0) {
                 em.flush();
             }
         }
-        log.info("Persisted " + atons.size() + " AtoNs in " +
-                (System.currentTimeMillis() - t0) + " ms");
+        log.info(String.format("Updated %s AtoNs (created %d, updated %d, ignored %d) in %d ms",
+                atons.size(), created, updated, unchanged, System.currentTimeMillis() - t0));
     }
-
 
 
 

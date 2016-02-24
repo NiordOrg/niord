@@ -36,7 +36,9 @@ import java.util.stream.Collectors;
 @Entity
 @NamedQueries({
         @NamedQuery(name  = "AtonNode.deleteAll",
-                query = "delete from AtonNode")
+                query = "delete from AtonNode"),
+        @NamedQuery(name  = "AtonNode.findByTag",
+                query = "select n from AtonNode n inner join n.tags t where t.k = :key and t.v = :value")
 })
 @SuppressWarnings("unused")
 public class AtonNode extends BaseEntity<Integer> {
@@ -104,6 +106,26 @@ public class AtonNode extends BaseEntity<Integer> {
     }
 
     /**
+     * Returns the AtoN UID
+     * @return the AtoN UID
+     */
+    @Transient
+    public String getAtonUid() {
+        return getTagValue(AtonTag.CUST_TAG_ATON_UID);
+    }
+
+    /**
+     * Returns the value of the tag with the given key. Returns null if the tag does not exist
+     * @param k the key
+     * @return the value of the tag with the given key. Returns null if the tag does not exist
+     */
+    @Transient
+    public String getTagValue(String k) {
+        AtonTag atonUidTag = getTag(k);
+        return atonUidTag == null ? null : atonUidTag.getV();
+    }
+
+    /**
      * Returns the tag with the given key. Returns null if the tag does not exist
      * @param k the key
      * @return the tag with the given key. Returns null if the tag does not exist
@@ -139,6 +161,44 @@ public class AtonNode extends BaseEntity<Integer> {
         }
         return tag;
     }
+
+
+    /**
+     * Checks if the values of the template has changed.
+     * Only checks relevant values, such as position and the tags of the template.
+     *
+     * @param template the template to compare with
+     * @return if the AtoN has changed
+     */
+    @Transient
+    public boolean hasChanged(AtonNode template) {
+        return Math.abs(template.getLat() - lat) > 0.00001 ||
+                Math.abs(template.getLon() - lon) > 0.00001 ||
+                template.isVisible() != visible ||
+                template.getTags().stream()
+                        .anyMatch(t -> !Objects.equals(t.getV(), getTagValue(t.getK())));
+    }
+
+
+    /**
+     * Updates the node with values of the template.
+     * Tags not present in the template are left unchanged.
+     *
+     * @param template the template to update with
+     */
+    @Transient
+    public void updateNode(AtonNode template) {
+        this.lat = template.getLat();
+        this.lon = template.getLon();
+        this.user = template.getUser();
+        this.uid = template.getUid();
+        this.visible = template.isVisible();
+        this.version = template.getVersion();
+        this.changeset = template.getChangeset();
+        this.timestamp = template.getTimestamp();
+        template.getTags().forEach(t -> updateTag(t.getK(), t.getV()));
+    }
+
 
     /*************************/
     /** Getters and Setters **/
