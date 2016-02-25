@@ -31,6 +31,12 @@ var app = angular.module('niord.admin', [
         }).when('/integration', {
             templateUrl: 'app/admin/admin-page-integration.html',
             reloadOnSearch: false
+        }).when('/batch', {
+            templateUrl: 'app/admin/admin-page-batch.html',
+            reloadOnSearch: false
+        }).when('/batch/:batchName', {
+            templateUrl: 'app/admin/admin-page-batch.html',
+            reloadOnSearch: false
         }).otherwise({
             redirectTo: '/overview'
         });

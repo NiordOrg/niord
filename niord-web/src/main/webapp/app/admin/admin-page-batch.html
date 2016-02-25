@@ -1,0 +1,39 @@
+
+<admin-page title="Batch Jobs">
+
+    <div ng-controller="BatchAdminCtrl" ng-init="loadBatchStatus()">
+        <p>Manage and monitoring of batch jobs</p>
+
+        <uib-tabset class="framed-tabs">
+            <uib-tab ng-repeat="batchType in batchStatus.types" select="initBatchType(batchType.name)">
+
+                <uib-tab-heading>
+                    <i class="glyphicon glyphicon-cog"></i>
+                    {{batchType.name}}
+                    <span ng-if="batchType.runningExecutions > 0" class="badge red">{{batchStatus.runningExecutions}}</span>
+                    <span style="font-size: 10px; color: lightgray;">({{batchType.instanceCount}})</span>
+                </uib-tab-heading>
+
+                <table class='table table-condensed table-hover'>
+                    <tr>
+                        <th>Instance</th>
+                        <th>Name</th>
+                    </tr>
+                    <tr ng-repeat="batchInstance in searchResult.data">
+                        <td>{{batchInstance.instanceId}}</td>
+                        <td>{{batchInstance.name}}</td>
+                    </tr>
+                </table>
+
+                <div>
+                    <button class="btn btn-default" ng-click="loadBatchInstances()" ng-disabled="searchResult.size >= searchResult.total">
+                        Load more...
+                    </button>
+                </div>
+
+            </uib-tab>
+        </uib-tabset>
+    </div>
+
+</admin-page>
+

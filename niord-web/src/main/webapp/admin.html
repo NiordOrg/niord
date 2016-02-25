@@ -24,7 +24,7 @@
         <div ng-include="'app/layout/menu.html'"></div>
 
         <div class="container-fluid">
-            <div class="row admin-page">
+            <div class="row admin-page" ng-controller="CommonAdminCtrl">
                 <div class="col-sm-3 col-md-2 admin-sidebar" ng-include="'/app/admin/admin-menu.html'"></div>
                 <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 admin-main" ng-view></div>
             </div>
@@ -51,6 +51,8 @@
 
     <script type="text/javascript" src="/app/admin-app.js"></script>
     <script type="text/javascript" src="/app/admin/admin-directives.js"></script>
+    <script type="text/javascript" src="/app/admin/admin-service.js"></script>
+    <script type="text/javascript" src="/app/admin/admin-ctrl.js"></script>
     <script type="text/javascript" src="/app/admin/site-admin-ctrl.js"></script>
     <script type="text/javascript" src="/app/common/common-service.js"></script>
     <script type="text/javascript" src="/app/common/common-directives.js"></script>

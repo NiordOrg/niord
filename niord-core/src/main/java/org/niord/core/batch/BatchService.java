@@ -19,11 +19,12 @@ import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
 import javax.batch.operations.JobOperator;
-import javax.batch.runtime.BatchRuntime;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * Provides an interface for managing batch jobs.
@@ -41,6 +42,8 @@ public class BatchService extends BaseService {
     @Inject
     private Logger log;
 
+    @Inject
+    JobOperator jobOperator;
 
     /**
      * Starts a new batch job
@@ -55,7 +58,6 @@ public class BatchService extends BaseService {
         }
 
         // Launch the batch job
-        JobOperator jobOperator = BatchRuntime.getJobOperator();
         Properties props = new Properties();
         props.put(IBatchable.BATCH_JOB_ENTITY, job);
         long executionId = jobOperator.start(job.getName(), props);
@@ -75,6 +77,26 @@ public class BatchService extends BaseService {
         job = saveEntity(job);
         em.flush();
         return job;
+    }
+
+    /**
+     * Returns the batch job names
+     * @return the batch job names
+     */
+    @SuppressWarnings("unchecked")
+    public List<String> getJobNames() {
+        // Sadly, this gets reset upon every JVM restart
+        /*
+        return jobOperator.getJobNames()
+                .stream()
+                .sorted()
+                .collect(Collectors.toList());
+        */
+
+        // Look up the names from the database
+        return (List<String>)em
+                .createNativeQuery("select distinct JOBNAME from JOB_INSTANCE order by lower(JOBNAME)")
+                .getResultList();
     }
 
 }

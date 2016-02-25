@@ -95,6 +95,10 @@ public class PagedSearchResultVo<T> implements IJsonSerializable {
         return result;
     }
 
+    public void updateSize() {
+        size = data.size();
+    }
+
     public List<T> getData() {
         return data;
     }
