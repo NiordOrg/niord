@@ -26,10 +26,10 @@ public interface IBatchable {
      * @param executionId the execution ID
      * @return the shared properties
      */
-    default BatchEntity getBatchEntity(long executionId) {
+    default BatchData getBatchEntity(long executionId) {
         Properties jobProperties = getSharedProperties(executionId);
         if (jobProperties != null) {
-            return (BatchEntity)jobProperties.get(BATCH_JOB_ENTITY);
+            return (BatchData)jobProperties.get(BATCH_JOB_ENTITY);
         }
         return null;
     }

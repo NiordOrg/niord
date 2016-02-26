@@ -46,12 +46,19 @@ public class JobStartBatchlet extends AbstractBatchlet implements IBatchable {
     /** {@inheritDoc} **/
     @Override
     public String process() throws Exception {
-        log.info("JobStartBatchlet started ");
 
-        BatchEntity job = getBatchEntity(jobContext.getExecutionId());
-        job.setExecutionId(jobContext.getExecutionId());
-        job.setStatus(jobContext.getBatchStatus());
-        job = batchService.saveBatchJob(job);
+        BatchData job = getBatchEntity(jobContext.getExecutionId());
+
+        // When a job is started, the instanceId will be null and the job must be persisted
+        // Restarts will have a well-defined instanceId and be persisted already
+        if (job != null) {
+            job.setInstanceId(jobContext.getInstanceId());
+            job = batchService.saveBatchJob(job);
+            log.info("JobStartBatchlet started for " + job.getJobName() + " and instanceId " + job.getInstanceId());
+        } else {
+            job = batchService.findByInstanceId(jobContext.getInstanceId());
+            log.info("JobStartBatchlet re-started for " + job.getJobName() + " and instanceId " + job.getInstanceId());
+        }
 
         // Update the properties
         getSharedProperties(jobContext.getExecutionId()).put(BATCH_JOB_ENTITY, job);

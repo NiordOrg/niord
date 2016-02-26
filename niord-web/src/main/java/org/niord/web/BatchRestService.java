@@ -17,6 +17,9 @@ package org.niord.web;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.batch.BatchData;
+import org.niord.core.batch.BatchFileData;
+import org.niord.core.batch.BatchRawData;
 import org.niord.core.batch.BatchService;
 import org.niord.core.batch.vo.BatchInstanceVo;
 import org.niord.core.batch.vo.BatchStatusVo;
@@ -127,4 +130,39 @@ public class BatchRestService {
     public BatchStatusVo getStatus() {
         return batchService.getStatus();
     }
+
+    /**
+     * Downloads the batch data associated with the given instance
+     *
+     * @param instanceId the instance ID
+     */
+    @PUT
+    @Path("/instance/{instanceId}/download/{fileName:.*}")
+    @NoCache
+    @RolesAllowed("admin")
+    public long downloadBatchData(@PathParam("instanceId") long instanceId, String fileName) {
+
+        BatchData job = batchService.findByInstanceId(instanceId);
+        if (job == null) {
+            throw new WebApplicationException(404);
+
+        } else if (job instanceof BatchFileData) {
+            BatchFileData fileData = (BatchFileData) job;
+            if (fileData.getBatchFilePath() == null) {
+                throw new WebApplicationException(404);
+            }
+
+
+
+        } else if (job instanceof BatchRawData) {
+            BatchRawData rawData = (BatchRawData) job;
+            if (rawData.getData() == null) {
+                throw new WebApplicationException(404);
+            }
+
+
+        }
+        throw new WebApplicationException(404);
+    }
+
 }

@@ -31,6 +31,12 @@ public class BatchInstanceVo implements IJsonSerializable {
     long instanceId;
     List<BatchExecutionVo> executions = new ArrayList<>();
 
+    // From the associated BatchData
+    String fileName;
+    String fileType;
+    String user;
+    String jobName;
+
     /**
      * Sorts the executions with the most recent execution first and update execution flags
      **/
@@ -90,5 +96,37 @@ public class BatchInstanceVo implements IJsonSerializable {
 
     public void setExecutions(List<BatchExecutionVo> executions) {
         this.executions = executions;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public String getFileType() {
+        return fileType;
+    }
+
+    public void setFileType(String fileType) {
+        this.fileType = fileType;
+    }
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public String getJobName() {
+        return jobName;
+    }
+
+    public void setJobName(String jobName) {
+        this.jobName = jobName;
     }
 }

@@ -118,3 +118,6 @@ tr.batch-execution-row td {
     border-top: 1px dashed #eee!important;
 }
 
+.batch-instance-download {
+    font-size: 12px;
+}
