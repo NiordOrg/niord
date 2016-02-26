@@ -86,3 +86,33 @@ body {
     margin-top: 0;
     text-align: left;
 }
+
+
+/** Batch admin page **/
+
+.batch-types {
+    border: 1px solid lightgray;
+    background-color: #eee;
+    min-height: 200px;
+    height: 100%;
+    overflow: hidden;
+    overflow-y: scroll;
+}
+
+.batch-type {
+    cursor: pointer;
+    background-color: white;
+    padding: 5px;
+    width: 100%;
+    border-bottom: 1px solid lightgray;
+}
+
+.batch-type-selected {
+    background-color: darkred;
+    color: #eee;
+}
+
+tr.batch-execution-row td {
+    border-top: 1px dashed #ddd!important;
+}
+

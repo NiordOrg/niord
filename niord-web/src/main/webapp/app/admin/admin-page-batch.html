@@ -4,35 +4,72 @@
     <div ng-controller="BatchAdminCtrl" ng-init="loadBatchStatus()">
         <p>Manage and monitoring of batch jobs</p>
 
-        <uib-tabset class="framed-tabs">
-            <uib-tab ng-repeat="batchType in batchStatus.types" select="initBatchType(batchType.name)">
+        <div class="row">
 
-                <uib-tab-heading>
-                    <i class="glyphicon glyphicon-cog"></i>
-                    {{batchType.name}}
-                    <span ng-if="batchType.runningExecutions > 0" class="badge red">{{batchStatus.runningExecutions}}</span>
-                    <span style="font-size: 10px; color: lightgray;">({{batchType.instanceCount}})</span>
-                </uib-tab-heading>
+            <!-- List of batch types -->
+            <div class="col-xs-12 col-sm-12 col-md-6 col-lg-4">
+                <div class="batch-types">
+                    <div ng-repeat="batchType in batchStatus.types" class="batch-type"
+                         ng-class="{'batch-type-selected' : batchType.name == batchName}"
+                         ng-click="selectBatchType(batchType.name)">
+                        <div style="font-weight: bold">{{batchType.name}}</div>
+                        <div>
+                            <small>{{batchType.instanceCount}} executions</small>
+                            <small class="pull-right">{{batchType.runningExecutions}} running</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-                <table class='table table-condensed table-hover'>
+            <!-- List of batch type instances -->
+            <div class="col-xs-12 col-sm-12 col-md-6 col-lg-8 batch-instances">
+                <table class='table table-condensed'>
                     <tr>
                         <th>Instance</th>
-                        <th>Name</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Status</th>
+                        <th>Action</th>
                     </tr>
-                    <tr ng-repeat="batchInstance in searchResult.data">
-                        <td>{{batchInstance.instanceId}}</td>
-                        <td>{{batchInstance.name}}</td>
+                    <tr ng-repeat-start="execution in executions" ng-if="execution.instance" class="batch-instance-row">
+                        <td>{{execution.instance.instanceId}}</td>
+                        <td colspan="4">{{execution.instance.name}}</td>
+                    </tr>
+                    <tr ng-repeat-end class="batch-execution-row">
+                        <td></td>
+                        <td>{{execution.startTime | formatDate}}</td>
+                        <td>{{execution.endTime | formatDate}}</td>
+                        <td>
+                            <span class="label" ng-class="statusColor(execution)">
+                                {{execution.batchStatus | lowercase}}
+                            </span>
+                        </td>
+                        <td>
+                            <button ng-if="execution.stoppable" class="btn btn-danger btn-xs"
+                                    ng-click="stop(execution)">
+                                stop
+                            </button>
+                            <button ng-if="execution.restartable" class="btn btn-primary btn-xs"
+                                    ng-click="restart(execution)">
+                                restart
+                            </button>
+                            <button ng-if="execution.abandonable" class="btn btn-primary btn-xs"
+                                    ng-click="abandon(execution)">
+                                abandon
+                            </button>
+                        </td>
                     </tr>
                 </table>
 
-                <div>
-                    <button class="btn btn-default" ng-click="loadBatchInstances()" ng-disabled="searchResult.size >= searchResult.total">
-                        Load more...
-                    </button>
-                </div>
+                <pagination total-items="searchResult.total" items-per-page="pageSize"
+                            ng-show="searchResult.total > pageSize"
+                            ng-model="currentPage" ng-change="loadBatchInstances()"
+                            class="pagination pagination-sm" previous-text="&lsaquo;"  next-text="&rsaquo;"
+                            boundary-links="true" first-text="&laquo;" last-text="&raquo;">
+                </pagination>
+            </div>
 
-            </uib-tab>
-        </uib-tabset>
+        </div>
     </div>
 
 </admin-page>

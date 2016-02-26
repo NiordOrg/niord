@@ -340,7 +340,18 @@ angular.module('niord.common')
             }
 
         }
+    }])
+
+
+    /** Formats a data using moment() **/
+    .filter('formatDate', [function () {
+        return function(input, format) {
+            format = format || 'lll';
+            return input ? moment(input).format(format) : '';
+        };
     }]);
+
+
 
 
 
