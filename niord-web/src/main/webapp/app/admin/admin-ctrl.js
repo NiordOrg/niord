@@ -56,7 +56,7 @@ angular.module('niord.admin')
                 types: []
             };
             $scope.batchName = $routeParams.batchName;
-            $scope.pageSize = 3;
+            $scope.pageSize = 5;
             $scope.currentPage = 1;
             $scope.executions = [];
             $scope.searchResult = {

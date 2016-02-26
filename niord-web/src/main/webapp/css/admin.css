@@ -113,6 +113,8 @@ body {
 }
 
 tr.batch-execution-row td {
-    border-top: 1px dashed #ddd!important;
+    color: #999;
+    font-size: 12px;
+    border-top: 1px dashed #eee!important;
 }
 
