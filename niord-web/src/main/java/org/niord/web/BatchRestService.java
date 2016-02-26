@@ -6,6 +6,8 @@ import org.niord.model.IJsonSerializable;
 import org.niord.model.PagedSearchResultVo;
 
 import javax.batch.operations.JobOperator;
+import javax.batch.operations.JobSecurityException;
+import javax.batch.operations.NoSuchJobException;
 import javax.batch.runtime.BatchStatus;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -108,7 +110,12 @@ public class BatchRestService {
             // Create a status for the batch type
             BatchTypeVo batchType = new BatchTypeVo();
             batchType.setName(name);
-            batchType.setRunningExecutions(jobOperator.getRunningExecutions(name).size());
+            try {
+                batchType.setRunningExecutions(jobOperator.getRunningExecutions(name).size());
+            } catch (NoSuchJobException ignored) {
+                // When the JVM has restarted the call will fail until the job has executed the first time.
+                // A truly annoying behaviour, given that we use persisted batch jobs.
+            }
             batchType.setInstanceCount(jobOperator.getJobInstanceCount(name));
 
             // Update the global batch status with the batch type

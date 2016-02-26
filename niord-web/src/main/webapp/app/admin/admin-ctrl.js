@@ -35,6 +35,9 @@ angular.module('niord.admin')
                         $interval.cancel(interval);
                     }
                 });
+
+                // Initial load
+                $scope.loadBatchStatus();
             }
 
         }])
