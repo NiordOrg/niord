@@ -16,6 +16,7 @@
 package org.niord.core.batch;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.batch.vo.BatchExecutionVo;
 import org.niord.core.batch.vo.BatchInstanceVo;
@@ -32,12 +33,12 @@ import org.slf4j.Logger;
 
 import javax.batch.operations.JobOperator;
 import javax.batch.operations.NoSuchJobException;
+import javax.ejb.Schedule;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -96,6 +97,15 @@ public class BatchService extends BaseService {
     //@Inject
     //@Setting(value = "batchJobRootPath", defaultValue = "${user.home}/.niord/batch-jobs", substituteSystemProperties = true)
     private Path batchJobRoot = Paths.get(System.getProperty("user.home") + "/.niord/batch-jobs");
+
+    // Delete execution files after 10 days
+    //@Setting...
+    private static final int batchFileExpiryDays = 10;
+
+    /****************************/
+    /** Starting batch jobs    **/
+    /****************************/
+
 
     /**
      * Starts a new batch job
@@ -227,6 +237,11 @@ public class BatchService extends BaseService {
     }
 
 
+    /****************************/
+    /** Batch job repository   **/
+    /****************************/
+
+
     /** Creates the given directories if they do not exist */
     private Path createDirectories(Path path) throws IOException {
         if (path != null && !Files.exists(path)) {
@@ -326,6 +341,11 @@ public class BatchService extends BaseService {
     }
 
 
+    /****************************/
+    /** Utility methods        **/
+    /****************************/
+
+
     /**
      * Returns the batch data entity with the given instance id.
      * Returns null if no batch data entity is not found.
@@ -370,6 +390,12 @@ public class BatchService extends BaseService {
         em.flush();
         return job;
     }
+
+
+    /****************************/
+    /** Managing batch jobs    **/
+    /****************************/
+
 
     /**
      * Returns the batch job names
@@ -496,6 +522,76 @@ public class BatchService extends BaseService {
             status.setRunningExecutions(status.getRunningExecutions() + batchType.getRunningExecutions());
         });
         return status;
+    }
+
+
+    /****************************/
+    /** Batch folder clean-up  **/
+    /****************************/
+
+    /**
+     * Called every hour to clean up the batch job "[jobName]/execution" folders for expired files
+     */
+    @Schedule(persistent=false, second="30", minute="42", hour="*/1", dayOfWeek="*", year="*")
+    protected void cleanUpExpiredBatchJobFiles() {
+
+        long t0 = System.currentTimeMillis();
+
+        // Resolve the list of batch job "execution" folders
+        List<Path> executionFolders = new ArrayList<>();
+        try {
+            Files.newDirectoryStream(batchJobRoot).forEach(p -> {
+                Path executionFolder = p.resolve("execution");
+                if (Files.isDirectory(executionFolder)) {
+                    executionFolders.add(executionFolder);
+                }
+            });
+        } catch (IOException e) {
+            log.error("Failed finding execution folders" + e);
+            return;
+        }
+
+        // Compute the expiry time
+        Calendar expiryDate = Calendar.getInstance();
+        expiryDate.add(Calendar.DATE, -batchFileExpiryDays);
+
+        // Clean up the files
+        executionFolders.forEach(folder -> {
+            try {
+                Files.walkFileTree(folder, new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                        if (isDirEmpty(dir)) {
+                            log.info("Deleting batch job directory :" + dir);
+                            Files.delete(dir);
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                        if (FileUtils.isFileOlder(file.toFile(), expiryDate.getTime())) {
+                            log.info("Deleting batch job file      :" + file);
+                            Files.delete(file);
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (IOException e) {
+                log.error("Failed cleaning up " + folder + " batch job directory: " + e.getMessage(), e);
+            }
+        });
+
+        log.info(String.format("Cleaned up expired batch job files in %d ms",
+                System.currentTimeMillis() - t0));
+    }
+
+
+    /** Returns if the given directory is empty **/
+    private static boolean isDirEmpty(final Path directory) throws IOException {
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(directory)) {
+            return !dirStream.iterator().hasNext();
+        }
     }
 
 }

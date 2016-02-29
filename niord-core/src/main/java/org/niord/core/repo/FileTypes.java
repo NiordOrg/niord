@@ -19,6 +19,7 @@ import java.util.Set;
  */
 @Singleton
 @Lock(LockType.READ)
+@SuppressWarnings("unused")
 public class FileTypes {
 
     static final String GENERIC_ICON 		= "generic";
@@ -115,6 +116,10 @@ public class FileTypes {
      * @return the associated content type if supported
      */
     private ContentType getSupportedContentType(Path path) {
+        if (path == null) {
+            return null;
+        }
+
         String type = getContentType(path);
         if (type != null) {
             Set<ContentType> supportedTypes = mimeTypeLookup.get(type);

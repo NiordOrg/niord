@@ -190,11 +190,6 @@ public class BatchRestService {
         IconSize iconSize = IconSize.getIconSize(size);
         java.nio.file.Path f = batchService.getBatchJobDataFile(instanceId);
 
-        if (f == null) {
-            log.warn("Failed streaming thumbnail for instance: " + instanceId);
-            throw new WebApplicationException(404);
-        }
-
         // Set expiry to 12 hours
         Date expirationDate = new Date(System.currentTimeMillis() + 1000L * 60L * 60L * 12L);
 
