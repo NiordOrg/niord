@@ -47,7 +47,7 @@ import java.util.zip.GZIPOutputStream;
 /**
  * Provides an interface for managing batch jobs.
  * <p>
- * Batch jobs have up to three associated batch job folders under the "batchRoot" path:
+ * Batch jobs have up to three associated batch job folders under the "batchJobRoot" path:
  * <ul>
  *     <li>
  *         <b>[jobName]/in</b>:
@@ -94,8 +94,8 @@ public class BatchService extends BaseService {
     SequenceService sequenceService;
 
     //@Inject
-    //@Setting(value = "repoRootPath", defaultValue = "${user.home}/.niord/batch-jobs", substituteSystemProperties = true)
-    Path batchRoot = Paths.get(System.getProperty("user.home") + "/.niord/batch-jobs");
+    //@Setting(value = "batchJobRootPath", defaultValue = "${user.home}/.niord/batch-jobs", substituteSystemProperties = true)
+    private Path batchJobRoot = Paths.get(System.getProperty("user.home") + "/.niord/batch-jobs");
 
     /**
      * Starts a new batch job
@@ -117,6 +117,7 @@ public class BatchService extends BaseService {
         return executionId;
     }
 
+
     /** Creates and initializes a new batch job data entity */
     private BatchData initBatchData(String jobName, Properties properties) throws IOException {
         // Construct a new batch data entity
@@ -127,6 +128,7 @@ public class BatchService extends BaseService {
         job.writeProperties(properties);
         return job;
     }
+
 
     /**
      * Starts a new batch job
@@ -140,7 +142,7 @@ public class BatchService extends BaseService {
         if (data != null) {
             dataFileName = StringUtils.isNotBlank(dataFileName) ? dataFileName : "batch-data.zip";
             job.setDataFileName(dataFileName);
-            Path path = batchRoot.resolve(job.computeDataFilePath());
+            Path path = computeBatchJobPath(job.computeDataFilePath());
             createDirectories(path.getParent());
             try (FileOutputStream file = new FileOutputStream(path.toFile());
                  GZIPOutputStream gzipOut = new GZIPOutputStream(file);
@@ -165,7 +167,7 @@ public class BatchService extends BaseService {
         if (data != null) {
             dataFileName = StringUtils.isNotBlank(dataFileName) ? dataFileName : "batch-data.json";
             job.setDataFileName(dataFileName);
-            Path path = batchRoot.resolve(job.computeDataFilePath());
+            Path path = computeBatchJobPath(job.computeDataFilePath());
             createDirectories(path.getParent());
             JsonUtils.writeJson(data, path);
         }
@@ -185,7 +187,7 @@ public class BatchService extends BaseService {
 
         if (in != null) {
             job.setDataFileName(dataFileName);
-            Path path = batchRoot.resolve(job.computeDataFilePath());
+            Path path = computeBatchJobPath(job.computeDataFilePath());
             createDirectories(path.getParent());
             Files.copy(in, path);
         }
@@ -235,6 +237,26 @@ public class BatchService extends BaseService {
 
 
     /**
+     * Computes the absolute path to the given local path within the repository
+     * @param localPath the local path withing the batch job repository
+     * @return the absolute path to the given local path within the repository
+     */
+    public Path computeBatchJobPath(Path localPath) {
+
+        Path path = batchJobRoot
+                .normalize()
+                .resolve(localPath);
+
+        // Check that it is a valid path within the batch job repository root
+        path = path.normalize();
+        if (!path.startsWith(batchJobRoot)) {
+            throw new RuntimeException("Invalid path " + localPath);
+        }
+
+        return path;
+    }
+
+    /**
      * Returns the data file associated with the given batch job instance.
      * Returns null if no data file is found
      *
@@ -248,7 +270,7 @@ public class BatchService extends BaseService {
             return null;
         }
 
-        Path path = batchRoot.resolve(job.computeDataFilePath());
+        Path path = computeBatchJobPath(job.computeDataFilePath());
         return Files.isRegularFile(path) ? path : null;
     }
 

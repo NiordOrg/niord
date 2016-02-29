@@ -104,18 +104,13 @@ public class BatchData extends BaseEntity<Integer> {
 
 
     /**
-     * Computes the path to an associated data file. Returns null if no data file is defined.
+     * Computes the path to the folder associated with the batch job. Returns null if no data file is defined.
      * The path is computed as:
      * <b>[jobName]/execution/[year]/[month]/[jobNo]</b>
      *
-     * @return the path to the associated data file.
+     * @return the path to the associated folder associated with the batch job.
      */
-    public Path computeDataFilePath() {
-        // If no data file is defined, return null
-        if (dataFileName == null) {
-            return null;
-        }
-
+    public Path computeBatchJobFolderPath() {
         // Make sure the created data is instantiated
         if (created == null) {
             created = new Date();
@@ -128,8 +123,24 @@ public class BatchData extends BaseEntity<Integer> {
                 "execution",
                 String.valueOf(cal.get(Calendar.YEAR)),
                 String.valueOf(cal.get(Calendar.MONTH) + 1), // NB: month zero-based
-                String.valueOf(jobNo),
-                dataFileName);
+                String.valueOf(jobNo));
+    }
+
+    /**
+     * Computes the path to an associated data file. Returns null if no data file is defined.
+     * The path is computed as:
+     * <b>[jobName]/execution/[year]/[month]/[jobNo]/[dataFileName]</b>
+     *
+     * @return the path to the associated data file.
+     */
+    public Path computeDataFilePath() {
+        // If no data file is defined, return null
+        if (dataFileName == null) {
+            return null;
+        }
+
+        return computeBatchJobFolderPath()
+                .resolve(dataFileName);
     }
 
     /*************************/
