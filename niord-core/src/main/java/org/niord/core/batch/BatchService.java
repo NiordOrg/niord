@@ -50,23 +50,23 @@ import java.util.zip.GZIPOutputStream;
  * <p>
  * Batch jobs have up to three associated batch job folders under the "batchJobRoot" path:
  * <ul>
- *     <li>
- *         <b>[jobName]/in</b>:
- *         The <b>in</b> folders will be monitored periodically, and any file placed in this folder will
- *         result in the <b>jobName</b> batch job being executed.
- *     </li>
- *     <li>
- *         <b>[jobName]/execution/[year]/[month]/[jobNo]</b>:
- *         Stores any input file associated with a batch job along with log files for the executions steps.
- *         These directories will be cleaned up after a configurable amount of time.
- *     </li>
- *     <li>
- *         <b>[jobName]/out</b>:
- *         Any file-based result from the execution of a batch job can be placed here.
- *         Not implemented yet.
- *     </li>
+ * <li>
+ * <b>[jobName]/in</b>:
+ * The <b>in</b> folders will be monitored periodically, and any file placed in this folder will
+ * result in the <b>jobName</b> batch job being executed.
+ * </li>
+ * <li>
+ * <b>[jobName]/execution/[year]/[month]/[jobNo]</b>:
+ * Stores any input file associated with a batch job along with log files for the executions steps.
+ * These directories will be cleaned up after a configurable amount of time.
+ * </li>
+ * <li>
+ * <b>[jobName]/out</b>:
+ * Any file-based result from the execution of a batch job can be placed here.
+ * Not implemented yet.
+ * </li>
  * </ul>
- *
+ * <p>
  * <p>
  * Note to self: Currently, there is a bug in Wildfly, so that the batch job xml files cannot be loaded
  * from an included jar.
@@ -102,6 +102,7 @@ public class BatchService extends BaseService {
     //@Setting...
     private static final int batchFileExpiryDays = 10;
 
+
     /****************************/
     /** Starting batch jobs    **/
     /****************************/
@@ -128,7 +129,9 @@ public class BatchService extends BaseService {
     }
 
 
-    /** Creates and initializes a new batch job data entity */
+    /**
+     * Creates and initializes a new batch job data entity
+     */
     private BatchData initBatchData(String jobName, Properties properties) throws IOException {
         // Construct a new batch data entity
         BatchData job = new BatchData();
@@ -228,6 +231,7 @@ public class BatchService extends BaseService {
 
     /**
      * Returns the next sequence number for the batch job
+     *
      * @param jobName the name of the batch job
      * @return the next sequence number for the batch job
      */
@@ -242,7 +246,9 @@ public class BatchService extends BaseService {
     /****************************/
 
 
-    /** Creates the given directories if they do not exist */
+    /**
+     * Creates the given directories if they do not exist
+     */
     private Path createDirectories(Path path) throws IOException {
         if (path != null && !Files.exists(path)) {
             Files.createDirectories(path);
@@ -253,6 +259,7 @@ public class BatchService extends BaseService {
 
     /**
      * Computes the absolute path to the given local path within the repository
+     *
      * @param localPath the local path withing the batch job repository
      * @return the absolute path to the given local path within the repository
      */
@@ -399,6 +406,7 @@ public class BatchService extends BaseService {
 
     /**
      * Returns the batch job names
+     *
      * @return the batch job names
      */
     @SuppressWarnings("all")
@@ -412,8 +420,8 @@ public class BatchService extends BaseService {
         */
 
         // Look up the names from the database
-        return (List<String>)em
-                .createNativeQuery("select distinct JOBNAME from JOB_INSTANCE order by lower(JOBNAME)")
+        return (List<String>) em
+                .createNativeQuery("SELECT DISTINCT JOBNAME FROM JOB_INSTANCE ORDER BY lower(JOBNAME)")
                 .getResultList();
     }
 
@@ -448,13 +456,14 @@ public class BatchService extends BaseService {
 
     /**
      * Returns the paged search result for the given batch type
+     *
      * @param jobName the job name
-     * @param start the start index of the paged search result
-     * @param count the max number of instances per start
+     * @param start   the start index of the paged search result
+     * @param count   the max number of instances per start
      * @return the paged search result for the given batch type
      */
     public PagedSearchResultVo<BatchInstanceVo> getJobInstances(
-           String jobName, int start, int count) throws Exception {
+            String jobName, int start, int count) throws Exception {
 
         Objects.requireNonNull(jobName);
         PagedSearchResultVo<BatchInstanceVo> result = new PagedSearchResultVo<>();
@@ -501,6 +510,7 @@ public class BatchService extends BaseService {
 
     /**
      * Returns the status of the batch job system
+     *
      * @return the status of the batch job system
      */
     public BatchStatusVo getStatus() {
@@ -525,9 +535,43 @@ public class BatchService extends BaseService {
     }
 
 
-    /****************************/
-    /** Batch folder clean-up  **/
-    /****************************/
+    /***************************************/
+    /** Batch "in" folder monitoring      **/
+    /***************************************/
+
+    /**
+     * Called every minute to monitor the batch job "[jobName]/in" folders. If a file has been
+     * placed in one of these folders, the cause the "jobName" batch job to be started.
+     */
+    @Schedule(persistent=false, second="48", minute="*/1", hour="*/1", dayOfWeek="*", year="*")
+    protected void monitorBatchJobInFolderInitiation() {
+
+        // Resolve the list of batch job "in" folders
+        List<Path> executionFolders = getBatchJobSubFolders("in");
+
+        // Check for new batch-initiating files in each folder
+        for (Path dir : executionFolders) {
+            for (Path file : getDirectoryFiles(dir)) {
+                String jobName = file.getParent().getParent().getFileName().toString();
+                log.info("Found file " + file.getFileName() + " for batch job " + jobName);
+
+                try {
+                    startBatchJobWithDataFile(jobName, file, new Properties());
+                } catch (IOException e) {
+                    log.error("Failed starting batch job " + jobName + " with file " + file.getFileName());
+                } finally {
+                    // Delete the file
+                    // Note to self: Move to error folder?
+                    try { Files.delete(file); } catch (IOException ignored) {}
+                }
+            }
+        }
+    }
+
+
+    /***************************************/
+    /** Batch "execution" folder clean-up **/
+    /***************************************/
 
     /**
      * Called every hour to clean up the batch job "[jobName]/execution" folders for expired files
@@ -538,18 +582,7 @@ public class BatchService extends BaseService {
         long t0 = System.currentTimeMillis();
 
         // Resolve the list of batch job "execution" folders
-        List<Path> executionFolders = new ArrayList<>();
-        try {
-            Files.newDirectoryStream(batchJobRoot).forEach(p -> {
-                Path executionFolder = p.resolve("execution");
-                if (Files.isDirectory(executionFolder)) {
-                    executionFolders.add(executionFolder);
-                }
-            });
-        } catch (IOException e) {
-            log.error("Failed finding execution folders" + e);
-            return;
-        }
+        List<Path> executionFolders = getBatchJobSubFolders("execution");
 
         // Compute the expiry time
         Calendar expiryDate = Calendar.getInstance();
@@ -587,8 +620,40 @@ public class BatchService extends BaseService {
     }
 
 
+    /** Returns the named sub-folders **/
+    private List<Path> getBatchJobSubFolders(String subFolderName) {
+        List<Path> subFolders = new ArrayList<>();
+        try {
+            Files.newDirectoryStream(batchJobRoot).forEach(p -> {
+                Path executionFolder = p.resolve(subFolderName);
+                if (Files.isDirectory(executionFolder)) {
+                    subFolders.add(executionFolder);
+                }
+            });
+        } catch (IOException e) {
+            log.error("Failed finding '" + subFolderName + "' batch job folders" + e);
+        }
+        return subFolders;
+    }
+
+
+    /** Returns the list of regular files in the given directory **/
+    private List<Path> getDirectoryFiles(Path dir) {
+        List<Path> files = new ArrayList<>();
+        try {
+            for (Path p : Files.newDirectoryStream(dir)) {
+                if (Files.isReadable(p) && !Files.isHidden(p)) {
+                    files.add(p);
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        return files;
+    }
+
+
     /** Returns if the given directory is empty **/
-    private static boolean isDirEmpty(final Path directory) throws IOException {
+    private boolean isDirEmpty(final Path directory) throws IOException {
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(directory)) {
             return !dirStream.iterator().hasNext();
         }

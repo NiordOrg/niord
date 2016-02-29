@@ -33,7 +33,7 @@
                     </tr>
                     <tr ng-repeat-start="execution in executions" ng-if="execution.instance" class="batch-instance-row">
                         <td>{{execution.instance.instanceId}}</td>
-                        <td>{{execution.instance.name}}</td>
+                        <td>{{execution.instance.user}}</td>
                         <td colspan="3">
                             <a ng-if="execution.instance.fileName"
                                class="batch-instance-download" target="_blank"

@@ -99,6 +99,10 @@ body {
     overflow-y: scroll;
 }
 
+.batch-instances {
+    font-size: 12px;
+}
+
 .batch-type {
     cursor: pointer;
     background-color: white;
@@ -118,6 +122,3 @@ tr.batch-execution-row td {
     border-top: 1px dashed #eee!important;
 }
 
-.batch-instance-download {
-    font-size: 12px;
-}

@@ -33,7 +33,7 @@ public class UserService extends BaseService {
         Principal principal = ctx.getCallerPrincipal();
 
         // Handle un-authenticated case
-        if (principal == null) {
+        if (principal == null || !(principal instanceof KeycloakPrincipal)) {
             return null;
         }
 
