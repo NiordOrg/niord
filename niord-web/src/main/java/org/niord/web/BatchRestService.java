@@ -201,7 +201,7 @@ public class BatchRestService {
         // NB: Response.temporaryRedirect() uses "/rest" as the root.
         String thumbUri = ".." + fileTypes.getIcon(f, iconSize);
 
-        log.info("Redirecting to thumbnail: " + thumbUri);
+        log.trace("Redirecting to thumbnail: " + thumbUri);
         return Response
                 .temporaryRedirect(new URI(thumbUri))
                 .expires(expirationDate)

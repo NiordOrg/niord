@@ -79,6 +79,7 @@ import java.util.zip.GZIPOutputStream;
 public class BatchService extends BaseService {
 
     public static final String BATCH_REPO_FOLDER = "batch";
+    public static final String BATCH_JOB_ENTITY = "batchJobEntity";
 
     @Inject
     private Logger log;
@@ -109,7 +110,7 @@ public class BatchService extends BaseService {
 
         // Launch the batch job
         Properties props = new Properties();
-        props.put(IBatchable.BATCH_JOB_ENTITY, job);
+        props.put(BATCH_JOB_ENTITY, job);
         long executionId = jobOperator.start(job.getJobName(), props);
 
         log.info("Started batch job: " + job);

@@ -18,9 +18,12 @@ package org.niord.core.batch;
 import org.slf4j.Logger;
 
 import javax.batch.api.AbstractBatchlet;
+import javax.batch.operations.JobOperator;
+import javax.batch.runtime.BatchRuntime;
 import javax.batch.runtime.context.JobContext;
 import javax.inject.Inject;
 import javax.inject.Named;
+import java.util.Properties;
 
 /**
  * Called when a batch job is started.
@@ -32,7 +35,7 @@ import javax.inject.Named;
  * </pre>
  */
 @Named
-public class JobStartBatchlet extends AbstractBatchlet implements IBatchable {
+public class JobStartBatchlet extends AbstractBatchlet {
 
     @Inject
     Logger log;
@@ -43,11 +46,25 @@ public class JobStartBatchlet extends AbstractBatchlet implements IBatchable {
     @Inject
     BatchService batchService;
 
+    /**
+     * Fetch the BatchData from the job operator properties, if they exist
+     * @param executionId the execution id
+     * @return the BatchData from the job operator properties
+     */
+    private BatchData getBatchData(long executionId) {
+        JobOperator jobOperator = BatchRuntime.getJobOperator();
+        Properties properties = jobOperator.getParameters(executionId);
+        return  properties != null
+                ? (BatchData) properties.get(BatchService.BATCH_JOB_ENTITY)
+                : null;
+    }
+
+
     /** {@inheritDoc} **/
     @Override
     public String process() throws Exception {
 
-        BatchData job = getBatchEntity(jobContext.getExecutionId());
+        BatchData job = getBatchData(jobContext.getExecutionId());
 
         // When a job is started, the instanceId will be null and the job must be persisted
         // Restarts will have a well-defined instanceId and be persisted already
@@ -61,7 +78,6 @@ public class JobStartBatchlet extends AbstractBatchlet implements IBatchable {
         }
 
         // Update the properties
-        getSharedProperties(jobContext.getExecutionId()).put(BATCH_JOB_ENTITY, job);
         return "COMPLETED";
     }
 }
