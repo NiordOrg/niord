@@ -17,19 +17,20 @@ package org.niord.web;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
-import org.niord.core.batch.BatchData;
-import org.niord.core.batch.BatchFileData;
-import org.niord.core.batch.BatchRawData;
 import org.niord.core.batch.BatchService;
 import org.niord.core.batch.vo.BatchInstanceVo;
 import org.niord.core.batch.vo.BatchStatusVo;
+import org.niord.core.repo.FileTypes;
 import org.niord.model.PagedSearchResultVo;
+import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Response;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -41,7 +42,14 @@ import java.util.List;
 public class BatchRestService {
 
     @Inject
+    Logger log;
+
+    @Inject
     BatchService batchService;
+
+    @Inject
+    FileTypes fileTypes;
+
 
     /**
      * Returns the job names
@@ -84,6 +92,7 @@ public class BatchRestService {
         return batchService.restartExecution(executionId);
     }
 
+
     /**
      * Abandons the given batch job execution
      *
@@ -96,6 +105,7 @@ public class BatchRestService {
     public void abandonExecution(@PathParam("executionId") long executionId) {
         batchService.abandonExecution(executionId);
     }
+
 
     /**
      * Returns the paged search result for the given batch type
@@ -112,7 +122,7 @@ public class BatchRestService {
     public PagedSearchResultVo<BatchInstanceVo> getJobInstances(
             @PathParam("jobName") String jobName,
             @QueryParam("page") @DefaultValue("0") int page,
-            @QueryParam("pageSize") @DefaultValue("10") int pageSize) {
+            @QueryParam("pageSize") @DefaultValue("10") int pageSize) throws Exception {
 
         return batchService.getJobInstances(jobName, page * pageSize, pageSize);
     }
@@ -131,38 +141,35 @@ public class BatchRestService {
         return batchService.getStatus();
     }
 
+
     /**
      * Downloads the batch data associated with the given instance
      *
      * @param instanceId the instance ID
      */
-    @PUT
+    @GET
     @Path("/instance/{instanceId}/download/{fileName:.*}")
-    @NoCache
-    @RolesAllowed("admin")
-    public long downloadBatchData(@PathParam("instanceId") long instanceId, String fileName) {
+    // TODO: Need to enforce security. Figure out how to create a download link that passes the authorization header along
+    // @RolesAllowed("admin")
+    @PermitAll
+    public Response downloadBatchData(@PathParam("instanceId") long instanceId, @PathParam("fileName") String fileName) {
 
-        BatchData job = batchService.findByInstanceId(instanceId);
-        if (job == null) {
+        java.nio.file.Path f = batchService.getBatchJobDataFile(instanceId);
+        if (f == null) {
+            log.warn("Failed streaming batch file: " + fileName);
             throw new WebApplicationException(404);
-
-        } else if (job instanceof BatchFileData) {
-            BatchFileData fileData = (BatchFileData) job;
-            if (fileData.getBatchFilePath() == null) {
-                throw new WebApplicationException(404);
-            }
-
-
-
-        } else if (job instanceof BatchRawData) {
-            BatchRawData rawData = (BatchRawData) job;
-            if (rawData.getData() == null) {
-                throw new WebApplicationException(404);
-            }
-
-
         }
-        throw new WebApplicationException(404);
+
+        // Set expiry to 12 hours
+        Date expirationDate = new Date(System.currentTimeMillis() + 1000L * 60L * 60L * 12L);
+
+        String mt = fileTypes.getContentType(f);
+
+        log.trace("Streaming file: " + f);
+        return Response
+                .ok(f.toFile(), mt)
+                .expires(expirationDate)
+                .build();
     }
 
 }

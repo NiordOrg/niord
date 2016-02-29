@@ -15,14 +15,18 @@
  */
 package org.niord.core.batch;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.batch.vo.BatchExecutionVo;
 import org.niord.core.batch.vo.BatchInstanceVo;
 import org.niord.core.batch.vo.BatchStatusVo;
 import org.niord.core.batch.vo.BatchTypeVo;
-import org.niord.core.repo.FileTypes;
-import org.niord.core.repo.RepositoryService;
+import org.niord.core.sequence.DefaultSequence;
+import org.niord.core.sequence.Sequence;
+import org.niord.core.sequence.SequenceService;
 import org.niord.core.service.BaseService;
 import org.niord.core.service.UserService;
+import org.niord.core.util.JsonUtils;
 import org.niord.model.PagedSearchResultVo;
 import org.slf4j.Logger;
 
@@ -30,19 +34,38 @@ import javax.batch.operations.JobOperator;
 import javax.batch.operations.NoSuchJobException;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * Provides an interface for managing batch jobs.
+ * <p>
+ * Batch jobs have up to three associated batch job folders under the "batchRoot" path:
+ * <ul>
+ *     <li>
+ *         <b>[jobName]/in</b>:
+ *         The <b>in</b> folders will be monitored periodically, and any file placed in this folder will
+ *         result in the <b>jobName</b> batch job being executed.
+ *     </li>
+ *     <li>
+ *         <b>[jobName]/execution/[year]/[month]/[jobNo]</b>:
+ *         Stores any input file associated with a batch job along with log files for the executions steps.
+ *         These directories will be cleaned up after a configurable amount of time.
+ *     </li>
+ *     <li>
+ *         <b>[jobName]/out</b>:
+ *         Any file-based result from the execution of a batch job can be placed here.
+ *         Not implemented yet.
+ *     </li>
+ * </ul>
+ *
  * <p>
  * Note to self: Currently, there is a bug in Wildfly, so that the batch job xml files cannot be loaded
  * from an included jar.
@@ -61,16 +84,17 @@ public class BatchService extends BaseService {
     private Logger log;
 
     @Inject
-    RepositoryService repositoryService;
-
-    @Inject
     UserService userService;
 
     @Inject
     JobOperator jobOperator;
 
     @Inject
-    FileTypes fileTypes;
+    SequenceService sequenceService;
+
+    //@Inject
+    //@Setting(value = "repoRootPath", defaultValue = "${user.home}/.niord/batch-jobs", substituteSystemProperties = true)
+    Path batchRoot = Paths.get(System.getProperty("user.home") + "/.niord/batch-jobs");
 
     /**
      * Starts a new batch job
@@ -78,6 +102,10 @@ public class BatchService extends BaseService {
      * @param job the batch job name
      */
     public long startBatchJob(BatchData job) {
+
+        // Note to self:
+        // There are some transaction issues with storing the BatchData in the current transaction,
+        // so, we leave it to the JobStartBatchlet batch step.
 
         // Launch the batch job
         Properties props = new Properties();
@@ -88,99 +116,190 @@ public class BatchService extends BaseService {
         return executionId;
     }
 
+    /** Creates and initializes a new batch job data entity */
+    private BatchData initBatchData(String jobName, Properties properties) throws IOException {
+        // Construct a new batch data entity
+        BatchData job = new BatchData();
+        job.setUser(userService.currentUser());
+        job.setJobName(jobName);
+        job.setJobNo(getNextJobNo(jobName));
+        job.writeProperties(properties);
+        return job;
+    }
 
     /**
-     * Starts a new raw data-based batch job
+     * Starts a new batch job
      *
      * @param jobName the batch job name
      */
-    public long startBatchJob(String jobName, byte[] data, boolean deflated, String fileName, String fileType) throws Exception {
+    public long startBatchJobWithDeflatedData(String jobName, Object data, String dataFileName, Properties properties) throws Exception {
 
-        // Construct a new raw data-based batch data entity
-        BatchRawData job = new BatchRawData();
-        job.setUser(userService.currentUser());
-        job.setJobName(jobName);
-        job.setFileName(fileName);
-        job.setFileType(fileType);
-        job.setData(data);
-        job.setDeflated(deflated);
+        BatchData job = initBatchData(jobName, properties);
+
+        if (data != null) {
+            dataFileName = StringUtils.isNotBlank(dataFileName) ? dataFileName : "batch-data.zip";
+            job.setDataFileName(dataFileName);
+            Path path = batchRoot.resolve(job.computeDataFilePath());
+            createDirectories(path.getParent());
+            try (FileOutputStream file = new FileOutputStream(path.toFile());
+                 GZIPOutputStream gzipOut = new GZIPOutputStream(file);
+                 ObjectOutputStream objectOut = new ObjectOutputStream(gzipOut)) {
+                objectOut.writeObject(data);
+            }
+        }
 
         return startBatchJob(job);
     }
 
+
     /**
-     * Starts a new raw data-based batch job.
-     * NB: The data will be deflated
+     * Starts a new batch job
      *
      * @param jobName the batch job name
      */
-    public long startBatchJobDeflateData(String jobName, Object data,  String fileName, String fileType) throws Exception {
+    public long startBatchJobWithJsonData(String jobName, Object data, String dataFileName, Properties properties) throws Exception {
 
-        return startBatchJob(jobName, BatchRawData.writeDeflatedData(data), true, fileName, fileType);
+        BatchData job = initBatchData(jobName, properties);
+
+        if (data != null) {
+            dataFileName = StringUtils.isNotBlank(dataFileName) ? dataFileName : "batch-data.json";
+            job.setDataFileName(dataFileName);
+            Path path = batchRoot.resolve(job.computeDataFilePath());
+            createDirectories(path.getParent());
+            JsonUtils.writeJson(data, path);
+        }
+
+        return startBatchJob(job);
     }
+
 
     /**
      * Starts a new file-based batch job
      *
      * @param jobName the batch job name
      */
-    public long startBatchJob(String jobName, Path file) throws IOException {
+    public long startBatchJobWithDataFile(String jobName, InputStream in, String dataFileName, Properties properties) throws IOException {
+
+        BatchData job = initBatchData(jobName, properties);
+
+        if (in != null) {
+            job.setDataFileName(dataFileName);
+            Path path = batchRoot.resolve(job.computeDataFilePath());
+            createDirectories(path.getParent());
+            Files.copy(in, path);
+        }
+
+        return startBatchJob(job);
+    }
+
+
+    /**
+     * Starts a new file-based batch job
+     *
+     * @param jobName the batch job name
+     */
+    public long startBatchJobWithDataFile(String jobName, Path file, Properties properties) throws IOException {
         if (!Files.isRegularFile(file)) {
             throw new IllegalArgumentException("Invalid file " + file);
         }
 
         try (InputStream in = new FileInputStream(file.toFile())) {
-            return startBatchJob(
+            return startBatchJobWithDataFile(
                     jobName,
                     in,
                     file.getFileName().toString(),
-                    fileTypes.getContentType(file));
+                    properties);
         }
     }
 
+
     /**
-     * Starts a new file-based batch job
+     * Returns the next sequence number for the batch job
+     * @param jobName the name of the batch job
+     * @return the next sequence number for the batch job
+     */
+    private Long getNextJobNo(String jobName) {
+        Sequence jobSequence = new DefaultSequence("BATCH_JOB_" + jobName, 1);
+        return sequenceService.getNextValue(jobSequence);
+    }
+
+
+    /** Creates the given directories if they do not exist */
+    private Path createDirectories(Path path) throws IOException {
+        if (path != null && !Files.exists(path)) {
+            Files.createDirectories(path);
+        }
+        return path;
+    }
+
+
+    /**
+     * Returns the data file associated with the given batch job instance.
+     * Returns null if no data file is found
      *
-     * @param jobName the batch job name
+     * @param instanceId the batch job instance
+     * @return the data file associated with the given batch job instance.
      */
-    public long startBatchJob(String jobName, InputStream in, String fileName, String fileType) throws IOException {
+    public Path getBatchJobDataFile(Long instanceId) {
+        BatchData job = findByInstanceId(instanceId);
 
-        // Copy the file to the repository
-        String repoUri = copyToBatchRepo(jobName, in, fileName);
-
-        // Construct a new file-based batch data entity
-        BatchFileData job = new BatchFileData();
-        job.setUser(userService.currentUser());
-        job.setJobName(jobName);
-        job.setFileName(fileName);
-        job.setBatchFilePath(repoUri);
-        job.setFileType(fileType);
-
-        return startBatchJob(job);
-    }
-
-    /**
-     * Saves the file to a batch repository folder
-     * @param jobName the batch job name
-     * @param in the input stream
-     * @param fileName the file name
-     * @return the resulting path
-     */
-    private String copyToBatchRepo(String jobName, InputStream in, String fileName) throws IOException {
-        Path repoFolder = repositoryService.getRepoRoot()
-                .resolve(BATCH_REPO_FOLDER)
-                .resolve(jobName);
-
-        // Create the folder if it does not exist
-        if (!Files.exists(repoFolder)) {
-            Files.createDirectories(repoFolder);
+        if (job == null || job.getDataFileName() == null) {
+            return null;
         }
 
-        // Copy the file to the repo
-        DateFormat df = new SimpleDateFormat("yyymmdd-HHmmss-");
-        Path repoFile = repoFolder.resolve(df.format(new Date()) + fileName);
-        Files.copy(in, repoFile);
-        return repositoryService.getRepoUri(repoFile);
+        Path path = batchRoot.resolve(job.computeDataFilePath());
+        return Files.isRegularFile(path) ? path : null;
+    }
+
+
+    /**
+     * Loads the batch job JSON data file as the given class.
+     * Returns null if no data file is found
+     *
+     * @param instanceId the batch job instance
+     * @return the data
+     */
+    public <T> T readBatchJobJsonDataFile(Long instanceId, Class<T> dataClass) throws IOException {
+        Path path = getBatchJobDataFile(instanceId);
+
+        return path != null ? JsonUtils.readJson(dataClass, path) : null;
+    }
+
+
+    /**
+     * Loads the batch job JSON data file as the given class.
+     * Returns null if no data file is found
+     *
+     * @param instanceId the batch job instance
+     * @return the data
+     */
+    public <T> T readBatchJobJsonDataFile(Long instanceId, TypeReference typeRef) throws IOException {
+        Path path = getBatchJobDataFile(instanceId);
+
+        return path != null ? JsonUtils.readJson(typeRef, path) : null;
+    }
+
+
+    /**
+     * Loads the batch job deflated data file as the given class.
+     * Returns null if no data file is found
+     *
+     * @param instanceId the batch job instance
+     * @return the data
+     */
+    @SuppressWarnings("all")
+    public <T> T readBatchJobDeflatedDataFile(Long instanceId) throws IOException, ClassNotFoundException {
+        Path path = getBatchJobDataFile(instanceId);
+
+        if (path != null) {
+            try (FileInputStream file = new FileInputStream(path.toFile());
+                 GZIPInputStream gzipIn = new GZIPInputStream(file);
+                 ObjectInputStream objectIn = new ObjectInputStream(gzipIn)) {
+                return (T) objectIn.readObject();
+            }
+        }
+
+        return null;
     }
 
 
@@ -233,7 +352,7 @@ public class BatchService extends BaseService {
      * Returns the batch job names
      * @return the batch job names
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("all")
     public List<String> getJobNames() {
         // Sadly, this gets reset upon every JVM restart
         /*
@@ -286,7 +405,7 @@ public class BatchService extends BaseService {
      * @return the paged search result for the given batch type
      */
     public PagedSearchResultVo<BatchInstanceVo> getJobInstances(
-           String jobName, int start, int count) {
+           String jobName, int start, int count) throws Exception {
 
         Objects.requireNonNull(jobName);
         PagedSearchResultVo<BatchInstanceVo> result = new PagedSearchResultVo<>();
@@ -315,15 +434,16 @@ public class BatchService extends BaseService {
         Map<Long, BatchData> batchDataLookup = findByInstanceIds(instanceIds)
                 .stream()
                 .collect(Collectors.toMap(BatchData::getInstanceId, Function.identity()));
-        result.getData().forEach(i -> {
+        for (BatchInstanceVo i : result.getData()) {
             BatchData data = batchDataLookup.get(i.getInstanceId());
             if (data != null) {
-                i.setFileName(data.getFileName());
-                i.setFileType(data.getFileType());
+                i.setFileName(data.getDataFileName());
+                i.setJobNo(data.getJobNo());
                 i.setUser(data.getUser() != null ? data.getUser().getName() : null);
                 i.setJobName(data.getJobName());
+                i.setProperties(data.readProperties());
             }
-        });
+        }
 
         result.updateSize();
         return result;

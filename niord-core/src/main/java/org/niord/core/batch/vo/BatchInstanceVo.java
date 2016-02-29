@@ -20,9 +20,10 @@ import org.niord.model.IJsonSerializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Properties;
 
 /**
- * Encapsulates a batch job instance
+ * Encapsulates a batch job instance.
  */
 @SuppressWarnings("unused")
 public class BatchInstanceVo implements IJsonSerializable {
@@ -32,14 +33,15 @@ public class BatchInstanceVo implements IJsonSerializable {
     List<BatchExecutionVo> executions = new ArrayList<>();
 
     // From the associated BatchData
+    long jobNo;
     String fileName;
-    String fileType;
     String user;
     String jobName;
+    Properties properties;
 
     /**
      * Sorts the executions with the most recent execution first and update execution flags
-     **/
+     */
     public void updateExecutions() {
         // Sort executions
         Comparator<BatchExecutionVo> mostRecentFirst = (e1, e2) -> {
@@ -90,6 +92,14 @@ public class BatchInstanceVo implements IJsonSerializable {
         this.instanceId = instanceId;
     }
 
+    public long getJobNo() {
+        return jobNo;
+    }
+
+    public void setJobNo(long jobNo) {
+        this.jobNo = jobNo;
+    }
+
     public List<BatchExecutionVo> getExecutions() {
         return executions;
     }
@@ -106,14 +116,6 @@ public class BatchInstanceVo implements IJsonSerializable {
         this.fileName = fileName;
     }
 
-    public String getFileType() {
-        return fileType;
-    }
-
-    public void setFileType(String fileType) {
-        this.fileType = fileType;
-    }
-
     public String getUser() {
         return user;
     }
@@ -128,5 +130,13 @@ public class BatchInstanceVo implements IJsonSerializable {
 
     public void setJobName(String jobName) {
         this.jobName = jobName;
+    }
+
+    public Properties getProperties() {
+        return properties;
+    }
+
+    public void setProperties(Properties properties) {
+        this.properties = properties;
     }
 }

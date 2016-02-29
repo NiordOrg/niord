@@ -17,26 +17,39 @@ package org.niord.core.batch;
 
 import org.niord.core.model.BaseEntity;
 import org.niord.core.model.User;
+import org.niord.core.util.JsonUtils;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Properties;
 
 /**
  * Used for storing batch data associated with a JSR-352 batch instance.
  */
 @Entity
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
-@DiscriminatorColumn(name = "batchDataType")
 @NamedQueries({
         @NamedQuery(name  = "BatchData.findByInstanceId",
                 query = "select bd from BatchData bd where bd.instanceId = :instanceId"),
         @NamedQuery(name  = "BatchData.findByInstanceIds",
                 query = "select bd from BatchData bd where bd.instanceId in :instanceIds")
 })
-public abstract class BatchData extends BaseEntity<Integer> {
+@SuppressWarnings("unused")
+public class BatchData extends BaseEntity<Integer> {
+
+    @NotNull
+    @Temporal(TemporalType.TIMESTAMP)
+    Date created;
 
     @NotNull
     String jobName;
+
+    @NotNull
+    Long jobNo;
 
     @NotNull
     Long instanceId;
@@ -44,25 +57,92 @@ public abstract class BatchData extends BaseEntity<Integer> {
     @ManyToOne
     User user;
 
-    String fileName;
+    String dataFileName;
 
-    String fileType;
+    @Lob
+    String properties;
 
+
+    /** Ensures that the created data is set */
+    @PrePersist
+    protected void onCreate() {
+        if (created == null) {
+            created = new Date();
+        }
+    }
+
+
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return "BatchData{" +
                 "id=" + id +
                 ", jobName='" + jobName + '\'' +
+                ", jobNo=" + jobNo +
                 ", instanceId=" + instanceId +
                 ", user=" + user +
-                ", batchFileName='" + fileName + '\'' +
-                ", batchFileType='" + fileType + '\'' +
+                ", dataFileName='" + dataFileName + '\'' +
                 '}';
+    }
+
+
+    /**
+     * Writes the Properties as JSON
+     * @param props the properties to write
+     */
+    public void writeProperties(Properties props) throws IOException {
+        this.properties = JsonUtils.toJson(props);
+    }
+
+
+    /**
+     * Reads the properties JSON as a Properties object
+     */
+    public Properties readProperties() throws IOException {
+        return JsonUtils.fromJson(this.properties, Properties.class);
+    }
+
+
+    /**
+     * Computes the path to an associated data file. Returns null if no data file is defined.
+     * The path is computed as:
+     * <b>[jobName]/execution/[year]/[month]/[jobNo]</b>
+     *
+     * @return the path to the associated data file.
+     */
+    public Path computeDataFilePath() {
+        // If no data file is defined, return null
+        if (dataFileName == null) {
+            return null;
+        }
+
+        // Make sure the created data is instantiated
+        if (created == null) {
+            created = new Date();
+        }
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(created);
+
+        return Paths.get(
+                jobName,
+                "execution",
+                String.valueOf(cal.get(Calendar.YEAR)),
+                String.valueOf(cal.get(Calendar.MONTH) + 1), // NB: month zero-based
+                String.valueOf(jobNo),
+                dataFileName);
     }
 
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
 
     public String getJobName() {
         return jobName;
@@ -70,6 +150,14 @@ public abstract class BatchData extends BaseEntity<Integer> {
 
     public void setJobName(String jobName) {
         this.jobName = jobName;
+    }
+
+    public Long getJobNo() {
+        return jobNo;
+    }
+
+    public void setJobNo(Long jobNo) {
+        this.jobNo = jobNo;
     }
 
     public Long getInstanceId() {
@@ -88,20 +176,19 @@ public abstract class BatchData extends BaseEntity<Integer> {
         this.user = user;
     }
 
-    public String getFileName() {
-        return fileName;
+    public String getDataFileName() {
+        return dataFileName;
     }
 
-    public void setFileName(String fileName) {
-        this.fileName = fileName;
+    public void setDataFileName(String fileName) {
+        this.dataFileName = fileName;
     }
 
-    public String getFileType() {
-        return fileType;
+    public String getProperties() {
+        return properties;
     }
 
-    public void setFileType(String fileType) {
-        this.fileType = fileType;
+    public void setProperties(String properties) {
+        this.properties = properties;
     }
-
 }
