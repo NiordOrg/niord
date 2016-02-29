@@ -156,7 +156,7 @@ public class BatchRestService {
     // TODO: Need to enforce security. Figure out how to create a download link that passes the authorization header along
     // @RolesAllowed("admin")
     @PermitAll
-    public Response downloadBatchData(@PathParam("instanceId") long instanceId, @PathParam("fileName") String fileName) {
+    public Response downloadBatchDataFile(@PathParam("instanceId") long instanceId, @PathParam("fileName") String fileName) {
 
         java.nio.file.Path f = batchService.getBatchJobDataFile(instanceId);
         if (f == null) {
@@ -184,8 +184,8 @@ public class BatchRestService {
     @GET
     @Path("/instance/{instanceId}/thumbnail.png")
     @PermitAll
-    public Response getThumbnail(@PathParam("instanceId") long instanceId,
-                                 @QueryParam("size") @DefaultValue("32") int size) throws IOException, URISyntaxException {
+    public Response getBatchDataFileThumbnail(@PathParam("instanceId") long instanceId,
+                                              @QueryParam("size") @DefaultValue("32") int size) throws IOException, URISyntaxException {
 
         IconSize iconSize = IconSize.getIconSize(size);
         java.nio.file.Path f = batchService.getBatchJobDataFile(instanceId);
@@ -195,12 +195,16 @@ public class BatchRestService {
             throw new WebApplicationException(404);
         }
 
-            // Fall back to file type icons
-        String thumbUri = "../" + fileTypes.getIcon(f, iconSize);
+        // Set expiry to 12 hours
+        Date expirationDate = new Date(System.currentTimeMillis() + 1000L * 60L * 60L * 12L);
+
+        // NB: Response.temporaryRedirect() uses "/rest" as the root.
+        String thumbUri = ".." + fileTypes.getIcon(f, iconSize);
 
         log.info("Redirecting to thumbnail: " + thumbUri);
         return Response
                 .temporaryRedirect(new URI(thumbUri))
+                .expires(expirationDate)
                 .build();
     }
 
