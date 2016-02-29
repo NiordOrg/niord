@@ -38,8 +38,9 @@
                             <a ng-if="execution.instance.fileName"
                                class="batch-instance-download" target="_blank"
                                href="/rest/batch/instance/{{execution.instance.instanceId}}/download/{{execution.instance.fileName}}">
-                                <span class="glyphicon glyphicon-download-alt"></span>
+                                <img ng-src="/rest/batch/instance/{{execution.instance.instanceId}}/thumbnail.png" width="16" height="16">
                                 {{execution.instance.fileName}}
+                                <span class="glyphicon glyphicon-download-alt"></span>
                             </a>
                         </td>
                     </tr>

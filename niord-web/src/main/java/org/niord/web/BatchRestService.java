@@ -21,6 +21,7 @@ import org.niord.core.batch.BatchService;
 import org.niord.core.batch.vo.BatchInstanceVo;
 import org.niord.core.batch.vo.BatchStatusVo;
 import org.niord.core.repo.FileTypes;
+import org.niord.core.repo.IconSize;
 import org.niord.model.PagedSearchResultVo;
 import org.slf4j.Logger;
 
@@ -30,6 +31,9 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.List;
 
@@ -169,6 +173,34 @@ public class BatchRestService {
         return Response
                 .ok(f.toFile(), mt)
                 .expires(expirationDate)
+                .build();
+    }
+
+    /**
+     * Returns the thumbnail to use for the given batch job instance
+     * @param size the icon size, either 32, 64 or 128
+     * @return the thumbnail to use for the given batch job instance
+     */
+    @GET
+    @Path("/instance/{instanceId}/thumbnail.png")
+    @PermitAll
+    public Response getThumbnail(@PathParam("instanceId") long instanceId,
+                                 @QueryParam("size") @DefaultValue("32") int size) throws IOException, URISyntaxException {
+
+        IconSize iconSize = IconSize.getIconSize(size);
+        java.nio.file.Path f = batchService.getBatchJobDataFile(instanceId);
+
+        if (f == null) {
+            log.warn("Failed streaming thumbnail for instance: " + instanceId);
+            throw new WebApplicationException(404);
+        }
+
+            // Fall back to file type icons
+        String thumbUri = "../" + fileTypes.getIcon(f, iconSize);
+
+        log.info("Redirecting to thumbnail: " + thumbUri);
+        return Response
+                .temporaryRedirect(new URI(thumbUri))
                 .build();
     }
 
