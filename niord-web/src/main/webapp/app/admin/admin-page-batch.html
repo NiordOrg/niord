@@ -32,12 +32,12 @@
                         <th>Action</th>
                     </tr>
                     <tr ng-repeat-start="execution in executions" ng-if="execution.instance" class="batch-instance-row">
-                        <td>{{execution.instance.instanceId}}</td>
+                        <td>{{execution.instance.jobNo}}</td>
                         <td>{{execution.instance.user}}</td>
                         <td colspan="3">
                             <a ng-if="execution.instance.fileName"
                                class="batch-instance-download" target="_blank"
-                               href="/rest/batch/instance/{{execution.instance.instanceId}}/download/{{execution.instance.fileName}}">
+                               href ng-click="download(execution.instance)">
                                 <img ng-src="/rest/batch/instance/{{execution.instance.instanceId}}/thumbnail.png" width="16" height="16">
                                 {{execution.instance.fileName}}
                                 <span class="glyphicon glyphicon-download-alt"></span>

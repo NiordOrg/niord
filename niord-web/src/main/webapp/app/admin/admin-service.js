@@ -39,6 +39,10 @@ angular.module('niord.admin')
             /** Stops the given batch execution **/
             abandonBatchExecution: function(executionId) {
                 return $http.put('/rest/batch/execution/' + executionId + '/abandon');
+            },
+
+            getBatchDownloadTicket: function () {
+                return $http.get('/rest/batch/download-ticket');
             }
 
         };

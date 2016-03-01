@@ -50,24 +50,24 @@ import java.util.zip.GZIPOutputStream;
  * <p>
  * Batch jobs have up to three associated batch job folders under the "batchJobRoot" path:
  * <ul>
- * <li>
- * <b>[jobName]/in</b>:
- * The <b>in</b> folders will be monitored periodically, and any file placed in this folder will
- * result in the <b>jobName</b> batch job being executed.
- * </li>
- * <li>
- * <b>[jobName]/execution/[year]/[month]/[jobNo]</b>:
- * Stores any input file associated with a batch job along with log files for the executions steps.
- * These directories will be cleaned up after a configurable amount of time.
- * </li>
- * <li>
- * <b>[jobName]/out</b>:
- * Any file-based result from the execution of a batch job can be placed here.
- * Not implemented yet.
- * </li>
+ *  <li>
+ *      <b>[jobName]/in</b>:
+ *      The <b>in</b> folders will be monitored periodically, and any file placed in this folder will
+ *      result in the <b>jobName</b> batch job being executed.
+ *  </li>
+ *  <li>
+ *      <b>[jobName]/execution/[year]/[month]/[jobNo]</b>:
+ *      Stores any input file associated with a batch job along with log files for the executions steps.
+ *      These directories will be cleaned up after a configurable amount of time.
+ *  </li>
+ *  <li>
+ *      <b>[jobName]/out</b>:
+ *      Any file-based result from the execution of a batch job can be placed here.
+ *      Not implemented yet.
+ *  </li>
  * </ul>
  * <p>
- * <p>
+ *
  * Note to self: Currently, there is a bug in Wildfly, so that the batch job xml files cannot be loaded
  * from an included jar.
  * Hence, move the xml files to META-INF/batch-jobs of the web application you are working on.

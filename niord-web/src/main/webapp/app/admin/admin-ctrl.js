@@ -173,4 +173,20 @@ angular.module('niord.admin')
                     .success($scope.loadBatchInstances);
             };
 
+            // Download the instance data file
+            $scope.download = function (instance) {
+                AdminService
+                    .getBatchDownloadTicket()
+                    .success(function (ticket) {
+                        var link = document.createElement("a");
+                        link.download = instance.fileName;
+                        link.href = '/rest/batch/instance/'
+                            + instance.instanceId
+                            + '/download/'
+                            + encodeURI(instance.fileName)
+                            + '?ticket=' + ticket;
+                        link.click();
+                    });
+            }
+
         }]);

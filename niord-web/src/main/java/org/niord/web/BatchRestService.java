@@ -22,6 +22,7 @@ import org.niord.core.batch.vo.BatchInstanceVo;
 import org.niord.core.batch.vo.BatchStatusVo;
 import org.niord.core.repo.FileTypes;
 import org.niord.core.repo.IconSize;
+import org.niord.core.user.TicketService;
 import org.niord.model.PagedSearchResultVo;
 import org.slf4j.Logger;
 
@@ -54,6 +55,8 @@ public class BatchRestService {
     @Inject
     FileTypes fileTypes;
 
+    @Inject
+    TicketService ticketService;
 
     /**
      * Returns the job names
@@ -147,16 +150,41 @@ public class BatchRestService {
 
 
     /**
-     * Downloads the batch data associated with the given instance
+     * Returns a ticket to be used in a subsequent call to download batch data
+     *
+     * @return a ticket
+     */
+    @GET
+    @Path("/download-ticket")
+    @Produces("text/plain")
+    @RolesAllowed("admin")
+    @NoCache
+    public String getDownloadBatchDataFileTicket() {
+        // Because of the @RolesAllowed annotation, we know that the
+        // the callee has the "admin" role
+        return ticketService.createTicketForRoles("admin");
+    }
+
+
+    /**
+     * Downloads the batch data associated with the given instance.
+     * First, the callee must call the "/batch/download-ticket" endpoint using Ajax
+     * to retrieve a valid ticket, and then pass the ticket along in this function
      *
      * @param instanceId the instance ID
      */
     @GET
     @Path("/instance/{instanceId}/download/{fileName:.*}")
-    // TODO: Need to enforce security. Figure out how to create a download link that passes the authorization header along
-    // @RolesAllowed("admin")
     @PermitAll
-    public Response downloadBatchDataFile(@PathParam("instanceId") long instanceId, @PathParam("fileName") String fileName) {
+    public Response downloadBatchDataFile(
+            @PathParam("instanceId") long instanceId,
+            @PathParam("fileName") String fileName,
+            @QueryParam("ticket") String ticket) {
+
+        // Check the ticket programmatically
+        if (!ticketService.validateTicket(ticket, "admin")) {
+            throw new WebApplicationException(403);
+        }
 
         java.nio.file.Path f = batchService.getBatchJobDataFile(instanceId);
         if (f == null) {
