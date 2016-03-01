@@ -1,12 +1,10 @@
 package org.niord.model.vo.geojson;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.niord.model.IJsonSerializable;
 
-import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -26,9 +24,7 @@ import java.util.function.Consumer;
         @JsonSubTypes.Type(value = FeatureVo.class,             name = "Feature"),
         @JsonSubTypes.Type(value = FeatureCollectionVo.class,   name = "FeatureCollection")
 })
-@JsonIgnoreProperties(ignoreUnknown=true)
-@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-public abstract class GeoJsonVo implements Serializable {
+public abstract class GeoJsonVo implements IJsonSerializable {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 

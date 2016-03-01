@@ -202,7 +202,7 @@ public class BatchService extends BaseService {
             job.setDataFileName(dataFileName);
             Path path = computeBatchJobPath(job.computeDataFilePath());
             createDirectories(path.getParent());
-            Files.copy(in, path);
+            Files.copy(in, path, StandardCopyOption.REPLACE_EXISTING);
         }
 
         return startBatchJob(job);

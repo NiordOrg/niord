@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
-import org.niord.core.model.Chart;
+import org.niord.core.chart.Chart;
+import org.niord.core.chart.ChartService;
 import org.niord.core.model.Extent;
 import org.niord.core.model.FeatureCollection;
-import org.niord.core.service.ChartService;
 import org.niord.core.service.FeatureService;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
@@ -24,24 +24,10 @@ import javax.ejb.Startup;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -185,10 +171,22 @@ public class TestRestService {
     public List<ChartVo> searchCharts(@QueryParam("name") @DefaultValue("") String name,
                                       @QueryParam("limit") @DefaultValue("1000") int limit) {
         return chartService.searchCharts(name, limit).stream()
+                .map(Chart::toVo)
+                .collect(Collectors.toList());
+    }
+
+    @GET
+    @Path("/charts/all")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public List<ChartVo> getAllCharts(@QueryParam("limit") @DefaultValue("1000") int limit) {
+        return chartService.getCharts().stream()
                 .limit(limit)
                 .map(Chart::toVo)
                 .collect(Collectors.toList());
     }
+
 
     @GET
     @Path("/charts/{chartIds}")

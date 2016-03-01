@@ -1,0 +1,12 @@
+<job id="ChartImportJob" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
+    <step id="setupStep" allow-start-if-complete="true" next="importChartsStep">
+        <batchlet ref="jobStartBatchlet"/>
+    </step>
+    <step id="importChartsStep">
+        <chunk item-count="10">
+            <reader ref="batchChartImportReader" />
+            <processor ref="batchChartImportProcessor"/>
+            <writer ref="batchChartImportWriter" />
+        </chunk>
+    </step>
+</job>

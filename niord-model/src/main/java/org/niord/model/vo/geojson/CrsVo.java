@@ -1,9 +1,7 @@
 package org.niord.model.vo.geojson;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.niord.model.IJsonSerializable;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -11,9 +9,7 @@ import java.util.Map;
  * Implementation of the Coordinate Reference System, as defined in
  * http://geojson.org/geojson-spec.html#coordinate-reference-system-objects
  */
-@JsonIgnoreProperties(ignoreUnknown=true)
-@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
-public class CrsVo implements Serializable {
+public class CrsVo implements IJsonSerializable {
 
     private String type;
 

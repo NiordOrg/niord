@@ -13,18 +13,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.core.model;
+package org.niord.core.chart;
 
 import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.model.VersionedEntity;
 import org.niord.core.util.GeoJsonUtils;
 import org.niord.model.vo.ChartVo;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.util.Objects;
 
 /**
  * Represents a chart
@@ -84,6 +83,12 @@ public class Chart extends VersionedEntity<Integer> {
      * Constructor
      */
     public Chart(ChartVo chart) {
+        updateChart(chart);
+    }
+
+
+    /** Updates this chart from the given chart */
+    public void updateChart(ChartVo chart) {
         this.chartNumber = chart.getChartNumber();
         this.internationalNumber = chart.getInternationalNumber();
         this.geometry = GeoJsonUtils.toJts(chart.getGeometry());
@@ -91,7 +96,6 @@ public class Chart extends VersionedEntity<Integer> {
         this.scale = chart.getScale();
         this.name = chart.getName();
     }
-
 
     /** Converts this entity to a value object */
     public ChartVo toVo() {
@@ -105,6 +109,34 @@ public class Chart extends VersionedEntity<Integer> {
         return chart;
     }
 
+    /**
+     * Checks if the values of the chart has changed.
+     * Only checks relevant values, not e.g. database id, created date, etc.
+     * Hence we do not use equals()
+     *
+     * @param template the template to compare with
+     * @return if the chart has changed
+     */
+    @Transient
+    public boolean hasChanged(Chart template) {
+        return !Objects.equals(chartNumber, template.getChartNumber()) ||
+                !Objects.equals(internationalNumber, template.getInternationalNumber()) ||
+                !Objects.equals(horizontalDatum, template.getHorizontalDatum()) ||
+                !Objects.equals(scale, template.getScale()) ||
+                !Objects.equals(name, template.getName()) ||
+                geometryChanged(template);
+    }
+
+
+    /** Checks if the geometry has changed */
+    protected boolean geometryChanged(Chart template) {
+        if (geometry == null && template.getGeometry() == null) {
+            return false;
+        } else if (geometry == null || template.getGeometry() == null) {
+            return true;
+        }
+        return !geometry.equals(template.getGeometry());
+    }
 
     /**
      * Returns a string representation of the chart including chart number and international number
