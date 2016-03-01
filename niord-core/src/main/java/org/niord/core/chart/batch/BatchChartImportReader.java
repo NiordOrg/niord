@@ -12,7 +12,12 @@ import java.util.List;
 
 /**
  * Reads charts from a charts.json file.
- *
+ * <p>
+ * Please note, the actual chart-import.xml job file is not placed in the META-INF/batch-jobs of this project,
+ * but rather, in the META-INF/batch-jobs folder of the niord-web project.<br>
+ * This is because of a class-loading bug in the Wildfly implementation. See e.g.
+ * https://issues.jboss.org/browse/WFLY-4988
+ * <p>
  * Format of json file is defined by the ChartVo class. Example:
  * <pre>
  * [
@@ -32,7 +37,7 @@ import java.util.List;
  *       ]
  *     },
  *     "horizontalDatum": "WGS84",
- *     "scale": 75000,
+ *     "scale": 75000
  *   },
  *   {
  *       etc, etc
