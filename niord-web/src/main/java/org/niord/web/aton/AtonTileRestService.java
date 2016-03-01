@@ -15,14 +15,14 @@
  */
 package org.niord.web.aton;
 
-import org.niord.core.model.Aton;
+import org.niord.core.aton.Aton;
+import org.niord.core.aton.AtonSearchParams;
+import org.niord.core.aton.AtonService;
 import org.niord.core.repo.RepositoryService;
-import org.niord.core.service.AtonSearchParams;
-import org.niord.core.service.AtonService;
 import org.niord.core.util.GlobalMercator;
 import org.niord.core.util.GraphicsUtils;
-import org.niord.model.PagedSearchResultVo;
 import org.apache.commons.io.IOUtils;
+import org.niord.model.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.imageio.ImageIO;

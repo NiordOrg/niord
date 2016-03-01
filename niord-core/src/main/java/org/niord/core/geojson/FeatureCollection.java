@@ -13,8 +13,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.core.model;
+package org.niord.core.geojson;
 
+import org.niord.core.model.BaseEntity;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
 import org.niord.model.vo.geojson.FeatureVo;
 

@@ -1,12 +1,11 @@
-package org.niord.core.service;
+package org.niord.core.geojson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vividsolutions.jts.geom.Geometry;
 import org.niord.core.conf.TextResource;
+import org.niord.core.service.BaseService;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
 import org.niord.model.vo.geojson.FeatureVo;
-import org.niord.core.model.Feature;
-import org.niord.core.model.FeatureCollection;
 import org.niord.core.util.GeoJsonUtils;
 import org.slf4j.Logger;
 

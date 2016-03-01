@@ -15,9 +15,9 @@
  */
 package org.niord.web;
 
-import org.niord.core.model.Aton;
-import org.niord.core.service.AtonSearchParams;
-import org.niord.core.service.AtonService;
+import org.niord.core.aton.Aton;
+import org.niord.core.aton.AtonSearchParams;
+import org.niord.core.aton.AtonService;
 import org.niord.model.PagedSearchResultVo;
 import org.niord.model.vo.AtonVo;
 import org.jboss.resteasy.annotations.GZIP;

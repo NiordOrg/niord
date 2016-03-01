@@ -26,7 +26,7 @@ import org.niord.core.sequence.DefaultSequence;
 import org.niord.core.sequence.Sequence;
 import org.niord.core.sequence.SequenceService;
 import org.niord.core.service.BaseService;
-import org.niord.core.service.UserService;
+import org.niord.core.user.UserService;
 import org.niord.core.util.JsonUtils;
 import org.niord.model.PagedSearchResultVo;
 import org.slf4j.Logger;

@@ -1,4 +1,4 @@
-package org.niord.core.service;
+package org.niord.core.aton;
 
 import org.niord.core.model.Extent;
 import org.niord.model.PagedSearchParamsVo;

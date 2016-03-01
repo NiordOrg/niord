@@ -16,7 +16,7 @@
 package org.niord.core.batch;
 
 import org.niord.core.model.BaseEntity;
-import org.niord.core.model.User;
+import org.niord.core.user.User;
 import org.niord.core.util.JsonUtils;
 
 import javax.persistence.*;

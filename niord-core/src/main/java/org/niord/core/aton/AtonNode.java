@@ -13,9 +13,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.core.model;
+package org.niord.core.aton;
 
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.model.BaseEntity;
 import org.niord.model.vo.aton.AtonNodeVo;
 import org.niord.model.vo.aton.AtonTagVo;
 

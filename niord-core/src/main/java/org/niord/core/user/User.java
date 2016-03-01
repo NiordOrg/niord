@@ -13,10 +13,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.core.model;
+package org.niord.core.user;
 
 import org.apache.commons.lang.StringUtils;
 import org.keycloak.representations.AccessToken;
+import org.niord.core.model.VersionedEntity;
 
 import javax.persistence.*;
 

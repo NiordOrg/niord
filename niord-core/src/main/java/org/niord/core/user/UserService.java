@@ -1,8 +1,8 @@
-package org.niord.core.service;
+package org.niord.core.user;
 
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.representations.AccessToken;
-import org.niord.core.model.User;
+import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
 import javax.annotation.Resource;
