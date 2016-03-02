@@ -1,9 +1,8 @@
 package org.niord.core.aton;
 
-import org.niord.core.model.Extent;
+import com.vividsolutions.jts.geom.Geometry;
+import org.niord.core.util.GeoJsonUtils;
 import org.niord.model.PagedSearchParamsVo;
-
-import java.util.List;
 
 /**
  * AtoN search parameters
@@ -11,42 +10,39 @@ import java.util.List;
 public class AtonSearchParams extends PagedSearchParamsVo {
 
     String name;
-    List<Extent> mapExtents;
-    List<Extent> chartExtents;
+    Geometry extent;
+    String[] chartNumbers;
 
-    /** Getters **/
+    public void setExtent(double minLat, double minLon, double maxLat, double maxLon) {
+        extent = GeoJsonUtils.toJtsExtent(minLat, minLon, maxLat, maxLon);
+    }
+
+    /*************************/
+    /** Getters and Setters **/
+    /*************************/
+
 
     public String getName() {
         return name;
     }
 
-    public List<Extent> getMapExtents() {
-        return mapExtents;
-    }
-
-    public List<Extent> getChartExtents() {
-        return chartExtents;
-    }
-
-    /** Method-chaining setters **/
-
-    public AtonSearchParams name(String name) {
+    public void setName(String name) {
         this.name = name;
-        return this;
     }
 
-    public AtonSearchParams mapExtents(List<Extent> extents) {
-        this.mapExtents = extents;
-        return this;
+    public Geometry getExtent() {
+        return extent;
     }
 
-    public AtonSearchParams mapExtents(double minLat, double minLon, double maxLat, double maxLon) {
-        this.mapExtents = new Extent(minLat, minLon, maxLat, maxLon).normalize();
-        return this;
+    public void setExtent(Geometry extent) {
+        this.extent = extent;
     }
 
-    public AtonSearchParams chartExtents(List<Extent> chartExtents) {
-        this.chartExtents = chartExtents;
-        return this;
+    public String[] getChartNumbers() {
+        return chartNumbers;
+    }
+
+    public void setChartNumbers(String[] chartNumbers) {
+        this.chartNumbers = chartNumbers;
     }
 }

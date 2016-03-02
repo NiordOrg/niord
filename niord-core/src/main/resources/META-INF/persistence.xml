@@ -11,7 +11,7 @@
         <shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
 
         <properties>
-            <property name="hibernate.dialect" value="org.niord.core.mysql.MySQLSpatialDialect" />
+            <property name="hibernate.dialect" value="org.niord.core.db.MySQLSpatialDialect" />
             <!--property name="hibernate.dialect" value="org.hibernate.spatial.dialect.mysql.MySQL56InnoDBSpatialDialect" /-->
 
             <!--property name="javax.persistence.schema-generation.database.action" value="drop-and-create"/>

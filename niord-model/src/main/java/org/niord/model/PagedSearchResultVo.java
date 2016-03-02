@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 /**
  * Used for pagination of search results
  */
+@SuppressWarnings("unused")
 public class PagedSearchResultVo<T> implements IJsonSerializable {
 
     List<T> data = new ArrayList<>();
@@ -95,8 +96,12 @@ public class PagedSearchResultVo<T> implements IJsonSerializable {
         return result;
     }
 
-    public void updateSize() {
+    public PagedSearchResultVo<T> updateSize() {
         size = data.size();
+        if (total < size) {
+            total = size;
+        }
+        return this;
     }
 
     public List<T> getData() {

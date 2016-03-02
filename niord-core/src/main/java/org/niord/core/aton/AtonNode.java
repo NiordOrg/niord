@@ -15,8 +15,10 @@
  */
 package org.niord.core.aton;
 
+import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.model.BaseEntity;
+import org.niord.core.util.GeoJsonUtils;
 import org.niord.model.vo.aton.AtonNodeVo;
 import org.niord.model.vo.aton.AtonTagVo;
 
@@ -39,7 +41,9 @@ import java.util.stream.Collectors;
         @NamedQuery(name  = "AtonNode.deleteAll",
                 query = "delete from AtonNode"),
         @NamedQuery(name  = "AtonNode.findByTag",
-                query = "select n from AtonNode n inner join n.tags t where t.k = :key and t.v = :value")
+                query = "select n from AtonNode n inner join n.tags t where t.k = :key and t.v = :value"),
+        @NamedQuery(name  = "AtonNode.findByTagValues",
+                query = "select n from AtonNode n inner join n.tags t where t.k = :key and t.v in :values")
 })
 @SuppressWarnings("unused")
 public class AtonNode extends BaseEntity<Integer> {
@@ -53,12 +57,17 @@ public class AtonNode extends BaseEntity<Integer> {
     int changeset;
     Date timestamp;
 
+    @Column(columnDefinition = "GEOMETRY", nullable = false)
+    Geometry geometry;
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "atonNode", orphanRemoval = true)
     List<AtonTag> tags = new ArrayList<>();
+
 
     /** Constructor */
     public AtonNode() {
     }
+
 
     /** Constructor */
     public AtonNode(AtonNodeVo node) {
@@ -80,6 +89,7 @@ public class AtonNode extends BaseEntity<Integer> {
         }
     }
 
+
     /** Converts this entity to a value object */
     public AtonNodeVo toVo() {
         AtonNodeVo vo = new AtonNodeVo();
@@ -98,13 +108,16 @@ public class AtonNode extends BaseEntity<Integer> {
         return vo;
     }
 
+
     /** Ensure that the timestamp is defined */
     @PrePersist
     protected void onCreate() {
         if (timestamp == null) {
             timestamp = new Date();
         }
+        geometry = GeoJsonUtils.toJtsPoint(lat, lon);
     }
+
 
     /**
      * Returns the AtoN UID
@@ -114,6 +127,7 @@ public class AtonNode extends BaseEntity<Integer> {
     public String getAtonUid() {
         return getTagValue(AtonTag.CUST_TAG_ATON_UID);
     }
+
 
     /**
      * Returns the value of the tag with the given key. Returns null if the tag does not exist
@@ -125,6 +139,7 @@ public class AtonNode extends BaseEntity<Integer> {
         AtonTag atonUidTag = getTag(k);
         return atonUidTag == null ? null : atonUidTag.getV();
     }
+
 
     /**
      * Returns the tag with the given key. Returns null if the tag does not exist
@@ -140,6 +155,7 @@ public class AtonNode extends BaseEntity<Integer> {
                     .findFirst()
                     .orElse(null);
     }
+
 
     /**
      * Adds or updates the tag with the given key
@@ -275,5 +291,13 @@ public class AtonNode extends BaseEntity<Integer> {
 
     public void setTags(List<AtonTag> tags) {
         this.tags = tags;
+    }
+
+    public Geometry getGeometry() {
+        return geometry;
+    }
+
+    public void setGeometry(Geometry geometry) {
+        this.geometry = geometry;
     }
 }

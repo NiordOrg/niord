@@ -15,14 +15,12 @@
  */
 package org.niord.web.aton;
 
-import org.niord.core.aton.Aton;
+import org.apache.commons.io.IOUtils;
 import org.niord.core.aton.AtonSearchParams;
 import org.niord.core.aton.AtonService;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.util.GlobalMercator;
 import org.niord.core.util.GraphicsUtils;
-import org.apache.commons.io.IOUtils;
-import org.niord.model.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.imageio.ImageIO;
@@ -126,20 +124,20 @@ public class AtonTileRestService {
             double[] bounds = mercator.TileLatLonBounds(x, y, z);
 
             // Convert to mapExtents search parameters
-            AtonSearchParams param = new AtonSearchParams()
-                .mapExtents(-bounds[2], bounds[1], -bounds[0], bounds[3]);
+            AtonSearchParams param = new AtonSearchParams();
+            param.setExtent(-bounds[2], bounds[1], -bounds[0], bounds[3]);
 
             // Compute the atons of the tile extent
-            PagedSearchResultVo<Aton> atons = atonService.search(param);
+            java.util.List<double[]> atonLonLast = atonService.searchPositions(param);
 
             // If the search result is empty, return blank and cache the result
-            if (atons.getData().isEmpty()) {
+            if (atonLonLast.isEmpty()) {
                 blankTileCache.getCache().put(file.toString(), file.toString());
                 return streamBlankTile(expirationDate);
             }
 
             // Generate an image
-            BufferedImage image = generateAtonTile(z, bounds, mercator, atons.getData());
+            BufferedImage image = generateAtonTile(z, bounds, mercator, atonLonLast);
 
             // Write the image to the repository
             checkCreateParentDirs(file);
@@ -160,10 +158,10 @@ public class AtonTileRestService {
      * @param z the zoom level
      * @param bounds the tile bounds
      * @param mercator the mercator calculator
-     * @param atons the atons
+     * @param atonLonLats the aton positions
      * @return the resulting image
      */
-    private BufferedImage generateAtonTile(int z, double[] bounds, GlobalMercator mercator, java.util.List<Aton> atons) {
+    private BufferedImage generateAtonTile(int z, double[] bounds, GlobalMercator mercator, java.util.List<double[]> atonLonLats) {
 
         BufferedImage image = new BufferedImage(TILE_SIZE, TILE_SIZE, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2 = image.createGraphics();
@@ -171,9 +169,9 @@ public class AtonTileRestService {
 
         int xy0[] =  mercator.LatLonToPixels(-bounds[0], bounds[1], z);
 
-        atons.stream().forEach(aton -> {
+        atonLonLats.stream().forEach(lonLat -> {
 
-            int xy[] = mercator.LatLonToPixels(aton.getLat(), aton.getLon(), z);
+            int xy[] = mercator.LatLonToPixels(lonLat[1], lonLat[0], z);
             double px = xy[0] - xy0[0];
             double py = -(xy[1] - xy0[1]);
             double radius = (z < 6) ? 0.5 : 1.0;

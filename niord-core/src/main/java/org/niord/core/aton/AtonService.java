@@ -16,19 +16,22 @@
 package org.niord.core.aton;
 
 import org.apache.commons.lang.StringUtils;
-import org.niord.core.model.Extent;
+import org.niord.core.chart.Chart;
+import org.niord.core.db.CriteriaHelper;
+import org.niord.core.db.SpatialWithinPredicate;
 import org.niord.core.service.BaseService;
 import org.niord.model.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.annotation.PostConstruct;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
+import javax.persistence.Tuple;
+import javax.persistence.criteria.*;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Interface for handling AtoNs
@@ -54,13 +57,30 @@ public class AtonService extends BaseService {
      *
      * @param key   the tag key
      * @param value the tag value
-     * @return the AtoNs with the given tag key-value or null if not found
+     * @return the AtoNs with the given tag key-value
      */
     public List<AtonNode> findByTag(String key, String value) {
         return em
                 .createNamedQuery("AtonNode.findByTag", AtonNode.class)
                 .setParameter("key", key)
                 .setParameter("value", value)
+                .getResultList();
+    }
+
+
+    /**
+     * Returns the AtoNs with the given tag key and values
+     *
+     * @param key   the tag key
+     * @param values the tag values
+     * @return the AtoNs with the given tag key and values
+     */
+    public List<AtonNode> findByTagValues(String key, String... values) {
+        Set<String> valueSet = new HashSet<>(Arrays.asList(values));
+        return em
+                .createNamedQuery("AtonNode.findByTagValues", AtonNode.class)
+                .setParameter("key", key)
+                .setParameter("values", valueSet)
                 .getResultList();
     }
 
@@ -74,6 +94,16 @@ public class AtonService extends BaseService {
         return findByTag(AtonTag.CUST_TAG_ATON_UID, atonUid).stream()
                 .findFirst()
                 .orElse(null);
+    }
+
+
+    /**
+     * Returns the AtoNs with the given AtoN UIDs
+     * @param atonUids the AtoN UIDs
+     * @return the AtoNs with the given AtoN UIDs
+     */
+    public List<AtonNode> findByAtonUids(String... atonUids) {
+        return findByTagValues(AtonTag.CUST_TAG_ATON_UID, atonUids);
     }
 
 
@@ -113,111 +143,105 @@ public class AtonService extends BaseService {
     }
 
 
-
-
-    /*************************/
-    /** OLD Aton Model      **/
-    /*************************/
-
-
-    private List<Aton> atons = new ArrayList<>();
-
-    /** Reloads the list of AtoNs */
-    @PostConstruct
-    @Lock(LockType.WRITE)
-    void loadAtoNs() {
-        atons = getAll(Aton.class);
-    }
-
     /**
-     * Returns the AtoN with the given ID
-     * @param atonUid the AtoN ID
-     * @return the AtoN with the given ID
-     */
-    public Aton getAton(String atonUid) {
-        return atons.stream()
-                .filter(a -> a.getAtonUid().equals(atonUid))
-                .findFirst()
-                .orElse(null);
-    }
-
-
-    /**
-     * Returns the list of all AtoNs
-     * @return the list of all AtoNs
-     */
-    public List<Aton> getAllAtons() {
-        return atons;
-    }
-
-
-    /**
-     * Replaces the AtoN DB
-     * @param atons the new AtoNs
-     */
-    @Lock(LockType.WRITE)
-    public void replaceAtonsOld(List<Aton> atons) {
-
-        // Delete old AtoNs
-        int deleted = em.createNamedQuery("Aton.deleteAll").executeUpdate();
-        log.info("Deleted " + deleted + " AtoNs");
-        em.flush();
-
-        // Persist new list of AtoNs
-        long t0 = System.currentTimeMillis();
-        int x = 0;
-        for (Aton aton : atons) {
-            em.persist(aton);
-
-            if (x++ % 100 == 0) {
-                em.flush();
-            }
-        }
-        log.info("Persisted " + atons.size() + " AtoNs in " +
-                (System.currentTimeMillis() - t0) + " ms");
-
-        // Reload the AtoN list
-        loadAtoNs();
-    }
-
-
-    /**
-     * Computes the list of AtoNs within the given name or mapExtents.<br>
+     * Computes the list of AtoNs that matches the search parameters.<br>
      *
-     * @return the AtoNs within the given name or mapExtents
+     * @return the AtoNs within that matches the search parameters
      */
-    public PagedSearchResultVo<Aton> search(AtonSearchParams param) {
+    public PagedSearchResultVo<AtonNode> search(AtonSearchParams param) {
         try {
-            return PagedSearchResultVo.paginate(
-                    getAllAtons(),
-                    param.getPage(),
-                    param.getMaxSize(),
-                    a -> matchText(a, param.getName())
-                            && withinExtent(a, param.getMapExtents())
-                            && withinExtent(a, param.getChartExtents()),
-                    null
-            );
+            //"select count(a) from AtonNode a, Chart c where c.chartNumber in ('101') and within(a.geometry, c.geometry) = true";
+
+            CriteriaHelper<AtonNode> criteriaHelper = CriteriaHelper.initWithQuery(em, AtonNode.class);
+
+            Root<AtonNode> atonRoot = buildSearchCriteria(criteriaHelper, param);
+
+            // Cause the tags to be fetched along with the nodes
+            Fetch<AtonNode, AtonTag> fetchTags = atonRoot.fetch("tags", JoinType.LEFT);
+
+            criteriaHelper.getCriteriaQuery()
+                    .select(atonRoot)
+                    .where(criteriaHelper.where());
+
+            List<AtonNode> atons = em
+                    .createQuery(criteriaHelper.getCriteriaQuery())
+                    .setMaxResults(param.getMaxSize())
+                    .getResultList();
+
+            PagedSearchResultVo<AtonNode> result = new PagedSearchResultVo<>();
+            result.setData(atons);
+            result.updateSize();
+            return result;
 
         } catch (RuntimeException e) {
-            log.error("Error computing AtoNs within the extents");
+            log.error("Error searching for AtoNs with params " + param, e);
             return new PagedSearchResultVo<>();
         }
     }
 
 
-    /** Returns whether the AtoN matches the given text **/
-    boolean matchText(Aton aton, String txt) {
-        return StringUtils.isBlank(txt) ||
-                aton.getAtonUid().toLowerCase().contains(txt.toLowerCase()) ||
-                (aton.getName() != null && aton.getName().toLowerCase().contains(txt.toLowerCase()));
+    /**
+     * Computes the list of AtoN lon-lat positions that matches the search parameters.<br>
+     *
+     * @return the AtoN lon-lat positions
+     */
+    public List<double[]> searchPositions(AtonSearchParams param) {
+        try {
+            CriteriaHelper<Tuple> criteriaHelper = CriteriaHelper.initWithTupleQuery(em);
+
+            Root<AtonNode> atonRoot = buildSearchCriteria(criteriaHelper, param);
+
+            criteriaHelper.getCriteriaQuery()
+                    .multiselect(atonRoot.get("lon"), atonRoot.get("lat"))
+                    .distinct(true)
+                    .where(criteriaHelper.where());
+
+            return em
+                    .createQuery(criteriaHelper.getCriteriaQuery())
+                    .setMaxResults(param.getMaxSize())
+                    .getResultList()
+                    .stream()
+                    .map(t -> new double[] { (double)t.get(0), (double)t.get(1) })
+                    .collect(Collectors.toList());
+
+        } catch (RuntimeException e) {
+            log.error("Error searching for AtoNs positions with params " + param, e);
+            return Collections.emptyList();
+        }
     }
 
+    /**
+     * Computes the list of AtoNs that matches the search parameters.<br>
+     *
+     * @return the AtoNs within that matches the search parameters
+     */
+    public <T> Root<AtonNode> buildSearchCriteria(CriteriaHelper<T> criteriaHelper, AtonSearchParams param) {
 
-    /** Returns if the AtoN is contained in any of the given mapExtents */
-    boolean withinExtent(Aton aton, List<Extent> extents) {
-        return extents == null ||
-                extents.stream()
-                .anyMatch(e -> e.withinExtent(aton.getLat(), aton.getLon()));
+        CriteriaBuilder cb = criteriaHelper.getCriteriaBuilder();
+        CriteriaQuery<T> c = criteriaHelper.getCriteriaQuery();
+
+        Root<AtonNode> atonRoot = c.from(AtonNode.class);
+
+        //Fetch<AtonNode, AtonTag> fetchTags = atonRoot.fetch("tags", JoinType.LEFT);
+        if (StringUtils.isNotBlank(param.getName())) {
+            Join<AtonNode, AtonTag> tags = atonRoot.join("tags", JoinType.LEFT);
+            criteriaHelper
+                    .equals(tags.get("k"), AtonTag.CUST_TAG_ATON_UID)
+                    .like(tags.get("v"), param.getName());
+        }
+
+        if (param.getExtent() != null) {
+            criteriaHelper.add(new SpatialWithinPredicate(cb, atonRoot.get("geometry"), param.getExtent()));
+        }
+
+        if (param.getChartNumbers() != null && param.getChartNumbers().length > 0) {
+            Root<Chart> chartRoot = c.from(Chart.class);
+            criteriaHelper
+                    .add(new SpatialWithinPredicate(cb, atonRoot.get("geometry"), chartRoot.get("geometry")))
+                    .in(chartRoot.get("chartNumber"), Arrays.asList(param.getChartNumbers()));
+        }
+
+        return atonRoot;
     }
 
 }

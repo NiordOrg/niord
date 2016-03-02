@@ -13,37 +13,47 @@ angular.module('niord.atons')
         // TEST: Try use a couple of the icons from
         //       https://github.com/OpenSeaMap/online_chart
         var atonIcons = {
-            'FYRLST'        : { anchor: [0.5, 0.5],  icon : 'Lighthouse_Major.png' },
-            'SPEC m/top'    : { anchor: [0.4, 0.95], icon : 'Special_Purpose.png' },
-            'SPEC,med top'  : { anchor: [0.4, 0.95], icon : 'Special_Purpose.png' },
-            'SPEC u/top'    : { anchor: [0.4, 0.95], icon : 'Special_Purpose.png' },
-            'STAR m/top'    : { anchor: [0.4, 0.95], icon : 'Lateral_Green.png' },
-            'PORT m/top'    : { anchor: [0.4, 0.95], icon : 'Lateral_Red.png' },
-            'STAR u/top'    : { anchor: [0.4, 0.95], icon : 'Lateral_Green.png' },
-            'PORT u/top'    : { anchor: [0.4, 0.95], icon : 'Lateral_Red.png' },
-            'N-CAR m/top'   : { anchor: [0.4, 0.95], icon : 'Cardinal_North.png' },
-            'S-CAR m/top'   : { anchor: [0.4, 0.95], icon : 'Cardinal_South.png' },
-            'E-CAR m/top'   : { anchor: [0.4, 0.95], icon : 'Cardinal_East.png' },
-            'W-CAR m/top'   : { anchor: [0.4, 0.95], icon : 'Cardinal_West.png' },
-            'W-SAFE m/top'  : { anchor: [0.4, 0.95], icon : 'Lateral_SafeWater.png' },
-            'SAFE m/top'    : { anchor: [0.4, 0.95], icon : 'Lateral_SafeWater.png' },
-            'IS D m/top'    : { anchor: [0.4, 0.95], icon : 'Cardinal_Single.png' }
+            'light'         : { anchor: [0.5, 0.5],  icon : 'Lighthouse_Major.png' },
+            'light_major'   : { anchor: [0.5, 0.5],  icon : 'Lighthouse_Major.png' },
+            'light_minor'   : { anchor: [0.5, 0.5],  icon : 'Lighthouse_Major.png' },
+            'buoy_special_purpose'    : { anchor: [0.4, 0.95], icon : 'Special_Purpose.png' },
+            'beacon_special_purpose'    : { anchor: [0.4, 0.95], icon : 'Special_Purpose.png' },
+            'buoy_lateral'    : { anchor: [0.4, 0.95], icon : 'Lateral_Green.png' },
+            'beacon_lateral'    : { anchor: [0.4, 0.95], icon : 'Lateral_Green.png' },
+            'buoy_cardinal'   : { anchor: [0.4, 0.95], icon : 'Cardinal_North.png' },
+            'beacon_cardinal'   : { anchor: [0.4, 0.95], icon : 'Cardinal_North.png' },
+            'buoy_safe_water'  : { anchor: [0.4, 0.95], icon : 'Lateral_SafeWater.png' },
+            'beacon_safe_water'  : { anchor: [0.4, 0.95], icon : 'Lateral_SafeWater.png' },
+            'buoy_isolated_danger'    : { anchor: [0.4, 0.95], icon : 'Cardinal_Single.png' },
+            'beacon_isolated_danger'    : { anchor: [0.4, 0.95], icon : 'Cardinal_Single.png' }
         };
 
+
+        /** Returns the AtoN tag value for the give tag key **/
+        function atonTagValue(aton, key) {
+            if (aton.tag && aton.tag.length) {
+                for (var x = 0; x < aton.tag.length; x++) {
+                    if (aton.tag[x].k == key) {
+                        return aton.tag[x].v;
+                    }
+                }
+            }
+            return null;
+        }
 
         return {
 
             getAtonIconUrl: function(aton) {
-                var icon = atonIcons[aton.code];
+                var icon = atonIcons[atonTagValue(aton, 'seamark:type')];
                 if (icon) {
                     return '/img/aton/' + icon.icon;
                 }
-                return '/img/aton/aton' + aton.type + '.png';
+                return '/img/aton/aton1.png';
             },
 
             // Compute which icon to display for a given AtoN
             getAtonOLIcon: function(aton, zoom) {
-                var icon = atonIcons[aton.code];
+                var icon = atonIcons[atonTagValue(aton, 'seamark:type')];
                 if (icon) {
                     var scale = Math.min(1.0, Math.max(0.1, zoom / 50.0));
                     return new ol.style.Icon({
@@ -57,7 +67,7 @@ angular.module('niord.atons')
                     anchor: [0.5, 0.5],
                     scale: 0.08,
                     opacity: 1.0,
-                    src: '/img/aton/aton' + aton.type + '.png'
+                    src: '/img/aton/aton1.png'
                 })
             },
 

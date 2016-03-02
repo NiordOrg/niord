@@ -1,4 +1,4 @@
-package org.niord.core.mysql;
+package org.niord.core.db;
 
 /**
  * Bizarrely, using the proper MySQL56SpatialDialect class (or MySQL56InnoDBSpatialDialect) will cause an error.
@@ -110,7 +110,7 @@ public class MySQLSpatialDialect extends MySQLDialect implements SpatialDialect 
 
     @Override
     public String getDWithinSQL(String columnName) {
-        throw new UnsupportedOperationException( String.format( "Mysql doesn't support the Dwithin function" ) );
+        throw new UnsupportedOperationException("Mysql doesn't support the within function");
     }
 
     @Override
@@ -159,7 +159,7 @@ public class MySQLSpatialDialect extends MySQLDialect implements SpatialDialect 
  */
 class MySQLSpatialFunctions implements Iterable<Map.Entry<String, StandardSQLFunction>> {
 
-    private final Map<String, StandardSQLFunction> functionsToRegister = new HashMap<String, StandardSQLFunction>();
+    private final Map<String, StandardSQLFunction> functionsToRegister = new HashMap<>();
 
     MySQLSpatialFunctions(){
         functionsToRegister.put(

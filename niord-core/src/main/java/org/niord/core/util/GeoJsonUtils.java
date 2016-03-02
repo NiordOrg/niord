@@ -46,6 +46,37 @@ public class GeoJsonUtils {
 
 
     /**
+     * Converts a lat-lon position to the corresponding JTS geometry
+     * @param lat the latitude
+     * @param lon the longitude
+     * @return the corresponding JTS geometry
+     */
+    public static Geometry toJtsPoint(double lat, double lon) {
+        return factory.createPoint(toJtsCoords(new double[]{lon, lat}));
+    }
+
+
+    /**
+     * Converts two lat-lon corner positions to the corresponding JTS geometry
+     * @param minLat the minimum latitude
+     * @param minLon the minimum longitude
+     * @param maxLat the maximum latitude
+     * @param maxLon the maximum longitude
+     * @return the corresponding JTS geometry
+     */
+    public static Geometry toJtsExtent(double minLat, double minLon, double maxLat, double maxLon) {
+        double[][][] coords = {{
+                    {minLon, minLat},
+                    {minLon, maxLat},
+                    {maxLon, maxLat},
+                    {maxLon, minLat},
+                    {minLon, minLat}
+            }};
+        return toJtsPolygon(coords);
+    }
+
+
+    /**
      * Converts a GeoJson geometry to the corresponding JTS geometry
      * @param g the GeoJson to convert
      * @return the corresponding JTS geometry

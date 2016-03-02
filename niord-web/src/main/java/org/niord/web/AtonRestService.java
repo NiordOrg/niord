@@ -15,25 +15,21 @@
  */
 package org.niord.web;
 
-import org.niord.core.aton.Aton;
-import org.niord.core.aton.AtonSearchParams;
-import org.niord.core.aton.AtonService;
-import org.niord.model.PagedSearchResultVo;
-import org.niord.model.vo.AtonVo;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.aton.AtonNode;
+import org.niord.core.aton.AtonSearchParams;
+import org.niord.core.aton.AtonService;
+import org.niord.model.PagedSearchResultVo;
+import org.niord.model.vo.aton.AtonNodeVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.*;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * REST interface for accessing AtoNs.
@@ -54,31 +50,16 @@ public class AtonRestService {
     TestRestService testRestService;
 
 
-    /** Returns all AtoNs */
-    @GET
-    @Path("/all")
-    @Produces("application/json;charset=UTF-8")
-    @GZIP
-    @NoCache
-    public List<AtonVo> getAll() {
-        return atonService.getAllAtons().stream()
-                .map(Aton::toVo)
-                .collect(Collectors.toList());
-    }
-
     /** Returns the AtoN with the given comma-separated IDs */
     @GET
     @Path("/{atonUids}")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<AtonVo> getAtons(@PathParam("atonUids") String atonUids) {
-        Set<String> ids = new HashSet<>(Arrays.asList(atonUids.split(",")));
-        return atonService.getAllAtons().stream()
-                .filter(a -> ids.contains(a.getAtonUid()))
-                .map(Aton::toVo)
-                .collect(Collectors.toList());
+    public List<AtonNode> getAtons(@PathParam("atonUids") String atonUids) {
+        return atonService.findByAtonUids(atonUids.split(","));
     }
+
 
     /** Returns the AtoNs within the given bounds */
     @GET
@@ -87,18 +68,19 @@ public class AtonRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<AtonVo> searchAtons(
+    public List<AtonNodeVo> searchAtons(
             @QueryParam("name") @DefaultValue("") String name,
             @QueryParam("maxAtonNo") @DefaultValue("1000") int maxAtonNo
     ) {
         AtonSearchParams param = new AtonSearchParams();
-        param.name(name)
-                .maxSize(maxAtonNo);
+        param.setName(name);
+        param.maxSize(maxAtonNo);
 
         return atonService.search(param)
-                .map(Aton::toVo)
+                .map(AtonNode::toVo)
                 .getData();
     }
+
 
     /** Returns the AtoNs within the given bounds */
     @GET
@@ -107,7 +89,7 @@ public class AtonRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public PagedSearchResultVo<AtonVo> search(
+    public PagedSearchResultVo<AtonNodeVo> search(
             @QueryParam("name") String name,
             @QueryParam("chart") String[] charts,
             @QueryParam("minLat") @DefaultValue("-90") double minLat,
@@ -119,17 +101,12 @@ public class AtonRestService {
     ) {
 
         AtonSearchParams param = new AtonSearchParams();
-        param.mapExtents(minLat, minLon, maxLat, maxLon)
-                .name(name)
-                .maxSize(maxAtonNo);
+        param.setName(name);
+        param.setExtent(minLat, minLon, maxLat, maxLon);
+        param.setChartNumbers(charts);
+        param.maxSize(maxAtonNo);
 
-        // Convert charts to mapExtents
-        // TODO: Move to AtonService when the chart service has been implemented
-        if (charts != null && charts.length > 0) {
-            param.chartExtents(testRestService.getChartExtents(charts));
-        }
-
-        PagedSearchResultVo<Aton> atons = atonService.search(param);
+        PagedSearchResultVo<AtonNode> atons = atonService.search(param);
 
         // For efficiency reasons the client may not want any data returned if the
         // result is larger than maxAtonNo
@@ -137,6 +114,6 @@ public class AtonRestService {
             atons.setData(null);
         }
 
-        return atons.map(Aton::toVo);
+        return atons.map(AtonNode::toVo);
     }
 }
