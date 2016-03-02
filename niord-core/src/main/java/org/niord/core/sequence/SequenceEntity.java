@@ -15,10 +15,8 @@
  */
 package org.niord.core.sequence;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
@@ -26,12 +24,16 @@ import java.io.Serializable;
  * manage sequences.
  */
 @Entity
-@Table(name="sequence")
+@Table(name="Sequence",
+    indexes = {
+        @Index(name = "sequence_name", columnList="name", unique = true)
+})
 public class SequenceEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     String name;
+
     long lastValue;
 
     @Id

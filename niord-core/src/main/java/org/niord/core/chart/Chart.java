@@ -29,7 +29,9 @@ import java.util.Objects;
  * Represents a chart
  */
 @Entity
-@SuppressWarnings("unused")
+@Table(indexes = {
+        @Index(name = "chart_chart_number", columnList="chartNumber", unique = true)
+})
 @NamedQueries({
 
         @NamedQuery(name  = "Chart.searchCharts",
@@ -46,6 +48,7 @@ import java.util.Objects;
         @NamedQuery(name="Chart.findByChartNumbers",
                 query="SELECT chart FROM Chart chart where chart.chartNumber IN :chartNumbers")
 })
+@SuppressWarnings("unused")
 public class Chart extends VersionedEntity<Integer> {
 
     @NotNull

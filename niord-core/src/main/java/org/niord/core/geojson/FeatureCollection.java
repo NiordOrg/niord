@@ -28,6 +28,9 @@ import java.util.UUID;
  * Represents a GeoJson feature collection entity
  */
 @Entity
+@Table(indexes = {
+        @Index(name = "feature_collection_uid", columnList="uid", unique = true)
+})
 @NamedQueries({
         @NamedQuery(name  = "FeatureCollection.findByUid",
                 query = "select fc from FeatureCollection fc where fc.uid = :uid")

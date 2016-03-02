@@ -5,16 +5,7 @@ import org.niord.core.model.BaseEntity;
 import org.niord.model.vo.geojson.FeatureVo;
 import org.niord.core.util.GeoJsonUtils;
 
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToOne;
-import javax.persistence.MapKeyColumn;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.PrePersist;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -31,6 +22,9 @@ import java.util.UUID;
  * Create index using "alter table Feature add spatial index feature_index (geometry);"
  */
 @Entity
+@Table(indexes = {
+        @Index(name = "feature_uid", columnList="uid", unique = true)
+})
 @NamedQueries({
         @NamedQuery(name  = "Feature.findByUid",
                 query = "select f from Feature f where f.uid = :uid"),

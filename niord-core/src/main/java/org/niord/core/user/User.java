@@ -26,6 +26,9 @@ import javax.persistence.*;
  */
 @Entity
 @Cacheable
+@Table(indexes = {
+        @Index(name = "user_username", columnList="username", unique = true)
+})
 @NamedQueries({
         @NamedQuery(name="User.findByUsername",
                 query="SELECT u FROM User u where lower(u.username) = lower(:username)")

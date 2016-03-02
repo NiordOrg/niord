@@ -32,6 +32,9 @@ import java.util.Properties;
  * Used for storing batch data associated with a JSR-352 batch instance.
  */
 @Entity
+@Table(indexes = {
+        @Index(name = "batch_data_instance_id", columnList="instanceId", unique = false)
+})
 @NamedQueries({
         @NamedQuery(name  = "BatchData.findByInstanceId",
                 query = "select bd from BatchData bd where bd.instanceId = :instanceId"),

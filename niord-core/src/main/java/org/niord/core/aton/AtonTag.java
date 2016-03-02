@@ -19,7 +19,9 @@ import org.niord.core.model.BaseEntity;
 import org.niord.model.vo.aton.AtonTagVo;
 
 import javax.persistence.Entity;
+import javax.persistence.Index;
 import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 import java.util.Objects;
 
@@ -31,6 +33,10 @@ import java.util.Objects;
  * and sub-pages.
  */
 @Entity
+@Table(indexes = {
+        @Index(name = "aton_tag_k", columnList="k", unique = false),
+        @Index(name = "aton_tag_v", columnList="v", unique = false)
+})
 @SuppressWarnings("unused")
 public class AtonTag extends BaseEntity<Integer> {
 
