@@ -399,6 +399,22 @@ public class BatchService extends BaseService {
     }
 
 
+    /**
+     * Updates progress (0-100) for the given batch job.
+     *
+     * @param instanceIds the batch job id
+     * @param progress the progress
+     */
+    public void updateBatchJobProgress(Long instanceIds, Integer progress) {
+
+        BatchData job = findByInstanceId(instanceIds);
+        if (job != null) {
+            job.setProgress(progress);
+            saveEntity(job);
+        }
+    }
+
+
     /****************************/
     /** Managing batch jobs    **/
     /****************************/
@@ -500,6 +516,7 @@ public class BatchService extends BaseService {
                 i.setUser(data.getUser() != null ? data.getUser().getName() : null);
                 i.setJobName(data.getJobName());
                 i.setProperties(data.readProperties());
+                i.setProgress(data.getProgress());
             }
         }
 
@@ -642,7 +659,7 @@ public class BatchService extends BaseService {
         List<Path> files = new ArrayList<>();
         try {
             for (Path p : Files.newDirectoryStream(dir)) {
-                if (Files.isReadable(p) && !Files.isHidden(p)) {
+                if (Files.isReadable(p) && Files.isRegularFile(p) && !Files.isHidden(p)) {
                     files.add(p);
                 }
             }

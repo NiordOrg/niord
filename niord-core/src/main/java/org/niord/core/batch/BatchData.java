@@ -62,6 +62,7 @@ public class BatchData extends BaseEntity<Integer> {
     @Lob
     String properties;
 
+    Integer progress;
 
     /** Ensures that the created data is set */
     @PrePersist
@@ -201,5 +202,13 @@ public class BatchData extends BaseEntity<Integer> {
 
     public void setProperties(String properties) {
         this.properties = properties;
+    }
+
+    public Integer getProgress() {
+        return progress;
+    }
+
+    public void setProgress(Integer progress) {
+        this.progress = progress;
     }
 }

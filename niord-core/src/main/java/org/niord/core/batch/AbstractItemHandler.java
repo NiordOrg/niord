@@ -72,6 +72,15 @@ public abstract class AbstractItemHandler implements ItemReader, ItemProcessor, 
         return log;
     }
 
+    /**
+     * Updates progress (0-100) for the current batch job.
+     *
+     * @param progress the progress
+     */
+    protected void updateProgress(Integer progress) {
+        // Note to self: We don't bother updating the local "job" batch data
+        batchService.updateBatchJobProgress(jobContext.getInstanceId(), progress);
+    }
 
     /** {@inheritDoc} */
     @Override

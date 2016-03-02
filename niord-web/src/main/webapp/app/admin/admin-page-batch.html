@@ -47,7 +47,12 @@
                     <tr ng-repeat-end class="batch-execution-row">
                         <td></td>
                         <td>{{execution.startTime | formatDate}}</td>
-                        <td>{{execution.endTime | formatDate}}</td>
+                        <td>
+                            <span ng-if="execution.batchStatus != 'STARTED'">{{execution.endTime | formatDate}}</span>
+                            <span ng-if="execution.batchStatus == 'STARTED' && execution.instance.progress">
+                                <uib-progressbar value="execution.instance.progress"></uib-progressbar>
+                            </span>
+                        </td>
                         <td>
                             <span class="label" ng-class="statusColor(execution)">
                                 {{execution.batchStatus | lowercase}}

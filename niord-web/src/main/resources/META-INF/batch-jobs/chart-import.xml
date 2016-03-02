@@ -1,4 +1,4 @@
-<job id="ChartImportJob" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
+<job id="chart-import" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
     <step id="setupStep" allow-start-if-complete="true" next="importChartsStep">
         <batchlet ref="jobStartBatchlet"/>
     </step>

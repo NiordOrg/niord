@@ -38,6 +38,7 @@ public class BatchInstanceVo implements IJsonSerializable {
     String user;
     String jobName;
     Properties properties;
+    Integer progress;
 
     /**
      * Sorts the executions with the most recent execution first and update execution flags
@@ -138,5 +139,13 @@ public class BatchInstanceVo implements IJsonSerializable {
 
     public void setProperties(Properties properties) {
         this.properties = properties;
+    }
+
+    public Integer getProgress() {
+        return progress;
+    }
+
+    public void setProgress(Integer progress) {
+        this.progress = progress;
     }
 }
