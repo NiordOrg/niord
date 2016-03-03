@@ -32,13 +32,10 @@ import java.util.Arrays;
  * The model represents a subset of the OSM model, please refer to:
  * https://github.com/oschrenk/osm/blob/master/osm-io/src/main/resources/OSMSchema.xsd
  * <p>
- * Example:
+ * XML Example:
  * <pre>
- *   &lt;osm version="0.6" generator="Niord"&gt;
  *     &lt;node id="672436827" lat="50.8070813" lon="-1.2841124" user="malcolmh" uid="128186" visible="true" version="11"
  *           changeset="9107813" timestamp="2011-08-23T21:22:36Z"&gt;
- *         &lt;bounds minlat='34.0662408634219' minlon='-118.736715316772' maxlat='34.0731374116421' maxlon='-118.73122215271'
- *            origin='Niord' /&gt;
  *         &lt;tag k="seamark:buoy_cardinal:category" v="north"/&gt;
  *         &lt;tag k="seamark:buoy_cardinal:colour" v="black;yellow"/&gt;
  *         &lt;tag k="seamark:buoy_cardinal:colour_pattern" v="horizontal"/&gt;
@@ -50,7 +47,33 @@ import java.util.Arrays;
  *         &lt;tag k="seamark:topmark:shape" v="2 cones up"/&gt;
  *         &lt;tag k="seamark:type" v="buoy_cardinal"/&gt;
  *     &lt;/node&gt;
- *   &lt;/osm&gt;
+ * </pre>
+ *
+ * For JSON, we pick a slightly mode compact format, where the tags are serialized as a Map:
+ * <pre>
+ * {
+ *  "id" : 672436827,
+ *  "lat" : 50.8070813,
+ *  "lon" : -1.2841124,
+ *  "user" : "malcolmh",
+ *  "uid" : 128186,
+ *  "visible" : true,
+ *  "version" : 11,
+ *  "changeset" : 9107813,
+ *  "timestamp" : 1314134556000,
+ *  "tags" : {
+ *    "seamark:buoy_cardinal:category" : "north",
+ *    "seamark:buoy_cardinal:colour" : "black;yellow",
+ *    "seamark:buoy_cardinal:colour_pattern" : "horizontal",
+ *    "seamark:buoy_cardinal:shape" : "pillar",
+ *    "seamark:light:character" : "VQ",
+ *    "seamark:light:colour" : "white",
+ *    "seamark:name" : "Calshot",
+ *    "seamark:topmark:colour" : "black",
+ *    "seamark:topmark:shape" : "2 cones up",
+ *    "seamark:type" : "buoy_cardinal"
+ *    }
+ *  }
  * </pre>
  */
 @XmlRootElement(name = "osm")
