@@ -12,9 +12,16 @@ public class AtonSearchParams extends PagedSearchParamsVo {
     String name;
     Geometry extent;
     String[] chartNumbers;
+    boolean emptyOnOverflow;
 
-    public void setExtent(double minLat, double minLon, double maxLat, double maxLon) {
-        extent = GeoJsonUtils.toJtsExtent(minLat, minLon, maxLat, maxLon);
+    public void setExtent(Double minLat, Double minLon, Double maxLat, Double maxLon) {
+        if (minLat != null || minLon != null || maxLat != null || maxLon != null) {
+            minLat = minLat != null ? minLat : -90.0;
+            minLon = minLon != null ? minLon : -180.0;
+            maxLat = maxLat != null ? maxLat : 90.0;
+            maxLon = maxLon != null ? maxLon : 180.0;
+            extent = GeoJsonUtils.toJtsExtent(minLat, minLon, maxLat, maxLon);
+        }
     }
 
     /*************************/
@@ -44,5 +51,13 @@ public class AtonSearchParams extends PagedSearchParamsVo {
 
     public void setChartNumbers(String[] chartNumbers) {
         this.chartNumbers = chartNumbers;
+    }
+
+    public boolean isEmptyOnOverflow() {
+        return emptyOnOverflow;
+    }
+
+    public void setEmptyOnOverflow(boolean emptyOnOverflow) {
+        this.emptyOnOverflow = emptyOnOverflow;
     }
 }

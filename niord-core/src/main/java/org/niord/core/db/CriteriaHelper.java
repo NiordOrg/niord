@@ -62,17 +62,6 @@ public class CriteriaHelper<T> {
     }
 
 
-    /** Returns the associated criteria builder */
-    public CriteriaBuilder getCriteriaBuilder() {
-        return cb;
-    }
-
-
-    /** Returns the associated criteria query */
-    public CriteriaQuery<T> getCriteriaQuery() {
-        return q;
-    }
-
     /**
      * Constructor
      *
@@ -84,6 +73,19 @@ public class CriteriaHelper<T> {
         this.q = q;
     }
 
+
+    /** Returns the associated criteria builder */
+    public CriteriaBuilder getCriteriaBuilder() {
+        return cb;
+    }
+
+
+    /** Returns the associated criteria query */
+    public CriteriaQuery<T> getCriteriaQuery() {
+        return q;
+    }
+
+
     /**
      * Adds a predicate to the list
      * @param predicate the predicate to add
@@ -92,6 +94,7 @@ public class CriteriaHelper<T> {
         where.add(predicate);
         return this;
     }
+
 
     /**
      * If value is defined, matches the attribute with the value

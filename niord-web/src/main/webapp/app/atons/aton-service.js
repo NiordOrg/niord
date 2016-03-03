@@ -79,7 +79,7 @@ angular.module('niord.atons')
                 return new ol.style.Text({
                     textAlign: 'center',
                     font: 'Arial',
-                    text: aton.atonUid,
+                    text: aton.tags['seamark_x:aton_uid'],
                     fill: new ol.style.Fill({color: 'red'}),
                     stroke: new ol.style.Stroke({color: 'white', width: 2.0}),
                     offsetX: 0,

@@ -185,10 +185,10 @@ angular.module('niord.atons')
 
                             scope.updateFeatureSelection = function (feature) {
                                 var aton = feature.get('aton');
-                                if (scope.selection.get(aton.atonUid)) {
-                                    scope.selection.remove(aton.atonUid);
+                                if (scope.selection.get(aton.tags['seamark_x:aton_uid'])) {
+                                    scope.selection.remove(aton.tags['seamark_x:aton_uid']);
                                 } else {
-                                    scope.selection.put(aton.atonUid, {
+                                    scope.selection.put(aton.tags['seamark_x:aton_uid'], {
                                         aton: angular.copy(aton),
                                         orig: aton
                                     });
@@ -340,8 +340,8 @@ angular.module('niord.atons')
                                 var html = '';
                                 angular.forEach(atons, function (aton) {
                                     html +=
-                                        '<div><strong>' + aton.atonUid + '</strong></div>' +
-                                        '<div><small>' + aton.name + '</small></div>';
+                                        '<div><strong>' + aton.tags['seamark_x:aton_uid'] + '</strong></div>' +
+                                        '<div><small>' + aton.tags['seamark:name'] + '</small></div>';
                                 });
 
                                 // Update the tooltip

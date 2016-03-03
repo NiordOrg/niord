@@ -43,7 +43,9 @@ import java.util.stream.Collectors;
         @NamedQuery(name  = "AtonNode.findByTag",
                 query = "select n from AtonNode n inner join n.tags t where t.k = :key and t.v = :value"),
         @NamedQuery(name  = "AtonNode.findByTagValues",
-                query = "select n from AtonNode n inner join n.tags t where t.k = :key and t.v in :values")
+                query = "select n from AtonNode n inner join n.tags t where t.k = :key and t.v in :values"),
+        @NamedQuery(name  = "AtonNode.findByIds",
+                query = "select distinct n from AtonNode n left join fetch n.tags t where n.id in :ids")
 })
 @SuppressWarnings("unused")
 public class AtonNode extends BaseEntity<Integer> {

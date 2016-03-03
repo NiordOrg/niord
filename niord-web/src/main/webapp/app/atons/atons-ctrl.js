@@ -248,7 +248,7 @@ angular.module('niord.atons')
 
             /** Returns if the given AtoN is selected or not **/
             $scope.isSelected = function (aton) {
-                return $scope.selection.get(aton.atonUid) !== undefined;
+                return $scope.selection.get(aton.tags['seamark_x:aton_uid']) !== undefined;
             };
 
 
@@ -263,7 +263,7 @@ angular.module('niord.atons')
                 angular.forEach($scope.atons, function (aton) {
                     if (!$scope.isSelected(aton)) {
                         // NB: We add a copy that can be modified on the selection page
-                        $scope.selection.put(aton.atonUid, {
+                        $scope.selection.put(aton.tags['seamark_x:aton_uid'], {
                             aton: angular.copy(aton),
                             orig: aton
                         });
@@ -324,7 +324,7 @@ angular.module('niord.atons')
                         return $scope.isSelected(aton);
                     });
                     angular.forEach(feature.properties.atons, function (aton) {
-                        featureAtonUids[aton.atonUid] = true;
+                        featureAtonUids[aton.tags['seamark_x:aton_uid']] = true;
                     });
                 });
 
@@ -374,7 +374,7 @@ angular.module('niord.atons')
             /** Deletes the given feature from the FeatureCollection **/
             $scope.deleteFeature = function (feature) {
                 angular.forEach(feature.properties.atons, function (aton) {
-                    $scope.selection.remove(aton.atonUid);
+                    $scope.selection.remove(aton.tags['seamark_x:aton_uid']);
                 });
             };
 

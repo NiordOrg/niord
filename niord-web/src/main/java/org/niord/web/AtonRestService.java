@@ -92,10 +92,10 @@ public class AtonRestService {
     public PagedSearchResultVo<AtonNodeVo> search(
             @QueryParam("name") String name,
             @QueryParam("chart") String[] charts,
-            @QueryParam("minLat") @DefaultValue("-90") double minLat,
-            @QueryParam("minLon") @DefaultValue("-180") double minLon,
-            @QueryParam("maxLat") @DefaultValue("90") double maxLat,
-            @QueryParam("maxLon") @DefaultValue("180") double maxLon,
+            @QueryParam("minLat") Double minLat,
+            @QueryParam("minLon") Double minLon,
+            @QueryParam("maxLat") Double maxLat,
+            @QueryParam("maxLon") Double maxLon,
             @QueryParam("maxAtonNo") Integer maxAtonNo,
             @QueryParam("emptyOnOverflow") @DefaultValue("false") boolean emptyOnOverflow
     ) {
@@ -105,14 +105,9 @@ public class AtonRestService {
         param.setExtent(minLat, minLon, maxLat, maxLon);
         param.setChartNumbers(charts);
         param.maxSize(maxAtonNo);
+        param.setEmptyOnOverflow(emptyOnOverflow);
 
         PagedSearchResultVo<AtonNode> atons = atonService.search(param);
-
-        // For efficiency reasons the client may not want any data returned if the
-        // result is larger than maxAtonNo
-        if (maxAtonNo != null && atons.getTotal() > maxAtonNo) {
-            atons.setData(null);
-        }
 
         return atons.map(AtonNode::toVo);
     }

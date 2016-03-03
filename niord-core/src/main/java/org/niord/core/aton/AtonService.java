@@ -152,23 +152,42 @@ public class AtonService extends BaseService {
         try {
             //"select count(a) from AtonNode a, Chart c where c.chartNumber in ('101') and within(a.geometry, c.geometry) = true";
 
-            CriteriaHelper<AtonNode> criteriaHelper = CriteriaHelper.initWithQuery(em, AtonNode.class);
+            PagedSearchResultVo<AtonNode> result = new PagedSearchResultVo<>();
+
+            // First fetch the ID's of the of all matching AtoNs
+            CriteriaHelper<Tuple> criteriaHelper = CriteriaHelper.initWithTupleQuery(em);
 
             Root<AtonNode> atonRoot = buildSearchCriteria(criteriaHelper, param);
 
-            // Cause the tags to be fetched along with the nodes
-            Fetch<AtonNode, AtonTag> fetchTags = atonRoot.fetch("tags", JoinType.LEFT);
-
             criteriaHelper.getCriteriaQuery()
-                    .select(atonRoot)
+                    .multiselect(atonRoot.get("id"))
+                    .distinct(true)
                     .where(criteriaHelper.where());
 
-            List<AtonNode> atons = em
+            List<Integer> atonIds = em
                     .createQuery(criteriaHelper.getCriteriaQuery())
-                    .setMaxResults(param.getMaxSize())
+                    .getResultList()
+                    .stream()
+                    .map(t -> (Integer)t.get(0))
+                    .collect(Collectors.toList());
+
+            result.setTotal(atonIds.size());
+
+            // For efficiency reasons the callee may not want any data returned if the
+            // result is larger than maxAtonNo
+            if (param.isEmptyOnOverflow() && param.getMaxSize() < atonIds.size()) {
+                return result;
+            }
+
+            // Get the ID's of the sub-list to fetch
+            atonIds = atonIds.subList(0, Math.min(atonIds.size(), param.getMaxSize()));
+
+            // TODO: When cache is implemented, look up AtoNs via cache
+
+            List<AtonNode> atons = em.createNamedQuery("AtonNode.findByIds", AtonNode.class)
+                    .setParameter("ids", atonIds)
                     .getResultList();
 
-            PagedSearchResultVo<AtonNode> result = new PagedSearchResultVo<>();
             result.setData(atons);
             result.updateSize();
             return result;
