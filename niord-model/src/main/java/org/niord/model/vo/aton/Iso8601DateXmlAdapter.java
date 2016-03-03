@@ -16,6 +16,7 @@
 package org.niord.model.vo.aton;
 
 import javax.xml.bind.annotation.adapters.XmlAdapter;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
@@ -39,7 +40,11 @@ public class Iso8601DateXmlAdapter extends XmlAdapter<String, Date> {
             return null;
         }
 
-        return format.format(d);
+        try {
+            return format.format(d);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override
@@ -48,7 +53,11 @@ public class Iso8601DateXmlAdapter extends XmlAdapter<String, Date> {
             return null;
         }
 
-        return format.parse(d);
+        try {
+            return format.parse(d);
+        } catch (ParseException e) {
+            return null;
+        }
     }
 
 }

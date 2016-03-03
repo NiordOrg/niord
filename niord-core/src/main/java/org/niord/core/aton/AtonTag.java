@@ -44,6 +44,7 @@ public class AtonTag extends BaseEntity<Integer> {
     public static final String CUST_TAG_ATON_UID            = "seamark_x:aton_uid";
     public static final String CUST_TAG_LIGHT_NUMBER        = "seamark_x:light_number";
     public static final String CUST_TAG_INT_LIGHT_NUMBER    = "seamark_x:int_light_number";
+    public static final String CUST_TAG_LOCALITY            = "seamark_x:locality";
 
     @NotNull
     String k;
