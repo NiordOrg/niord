@@ -15,6 +15,7 @@
  */
 package org.niord.model.vo.aton;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.lang.StringUtils;
@@ -92,9 +93,6 @@ public class AtonNodeVo implements IJsonSerializable {
     int version;
     int changeset;
     Date timestamp;
-
-    @JsonSerialize(using = AtonTagJsonSerialization.Serializer.class)
-    @JsonDeserialize(using = AtonTagJsonSerialization.Deserializer.class)
     private AtonTagVo[] tags;
 
     /**
@@ -236,6 +234,9 @@ public class AtonNodeVo implements IJsonSerializable {
         this.timestamp = timestamp;
     }
 
+    @JsonProperty("tags")
+    @JsonSerialize(using = AtonTagJsonSerialization.Serializer.class)
+    @JsonDeserialize(using = AtonTagJsonSerialization.Deserializer.class)
     @XmlElement(name = "tag")
     public AtonTagVo[] getTags() {
         return tags;

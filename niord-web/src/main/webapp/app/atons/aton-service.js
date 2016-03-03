@@ -32,7 +32,7 @@ angular.module('niord.atons')
         return {
 
             getAtonIconUrl: function(aton) {
-                var icon = atonIcons[aton.tag['seamark:type']];
+                var icon = atonIcons[aton.tags['seamark:type']];
                 if (icon) {
                     return '/img/aton/' + icon.icon;
                 }
@@ -41,7 +41,7 @@ angular.module('niord.atons')
 
             // Compute which icon to display for a given AtoN
             getAtonOLIcon: function(aton, zoom) {
-                var icon = atonIcons[aton.tag['seamark:type']];
+                var icon = atonIcons[aton.tags['seamark:type']];
                 if (icon) {
                     var scale = Math.min(1.0, Math.max(0.1, zoom / 50.0));
                     return new ol.style.Icon({
