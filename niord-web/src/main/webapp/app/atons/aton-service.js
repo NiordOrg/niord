@@ -29,22 +29,10 @@ angular.module('niord.atons')
         };
 
 
-        /** Returns the AtoN tag value for the give tag key **/
-        function atonTagValue(aton, key) {
-            if (aton.tag && aton.tag.length) {
-                for (var x = 0; x < aton.tag.length; x++) {
-                    if (aton.tag[x].k == key) {
-                        return aton.tag[x].v;
-                    }
-                }
-            }
-            return null;
-        }
-
         return {
 
             getAtonIconUrl: function(aton) {
-                var icon = atonIcons[atonTagValue(aton, 'seamark:type')];
+                var icon = atonIcons[aton.tag['seamark:type']];
                 if (icon) {
                     return '/img/aton/' + icon.icon;
                 }
@@ -53,7 +41,7 @@ angular.module('niord.atons')
 
             // Compute which icon to display for a given AtoN
             getAtonOLIcon: function(aton, zoom) {
-                var icon = atonIcons[atonTagValue(aton, 'seamark:type')];
+                var icon = atonIcons[aton.tag['seamark:type']];
                 if (icon) {
                     var scale = Math.min(1.0, Math.max(0.1, zoom / 50.0));
                     return new ol.style.Icon({

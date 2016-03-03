@@ -22,7 +22,7 @@ import java.util.Date;
 import java.util.TimeZone;
 
 /**
- * <code>DateXmlAdapter</code> is an {@link XmlAdapter} implementation that
+ * <code>Iso8601DateXmlAdapter</code> is an {@link XmlAdapter} implementation that
  * (un)marshals dates in the ISO-8601 format.
  */
 public class Iso8601DateXmlAdapter extends XmlAdapter<String, Date> {

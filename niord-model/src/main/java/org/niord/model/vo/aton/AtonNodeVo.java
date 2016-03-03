@@ -15,6 +15,8 @@
  */
 package org.niord.model.vo.aton;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.lang.StringUtils;
 import org.niord.model.IJsonSerializable;
 
@@ -34,7 +36,7 @@ import java.util.Date;
  * The model represents a subset of the OSM model, please refer to:
  * https://github.com/oschrenk/osm/blob/master/osm-io/src/main/resources/OSMSchema.xsd
  * <p>
- * Example:
+ * XML Example:
  * <pre>
  *     &lt;node id="672436827" lat="50.8070813" lon="-1.2841124" user="malcolmh" uid="128186" visible="true" version="11" 
  *           changeset="9107813" timestamp="2011-08-23T21:22:36Z"&gt;
@@ -50,6 +52,33 @@ import java.util.Date;
  *         &lt;tag k="seamark:type" v="buoy_cardinal"/&gt;
  *     &lt;/node&gt;
  * </pre>
+ *
+ * For JSON, we pick a slightly mode compact format, where the tags are serialized as a Map:
+ * <pre>
+ * {
+ *  "id" : 672436827,
+ *  "lat" : 50.8070813,
+ *  "lon" : -1.2841124,
+ *  "user" : "malcolmh",
+ *  "uid" : 128186,
+ *  "visible" : true,
+ *  "version" : 11,
+ *  "changeset" : 9107813,
+ *  "timestamp" : 1314134556000,
+ *  "tags" : {
+ *    "seamark:buoy_cardinal:category" : "north",
+ *    "seamark:buoy_cardinal:colour" : "black;yellow",
+ *    "seamark:buoy_cardinal:colour_pattern" : "horizontal",
+ *    "seamark:buoy_cardinal:shape" : "pillar",
+ *    "seamark:light:character" : "VQ",
+ *    "seamark:light:colour" : "white",
+ *    "seamark:name" : "Calshot",
+ *    "seamark:topmark:colour" : "black",
+ *    "seamark:topmark:shape" : "2 cones up",
+ *    "seamark:type" : "buoy_cardinal"
+ *    }
+ *  }
+ * </pre>
  */
 @XmlRootElement(name = "node")
 public class AtonNodeVo implements IJsonSerializable {
@@ -63,6 +92,9 @@ public class AtonNodeVo implements IJsonSerializable {
     int version;
     int changeset;
     Date timestamp;
+
+    @JsonSerialize(using = AtonTagJsonSerialization.Serializer.class)
+    @JsonDeserialize(using = AtonTagJsonSerialization.Deserializer.class)
     private AtonTagVo[] tags;
 
     /**
@@ -100,6 +132,7 @@ public class AtonNodeVo implements IJsonSerializable {
 
     /** {@inheritDoc} */
     @Override
+    @SuppressWarnings("all")
     public int hashCode() {
         int result;
         long temp;
