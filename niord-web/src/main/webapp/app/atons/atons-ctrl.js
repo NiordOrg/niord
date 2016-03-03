@@ -144,7 +144,7 @@ angular.module('niord.atons')
                     })
                 }
 
-                params += '&maxAtonNo=' + $scope.maxAtonNo;
+                params += '&maxAtonNo=' + $scope.maxAtonNo + '&emptyOnOverflow=true';
 
                 // Skip first '&'
                 return params.length > 0 ? params.substr(1) : '';
