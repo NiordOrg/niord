@@ -26,7 +26,7 @@ angular.module('niord.atons')
 
                     // Returns if the given AtoN is selected or not
                     scope.isSelected = function (aton) {
-                        return scope.selection.get(aton.tags['seamark_x:aton_uid']) !== undefined;
+                        return scope.selection.get(AtonService.getAtonUid(aton)) !== undefined;
                     };
 
                     // Toggle the selection state of the AtoN
@@ -42,7 +42,7 @@ angular.module('niord.atons')
                     scope.selectAton = function (aton) {
                         if (!scope.isSelected(aton)) {
                             // NB: We add a copy that can be modified on the selection page
-                            scope.selection.put(aton.tags['seamark_x:aton_uid'], {
+                            scope.selection.put(AtonService.getAtonUid(aton), {
                                 aton: angular.copy(aton),
                                 orig: aton
                             });
@@ -52,7 +52,7 @@ angular.module('niord.atons')
                     // De-selects the given AtoN
                     scope.unselectAton = function (aton) {
                         if (scope.isSelected(aton)) {
-                            scope.selection.remove(aton.tags['seamark_x:aton_uid']);
+                            scope.selection.remove(AtonService.getAtonUid(aton));
                         }
                     };
 
@@ -63,7 +63,7 @@ angular.module('niord.atons')
 
                     // Edits the attributes of the AtoN
                     scope.editAton = function (aton) {
-                        var atonCtx = scope.selection.get(scope.aton.tags['seamark_x:aton_uid']);
+                        var atonCtx = scope.selection.get(AtonService.getAtonUid(scope.aton));
                         if (atonCtx != null) {
                             $rootScope.$broadcast('edit-aton-details', atonCtx);
                         }
@@ -71,7 +71,7 @@ angular.module('niord.atons')
 
                     // Returns if the given attribute is changed compared with the original
                     scope.changed = function (attr) {
-                        var atonCtx = scope.selection.get(scope.aton.tags['seamark_x:aton_uid']);
+                        var atonCtx = scope.selection.get(AtonService.getAtonUid(scope.aton));
                         if (attr) {
                             return atonCtx != null && !angular.equals(atonCtx.orig[attr], atonCtx.aton[attr]);
                         }
@@ -81,13 +81,13 @@ angular.module('niord.atons')
 
                     // Returns if the icon has changed
                     scope.iconChanged = function () {
-                        var atonCtx = scope.selection.get(scope.aton.tags['seamark_x:aton_uid']);
+                        var atonCtx = scope.selection.get(AtonService.getAtonUid(scope.aton));
                         return atonCtx != null && atonCtx.orig.iconUrl != atonCtx.aton.iconUrl;
                     };
 
                     // Returns if the position has changed
                     scope.posChanged = function () {
-                        var atonCtx = scope.selection.get(scope.aton.tags['seamark_x:aton_uid']);
+                        var atonCtx = scope.selection.get(AtonService.getAtonUid(scope.aton));
                         return atonCtx != null && (
                             (atonCtx.orig.lat != scope.aton.lat) ||
                             (atonCtx.orig.lon != scope.aton.lon));

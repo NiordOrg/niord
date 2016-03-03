@@ -88,6 +88,10 @@ angular.module('niord.atons')
             },
 
 
+            getAtonUid: function(aton) {
+                return aton ? aton.tags['seamark_x:aton_uid'] : undefined;
+            },
+
             getAton: function(atonUid, success, error) {
                 $http.get('/rest/atons/' + encodeURI(atonUid))
                     .success(success)
