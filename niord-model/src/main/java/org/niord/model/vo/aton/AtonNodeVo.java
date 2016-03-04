@@ -24,6 +24,7 @@ import org.niord.model.IJsonSerializable;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.Arrays;
 import java.util.Date;
 
@@ -225,6 +226,7 @@ public class AtonNodeVo implements IJsonSerializable {
         this.changeset = changeset;
     }
 
+    @XmlJavaTypeAdapter(Iso8601DateXmlAdapter.class)
     @XmlAttribute
     public Date getTimestamp() {
         return timestamp;
