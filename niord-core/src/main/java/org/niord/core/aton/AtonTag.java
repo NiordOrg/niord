@@ -41,10 +41,10 @@ import java.util.Objects;
 public class AtonTag extends BaseEntity<Integer> {
 
     // Custom AtoN tags
-    public static final String CUST_TAG_ATON_UID            = "seamark_x:aton_uid";
-    public static final String CUST_TAG_LIGHT_NUMBER        = "seamark_x:light_number";
-    public static final String CUST_TAG_INT_LIGHT_NUMBER    = "seamark_x:int_light_number";
-    public static final String CUST_TAG_LOCALITY            = "seamark_x:locality";
+    public static final String TAG_ATON_UID         = "seamark:ref";
+    public static final String TAG_LIGHT_NUMBER     = "seamark:light:ref";
+    public static final String TAG_INT_LIGHT_NUMBER = "seamark:light:int_ref";
+    public static final String TAG_LOCALITY         = "seamark:locality";
 
     @NotNull
     String k;

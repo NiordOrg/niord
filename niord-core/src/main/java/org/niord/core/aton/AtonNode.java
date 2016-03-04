@@ -127,7 +127,7 @@ public class AtonNode extends BaseEntity<Integer> {
      */
     @Transient
     public String getAtonUid() {
-        return getTagValue(AtonTag.CUST_TAG_ATON_UID);
+        return getTagValue(AtonTag.TAG_ATON_UID);
     }
 
 
@@ -166,7 +166,7 @@ public class AtonNode extends BaseEntity<Integer> {
      * @return the updated tag
      */
     public AtonTag updateTag(String k, String v) {
-        if (v == null) {
+        if (StringUtils.isBlank(v)) {
             return null;
         }
 

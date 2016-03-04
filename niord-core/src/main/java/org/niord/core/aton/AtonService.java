@@ -91,7 +91,7 @@ public class AtonService extends BaseService {
      * @return the AtoNs with the given AtoN UID or null if not found
      */
     public AtonNode findByAtonUid(String atonUid) {
-        return findByTag(AtonTag.CUST_TAG_ATON_UID, atonUid).stream()
+        return findByTag(AtonTag.TAG_ATON_UID, atonUid).stream()
                 .findFirst()
                 .orElse(null);
     }
@@ -103,7 +103,7 @@ public class AtonService extends BaseService {
      * @return the AtoNs with the given AtoN UIDs
      */
     public List<AtonNode> findByAtonUids(String... atonUids) {
-        return findByTagValues(AtonTag.CUST_TAG_ATON_UID, atonUids);
+        return findByTagValues(AtonTag.TAG_ATON_UID, atonUids);
     }
 
 
@@ -132,7 +132,6 @@ public class AtonService extends BaseService {
             } else {
                 unchanged++;
             }
-            log.info("XX " + aton);
 
             if ((created + updated + unchanged) % 100 == 0) {
                 em.flush();
@@ -181,6 +180,9 @@ public class AtonService extends BaseService {
 
             // Get the ID's of the sub-list to fetch
             atonIds = atonIds.subList(0, Math.min(atonIds.size(), param.getMaxSize()));
+            if (atonIds.size() == 0) {
+                return result;
+            }
 
             // TODO: When cache is implemented, look up AtoNs via cache
 
@@ -245,7 +247,7 @@ public class AtonService extends BaseService {
         if (StringUtils.isNotBlank(param.getName())) {
             Join<AtonNode, AtonTag> tags = atonRoot.join("tags", JoinType.LEFT);
             criteriaHelper
-                    .equals(tags.get("k"), AtonTag.CUST_TAG_ATON_UID)
+                    .equals(tags.get("k"), AtonTag.TAG_ATON_UID)
                     .like(tags.get("v"), param.getName());
         }
 

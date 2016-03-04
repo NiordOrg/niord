@@ -185,10 +185,10 @@ angular.module('niord.atons')
 
                             scope.updateFeatureSelection = function (feature) {
                                 var aton = feature.get('aton');
-                                if (scope.selection.get(aton.tags['seamark_x:aton_uid'])) {
-                                    scope.selection.remove(aton.tags['seamark_x:aton_uid']);
+                                if (scope.selection.get(AtonService.getAtonUid(aton))) {
+                                    scope.selection.remove(AtonService.getAtonUid(aton));
                                 } else {
-                                    scope.selection.put(aton.tags['seamark_x:aton_uid'], {
+                                    scope.selection.put(AtonService.getAtonUid(aton), {
                                         aton: angular.copy(aton),
                                         orig: aton
                                     });
@@ -214,7 +214,7 @@ angular.module('niord.atons')
                                 condition: ol.events.condition.platformModifierKeyOnly
                             });
 
-                            dragBox.on('boxend', function(e) {
+                            dragBox.on('boxend', function() {
                                 var extent = dragBox.getGeometry().getExtent();
                                 atonVectorLayer.getSource().forEachFeatureIntersectingExtent(extent, scope.updateFeatureSelection);
                             });
@@ -340,7 +340,7 @@ angular.module('niord.atons')
                                 var html = '';
                                 angular.forEach(atons, function (aton) {
                                     html +=
-                                        '<div><strong>' + aton.tags['seamark_x:aton_uid'] + '</strong></div>' +
+                                        '<div><strong>' + AtonService.getAtonUid(aton) + '</strong></div>' +
                                         '<div><small>' + aton.tags['seamark:name'] + '</small></div>';
                                 });
 
