@@ -25,8 +25,7 @@ Country-specific implementations of the Niord system are easily created using a 
 Here additional code can be added and web resources (images, stylesheets, javascript files, etc) can be replaced with 
 custom versions.
 
-For an example, please refer to [niord-web-dk](https://github.com/NiordOrg/niord-dk/tree/master/niord-web-dk) 
-- a Danish implementation of Niord.
+For an example, please refer to [niord-dk](https://github.com/NiordOrg/niord-dk) - a Danish implementation of Niord.
 
 ## Tips and Tricks
 
@@ -35,7 +34,7 @@ For an example, please refer to [niord-web-dk](https://github.com/NiordOrg/niord
 * First, check out and open the parent niord project in IntelliJ.
 * In Run -> Edit configuration..., configure a new local JBoss server based on the [niord-appsrv](https://github.com/NiordOrg/niord-appsrv) project.
 * Deploy "niord-web:war exploded" to the server.
-* If working on a country-specific Niord implementation, e.g. [niord-web-dk](https://github.com/NiordOrg/niord-dk/tree/master/niord-web-dk), 
+* If working on a country-specific Niord implementation, e.g. [niord-dk](https://github.com/NiordOrg/niord-dk), 
   import this maven project via the "Maven Projects" tab. Deploy the imported project to Wildfly instead of "niord-web".
 * If you have only updated web resources, there is no need to re-deploy the web application. Use the "Update resources" function instead.
 

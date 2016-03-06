@@ -11,7 +11,7 @@
 
     <artifactId>niord-josm-seachart</artifactId>
     <packaging>jar</packaging>
-    <name>JOSM seachart library</name>
+    <name>Niord JOSM seachart library</name>
     <url>https://github.com/openstreetmap/josm-plugins</url>
 
     <properties>
