@@ -155,6 +155,7 @@
     </build>
 
     <modules>
+        <module>niord-josm-seachart</module>
         <module>niord-model</module>
         <module>niord-core</module>
         <module>niord-web</module>

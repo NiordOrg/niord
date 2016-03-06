@@ -482,6 +482,16 @@ angular.module('niord.atons')
 
             $scope.aton = angular.copy(atonCtx.aton);
 
+            AtonService.getAtonSvg($scope.aton)
+                .success(function (svg) {
+
+                    $('#aton-details-image').html(svg);
+
+                    //var base64svg = "data:image/svg+xml;charset=utf-8,"+btoa(svg);
+                    //console.log("SVG: " + base64svg);
+                    //$('#aton-details-image').attr('src', base64svg);
+                });
+
             // Returns if the given attribute is changed compared with the original
             $scope.changed = function (attr) {
                 if (attr) {

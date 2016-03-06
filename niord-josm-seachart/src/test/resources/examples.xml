@@ -1,0 +1,127 @@
+<icons>
+  <icon width="100" height="100" x="50" y="80" scale="0.25" file="red_pillar" format="PNG" >
+    <tag k="seamark:type" v="buoy_lateral" />
+    <tag k="seamark:buoy_lateral:shape" v="pillar" />
+    <tag k="seamark:buoy_lateral:colour" v="red" />
+    <tag k="seamark:topmark:colour" v="red" />
+    <tag k="seamark:topmark:shape" v="cylinder" />
+  </icon>
+  <icon width="100" height="100" scale="0.25" file="green_pillar" format="SVG" >
+    <tag k="seamark:type" v="buoy_lateral" />
+    <tag k="seamark:buoy_lateral:shape" v="pillar" />
+    <tag k="seamark:buoy_lateral:colour" v="green" />
+    <tag k="seamark:topmark:colour" v="green" />
+    <tag k="seamark:topmark:shape" v="cone, point up" />
+  </icon>
+  <icon width="100" height="100" scale="1.0" file="notice" format="PNG" >
+    <tag k="seamark:type" v="small_craft_facility" />
+    <tag k="seamark:small_craft_facility:category" v="fuel_station" />
+  </icon>
+  <icon width="100" height="100" scale="0.25" file="north_pillar" format="SVG">
+    <tag k="seamark:buoy_cardinal:category" v="north"/>
+    <tag k="seamark:buoy_cardinal:colour" v="black;yellow;red"/>
+    <tag k="seamark:buoy_cardinal:colour_pattern" v="vertical"/>
+    <tag k="seamark:buoy_cardinal:shape" v="pillar"/>
+    <tag k="seamark:light:character" v="VQ"/>
+    <tag k="seamark:light:colour" v="white"/>
+    <tag k="seamark:name" v="Calshot"/>
+    <tag k="seamark:topmark:colour" v="red"/>
+    <tag k="seamark:topmark:shape" v="2 cones up"/>
+    <tag k="seamark:type" v="buoy_cardinal"/>
+  </icon>
+  <icon width="600" height="600" scale="0.30" file="light_spodsbjerg" format="SVG">
+    <tag k="light:category" v="directional"/>
+    <tag k="light:character" v="occulting"/>
+    <tag k="light:elevation" v="32"/>
+    <tag k="lighthouse:colour" v="yellow"/>
+    <tag k="light:ref" v="C 1104"/>
+    <tag k="light:signal_period" v="5"/>
+    <tag k="light:signal_sequence" v="4+(1)"/>
+    <tag k="man_made" v="lighthouse"/>
+    <tag k="name:de" v="Leuchtturm Kegnæs"/>
+    <tag k="seamark" v="lighthouse"/>
+    <tag k="seamark:light:10:character" v="Oc"/>
+    <tag k="seamark:light:10:colour" v="red"/>
+    <tag k="seamark:light:10:height" v="32"/>
+    <tag k="seamark:light:10:period" v="5"/>
+    <tag k="seamark:light:10:radius" v="0.7"/>
+    <tag k="seamark:light:10:range" v="10"/>
+    <tag k="seamark:light:10:sector_end" v="102.5"/>
+    <tag k="seamark:light:10:sector_start" v="80"/>
+    <tag k="seamark:light:1:character" v="Oc"/>
+    <tag k="seamark:light:1:colour" v="red"/>
+    <tag k="seamark:light:1:height" v="32"/>
+    <tag k="seamark:light:1:period" v="5"/>
+    <tag k="seamark:light:1:radius" v="0.7"/>
+    <tag k="seamark:light:1:range" v="10"/>
+    <tag k="seamark:light:1:sector_end" v="266.5"/>
+    <tag k="seamark:light:1:sector_start" v="217"/>
+    <tag k="seamark:light:2:character" v="Oc"/>
+    <tag k="seamark:light:2:colour" v="green"/>
+    <tag k="seamark:light:2:height" v="32"/>
+    <tag k="seamark:light:2:period" v="5"/>
+    <tag k="seamark:light:2:radius" v="0.7"/>
+    <tag k="seamark:light:2:range" v="10"/>
+    <tag k="seamark:light:2:sector_end" v="273"/>
+    <tag k="seamark:light:2:sector_start" v="266.5"/>
+    <tag k="seamark:light:3:character" v="Oc"/>
+    <tag k="seamark:light:3:colour" v="white"/>
+    <tag k="seamark:light:3:height" v="32"/>
+    <tag k="seamark:light:3:period" v="5"/>
+    <tag k="seamark:light:3:radius" v="0.7"/>
+    <tag k="seamark:light:3:range" v="12"/>
+    <tag k="seamark:light:3:sector_end" v="289.5"/>
+    <tag k="seamark:light:3:sector_start" v="273"/>
+    <tag k="seamark:light:4:character" v="Oc"/>
+    <tag k="seamark:light:4:colour" v="red"/>
+    <tag k="seamark:light:4:height" v="32"/>
+    <tag k="seamark:light:4:period" v="5"/>
+    <tag k="seamark:light:4:radius" v="0.7"/>
+    <tag k="seamark:light:4:range" v="10"/>
+    <tag k="seamark:light:4:sector_end" v="337"/>
+    <tag k="seamark:light:4:sector_start" v="289.5"/>
+    <tag k="seamark:light:5:character" v="Oc"/>
+    <tag k="seamark:light:5:colour" v="green"/>
+    <tag k="seamark:light:5:height" v="32"/>
+    <tag k="seamark:light:5:period" v="5"/>
+    <tag k="seamark:light:5:radius" v="0.7"/>
+    <tag k="seamark:light:5:range" v="10"/>
+    <tag k="seamark:light:5:sector_end" v="26"/>
+    <tag k="seamark:light:5:sector_start" v="337"/>
+    <tag k="seamark:light:6:character" v="Oc"/>
+    <tag k="seamark:light:6:colour" v="white"/>
+    <tag k="seamark:light:6:height" v="32"/>
+    <tag k="seamark:light:6:period" v="5"/>
+    <tag k="seamark:light:6:radius" v="0.7"/>
+    <tag k="seamark:light:6:range" v="12"/>
+    <tag k="seamark:light:6:sector_end" v="44"/>
+    <tag k="seamark:light:6:sector_start" v="26"/>
+    <tag k="seamark:light:7:character" v="Oc"/>
+    <tag k="seamark:light:7:colour" v="red"/>
+    <tag k="seamark:light:7:height" v="32"/>
+    <tag k="seamark:light:7:period" v="5"/>
+    <tag k="seamark:light:7:radius" v="0.7"/>
+    <tag k="seamark:light:7:range" v="10"/>
+    <tag k="seamark:light:7:sector_end" v="50.5"/>
+    <tag k="seamark:light:7:sector_start" v="44"/>
+    <tag k="seamark:light:8:character" v="Oc"/>
+    <tag k="seamark:light:8:colour" v="green"/>
+    <tag k="seamark:light:8:height" v="32"/>
+    <tag k="seamark:light:8:period" v="5"/>
+    <tag k="seamark:light:8:radius" v="0.7"/>
+    <tag k="seamark:light:8:range" v="10"/>
+    <tag k="seamark:light:8:sector_end" v="75"/>
+    <tag k="seamark:light:8:sector_start" v="50.5"/>
+    <tag k="seamark:light:9:character" v="Oc"/>
+    <tag k="seamark:light:9:colour" v="white"/>
+    <tag k="seamark:light:9:height" v="32"/>
+    <tag k="seamark:light:9:period" v="5"/>
+    <tag k="seamark:light:9:radius" v="1.5"/>
+    <tag k="seamark:light:9:range" v="12"/>
+    <tag k="seamark:light:9:sector_end" v="80"/>
+    <tag k="seamark:light:9:sector_start" v="75"/>
+    <tag k="seamark:light:reference" v="C 1104"/>
+    <tag k="seamark:name" v="Kegnæs"/>
+    <tag k="seamark:type" v="landmark"/>  
+  </icon>
+</icons>

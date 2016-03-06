@@ -10,52 +10,56 @@ angular.module('niord.atons')
     .factory('AtonService', [ '$http', function($http) {
         'use strict';
 
-        // TEST: Try use a couple of the icons from
-        //       https://github.com/OpenSeaMap/online_chart
-        var atonIcons = {
-            'light'         : { anchor: [0.5, 0.5],  icon : 'Lighthouse_Major.png' },
-            'light_major'   : { anchor: [0.5, 0.5],  icon : 'Lighthouse_Major.png' },
-            'light_minor'   : { anchor: [0.5, 0.5],  icon : 'Lighthouse_Major.png' },
-            'buoy_special_purpose'    : { anchor: [0.4, 0.95], icon : 'Special_Purpose.png' },
-            'beacon_special_purpose'    : { anchor: [0.4, 0.95], icon : 'Special_Purpose.png' },
-            'buoy_lateral'    : { anchor: [0.4, 0.95], icon : 'Lateral_Green.png' },
-            'beacon_lateral'    : { anchor: [0.4, 0.95], icon : 'Lateral_Green.png' },
-            'buoy_cardinal'   : { anchor: [0.4, 0.95], icon : 'Cardinal_North.png' },
-            'beacon_cardinal'   : { anchor: [0.4, 0.95], icon : 'Cardinal_North.png' },
-            'buoy_safe_water'  : { anchor: [0.4, 0.95], icon : 'Lateral_SafeWater.png' },
-            'beacon_safe_water'  : { anchor: [0.4, 0.95], icon : 'Lateral_SafeWater.png' },
-            'buoy_isolated_danger'    : { anchor: [0.4, 0.95], icon : 'Cardinal_Single.png' },
-            'beacon_isolated_danger'    : { anchor: [0.4, 0.95], icon : 'Cardinal_Single.png' }
-        };
+        // Adds a the given AtoN tag as a parameter if well-defined
+        function addParam(url, aton, k) {
+            var v = aton.tags[k];
+            if (v && v.length > 0) {
+                if (url.length > 0) {
+                    url = url + '&'
+                }
+                url += encodeURIComponent(k) + '=' + encodeURIComponent(v);
+            }
+            return url;
+        }
 
+        // Constructs a URL for the overview AtoN icon
+        function computeAtonIconUrl(aton) {
+
+            var type = aton.tags['seamark:type'];
+            if (!type) {
+                return '/img/aton/aton.png';
+            }
+
+            var url = addParam('', aton, 'seamark:type');
+            url = addParam(url, aton, 'seamark:' + type + ':category');
+            url = addParam(url, aton, 'seamark:' + type + ':shape');
+            url = addParam(url, aton, 'seamark:' + type + ':colour');
+            url = addParam(url, aton, 'seamark:' + type + ':colour_pattern');
+            url = addParam(url, aton, 'seamark:topmark:shape');
+            url = addParam(url, aton, 'seamark:topmark:colour');
+            url = addParam(url, aton, 'seamark:light:character');
+            url = addParam(url, aton, 'seamark:light:colour');
+
+            return '/rest/aton-icon/overview?' + url;
+        }
 
         return {
 
+            // Constructs a URL for the overview AtoN icon
             getAtonIconUrl: function(aton) {
-                var icon = atonIcons[aton.tags['seamark:type']];
-                if (icon) {
-                    return '/img/aton/' + icon.icon;
-                }
-                return '/img/aton/aton1.png';
+                return computeAtonIconUrl(aton);
             },
+
 
             // Compute which icon to display for a given AtoN
             getAtonOLIcon: function(aton, zoom) {
-                var icon = atonIcons[aton.tags['seamark:type']];
-                if (icon) {
-                    var scale = Math.min(1.0, Math.max(0.1, zoom / 50.0));
-                    return new ol.style.Icon({
-                        anchor: icon.anchor,
-                        scale: scale,
-                        opacity: 1.0,
-                        src: '/img/aton/' + icon.icon
-                    })
-                }
+                var iconUrl = computeAtonIconUrl(aton);
+                var scale = Math.min(1.0, Math.max(0.7, zoom / 20.0));
                 return new ol.style.Icon({
-                    anchor: [0.5, 0.5],
-                    scale: 0.08,
+                    anchor: [ 0.33333333, 0.666666667 ],
+                    scale: scale,
                     opacity: 1.0,
-                    src: '/img/aton/aton1.png'
+                    src: iconUrl
                 })
             },
 
@@ -90,6 +94,11 @@ angular.module('niord.atons')
 
             getAtonUid: function(aton) {
                 return aton ? aton.tags['seamark:ref'] : undefined;
+            },
+
+
+            getAtonSvg: function(aton) {
+                return $http.post('/rest/aton-icon/svg/100', aton);
             },
 
 
