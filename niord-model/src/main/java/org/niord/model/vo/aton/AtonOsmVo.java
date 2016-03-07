@@ -34,6 +34,9 @@ import java.util.Arrays;
  * <p>
  * XML Example:
  * <pre>
+ *   &lt;osm version='0.6' generator='JOSM'&gt;
+ *     &lt;bounds minlat='34.0662408634219' minlon='-118.736715316772'
+ *                maxlat='34.0731374116421' maxlon='-118.73122215271' /&gt;
  *     &lt;node id="672436827" lat="50.8070813" lon="-1.2841124" user="malcolmh" uid="128186" visible="true" version="11"
  *           changeset="9107813" timestamp="2011-08-23T21:22:36Z"&gt;
  *         &lt;tag k="seamark:buoy_cardinal:category" v="north"/&gt;
@@ -47,6 +50,8 @@ import java.util.Arrays;
  *         &lt;tag k="seamark:topmark:shape" v="2 cones up"/&gt;
  *         &lt;tag k="seamark:type" v="buoy_cardinal"/&gt;
  *     &lt;/node&gt;
+ *     ...
+ *   &lt;/osm&gt;
  * </pre>
  *
  * For JSON, we pick a slightly mode compact format, where the tags are serialized as a Map:
