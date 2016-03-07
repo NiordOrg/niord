@@ -39,6 +39,10 @@ public class BatchAtonImportProcessor extends AbstractItemHandler {
         // Convert the item to an AtoN node
         AtonNode aton = toAtonNode(item);
 
+        if (aton == null) {
+            return null;
+        }
+
         if (aton.getAtonUid() == null) {
             getLog().warning("Skipping AtoN with no AtoN UID " + aton);
             return null;

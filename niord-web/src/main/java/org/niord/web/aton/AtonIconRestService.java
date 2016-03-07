@@ -80,7 +80,7 @@ public class AtonIconRestService {
                 size,       // height
                 size/2,     // x
                 size/2,     // y
-                0.2         // scale
+                0.4         // scale
         );
 
         log.info("Generated AtoN SVG in " + (System.currentTimeMillis() - t0) + " ms");
