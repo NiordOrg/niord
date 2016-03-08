@@ -27,11 +27,7 @@ import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import java.io.ByteArrayOutputStream;
@@ -62,12 +58,16 @@ public class AtonIconRestService {
 
 
     @POST
-    @javax.ws.rs.Path("/svg/{size}")
+    @javax.ws.rs.Path("/svg")
     @Consumes("application/json;charset=UTF-8")
     @Produces("image/svg+xml")
     @GZIP
     @NoCache
-    public Response createSvgForAton(@PathParam("size") int size, AtonNodeVo aton) throws Exception {
+    public Response createSvgForAton(
+            @QueryParam("width") @DefaultValue("100") int width,
+            @QueryParam("height") @DefaultValue("100") int height,
+            @QueryParam("scale") @DefaultValue("0.4") double scale,
+            AtonNodeVo aton) throws Exception {
 
         long t0 = System.currentTimeMillis();
 
@@ -76,11 +76,11 @@ public class AtonIconRestService {
                 aton,
                 "svg",
                 out,
-                size,       // width
-                size,       // height
-                size/2,     // x
-                size/2,     // y
-                0.4         // scale
+                width,       // width
+                height,      // height
+                width/2,     // x
+                height/2,    // y
+                scale        // scale
         );
 
         log.info("Generated AtoN SVG in " + (System.currentTimeMillis() - t0) + " ms");

@@ -98,7 +98,7 @@ angular.module('niord.atons')
 
 
             getAtonSvg: function(aton) {
-                return $http.post('/rest/aton-icon/svg/200', aton);
+                return $http.post('/rest/aton-icon/svg?width=400&height=200&scale=0.4', aton);
             },
 
 

@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.web;
+package org.niord.web.aton;
 
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -23,6 +23,7 @@ import org.niord.core.aton.AtonSearchParams;
 import org.niord.core.aton.AtonService;
 import org.niord.model.PagedSearchResultVo;
 import org.niord.model.vo.aton.AtonNodeVo;
+import org.niord.web.TestRestService;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
