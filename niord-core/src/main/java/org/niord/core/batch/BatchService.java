@@ -366,7 +366,7 @@ public class BatchService extends BaseService {
         return files == null
                 ? Collections.emptyList()
                 : Arrays.stream(files)
-                    .filter(f -> Files.isRegularFile(f.toPath()) && f.getName().endsWith("Log.txt"))
+                    .filter(f -> Files.isRegularFile(f.toPath()) && f.getName().matches(".+Log\\.txt(\\.\\d+)?"))
                     .map(File::getName)
                     .sorted()
                     .collect(Collectors.toList());
