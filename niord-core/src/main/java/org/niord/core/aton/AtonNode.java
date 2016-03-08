@@ -160,6 +160,18 @@ public class AtonNode extends BaseEntity<Integer> {
 
 
     /**
+     * Returns all tags matching the given key pattern
+     * @param keyPattern the regular expression
+     * @return the elements matching the pattern
+     */
+    public List<AtonTag> matchingTags(String keyPattern) {
+        return tags.stream()
+                .filter(t -> t.getK().matches(keyPattern))
+                .collect(Collectors.toList());
+    }
+
+
+    /**
      * Adds or updates the tag with the given key
      * @param k the key of the tag
      * @param v the value of the tag
@@ -179,6 +191,16 @@ public class AtonNode extends BaseEntity<Integer> {
             tag.setV(v);
         }
         return tag;
+    }
+
+
+    /**
+     * Removes all tags matching the given key pattern
+     * @param keyPattern the regular expression
+     * @return if any element was removed
+     */
+    public boolean removeTags(String keyPattern) {
+        return tags.removeIf(t -> t.getK().matches(keyPattern));
     }
 
 
@@ -205,7 +227,6 @@ public class AtonNode extends BaseEntity<Integer> {
      *
      * @param template the template to update with
      */
-    @Transient
     public void updateNode(AtonNode template) {
         this.lat = template.getLat();
         this.lon = template.getLon();

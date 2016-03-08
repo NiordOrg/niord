@@ -59,7 +59,7 @@ public class BatchAtonImportProcessor extends AbstractItemHandler {
         } else if (orig.hasChanged(aton)) {
             // Update original
             getLog().info("Updating AtoN " + orig.getId());
-            orig.updateNode(aton);
+            mergeAtonNodes(orig, aton);
             return orig;
         }
 
@@ -76,5 +76,22 @@ public class BatchAtonImportProcessor extends AbstractItemHandler {
     protected AtonNode toAtonNode(Object item) throws Exception {
         AtonNodeVo atonVo = (AtonNodeVo)item;
         return new AtonNode(atonVo);
+    }
+
+
+    /**
+     * Called when the newly parsed AtoN is an update to an existing AtoN.
+     * Merges the AtoN template into the original AtoN.
+     *
+     * Sub-classes can override to provide customized behaviour.
+     *
+     * @param original the original AtoN that should be updated
+     * @param aton the new AtoN template
+     */
+    protected void mergeAtonNodes(AtonNode original, AtonNode aton) {
+
+
+
+        original.updateNode(aton);
     }
 }
