@@ -15,7 +15,7 @@
                         <div style="font-weight: bold">{{batchType.name}}</div>
                         <div>
                             <small>{{batchType.instanceCount}} executions</small>
-                            <small class="pull-right">{{batchType.runningExecutions}} running</small>
+                            <small class="pull-right" ng-if="batchType.runningExecutions > 0">{{batchType.runningExecutions}} running</small>
                         </div>
                     </div>
                 </div>
@@ -40,8 +40,9 @@
                                href ng-click="download(execution.instance)">
                                 <img ng-src="/rest/batch/instance/{{execution.instance.instanceId}}/thumbnail.png" width="16" height="16">
                                 {{execution.instance.fileName}}
-                                <span class="glyphicon glyphicon-download-alt"></span>
                             </a>
+                            &nbsp;
+                            <a href ng-click="showLogFiles(execution.instance.instanceId)">logs...</a>
                         </td>
                     </tr>
                     <tr ng-repeat-end class="batch-execution-row">

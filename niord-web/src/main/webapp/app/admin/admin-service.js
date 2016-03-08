@@ -43,6 +43,15 @@ angular.module('niord.admin')
 
             getBatchDownloadTicket: function () {
                 return $http.get('/rest/batch/download-ticket');
+            },
+
+            getBatchLogFiles: function (instanceId) {
+                return $http.get('/rest/batch/instance/' + instanceId + '/logs');
+            },
+
+            getBatchLogFileContent: function (instanceId, logFileName, fromLineNo) {
+                var fromLine = fromLineNo ? '?fromLineNo=' + fromLineNo : '';
+                return $http.get('/rest/batch/instance/' + instanceId + '/logs/' + encodeURIComponent(logFileName) + fromLine);
             }
 
         };

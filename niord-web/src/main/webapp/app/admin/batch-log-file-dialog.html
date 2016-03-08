@@ -1,0 +1,26 @@
+
+<div>
+    <div class="modal-header" style="text-align: center">
+        <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
+        <h4>Batch Job Log Files</h4>
+    </div>
+
+    <div class="modal-body">
+
+        <form name="execute_form">
+
+            <div class="btn-group batch-log-files">
+                <label ng-repeat="f in files" class="btn btn-xs btn-default" ng-model="selection.file" uib-btn-radio="f">{{f}}</label>
+            </div>
+
+            <textarea class="batch-log-content" ng-model="fileContent" readonly="readonly"></textarea>
+
+            <div class="form-group">
+                <div style="margin-top: 24px">
+                    <button class="btn btn-sm" ng-click="$dismiss('aborted')">Close</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+

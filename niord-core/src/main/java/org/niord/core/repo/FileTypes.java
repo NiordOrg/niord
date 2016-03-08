@@ -2,7 +2,6 @@ package org.niord.core.repo;
 
 import org.apache.commons.io.FilenameUtils;
 
-import javax.activation.MimetypesFileTypeMap;
 import javax.annotation.PostConstruct;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
@@ -37,12 +36,13 @@ public class FileTypes {
     void init() {
         addConentType("application/msword", 			    "docx", 	"doc", "dot");
         addConentType("application/pdf", 			    	"pdf", 		"pdf");
-        addConentType("application/vnd.ms-excel",   		"xslx", 	"xsl", "xlt");
+        addConentType("application/vnd.ms-excel",   		"xlsx", 	"xls", "xlt");
         addConentType("application/vnd.ms-powerpoint", 	    "pptx", 	"ppt", "pot");
         addConentType("application/zip", 			    	"zip", 		"zip");
         addConentType("audio/mpeg", 			    		"mp3", 		"mp3");
         addConentType("image/bmp", 						    "bmp", 		"bmp");
         addConentType("image/gif", 					    	"gif", 		"gif");
+        addConentType("image/png", 					    	"png", 		"png");
         addConentType("image/jpeg", 			    		"jpeg",		"jpg", "jpeg");
         addConentType("image/tiff", 		    			"tiff", 	"tif", "tiff");
         addConentType("text/html", 		    				"html",		"html", "htm");
@@ -92,9 +92,12 @@ public class FileTypes {
      */
     public String getContentType(Path path) {
         try {
-            // For some reason unknown, this does not work
-            // String type = Files.probeContentType(path);
-            return new MimetypesFileTypeMap().getContentType(path.toFile());
+            // This is just patently ridiculous ... probing the file system for a content type on a Mac OS X
+            // still does not work properly :-(
+            // return Files.probeContentType(path);
+            // return new MimetypesFileTypeMap().getContentType(path.toFile());
+            String ext = FilenameUtils.getExtension(path.toString());
+            return fileExtensionLookup.get(ext).getMimeType();
         } catch (Exception e) {
             // Unknown type
             return null;

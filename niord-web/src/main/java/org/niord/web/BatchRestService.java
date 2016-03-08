@@ -15,6 +15,7 @@
  */
 package org.niord.web;
 
+import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.BatchService;
@@ -65,6 +66,7 @@ public class BatchRestService {
     @GET
     @Path("/job-names")
     @Produces("application/json;charset=UTF-8")
+    @GZIP
     @NoCache
     @PermitAll
     public List<String> getJobNames() {
@@ -124,6 +126,7 @@ public class BatchRestService {
     @GET
     @Path("/{jobName}/instances")
     @Produces("application/json;charset=UTF-8")
+    @GZIP
     @NoCache
     @RolesAllowed("admin")
     public PagedSearchResultVo<BatchInstanceVo> getJobInstances(
@@ -142,6 +145,7 @@ public class BatchRestService {
     @GET
     @Path("/status")
     @Produces("application/json;charset=UTF-8")
+    @GZIP
     @NoCache
     @RolesAllowed("admin")
     public BatchStatusVo getStatus() {
@@ -212,8 +216,9 @@ public class BatchRestService {
     @GET
     @Path("/instance/{instanceId}/thumbnail.png")
     @PermitAll
-    public Response getBatchDataFileThumbnail(@PathParam("instanceId") long instanceId,
-                                              @QueryParam("size") @DefaultValue("32") int size) throws IOException, URISyntaxException {
+    public Response getBatchDataFileThumbnail(
+            @PathParam("instanceId") long instanceId,
+            @QueryParam("size") @DefaultValue("32") int size) throws IOException, URISyntaxException {
 
         IconSize iconSize = IconSize.getIconSize(size);
         java.nio.file.Path f = batchService.getBatchJobDataFile(instanceId);
@@ -230,5 +235,42 @@ public class BatchRestService {
                 .expires(expirationDate)
                 .build();
     }
+
+    /**
+     * Returns the names of log files for the batch job with the given instance.
+     * @param instanceId the instance ID
+     */
+    @GET
+    @Path("/instance/{instanceId}/logs")
+    @GZIP
+    @NoCache
+    @RolesAllowed("admin")
+    public List<String> getBatchJobLogFiles(@PathParam("instanceId") long instanceId) throws IOException {
+
+        return batchService.getBatchJobLogFiles(instanceId);
+    }
+
+    /**
+     * Returns the contents of the batch job log file with the given name.
+     *
+     * @param instanceId the instance id
+     * @param logFileName the log file name
+     * @param fromLineNo if specified, only the subsequent lines are returned
+     * @return the contents of the log file
+     */
+    @GET
+    @Path("/instance/{instanceId}/logs/{logFileName}")
+    @Produces("text/plain")
+    @GZIP
+    @NoCache
+    @RolesAllowed("admin")
+    public String getBatchJobLogFileContent(
+            @PathParam("instanceId") long instanceId,
+            @PathParam("logFileName") String logFileName,
+            @QueryParam("fromLineNo") Integer fromLineNo) throws IOException {
+
+        return batchService.getBatchJobLogFile(instanceId, logFileName, fromLineNo);
+    }
+
 
 }

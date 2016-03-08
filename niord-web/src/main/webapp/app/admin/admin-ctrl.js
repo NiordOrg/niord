@@ -47,8 +47,8 @@ angular.module('niord.admin')
     /**
      * Batch Admin Controller
      */
-    .controller('BatchAdminCtrl', ['$scope', '$interval', '$routeParams', 'AdminService',
-        function ($scope, $interval, $routeParams, AdminService) {
+    .controller('BatchAdminCtrl', ['$scope', '$interval', '$routeParams', '$uibModal', 'AdminService',
+        function ($scope, $interval, $routeParams, $uibModal, AdminService) {
             'use strict';
 
             $scope.batchStatus = {
@@ -187,6 +187,56 @@ angular.module('niord.admin')
                             + '?ticket=' + ticket;
                         link.click();
                     });
+            };
+
+            // Open the logs dialo
+            $scope.showLogFiles = function (instanceId) {
+                $uibModal.open({
+                    controller: "BatchLogFileDialogCtrl",
+                    templateUrl: "/app/admin/batch-log-file-dialog.html",
+                    size: 'l',
+                    resolve: {
+                        instanceId: function () {
+                            return instanceId;
+                        }
+                    }
+                });
             }
 
+        }])
+
+    /**
+     * Dialog Controller for the Batch job log file dialog
+     */
+    .controller('BatchLogFileDialogCtrl', ['$scope', 'AdminService', 'instanceId',
+        function ($scope, AdminService, instanceId) {
+            'use strict';
+
+            $scope.instanceId = instanceId;
+            $scope.fileContent = '';
+            $scope.selection = { file: undefined };
+            $scope.files = [];
+
+            // Load the log files
+            AdminService.getBatchLogFiles($scope.instanceId)
+                .success(function (fileNames) {
+                    $scope.files = fileNames;
+                });
+
+            $scope.reloadLogFile = function () {
+                var file = $scope.selection.file;
+                if (file && file.length > 0) {
+                    AdminService.getBatchLogFileContent($scope.instanceId, file)
+                        .success(function (fileContent) {
+                            $scope.fileContent = fileContent;
+                        })
+                        .error(function (err) {
+                            $scope.fileContent = err;
+                        });
+                } else {
+                    $scope.fileContent = '';
+                }
+            };
+
+            $scope.$watch("selection.file", $scope.reloadLogFile, true);
         }]);

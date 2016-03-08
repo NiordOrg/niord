@@ -348,6 +348,58 @@ public class BatchService extends BaseService {
     }
 
 
+    /**
+     * Returns the list of log names in the batch job directory
+     * @param instanceId the instance id
+     * @return the list of log names in the batch job directory
+     */
+    public List<String> getBatchJobLogFiles(Long instanceId) throws IOException {
+
+        BatchData job = findByInstanceId(instanceId);
+        if (job == null) {
+            throw new IllegalArgumentException("Invalid batch instance ID " + instanceId);
+        }
+
+        Path path = computeBatchJobPath(job.computeBatchJobFolderPath());
+
+        File[] files = path.toFile().listFiles();
+        return files == null
+                ? Collections.emptyList()
+                : Arrays.stream(files)
+                    .filter(f -> Files.isRegularFile(f.toPath()) && f.getName().endsWith("Log.txt"))
+                    .map(File::getName)
+                    .sorted()
+                    .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Returns the contents of the log file with the given file name.
+     * If fromLineNo is specified, only the subsequent lines are returned.
+     *
+     * @param instanceId the instance id
+     * @param logFileName the log file name
+     * @param fromLineNo if specified, only the subsequent lines are returned
+     * @return the contents of the log file
+     */
+    public String getBatchJobLogFile(Long instanceId, String logFileName, Integer fromLineNo) throws IOException {
+
+        BatchData job = findByInstanceId(instanceId);
+        if (job == null) {
+            throw new IllegalArgumentException("Invalid batch instance ID " + instanceId);
+        }
+
+        Path path = computeBatchJobPath(job.computeBatchJobFolderPath().resolve(logFileName));
+        if (!Files.isRegularFile(path) || !Files.isReadable(path)) {
+            throw new IllegalArgumentException("Invalid batch log file " + logFileName);
+        }
+
+        int skipLineNo = fromLineNo == null ? 0 : fromLineNo;
+        return Files.lines(path)
+                .skip(skipLineNo)
+                .collect(Collectors.joining("\n"));
+    }
+
     /****************************/
     /** Utility methods        **/
     /****************************/

@@ -128,3 +128,21 @@ tr.batch-execution-row td div.progress {
     height: 8px;
 }
 
+.batch-log-content {
+    width: 100%;
+    height: 400px;
+    font-size: 10px;
+    font-family: "Courier New", serif;
+    color: black;
+}
+
+.batch-log-files {
+    width: 100%;
+    border: 1px solid lightgray;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.batch-log-files label {
+    font-size: 10px;
+}
