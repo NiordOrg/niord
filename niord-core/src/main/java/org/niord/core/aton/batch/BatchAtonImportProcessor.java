@@ -25,6 +25,8 @@ import javax.inject.Named;
 
 /**
  * Filters AtoNs that need to be a added or updated
+ *
+ * TODO: we should probably detach the original AtoN looked up in processItem()
  */
 @Named
 public class BatchAtonImportProcessor extends AbstractItemHandler {
@@ -90,8 +92,7 @@ public class BatchAtonImportProcessor extends AbstractItemHandler {
      */
     protected void mergeAtonNodes(AtonNode original, AtonNode aton) {
 
-
-
+        // Default behaviour - just update the original from the new AtoN
         original.updateNode(aton);
     }
 }
