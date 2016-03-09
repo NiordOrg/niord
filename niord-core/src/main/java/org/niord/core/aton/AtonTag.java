@@ -46,6 +46,8 @@ public class AtonTag extends BaseEntity<Integer> {
     public static final String TAG_INT_LIGHT_NUMBER = "seamark:light:int_ref";
     public static final String TAG_LOCALITY         = "seamark:locality";
     public static final String TAG_AIS_NUMBER       = "seamark:ais:ref";
+    public static final String TAG_RACON_NUMBER     = "seamark:racon:ref";
+    public static final String TAG_INT_RACON_NUMBER = "seamark:racon:int_ref";
 
     @NotNull
     String k;
