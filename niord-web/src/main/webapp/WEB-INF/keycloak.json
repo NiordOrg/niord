@@ -2,7 +2,7 @@
   "realm": "niord",
   "realm-public-key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqKqBs9MGhjtcO0PT6xfkyx40gQhC/VwoAhY0jTkX46eVJxVeJ+6EEJa4IVOEbITEwLQdQOydPq8cEHLdVjdhVqKoSkB2XXZIIS7H6ZAmB1vV25ahTsF5ws2Oe5Avtaphh2wxoYF5Cl/h0ijJOw0FvHrPvegHsQxpJaWQ0VgzUQeFKDvxwkBGDIuJoONHs8UnwhBzbeRAVsz5gTBrduYoiRmA23+gSwig5rrE3GfkLswK3upn1RXeyfh+DdYHhy/e+307nDeK0Sps6uCYUgdxytSDE1YbOngvwKIC7Y0dvEGHXQZhfvBh6EiwBn9zDcKWXSjRW4ZSqj0hjsbXoXSxBQIDAQAB",
   "bearer-only": true,
-  "auth-server-url": "http://localhost:8080/auth",
+  "auth-server-url": "/auth",
   "ssl-required": "external",
   "resource": "niord-rest",
   "use-resource-role-mappings": false
