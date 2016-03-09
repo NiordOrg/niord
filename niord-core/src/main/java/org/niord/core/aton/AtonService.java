@@ -23,14 +23,19 @@ import org.niord.core.service.BaseService;
 import org.niord.model.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
+import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.Tuple;
-import javax.persistence.criteria.*;
-import java.util.*;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Root;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -39,9 +44,7 @@ import java.util.stream.Collectors;
  * TODO: Make it a singleton and cache the list of AtoNs
  * or create a Lucene index with AtoNs
  */
-@Singleton
-@Startup
-@Lock(LockType.READ)
+@Stateless
 @SuppressWarnings("unused")
 public class AtonService extends BaseService {
 
@@ -111,7 +114,6 @@ public class AtonService extends BaseService {
      * Replaces the AtoN DB
      * @param atons the new AtoNs
      */
-    @Lock(LockType.WRITE)
     public void updateAtons(List<AtonNode> atons) {
 
         // Persist new list of AtoNs
