@@ -18,8 +18,8 @@ package org.niord.core.aton;
 import org.slf4j.Logger;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
+import javax.annotation.Resource;
+import javax.ejb.*;
 import javax.inject.Inject;
 import javax.xml.transform.Result;
 import javax.xml.transform.Source;
@@ -47,9 +47,21 @@ public class AtonDefaultsService {
     @Inject
     private Logger log;
 
+    @Resource
+    TimerService timerService;
+
+    /** Called upon application startup */
     @PostConstruct
     public void init() {
+        // In order not to stall webapp deployment, wait 3 seconds before initializing the defaults
+        timerService.createSingleActionTimer(3000, new TimerConfig());
+    }
 
+    /**
+     * Generates the AtoN defaults from the INT-1-preset.xml file
+     */
+    @Timeout
+    private void generateDefaults() {
         try {
             long t0 = System.currentTimeMillis();
             Source xsltSource = new StreamSource(getClass().getResourceAsStream("/aton/aton-osm-defaults.xslt"));
@@ -66,7 +78,6 @@ public class AtonDefaultsService {
         } catch (Exception e) {
             log.error("Failed creating AtoN defaults in " + e, e);
         }
-
     }
 
 }
