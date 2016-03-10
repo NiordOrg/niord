@@ -21,21 +21,23 @@
                         <td class="osm-pos" colspan="2">
                             <input latitude  type="text" ng-model="aton.lat" required
                                    ng-class="{'changed' : changed('lat')}"
+                                   ng-change="atonUpdated()"
                                    class="form-control form-control-inline input-sm" style="width: 100px">
                             <input longitude type="text" ng-model="aton.lon" required
+                                   ng-change="atonUpdated()"
                                    ng-class="{'changed' : changed('lon')}"
                                    class="form-control form-control-inline input-sm" style="width: 100px">
                         </td>
                     </tr>
-                    <tr ng-repeat="(k, v) in aton.tags">
+                    <tr ng-repeat="tag in tags">
                         <th class="osm-tag">
-                            <edit-tag-in-place value="k" aton="aton"></edit-tag-in-place>
+                            <edit-tag-in-place value="tag.k" aton="aton"></edit-tag-in-place>
                         </th>
                         <td class="osm-tag">
-                            <edit-tag-in-place value="v" for-key="k" aton="aton"></edit-tag-in-place>
+                            <edit-tag-in-place value="tag.v" for-key="tag.k" aton="aton"></edit-tag-in-place>
                         </td>
                         <td class="osm-tag-btns" nowrap>
-                            <a href ng-click="deleteAtonTag(k)">
+                            <a href ng-click="deleteAtonTag($index)">
                                 <span class="glyphicon glyphicon-trash"></span>
                             </a>
                         </td>

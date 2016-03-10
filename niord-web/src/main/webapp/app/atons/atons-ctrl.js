@@ -482,6 +482,7 @@ angular.module('niord.atons')
             'use strict';
 
             $scope.aton = angular.copy(atonCtx.aton);
+            $scope.tags = [];
             $scope.newTag = { k: '', v: '' };
 
             var loadTimer;
@@ -508,7 +509,38 @@ angular.module('niord.atons')
                 $scope.aton.iconUrl = AtonService.getAtonIconUrl($scope.aton);
                 loadTimer = $timeout($scope.updateSvgImage, 500);
             };
-            $scope.$watch("aton", $scope.timedUpdateSvgImage, true);
+
+
+            /** Called whenever the AtoN has been updated **/
+            $scope.atonUpdated = function () {
+
+                $scope.tags.length = 0;
+                angular.forEach($scope.aton.tags, function (v, k) {
+                    $scope.tags.push({ k: k, v: v });
+                });
+                // Sort by tag key
+                $scope.tags.sort(function(t1, t2){
+                    return ((t1.k < t2.k) ? -1 : ((t1.k > t2.k) ? 1 : 0));
+                });
+
+                // Update the SVG
+                $scope.timedUpdateSvgImage();
+            };
+            $scope.atonUpdated();
+
+
+            /** Called whenever the AtoN tags array has been updated **/
+            $scope.tagsUpdated = function () {
+
+                $scope.aton.tags = {};
+                angular.forEach($scope.tags, function (tag) {
+                    $scope.aton.tags[tag.k] = tag.v;
+                });
+
+                // Update the SVG
+                $scope.timedUpdateSvgImage();
+            };
+            $scope.$watch("tags", $scope.tagsUpdated, true);
 
 
             /** Destroy any pending SVG-update timers **/
@@ -520,11 +552,9 @@ angular.module('niord.atons')
             });
 
 
-            /** Deletes the AtoN tag with the given key */
-            $scope.deleteAtonTag = function (key) {
-                if ($scope.aton.tags[key]) {
-                    delete $scope.aton.tags[key];
-                }
+            /** Deletes the AtoN tag with the given index */
+            $scope.deleteAtonTag = function (index) {
+                $scope.tags.splice(index, 1);
             };
 
 
@@ -534,6 +564,7 @@ angular.module('niord.atons')
                 var v = $scope.newTag.v;
                 if (k.length > 0 && v.length) {
                     $scope.aton.tags[k] = v;
+                    $scope.atonUpdated();
                 }
                 $scope.newTag = { k: '', v: '' };
             };
@@ -552,6 +583,7 @@ angular.module('niord.atons')
             /** Revert all AtoN changes */
             $scope.revert = function () {
                 angular.copy(atonCtx.orig, $scope.aton);
+                $scope.atonUpdated();
                 $scope.atonDetailsForm.$setDirty();
             };
 
