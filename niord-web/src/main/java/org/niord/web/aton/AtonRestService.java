@@ -30,6 +30,7 @@ import javax.annotation.security.PermitAll;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.*;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -112,4 +113,51 @@ public class AtonRestService {
 
         return atons.map(AtonNode::toVo);
     }
+
+    /**
+     * Creates an auto-complete list for OSM tag keys, based on the current AtoN and key
+     * @param key the currently typed key
+     * @param aton the current AtoN
+     * @return the auto-complete list
+     */
+    @POST
+    @javax.ws.rs.Path("/auto-complete-key")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public List<String> autoCompleteKey(
+            @QueryParam("key") String key,
+            AtonNodeVo aton) throws Exception {
+
+        List<String> result = new ArrayList<>();
+        result.add("seamark:type");
+        result.add("seamark:light:category");
+        return result;
+    }
+
+    /**
+     * Creates an auto-complete list for OSM tag values, based on the current AtoN, key and value
+     * @param key the current key
+     * @param value the currently typed value
+     * @param aton the current AtoN
+     * @return the auto-complete list
+     */
+    @POST
+    @javax.ws.rs.Path("/auto-complete-value")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public List<String> autoCompleteValue(
+            @QueryParam("key") String key,
+            @QueryParam("value") String value,
+            AtonNodeVo aton) throws Exception {
+
+        List<String> result = new ArrayList<>();
+        result.add("light");
+        result.add("ged");
+        return result;
+    }
+
 }

@@ -86,7 +86,7 @@ div.map-extent span::first-letter {
 
 .aton-edit-btn {
     color: gray;
-    background: sotransparent;
+    background: transparent;
     border: 1px solid lightgray;
     position: absolute;
     bottom: 5px;
@@ -220,9 +220,68 @@ div.map-extent span::first-letter {
 
 div.aton-details-editor {
     font-size: 12px;
+    width: 100%;
+    max-height: 300px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    padding-right: 15px;
+    padding-bottom: 10px;
 }
 
-div.aton-details-editor table td, div.aton-details-editor table th {
-    padding-bottom: 5px;
-    padding-right: 5px;
+.aton-svg-image {
+    width: 100%;
+    height: 200px;
+    border: 1px solid #ddd;
+    background-color: #eee;
+    margin: 10px auto;
 }
+
+td.osm-pos, th.osm-pos {
+    padding: 10px 5px;
+    border-bottom: 1px solid lightgray
+}
+
+td.osm-tag, th.osm-tag {
+    font-size: 11px;
+    width: 50%;
+    padding: 5px;
+    border-left: 1px solid lightgray;
+    border-right: 1px solid lightgray;
+    border-bottom: 1px solid lightgray;
+}
+
+td.osm-tag-btns {
+    font-size: 11px;
+    width: 30px;
+    padding: 5px;
+    text-align: center;
+    white-space: nowrap;
+    border-left: 1px solid lightgray;
+    border-right: 1px solid lightgray;
+    border-bottom: 1px solid lightgray;
+}
+
+td.osm-tag-btns a {
+    color: darkgray;
+}
+
+.edit-tag-label {
+    width: 100%;
+    cursor: pointer;
+}
+
+.edit-tag-editor {
+    width: 80%;
+    white-space: nowrap;
+    display: none;
+}
+
+.edit-tag-editor input {
+    width: 100%;
+}
+
+.edit-tag-btn {
+    cursor: pointer;
+    margin-left: 5px;
+}
+

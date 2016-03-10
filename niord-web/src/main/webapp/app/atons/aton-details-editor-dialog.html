@@ -1,8 +1,8 @@
 
 <div>
-    <div class="modal-header" style="text-align: center">
+    <div class="modal-header" style="text-align: center; padding: 5px 15px">
         <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
-        <h4><img ng-src="{{aton.iconUrl}}" width="30"> &nbsp; Aid to Navigation</h4>
+        <span style="font-size: 14px"><img ng-src="{{aton.iconUrl}}" width="30" style="margin-top: -5px"> &nbsp; Aid to Navigation</span>
     </div>
 
     <div class="modal-body">
@@ -10,117 +10,47 @@
         <form name="atonDetailsForm">
 
             <div style="text-align: center">
-                <div id="aton-details-image" style="width: 100%; height: 200px; border: 1px solid #ddd; background-color: #eee; margin: 10px auto;"></div>
+                <div id="aton-details-image" class="aton-svg-image"></div>
             </div>
 
             <div class="form-controls aton-details-editor">
 
-                <table>
+                <table class="osm-tags">
                     <tr>
-                        <th>id</th>
-                        <td>{{aton.tags['seamark:ref']}}</td>
-                    </tr>
-                    <tr>
-                        <th>name</th>
-                        <td>{{aton.tags['seamark:name']}}</td>
-                    </tr>
-                    <tr>
-                        <th>description</th>
-                        <td>{{aton.tags['seamark:locality']}}</td>
-                    </tr>
-                    <tr>
-                        <th><label for="code">code</label></th>
-                        <td>
-                            <select id="code" class="form-control form-control-inline input-sm" style="width: 200px"
-                                    ng-class="{'changed' : changed('code')}"
-                                    ng-change="updateIconUrl()"
-                                    ng-model="aton.code">
-                                <option value="FYRLST">FYRLST</option>
-                                <option value="SPEC m/top">SPEC m/top</option>
-                                <option value="SPEC,med top">SPEC,med top</option>
-                                <option value="SPEC u/top">SPEC u/top</option>
-                                <option value="STAR m/top">STAR m/top</option>
-                                <option value="PORT m/top">PORT m/top</option>
-                                <option value="STAR u/top">STAR u/top</option>
-                                <option value="PORT u/top">PORT u/top</option>
-                                <option value="N-CAR m/top">N-CAR m/top</option>
-                                <option value="S-CAR m/top">S-CAR m/top</option>
-                                <option value="E-CAR m/top">E-CAR m/top</option>
-                                <option value="W-CAR m/top">W-CAR m/top</option>
-                                <option value="W-SAFE m/top">W-SAFE m/top</option>
-                                <option value="SAFE m/top">SAFE m/top</option>
-                                <option value="XXX">IS D m/top</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="color">color</label></th>
-                        <td>
-                            <select id="color" class="form-control form-control-inline input-sm" style="width: 200px"
-                                    ng-class="{'changed' : changed('color')}"
-                                    ng-change="clearBlank('color')"
-                                    ng-model="aton.color">
-                                <option></option>
-                                <option value="R">red</option>
-                                <option value="G">green</option>
-                                <option value="Y">yellow</option>
-                                <option value="RGR">red-green-red</option>
-                                <option value="BY">black-yellow</option>
-                                <option value="YB">yellow-black</option>
-                                <option value="BYB">black-yellow-black</option>
-                                <option value="YBY">yellow-black-yellow</option>
-                                <option value="BRB">black-red-black</option>
-                                <option value="RW">red-white</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="shape">shape</label></th>
-                        <td>
-                            <select id="shape" class="form-control form-control-inline input-sm" style="width: 200px"
-                                    ng-class="{'changed' : changed('shape')}"
-                                    ng-change="clearBlank('shape')"
-                                    ng-model="aton.shape">
-                                <option value=""></option>
-                                <option value="can">can</option>
-                                <option value="cone">cone</option>
-                                <option value="pillar">pillar</option>
-                                <option value="spar">spar</option>
-                                <option value="sphere">sphere</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="topmark">topmark</label></th>
-                        <td>
-                            <select id="topmark" class="form-control form-control-inline input-sm" style="width: 200px"
-                                    ng-class="{'changed' : changed('topmark')}"
-                                    ng-change="clearBlank('topmark')"
-                                    ng-model="aton.topmark">
-                                <option value=""></option>
-                                <option value="can">can</option>
-                                <option value="cone">cone</option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th><label for="lightChar">Light Char.</label></th>
-                        <td>
-                            <input id="lightChar" ng-model="aton.lightChar" type="text"
-                                   ng-class="{'changed' : changed('lightChar')}"
-                                   ng-change="clearBlank('lightChar')"
-                                   class="form-control form-control-inline input-sm" style="width: 200px">
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>position</th>
-                        <td>
+                        <th class="osm-pos">position</th>
+                        <td class="osm-pos" colspan="2">
                             <input latitude  type="text" ng-model="aton.lat" required
                                    ng-class="{'changed' : changed('lat')}"
                                    class="form-control form-control-inline input-sm" style="width: 100px">
                             <input longitude type="text" ng-model="aton.lon" required
                                    ng-class="{'changed' : changed('lon')}"
                                    class="form-control form-control-inline input-sm" style="width: 100px">
+                        </td>
+                    </tr>
+                    <tr ng-repeat="(k, v) in aton.tags">
+                        <th class="osm-tag">
+                            <edit-tag-in-place value="k" aton="aton"></edit-tag-in-place>
+                        </th>
+                        <td class="osm-tag">
+                            <edit-tag-in-place value="v" for-key="k" aton="aton"></edit-tag-in-place>
+                        </td>
+                        <td class="osm-tag-btns" nowrap>
+                            <a href ng-click="deleteAtonTag(k)">
+                                <span class="glyphicon glyphicon-trash"></span>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="osm-tag">
+                            <edit-tag-in-place value="newTag.k" aton="aton"></edit-tag-in-place>
+                        </th>
+                        <td class="osm-tag">
+                            <edit-tag-in-place value="newTag.v" for-key="newTag.k" aton="aton"></edit-tag-in-place>
+                        </td>
+                        <td class="osm-tag-btns" nowrap>
+                            <a href ng-click="addNewAtonTag()">
+                                <span class="glyphicon glyphicon-plus"></span>
+                            </a>
                         </td>
                     </tr>
                 </table>

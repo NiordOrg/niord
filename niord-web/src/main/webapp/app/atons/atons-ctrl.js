@@ -448,6 +448,7 @@ angular.module('niord.atons')
                     controller: "EditAtonDetailsDialogCtrl",
                     templateUrl: "/app/atons/aton-details-editor-dialog.html",
                     size: 'md',
+                    keyboard: false,
                     resolve: {
                         atonCtx: function () {
                             return atonCtx;
@@ -476,23 +477,69 @@ angular.module('niord.atons')
      * Important: Only the local AtoN instance is updated. The
      * AtoN is not persisted to the database.
      */
-    .controller('EditAtonDetailsDialogCtrl', ['$scope', '$rootScope', 'AtonService', 'atonCtx',
-        function ($scope, $rootScope, AtonService, atonCtx) {
+    .controller('EditAtonDetailsDialogCtrl', ['$scope', '$rootScope', '$timeout', 'AtonService', 'atonCtx',
+        function ($scope, $rootScope, $timeout, AtonService, atonCtx) {
             'use strict';
 
             $scope.aton = angular.copy(atonCtx.aton);
+            $scope.newTag = { k: '', v: '' };
 
-            AtonService.getAtonSvg($scope.aton)
-                .success(function (svg) {
+            var loadTimer;
 
-                    $('#aton-details-image').html(svg);
+            /** Loads the SVG icon for the current AtoN **/
+            $scope.updateSvgImage = function () {
+                loadTimer = undefined;
+                AtonService.getAtonSvg($scope.aton)
+                    .success(function (svg) {
+                        $('#aton-details-image').html(svg);
+                    });
+            };
+            $scope.updateSvgImage();
 
-                    //var base64svg = "data:image/svg+xml;charset=utf-8,"+btoa(svg);
-                    //console.log("SVG: " + base64svg);
-                    //$('#aton-details-image').attr('src', base64svg);
-                });
 
-            // Returns if the given attribute is changed compared with the original
+            /** Loads the SVG icon for the current AtoN via a timer **/
+            $scope.timedUpdateSvgImage = function () {
+                if (loadTimer) {
+                    $timeout.cancel(loadTimer);
+                }
+                if ($scope.atonDetailsForm) {
+                    $scope.atonDetailsForm.$setDirty();
+                }
+                $scope.aton.iconUrl = AtonService.getAtonIconUrl($scope.aton);
+                loadTimer = $timeout($scope.updateSvgImage, 500);
+            };
+            $scope.$watch("aton", $scope.timedUpdateSvgImage, true);
+
+
+            /** Destroy any pending SVG-update timers **/
+            $scope.$on('$destroy', function() {
+                if (angular.isDefined(loadTimer)) {
+                    $timeout.cancel(loadTimer);
+                    loadTimer = undefined;
+                }
+            });
+
+
+            /** Deletes the AtoN tag with the given key */
+            $scope.deleteAtonTag = function (key) {
+                if ($scope.aton.tags[key]) {
+                    delete $scope.aton.tags[key];
+                }
+            };
+
+
+            /** Adds the new AtoN tag to the AtoN */
+            $scope.addNewAtonTag = function () {
+                var k = $scope.newTag.k;
+                var v = $scope.newTag.v;
+                if (k.length > 0 && v.length) {
+                    $scope.aton.tags[k] = v;
+                }
+                $scope.newTag = { k: '', v: '' };
+            };
+
+
+            /** Returns if the given attribute is changed compared with the original */
             $scope.changed = function (attr) {
                 if (attr) {
                     return !angular.equals($scope.aton[attr], atonCtx.orig[attr]);
@@ -501,25 +548,15 @@ angular.module('niord.atons')
                 return !angular.equals($scope.aton, atonCtx.orig);
             };
 
-            // Deletes blank attributes
-            $scope.clearBlank = function (attr) {
-                if ($scope.aton[attr] === undefined || $scope.aton[attr] == "") {
-                    delete $scope.aton[attr];
-                }
-            };
 
-            // Updates the icon url
-            $scope.updateIconUrl = function () {
-                $scope.aton.iconUrl = AtonService.getAtonIconUrl($scope.aton);
-            };
-
-            // Revert all AtoN changes
+            /** Revert all AtoN changes */
             $scope.revert = function () {
                 angular.copy(atonCtx.orig, $scope.aton);
                 $scope.atonDetailsForm.$setDirty();
             };
 
-            // Closes the dialog and update the original AtoN
+
+            /** Closes the dialog and update the original AtoN */
             $scope.save = function () {
                 // Copy the changes to the original AtoN
                 angular.copy($scope.aton, atonCtx.aton);
@@ -530,3 +567,4 @@ angular.module('niord.atons')
                 $rootScope.$broadcast('aton-updated', $scope.aton);
             }
         }]);
+
