@@ -692,8 +692,8 @@ public class BatchService extends BaseService {
     /** Returns the named sub-folders **/
     private List<Path> getBatchJobSubFolders(String subFolderName) {
         List<Path> subFolders = new ArrayList<>();
-        try {
-            Files.newDirectoryStream(batchJobRoot).forEach(p -> {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(batchJobRoot)) {
+            stream.forEach(p -> {
                 Path executionFolder = p.resolve(subFolderName);
                 if (Files.isDirectory(executionFolder)) {
                     subFolders.add(executionFolder);
@@ -709,8 +709,8 @@ public class BatchService extends BaseService {
     /** Returns the list of regular files in the given directory **/
     private List<Path> getDirectoryFiles(Path dir) {
         List<Path> files = new ArrayList<>();
-        try {
-            for (Path p : Files.newDirectoryStream(dir)) {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
+            for (Path p : stream) {
                 if (Files.isReadable(p) && Files.isRegularFile(p) && !Files.isHidden(p)) {
                     files.add(p);
                 }
