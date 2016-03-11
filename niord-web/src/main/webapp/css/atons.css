@@ -236,6 +236,10 @@ div.aton-details-editor {
     margin: 10px auto;
 }
 
+table.osm-tags {
+    width: 100%;
+}
+
 td.osm-pos, th.osm-pos {
     padding: 10px 5px;
     border-bottom: 1px solid lightgray
@@ -244,7 +248,7 @@ td.osm-pos, th.osm-pos {
 td.osm-tag, th.osm-tag {
     font-size: 11px;
     width: 50%;
-    padding: 5px;
+    padding: 3px;
     border-left: 1px solid lightgray;
     border-right: 1px solid lightgray;
     border-bottom: 1px solid lightgray;

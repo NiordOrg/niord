@@ -83,7 +83,7 @@ public class AtonIconRestService {
                 scale        // scale
         );
 
-        log.info("Generated AtoN SVG in " + (System.currentTimeMillis() - t0) + " ms");
+        log.trace("Generated AtoN SVG in " + (System.currentTimeMillis() - t0) + " ms");
 
         return Response
                 .ok(out.toByteArray())
@@ -142,7 +142,7 @@ public class AtonIconRestService {
                         OVERVIEW_ICON_SCALE             // scale
                 );
 
-                log.info("Generated AtoN PNG " + path + " in " + (System.currentTimeMillis() - t0) + " ms");
+                log.trace("Generated AtoN PNG " + path + " in " + (System.currentTimeMillis() - t0) + " ms");
             }
         }
 

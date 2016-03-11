@@ -429,15 +429,15 @@ angular.module('niord.atons')
             'use strict';
 
             // Listens for 'show-aton-details' events for opening the AtoN details dialog
-            $scope.$on('show-aton-details', function (event, data) {
+            $scope.$on('show-aton-details', function (event, aton) {
                 $uibModal.open({
-                    controller: "AtonDetailsDialogCtrl",
-                    templateUrl: "/app/atons/aton-details-dialog.html",
-                    size: 'sm',
+                    controller: "EditAtonDetailsDialogCtrl",
+                    templateUrl: "/app/atons/aton-details-editor-dialog.html",
+                    size: 'md',
+                    keyboard: true,
                     resolve: {
-                        aton: function () {
-                            return data;
-                        }
+                        atonCtx: function () { return { aton: aton, orig: aton }; },
+                        editable: function () { return false; }
                     }
                 });
             });
@@ -450,9 +450,8 @@ angular.module('niord.atons')
                     size: 'md',
                     keyboard: false,
                     resolve: {
-                        atonCtx: function () {
-                            return atonCtx;
-                        }
+                        atonCtx: function () { return atonCtx; },
+                        editable: function () { return true; }
                     }
                 });
             });
@@ -461,26 +460,16 @@ angular.module('niord.atons')
 
 
     /**
-     * Dialog Controller used for viewing the details of an AtoN
-     */
-    .controller('AtonDetailsDialogCtrl', ['$scope', 'AtonService', 'aton',
-        function ($scope, AtonService, aton) {
-            'use strict';
-
-            $scope.aton = aton;
-
-        }])
-
-    /**
      * Dialog Controller used for editing the details of an AtoN.
      *
      * Important: Only the local AtoN instance is updated. The
      * AtoN is not persisted to the database.
      */
-    .controller('EditAtonDetailsDialogCtrl', ['$scope', '$rootScope', '$timeout', 'AtonService', 'atonCtx',
-        function ($scope, $rootScope, $timeout, AtonService, atonCtx) {
+    .controller('EditAtonDetailsDialogCtrl', ['$scope', '$rootScope', '$timeout', 'AtonService', 'atonCtx', 'editable',
+        function ($scope, $rootScope, $timeout, AtonService, atonCtx, editable) {
             'use strict';
 
+            $scope.editable = editable;
             $scope.aton = angular.copy(atonCtx.aton);
             $scope.tags = [];
             $scope.newTag = { k: '', v: '' };

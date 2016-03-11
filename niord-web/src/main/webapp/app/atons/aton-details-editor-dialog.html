@@ -15,7 +15,20 @@
 
             <div class="form-controls aton-details-editor">
 
-                <table class="osm-tags">
+                <!-- Non-editable presentation -->
+                <table ng-if="!editable" class="osm-tags">
+                    <tr>
+                        <th class="osm-pos">position</th>
+                        <td class="osm-pos">{{aton | lonlat:{ decimals : 2, pp: true } }}</td>
+                    </tr>
+                    <tr ng-repeat="tag in tags">
+                        <th class="osm-tag">{{tag.k}}</th>
+                        <td class="osm-tag">{{tag.v}}</td>
+                    </tr>
+                </table>
+
+                <!-- Editable presentation -->
+                <table ng-if="editable" class="osm-tags">
                     <tr>
                         <th class="osm-pos">position</th>
                         <td class="osm-pos" colspan="2">
@@ -63,7 +76,11 @@
         </form>
     </div>
 
-    <div class="modal-footer">
+    <div ng-if="!editable" class="modal-footer">
+        <button class="btn btn-sm" ng-click="$dismiss('aborted')">Close</button>
+    </div>
+
+    <div ng-if="editable" class="modal-footer">
         <button class="btn pull-left" ng-click="revert()" ng-disabled="!changed()">Revert</button>
         <button class="btn" ng-click="$dismiss('aborted')">Cancel</button>
         <button class="btn btn-primary" ng-click="save()" ng-disabled="atonDetailsForm.$pristine || atonDetailsForm.$invalid">Save</button>
