@@ -273,7 +273,6 @@ td.osm-tag-btns a {
 .edit-tag-editor {
     width: 80%;
     white-space: nowrap;
-    display: none;
 }
 
 .edit-tag-editor input {

@@ -15,23 +15,24 @@
  */
 package org.niord.web.aton;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.aton.AtonDefaultsService;
 import org.niord.core.aton.AtonNode;
 import org.niord.core.aton.AtonSearchParams;
 import org.niord.core.aton.AtonService;
 import org.niord.model.PagedSearchResultVo;
 import org.niord.model.vo.aton.AtonNodeVo;
-import org.niord.web.TestRestService;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.*;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * REST interface for accessing AtoNs.
@@ -49,7 +50,7 @@ public class AtonRestService {
     AtonService atonService;
 
     @Inject
-    TestRestService testRestService;
+    AtonDefaultsService atonDefaultsService;
 
 
     /** Returns the AtoN with the given comma-separated IDs */
@@ -130,10 +131,9 @@ public class AtonRestService {
             @QueryParam("key") String key,
             AtonNodeVo aton) throws Exception {
 
-        List<String> result = new ArrayList<>();
-        result.add("seamark:type");
-        result.add("seamark:light:category");
-        return result;
+        return atonDefaultsService.getKeysForAton(new AtonNode(aton)).stream()
+                .filter(k -> StringUtils.isBlank(key) || k.startsWith(key))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -154,10 +154,9 @@ public class AtonRestService {
             @QueryParam("value") String value,
             AtonNodeVo aton) throws Exception {
 
-        List<String> result = new ArrayList<>();
-        result.add("light");
-        result.add("ged");
-        return result;
+        return atonDefaultsService.getValuesForAtonAndKey(new AtonNode(aton), key).stream()
+                .filter(v -> StringUtils.isBlank(value) || v.startsWith(value))
+                .collect(Collectors.toList());
     }
 
 }

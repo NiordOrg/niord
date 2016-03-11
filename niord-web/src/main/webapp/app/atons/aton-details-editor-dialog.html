@@ -31,10 +31,10 @@
                     </tr>
                     <tr ng-repeat="tag in tags">
                         <th class="osm-tag">
-                            <edit-tag-in-place value="tag.k" aton="aton"></edit-tag-in-place>
+                            <aton-tag-editor mode="in-place" tag="tag" attr="k" aton="aton"></aton-tag-editor>
                         </th>
                         <td class="osm-tag">
-                            <edit-tag-in-place value="tag.v" for-key="tag.k" aton="aton"></edit-tag-in-place>
+                            <aton-tag-editor mode="in-place" tag="tag" attr="v" aton="aton"></aton-tag-editor>
                         </td>
                         <td class="osm-tag-btns" nowrap>
                             <a href ng-click="deleteAtonTag($index)">
@@ -44,10 +44,10 @@
                     </tr>
                     <tr>
                         <th class="osm-tag">
-                            <edit-tag-in-place value="newTag.k" aton="aton"></edit-tag-in-place>
+                            <aton-tag-editor mode="standard" tag="newTag" attr="k" aton="aton"></aton-tag-editor>
                         </th>
                         <td class="osm-tag">
-                            <edit-tag-in-place value="newTag.v" for-key="newTag.k" aton="aton"></edit-tag-in-place>
+                            <aton-tag-editor mode="standard" tag="newTag" attr="v" aton="aton"></aton-tag-editor>
                         </td>
                         <td class="osm-tag-btns" nowrap>
                             <a href ng-click="addNewAtonTag()">

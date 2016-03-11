@@ -1,0 +1,15 @@
+
+<div ng-if="mode == 'in-place' && !editing" ng-click="edit()" class="edit-tag-label">{{value.val || "&nbsp;"}}</div>
+<div ng-if="mode == 'in-place' && editing" class="edit-tag-editor">
+  <input ng-model="value.val" autocomplete="off" spellcheck="false"
+        uib-typeahead="val for val in autoComplete($viewValue)" typeahead-wait-ms="300"
+        typeahead-focus-first="falses" typeahead-focus-on-select="false" />
+  <span ng-if="mode == 'in-place'" class="edit-tag-btn glyphicon glyphicon-ok" ng-click="endEdit(true)"></span>
+  <span ng-if="mode == 'in-place'" class="edit-tag-btn glyphicon glyphicon-remove" ng-click="endEdit(false)"></span>
+</div>
+
+<div ng-if="mode == 'standard'" class="edit-tag-editor" style="width: 100%">
+    <input ng-model="value.val" autocomplete="off" spellcheck="false"
+           uib-typeahead="val for val in autoComplete($viewValue)" typeahead-wait-ms="300"
+           typeahead-focus-first="falses" typeahead-focus-on-select="false" />
+</div>
