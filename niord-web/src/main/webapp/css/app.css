@@ -295,6 +295,10 @@ li.view-mode-menu-btn span {
     font-size: 12px;
 }
 
+body > .ui-select-container {
+    z-index:9999;
+}
+
 @media (min-width: 800px) {
     .view-mode-menu-text {
         display: inherit;

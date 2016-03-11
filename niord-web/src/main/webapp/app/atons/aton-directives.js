@@ -113,19 +113,16 @@ angular.module('niord.atons')
                 aton:   '=',
                 mode:   '@',
                 tag:    '=',
-                attr:   '@'
+                attr:   '@',
+                placeholder: '@'
             },
 
             link: function (scope, element) {
-
-                console.log("YYY " + scope.attr);
 
                 scope.mode = scope.mode || 'in-place';
                 scope.attr = scope.attr == 'k' ? 'k' : 'v';
                 scope.value = { val: scope.tag[scope.attr] }; // NB: Nested because of scope madness!
                 scope.editing = scope.mode != 'in-place';
-
-                console.log("XXX " + scope.attr + " > " + scope.value);
 
                 /** "in-place" editor mode **/
                 if (scope.mode == 'in-place') {
@@ -157,7 +154,6 @@ angular.module('niord.atons')
 
                     /** Called to end editing of the value */
                     scope.endEdit = function (save) {
-                        console.log("save " + save + ", val " + scope.value.val);
                         if (save) {
                             scope.tag[scope.attr] = scope.value.val;
                         } else {
@@ -184,7 +180,7 @@ angular.module('niord.atons')
 
                 /** Creates an auto-complete list */
                 scope.autoComplete = function (viewValue) {
-                    var url = '/rest/atons/';
+                    var url = '/rest/atons/defaults/';
                     if (scope.attr == 'v') {
                         // We are editing a tag value
                         url += 'auto-complete-value?key=' + encodeURIComponent(scope.tag.k)

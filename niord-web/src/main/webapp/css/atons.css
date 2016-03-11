@@ -269,6 +269,10 @@ td.osm-tag-btns a {
     color: darkgray;
 }
 
+td.osm-tag .ui-select-search, td.osm-tag .btn-xs {
+    font-size: 11px;
+}
+
 .edit-tag-label {
     width: 100%;
     cursor: pointer;

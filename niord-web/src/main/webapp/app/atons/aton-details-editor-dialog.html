@@ -15,6 +15,7 @@
 
             <div class="form-controls aton-details-editor">
 
+
                 <!-- Non-editable presentation -->
                 <table ng-if="!editable" class="osm-tags">
                     <tr>
@@ -26,6 +27,7 @@
                         <td class="osm-tag">{{tag.v}}</td>
                     </tr>
                 </table>
+
 
                 <!-- Editable presentation -->
                 <table ng-if="editable" class="osm-tags">
@@ -57,13 +59,33 @@
                     </tr>
                     <tr>
                         <th class="osm-tag">
-                            <aton-tag-editor mode="standard" tag="newTag" attr="k" aton="aton"></aton-tag-editor>
+                            <aton-tag-editor mode="standard" tag="newTag" attr="k" aton="aton" placeholder="Key"></aton-tag-editor>
                         </th>
                         <td class="osm-tag">
-                            <aton-tag-editor mode="standard" tag="newTag" attr="v" aton="aton"></aton-tag-editor>
+                            <aton-tag-editor mode="standard" tag="newTag" attr="v" aton="aton" placeholder="value"></aton-tag-editor>
                         </td>
                         <td class="osm-tag-btns" nowrap>
                             <a href ng-click="addNewAtonTag()">
+                                <span class="glyphicon glyphicon-plus"></span>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="osm-tag" colspan="2">
+                            <ui-select multiple id="nodeTypes" ng-model="selcetedNodeTypes.names" >
+                                <ui-select-match placeholder="Merge with AtoN type">
+                                    {{$item}}
+                                </ui-select-match>
+                                <ui-select-choices repeat="type in nodeTypeNames"
+                                                   refresh="refreshNodeTypeNames($select.search)"
+                                                   refresh-delay="100"
+                                                   position="up">
+                                    <div>{{type}}</div>
+                                </ui-select-choices>
+                            </ui-select>
+                        </td>
+                        <td class="osm-tag-btns" nowrap>
+                            <a href ng-click="mergeWithNodeType()">
                                 <span class="glyphicon glyphicon-plus"></span>
                             </a>
                         </td>

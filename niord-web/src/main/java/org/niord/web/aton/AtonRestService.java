@@ -23,6 +23,7 @@ import org.niord.core.aton.AtonDefaultsService;
 import org.niord.core.aton.AtonNode;
 import org.niord.core.aton.AtonSearchParams;
 import org.niord.core.aton.AtonService;
+import org.niord.model.IJsonSerializable;
 import org.niord.model.PagedSearchResultVo;
 import org.niord.model.vo.aton.AtonNodeVo;
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ import javax.annotation.security.PermitAll;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -116,13 +118,46 @@ public class AtonRestService {
     }
 
     /**
+     * Returns the name of all node types where the name matches the parameter
+     *
+     * @param name the substring match
+     * @return the name of all node types where the name matches the parameter
+     */
+    @GET
+    @Path("/defaults/node-types")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    public List<String> getNodeTypeNames(@QueryParam("name") String name) {
+        return atonDefaultsService.getNodeTypeNames(name);
+    }
+
+    /**
+     * Merges the given AtoN with the tags of the node types with the given names
+     *
+     * @param atonNodeTypeParam the AtoN and node type names
+     * @return the updated AtoN
+     */
+    @POST
+    @Path("/defaults/merge-with-node-types")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public AtonNodeVo mergeAtonWithNodeTypes(AtonNodeTypeParam atonNodeTypeParam) throws Exception {
+        AtonNode aton = new AtonNode(atonNodeTypeParam.getAton());
+        atonNodeTypeParam.getNodeTypeNames()
+                .forEach(nt -> atonDefaultsService.mergeAtonWithNodeTypes(aton, nt));
+        return aton.toVo();
+    }
+
+    /**
      * Creates an auto-complete list for OSM tag keys, based on the current AtoN and key
      * @param key the currently typed key
      * @param aton the current AtoN
      * @return the auto-complete list
      */
     @POST
-    @javax.ws.rs.Path("/auto-complete-key")
+    @Path("/defaults/auto-complete-key")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @GZIP
@@ -144,7 +179,7 @@ public class AtonRestService {
      * @return the auto-complete list
      */
     @POST
-    @javax.ws.rs.Path("/auto-complete-value")
+    @Path("/defaults/auto-complete-value")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @GZIP
@@ -159,4 +194,32 @@ public class AtonRestService {
                 .collect(Collectors.toList());
     }
 
+
+    /*************************/
+    /** Helper classes      **/
+    /*************************/
+
+
+    /** Encapsulates the parameters uses for merging an AtoN with the node type tags */
+    @SuppressWarnings("unused")
+    public static class AtonNodeTypeParam implements IJsonSerializable {
+        AtonNodeVo aton;
+        List<String> nodeTypeNames = new ArrayList<>();
+
+        public AtonNodeVo getAton() {
+            return aton;
+        }
+
+        public void setAton(AtonNodeVo aton) {
+            this.aton = aton;
+        }
+
+        public List<String> getNodeTypeNames() {
+            return nodeTypeNames;
+        }
+
+        public void setNodeTypeNames(List<String> nodeTypeNames) {
+            this.nodeTypeNames = nodeTypeNames;
+        }
+    }
 }

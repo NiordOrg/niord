@@ -125,6 +125,18 @@ angular.module('niord.atons')
                 $http.get('/rest/atons/search?' + params)
                     .success(success)
                     .error(error);
+            },
+
+            // Returns the node type names matching the name param
+            getNodeTypeNames: function (name) {
+                var param = (name) ? '?name=' + encodeURIComponent(name) : '';
+                return $http.get('/rest/atons/defaults/node-types' + param);
+            },
+
+            // Updates and returns an AtoN from the node types with the given names
+            mergeWithNodeTypes: function (aton, nodeTypeNames) {
+                var param = { aton: aton, nodeTypeNames: nodeTypeNames };
+                return $http.post('/rest/atons/defaults/merge-with-node-types', param);
             }
 
         };

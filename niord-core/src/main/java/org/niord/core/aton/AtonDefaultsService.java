@@ -94,6 +94,9 @@ public class AtonDefaultsService {
     @Resource
     TimerService timerService;
 
+    // TODO: Inject from setting
+    String ialaSystem = "iala-a";
+
     private OsmDefaults osmDefaults;
 
     // Look-up table for tag-values
@@ -132,6 +135,10 @@ public class AtonDefaultsService {
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
             osmDefaults = (OsmDefaults) unmarshaller.unmarshal(new StringReader(xml.toString()));
 
+            // Purge all node types not in the current IALA system ("iala-a" vs "iala-b")
+            String removeSystem = "iala-a".equals(ialaSystem) ? "iala-b" : "iala-a";
+            osmDefaults.getNodeTypes().removeIf(nt -> nt.hasTagValue("seamark:.*:system", removeSystem));
+
             // Build look-up tables for fast access
             osmDefaults.getTagValues().stream()
                     .forEach(tv -> osmTagValues.put(tv.getId(), tv));
@@ -143,6 +150,44 @@ public class AtonDefaultsService {
             log.error("Failed creating AtoN defaults in " + e, e);
         }
     }
+
+    /**
+     * Returns the name of all node types where the name matches the parameter
+     *
+     * @param name the substring match
+     * @return the name of all node types where the name matches the parameter
+     */
+    public List<String> getNodeTypeNames(String name) {
+        return osmDefaults.getNodeTypes().stream()
+                .map(ODNodeType::getName)
+                .filter(n -> name == null || StringUtils.containsIgnoreCase(n, name))
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Merges the given AtoN with the tags of the node type with the given name
+     *
+     * @param aton the AtoN to update
+     * @param nodeTypeName type names
+     */
+    public void mergeAtonWithNodeTypes(AtonNode aton, String nodeTypeName) {
+
+        // Sanity checks
+        if (aton == null || StringUtils.isBlank(nodeTypeName) || !osmNodeTypes.containsKey(nodeTypeName)) {
+            return;
+        }
+
+        osmNodeTypes.get(nodeTypeName).getTags().forEach(tag -> {
+            if (aton.getTagValue(tag.getK()) == null) {
+                String v = StringUtils.defaultString(tag.getV());
+                aton.getTags().add(new AtonTag(tag.getK(), v));
+            }
+        });
+    }
+
 
     public List<String> getKeysForAton(AtonNode aton) {
         return getNodeTypeForAton(aton).stream()
@@ -183,6 +228,7 @@ public class AtonDefaultsService {
         return false;
     }
 
+
     /*************************/
     /** Helper classes      **/
     /*************************/
@@ -221,6 +267,10 @@ public class AtonDefaultsService {
     public static class ODNodeType {
         String name;
         List<ODTag> tags = new ArrayList<>();
+
+        public boolean hasTagValue(String k, String v) {
+            return tags.stream().anyMatch(t -> t.getK().matches(k) && v.equals(t.getV()));
+        }
 
         @XmlAttribute
         public String getName() {

@@ -476,6 +476,7 @@ angular.module('niord.atons')
 
             var loadTimer;
 
+
             /** Loads the SVG icon for the current AtoN **/
             $scope.updateSvgImage = function () {
                 loadTimer = undefined;
@@ -556,6 +557,31 @@ angular.module('niord.atons')
                     $scope.atonUpdated();
                 }
                 $scope.newTag = { k: '', v: '' };
+            };
+
+
+            /** Creates an auto-complete node type list */
+            $scope.nodeTypeNames = [];
+            $scope.selcetedNodeTypes = { names: [] };
+            $scope.refreshNodeTypeNames = function (name) {
+                return AtonService.getNodeTypeNames(name).then(function(response) {
+                    $scope.nodeTypeNames = response.data;
+                });
+            };
+
+
+            /** Merges the current AtoN definition with the node types currently selected */
+            $scope.mergeWithNodeType = function () {
+                if ($scope.selcetedNodeTypes.names.length == 0) {
+                    return;
+                }
+                var names = angular.copy($scope.selcetedNodeTypes.names);
+                AtonService.mergeWithNodeTypes($scope.aton, names).then(function(response) {
+                    $scope.aton.tags = response.data.tags;
+                    $scope.atonUpdated();
+                });
+                $scope.nodeTypeNames.length = 0;
+                $scope.selcetedNodeTypes.names.length = 0;
             };
 
 
