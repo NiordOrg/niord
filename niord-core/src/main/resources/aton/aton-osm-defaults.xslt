@@ -6,16 +6,28 @@
     <xsl:output omit-xml-declaration="yes" indent="yes"/>
     <xsl:strip-space elements="*"/>
 
+    <!-- Either provide "IALA-A" or "IALA-B" as a parameter to the XSLT -->
+    <xsl:param name="ialaSkipSystem"/>
+
+    <!-- Handle root element -->
     <xsl:template match="presets">
         <osm-defaults>
             <xsl:apply-templates/>
         </osm-defaults>
     </xsl:template>
 
+    <!-- Match the groups we are interested in -->
     <xsl:template match="group[@name='Seamarks' or ancestor-or-self::group[@name='P: Lights' or @name='Q: Buoys, Beacons, Notices' or @name='R: Fog Signals' or @name='S: Electronic Position-Fixing Systems']]">
-        <xsl:apply-templates/>
+        <xsl:if test="not(starts-with(@name,$ialaSkipSystem))">
+            <xsl:apply-templates/>
+        </xsl:if>
     </xsl:template>
 
+    <!-- Discard all other groups -->
+    <xsl:template match="group" />
+
+
+    <!-- Filter chunks by ID -->
     <xsl:template match="chunk[@id='lightcolours' or @id='othercolours' or @id='rightlateralcolours' or @id='leftlateralcolours' or @id='cardinalcolours' or @id='lightchars' or @id='lightcats' or @id='lightexhibs' or @id='lightvisis' or @id='patterns']">
         <tag-values>
             <xsl:attribute name="id">
@@ -25,6 +37,7 @@
         </tag-values>
     </xsl:template>
 
+    <!-- Filter chunks by ID -->
     <xsl:template match="chunk[@id='lateraltops' or @id='cardinaltops' or @id='specialtops' or @id='topshapes' or @id='buoyshapes' or @id='beaconshapes' or @id='topmarks' or @id='ialas' or @id='cevnis' or @id='laterals' or @id='cardinals' or @id='specials']">
         <tag-values>
             <xsl:attribute name="id">
@@ -33,6 +46,9 @@
             <xsl:apply-templates/>
         </tag-values>
     </xsl:template>
+
+    <!-- Discard all other chunks -->
+    <xsl:template match="chunk" />
 
     <xsl:template match="list_entry">
         <tag-value>
@@ -97,10 +113,6 @@
 
     <xsl:template match="label|space|link|check">
         <!-- discard these elements -->
-    </xsl:template>
-
-    <xsl:template match="chunk|group">
-        <!-- discard all other chunks and groups -->
     </xsl:template>
 
     <xsl:template match="*">

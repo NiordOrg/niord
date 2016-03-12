@@ -82,6 +82,12 @@ import java.util.stream.Collectors;
  *   ...
  * </pre>
  *
+ * <p>
+ * Testing: From the command lines, run:
+ * <pre>
+ *     xsltproc --stringparam ialaSkipSystem "IALA-B"  aton-osm-defaults.xslt INT-1-preset.xml &gt; result.xml
+ * </pre>
+ *
  */
 @Singleton
 @Startup
@@ -95,7 +101,7 @@ public class AtonDefaultsService {
     TimerService timerService;
 
     // TODO: Inject from setting
-    String ialaSystem = "iala-a";
+    IalaBuoyageSystem ialaSystem = IalaBuoyageSystem.IALA_A;
 
     private OsmDefaults osmDefaults;
 
@@ -128,16 +134,13 @@ public class AtonDefaultsService {
             // Execute the xslt
             TransformerFactory transFact = TransformerFactory.newInstance();
             Transformer trans = transFact.newTransformer(xsltSource);
+            trans.setParameter("ialaSkipSystem", ialaSystem.other().toString());
             trans.transform(xmlSource, result);
 
             // Read in the result as OsmDefaults data
             JAXBContext jaxbContext = JAXBContext.newInstance(OsmDefaults.class);
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
             osmDefaults = (OsmDefaults) unmarshaller.unmarshal(new StringReader(xml.toString()));
-
-            // Purge all node types not in the current IALA system ("iala-a" vs "iala-b")
-            String removeSystem = "iala-a".equals(ialaSystem) ? "iala-b" : "iala-a";
-            osmDefaults.getNodeTypes().removeIf(nt -> nt.hasTagValue("seamark:.*:system", removeSystem));
 
             // Build look-up tables for fast access
             osmDefaults.getTagValues().stream()
