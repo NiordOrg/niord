@@ -15,7 +15,6 @@
  */
 package org.niord.web.aton;
 
-import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
@@ -34,7 +33,6 @@ import javax.inject.Inject;
 import javax.ws.rs.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * REST interface for accessing AtoNs.
@@ -152,6 +150,7 @@ public class AtonRestService {
 
     /**
      * Creates an auto-complete list for OSM tag keys, based on the current AtoN and key
+     *
      * @param key the currently typed key
      * @param aton the current AtoN
      * @return the auto-complete list
@@ -166,13 +165,12 @@ public class AtonRestService {
             @QueryParam("key") String key,
             AtonNodeVo aton) throws Exception {
 
-        return atonDefaultsService.getKeysForAton(new AtonNode(aton)).stream()
-                .filter(k -> StringUtils.isBlank(key) || k.startsWith(key))
-                .collect(Collectors.toList());
+        return atonDefaultsService.computeKeysForAton(new AtonNode(aton), key, 20);
     }
 
     /**
      * Creates an auto-complete list for OSM tag values, based on the current AtoN, key and value
+     *
      * @param key the current key
      * @param value the currently typed value
      * @param aton the current AtoN
@@ -189,9 +187,7 @@ public class AtonRestService {
             @QueryParam("value") String value,
             AtonNodeVo aton) throws Exception {
 
-        return atonDefaultsService.getValuesForAtonAndKey(new AtonNode(aton), key).stream()
-                .filter(v -> StringUtils.isBlank(value) || v.startsWith(value))
-                .collect(Collectors.toList());
+        return atonDefaultsService.getValuesForAtonAndKey(new AtonNode(aton), key, value, 20);
     }
 
 

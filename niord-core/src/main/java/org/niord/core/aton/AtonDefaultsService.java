@@ -36,6 +36,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -137,10 +138,16 @@ public class AtonDefaultsService {
             trans.setParameter("ialaSkipSystem", ialaSystem.other().toString());
             trans.transform(xmlSource, result);
 
+            // Fix spelling mistakes
+            String resultXml = xml.toString();
+            resultXml = resultXml
+                    .replace("topamrk", "topmark")
+                    .replace("patern", "pattern");
+
             // Read in the result as OsmDefaults data
             JAXBContext jaxbContext = JAXBContext.newInstance(OsmDefaults.class);
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-            osmDefaults = (OsmDefaults) unmarshaller.unmarshal(new StringReader(xml.toString()));
+            osmDefaults = (OsmDefaults) unmarshaller.unmarshal(new StringReader(resultXml));
 
             // Build look-up tables for fast access
             osmDefaults.getTagValues().stream()
@@ -148,7 +155,7 @@ public class AtonDefaultsService {
             osmDefaults.getNodeTypes().stream()
                     .forEach(nt -> osmNodeTypes.put(nt.getName(), nt));
 
-            log.trace("********* Created AtoN defaults in " + (System.currentTimeMillis() - t0) +  " ms");
+            log.trace("Created AtoN defaults in " + (System.currentTimeMillis() - t0) +  " ms");
         } catch (Exception e) {
             log.error("Failed creating AtoN defaults in " + e, e);
         }
@@ -192,45 +199,227 @@ public class AtonDefaultsService {
     }
 
 
-    public List<String> getKeysForAton(AtonNode aton) {
-        return getNodeTypeForAton(aton).stream()
-                .flatMap(nt -> nt.getTags().stream())
-                .map(ODTag::getK)
-                .distinct()
-                .sorted()
-                .collect(Collectors.toList());
-    }
+    /**
+     * Computes an auto-complete list for OSM tag keys, based on the current AtoN and key
+     *
+     * @param aton the current AtoN
+     * @param keyStr the currently typed key
+     * @param maxKeyNo the max number of keys to return
+     * @return the auto-complete list
+     */
+    public List<String> computeKeysForAton(AtonNode aton, String keyStr, int maxKeyNo) {
 
-    public List<String> getValuesForAtonAndKey(AtonNode aton, String key) {
-        return getNodeTypeForAton(aton).stream()
-                .flatMap(nt -> nt.getTags().stream())
-                .filter(t -> key.equals(t.getK()))
-                .filter(t -> t.getV() != null) // TODO refs
-                .map(ODTag::getV)
-                .distinct()
-                .sorted()
-                .collect(Collectors.toList());
-    }
-
-    private List<ODNodeType> getNodeTypeForAton(AtonNode aton) {
-        String type = aton.getTagValue("seamark:type");
-        if (StringUtils.isBlank(type)) {
+        // Return empty result for empty key string
+        if (StringUtils.isBlank(keyStr)) {
             return Collections.emptyList();
         }
-        return osmDefaults.getNodeTypes().stream()
-                .filter(nt -> hasKeyValue(nt, "seamark:type", type))
+
+        List<ODNodeType> matchingNodeTypes = computeMatchingNodeTypes(aton);
+        Set<String> existingTagKeys = aton.getTags().stream()
+                .map(AtonTag::getK)
+                .collect(Collectors.toSet());
+
+        // Filter the tag keys of the matching node types, such that
+        // 1) There is a substring match with the "key" param
+        // 2) The key is not already defined in the AtoN
+        List<String> result = matchingNodeTypes.stream()
+                .flatMap(nt -> nt.getTags().stream())
+                .map(ODTag::getK)
+                .filter(k -> StringUtils.containsIgnoreCase(k, keyStr))
+                .filter(k -> !existingTagKeys.contains(k))
+                .distinct()
+                .limit(maxKeyNo)
+                .collect(Collectors.toList());
+
+        // If there is no match from the matching node types, just look for any matching tag key
+        if (result.isEmpty()) {
+            result = osmDefaults.getNodeTypes().stream()
+                    .flatMap(nt -> nt.getTags().stream())
+                    .map(ODTag::getK)
+                    .filter(k -> StringUtils.containsIgnoreCase(k, keyStr))
+                    .distinct()
+                    .limit(maxKeyNo)
+                    .sorted()
+                    .collect(Collectors.toList());
+        }
+
+        return result;
+    }
+
+
+    /**
+     * Creates an auto-complete list for OSM tag values, based on the current AtoN, key and value
+     *
+     * @param aton the current AtoN
+     * @param key the current key
+     * @param valueStr the currently typed value
+     * @param maxValueNo the max number of values to return
+     * @return the auto-complete list
+     */
+    public List<String> getValuesForAtonAndKey(AtonNode aton, String key, String valueStr, int maxValueNo) {
+
+        // Return empty result for empty key
+        if (StringUtils.isBlank(key)) {
+            return Collections.emptyList();
+        }
+
+        // Find a tag with a matching key in the set of node types that matches the AtoN
+        List<ODNodeType> matchingNodeTypes = computeMatchingNodeTypes(aton);
+        List<String> values = matchingNodeTypes.stream()
+                .map(nt -> computeValuesForNodeType(nt, key, valueStr))
+                .filter(v -> !v.isEmpty())
+                .flatMap(Collection::stream)
+                .distinct()
+                .limit(maxValueNo)
+                .collect(Collectors.toList());
+
+        // If we did not find any matching key-value in the set of node types
+        // that matches the AtoN, look for any matching key-value
+        if (values.isEmpty()) {
+            values = osmDefaults.getNodeTypes().stream()
+                    .map(nt -> computeValuesForNodeType(nt, key, valueStr))
+                    .filter(v -> !v.isEmpty())
+                    .flatMap(Collection::stream)
+                    .distinct()
+                    .limit(maxValueNo)
+                    .collect(Collectors.toList());
+        }
+
+        return values;
+    }
+
+
+    /**
+     * Computes the tag values for the given node type, key and value substring.
+     * @param nodeType the node type
+     * @param key the tag key
+     * @param valueStr the value string
+     * @return the tag values for the given node type, key and value substring
+     */
+    private List<String> computeValuesForNodeType(ODNodeType nodeType, String key, String valueStr) {
+        ODTag tag = nodeType.tag(key);
+        return computeValuesForTag(tag).stream()
+                .filter(v -> valueStr == null || StringUtils.containsIgnoreCase(v, valueStr))
+                .distinct()
                 .collect(Collectors.toList());
     }
 
-    private boolean hasKeyValue(ODNodeType nodeType, String k, String v) {
-        for (ODTag tag : nodeType.getTags()) {
-            if (v.equals(tag.getV())) {
-                return true;
-            }
+
+    /**
+     * Compute the list of values for the given tag. The tag can have various formats:
+     *
+     * <p>
+     * Format 1) Tag defines the value in "v" attribute
+     * <pre>
+     *     &lt;tag k="seamark:notice:function" v="information"/&gt;
+     * </pre>
+     * <p>
+     * Format 2) Tag defines values in "tag-value" sub-elements
+     * <pre>
+     *     &lt;tag k="seamark:buoy_lateral:category"&gt;
+     *         &lt;tag-value v="danger_right"/&gt;
+     *         &lt;tag-value v="junction_right"/&gt;
+     *         &lt;tag-value v="turnoff_right"/&gt;
+     *         &lt;tag-value v="harbour_right"/&gt;
+     *     &lt;/tag&gt;
+     * </pre>
+     * Format 3) defines values in "tag-values" value list references
+     * <pre>
+     *     &lt;tag k="seamark:buoy_lateral:colour"&gt;
+     *         &lt;tag-values ref="rightlateralcolours"/&gt;
+     *         &lt;tag-values ref="leftlateralcolours"/&gt;
+     *     &lt;/tag&gt;
+     * </pre>
+     * <p>
+     *
+     * The tag may either define a value directly, or it may contain
+     * a list of "tag-values" sub-elements that each contains a "ref" reference
+     * to a tag value collection,
+     * or it may contain a list of "tag-value" sub-element with values
+     *
+     * @param tag the tag to find the values for
+     * @return the list of values
+     */
+    private List<String> computeValuesForTag(ODTag tag) {
+        if (tag == null) {
+            return Collections.emptyList();
+
+        } else if (StringUtils.isNotBlank(tag.getV())) {
+            // The tag explicitly defines the value in the "v" attribute
+            return Collections.singletonList(tag.getV());
         }
-        return false;
+
+        // Look for "<tag-values ref="id"/>" sub-elements
+        if (tag.getTagValueRefs() != null) {
+            return tag.getTagValueRefs().stream()
+                    .filter(tvs -> tvs.getRef() != null && osmTagValues.containsKey(tvs.getRef()))
+                    .map(tvs -> osmTagValues.get(tvs.getRef()))
+                    .filter(tvs -> tvs != null && tvs.getTags() != null)
+                    .flatMap(tvs -> tvs.getTags().stream())
+                    .map(ODTagValue::getV)
+                    .collect(Collectors.toList());
+
+        } else if (tag.getTagValues() != null) {
+            // Look for "<tag-value v="value"/>" sub-elements
+            return tag.getTagValues().stream()
+                    .map(ODTagValue::getV)
+                    .collect(Collectors.toList());
+        }
+
+        // No joy
+        return Collections.emptyList();
     }
 
+    /**
+     * Returns a list of matching node types for the given AtoN, sorted
+     * so that the first node types have a higher match with the AtoN.
+     *
+     * @param aton the AtoN
+     * @return a list of matching node types for the given AtoN
+     */
+    private List<ODNodeType> computeMatchingNodeTypes(AtonNode aton) {
+
+        // Compute an AtoN match score for each node type
+        Map<ODNodeType, Integer> nodeTypeScore = osmDefaults.getNodeTypes().stream()
+            .collect(Collectors.toMap(Function.identity(), nt -> computeNodeTypeMatch(aton, nt)));
+
+        // Returns all node types with a non-trivial match (score > 2) sorted by the score
+        return nodeTypeScore.keySet().stream()
+                .filter(nt -> nodeTypeScore.get(nt) > 2)
+                .sorted((nt1, nt2) -> nodeTypeScore.get(nt2).compareTo(nodeTypeScore.get(nt1)))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns a score for match between the AtoN and the node type
+     *
+     * @param aton the AtoN
+     * @param nodeType the node type
+     * @return a score for match between the AtoN and the node type
+     */
+    private int computeNodeTypeMatch(AtonNode aton, ODNodeType nodeType) {
+        int score = 0;
+
+        // Check for matching tag values
+        score += nodeType.getTags().stream()
+                .mapToInt(t -> {
+                    AtonTag tag = aton.getTag(t.getK());
+                    if (tag != null && Objects.equals(tag.getV(), t.getV())) {
+                        if ("seamark:type".equals(t.getK())) {
+                            return 10;  // Matching "seamark:type" value
+                        } else {
+                            return 4;   // Matching key and value
+                        }
+                    } else if (tag != null) {
+                        return 2;       // Matching key
+                    } else {
+                        return 0;       // No match
+                    }
+                })
+                .sum();
+
+        return score;
+    }
 
     /*************************/
     /** Helper classes      **/
@@ -271,8 +460,17 @@ public class AtonDefaultsService {
         String name;
         List<ODTag> tags = new ArrayList<>();
 
+        /** Returns if the node type contains a matching tag key pattern and value */
         public boolean hasTagValue(String k, String v) {
             return tags.stream().anyMatch(t -> t.getK().matches(k) && v.equals(t.getV()));
+        }
+
+        /** Returns the tag with the given key, or null if not found */
+        public ODTag tag(String key) {
+            return tags.stream()
+                    .filter(t -> t.getK().equals(key))
+                    .findFirst()
+                    .orElse(null);
         }
 
         @XmlAttribute
@@ -300,7 +498,8 @@ public class AtonDefaultsService {
     public static class ODTag {
         String k;
         String v;
-        List<ODTagValues> tagValues;
+        List<ODTagValues> tagValueRefs;
+        List<ODTagValue> tagValues;
 
         @XmlAttribute
         public String getK() {
@@ -321,11 +520,20 @@ public class AtonDefaultsService {
         }
 
         @XmlElement(name = "tag-values")
-        public List<ODTagValues> getTagValues() {
+        public List<ODTagValues> getTagValueRefs() {
+            return tagValueRefs;
+        }
+
+        public void setTagValueRefs(List<ODTagValues> tagValueRefs) {
+            this.tagValueRefs = tagValueRefs;
+        }
+
+        @XmlElement(name = "tag-value")
+        public List<ODTagValue> getTagValues() {
             return tagValues;
         }
 
-        public void setTagValues(List<ODTagValues> tagValues) {
+        public void setTagValues(List<ODTagValue> tagValues) {
             this.tagValues = tagValues;
         }
     }
@@ -336,6 +544,7 @@ public class AtonDefaultsService {
     public static class ODTagValues {
         String id;
         String ref;
+        List<ODTagValue> tags;
 
         @XmlAttribute
         public String getId() {
@@ -353,6 +562,15 @@ public class AtonDefaultsService {
 
         public void setRef(String ref) {
             this.ref = ref;
+        }
+
+        @XmlElement(name = "tag-value")
+        public List<ODTagValue> getTags() {
+            return tags;
+        }
+
+        public void setTags(List<ODTagValue> tags) {
+            this.tags = tags;
         }
     }
 
