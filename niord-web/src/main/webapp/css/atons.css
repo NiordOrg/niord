@@ -240,18 +240,14 @@ table.osm-tags {
     width: 100%;
 }
 
-td.osm-pos, th.osm-pos {
-    padding: 10px 5px;
-    border-bottom: 1px solid lightgray
+td.osm-tag-info, th.osm-tag-info {
+    padding: 3px 5px;
 }
 
 td.osm-tag, th.osm-tag {
     font-size: 11px;
     width: 50%;
     padding: 3px;
-    border-left: 1px solid lightgray;
-    border-right: 1px solid lightgray;
-    border-bottom: 1px solid lightgray;
 }
 
 td.osm-tag-btns {
@@ -260,9 +256,6 @@ td.osm-tag-btns {
     padding: 5px;
     text-align: center;
     white-space: nowrap;
-    border-left: 1px solid lightgray;
-    border-right: 1px solid lightgray;
-    border-bottom: 1px solid lightgray;
 }
 
 td.osm-tag-btns a {

@@ -19,12 +19,16 @@
                 <!-- Non-editable presentation -->
                 <table ng-if="!editable" class="osm-tags">
                     <tr>
-                        <th class="osm-pos">position</th>
-                        <td class="osm-pos">{{aton | lonlat:{ decimals : 2, pp: true } }}</td>
+                        <th class="osm-tag-info">AtoN UID</th>
+                        <td class="osm-tag-info">{{aton.tags['seamark:ref']}}</td>
                     </tr>
-                    <tr ng-repeat="tag in tags">
-                        <th class="osm-tag">{{tag.k}}</th>
-                        <td class="osm-tag">{{tag.v}}</td>
+                    <tr>
+                        <th class="osm-tag-info border-b">position</th>
+                        <td class="osm-tag-info border-b">{{aton | lonlat:{ decimals : 2, pp: true } }}</td>
+                    </tr>
+                    <tr ng-repeat="tag in tags" ng-if="tag.k != 'seamark:ref'">
+                        <th class="osm-tag border-lrb">{{tag.k}}</th>
+                        <td class="osm-tag border-lrb">{{tag.v}}</td>
                     </tr>
                 </table>
 
@@ -32,26 +36,30 @@
                 <!-- Editable presentation -->
                 <table ng-if="editable" class="osm-tags">
                     <tr>
-                        <th class="osm-pos">position</th>
-                        <td class="osm-pos" colspan="2">
+                        <th class="osm-tag-info">AtoN UID</th>
+                        <td class="osm-tag-info" colspan="2">{{aton.tags['seamark:ref']}}</td>
+                    </tr>
+                    <tr>
+                        <th class="osm-tag-info border-b">position</th>
+                        <td class="osm-tag-info border-b" colspan="2">
                             <input latitude  type="text" ng-model="aton.lat" required
                                    ng-class="{'changed' : changed('lat')}"
                                    ng-change="atonUpdated()"
-                                   class="form-control form-control-inline input-sm" style="width: 100px">
+                                   class="form-control form-control-inline input-sm" style="width: 100px; height: 26px">
                             <input longitude type="text" ng-model="aton.lon" required
                                    ng-change="atonUpdated()"
                                    ng-class="{'changed' : changed('lon')}"
-                                   class="form-control form-control-inline input-sm" style="width: 100px">
+                                   class="form-control form-control-inline input-sm" style="width: 100px; height: 26px">
                         </td>
                     </tr>
-                    <tr ng-repeat="tag in tags">
-                        <th class="osm-tag">
+                    <tr ng-repeat="tag in tags" ng-if="tag.k != 'seamark:ref'">
+                        <th class="osm-tag border-lrb">
                             <aton-tag-editor mode="in-place" tag="tag" attr="k" aton="aton"></aton-tag-editor>
                         </th>
-                        <td class="osm-tag">
+                        <td class="osm-tag border-lrb">
                             <aton-tag-editor mode="in-place" tag="tag" attr="v" aton="aton"></aton-tag-editor>
                         </td>
-                        <td class="osm-tag-btns" nowrap>
+                        <td class="osm-tag-btns border-lrb" nowrap>
                             <a href ng-click="deleteAtonTag($index)">
                                 <span class="glyphicon glyphicon-trash"></span>
                             </a>

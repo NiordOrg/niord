@@ -122,6 +122,16 @@ input.ng-invalid-messageId {
     padding: 5px 10px;
 }
 
+.border-b {
+    border-bottom: 1px solid lightgray;
+}
+
+.border-lrb {
+    border-left: 1px solid lightgray;
+    border-right: 1px solid lightgray;
+    border-bottom: 1px solid lightgray;
+}
+
 /** File upload directive **/
 
 .btn-file {

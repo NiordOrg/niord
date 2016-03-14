@@ -148,7 +148,7 @@ public class AtonDefaultsService {
             osmDefaults.getNodeTypes().stream()
                     .forEach(nt -> osmNodeTypes.put(nt.getName(), nt));
 
-            log.info("********* Created AtoN defaults in " + (System.currentTimeMillis() - t0) +  " ms");
+            log.trace("********* Created AtoN defaults in " + (System.currentTimeMillis() - t0) +  " ms");
         } catch (Exception e) {
             log.error("Failed creating AtoN defaults in " + e, e);
         }
