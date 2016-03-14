@@ -225,6 +225,7 @@ angular.module('niord.atons')
                 AtonService.searchAtonsByParams(
                     params,
                     function (result) {
+                        $scope.totalAtonNo = result.total;
                         if (result.data != null) {
                             $scope.atons = result.data;
                             // Update the icon urls
