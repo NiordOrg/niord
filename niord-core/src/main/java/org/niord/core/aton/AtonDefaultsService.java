@@ -332,11 +332,6 @@ public class AtonDefaultsService {
      * </pre>
      * <p>
      *
-     * The tag may either define a value directly, or it may contain
-     * a list of "tag-values" sub-elements that each contains a "ref" reference
-     * to a tag value collection,
-     * or it may contain a list of "tag-value" sub-element with values
-     *
      * @param tag the tag to find the values for
      * @return the list of values
      */
