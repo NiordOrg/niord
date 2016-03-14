@@ -245,12 +245,11 @@ public class AtonService extends BaseService {
 
         Root<AtonNode> atonRoot = c.from(AtonNode.class);
 
-        //Fetch<AtonNode, AtonTag> fetchTags = atonRoot.fetch("tags", JoinType.LEFT);
         if (StringUtils.isNotBlank(param.getName())) {
             Join<AtonNode, AtonTag> tags = atonRoot.join("tags", JoinType.LEFT);
             criteriaHelper
-                    .equals(tags.get("k"), AtonTag.TAG_ATON_UID)
-                    .like(tags.get("v"), param.getName());
+                    // .equals(tags.get("k"), AtonTag.TAG_ATON_UID)
+                    .matchText(tags.get("v"), param.getName());
         }
 
         if (param.getExtent() != null) {

@@ -26,13 +26,18 @@ import javax.persistence.criteria.Predicate;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Helps initializing the criteria builders and queries and
  * helps building the list of "where" predicates
  * for a Criteria API query
  */
+@SuppressWarnings("unused")
 public class CriteriaHelper<T> {
+
+    private static final Pattern MATCH_TEXT_PATTERN = Pattern.compile("\"([^\"]*)\"|(\\S+)");
 
     CriteriaBuilder cb;
     CriteriaQuery<T> q;
@@ -168,6 +173,54 @@ public class CriteriaHelper<T> {
         }
         return this;
     }
+
+    /**
+     * If value is defined, attempts a pseudo google-style free text search of the value.
+     * Supported format:
+     * <ul>
+     *     <li>ab cd: Matches either of the values.</li>
+     *     <li>"ab cd": Quoted matches must be exact.</li>
+     *     <li>+ab: Must contain value.</li>
+     *     <li>-ab: Must not contain value.</li>
+     *     <li>ab*: Must match the given wildcard value pattern.</li>
+     * </ul>
+     *
+     * @param attr the attribute
+     * @param value the free-text match
+     */
+    public CriteriaHelper<T> matchText(Expression<String> attr, String value) {
+        if (StringUtils.isNotBlank(value)) {
+            Predicate predicate = null;
+            Matcher m = MATCH_TEXT_PATTERN.matcher(value);
+            while (m.find()) {
+                String quotedText = m.group(1);
+                String plainText = m.group(2);
+
+                if (quotedText != null) {
+                    Predicate p = cb.like(cb.lower(attr), "%" + quotedText.toLowerCase() + "%");
+                    predicate = predicate == null ? p : cb.or(predicate, p);
+
+                } else if (plainText != null) {
+                    plainText = plainText.replace('*', '%');
+                    if (plainText.startsWith("-")) {
+                        Predicate p = cb.not(cb.like(cb.lower(attr), "%" + plainText.substring(1).toLowerCase() + "%"));
+                        predicate = predicate == null ? p : cb.and(predicate, p);
+                    } else if (plainText.startsWith("+")) {
+                        Predicate p = cb.like(cb.lower(attr), "%" + plainText.substring(1).toLowerCase() + "%");
+                        predicate = predicate == null ? p : cb.and(predicate, p);
+                    } else if (!plainText.isEmpty()) {
+                        Predicate p = cb.like(cb.lower(attr), "%" + plainText.toLowerCase() + "%");
+                        predicate = predicate == null ? p : cb.or(predicate, p);
+                    }
+                }
+            }
+            if (predicate != null) {
+                where.add(predicate);
+            }
+        }
+        return this;
+    }
+
 
     /**
      * Returns the collected list of predicates
