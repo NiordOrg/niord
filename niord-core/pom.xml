@@ -51,6 +51,19 @@
             <artifactId>commons-fileupload</artifactId>
         </dependency>
 
+        <!-- Hibernate Search -->
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-search-orm</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-queryparser</artifactId>
+            <version>5.3.1</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Only used for executing jpa-ql in Intellij! -->
         <dependency>
             <groupId>org.hibernate</groupId>

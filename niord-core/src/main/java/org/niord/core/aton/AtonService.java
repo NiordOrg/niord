@@ -16,9 +16,18 @@
 package org.niord.core.aton;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
+import org.apache.lucene.search.MatchNoDocsQuery;
+import org.hibernate.search.jpa.FullTextEntityManager;
+import org.hibernate.search.jpa.FullTextQuery;
+import org.hibernate.search.jpa.Search;
 import org.niord.core.chart.Chart;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.db.SpatialWithinPredicate;
+import org.niord.core.model.BaseEntity;
 import org.niord.core.service.BaseService;
 import org.niord.model.PagedSearchResultVo;
 import org.slf4j.Logger;
@@ -28,21 +37,14 @@ import javax.inject.Inject;
 import javax.persistence.Tuple;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Root;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.niord.core.util.LuceneUtils.normalize;
 
 /**
  * Interface for handling AtoNs
- * <p>
- * TODO: Make it a singleton and cache the list of AtoNs
- * or create a Lucene index with AtoNs
  */
 @Stateless
 @SuppressWarnings("unused")
@@ -196,7 +198,7 @@ public class AtonService extends BaseService {
             result.updateSize();
             return result;
 
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             log.error("Error searching for AtoNs with params " + param, e);
             return new PagedSearchResultVo<>();
         }
@@ -227,7 +229,7 @@ public class AtonService extends BaseService {
                     .map(t -> new double[] { (double)t.get(0), (double)t.get(1) })
                     .collect(Collectors.toList());
 
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             log.error("Error searching for AtoNs positions with params " + param, e);
             return Collections.emptyList();
         }
@@ -246,10 +248,14 @@ public class AtonService extends BaseService {
         Root<AtonNode> atonRoot = c.from(AtonNode.class);
 
         if (StringUtils.isNotBlank(param.getName())) {
+            /**
             Join<AtonNode, AtonTag> tags = atonRoot.join("tags", JoinType.LEFT);
             criteriaHelper
                     // .equals(tags.get("k"), AtonTag.TAG_ATON_UID)
                     .matchText(tags.get("v"), param.getName());
+             **/
+            // Use Hibernate Search to match the name
+            criteriaHelper.in(atonRoot.get("id"), searchAtonTagKeys(param.getName()));
         }
 
         if (param.getExtent() != null) {
@@ -264,6 +270,45 @@ public class AtonService extends BaseService {
         }
 
         return atonRoot;
+    }
+
+
+    /**
+     * Performs a Hibernate Search on the AtoN tag values
+     * @param value the search string
+     * @return the IDs of the AtoN nodes that matches the search criteria
+     */
+    private List<Integer> searchAtonTagKeys(String value) {
+
+        value = normalize(value);
+
+        FullTextEntityManager fullTextEntityManager = Search.getFullTextEntityManager(em);
+
+        // Create a query parser with "or" operator as the default
+        QueryParser parser = new ComplexPhraseQueryParser(
+                "tags.v",
+                new StandardAnalyzer());
+        parser.setDefaultOperator(QueryParser.OR_OPERATOR);
+        parser.setAllowLeadingWildcard(true); // NB: Expensive!
+        org.apache.lucene.search.Query query;
+        try {
+            query = parser.parse(value);
+        } catch (ParseException e) {
+            // Make the client suffer
+            query = new MatchNoDocsQuery();
+        }
+
+        // wrap Lucene query in a javax.persistence.Query
+        FullTextQuery persistenceQuery = fullTextEntityManager.createFullTextQuery(query, AtonNode.class);
+
+        // execute search
+        @SuppressWarnings("unchecked")
+        List<AtonNode> an = (List<AtonNode>)persistenceQuery.getResultList();
+
+        // Returns the ID's of the AtoN nodes
+        return an.stream()
+                .map(BaseEntity::getId)
+                .collect(Collectors.toList());
     }
 
 }

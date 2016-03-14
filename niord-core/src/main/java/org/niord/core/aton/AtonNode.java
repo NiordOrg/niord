@@ -17,6 +17,8 @@ package org.niord.core.aton;
 
 import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.search.annotations.Indexed;
+import org.hibernate.search.annotations.IndexedEmbedded;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.util.GeoJsonUtils;
 import org.niord.model.vo.aton.AtonNodeVo;
@@ -37,6 +39,7 @@ import java.util.stream.Collectors;
  * http://wiki.openstreetmap.org/wiki/Elements
  */
 @Entity
+@Indexed(index = "indexes/atons")
 @NamedQueries({
         @NamedQuery(name  = "AtonNode.deleteAll",
                 query = "delete from AtonNode"),
@@ -62,6 +65,7 @@ public class AtonNode extends BaseEntity<Integer> {
     @Column(columnDefinition = "GEOMETRY", nullable = false)
     Geometry geometry;
 
+    @IndexedEmbedded
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "atonNode", orphanRemoval = true)
     List<AtonTag> tags = new ArrayList<>();
 

@@ -21,6 +21,10 @@
             <property name="hibernate.show_sql" value="false"/>
             <property name="hibernate.format_sql" value="false"/>
 
+            <!-- Enable Hibernate Search -->
+            <property name="wildfly.jpa.hibernate.search.module" value="org.hibernate.search.orm:main"/>
+            <property name="hibernate.search.lucene_version" value="LUCENE_CURRENT"/>
+
             <!-- caching -->
             <property name="hibernate.cache.use_second_level_cache" value="true"/>
             <property name="hibernate.cache.use_query_cache" value="true"/>

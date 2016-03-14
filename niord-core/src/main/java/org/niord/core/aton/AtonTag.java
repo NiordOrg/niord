@@ -15,6 +15,7 @@
  */
 package org.niord.core.aton;
 
+import org.hibernate.search.annotations.Field;
 import org.niord.core.model.BaseEntity;
 import org.niord.model.vo.aton.AtonTagVo;
 
@@ -52,6 +53,7 @@ public class AtonTag extends BaseEntity<Integer> {
     @NotNull
     String k;
 
+    @Field
     String v;
 
     @ManyToOne
