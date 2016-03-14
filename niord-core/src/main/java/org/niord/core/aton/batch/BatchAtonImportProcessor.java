@@ -17,6 +17,7 @@ package org.niord.core.aton.batch;
 
 import org.niord.core.aton.AtonNode;
 import org.niord.core.aton.AtonService;
+import org.niord.core.aton.AtonTag;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.model.vo.aton.AtonNodeVo;
 
@@ -46,8 +47,9 @@ public class BatchAtonImportProcessor extends AbstractItemHandler {
         }
 
         if (aton.getAtonUid() == null) {
-            getLog().warning("Skipping AtoN with no AtoN UID " + aton);
-            return null;
+            aton.updateTag(AtonTag.TAG_ATON_UID, "aton-import-" + aton.getId());
+            //getLog().warning("Skipping AtoN with no AtoN UID " + aton);
+            //return null;
         }
 
         // Look up any existing AtoN with the same AtoN UID
