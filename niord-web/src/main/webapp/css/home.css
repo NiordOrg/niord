@@ -54,3 +54,6 @@ body {
     z-index: -100;
 }
 
+.home-map .ol-zoom {
+    display: none;
+}
