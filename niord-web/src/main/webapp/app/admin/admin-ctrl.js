@@ -7,8 +7,8 @@ angular.module('niord.admin')
      * Admin Controller
      * Will periodically reload batch status to display the number of running batch jobs in the admin page menu
      */
-    .controller('CommonAdminCtrl', ['$scope', '$interval', 'AdminService',
-        function ($scope, $interval, AdminService) {
+    .controller('CommonAdminCtrl', ['$scope', '$interval', 'AdminBatchService',
+        function ($scope, $interval, AdminBatchService) {
             'use strict';
 
             $scope.batchStatus = {
@@ -18,7 +18,7 @@ angular.module('niord.admin')
 
             // Loads the batch status
             $scope.loadBatchStatus = function () {
-                AdminService.getBatchStatus()
+                AdminBatchService.getBatchStatus()
                     .success(function (status) {
                         $scope.batchStatus = status;
                     });
@@ -47,8 +47,8 @@ angular.module('niord.admin')
     /**
      * Batch Admin Controller
      */
-    .controller('BatchAdminCtrl', ['$scope', '$interval', '$routeParams', '$uibModal', 'AdminService',
-        function ($scope, $interval, $routeParams, $uibModal, AdminService) {
+    .controller('BatchAdminCtrl', ['$scope', '$interval', '$routeParams', '$uibModal', 'AdminBatchService',
+        function ($scope, $interval, $routeParams, $uibModal, AdminBatchService) {
             'use strict';
 
             $scope.batchStatus = {
@@ -82,7 +82,7 @@ angular.module('niord.admin')
 
             // Loads the batch status
             $scope.loadBatchStatus = function () {
-                AdminService.getBatchStatus()
+                AdminBatchService.getBatchStatus()
                     .success(function (status) {
                         $scope.batchStatus = status;
                         $scope.loadBatchInstances();
@@ -104,7 +104,7 @@ angular.module('niord.admin')
             // Loads "count" more batch instances
             $scope.loadBatchInstances = function () {
                 if ($scope.batchName) {
-                    AdminService.getBatchInstances($scope.batchName, $scope.currentPage - 1, $scope.pageSize)
+                    AdminBatchService.getBatchInstances($scope.batchName, $scope.currentPage - 1, $scope.pageSize)
                         .success(function (result) {
                             $scope.searchResult = result;
                             $scope.buildBatchExecutionList();
@@ -154,28 +154,28 @@ angular.module('niord.admin')
 
             // Stops the given batch job
             $scope.stop = function (execution) {
-                AdminService
+                AdminBatchService
                     .stopBatchExecution(execution.executionId)
                     .success($scope.loadBatchInstances);
             };
 
             // Restarts the given batch job
             $scope.restart = function (execution) {
-                AdminService
+                AdminBatchService
                     .restartBatchExecution(execution.executionId)
                     .success($scope.loadBatchInstances);
             };
 
             // Abandon the given batch job
             $scope.abandon = function (execution) {
-                AdminService
+                AdminBatchService
                     .abandonBatchExecution(execution.executionId)
                     .success($scope.loadBatchInstances);
             };
 
             // Download the instance data file
             $scope.download = function (instance) {
-                AdminService
+                AdminBatchService
                     .getBatchDownloadTicket()
                     .success(function (ticket) {
                         var link = document.createElement("a");
@@ -208,8 +208,8 @@ angular.module('niord.admin')
     /**
      * Dialog Controller for the Batch job log file dialog
      */
-    .controller('BatchLogFileDialogCtrl', ['$scope', 'AdminService', 'instanceId',
-        function ($scope, AdminService, instanceId) {
+    .controller('BatchLogFileDialogCtrl', ['$scope', 'AdminBatchService', 'instanceId',
+        function ($scope, AdminBatchService, instanceId) {
             'use strict';
 
             $scope.instanceId = instanceId;
@@ -218,7 +218,7 @@ angular.module('niord.admin')
             $scope.files = [];
 
             // Load the log files
-            AdminService.getBatchLogFiles($scope.instanceId)
+            AdminBatchService.getBatchLogFiles($scope.instanceId)
                 .success(function (fileNames) {
                     $scope.files = fileNames;
                 });
@@ -226,7 +226,7 @@ angular.module('niord.admin')
             $scope.reloadLogFile = function () {
                 var file = $scope.selection.file;
                 if (file && file.length > 0) {
-                    AdminService.getBatchLogFileContent($scope.instanceId, file)
+                    AdminBatchService.getBatchLogFileContent($scope.instanceId, file)
                         .success(function (fileContent) {
                             $scope.fileContent = fileContent;
                         })

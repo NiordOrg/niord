@@ -102,13 +102,6 @@ angular.module('niord.atons')
             },
 
 
-            getAton: function(atonUid, success, error) {
-                $http.get('/rest/atons/' + encodeURI(atonUid))
-                    .success(success)
-                    .error(error);
-            },
-
-
             searchAtonsByExtent: function(extent, maxAtonNo, success, error) {
                 var params = 'maxAtonNo=' + maxAtonNo + '&emptyOnOverflow=true';
                 if (extent && extent.length == 4) {

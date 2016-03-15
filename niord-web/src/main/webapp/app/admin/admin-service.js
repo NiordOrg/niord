@@ -7,7 +7,7 @@ angular.module('niord.admin')
     /**
      * Interface for calling the application server
      */
-    .factory('AdminService', [ '$http', function($http) {
+    .factory('AdminBatchService', [ '$http', function($http) {
         'use strict';
 
         return {
