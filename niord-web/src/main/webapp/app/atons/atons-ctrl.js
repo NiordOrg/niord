@@ -222,8 +222,7 @@ angular.module('niord.atons')
 
                 var params = $scope.toRequestFilterParameters();
 
-                AtonService.searchAtonsByParams(
-                    params,
+                AtonService.searchAtonsByParams(params).success(
                     function (result) {
                         $scope.totalAtonNo = result.total;
                         if (result.data != null) {
@@ -235,11 +234,7 @@ angular.module('niord.atons')
                         } else {
                             $scope.atons.length = 0;
                         }
-                    },
-                    function (error) {
-                        console.error("Error updating AtoN's: " + error);
-                    }
-                );
+                    });
             };
 
 

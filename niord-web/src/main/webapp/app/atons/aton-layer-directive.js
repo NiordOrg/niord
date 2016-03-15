@@ -247,9 +247,7 @@ angular.module('niord.atons')
                                 }
 
                                 // Load at most scope.maxAtonNo AtoN's
-                                AtonService.searchAtonsByExtent(
-                                    extent,
-                                    maxAtonNo,
+                                AtonService.searchAtonsByExtent(extent, maxAtonNo).success(
                                     function (result) {
                                         if (result.data != null) {
                                             scope.updateAtonVectorLayer(result.data);
@@ -260,10 +258,6 @@ angular.module('niord.atons')
                                                 scope.updateAtonVectorLayer([]);
                                             }
                                         }
-                                    },
-                                    function (error) {
-                                        console.error("Error updating AtoN's: " + error);
-                                        scope.updateAtonTileLayer([]);
                                     });
                             };
 

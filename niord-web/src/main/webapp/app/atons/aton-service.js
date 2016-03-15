@@ -102,22 +102,18 @@ angular.module('niord.atons')
             },
 
 
-            searchAtonsByExtent: function(extent, maxAtonNo, success, error) {
+            searchAtonsByExtent: function(extent, maxAtonNo) {
                 var params = 'maxAtonNo=' + maxAtonNo + '&emptyOnOverflow=true';
                 if (extent && extent.length == 4) {
                     params += '&minLon=' + extent[0] + '&minLat=' + extent[1]
                            +  '&maxLon=' + extent[2] + '&maxLat=' + extent[3];
                 }
 
-                $http.get('/rest/atons/search?' + params)
-                    .success(success)
-                    .error(error);
+                return $http.get('/rest/atons/search?' + params);
             },
 
-            searchAtonsByParams: function(params, success, error) {
-                $http.get('/rest/atons/search?' + params)
-                    .success(success)
-                    .error(error);
+            searchAtonsByParams: function(params) {
+                return $http.get('/rest/atons/search?' + params);
             },
 
             // Returns the node type names matching the name param

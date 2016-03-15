@@ -33,6 +33,7 @@ import javax.inject.Inject;
 import javax.ws.rs.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * REST interface for accessing AtoNs.
@@ -59,8 +60,10 @@ public class AtonRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<AtonNode> getAtons(@PathParam("atonUids") String atonUids) {
-        return atonService.findByAtonUids(atonUids.split(","));
+    public List<AtonNodeVo> getAtons(@PathParam("atonUids") String atonUids) {
+        return atonService.findByAtonUids(atonUids.split(",")).stream()
+                .map(AtonNode::toVo)
+                .collect(Collectors.toList());
     }
 
 

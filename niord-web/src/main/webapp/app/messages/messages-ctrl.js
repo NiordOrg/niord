@@ -6,8 +6,10 @@
  * are updated. This allows e.g. for bookmarking of the current state.
  */
 angular.module('niord.messages')
-    .controller('MessageListCtrl', ['$scope', '$rootScope', '$location', '$http', '$timeout', 'FilterService', 'MapService',
-        function ($scope, $rootScope, $location, $http, $timeout, FilterService, MapService) {
+    .controller('MessageListCtrl', ['$scope', '$rootScope', '$location', '$http', '$timeout',
+                'FilterService', 'MapService', 'AtonService',
+        function ($scope, $rootScope, $location, $http, $timeout,
+                  FilterService, MapService, AtonService) {
             'use strict';
 
             $scope.messageList = [];
@@ -195,7 +197,7 @@ angular.module('niord.messages')
                 }
                 if (s.aton.enabled) {
                     angular.forEach(s.aton.atons, function (aton) {
-                        params += '&aton=' + aton.atonUid;
+                        params += '&aton=' + AtonService.getAtonUid(aton);
                     })
                 }
                 if (s.chart.enabled) {
@@ -269,42 +271,41 @@ angular.module('niord.messages')
                 if (params.tag && params.tag.length > 0) {
                     s.tag.enabled = true;
                     var tags = (typeof params.tag === 'string') ? params.tag : params.tag.join();
-                    $http.get('/rest/tags/' + tags
-                    ).then(function(response) {
+                    $http.get('/rest/tags/' + tags).then(function(response) {
                         s.tag.tags = response.data;
                     });
                 }
                 if (params.aton && params.aton.length > 0) {
                     s.aton.enabled = true;
                     var atons = (typeof params.aton === 'string') ? params.aton : params.aton.join();
-                    $http.get('/rest/atons/' + atons + '?lang=' + $rootScope.language
-                    ).then(function(response) {
-                        s.aton.atons = response.data;
-                    });
+                    $http.get('/rest/atons/' + atons + '?lang=' + $rootScope.language)
+                        .then(function(response) {
+                            s.aton.atons = response.data;
+                        });
                 }
                 if (params.chart && params.chart.length > 0) {
                     s.chart.enabled = true;
                     var charts = (typeof params.chart === 'string') ? params.chart : params.chart.join();
-                    $http.get('/rest/test/charts/' + charts + '?lang=' + $rootScope.language + '&limit=10'
-                    ).then(function(response) {
-                      s.chart.charts = response.data;
-                    });
+                    $http.get('/rest/test/charts/' + charts + '?lang=' + $rootScope.language + '&limit=10')
+                        .then(function(response) {
+                            s.chart.charts = response.data;
+                        });
                 }
                 if (params.area && params.area.length > 0) {
                     s.area.enabled = true;
                     var areas = (typeof params.area === 'string') ? params.area : params.area.join();
-                    $http.get('/rest/test/areas/' + areas + '?lang=' + $rootScope.language + '&limit=10'
-                    ).then(function(response) {
-                        s.area.areas = response.data;
-                    });
+                    $http.get('/rest/test/areas/' + areas + '?lang=' + $rootScope.language + '&limit=10')
+                        .then(function(response) {
+                            s.area.areas = response.data;
+                        });
                 }
                 if (params.category && params.category.length > 0) {
                     s.category.enabled = true;
                     var categories = (typeof params.category === 'string') ? params.category : params.category.join();
-                    $http.get('/rest/test/categories/' + categories + '?lang=' + $rootScope.language + '&limit=10'
-                    ).then(function(response) {
-                        s.category.categories = response.data;
-                    });
+                    $http.get('/rest/test/categories/' + categories + '?lang=' + $rootScope.language + '&limit=10')
+                        .then(function(response) {
+                            s.category.categories = response.data;
+                        });
                 }
                 if (params.fromDate || params.toDate) {
                     s.date.enabled = true;

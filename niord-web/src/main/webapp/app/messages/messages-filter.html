@@ -71,15 +71,15 @@
         <view-mode-filter-panel state="state" filter-name="aton" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
             <ui-select multiple id="atons" ng-model="state.aton.atons" >
                 <ui-select-match placeholder="Select AtoNs">
-                    {{$item.atonUid}}
-                    <span ng-if="$item.name">{{$item.name}}</span>
+                    {{$item.tags['seamark:ref']}}
+                    <span ng-if="$item.tags['seamark:name']">{{$item.tags['seamark:name']}}</span>
                 </ui-select-match>
                 <ui-select-choices repeat="aton in atons"
                                    refresh="refreshAtons($select.search)"
                                    refresh-delay="100">
                     <div>
-                        <span ng-bind-html="aton.atonUid | highlight: $select.search"></span>
-                        <small ng-bind-html="aton.name | highlight: $select.search"></small>
+                        <span ng-bind-html="aton.tags['seamark:ref'] | highlight: $select.search"></span>
+                        <small ng-bind-html="aton.tags['seamark:name'] | highlight: $select.search"></small>
                     </div>
 
                 </ui-select-choices>
