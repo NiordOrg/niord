@@ -10,10 +10,13 @@ angular.module('niord.conf')
 
         $rootScope.adminIntegrationPageEnabled = false;
 
-            // Map settings
+        // Map settings
         $rootScope.mapDefaultZoomLevel = 6;
         $rootScope.mapDefaultLatitude  = 56;
         $rootScope.mapDefaultLongitude = 11;
+
+        // Layer settings
+        $rootScope.wmsLayerEnabled = true;
 
         // Language settings
         $rootScope.modelLanguages = [ 'en' ];

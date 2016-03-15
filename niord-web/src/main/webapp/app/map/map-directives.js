@@ -227,14 +227,38 @@ angular.module('niord.map')
 
                 olScope.getMap().then(function(map) {
 
-                    angular.forEach(map.getLayers(), function (layer) {
-                        if (layer.get('displayInLayerSwitcher')) {
-                            scope.switcherLayers.push({
-                                layer : layer,
-                                name : layer.get('name'),
-                                visible : layer.getVisible()
-                            });
+                    // Update the list of layers to display in the layer switcher
+                    scope.updateLayerSwitcher = function () {
+                        scope.switcherLayers.length = 0;
+                        angular.forEach(map.getLayers(), function (layer) {
+                            if (layer.get('displayInLayerSwitcher')) {
+                                scope.switcherLayers.push({
+                                    layer : layer,
+                                    name : layer.get('name'),
+                                    visible : layer.getVisible()
+                                });
+                            }
+                        });
+                    };
+                    scope.updateLayerSwitcher();
+
+                    // Function called when displayInLayerSwitcher changes
+                    scope.displayInLayerSwitcherChanged = function (evt) {
+                        if (evt.key == 'displayInLayerSwitcher') {
+                            scope.updateLayerSwitcher();
                         }
+                    };
+
+                    // Listen for 'displayInLayerSwitcher' change events
+                    angular.forEach(map.getLayers(), function (layer) {
+                        layer.on('propertychange', scope.displayInLayerSwitcherChanged);
+                    });
+
+                    // When destroyed, un-listen for 'displayInLayerSwitcher' change events
+                    scope.$on('$destroy', function() {
+                        angular.forEach(map.getLayers(), function (layer) {
+                            layer.un('propertychange', scope.displayInLayerSwitcherChanged);
+                        });
                     });
 
                 });
@@ -273,6 +297,13 @@ angular.module('niord.map')
                             map.removeLayer(olLayer);
                         }
                     });
+
+
+                    // Supports dynamically adding and removing the layer from the layer switcher
+                    scope.$watch("layerSwitcher", function (layerSwitcher) {
+                        olLayer.set('displayInLayerSwitcher', layerSwitcher);
+                    }, true);
+
 
                     switch (scope.source) {
                         case 'MapQuest':
@@ -345,6 +376,13 @@ angular.module('niord.map')
                     });
                     olLayer = MapService.initLayer(olLayer, scope.name, scope.visible, scope.layerSwitcher);
                     map.addLayer(olLayer);
+
+
+                    // Supports dynamically adding and removing the layer from the layer switcher
+                    scope.$watch("layerSwitcher", function (layerSwitcher) {
+                        olLayer.set('displayInLayerSwitcher', layerSwitcher);
+                    }, true);
+
 
                     // Creates a style with a label in the corner
                     scope.stylesForChart = function (feature, chart) {

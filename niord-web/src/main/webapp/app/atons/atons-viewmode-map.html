@@ -20,9 +20,9 @@
 
     <ol-map class="atons-map" map-state="state.map">
         <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
-        <map-tile-layer name="WMS" visible="false" layer-switcher="true" source="WMS"
+        <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
                         source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
-        <map-charts-layer name="Charts" visible="false" layer-switcher="true" charts="state.chart.charts"></map-charts-layer>
+        <map-charts-layer name="Charts" visible="false" layer-switcher="state.chart.enabled" charts="state.chart.charts"></map-charts-layer>
         <map-aton-layer atons="atons" selection="selection" name="AtoN" visible="true" layer-switcher="false"></map-aton-layer>
         <map-layer-switcher></map-layer-switcher>
     </ol-map>

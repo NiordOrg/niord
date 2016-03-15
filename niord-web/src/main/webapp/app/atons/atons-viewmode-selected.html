@@ -61,7 +61,7 @@
 
                 <ol-map class="aton-selection-map">
                     <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
-                    <map-tile-layer name="WMS" visible="false" layer-switcher="true" source="WMS"
+                    <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
                                     source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
                     <map-message-details-layer name="Messages" visible="true" layer-switcher="false" message="featureCollection" fit-extent="true"></map-message-details-layer>
                     <map-layer-switcher></map-layer-switcher>

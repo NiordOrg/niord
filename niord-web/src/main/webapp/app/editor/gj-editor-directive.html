@@ -148,7 +148,7 @@
 
         <ol-map class="osm-water-bg full-size">
             <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
-            <map-tile-layer name="WMS" visible="false" layer-switcher="true" source="WMS"
+            <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
                             source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
             <map-aton-layer name="AtoN" visible="false" layer-switcher="true"></map-aton-layer>
             <map-ol-editor-layer name="Locations" visible="true" layer-switcher="false"
