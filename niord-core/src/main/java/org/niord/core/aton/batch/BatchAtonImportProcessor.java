@@ -46,6 +46,8 @@ public class BatchAtonImportProcessor extends AbstractItemHandler {
             return null;
         }
 
+        // TODO: Figure out a good strategy for handling AtoN's without an AtoN UID.
+        // Either skip them, or look up by "seamark:type" + coordinates...
         if (aton.getAtonUid() == null) {
             aton.updateTag(AtonTag.TAG_ATON_UID, "aton-import-" + aton.getId());
             //getLog().warning("Skipping AtoN with no AtoN UID " + aton);
