@@ -107,10 +107,13 @@ public class ChartService extends BaseService {
      * @return the updated chart
      */
     public Chart updateChartData(Chart chart) {
-        Chart original = getByPrimaryKey(Chart.class, chart.getId());
+        Chart original = findByChartNumber(chart.getChartNumber());
+        if (original == null) {
+            throw new IllegalArgumentException("Cannot update non-existing chart "
+                    + chart.getChartNumber());
+        }
 
         // Copy the chart data
-        original.setChartNumber(chart.getChartNumber());
         original.setInternationalNumber(chart.getInternationalNumber());
         original.setHorizontalDatum(chart.getHorizontalDatum());
         original.setName(chart.getName());
@@ -127,6 +130,11 @@ public class ChartService extends BaseService {
      * @return the created chart
      */
     public Chart createChart(Chart chart) {
+        Chart original = findByChartNumber(chart.getChartNumber());
+        if (original != null) {
+            throw new IllegalArgumentException("Cannot create chart with duplicate chart number "
+                    + chart.getChartNumber());
+        }
 
         return saveEntity(chart);
     }
@@ -134,11 +142,11 @@ public class ChartService extends BaseService {
 
     /**
      * Deletes the chart
-     * @param chartId the id of the chart to delete
+     * @param chartNumber the id of the chart to delete
      */
-    public boolean deleteChart(Integer chartId) {
+    public boolean deleteChart(String chartNumber) {
 
-        Chart chart = getByPrimaryKey(Chart.class, chartId);
+        Chart chart = findByChartNumber(chartNumber);
         if (chart != null) {
             remove(chart);
             return true;

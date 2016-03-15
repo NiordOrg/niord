@@ -349,7 +349,17 @@ angular.module('niord.common')
             format = format || 'lll';
             return input ? moment(input).format(format) : '';
         };
+    }])
+
+
+    /** Formats a number using numeral() **/
+    .filter('numeral', [function () {
+        return function(input, format) {
+            format = format || '0,0';
+            return input ? numeral(input).format(format) : '';
+        };
     }]);
+
 
 
 

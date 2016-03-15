@@ -74,7 +74,7 @@ angular.module('niord.common')
                 backdrop: true,
                 keyboard: true,
                 modalFade: true,
-                templateUrl: '/partials/common/dialog.html'
+                templateUrl: '/app/common/dialog.html'
             };
 
             var modalOptions = {

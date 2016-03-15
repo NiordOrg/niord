@@ -5,15 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
-import org.niord.core.chart.Chart;
-import org.niord.core.chart.ChartService;
 import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.geojson.FeatureService;
-import org.niord.core.model.Extent;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 import org.niord.model.ILocalizedDesc;
-import org.niord.model.vo.ChartVo;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
 
 import javax.annotation.PostConstruct;
@@ -48,9 +44,6 @@ public class TestRestService {
 
     @Inject
     FeatureService featureService;
-
-    @Inject
-    ChartService chartService;
 
     List<Area> areas;
     List<Category> categories;
@@ -162,67 +155,6 @@ public class TestRestService {
         return System.currentTimeMillis() + "";
     }
 
-
-    @GET
-    @Path("/charts")
-    @Produces("application/json;charset=UTF-8")
-    @GZIP
-    @NoCache
-    public List<ChartVo> searchCharts(@QueryParam("name") @DefaultValue("") String name,
-                                      @QueryParam("limit") @DefaultValue("1000") int limit) {
-        return chartService.searchCharts(name, limit).stream()
-                .map(Chart::toVo)
-                .collect(Collectors.toList());
-    }
-
-    @GET
-    @Path("/charts/all")
-    @Produces("application/json;charset=UTF-8")
-    @GZIP
-    @NoCache
-    public List<ChartVo> getAllCharts(@QueryParam("limit") @DefaultValue("1000") int limit) {
-        return chartService.getCharts().stream()
-                .limit(limit)
-                .map(Chart::toVo)
-                .collect(Collectors.toList());
-    }
-
-
-    @GET
-    @Path("/charts/{chartIds}")
-    @Produces("application/json;charset=UTF-8")
-    @GZIP
-    @NoCache
-    public List<ChartVo> getCharts(@PathParam("chartIds") String chartIds,
-                                 @QueryParam("limit") @DefaultValue("1000") int limit) {
-        return chartService.findByChartNumbers(chartIds.split(",")).stream()
-                .limit(limit)
-                .map(Chart::toVo)
-                .collect(Collectors.toList());
-    }
-
-    public List<Extent> getChartExtents(String[] chartIds) {
-
-        return null;
-        /**
-        if (chartIds == null) {
-            return null;
-        }
-        List<Extent> result = new ArrayList<>();
-        Arrays.stream(chartIds)
-                .forEach(c -> {
-                    ChartVo chart = searchCharts(c, 1).get(0);
-                    if (chart.getLowerLeftLatitude() != null) {
-                        result.addAll(new Extent(
-                                chart.getLowerLeftLatitude(),
-                                chart.getLowerLeftLongitude(),
-                                chart.getUpperRightLatitude(),
-                                chart.getUpperRightLongitude()).normalize());
-                    }
-                });
-        return result;
-         */
-    }
 
     @GET
     @Path("/areas")

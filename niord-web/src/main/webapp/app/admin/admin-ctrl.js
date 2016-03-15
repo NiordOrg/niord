@@ -4,7 +4,7 @@
 angular.module('niord.admin')
 
     /**
-     * Admin Controller
+     * Common Admin Controller
      * Will periodically reload batch status to display the number of running batch jobs in the admin page menu
      */
     .controller('CommonAdminCtrl', ['$scope', '$interval', 'AdminBatchService',
@@ -38,6 +38,120 @@ angular.module('niord.admin')
 
                 // Initial load
                 $scope.loadBatchStatus();
+            }
+
+        }])
+
+
+
+    /**
+     * Charts Admin Controller
+     * Controller for the Admin Charts page
+     */
+    .controller('ChartsAdminCtrl', ['$scope', 'growl', 'AdminChartService', 'DialogService',
+        function ($scope, growl, AdminChartService, DialogService) {
+            'use strict';
+
+            $scope.allCharts = [];
+            $scope.chart = undefined; // The chart being edited
+            $scope.editMode = 'add';
+
+            // Pagination
+            $scope.charts = [];
+            $scope.pageSize = 20;
+            $scope.currentPage = 1;
+            $scope.chartNo = 0;
+            $scope.search = '';
+
+
+            /** Loads the charts from the back-end */
+            $scope.loadCharts = function() {
+                AdminChartService
+                    .getCharts()
+                    .success(function (charts) {
+                        $scope.allCharts = charts;
+                        $scope.pageChanged();
+                    });
+            };
+
+
+            /** Returns if the string matches the given chart property */
+            function match(chartProperty, str) {
+                var txt = (chartProperty) ? "" + chartProperty : "";
+                return txt.toLowerCase().indexOf(str.toLowerCase()) >= 0;
+            }
+
+
+            /** Called whenever chart pagination changes */
+            $scope.pageChanged = function() {
+                var search = $scope.search.toLowerCase();
+                var filteredCharts = $scope.allCharts.filter(function (chart) {
+                    return match(chart.chartNumber, search) ||
+                        match(chart.internationalNumber, search) ||
+                        match(chart.horizontalDatum, search) ||
+                        match(chart.name, search);
+                });
+                $scope.chartNo = filteredCharts.length;
+                $scope.charts = filteredCharts.slice(
+                    $scope.pageSize * ($scope.currentPage - 1),
+                    Math.min($scope.chartNo, $scope.pageSize * $scope.currentPage));
+            };
+            $scope.$watch("search", $scope.pageChanged, true);
+
+
+            /** Adds a new chart **/
+            $scope.addChart = function () {
+                $scope.editMode = 'add';
+                $scope.chart = { chartNumber: undefined, internationalNumber: undefined, horizontalDatum: undefined };
+            };
+
+
+            /** Edits a chart **/
+            $scope.editChart = function (chart) {
+                $scope.editMode = 'edit';
+                $scope.chart = angular.copy(chart);
+            };
+
+
+            /** Cancel adding/editing a chart **/
+            $scope.cancelEditChart = function () {
+                $scope.editMode = undefined;
+                $scope.chart = undefined;
+            };
+
+
+            /** Displays the error message */
+            $scope.displayError = function (error) {
+                growl.error("Error: " + error);
+            };
+
+
+            /** Saves the current chart being edited */
+            $scope.saveChart = function () {
+                if ($scope.chart && $scope.editMode == 'add') {
+                    AdminChartService
+                        .createChart($scope.chart)
+                        .success($scope.loadCharts)
+                        .error($scope.displayError);
+                } else if ($scope.chart && $scope.editMode == 'edit') {
+                    AdminChartService
+                        .updateChart($scope.chart)
+                        .success($scope.loadCharts)
+                        .error($scope.displayError);
+                }
+            };
+
+
+            /** Deletes the given chart */
+            $scope.deleteChart = function (chart) {
+                DialogService.showConfirmDialog(
+                    "Delete Chart?", "Delete chart number '" + chart.chartNumber + "'?")
+                    .then(function() {
+                        AdminChartService
+                            .deleteChart(chart)
+                            .success($scope.loadCharts)
+                            .error($scope.displayError);
+                    });
             }
 
         }])

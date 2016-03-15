@@ -286,7 +286,7 @@ angular.module('niord.messages')
                 if (params.chart && params.chart.length > 0) {
                     s.chart.enabled = true;
                     var charts = (typeof params.chart === 'string') ? params.chart : params.chart.join();
-                    $http.get('/rest/test/charts/' + charts + '?lang=' + $rootScope.language + '&limit=10')
+                    $http.get('/rest/charts/' + charts + '?lang=' + $rootScope.language + '&limit=10')
                         .then(function(response) {
                             s.chart.charts = response.data;
                         });
@@ -361,7 +361,7 @@ angular.module('niord.messages')
                     return [];
                 }
                 return $http.get(
-                    '/rest/test/charts?name=' + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10'
+                    '/rest/charts/search?name=' + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10'
                 ).then(function(response) {
                     $scope.charts = response.data;
                 });

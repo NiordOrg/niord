@@ -5,7 +5,42 @@
 angular.module('niord.admin')
 
     /**
-     * Interface for calling the application server
+     * Interface for calling chart related functions at the application server
+     */
+    .factory('AdminChartService', [ '$http', function($http) {
+        'use strict';
+
+        return {
+
+            /** Returns all charts **/
+            getCharts: function () {
+                return $http.get('/rest/charts/all');
+            },
+
+
+            /** Creates a new chart **/
+            createChart: function(chart) {
+                return $http.post('/rest/charts/chart', chart);
+            },
+
+
+            /** Updates the given chart **/
+            updateChart: function(chart) {
+                return $http.put('/rest/charts/chart/' + encodeURIComponent(chart.chartNumber), chart);
+            },
+
+
+            /** Deletes the given chart **/
+            deleteChart: function(chart) {
+                return $http.delete('/rest/charts/chart/' + encodeURIComponent(chart.chartNumber));
+            }
+
+        };
+    }])
+
+
+    /**
+     * Interface for calling batch-related functions at the application server
      */
     .factory('AdminBatchService', [ '$http', function($http) {
         'use strict';
