@@ -10,7 +10,7 @@ angular.module('niord.atons')
     .factory('AtonService', [ '$http', function($http) {
         'use strict';
 
-        // Adds a the given AtoN tag as a parameter if well-defined
+        /** Adds a the given AtoN tag as a parameter if well-defined */
         function addParam(url, aton, k) {
             var v = aton.tags[k];
             if (v && v.length > 0) {
@@ -22,7 +22,8 @@ angular.module('niord.atons')
             return url;
         }
 
-        // Constructs a URL for the overview AtoN icon
+
+        /** Constructs a URL for the overview AtoN icon */
         function computeAtonIconUrl(aton) {
 
             var type = aton.tags['seamark:type'];
@@ -45,13 +46,13 @@ angular.module('niord.atons')
 
         return {
 
-            // Constructs a URL for the overview AtoN icon
+            /** Constructs a URL for the overview AtoN icon */
             getAtonIconUrl: function(aton) {
                 return computeAtonIconUrl(aton);
             },
 
 
-            // Compute which icon to display for a given AtoN
+            /** Compute which icon to display for a given AtoN */
             getAtonOLIcon: function(aton, zoom) {
                 var iconUrl = computeAtonIconUrl(aton);
                 var scale = Math.min(1.0, Math.max(0.7, zoom / 20.0));
@@ -64,7 +65,7 @@ angular.module('niord.atons')
             },
 
 
-            // Returns the selection icon to use with a selected AtoN
+            /** Returns the selection icon to use with a selected AtoN */
             getAtonSelectionOLIcon: function() {
                 return new ol.style.Icon({
                     anchor: [0.5, 0.5],
@@ -74,7 +75,8 @@ angular.module('niord.atons')
                 })
             },
 
-            // Compute the label to display for a given AtoN
+
+            /** Compute the OL label to display for a given AtoN */
             getAtonLabel: function(aton, zoom) {
                 // it easily becomes cluttered, so, only show labels when you have zoomed in a lot...
                 if (zoom <= 15) {
@@ -92,16 +94,19 @@ angular.module('niord.atons')
             },
 
 
+            /** Returns the UID for the given AtoN */
             getAtonUid: function(aton) {
                 return aton ? aton.tags['seamark:ref'] : undefined;
             },
 
 
+            /** Returns an SVG representation of the AtoN */
             getAtonSvg: function(aton) {
                 return $http.post('/rest/aton-icon/svg?width=400&height=200&scale=0.4', aton);
             },
 
 
+            /** Search for AtoNs within the given extent */
             searchAtonsByExtent: function(extent, maxAtonNo) {
                 var params = 'maxAtonNo=' + maxAtonNo + '&emptyOnOverflow=true';
                 if (extent && extent.length == 4) {
@@ -112,17 +117,21 @@ angular.module('niord.atons')
                 return $http.get('/rest/atons/search?' + params);
             },
 
+
+            /** Searches for AtoNs based on the given search parameters */
             searchAtonsByParams: function(params) {
                 return $http.get('/rest/atons/search?' + params);
             },
 
-            // Returns the node type names matching the name param
+
+            /** Returns the node type names matching the name param */
             getNodeTypeNames: function (name) {
                 var param = (name) ? '?name=' + encodeURIComponent(name) : '';
                 return $http.get('/rest/atons/defaults/node-types' + param);
             },
 
-            // Updates and returns an AtoN from the node types with the given names
+
+            /** Updates and returns an AtoN from the node types with the given names */
             mergeWithNodeTypes: function (aton, nodeTypeNames) {
                 var param = { aton: aton, nodeTypeNames: nodeTypeNames };
                 return $http.post('/rest/atons/defaults/merge-with-node-types', param);
