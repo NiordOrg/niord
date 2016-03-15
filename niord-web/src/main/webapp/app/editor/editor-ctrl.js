@@ -18,33 +18,25 @@ angular.module('niord.editor')
             };
 
             $scope.loadFeatureCollections = function () {
-                MapService.getAllFeatureCollections(function (featureCollections) {
+                MapService.getAllFeatureCollections().success(function (featureCollections) {
                     $scope.featureCollections.length = 0;
                     angular.forEach(featureCollections, function (featureCollection) {
                         $scope.featureCollections.push(featureCollection);
                     });
-                }, function (e) {
-                    log.error("Error fetching shapes " + e)
                 });
             };
 
             $scope.loadFeatureCollections();
 
             $scope.updateFeatureCollection = function (fc) {
-                MapService.updateFeatureCollection(
-                    fc,
-                    $scope.loadFeatureCollections,
-                    function (e) {log.error("Error fetching shapes " + e)}
-                );
+                MapService.updateFeatureCollection(fc)
+                    .success($scope.loadFeatureCollections);
             };
 
 
             $scope.newFeatureCollection = function (fc) {
-                MapService.createFeatureCollection(
-                    fc,
-                    $scope.loadFeatureCollections,
-                    function (e) {log.error("Error fetching shapes " + e)}
-                );
+                MapService.createFeatureCollection(fc)
+                    .success($scope.loadFeatureCollections);
             };
 
 

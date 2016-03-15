@@ -11,13 +11,11 @@ angular.module('niord.home')
             $scope.init = function () {
 
                 // TODO: Test using feature collections as messages
-                MapService.getAllFeatureCollections(function (featureCollections) {
+                MapService.getAllFeatureCollections().success(function (featureCollections) {
                     $scope.messageList.length = 0;
                     angular.forEach(featureCollections, function (featureCollection) {
                         $scope.messageList.push(featureCollection);
                     });
-                }, function (e) {
-                    log.error("Error fetching shapes " + e)
                 });
 
             };

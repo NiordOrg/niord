@@ -10,7 +10,7 @@ angular.module('niord.common')
         function ($rootScope, $window, $translate) {
             'use strict';
 
-            // Change the current language settings
+            /** Change the current language settings */
             this.changeLanguage = function(lang) {
                 $translate.use(lang);
                 $rootScope.language = lang;
@@ -19,7 +19,8 @@ angular.module('niord.common')
                 numeral.language($rootScope.numeralLauguages[lang]);
             };
 
-            // Updates the initial language settings when the application is loaded
+
+            /** Updates the initial language settings when the application is loaded */
             this.initLanguage = function() {
                 var language =
                     ($window.localStorage.lang && $.inArray($window.localStorage.lang, $rootScope.siteLanguages) > 0)
@@ -39,12 +40,15 @@ angular.module('niord.common')
         function ($rootScope, $window) {
             'use strict';
 
+            /** Changes the current application space */
             this.changeAppSpace = function(space) {
                 $rootScope.space = space;
                 $window.localStorage.space = space.id;
                 return space;
             };
 
+
+            /** Sets the initial application space */
             this.initAppSpace = function () {
                 var spaces = $.grep($rootScope.spaces, function (space) {
                     return space.id == $window.localStorage.space;
@@ -64,59 +68,65 @@ angular.module('niord.common')
      */
     .service('DialogService', ['$uibModal',
         function ($uibModal) {
-        'use strict';
+            'use strict';
 
-        var modalDefaults = {
-            backdrop: true,
-            keyboard: true,
-            modalFade: true,
-            templateUrl: '/partials/common/dialog.html'
-        };
+            var modalDefaults = {
+                backdrop: true,
+                keyboard: true,
+                modalFade: true,
+                templateUrl: '/partials/common/dialog.html'
+            };
 
-        var modalOptions = {
-            closeButtonText: 'Cancel',
-            actionButtonText: 'OK',
-            headerText: '',
-            bodyText: undefined
-        };
+            var modalOptions = {
+                closeButtonText: 'Cancel',
+                actionButtonText: 'OK',
+                headerText: '',
+                bodyText: undefined
+            };
 
-        this.showDialog = function (customModalDefaults, customModalOptions) {
-            if (!customModalDefaults) {
-                customModalDefaults = {};
-            }
-            customModalDefaults.backdrop = 'static';
-            return this.show(customModalDefaults, customModalOptions);
-        };
 
-        this.showConfirmDialog = function (headerText, bodyText) {
-            return this.showDialog(undefined, { headerText: headerText, bodyText: bodyText});
-        };
-
-        this.show = function (customModalDefaults, customModalOptions) {
-            //Create temp objects to work with since we're in a singleton service
-            var tempModalDefaults = {};
-            var tempModalOptions = {};
-
-            //Map angular-ui modal custom defaults to modal defaults defined in service
-            angular.extend(tempModalDefaults, modalDefaults, customModalDefaults);
-
-            //Map modal.html $scope custom properties to defaults defined in service
-            angular.extend(tempModalOptions, modalOptions, customModalOptions);
-
-            if (!tempModalDefaults.controller) {
-                tempModalDefaults.controller = function ($scope, $uibModalInstance) {
-                    $scope.modalOptions = tempModalOptions;
-                    $scope.modalOptions.ok = function (result) {
-                        $uibModalInstance.close(result);
-                    };
-                    $scope.modalOptions.close = function (result) {
-                        $uibModalInstance.dismiss('cancel');
-                    };
+            /** Display a dialog with the given options */
+            this.showDialog = function (customModalDefaults, customModalOptions) {
+                if (!customModalDefaults) {
+                    customModalDefaults = {};
                 }
-            }
+                customModalDefaults.backdrop = 'static';
+                return this.show(customModalDefaults, customModalOptions);
+            };
 
-            return $uibModal.open(tempModalDefaults).result;
-        };
+
+            /** Displays a confimation dialog */
+            this.showConfirmDialog = function (headerText, bodyText) {
+                return this.showDialog(undefined, {headerText: headerText, bodyText: bodyText});
+            };
+
+
+            /** Opens the dialog with the given options */
+            this.show = function (customModalDefaults, customModalOptions) {
+                //Create temp objects to work with since we're in a singleton service
+                var tempModalDefaults = {};
+                var tempModalOptions = {};
+
+                //Map angular-ui modal custom defaults to modal defaults defined in service
+                angular.extend(tempModalDefaults, modalDefaults, customModalDefaults);
+
+                //Map modal.html $scope custom properties to defaults defined in service
+                angular.extend(tempModalOptions, modalOptions, customModalOptions);
+
+                if (!tempModalDefaults.controller) {
+                    tempModalDefaults.controller = function ($scope, $uibModalInstance) {
+                        $scope.modalOptions = tempModalOptions;
+                        $scope.modalOptions.ok = function (result) {
+                            $uibModalInstance.close(result);
+                        };
+                        $scope.modalOptions.close = function () {
+                            $uibModalInstance.dismiss('cancel');
+                        };
+                    }
+                }
+
+                return $uibModal.open(tempModalDefaults).result;
+            };
 
     }]);
 

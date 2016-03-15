@@ -338,24 +338,18 @@ angular.module('niord.map')
 
 
             /** Test - test test **/
-            this.getAllFeatureCollections = function(success, error) {
-                $http.get('/rest/test/shapes')
-                    .success(success)
-                    .error(error);
+            this.getAllFeatureCollections = function() {
+                return $http.get('/rest/test/shapes');
             };
 
             /** Test - test test **/
-            this.createFeatureCollection = function(fc, success, error) {
-                $http.post('/rest/test/shapes', fc)
-                    .success(success)
-                    .error(error);
+            this.createFeatureCollection = function(fc) {
+                return $http.post('/rest/test/shapes', fc);
             };
 
             /** Test - test test **/
-            this.updateFeatureCollection = function(fc, success, error) {
-                $http.put('/rest/test/shapes', fc)
-                    .success(success)
-                    .error(error);
+            this.updateFeatureCollection = function(fc) {
+                return $http.put('/rest/test/shapes', fc);
             };
 
             /**
