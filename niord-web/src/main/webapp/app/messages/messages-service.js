@@ -7,27 +7,26 @@ angular.module('niord.messages')
     /**
      * Interface for calling the application server
      */
-    .factory('FilterService', [ '$http', '$rootScope', function($http, $rootScope) {
+    .factory('FilterService', [ '$http', function($http) {
         'use strict';
 
         return {
 
-            getFilters: function(success, error) {
-                $http.get('/rest/filters/all')
-                    .success(success)
-                    .error(error);
+            /** Returns the message filters */
+            getFilters: function() {
+                return $http.get('/rest/filters/all');
             },
 
-            addFilter: function(filter, success, error) {
-                $http.post('/rest/filters/', filter)
-                    .success(success)
-                    .error(error);
+
+            /** Adds a new message filter */
+            addFilter: function(filter) {
+                return $http.post('/rest/filters/', filter);
             },
 
-            removeFilter: function(filterId, success, error) {
-                $http.delete('/rest/filters/' + filterId)
-                    .success(success)
-                    .error(error);
+
+            /** Removes hte message filter with the given ID */
+            removeFilter: function(filterId) {
+                return $http.delete('/rest/filters/' + filterId);
             }
 
         };

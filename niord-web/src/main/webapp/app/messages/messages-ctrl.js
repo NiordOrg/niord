@@ -411,10 +411,9 @@ angular.module('niord.messages')
             /*****************************/
 
             $scope.loadNamedFilters = function () {
-                FilterService.getFilters(
-                    function (filters) { $scope.namedFilters = filters; },
-                    function (error) { console.log("Error fetching named filters: " + error) }
-                );
+                FilterService
+                    .getFilters()
+                    .success(function (filters) { $scope.namedFilters = filters; });
             };
 
             $scope.namedFilters = [];
@@ -427,20 +426,16 @@ angular.module('niord.messages')
                         name: name,
                         parameters: $scope.toRequestFilterParameters()
                     };
-                    FilterService.addFilter(
-                        filter,
-                        $scope.loadNamedFilters,
-                        function (error) { console.log("Error adding filter: " + error); }
-                    );
+                    FilterService
+                        .addFilter(filter)
+                        .success($scope.loadNamedFilters);
                 }
             };
 
             $scope.removeNamedFilter = function (filter) {
-                FilterService.removeFilter(
-                    filter.id,
-                    $scope.loadNamedFilters,
-                    function (error) { console.log("Error removing filter: " + error); }
-                );
+                FilterService
+                    .removeFilter(filter.id)
+                    .success($scope.loadNamedFilters);
             };
 
             $scope.applyNamedFilter = function (filter) {
