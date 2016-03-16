@@ -20,25 +20,35 @@
 
                 <div class="editor-tools">
                     <span class="btn-group">
-                        <label class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'point'"
+                        <label ng-show="showDrawControls.point"
+                               class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'point'"
                                uib-tooltip="Add points" tooltip-placement="bottom">
                             <img src="/img/editor/drawPoint.png"/>
                         </label>
-                        <label class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'polyline'"
+                        <label ng-show="showDrawControls.polyline"
+                               class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'polyline'"
                                uib-tooltip="Add paths" tooltip-placement="bottom">
                             <img src="/img/editor/drawPath.png"/>
                         </label>
-                        <label class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'polygon'"
+                        <label ng-show="showDrawControls.polygon"
+                               class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'polygon'"
                                uib-tooltip="Add polygons" tooltip-placement="bottom">
                             <img src="/img/editor/drawPolygon.png"/>
                         </label>
+                        <label ng-show="showDrawControls.box"
+                               class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'box'"
+                               uib-tooltip="Add box" tooltip-placement="bottom">
+                            <img src="/img/editor/drawBox.png"/>
+                        </label>
                     </span>
                     <span class="btn-group">
-                        <label class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'select'"
+                        <label ng-show="showDrawControls.select"
+                               class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'select'"
                                uib-tooltip="Modify" tooltip-placement="bottom">
                             <img src="/img/editor/selectFeature.png"/>
                         </label>
-                        <label class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'remove'"
+                        <label ng-show="showDrawControls.remove"
+                               class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'remove'"
                                uib-tooltip="Delete" tooltip-placement="bottom">
                             <img src="/img/editor/deleteFeature.png"/>
                         </label>

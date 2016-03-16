@@ -14,12 +14,12 @@ angular.module('niord.editor')
             template: '<div id="msg-info"/>',
             require: '^olMap',
             scope: {
-                name: '@',
-                visible: '=',
-                layerSwitcher: '=',
-                features: '=',
+                name:           '@',
+                visible:        '=',
+                layerSwitcher:  '=',
+                features:       '=',
                 bufferFeatures: '=',
-                drawControl: '='
+                drawControl:    '='
             },
             link: function(scope, element, attrs, ctrl) {
                 var olScope = ctrl.getOpenlayersScope();

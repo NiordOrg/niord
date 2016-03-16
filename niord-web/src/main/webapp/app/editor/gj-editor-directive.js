@@ -35,12 +35,14 @@ angular.module('niord.editor')
                 class:              '@',
                 openEditorMessage:  "@",
                 editType:           "@",
+                drawControls:       "@",
                 featureCollection:  "="
             },
             link: function(scope, element, attrs) {
 
                 scope.mode = 'viewer';
                 scope.openEditorMessage = scope.openEditorMessage || 'Edit';
+                scope.drawControls  =  scope.drawControls || 'point,polyline,polygon,select,remove';
                 scope.drawControl = 'select';
                 scope.editorId = attrs['id'] + '-editor';
                 scope.languages = $rootScope.modelLanguages;
@@ -56,6 +58,15 @@ angular.module('niord.editor')
 
                 /** The buffered OpenLayer features being edited **/
                 scope.bufferFeatures = [];
+
+                scope.showDrawControls = {
+                    point:      scope.drawControls.indexOf('point') != -1,
+                    polyline:   scope.drawControls.indexOf('polyline') != -1,
+                    polygon:    scope.drawControls.indexOf('polygon') != -1,
+                    box:        scope.drawControls.indexOf('box') != -1,
+                    select:     scope.drawControls.indexOf('select') != -1,
+                    remove:     scope.drawControls.indexOf('remove') != -1
+                };
 
                 /** ************************ **/
                 /** Utility functions        **/
