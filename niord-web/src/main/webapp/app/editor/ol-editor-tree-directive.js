@@ -1,6 +1,9 @@
 /**
  * The Location Tree directive
  * <p>
+ * The editor tree can be initialized with "edit-type" set to "simple" or "advanced". If "simple" is chosen, you merely edit
+ * a feature geometry. If "advanced" is chosen, you also edit the names of each coordinates.
+ * <p>
  * A few things to keep in mind:
  * <ul>
  *     <li>For the exterior and interior linear rings of polygons, the last position is not displayed
@@ -19,13 +22,15 @@ angular.module('niord.editor')
         return {
             restrict: 'AE',
             scope: {
-                feature: '='
+                feature: '=',
+                editType: "@"
             },
 
             link: function (scope, element) {
 
                 scope.expandedNodeKeys = [];
                 scope.activeNodeKey = undefined;
+                scope.editType = scope.editType || 'features';
 
                 var tree;
                 var container = element.closest(".feature-collection-panel");
@@ -367,8 +372,8 @@ angular.module('niord.editor')
 
                 /** Converts the list of coordinates to tree data **/
                 function coordinatesToTreeData(coords, parentType, treeData, key, coordIndex) {
-                    var hasLanguageDescs =
-                        parentType == 'Point' || parentType == 'LineString' || parentType == 'Exterior';
+                    var hasLanguageDescs = scope.editType == 'message' &&
+                        (parentType == 'Point' || parentType == 'LineString' || parentType == 'Exterior');
                     var isPolygon = parentType == 'Exterior' || parentType == 'Interior';
 
                     angular.forEach(coords, function (coord, index) {

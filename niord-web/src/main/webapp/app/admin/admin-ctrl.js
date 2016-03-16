@@ -54,6 +54,7 @@ angular.module('niord.admin')
 
             $scope.allCharts = [];
             $scope.chart = undefined; // The chart being edited
+            $scope.chartFeatureCollection = { type: 'FeatureCollection', features: [] };
             $scope.editMode = 'add';
 
             // Pagination
@@ -62,8 +63,6 @@ angular.module('niord.admin')
             $scope.currentPage = 1;
             $scope.chartNo = 0;
             $scope.search = '';
-
-            $scope.fc = { type: 'FeatureCollection', features: [] };
 
             /** Loads the charts from the back-end */
             $scope.loadCharts = function() {
@@ -107,7 +106,9 @@ angular.module('niord.admin')
                 $scope.chart = {
                     chartNumber: undefined,
                     internationalNumber: undefined,
-                    horizontalDatum: 'WGS84' };
+                    horizontalDatum: 'WGS84'
+                };
+                $scope.chartFeatureCollection.features.length = 0;
             };
 
 
@@ -115,6 +116,11 @@ angular.module('niord.admin')
             $scope.editChart = function (chart) {
                 $scope.editMode = 'edit';
                 $scope.chart = angular.copy(chart);
+                $scope.chartFeatureCollection.features.length = 0;
+                if ($scope.chart.geometry) {
+                    var feature = {type: 'Feature', geometry: $scope.chart.geometry, properties: {}};
+                    $scope.chartFeatureCollection.features.push(feature);
+                }
             };
 
 
@@ -126,6 +132,14 @@ angular.module('niord.admin')
 
             /** Saves the current chart being edited */
             $scope.saveChart = function () {
+
+                // Update the chart geometry
+                delete $scope.chart.geometry;
+                if ($scope.chartFeatureCollection.features.length > 0 &&
+                    $scope.chartFeatureCollection.features[0].geometry) {
+                    $scope.chart.geometry = $scope.chartFeatureCollection.features[0].geometry;
+                }
+
                 if ($scope.chart && $scope.editMode == 'add') {
                     AdminChartService
                         .createChart($scope.chart)

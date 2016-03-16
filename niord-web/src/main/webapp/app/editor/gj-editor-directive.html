@@ -85,7 +85,7 @@
                             <a href ng-click="moveFeatureDown(featureCtx)"><i class="glyphicon glyphicon-arrow-down"></i></a>
                         </span>
                     </div>
-                    <div class="feature-panel-info">
+                    <div class="feature-panel-info" ng-if="editType == 'message'">
                         <div style="text-align: center; font-size: 11px; padding: 5px 0 5px 0;">
                             <div class="btn-group btn-group-justified">
                                 <label class="btn btn-default btn-xs" ng-model="featureCtx.showName" uib-btn-checkbox >Name</label>
@@ -139,7 +139,7 @@
                         </table>
                     </div>
                     <div class="feature-geometry-tree">
-                        <ol-editor-tree feature="features[$index]" tabindex="-1"></ol-editor-tree>
+                        <ol-editor-tree feature="features[$index]" edit-type="{{editType}}" tabindex="-1"></ol-editor-tree>
                     </div>
                 </div>
             </div>

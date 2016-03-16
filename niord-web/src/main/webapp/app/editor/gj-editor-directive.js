@@ -1,6 +1,15 @@
 /**
  * The GeoJSON FeatureCollection Editor directive.
  * <p>
+ * The editor can be initialized with "edit-type" set to the following values:
+ * <ul>
+ *     <li>"features": You edit a GeoJson feature collection.</li>
+ *     <li>"feature": You edit a GeoJson feature collection, but when you save, all features are merged
+ *                   into a single feature.</li>
+ *     <li>"message": You edit the feature collection of a message, which means that there are a lot of extra
+ *                    functionality, such as allowing the user to specify names for each feature and position,
+ *                    an affected radius, etc.</li>
+ * </ul>
  * The GeoJson feature collection is divided into three lists:
  * <ul>
  *     <li>features: List of non-buffered OpenLayers Features, that can be edited in the data tree-view or map view.</li>
@@ -23,9 +32,10 @@ angular.module('niord.editor')
             replace: true,
             transclude: true,
             scope: {
-                class: '@',
-                openEditorMessage: "@",
-                featureCollection: "="
+                class:              '@',
+                openEditorMessage:  "@",
+                editType:           "@",
+                featureCollection:  "="
             },
             link: function(scope, element, attrs) {
 
@@ -34,6 +44,7 @@ angular.module('niord.editor')
                 scope.drawControl = 'select';
                 scope.editorId = attrs['id'] + '-editor';
                 scope.languages = $rootScope.modelLanguages;
+                scope.editType = scope.editType || 'features';
 
                 /** The corresponding non-buffered OpenLayer features being edited **/
                 scope.features = [];
@@ -232,6 +243,14 @@ angular.module('niord.editor')
 
                         // Convert the features into GeoJSON
                         scope.featureCollection.features.length = 0;
+
+                        // Check if we need to merge all features into one
+                        if (scope.editType == 'feature') {
+                            scope.selectAll();
+                            scope.merge();
+                        }
+
+                        // Convert to GeoJson feature collection
                         angular.forEach(scope.features, function (olFeature) {
 
                             var geoJsonFormat = new ol.format.GeoJSON();
@@ -266,6 +285,14 @@ angular.module('niord.editor')
                     scope.bufferFeatures.length = 0;
                     scope.featureContexts.length = 0;
                     broadcast('refresh-all');
+                };
+
+
+                /** Selects all features **/
+                scope.selectAll = function () {
+                    angular.forEach(scope.features, function (feature) {
+                        feature.set('selected', true);
+                    });
                 };
 
 
@@ -340,7 +367,6 @@ angular.module('niord.editor')
                     if (selected.length < 2) {
                         return;
                     }
-
                     // NB: This could have been implemented easily with JSTS's union() feature.
                     //     However, in some cases this causes an error.
 
