@@ -236,7 +236,7 @@
         kc.createLogoutUrl = function(options) {
             var url = getRealmUrl()
                 + '/protocol/openid-connect/logout'
-                + '?redirect_uri=' + encodeURIComponent(adapter.redirectUri(options));
+                + '?redirect_uri=' + encodeURIComponent(adapter.redirectUri(options, false));
 
             return url;
         }
@@ -842,14 +842,18 @@
                         return createPromise().promise;
                     },
 
-                    redirectUri: function(options) {
+                    redirectUri: function(options, encodeHash) {
+                        if (arguments.length == 1) {
+                            encodeHash = true;
+                        }
+
                         if (options && options.redirectUri) {
                             return options.redirectUri;
                         } else if (kc.redirectUri) {
                             return kc.redirectUri;
                         } else {
                             var redirectUri = location.href;
-                            if (location.hash) {
+                            if (location.hash && encodeHash) {
                                 redirectUri = redirectUri.substring(0, location.href.indexOf('#'));
                                 redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'redirect_fragment=' + encodeURIComponent(location.hash.substring(1));
                             }
@@ -874,31 +878,28 @@
                         var loginUrl = kc.createLoginUrl(options);
                         var ref = window.open(loginUrl, '_blank', o);
 
-                        var callback;
-                        var error;
+                        var completed = false;
 
                         ref.addEventListener('loadstart', function(event) {
                             if (event.url.indexOf('http://localhost') == 0) {
-                                callback = parseCallback(event.url);
+                                var callback = parseCallback(event.url);
+                                processCallback(callback, promise);
                                 ref.close();
+                                completed = true;
                             }
                         });
 
                         ref.addEventListener('loaderror', function(event) {
-                            if (event.url.indexOf('http://localhost') == 0) {
-                                callback = parseCallback(event.url);
-                                ref.close();
-                            } else {
-                                error = true;
-                                ref.close();
-                            }
-                        });
-
-                        ref.addEventListener('exit', function(event) {
-                            if (error || !callback) {
-                                promise.setError();
-                            } else {
-                                processCallback(callback, promise);
+                            if (!completed) {
+                                if (event.url.indexOf('http://localhost') == 0) {
+                                    var callback = parseCallback(event.url);
+                                    processCallback(callback, promise);
+                                    ref.close();
+                                    completed = true;
+                                } else {
+                                    promise.setError();
+                                    ref.close();
+                                }
                             }
                         });
 
