@@ -112,9 +112,9 @@ input.ng-invalid-messageId {
 }
 
 .framed-tabs .tab-content {
-    border-left: 1px solid #DDDDDD;
-    border-right: 1px solid #DDDDDD;
-    border-bottom: 1px solid #DDDDDD;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
     padding: 10px;
 }
 
@@ -122,14 +122,40 @@ input.ng-invalid-messageId {
     padding: 5px 10px;
 }
 
+.border {
+    border: 1px solid #ddd;
+}
+
 .border-b {
-    border-bottom: 1px solid lightgray;
+    border-bottom: 1px solid #ddd;
 }
 
 .border-lrb {
-    border-left: 1px solid lightgray;
-    border-right: 1px solid lightgray;
-    border-bottom: 1px solid lightgray;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+}
+
+.padding-5 {
+    padding: 5px;
+}
+
+.padding-10 {
+    padding: 10px;
+}
+
+.inline .form-group {
+    display: inline-block;
+    margin-bottom: 0;
+    vertical-align: middle;
+}
+.inline .form-control {
+    display: inline-block;
+    width: auto;
+    vertical-align: middle;
+}
+.inline .input-group > .form-control {
+    width: 100%;
 }
 
 /** File upload directive **/

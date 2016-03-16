@@ -8,11 +8,12 @@ angular.module('niord.auth', []);
 angular.module('niord.common', []);
 angular.module('niord.conf', []);
 angular.module('niord.map', []);
+angular.module('niord.editor', []);
 
 
 var app = angular.module('niord.admin', [
         'ngRoute', 'ngSanitize', 'ui.bootstrap', 'ui.select', 'pascalprecht.translate', 'angular-growl', 'angularFileUpload',
-        'niord.common', 'niord.auth', 'niord.conf', 'niord.map' ])
+        'niord.common', 'niord.auth', 'niord.conf', 'niord.map', 'niord.editor' ])
 
     .config(['$routeProvider', '$httpProvider', function ($routeProvider, $httpProvider) {
         'use strict';

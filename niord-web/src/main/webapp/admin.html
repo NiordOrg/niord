@@ -12,8 +12,12 @@
     <link rel="stylesheet" type="text/css" href="/ext/bootstrap-3.3.5/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="/ext/bootstrap-3.3.5/css/bootstrap-theme.min.css">
     <link rel="stylesheet" type="text/css" href="/ext/openlayers-3.12.1/ol.css">
+    <link rel="stylesheet" type="text/css" href="/ext/angular-ui-select-0.13.2/select.min.css">
+    <link rel="stylesheet" type="text/css" href="/ext/angular-growl-2-0.6.0/angular-growl.min.css">
+    <link rel="stylesheet" type="text/css" href="/ext/fancytree-2.13.0/skin-win8/ui.fancytree.min.css">
 
     <link rel="stylesheet" type="text/css" href="css/app.css">
+    <link rel="stylesheet" type="text/css" href="css/editor.css">
     <link rel="stylesheet" type="text/css" href="css/admin.css">
     <link rel="stylesheet" type="text/css" href="css/site.css">
 
@@ -22,6 +26,7 @@
 
     <div class="page-content">
         <div ng-include="'app/layout/menu.html'"></div>
+        <div growl></div>
 
         <div class="container-fluid">
             <div class="row admin-page" ng-controller="CommonAdminCtrl">
@@ -35,6 +40,7 @@
 
     <script type="text/javascript" src="/ext/keycloak-js-adapter-dist-1.9.0.Final/keycloak.min.js"></script>
     <script type="text/javascript" src="/ext/jquery-2.1.4/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript" src="/ext/jquery-ui-1.11.4/jquery-ui.min.js"></script>
     <script type="text/javascript" src="/ext/angularjs-1.4.8/angular.min.js"></script>
     <script type="text/javascript" src="/ext/angularjs-1.4.8/angular-route.min.js"></script>
     <script type="text/javascript" src="/ext/angularjs-1.4.8/angular-sanitize.min.js"></script>
@@ -45,9 +51,12 @@
     <script type="text/javascript" src="/ext/angular-file-upload-2.2.0/angular-file-upload.min.js"></script>
     <script type="text/javascript" src="/ext/bootstrap-3.3.5/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="/ext/openlayers-3.12.1/ol.js"></script>
+    <script type="text/javascript" src="/ext/jsts-0.17.0/javascript.util.min.js"></script>
+    <script type="text/javascript" src="/ext/jsts-0.17.0/jsts.min.js"></script>
     <script type="text/javascript" src="/ext/moment-2.10.16/moment-with-locales.js"></script>
     <script type="text/javascript" src="/ext/numeral-1.4.5/numeral.min.js.css"></script>
     <script type="text/javascript" src="/ext/numeral-1.4.5/languages.min.js"></script>
+    <script type="text/javascript" src="/ext/fancytree-2.13.0/jquery.fancytree-all.min.js"></script>
 
     <script type="text/javascript" src="/app/admin-app.js"></script>
     <script type="text/javascript" src="/app/admin/admin-directives.js"></script>
@@ -57,11 +66,18 @@
     <script type="text/javascript" src="/app/common/common-service.js"></script>
     <script type="text/javascript" src="/app/common/common-directives.js"></script>
     <script type="text/javascript" src="/app/common/common-ctrl.js"></script>
+    <script type="text/javascript" src="/app/map/position.js"></script>
+    <script type="text/javascript" src="/app/map/openlayers-additions.js"></script>
     <script type="text/javascript" src="/app/map/map-service.js"></script>
     <script type="text/javascript" src="/app/map/map-directives.js"></script>
     <script type="text/javascript" src="/app/conf/site-config.js"></script>
     <script type="text/javascript" src="/app/conf/site-texts.js"></script>
     <script type="text/javascript" src="/app/auth/auth-service.js"></script>
     <script type="text/javascript" src="/app/auth/auth-ctrl.js"></script>
+
+    <!-- TODO: Replace -->
+    <script type="text/javascript" src="/app/editor/gj-editor-directive.js"></script>
+    <script type="text/javascript" src="/app/editor/ol-editor-layer-directive.js"></script>
+    <script type="text/javascript" src="/app/editor/ol-editor-tree-directive.js"></script>
 </body>
 </html>

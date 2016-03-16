@@ -58,14 +58,16 @@ angular.module('niord.admin')
 
             // Pagination
             $scope.charts = [];
-            $scope.pageSize = 20;
+            $scope.pageSize = 10;
             $scope.currentPage = 1;
             $scope.chartNo = 0;
             $scope.search = '';
 
+            $scope.fc = { type: 'FeatureCollection', features: [] };
 
             /** Loads the charts from the back-end */
             $scope.loadCharts = function() {
+                $scope.chart = undefined;
                 AdminChartService
                     .getCharts()
                     .success(function (charts) {
@@ -102,7 +104,10 @@ angular.module('niord.admin')
             /** Adds a new chart **/
             $scope.addChart = function () {
                 $scope.editMode = 'add';
-                $scope.chart = { chartNumber: undefined, internationalNumber: undefined, horizontalDatum: undefined };
+                $scope.chart = {
+                    chartNumber: undefined,
+                    internationalNumber: undefined,
+                    horizontalDatum: 'WGS84' };
             };
 
 
@@ -113,16 +118,9 @@ angular.module('niord.admin')
             };
 
 
-            /** Cancel adding/editing a chart **/
-            $scope.cancelEditChart = function () {
-                $scope.editMode = undefined;
-                $scope.chart = undefined;
-            };
-
-
             /** Displays the error message */
-            $scope.displayError = function (error) {
-                growl.error("Error: " + error);
+            $scope.displayError = function () {
+                growl.error("Error saving chart");
             };
 
 

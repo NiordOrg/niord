@@ -20,19 +20,19 @@ angular.module('niord.admin')
 
             /** Creates a new chart **/
             createChart: function(chart) {
-                return $http.post('/rest/charts/chart', chart);
+                return $http.post('/rest/charts', chart);
             },
 
 
             /** Updates the given chart **/
             updateChart: function(chart) {
-                return $http.put('/rest/charts/chart/' + encodeURIComponent(chart.chartNumber), chart);
+                return $http.put('/rest/charts/' + encodeURIComponent(chart.chartNumber), chart);
             },
 
 
             /** Deletes the given chart **/
             deleteChart: function(chart) {
-                return $http.delete('/rest/charts/chart/' + encodeURIComponent(chart.chartNumber));
+                return $http.delete('/rest/charts/' + encodeURIComponent(chart.chartNumber));
             }
 
         };
