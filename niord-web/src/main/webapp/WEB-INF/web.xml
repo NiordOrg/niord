@@ -4,13 +4,11 @@
 
     <display-name>Niord</display-name>
 
-    <!--
-      If the keycloak resolver below is enabled, move WEB-INF/keycloak.json to resources/
-    -->
-    <!--context-param>
+    <!-- User a Niord-specific KeycloakConfigResolver -->
+    <context-param>
         <param-name>keycloak.config.resolver</param-name>
         <param-value>org.niord.web.NiordKeycloakConfigResolver</param-value>
-    </context-param-->
+    </context-param>
 
     <welcome-file-list>
         <welcome-file>index.html</welcome-file>
