@@ -34,29 +34,29 @@ angular.module('niord.common')
 
 
     /**
-     * The application space service is used for loading and changing application spaces, etc.
+     * The application domain service is used for loading and changing application domains, etc.
      */
-    .service('AppSpaceService', ['$rootScope', '$window',
+    .service('DomainService', ['$rootScope', '$window',
         function ($rootScope, $window) {
             'use strict';
 
-            /** Changes the current application space */
-            this.changeAppSpace = function(space) {
-                $rootScope.space = space;
-                $window.localStorage.space = space.id;
-                return space;
+            /** Changes the current application domain */
+            this.changeDomain = function(domain) {
+                $rootScope.domain = domain;
+                $window.localStorage.domain = domain.id;
+                return domain;
             };
 
 
-            /** Sets the initial application space */
-            this.initAppSpace = function () {
-                var spaces = $.grep($rootScope.spaces, function (space) {
-                    return space.id == $window.localStorage.space;
+            /** Sets the initial application domain */
+            this.initDomain = function () {
+                var domains = $.grep($rootScope.domains, function (domain) {
+                    return domain.id == $window.localStorage.domain;
                 });
-                var space = spaces.length == 1
-                    ? spaces[0]
-                    : $rootScope.spaces[0];
-                this.changeAppSpace(space);
+                var domain = domains.length == 1
+                    ? domains[0]
+                    : $rootScope.domains[0];
+                this.changeDomain(domain);
             };
 
         }])

@@ -24,16 +24,16 @@
 
             <ul class="nav navbar-nav navbar-right">
 
-                <li ng-if="isLoggedIn" class="dropdown" ng-controller="AppSpaceCtrl">
+                <li ng-if="isLoggedIn" class="dropdown" ng-controller="DomainCtrl">
                     <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                        {{space.name}}
+                        {{domain.name}}
                         <span class="caret"></span>
                     </a>
                     <ul class="dropdown-menu">
-                        <li ng-repeat="s in spaces">
-                            <a href ng-click="changeSpace(s)">
-                                {{s.name}}
-                                <span ng-if="s.id == space.id">&#10004;</span>
+                        <li ng-repeat="d in domains">
+                            <a href ng-click="changeDomain(d)">
+                                {{d.name}}
+                                <span ng-if="d.id == domain.id">&#10004;</span>
                             </a>
                         </li>
                     </ul>

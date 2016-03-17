@@ -17,14 +17,14 @@ angular.module('niord.common')
         }])
 
     /**
-     * Application Space Controller
+     * Domain Controller
      */
-    .controller('AppSpaceCtrl', ['$scope', 'AppSpaceService',
-        function ($scope, AppSpaceService) {
+    .controller('DomainCtrl', ['$scope', 'DomainService',
+        function ($scope, DomainService) {
             'use strict';
 
-            $scope.changeSpace = function (space) {
-                AppSpaceService.changeAppSpace(space);
+            $scope.changeDomain = function (domain) {
+                DomainService.changeDomain(domain);
             }
 
         }]);
