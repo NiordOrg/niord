@@ -4,5 +4,6 @@
   "auth-server-url": "/auth",
   "ssl-required": "external",
   "resource": "niord-web",
-  "public-client": true
+  "public-client": true,
+  "use-resource-role-mappings": true
 }

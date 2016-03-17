@@ -26,10 +26,11 @@
 
                 <li ng-if="isLoggedIn" class="dropdown" ng-controller="DomainCtrl">
                     <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                        {{domain.name}}
+                        <span ng-if="domain">{{domain.name}}</span>
+                        <span ng-if="!domain" style="font-style: italic;">domain</span>
                         <span class="caret"></span>
                     </a>
-                    <ul class="dropdown-menu">
+                    <ul ng-if="domains.length" class="dropdown-menu">
                         <li ng-repeat="d in domains">
                             <a href ng-click="changeDomain(d)">
                                 {{d.name}}
