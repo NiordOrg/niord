@@ -24,6 +24,7 @@ import java.util.List;
 /**
  * Provides an interface for managing application domains
  */
+@SuppressWarnings("unused")
 public class DomainService extends BaseService {
 
     @Inject

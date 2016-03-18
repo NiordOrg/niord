@@ -22,6 +22,7 @@ import java.util.Date;
 /**
  * Represents a message tag, used for grouping a fixed set of messages
  */
+@SuppressWarnings("unused")
 public class MessageTagVo implements IJsonSerializable {
 
     String uid;

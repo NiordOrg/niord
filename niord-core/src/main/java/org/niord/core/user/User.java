@@ -33,6 +33,7 @@ import javax.persistence.*;
         @NamedQuery(name="User.findByUsername",
                 query="SELECT u FROM User u where lower(u.username) = lower(:username)")
 })
+@SuppressWarnings("unused")
 public class User extends VersionedEntity<Integer> {
 
     @Column(nullable = false, unique = true)

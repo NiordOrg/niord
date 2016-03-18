@@ -57,6 +57,7 @@ public abstract class BaseCache {
     /**
      * Clears the cache
      */
+    @SuppressWarnings("unused")
     public abstract void clearCache();
 
     /**

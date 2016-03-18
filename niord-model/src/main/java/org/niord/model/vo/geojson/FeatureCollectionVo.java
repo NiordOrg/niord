@@ -17,8 +17,8 @@ public class FeatureCollectionVo extends GeoJsonVo {
     @Override
     public void visitCoordinates(Consumer<double[]> handler) {
         if (features != null) {
-            for (int x = 0; x < features.length; x++) {
-                features[x].visitCoordinates(handler);
+            for (FeatureVo feature : features) {
+                feature.visitCoordinates(handler);
             }
         }
     }

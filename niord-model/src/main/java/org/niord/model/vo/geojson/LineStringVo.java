@@ -11,6 +11,7 @@ public class LineStringVo extends GeometryVo {
 
     private double[][] coordinates;
 
+    @SuppressWarnings("unused")
     public LineStringVo() {
     }
 

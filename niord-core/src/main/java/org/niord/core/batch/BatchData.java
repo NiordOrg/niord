@@ -33,7 +33,7 @@ import java.util.Properties;
  */
 @Entity
 @Table(indexes = {
-        @Index(name = "batch_data_instance_id", columnList="instanceId", unique = false)
+        @Index(name = "batch_data_instance_id", columnList="instanceId")
 })
 @NamedQueries({
         @NamedQuery(name  = "BatchData.findByInstanceId",

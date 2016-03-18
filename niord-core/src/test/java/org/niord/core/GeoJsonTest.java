@@ -62,8 +62,8 @@ public class GeoJsonTest {
             return this;
         }
 
-    public String toString() {
+        public String toString() {
         return String.valueOf(count);
     }
-};
+    }
 }

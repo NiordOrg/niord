@@ -21,6 +21,7 @@ import org.apache.lucene.util.Version;
 /**
  * Lucene utility methods
  */
+@SuppressWarnings("unused")
 public class LuceneUtils {
 
     public final static Version LUCENE_VERSION = Version.LATEST;

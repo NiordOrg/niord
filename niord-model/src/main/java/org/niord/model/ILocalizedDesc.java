@@ -36,6 +36,7 @@ public interface ILocalizedDesc {
      * Returns if this descriptive entity is defined, i.e. has at least one non-blank field
      * @return if this descriptive entity is defined
      */
+    @SuppressWarnings("unused")
     boolean descDefined();
 
     /**

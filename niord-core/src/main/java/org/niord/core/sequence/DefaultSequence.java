@@ -23,6 +23,7 @@ public final class DefaultSequence implements Sequence {
     String name;
     long initialValue;
 
+    @SuppressWarnings("unused")
     public DefaultSequence(String name) {
         this(name, 0);
     }

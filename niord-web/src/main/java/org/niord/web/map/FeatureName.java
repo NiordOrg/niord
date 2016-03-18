@@ -28,6 +28,7 @@ public class FeatureName {
     Type type;
 
     /** Constructor **/
+    @SuppressWarnings("unused")
     public FeatureName(String key, Object value) {
         this.key = key;
         this.value = value;

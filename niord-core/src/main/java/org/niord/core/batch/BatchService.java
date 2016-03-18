@@ -488,6 +488,7 @@ public class BatchService extends BaseService {
         */
 
         // Look up the names from the database
+        //noinspection SqlDialectInspection
         return (List<String>) em
                 .createNativeQuery("SELECT DISTINCT JOBNAME FROM JOB_INSTANCE ORDER BY lower(JOBNAME)")
                 .getResultList();
@@ -612,7 +613,7 @@ public class BatchService extends BaseService {
      * Called every minute to monitor the batch job "[jobName]/in" folders. If a file has been
      * placed in one of these folders, the cause the "jobName" batch job to be started.
      */
-    @Schedule(persistent=false, second="48", minute="*/1", hour="*/1", dayOfWeek="*", year="*")
+    @Schedule(persistent=false, second="48", minute="*/1", hour="*/1")
     protected void monitorBatchJobInFolderInitiation() {
 
         // Resolve the list of batch job "in" folders
@@ -645,7 +646,7 @@ public class BatchService extends BaseService {
     /**
      * Called every hour to clean up the batch job "[jobName]/execution" folders for expired files
      */
-    @Schedule(persistent=false, second="30", minute="42", hour="*/1", dayOfWeek="*", year="*")
+    @Schedule(persistent=false, second="30", minute="42", hour="*/1")
     protected void cleanUpExpiredBatchJobFiles() {
 
         long t0 = System.currentTimeMillis();

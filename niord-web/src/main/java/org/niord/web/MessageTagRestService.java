@@ -43,7 +43,7 @@ public class MessageTagRestService {
 
 
     /** Periodically purge expired tags */
-    @Schedule(persistent = false, second = "10", minute = "14", hour = "*", dayOfWeek = "*", year = "*")
+    @Schedule(persistent = false, second = "10", minute = "14", hour = "*")
     void purgeExpiredTags() {
         Date now = new Date();
         tags.removeIf(t -> t.getExpiryDate() != null && t.getExpiryDate().after(now));

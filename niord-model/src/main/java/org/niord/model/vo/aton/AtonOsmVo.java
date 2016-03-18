@@ -82,6 +82,7 @@ import java.util.Arrays;
  * </pre>
  */
 @XmlRootElement(name = "osm")
+@SuppressWarnings("unused")
 public class AtonOsmVo implements IJsonSerializable {
 
     float version;

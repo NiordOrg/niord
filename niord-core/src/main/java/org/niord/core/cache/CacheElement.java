@@ -21,6 +21,7 @@ import java.io.Serializable;
  * Can be used in JCache/Infinispan to wrap the stored element.
  * This way, you can cache a value of "null"
  */
+@SuppressWarnings("unused")
 public class CacheElement<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;

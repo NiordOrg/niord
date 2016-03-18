@@ -11,6 +11,7 @@ public class MultiPolygonVo extends GeometryVo {
 
     private double[][][][] coordinates;
 
+    @SuppressWarnings("unused")
     public MultiPolygonVo() {
     }
 

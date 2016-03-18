@@ -11,6 +11,7 @@ public class MultiLineStringVo extends GeometryVo {
 
     private double[][][] coordinates;
 
+    @SuppressWarnings("unused")
     public MultiLineStringVo() {
     }
 

@@ -3,6 +3,7 @@ package org.niord.model;
 /**
  * Can be used as a base class for search parameters for paged search results
  */
+@SuppressWarnings("unused")
 public abstract class PagedSearchParamsVo implements IJsonSerializable {
 
     public enum SortOrder { ASC, DESC }

@@ -30,5 +30,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Target({TYPE, METHOD, FIELD, PARAMETER})
 public @interface TextResource {
-    @Nonbinding public String value() default "";
+    @Nonbinding String value() default "";
 }

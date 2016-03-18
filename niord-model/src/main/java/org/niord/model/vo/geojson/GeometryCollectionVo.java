@@ -11,6 +11,7 @@ public class GeometryCollectionVo extends GeometryVo {
 
     private GeometryVo[] geometries;
 
+    @SuppressWarnings("unused")
     public GeometryCollectionVo() {
     }
 
@@ -22,8 +23,8 @@ public class GeometryCollectionVo extends GeometryVo {
     @Override
     public void visitCoordinates(Consumer<double[]> handler) {
         if (geometries != null) {
-            for (int x = 0; x < geometries.length; x++) {
-                geometries[x].visitCoordinates(handler);
+            for (GeometryVo geometry : geometries) {
+                geometry.visitCoordinates(handler);
             }
         }
     }

@@ -32,6 +32,7 @@ import javax.xml.bind.annotation.XmlAttribute;
  *     &lt;/node&gt;
  * </pre>
  */
+@SuppressWarnings("unused")
 public class AtonTagVo implements IJsonSerializable {
 
     String k;

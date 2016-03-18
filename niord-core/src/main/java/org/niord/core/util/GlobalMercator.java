@@ -121,6 +121,7 @@ package org.niord.core.util;
  *
  *
  */
+@SuppressWarnings("all")
 public class GlobalMercator {
     public static final int TILE_SIZE = 256;
     private final int tileSize;

@@ -30,7 +30,7 @@ public interface Sequence {
      * Returns the initial sequence value
      * @return the initial sequence value
      */
-    public default long initialValue() {
+    default long initialValue() {
         return 0L;
     }
 }

@@ -81,6 +81,7 @@ public interface ILocalizable<D extends ILocalizedDesc> {
      * @param lang the language
      * @return the localized description for the given language
      */
+    @SuppressWarnings("unused")
     default D checkCreateDesc(String lang) {
         D desc = getDesc(lang);
         if (desc == null) {

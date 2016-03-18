@@ -11,6 +11,7 @@ public class PointVo extends GeometryVo {
 
     private double[] coordinates;
 
+    @SuppressWarnings("unused")
     public PointVo() {
     }
 

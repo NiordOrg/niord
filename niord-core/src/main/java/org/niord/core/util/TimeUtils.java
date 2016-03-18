@@ -7,6 +7,7 @@ import java.util.GregorianCalendar;
 /**
  * Utility methods for handling date and time.
  */
+@SuppressWarnings("unused")
 public class TimeUtils {
 
     /**
