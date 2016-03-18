@@ -231,7 +231,7 @@ angular.module('niord.common')
      *   <li>error(status, statusText): Error callback function. Optional.</li>
      * </ul>
      */
-    .directive('fileUpload', ['FileUploader', 'Auth', function (FileUploader, Auth) {
+    .directive('fileUpload', ['FileUploader', 'AuthService', function (FileUploader, AuthService) {
         'use strict';
 
         return {

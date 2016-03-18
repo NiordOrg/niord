@@ -36,8 +36,8 @@ angular.module('niord.common')
     /**
      * The application domain service is used for loading and changing application domains, etc.
      */
-    .service('DomainService', ['$rootScope', '$window', '$http',
-        function ($rootScope, $window, $http) {
+    .service('DomainService', ['$rootScope', '$window', 'AuthService',
+        function ($rootScope, $window, AuthService) {
             'use strict';
 
             var that = this;
@@ -46,34 +46,30 @@ angular.module('niord.common')
             this.changeDomain = function(domain) {
                 if (domain) {
                     $rootScope.domain = domain;
-                    $window.localStorage.domain = domain.id;
+                    $window.localStorage.domain = domain.clientId;
                 } else  {
                     $rootScope.domain = undefined;
-                    $window.localStorage.domain = undefined;
+                    $window.localStorage.removeItem('domain');
                 }
                 return domain;
             };
 
-            /** Sets the list of domains as the current domains */
-            function selectDomain(domains) {
-                $rootScope.domains = domains;
+            /** Sets the initial application domain */
+            this.initDomain = function () {
+
+                // Prune the list of niordDomains to be the one the user has roles for
+                $rootScope.domains = $.grep(niordDomains, function (domain) {
+                    return AuthService.hasRolesFor(domain.clientId);
+                });
 
                 var domainId = $window.localStorage.domain;
                 var matchingDomains = $.grep($rootScope.domains, function (domain) {
-                    return domain.id == domainId;
+                    return domain.clientId == domainId;
                 });
                 var domain = matchingDomains.length == 1
                     ? matchingDomains[0]
                     : ($rootScope.domains ? $rootScope.domains[0] : undefined);
                 that.changeDomain(domain);
-            }
-
-            /** Sets the initial application domain */
-            this.initDomain = function () {
-                // Start by setting the full list of domains
-                selectDomain(niordDomains);
-                // Once we have loaded the user specific domains, set these as the current list.
-                $http.get('/rest/domains/user-domains').success(selectDomain);
             };
 
         }])

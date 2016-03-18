@@ -6,46 +6,51 @@ angular.module('niord.auth')
     /**
      * Interceptor that adds a Keycloak access token to the requests as an authorization header.
      */
-    .factory('authHttpInterceptor', function($q, Auth) {
-        return {
+    .factory('authHttpInterceptor', ['$q', '$window', 'AuthService',
+        function($q, $window, AuthService) {
+            return {
 
-            'request': function(config) {
-                var deferred = $q.defer();
+                'request': function(config) {
+                    var deferred = $q.defer();
+                    config.headers = config.headers || {};
 
-                if (Auth.keycloak.token) {
-                    Auth.keycloak.updateToken(60).success(function() {
-                        config.headers = config.headers || {};
-                        config.headers.Authorization = 'Bearer ' + Auth.keycloak.token;
-                        deferred.resolve(config);
-                    }).error(function() {
-                        deferred.reject('Failed to refresh token');
-                    });
-                } else {
-                    // Not authenticated - leave it to the server to fail
-                    deferred.resolve(config);
-                }
-                return deferred.promise;
-            },
-
-            'responseError': function(response) {
-                if (response.status == 401) {
-                    console.error('session timeout?');
-                    Auth.logout();
-                } else if (response.status == 403) {
-                    console.error('Forbidden');
-                } else if (response.status == 404) {
-                    console.error('Not found');
-                } else if (response.status) {
-                    if (response.data && response.data.errorMessage) {
-                        console.error(response.data.errorMessage);
-                    } else {
-                        console.error("An unexpected server error has occurred " + response.status);
+                    if ($window.localStorage.domain) {
+                        config.headers['NiordDomain'] = $window.localStorage.domain;
                     }
+
+                    if (AuthService.keycloak.token) {
+                        AuthService.keycloak.updateToken(60).success(function() {
+                            config.headers.Authorization = 'Bearer ' + AuthService.keycloak.token;
+                            deferred.resolve(config);
+                        }).error(function() {
+                            deferred.reject('Failed to refresh token');
+                        });
+                    } else {
+                        // Not authenticated - leave it to the server to fail
+                        deferred.resolve(config);
+                    }
+                    return deferred.promise;
+                },
+
+                'responseError': function(response) {
+                    if (response.status == 401) {
+                        console.error('session timeout?');
+                        AuthService.logout();
+                    } else if (response.status == 403) {
+                        console.error('Forbidden');
+                    } else if (response.status == 404) {
+                        console.error('Not found');
+                    } else if (response.status) {
+                        if (response.data && response.data.errorMessage) {
+                            console.error(response.data.errorMessage);
+                        } else {
+                            console.error("An unexpected server error has occurred " + response.status);
+                        }
+                    }
+                    return $q.reject(response);
                 }
-                return $q.reject(response);
-            }
-        };
-    })
+            };
+        }])
 
 
     /**
@@ -82,8 +87,17 @@ function bootstrapKeycloak(angularAppName, onLoad) {
         auth.loggedIn = authenticated;
         auth.keycloak = keycloak;
 
+        // Returns whether the current user has any roles defined for the given client
+        auth.hasRolesFor = function (clientId) {
+            if (!keycloak.resourceAccess) {
+                return false;
+            }
+            var access = keycloak.resourceAccess[clientId];
+            return !!access && access.roles.length > 0;
+        };
+
         // Register the Auth factory
-        app.factory('Auth', function() {
+        app.factory('AuthService', function() {
             return auth;
         });
 
@@ -94,26 +108,3 @@ function bootstrapKeycloak(angularAppName, onLoad) {
     });
 
 }
-
-/**
- * Checks that the user has the given role. Otherwise, redirects to "/"
- * @param role the role to check
- */
-checkRole = function (role) {
-    return {
-        load: function ($q, Auth) {
-
-            if (role &&
-                Auth.loggedIn &&
-                (Auth.keycloak.hasRealmRole(role) || Auth.keycloak.hasResourceRole(role))) {
-                var deferred = $q.defer();
-                deferred.resolve();
-                return deferred.promise;
-            }
-
-            console.error("User must have role " + role + ". Redirecting to front page");
-            location.href = "/";
-        }
-    }
-};
-

@@ -1,5 +1,6 @@
 package org.niord.web;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.HttpClient;
 import org.keycloak.adapters.KeycloakConfigResolver;
@@ -14,6 +15,7 @@ import org.keycloak.enums.TokenStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
@@ -35,23 +37,33 @@ public class NiordKeycloakConfigResolver implements KeycloakConfigResolver {
 
     private final Logger log = LoggerFactory.getLogger(NiordKeycloakConfigResolver.class);
 
+    private KeycloakDeployment noDeployment = new KeycloakDeployment();
+
     /** {@inheritDoc} */
     @Override
     public KeycloakDeployment resolve(HttpFacade.Request request) {
 
-        String client = resolveClient(request);
+        String clientId = resolveDomain(request);
 
-        KeycloakDeployment deployment = cache.get(client);
-        if (null == deployment) {
+        if (StringUtils.isBlank(clientId)) {
+            return noDeployment;
+        }
+
+        KeycloakDeployment deployment = cache.get(clientId);
+        if (deployment == null) {
 
             // not found on the simple cache, try to load it from the file system
-            String kcFile = StringUtils.isBlank(client) ? "keycloak.json" : client + "-keycloak.json";
-            InputStream is = getClass().getResourceAsStream("/" + kcFile);
+            InputStream is = getClass().getResourceAsStream("/keycloak.json");
             if (is == null) {
-                throw new IllegalStateException("Not able to find the file /" + kcFile);
+                throw new IllegalStateException("Not able to find the file /keycloak.json");
             }
+
+            // Substitute the $CLIENT_ID
+            is = replaceResource(is, clientId);
+
+            // Instantiate and cache the new Keycloak deployment
             deployment = KeycloakDeploymentBuilder.build(is);
-            cache.put(client, deployment);
+            cache.put(clientId, deployment);
         }
 
 
@@ -61,11 +73,26 @@ public class NiordKeycloakConfigResolver implements KeycloakConfigResolver {
         return resolveUrls(deployment, request);
     }
 
-    /** Resolves the client ID from the request */
+    /** Resolves the domain, i.e. the Keycloak client ID, from the request */
     @SuppressWarnings("unused")
-    private String resolveClient(HttpFacade.Request request) {
-        // TODO: Implement
-        return "";
+    private String resolveDomain(HttpFacade.Request request) {
+        return request.getHeader("NiordDomain");
+    }
+
+
+    /** Substitute the $CLIENT_ID with the given client id */
+    private InputStream replaceResource(InputStream is, String clientId) {
+        try {
+            String keycloakJson = IOUtils.toString(is)
+                    .replace("$CLIENT_ID", clientId);
+
+            log.info("Caching Keycloak.json for client " + clientId);
+
+            return IOUtils.toInputStream(keycloakJson);
+        } catch (IOException e) {
+            // This should never happen
+            return is;
+        }
     }
 
 
@@ -73,7 +100,7 @@ public class NiordKeycloakConfigResolver implements KeycloakConfigResolver {
      * IMPORTANT: This function has been copied (and modified) from the Keycloak AdapterDeploymentContext class.
      * It should be kept up-to-date with future versions of Keycloak.
      */
-    protected KeycloakDeployment resolveUrls(KeycloakDeployment deployment, HttpFacade.Request facadeRequest) {
+    private KeycloakDeployment resolveUrls(KeycloakDeployment deployment, HttpFacade.Request facadeRequest) {
         if (deployment.getRelativeUrls() == RelativeUrlsUsed.NEVER) {
             // Absolute URI are already set to everything
             return deployment;
@@ -89,7 +116,7 @@ public class NiordKeycloakConfigResolver implements KeycloakConfigResolver {
      * IMPORTANT: This function has been copied (and modified) from the Keycloak AdapterDeploymentContext class.
      * It should be kept up-to-date with future versions of Keycloak.
      */
-    protected KeycloakUriBuilder getBaseBuilder(KeycloakDeployment deployment, HttpFacade.Request facadeRequest) {
+    private KeycloakUriBuilder getBaseBuilder(KeycloakDeployment deployment, HttpFacade.Request facadeRequest) {
         String base = deployment.getAuthServerBaseUrl();
         KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(base);
         URI request = URI.create(facadeRequest.getURI());
@@ -119,14 +146,14 @@ public class NiordKeycloakConfigResolver implements KeycloakConfigResolver {
      * Ever method is delegated except URL get methods and isConfigured()
      *
      */
-    protected static class DeploymentDelegate extends KeycloakDeployment {
+    private static class DeploymentDelegate extends KeycloakDeployment {
         protected KeycloakDeployment delegate;
 
-        public DeploymentDelegate(KeycloakDeployment delegate) {
+        DeploymentDelegate(KeycloakDeployment delegate) {
             this.delegate = delegate;
         }
 
-        public void setAuthServerBaseUrl(String authServerBaseUrl) {
+        void setAuthServerBaseUrl(String authServerBaseUrl) {
             this.authServerBaseUrl = authServerBaseUrl;
             KeycloakUriBuilder serverBuilder = KeycloakUriBuilder.fromUri(authServerBaseUrl);
             resolveBrowserUrls(serverBuilder);

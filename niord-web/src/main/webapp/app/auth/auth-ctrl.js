@@ -3,16 +3,17 @@
  * The Auth controller. Install it at all html pages that require authentication/authorization
  */
 angular.module('niord.auth')
-    .controller('AuthCtrl', ['$scope', 'Auth',
-        function ($scope, Auth) {
+    .controller('AuthCtrl', ['$scope', '$rootScope', 'AuthService',
+        function ($scope, $rootScope, AuthService) {
             'use strict';
 
-            $scope.isLoggedIn = Auth.loggedIn;
+            $scope.isLoggedIn = AuthService.loggedIn;
 
             /** Returns the user name ,**/
             $scope.userName = function () {
-                if (Auth.keycloak.idTokenParsed) {
-                    return Auth.keycloak.idTokenParsed.name || Auth.keycloak.idTokenParsed.preferred_username;
+                if (AuthService.keycloak.idTokenParsed) {
+                    return AuthService.keycloak.idTokenParsed.name 
+                        || AuthService.keycloak.idTokenParsed.preferred_username;
                 }
                 return undefined;
             };
@@ -20,25 +21,25 @@ angular.module('niord.auth')
 
             /** Logs the user in via Keycloak **/
             $scope.login = function () {
-                Auth.keycloak.login();
+                AuthService.keycloak.login();
             };
 
             /** Logs the user out via Keycloak **/
             $scope.logout = function () {
-                Auth.keycloak.logout();
-                Auth.loggedIn = false;
-                Auth.keycloak = null;
+                AuthService.keycloak.logout();
+                AuthService.loggedIn = false;
+                AuthService.keycloak = null;
             };
 
             /** Enters the Keycloak account management **/
             $scope.accountManagement = function () {
-                Auth.keycloak.accountManagement();
+                AuthService.keycloak.accountManagement();
             };
 
             /** Returns if the user has the given role in Keycloak **/
             $scope.hasRole = function (role) {
-                return Auth.keycloak.hasRealmRole(role) ||
-                    Auth.keycloak.hasResourceRole(role);
+                return AuthService.keycloak.hasRealmRole(role) ||
+                    ($rootScope.domain && AuthService.keycloak.hasResourceRole(role, $rootScope.domain.clientId));
             }
 
         }]);

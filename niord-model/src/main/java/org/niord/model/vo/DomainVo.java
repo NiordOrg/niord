@@ -22,9 +22,9 @@ import org.niord.model.IJsonSerializable;
  */
 public class DomainVo implements IJsonSerializable {
 
-    Integer id;
-    String clientId;
-    String name;
+    private Integer id;
+    private String clientId;
+    private String name;
 
     /*************************/
     /** Getters and Setters **/

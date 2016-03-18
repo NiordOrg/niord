@@ -28,7 +28,7 @@ angular.element(document).ready(function ($http) {
         console.log('*** LOGGED IN: ' + authenticated);
         auth.loggedIn = authenticated;
         auth.keycloak = keycloak;
-        module.factory('Auth', function() {
+        module.factory('AuthService', function() {
             return auth;
         });
         angular.bootstrap(document, ["product"]);
@@ -38,7 +38,7 @@ angular.element(document).ready(function ($http) {
 
 });
 
-module.controller('GlobalCtrl', function($scope, $http, Auth) {
+module.controller('GlobalCtrl', function($scope, $http, AuthService) {
     $scope.userProfile = undefined;
 
     $scope.isLoggedIn = function () {
@@ -77,7 +77,7 @@ module.controller('GlobalCtrl', function($scope, $http, Auth) {
 
 });
 
-module.factory('myHttpInterceptor', function($q, Auth) {
+module.factory('myHttpInterceptor', function($q, AuthService) {
     return {
 
         'request': function(config) {

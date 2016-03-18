@@ -1,6 +1,6 @@
 {
   "realm": "niord",
-  "realm-public-key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqKqBs9MGhjtcO0PT6xfkyx40gQhC/VwoAhY0jTkX46eVJxVeJ+6EEJa4IVOEbITEwLQdQOydPq8cEHLdVjdhVqKoSkB2XXZIIS7H6ZAmB1vV25ahTsF5ws2Oe5Avtaphh2wxoYF5Cl/h0ijJOw0FvHrPvegHsQxpJaWQ0VgzUQeFKDvxwkBGDIuJoONHs8UnwhBzbeRAVsz5gTBrduYoiRmA23+gSwig5rrE3GfkLswK3upn1RXeyfh+DdYHhy/e+307nDeK0Sps6uCYUgdxytSDE1YbOngvwKIC7Y0dvEGHXQZhfvBh6EiwBn9zDcKWXSjRW4ZSqj0hjsbXoXSxBQIDAQAB",
+  "realm-public-key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqDqSUVICX9blL8j6mjppBnmrvQU3N/1eu58aRrnq4082j7IN+bBtfzDGkRYZfm7r8BXF0S2sLlqFuDSL1yKiV0TbMuBGehr/SwFiK0Frh7mk9LSKelZwPKLiKIgKOqdhTenP11EKNZA81dQu6VHDp+UXMXTCcXvkSca5jzs2WSsY+Ug0g6DWm1qvt3Nx9m5AEdi4XftbyIA6OFM1uJWOaqmKKUmfy34Gz8daZYPm/18tetafhUN9d4StexKh5hYCpWbLoX34uFtth2fwtPZK78STrdGVG5vh1jdNmOGOPEHtQVoQR3vagmYrfLI7/4fq0e12jkVlvQXmlC8bG+k8hQIDAQAB",
   "auth-server-url": "/auth",
   "ssl-required": "external",
   "resource": "niord-web",
