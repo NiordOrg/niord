@@ -332,7 +332,7 @@ public class BatchService extends BaseService {
      * @param instanceId the batch job instance
      * @return the data
      */
-    @SuppressWarnings("all")
+    @SuppressWarnings("unchecked")
     public <T> T readBatchJobDeflatedDataFile(Long instanceId) throws IOException, ClassNotFoundException {
         Path path = getBatchJobDataFile(instanceId);
 
@@ -477,7 +477,7 @@ public class BatchService extends BaseService {
      *
      * @return the batch job names
      */
-    @SuppressWarnings("all")
+    @SuppressWarnings("unchecked")
     public List<String> getJobNames() {
         // Sadly, this gets reset upon every JVM restart
         /*

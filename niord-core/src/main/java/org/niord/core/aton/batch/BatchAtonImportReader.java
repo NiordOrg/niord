@@ -49,8 +49,8 @@ import java.util.logging.Level;
 @Named
 public class BatchAtonImportReader extends AbstractItemHandler {
 
-    AtonNodeVo[] atons;
-    int atonNo = 0;
+    private AtonNodeVo[] atons;
+    private int atonNo = 0;
 
     /** {@inheritDoc} **/
     @Override

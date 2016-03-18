@@ -231,7 +231,8 @@ angular.module('niord.common')
      *   <li>error(status, statusText): Error callback function. Optional.</li>
      * </ul>
      */
-    .directive('fileUpload', ['FileUploader', 'AuthService', function (FileUploader, AuthService) {
+    .directive('fileUpload', ['$rootScope', 'FileUploader', 'AuthService',
+        function ($rootScope, FileUploader, AuthService) {
         'use strict';
 
         return {
@@ -303,9 +304,12 @@ angular.module('niord.common')
                             scope.uploader.removeAfterUpload = scope.removeAfterUpload;
                         }
 
-                        // Handle authenticaiton
-                        if (Auth.loggedIn) {
-                            scope.uploader.headers.Authorization = 'bearer ' + Auth.keycloak.token;
+                        // Handle domain and authentication headers (todo: move to common function)
+                        if ($rootScope.domain) {
+                            scope.uploader.headers.NiordDomain = $rootScope.domain.clientId;
+                        }
+                        if (AuthService.keycloak.token) {
+                            scope.uploader.headers.Authorization = 'bearer ' + AuthService.keycloak.token;
                         }
 
                         scope.cancelOrRemove = function (item) {

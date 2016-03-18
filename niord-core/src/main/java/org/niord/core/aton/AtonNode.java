@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
  * http://wiki.openstreetmap.org/wiki/Elements
  */
 @Entity
-@Indexed(index = "indexes/atons")
+@Indexed
 @NamedQueries({
         @NamedQuery(name  = "AtonNode.deleteAll",
                 query = "delete from AtonNode"),

@@ -9,10 +9,10 @@ import org.niord.model.PagedSearchParamsVo;
  */
 public class AtonSearchParams extends PagedSearchParamsVo {
 
-    String name;
-    Geometry extent;
-    String[] chartNumbers;
-    boolean emptyOnOverflow;
+    private String name;
+    private Geometry extent;
+    private String[] chartNumbers;
+    private boolean emptyOnOverflow;
 
     public void setExtent(Double minLat, Double minLon, Double maxLat, Double maxLon) {
         if (minLat != null || minLon != null || maxLat != null || maxLon != null) {
