@@ -1,3 +1,18 @@
+/* Copyright (c) 2011 Danish Maritime Authority
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this library.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.niord.web;
 
 import org.apache.commons.io.IOUtils;
@@ -39,33 +54,30 @@ public class NiordKeycloakConfigResolver implements KeycloakConfigResolver {
 
     private KeycloakDeployment noDeployment = new KeycloakDeployment();
 
+    private DomainResolver domainResolver = DomainResolver.newInstance();
+
     /** {@inheritDoc} */
     @Override
     public KeycloakDeployment resolve(HttpFacade.Request request) {
 
-        String clientId = resolveDomain(request);
+        // Resolves the domain, i.e. the Keycloak client ID, from the request
+        String clientId = domainResolver.resolveDomain(request);
 
         if (StringUtils.isBlank(clientId)) {
             return noDeployment;
         }
 
+        // Look up, or create, cached Keycloak deployment for the client ID
         KeycloakDeployment deployment = cache.get(clientId);
         if (deployment == null) {
-
-            // not found on the simple cache, try to load it from the file system
-            InputStream is = getClass().getResourceAsStream("/keycloak.json");
-            if (is == null) {
-                throw new IllegalStateException("Not able to find the file /keycloak.json");
+            // If there are concurrent requests, only instantiate once
+            synchronized (cache) {
+                deployment = cache.get(clientId);
+                if (deployment == null) {
+                    deployment = instantiateDeployment(clientId);
+                }
             }
-
-            // Substitute the $CLIENT_ID
-            is = replaceResource(is, clientId);
-
-            // Instantiate and cache the new Keycloak deployment
-            deployment = KeycloakDeploymentBuilder.build(is);
-            cache.put(clientId, deployment);
         }
-
 
         if (deployment.getAuthServerBaseUrl() == null) {
             return deployment;
@@ -73,10 +85,24 @@ public class NiordKeycloakConfigResolver implements KeycloakConfigResolver {
         return resolveUrls(deployment, request);
     }
 
-    /** Resolves the domain, i.e. the Keycloak client ID, from the request */
-    @SuppressWarnings("unused")
-    private String resolveDomain(HttpFacade.Request request) {
-        return request.getHeader("NiordDomain");
+
+    /** Instantiates and caches a keycloak deployment for the given client ID */
+    private KeycloakDeployment instantiateDeployment(String clientId) {
+
+        // not found on the simple cache, try to load it from the file system
+        InputStream is = getClass().getResourceAsStream("/keycloak.json");
+        if (is == null) {
+            throw new IllegalStateException("Not able to find the file /keycloak.json");
+        }
+
+        // Substitute the $CLIENT_ID
+        is = replaceResource(is, clientId);
+
+        // Instantiate and cache the new Keycloak deployment
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(is);
+        cache.put(clientId, deployment);
+
+        return deployment;
     }
 
 
