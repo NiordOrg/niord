@@ -1,14 +1,11 @@
-body {
-    background-color: black;
-}
 
-.page-content {
+.home-content {
     background-color: black;
 }
 
 /** Footer Panel **/
 
-.footer {
+.home-footer .footer {
     position: fixed;
     left: 0;
     bottom: 0;

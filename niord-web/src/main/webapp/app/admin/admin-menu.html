@@ -1,17 +1,17 @@
 
 <div>
     <ul class="nav admin-nav-sidebar">
-        <li check-active="/overview"><a href ng-click="go('/overview');">Overview</a></li>
-        <li check-active="/charts"><a href ng-click="go('/charts');">Charts</a></li>
-        <li check-active="/areas"><a href ng-click="go('/areas');">Areas</a></li>
-        <li check-active="/categories"><a href ng-click="go('/categories');">Categories</a></li>
-        <li check-active="/integration" ng-if="adminIntegrationPageEnabled && hasRole('admin')"><a href ng-click="go('/integration');">Integration</a></li>
-        <li check-active="/batch" ng-if="hasRole('admin')">
-            <a href ng-click="go('/batch');">
+        <li ui-sref-active="active"><a href ui-sref="admin.overview">Overview</a></li>
+        <li ui-sref-active="active"><a href ui-sref="admin.charts">Charts</a></li>
+        <li ui-sref-active="active"><a href ui-sref="admin.areas">Areas</a></li>
+        <li ui-sref-active="active"><a href ui-sref="admin.categories">Categories</a></li>
+        <li ui-sref-active="active" ng-if="adminIntegrationPageEnabled && hasRole('admin')"><a href ui-sref="admin.integration">Integration</a></li>
+        <li ui-sref-active="active" ng-if="hasRole('admin')">
+            <a href ui-sref="admin.batch">
                 Batch Jobs
                 &nbsp;<span uib-tooltip="{{batchStatus.runningExecutions}} running batch jobs" class="badge">{{batchStatus.runningExecutions}}</span>
             </a>
         </li>
-        <li check-active="/settings" ng-if="hasRole('admin')"><a href ng-click="go('/settings');">Settings</a></li>
+        <li ui-sref-active="active" ng-if="hasRole('admin')"><a href ui-sref="admin.settings">Settings</a></li>
     </ul>
 </div>

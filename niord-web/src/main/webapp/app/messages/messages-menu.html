@@ -3,25 +3,25 @@
     <ul style="padding-left: 0">
 
         <li class="view-mode-menu-btn">
-            <span ng-click="go('/grid')" check-active="/grid">
+            <span ui-sref="messages.grid" ui-sref-active="active">
                 <span class="glyphicon glyphicon-th"></span> <span class="view-mode-menu-text" translate>VIEW_MODE_GRID</span>
             </span>
         </li>
 
         <li class="view-mode-menu-btn">
-            <span ng-click="go('/details')" check-active="/details">
+            <span ui-sref="messages.details" ui-sref-active="active">
                 <span class="glyphicon glyphicon-th-list"></span> <span class="view-mode-menu-text" translate>VIEW_MODE_DETAILS</span>
             </span>
         </li>
 
         <li class="view-mode-menu-btn">
-            <span ng-click="go('/table')" check-active="/table">
+            <span ui-sref="messages.table" ui-sref-active="active">
                 <span class="glyphicon glyphicon-align-justify"></span> <span class="view-mode-menu-text" translate>VIEW_MODE_TABLE</span>
             </span>
         </li>
 
         <li class="view-mode-menu-btn">
-            <span ng-click="go('/map')" check-active="/map">
+            <span ui-sref="messages.map" ui-sref-active="active">
                 <span class="glyphicon glyphicon-globe"></span> <span class="view-mode-menu-text" translate>VIEW_MODE_MAP</span>
             </span>
         </li>

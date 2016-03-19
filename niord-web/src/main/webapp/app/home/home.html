@@ -1,5 +1,5 @@
 
-<div ng-controller="HomeCtrl" ng-init="init()">
+<div class="home-content" ng-controller="HomeCtrl" ng-init="init()">
 
     <ol-map class="home-map" zoom="3">
         <cesium-map></cesium-map>
@@ -19,3 +19,5 @@
         <a ng-if="!isLoggedIn" href ng-click="login()" class="btn btn-lg btn-primary" translate>MENU_LOGIN</a>
     </div>
 </div>
+
+<div class="home-footer" ng-include="'app/layout/footer.html'"></div>

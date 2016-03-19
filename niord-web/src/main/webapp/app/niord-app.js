@@ -1,0 +1,161 @@
+/**
+ * The main Niord message list app module
+ *
+ * @type {angular.Module}
+ */
+
+angular.module('niord.auth', []);
+angular.module('niord.admin', []);
+angular.module('niord.atons', []);
+angular.module('niord.messages', []);
+angular.module('niord.common', []);
+angular.module('niord.conf', []);
+angular.module('niord.map', []);
+angular.module('niord.editor', []);
+angular.module('niord.home', []);
+
+
+var app = angular.module('niord.admin', [
+        'ngRoute', 'ngSanitize', 'ui.bootstrap', 'ui.select', 'ui.router', 'pascalprecht.translate', 'angular-growl', 'angularFileUpload',
+        'niord.common', 'niord.auth', 'niord.admin', 'niord.atons', 'niord.messages', 'niord.conf', 'niord.map', 'niord.editor', 'niord.home' ])
+
+    .config(['$stateProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $urlRouterProvider, $httpProvider) {
+        'use strict';
+
+        $httpProvider.interceptors.push('authHttpInterceptor');
+
+
+        $urlRouterProvider
+            .when('/messages', '/messages/grid')
+            .when('/atons', '/atons/grid')
+            .when('/admin', '/admin/overview')
+            .otherwise("/");
+
+        $stateProvider
+
+            /** Home **/
+            .state('home', {
+                url: "/",
+                templateUrl: "/app/home/home.html"
+            })
+
+
+            /** Editor **/
+            .state('editor', {
+                url: "/editor",
+                templateUrl: "/app/editor/editor.html",
+                data: { rolesRequired: ["editor", "admin", "sysadmin"] }
+            })
+
+
+            /** Messages **/
+            .state('messages', {
+                url: "/messages",
+                templateUrl: "/app/messages/messages.html"
+            })
+            .state('messages.grid', {
+                url: "/grid",
+                templateUrl: "/app/messages/messages-viewmode-grid.html"
+            })
+            .state('messages.map', {
+                url: "/map",
+                templateUrl: "/app/messages/messages-viewmode-map.html"
+            })
+            .state('messages.details', {
+                url: "/details",
+                templateUrl: "/app/messages/messages-viewmode-details.html"
+            })
+            .state('messages.table', {
+                url: "/table",
+                templateUrl: "/app/messages/messages-viewmode-table.html"
+            })
+
+
+
+            /** AtoNs **/
+            .state('atons', {
+                url: "/atons",
+                templateUrl: "/app/atons/atons.html"
+            })
+            .state('atons.grid', {
+                url: "/grid",
+                templateUrl: "/app/atons/atons-viewmode-grid.html"
+            })
+            .state('atons.map', {
+                url: "/map",
+                templateUrl: "/app/atons/atons-viewmode-map.html"
+            })
+            .state('atons.selected', {
+                url: "/selected",
+                templateUrl: "/app/atons/atons-viewmode-selected.html"
+            })
+
+                
+            /** Admin **/
+            .state('admin', {
+                url: "/admin",
+                templateUrl: "/app/admin/admin.html",
+                data: { rolesRequired: [ "admin", "sysadmin" ] }
+            })
+            .state('admin.overview', {
+                url: "/overview",
+                templateUrl: "/app/admin/admin-page-overview.html"
+            })
+            .state('admin.charts', {
+                url: "/charts",
+                templateUrl: "/app/admin/admin-page-charts.html"
+            })
+            .state('admin.areas', {
+                url: "/areas",
+                templateUrl: "/app/admin/admin-page-areas.html"
+            })
+            .state('admin.integration', {
+                url: "/integration",
+                templateUrl: "/app/admin/admin-page-integration.html"
+            })
+            .state('admin.batch', {
+                url: "/batch/:batchName",
+                templateUrl: "/app/admin/admin-page-batch.html"
+            })
+
+        ;
+    }])
+
+
+    .run(['$rootScope', '$state', '$location', 'growl', 'AuthService',
+        function($rootScope, $state, $location, growl, AuthService) {
+
+        /** TODO: Merge with role checks in AuthCtrl and AuthService **/
+        function checkRoles(roles) {
+            for (var x = 0; x < roles.length; x++) {
+                var role = roles[x];
+                if (AuthService.keycloak.hasRealmRole(role) ||
+                    ($rootScope.domain && AuthService.keycloak.hasResourceRole(role, $rootScope.domain.clientId)))
+                    return true;
+            }
+            return false;
+        }
+
+        // If there are roles associated with any of the states, verify that the user has access, or log in
+        $rootScope.$on('$stateChangeStart', function(event, next) {
+
+            if (next.data && next.data.rolesRequired && !checkRoles(next.data.rolesRequired)) {
+                event.preventDefault();
+                if (AuthService.loggedIn) {
+                    $state.go("home");
+                    growl.error("Access Denied :-(");
+                } else {
+                    AuthService.login($location.absUrl());
+                }
+            }
+        });
+
+    }]);
+
+
+/** Bootstrap the Angular application **/
+angular
+    .element(document)
+    .ready(function () {
+        bootstrapKeycloak("niord.admin", 'check-sso');
+    });

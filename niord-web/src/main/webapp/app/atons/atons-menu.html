@@ -3,21 +3,21 @@
     <ul style="padding-left: 0">
 
         <li class="view-mode-menu-btn">
-            <span ng-click="go('/grid')" check-active="/grid">
+            <span ui-sref="atons.grid" ui-sref-active="active">
                 <span class="glyphicon glyphicon-th"></span>
                 <span class="view-mode-menu-text" translate>VIEW_MODE_GRID</span>
             </span>
         </li>
 
         <li class="view-mode-menu-btn">
-            <span ng-click="go('/map')" check-active="/map">
+            <span ui-sref="atons.map" ui-sref-active="active">
                 <span class="glyphicon glyphicon-globe"></span>
                 <span class="view-mode-menu-text" translate>VIEW_MODE_MAP</span>
             </span>
         </li>
 
         <li class="view-mode-menu-btn">
-            <span ng-click="go('/selected')" check-active="/selected">
+            <span ui-sref="atons.selected" ui-sref-active="active">
                 <span class="glyphicon glyphicon-star"></span>
                 <span class="view-mode-menu-text" translate>VIEW_MODE_SELECTION</span>
                 <span ng-if="selection.size() > 0" class="badge">{{selection.size()}}</span>

@@ -8,7 +8,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="index.html#/">
+            <a class="navbar-brand" href ng-click="go('/')">
                 <img src="/img/niord_white.png" height="40" style="margin-top: -10px;position: absolute;">
                 <span style="padding-left: 60px;"></span>
             </a>
@@ -16,10 +16,10 @@
 
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav">
-                <li ng-class="{'active' : module == 'messages'}"><a href="messages.html" translate>MENU_MESSAGES</a></li>
-                <li ng-class="{'active' : module == 'atons'}"><a href="atons.html" translate>MENU_ATONS</a></li>
-                <li ng-class="{'active' : module == 'editor'}"><a href="editor.html" translate>MENU_EDITOR</a></li>
-                <li ng-if="hasRole('admin')" ng-class="{'active' : module == 'admin'}"><a href="admin.html" translate>MENU_ADMIN</a></li>
+                <li ui-sref-active="active"><a href ui-sref="messages" translate>MENU_MESSAGES</a></li>
+                <li ui-sref-active="active"><a href ui-sref="atons" translate>MENU_ATONS</a></li>
+                <li ui-sref-active="active"><a href ui-sref="editor" translate>MENU_EDITOR</a></li>
+                <li ng-if="hasRole('admin')" ui-sref-active="active"><a href ui-sref="admin" translate>MENU_ADMIN</a></li>
             </ul>
 
             <ul class="nav navbar-nav navbar-right">

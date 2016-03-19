@@ -59,9 +59,11 @@ angular.module('niord.auth')
     .run(['$rootScope', '$location',
         function ($rootScope, $location) {
 
+            // Navigate to the given path
             $rootScope.go = function (path) {
                 $location.path(path);
             };
+            
         }]);
 
 
@@ -95,6 +97,17 @@ function bootstrapKeycloak(angularAppName, onLoad) {
             var access = keycloak.resourceAccess[clientId];
             return !!access && access.roles.length > 0;
         };
+        
+        
+        // Performs a log-in and sets the return url to the given value
+        auth.login = function (returnUrl) {
+            var loginOpts = {};
+            if (returnUrl) {
+                loginOpts.redirectUri = returnUrl;
+            }
+            keycloak.login(loginOpts);
+        };
+        
 
         // Register the Auth factory
         app.factory('AuthService', function() {

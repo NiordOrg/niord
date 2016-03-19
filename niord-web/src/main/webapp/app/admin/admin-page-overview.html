@@ -5,22 +5,22 @@
 
     <dl class="dl-horizontal">
 
-        <dt><a href ng-click="go('/charts');">Charts</a></dt>
+        <dt><a href ui-sref="admin.charts">Charts</a></dt>
         <dd>Configure the nautical charts.</dd>
 
-        <dt><a href ng-click="go('/areas');">Areas</a></dt>
+        <dt><a href ui-sref="admin.areas">Areas</a></dt>
         <dd>Manage the list of areas used for grouping NW and NM messages.</dd>
 
-        <dt><a href ng-click="go('/categories');">Categories</a></dt>
+        <dt><a href ui-sref="admin.categories">Categories</a></dt>
         <dd>Manage the list of categories used for grouping NW and NM messages.</dd>
 
-        <dt ng-if="adminIntegrationPageEnabled && hasRole('admin')"><a href ng-click="go('/integration');">Integration</a></dt>
+        <dt ng-if="adminIntegrationPageEnabled && hasRole('admin')"><a href ui-sref="admin.integration">Integration</a></dt>
         <dd ng-if="adminIntegrationPageEnabled && hasRole('admin')">Handle integration with the legacy systems.</dd>
 
-        <dt ng-if="hasRole('admin')"><a href ng-click="go('/batch');">Batch Jobs</a></dt>
+        <dt ng-if="hasRole('admin')"><a href ui-sref="admin.batch">Batch Jobs</a></dt>
         <dd ng-if="hasRole('admin')">Monitor and manage batch jobs.</dd>
 
-        <dt ng-if="hasRole('admin')"><a href ng-click="go('/settings');">Settings</a></dt>
+        <dt ng-if="hasRole('admin')"><a href ui-sref="admin.settings">Settings</a></dt>
         <dd ng-if="hasRole('admin')">Manage the system settings.</dd>
     </dl>
 

@@ -1,14 +1,10 @@
 
-<div class="messages">
-    
-    <ol-map class="message-list-map" map-state="state.map">
-        <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
-        <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
-                        source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
-        <map-charts-layer name="Charts" visible="false" layer-switcher="state.chart.enabled" charts="state.chart.charts"></map-charts-layer>
-        <map-aton-layer name="AtoN" visible="false" layer-switcher="true"></map-aton-layer>
-        <map-message-list-layer name="Messages" visible="false" layer-switcher="true" message-list="messageList"></map-message-list-layer>
-        <map-layer-switcher></map-layer-switcher>
-    </ol-map>
-
-</div>
+<ol-map class="message-list-map" map-state="state.map">
+    <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
+    <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
+                    source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
+    <map-charts-layer name="Charts" visible="false" layer-switcher="state.chart.enabled" charts="state.chart.charts"></map-charts-layer>
+    <map-aton-layer name="AtoN" visible="false" layer-switcher="true"></map-aton-layer>
+    <map-message-list-layer name="Messages" visible="false" layer-switcher="true" message-list="messageList"></map-message-list-layer>
+    <map-layer-switcher></map-layer-switcher>
+</ol-map>

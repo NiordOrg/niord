@@ -28,7 +28,6 @@ angular.module('niord.auth')
             $scope.logout = function () {
                 AuthService.keycloak.logout();
                 AuthService.loggedIn = false;
-                AuthService.keycloak = null;
             };
 
             /** Enters the Keycloak account management **/

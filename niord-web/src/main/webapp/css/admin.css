@@ -2,15 +2,8 @@
  * Admin CSS styles
  */
 
-body {
-    background-color: white;
-}
-
-.page-content {
-    background-color: white;
-}
-
 .admin-page {
+    background-color: white;
     position: relative;
 }
 

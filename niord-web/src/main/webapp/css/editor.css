@@ -1,12 +1,9 @@
 
-body {
-    background-color: white;
+.editor-page {
+    background-color: #eee;
+    margin: 0;
+    padding: 10px;
 }
-
-.page-content {
-    background-color: white;
-}
-
 
 .editor-locations {
     width: 200px;

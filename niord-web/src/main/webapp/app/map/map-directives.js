@@ -187,7 +187,7 @@ angular.module('niord.map')
                 olScope.getMap().then(function(map) {
                     var ol3d = new olcs.OLCesium({map: map});
 
-                    // Important: Will prevent CPU maxing out because of high frame rate
+                    // Important: Will prevent CPU from maxing out because of high frame rate
                     ol3d.enableAutoRenderLoop();
 
                     ol3d.setEnabled(true);

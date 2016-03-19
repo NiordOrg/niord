@@ -1,5 +1,8 @@
 
-<div>
+<div ng-controller="AtonDetailsCtrl"></div>
+
+<div class="editor-page" ng-controller="EditorCtrl">
+
     <h1>Editor</h1>
 
     <div ng-repeat="fc in featureCollections">
@@ -16,3 +19,6 @@
     </div>
 
 </div>
+
+<div ng-include="'app/layout/footer.html'"></div>
+

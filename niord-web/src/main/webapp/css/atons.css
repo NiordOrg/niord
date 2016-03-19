@@ -1,12 +1,4 @@
 
-body {
-    background-color: white;
-}
-
-.page-content {
-    background-color: white;
-}
-
 div.map-extent {
     font-size: 12px; 
     margin: 8px 0 0 5px;
@@ -33,7 +25,7 @@ div.map-extent span::first-letter {
 /** View mode **/
 
 .atons {
-    background-color: lightgray;
+    background-color: #eee;
 }
 
 .empty-search-result {

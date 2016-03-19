@@ -173,15 +173,15 @@ angular.module('niord.admin')
     /**
      * Batch Admin Controller
      */
-    .controller('BatchAdminCtrl', ['$scope', '$interval', '$routeParams', '$uibModal', 'AdminBatchService',
-        function ($scope, $interval, $routeParams, $uibModal, AdminBatchService) {
+    .controller('BatchAdminCtrl', ['$scope', '$interval', '$stateParams', '$uibModal', 'AdminBatchService',
+        function ($scope, $interval, $stateParams, $uibModal, AdminBatchService) {
             'use strict';
 
             $scope.batchStatus = {
                 runningExecutions: 0,
                 types: []
             };
-            $scope.batchName = $routeParams.batchName;
+            $scope.batchName = $stateParams.batchName;
             $scope.pageSize = 5;
             $scope.currentPage = 1;
             $scope.executions = [];
