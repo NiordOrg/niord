@@ -15,11 +15,15 @@
  */
 package org.niord.web;
 
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.batch.BatchService;
 import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
+import org.niord.core.repo.RepositoryService;
 import org.niord.model.vo.ChartVo;
 import org.slf4j.Logger;
 
@@ -27,9 +31,15 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 /**
@@ -41,11 +51,17 @@ import java.util.stream.Collectors;
 @PermitAll
 public class ChartRestService {
 
+    @Context
+    ServletContext servletContext;
+
     @Inject
     Logger log;
 
     @Inject
     ChartService chartService;
+
+    @Inject
+    BatchService batchService;
 
 
     /** Returns the charts with the given comma-separated chart numbers */
@@ -132,4 +148,54 @@ public class ChartRestService {
         chartService.deleteChart(chartNumber);
     }
 
+
+    /**
+     * Imports an uploaded Charts json file
+     *
+     * @param request the servlet request
+     * @return a status
+     */
+    @POST
+    @Path("/upload-charts")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("text/plain")
+    @RolesAllowed("admin")
+    public String importCharts(@Context HttpServletRequest request) throws Exception {
+
+        FileItemFactory factory = RepositoryService.newDiskFileItemFactory(servletContext);
+        ServletFileUpload upload = new ServletFileUpload(factory);
+
+        StringBuilder txt = new StringBuilder();
+        upload.parseRequest(request).stream()
+                .filter(item -> !item.isFormField())
+                .forEach(item -> {
+                    try {
+                        startChartsImportBatchJob(item.getInputStream(), item.getName(), txt);
+                    } catch (Exception e) {
+                        String errorMsg = "Error importing charts from " + item.getName() + ": " + e;
+                        log.error(errorMsg, e);
+                        txt.append(errorMsg);
+                    }
+                });
+
+        return txt.toString();
+    }
+
+
+    /**
+     * Extracts the lights from the Excel sheet
+     * @param inputStream the Excel sheet input stream
+     * @param fileName the name of the PDF file
+     * @param txt a log of the import
+     */
+    private void startChartsImportBatchJob(InputStream inputStream, String fileName, StringBuilder txt) throws Exception {
+        batchService.startBatchJobWithDataFile(
+                "chart-import",
+                inputStream,
+                fileName,
+                new Properties());
+
+        log.info("Started 'chart-import' batch job with file " + fileName);
+        txt.append("Started 'chart-import' batch job with file ").append(fileName);
+    }
 }

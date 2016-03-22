@@ -1,0 +1,35 @@
+<div>
+    <div class="modal-header">
+        <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
+        <h2>{{title}}</h2>
+    </div>
+
+    <div class="modal-body">
+
+        <form name="import_form">
+
+            <div class="form-controls">
+
+                <div>
+                    <file-upload url="uploadUrl"
+                                 drop-text="or drop file here"
+                                 multiple="false"
+                                 file-types="fileTypes"
+                                 auto-upload="true"
+                                 remove-after-upload="true"
+                                 success="fileUploaded(result)"
+                                 error="fileUploadError(status, statusText)"></file-upload>
+                </div>
+
+                <div>
+                    <label class="control-label" for="importResult">Upload Result</label>
+                    <textarea ng-model="importResult" id="importResult" class="form-control input-sm" style="font-size: 10px;" rows="3" readonly></textarea>
+                </div>
+
+                <div style="margin-top: 24px">
+                    <button class="btn btn-sm" ng-click="$dismiss('aborted')">Close</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

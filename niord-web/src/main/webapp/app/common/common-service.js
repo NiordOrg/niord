@@ -141,7 +141,41 @@ angular.module('niord.common')
                 return $uibModal.open(tempModalDefaults).result;
             };
 
-    }]);
+        }])
+
+    /**
+     * Service for uploading files
+     */
+    .service('UploadFileService', ['$uibModal',
+        function ($uibModal) {
+            'use strict';
+
+            /** Opens an upload file dialog **/
+            this.showUploadFileDialog = function (title, uploadUrl, fileTypes) {
+
+                return $uibModal.open({
+                    templateUrl: '/app/common/file-upload-dialog.html',
+                    controller: function ($scope) {
+                        $scope.title = title;
+                        $scope.uploadUrl = uploadUrl;
+                        $scope.fileTypes = fileTypes;
+                        $scope.importResult = '';
+
+                        $scope.fileUploaded = function(result) {
+                            $scope.importResult = result;
+                            $scope.$$phase || $scope.$apply();
+                        };
+
+                        $scope.fileUploadError = function(status, statusText) {
+                            $scope.importResult = "Error importing charts (error " + status + ")";
+                            $scope.$$phase || $scope.$apply();
+                        };
+                    },
+                    size: 'md'
+                });
+            }
+
+        }]);
 
 
 /** An implementation of a Map that preserves the order of the keys */

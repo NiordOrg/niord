@@ -48,8 +48,8 @@ angular.module('niord.admin')
      * Charts Admin Controller
      * Controller for the Admin Charts page
      */
-    .controller('ChartsAdminCtrl', ['$scope', 'growl', 'AdminChartService', 'DialogService',
-        function ($scope, growl, AdminChartService, DialogService) {
+    .controller('ChartsAdminCtrl', ['$scope', 'growl', 'AdminChartService', 'DialogService', 'UploadFileService',
+        function ($scope, growl, AdminChartService, DialogService, UploadFileService) {
             'use strict';
 
             $scope.allCharts = [];
@@ -63,6 +63,7 @@ angular.module('niord.admin')
             $scope.currentPage = 1;
             $scope.chartNo = 0;
             $scope.search = '';
+
 
             /** Loads the charts from the back-end */
             $scope.loadCharts = function() {
@@ -164,8 +165,16 @@ angular.module('niord.admin')
                             .success($scope.loadCharts)
                             .error($scope.displayError);
                     });
-            }
+            };
 
+
+            /** Opens the upload-charts dialog **/
+            $scope.uploadChartsDialog = function () {
+                UploadFileService.showUploadFileDialog(
+                    'Upload Charts File',
+                    '/rest/charts/upload-charts',
+                    'json');
+            };
         }])
 
 
@@ -294,8 +303,7 @@ angular.module('niord.admin')
                     .createDomainInKeycloak(domain)
                     .success($scope.loadDomains)
                     .error($scope.displayError);
-            }
-
+            };
         }])
 
 
