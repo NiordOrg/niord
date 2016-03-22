@@ -33,6 +33,7 @@ import javax.validation.constraints.NotNull;
         @NamedQuery(name="Domain.findByClientId",
                 query="SELECT d FROM Domain d where d.clientId = :clientId")
 })
+@SuppressWarnings("unused")
 public class Domain extends BaseEntity<Integer> {
 
     @NotNull
@@ -41,6 +42,9 @@ public class Domain extends BaseEntity<Integer> {
     @NotNull
     String name;
 
+    @Transient
+    Boolean inKeycloak;
+
     /** Constructor */
     public Domain() {
     }
@@ -48,18 +52,18 @@ public class Domain extends BaseEntity<Integer> {
 
     /** Constructor */
     public Domain(DomainVo domain) {
-        this.id = domain.getId();
         this.clientId = domain.getClientId();
         this.name = domain.getName();
+        this.inKeycloak = domain.getInKeycloak();
     }
 
 
     /** Converts this entity to a value object */
     public DomainVo toVo() {
         DomainVo domain = new DomainVo();
-        domain.setId(id);
         domain.setClientId(clientId);
         domain.setName(name);
+        domain.setInKeycloak(inKeycloak);
         return domain;
     }
 
@@ -82,5 +86,13 @@ public class Domain extends BaseEntity<Integer> {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Boolean getInKeycloak() {
+        return inKeycloak;
+    }
+
+    public void setInKeycloak(Boolean inKeycloak) {
+        this.inKeycloak = inKeycloak;
     }
 }

@@ -171,6 +171,135 @@ angular.module('niord.admin')
 
 
     /**
+     * Domains Admin Controller
+     * Controller for the Admin domains page
+     */
+    .controller('DomainAdminCtrl', ['$scope', 'growl', 'AuthService', 'AdminDomainService', 'DialogService',
+        function ($scope, growl, AuthService, AdminDomainService, DialogService) {
+            'use strict';
+
+            $scope.allDomains = [];
+            $scope.domains = [];
+            $scope.domain = undefined; // The domain being edited
+            $scope.editMode = 'add';
+            $scope.search = '';
+
+
+            /** Computes the Keycloak URL */
+            $scope.getKeycloakUrl = function() {
+                // Template http://localhost:8080/auth/admin/master/console/#/realms/niord/clients
+                var url = AuthService.keycloak.authServerUrl;
+                if (url.charAt(url.length - 1) != '/') {
+                    url += '/';
+                }
+                return url + 'admin/master/console/#/realms/niord/clients';
+            };
+            $scope.keycloakUrl = $scope.getKeycloakUrl();
+
+
+            /** Loads the domains from the back-end */
+            $scope.loadDomains = function() {
+                $scope.domain = undefined;
+                AdminDomainService
+                    .getDomains()
+                    .success(function (domains) {
+                        $scope.allDomains = domains;
+                        $scope.searchUpdated();
+                    });
+            };
+
+
+            /** Returns if the string matches the given domain property */
+            function match(domainProperty, str) {
+                var txt = (domainProperty) ? "" + domainProperty : "";
+                return txt.toLowerCase().indexOf(str.toLowerCase()) >= 0;
+            }
+
+
+            /** Called whenever search criteria changes */
+            $scope.searchUpdated = function() {
+                var search = $scope.search.toLowerCase();
+                $scope.domains = $scope.allDomains.filter(function (domain) {
+                    return match(domain.clientId, search) ||
+                        match(domain.name, search);
+                });
+            };
+            $scope.$watch("search", $scope.searchUpdated, true);
+
+
+            /** Adds a new domain **/
+            $scope.addDomain = function () {
+                $scope.editMode = 'add';
+                $scope.domain = {
+                    clientId: undefined,
+                    name: undefined
+                };
+            };
+
+
+            /** Copies a domain **/
+            $scope.copyDomain = function (domain) {
+                $scope.editMode = 'add';
+                $scope.domain = angular.copy(domain);
+                $scope.domain.clientId = undefined;
+            };
+
+
+            /** Edits a domain **/
+            $scope.editDomain = function (domain) {
+                $scope.editMode = 'edit';
+                $scope.domain = angular.copy(domain);
+            };
+
+
+            /** Displays the error message */
+            $scope.displayError = function () {
+                growl.error("Error saving domain");
+            };
+
+
+            /** Saves the current domain being edited */
+            $scope.saveDomain = function () {
+
+                if ($scope.domain && $scope.editMode == 'add') {
+                    AdminDomainService
+                        .createDomain($scope.domain)
+                        .success($scope.loadDomains)
+                        .error($scope.displayError);
+                } else if ($scope.domain && $scope.editMode == 'edit') {
+                    AdminDomainService
+                        .updateDomain($scope.domain)
+                        .success($scope.loadDomains)
+                        .error($scope.displayError);
+                }
+            };
+
+
+            /** Deletes the given domain */
+            $scope.deleteDomain = function (domain) {
+                DialogService.showConfirmDialog(
+                    "Delete domain?", "Delete domain ID '" + domain.clientId + "'?")
+                    .then(function() {
+                        AdminDomainService
+                            .deleteDomain(domain)
+                            .success($scope.loadDomains)
+                            .error($scope.displayError);
+                    });
+            };
+
+
+            /** Creates the domain in Keycloak **/
+            $scope.createInKeycloak = function (domain) {
+                AdminDomainService
+                    .createDomainInKeycloak(domain)
+                    .success($scope.loadDomains)
+                    .error($scope.displayError);
+            }
+
+        }])
+
+
+    /**
      * Batch Admin Controller
      */
     .controller('BatchAdminCtrl', ['$scope', '$interval', '$stateParams', '$uibModal', 'AdminBatchService',

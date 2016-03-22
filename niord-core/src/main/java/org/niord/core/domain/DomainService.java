@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 
 import javax.inject.Inject;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Provides an interface for managing application domains
@@ -29,6 +30,9 @@ public class DomainService extends BaseService {
 
     @Inject
     private Logger log;
+
+    @Inject
+    private KeycloakIntegrationService keycloakService;
 
     /**
      * Returns the domain with the given clientId
@@ -46,12 +50,99 @@ public class DomainService extends BaseService {
         }
     }
 
+
     /**
      * Returns all domains
      * @return all domains
      */
     public List<Domain> getDomains() {
-        return getAll(Domain.class);
+        return getDomains(false);
     }
 
+
+    /**
+     * Returns all domains, optionally with the current Keycloak state
+     * @param keycloakState whether to load the state of the domains in Keycloak
+     * @return all domains
+     */
+    public List<Domain> getDomains(boolean keycloakState) {
+        List<Domain> domains = getAll(Domain.class);
+        if (keycloakState) {
+            try {
+                Set<String> keycloakClients = keycloakService.getKeycloakDomainClients();
+                domains.stream()
+                        .forEach(d -> d.setInKeycloak(keycloakClients.contains(d.getClientId())));
+            } catch (Exception e) {
+                log.debug("Failed loading Keycloak states for domains");
+            }
+
+        }
+        return domains;
+    }
+
+
+    /**
+     * Updates the domain data from the domain template
+     * @param domain the domain to update
+     * @return the updated domain
+     */
+    public Domain updateDomain(Domain domain) {
+        Domain original = findByClientId(domain.getClientId());
+        if (original == null) {
+            throw new IllegalArgumentException("Cannot update non-existing domain "
+                    + domain.getClientId());
+        }
+
+        // Copy the domain data
+        original.setName(domain.getName());
+
+        return saveEntity(original);
+    }
+
+
+    /**
+     * Creates a new domain based on the domain template
+     * @param domain the domain to create
+     * @return the created domain
+     */
+    public Domain createDomain(Domain domain) {
+        Domain original = findByClientId(domain.getClientId());
+        if (original != null) {
+            throw new IllegalArgumentException("Cannot create domain with duplicate client ID "
+                    + domain.getClientId());
+        }
+
+        return saveEntity(domain);
+    }
+
+
+    /**
+     * Deletes the domain
+     * @param clientId the client id of the domain to delete
+     */
+    public boolean deleteDomain(String clientId) {
+
+        Domain domain = findByClientId(clientId);
+        if (domain != null) {
+            remove(domain);
+            return true;
+        }
+        return false;
+    }
+
+
+    /**
+     * Creates the domain as a client in Keycloak
+     * @param domain the domain to create a Keycloak client for
+     */
+    public void createDomainInKeycloak(Domain domain) throws Exception {
+
+        long t0 = System.currentTimeMillis();
+
+        boolean result = keycloakService.createKeycloakDomainClient(domain);
+
+        log.info(String.format("Created client %s in Keycloak in %d ms. Result: %s",
+                domain.getClientId(), System.currentTimeMillis() - t0, result));
+
+    }
 }

@@ -19,23 +19,19 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
-import org.niord.core.user.UserService;
 import org.niord.model.vo.DomainVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
+import javax.ws.rs.*;
 import java.util.List;
-import java.util.Set;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -53,12 +49,6 @@ public class DomainRestService {
     @Inject
     DomainService domainService;
 
-    @Inject
-    UserService userService;
-
-    @Context
-    HttpRequest request;
-
 
     /** Returns all domains */
     @GET
@@ -68,7 +58,8 @@ public class DomainRestService {
     @NoCache
     public List<DomainVo> getAllDomains() {
 
-        return domainService.getDomains().stream()
+        // Load the domains including their keycloak state
+        return domainService.getDomains(true).stream()
                 .map(Domain::toVo)
                 .collect(Collectors.toList());
     }
@@ -95,19 +86,59 @@ public class DomainRestService {
     }
 
 
-    /** Returns the domains for the current user */
-    @GET
-    @Path("/user-domains")
+    /** Creates a new domain */
+    @POST
+    @Path("/")
+    @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
+    @RolesAllowed({ "sysadmin" })
     @GZIP
-    public List<DomainVo> getUserDomains() {
+    @NoCache
+    public DomainVo createDomain(DomainVo domain) throws Exception {
+        log.info("Creating domain " + domain);
+        return domainService.createDomain(new Domain(domain)).toVo();
+    }
 
-        Set<String> clientIds = userService.getUserKeycloakClientIds(request);
+    /** Updates an existing domain */
+    @PUT
+    @Path("/{clientId}")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed({ "sysadmin" })
+    @GZIP
+    @NoCache
+    public DomainVo updateDomain(@PathParam("clientId") String clientId, DomainVo domain) throws Exception {
+        if (!Objects.equals(clientId, domain.getClientId())) {
+            throw new WebApplicationException(400);
+        }
 
-        return domainService.getDomains().stream()
-                .filter(d -> clientIds.contains(d.getClientId()))
-                .map(Domain::toVo)
-                .collect(Collectors.toList());
+        log.info("Updating domain " + domain);
+        return domainService.updateDomain(new Domain(domain)).toVo();
+    }
+
+    /** Deletes an existing domain */
+    @DELETE
+    @Path("/{clientId}")
+    @Consumes("application/json;charset=UTF-8")
+    @RolesAllowed({ "sysadmin" })
+    @GZIP
+    @NoCache
+    public void deleteDomain(@PathParam("clientId") String clientId) throws Exception {
+        log.info("Deleting domain " + clientId);
+        domainService.deleteDomain(clientId);
+    }
+
+
+    /** Creates the domain in Keycloak */
+    @POST
+    @Path("/keycloak")
+    @Consumes("application/json;charset=UTF-8")
+    @RolesAllowed({ "sysadmin" })
+    @GZIP
+    @NoCache
+    public void createDomainInKeycloak(DomainVo domain) throws Exception {
+        log.info("Creating Keycloak domain " + domain);
+        domainService.createDomainInKeycloak(new Domain(domain));
     }
 
 }

@@ -40,6 +40,47 @@ angular.module('niord.admin')
 
 
     /**
+     * Interface for calling domain related functions at the application server
+     */
+    .factory('AdminDomainService', [ '$http', function($http) {
+        'use strict';
+
+        return {
+
+            /** Returns all domain **/
+            getDomains: function () {
+                return $http.get('/rest/domains/all');
+            },
+
+
+            /** Creates a new domain **/
+            createDomain: function(domain) {
+                return $http.post('/rest/domains', domain);
+            },
+
+
+            /** Updates the given domain **/
+            updateDomain: function(domain) {
+                return $http.put('/rest/domains/' + encodeURIComponent(domain.clientId), domain);
+            },
+
+
+            /** Deletes the given domain **/
+            deleteDomain: function(domain) {
+                return $http.delete('/rest/domains/' + encodeURIComponent(domain.clientId));
+            },
+
+
+            /** Creates the domain in Keycloak **/
+            createDomainInKeycloak : function (domain) {
+                return $http.post('/rest/domains/keycloak', domain);
+            }
+
+        };
+    }])
+
+
+    /**
      * Interface for calling batch-related functions at the application server
      */
     .factory('AdminBatchService', [ '$http', function($http) {

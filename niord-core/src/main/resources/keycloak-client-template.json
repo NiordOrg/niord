@@ -1,0 +1,38 @@
+{
+  "id": "7f278d93-92b7-4d3c-8f95-3d0ce247ebdb",
+  "clientId": "niord-client-nm",
+  "name": "Niord NM Domain",
+  "surrogateAuthRequired": false,
+  "enabled": true,
+  "clientAuthenticatorType": "client-secret",
+  "redirectUris": [
+    "/*"
+  ],
+  "webOrigins": [],
+  "notBefore": 0,
+  "bearerOnly": true,
+  "consentRequired": false,
+  "standardFlowEnabled": true,
+  "implicitFlowEnabled": false,
+  "directAccessGrantsEnabled": true,
+  "serviceAccountsEnabled": false,
+  "publicClient": false,
+  "frontchannelLogout": false,
+  "protocol": "openid-connect",
+  "attributes": {
+    "saml.assertion.signature": "false",
+    "saml.force.post.binding": "false",
+    "saml.multivalued.roles": "false",
+    "saml.encrypt": "false",
+    "saml_force_name_id_format": "false",
+    "saml.client.signature": "false",
+    "saml.authnstatement": "false",
+    "saml.server.signature": "false"
+  },
+  "fullScopeAllowed": false,
+  "nodeReRegistrationTimeout": -1,
+  "clientTemplate": "niord-client",
+  "useTemplateConfig": false,
+  "useTemplateScope": true,
+  "useTemplateMappers": true
+}

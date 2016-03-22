@@ -22,21 +22,13 @@ import org.niord.model.IJsonSerializable;
  */
 public class DomainVo implements IJsonSerializable {
 
-    private Integer id;
     private String clientId;
     private String name;
+    private Boolean inKeycloak;
 
     /*************************/
     /** Getters and Setters **/
     /*************************/
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
 
     public String getClientId() {
         return clientId;
@@ -52,5 +44,13 @@ public class DomainVo implements IJsonSerializable {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Boolean getInKeycloak() {
+        return inKeycloak;
+    }
+
+    public void setInKeycloak(Boolean inKeycloak) {
+        this.inKeycloak = inKeycloak;
     }
 }
