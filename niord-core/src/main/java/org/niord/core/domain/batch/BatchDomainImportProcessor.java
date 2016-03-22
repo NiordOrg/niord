@@ -13,49 +13,49 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.core.chart.batch;
+package org.niord.core.domain.batch;
 
 import org.niord.core.batch.AbstractItemHandler;
-import org.niord.core.chart.Chart;
-import org.niord.core.chart.ChartService;
-import org.niord.model.vo.ChartVo;
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
+import org.niord.model.vo.DomainVo;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 
 /**
- * Filters charts that need to be a added or updated
+ * Filters domains that need to be a added or updated
  */
 @Named
-public class BatchChartImportProcessor extends AbstractItemHandler {
+public class BatchDomainImportProcessor extends AbstractItemHandler {
 
     @Inject
-    ChartService chartService;
+    DomainService domainService;
 
     /** {@inheritDoc} **/
     @Override
     public Object processItem(Object item) throws Exception {
 
-        ChartVo chartVo = (ChartVo) item;
-        Chart chart = new Chart(chartVo);
+        DomainVo domainVo = (DomainVo) item;
+        Domain domain = new Domain(domainVo);
 
-        // Look
-        Chart orig = chartService.findByChartNumber(chart.getChartNumber());
+        // Look up any existing domain with the same client ID
+        Domain orig = domainService.findByClientId(domain.getClientId());
 
         if (orig == null) {
-            // Persist new chart
-            getLog().info("Persisting new chart " + chart);
-            return chart;
+            // Persist new domain
+            getLog().info("Persisting new domain " + domain);
+            return domain;
 
-        } else if (orig.hasChanged(chart)) {
+        } else if (orig.hasChanged(domain)) {
             // Update original
-            getLog().info("Updating chart " + orig.getId());
-            orig.updateChart(chartVo);
+            getLog().info("Updating domain " + orig.getClientId());
+            orig.updateDomain(domainVo);
             return orig;
         }
 
         // No change, ignore...
-        getLog().info("Ignoring unchanged chart " + orig.getId());
+        getLog().info("Ignoring unchanged domain " + orig.getClientId());
         return null;
     }
 }

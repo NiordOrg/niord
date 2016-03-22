@@ -13,33 +13,33 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.core.chart.batch;
+package org.niord.core.domain.batch;
 
 import org.niord.core.batch.AbstractItemHandler;
-import org.niord.core.chart.Chart;
-import org.niord.core.chart.ChartService;
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.List;
 
 /**
- * Persists the charts to the database
+ * Persists the domains to the database
  */
 @Named
-public class BatchChartImportWriter extends AbstractItemHandler {
+public class BatchDomainImportWriter extends AbstractItemHandler {
 
     @Inject
-    ChartService chartService;
+    DomainService domainService;
 
     /** {@inheritDoc} **/
     @Override
     public void writeItems(List<Object> items) throws Exception {
         long t0 = System.currentTimeMillis();
         for (Object i : items) {
-            Chart chart = (Chart) i;
-            chartService.saveEntity(chart);
+            Domain domain = (Domain) i;
+            domainService.saveEntity(domain);
         }
-        getLog().info(String.format("Persisted %d charts in %d ms", items.size(), System.currentTimeMillis() - t0));
+        getLog().info(String.format("Persisted %d domains in %d ms", items.size(), System.currentTimeMillis() - t0));
     }
 }

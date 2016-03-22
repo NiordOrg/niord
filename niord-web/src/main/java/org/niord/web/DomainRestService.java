@@ -17,11 +17,15 @@ package org.niord.web;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.batch.BatchService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.repo.RepositoryService;
 import org.niord.model.vo.DomainVo;
 import org.slf4j.Logger;
 
@@ -29,9 +33,15 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 /**
@@ -43,11 +53,17 @@ import java.util.stream.Collectors;
 @PermitAll
 public class DomainRestService {
 
+    @Context
+    ServletContext servletContext;
+
     @Inject
     Logger log;
 
     @Inject
     DomainService domainService;
+
+    @Inject
+    BatchService batchService;
 
 
     /** Returns all domains */
@@ -139,6 +155,57 @@ public class DomainRestService {
     public void createDomainInKeycloak(DomainVo domain) throws Exception {
         log.info("Creating Keycloak domain " + domain);
         domainService.createDomainInKeycloak(new Domain(domain));
+    }
+
+
+    /**
+     * Imports an uploaded domains json file
+     *
+     * @param request the servlet request
+     * @return a status
+     */
+    @POST
+    @Path("/upload-domains")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("text/plain")
+    @RolesAllowed("sysadmin")
+    public String importDomains(@Context HttpServletRequest request) throws Exception {
+
+        FileItemFactory factory = RepositoryService.newDiskFileItemFactory(servletContext);
+        ServletFileUpload upload = new ServletFileUpload(factory);
+
+        StringBuilder txt = new StringBuilder();
+        upload.parseRequest(request).stream()
+                .filter(item -> !item.isFormField())
+                .forEach(item -> {
+                    try {
+                        startDomainsImportBatchJob(item.getInputStream(), item.getName(), txt);
+                    } catch (Exception e) {
+                        String errorMsg = "Error importing domains from " + item.getName() + ": " + e;
+                        log.error(errorMsg, e);
+                        txt.append(errorMsg);
+                    }
+                });
+
+        return txt.toString();
+    }
+
+
+    /**
+     * Starts a domain import batch job
+     * @param inputStream the domain JSON input stream
+     * @param fileName the name of the file
+     * @param txt a log of the import
+     */
+    private void startDomainsImportBatchJob(InputStream inputStream, String fileName, StringBuilder txt) throws Exception {
+        batchService.startBatchJobWithDataFile(
+                "domain-import",
+                inputStream,
+                fileName,
+                new Properties());
+
+        log.info("Started 'domain-import' batch job with file " + fileName);
+        txt.append("Started 'domain-import' batch job with file ").append(fileName);
     }
 
 }

@@ -1,0 +1,12 @@
+<job id="domain-import" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
+    <step id="setupStep" allow-start-if-complete="true" next="importDomainsStep">
+        <batchlet ref="jobStartBatchlet"/>
+    </step>
+    <step id="importDomainsStep">
+        <chunk item-count="10">
+            <reader ref="batchDomainImportReader" />
+            <processor ref="batchDomainImportProcessor"/>
+            <writer ref="batchDomainImportWriter" />
+        </chunk>
+    </step>
+</job>

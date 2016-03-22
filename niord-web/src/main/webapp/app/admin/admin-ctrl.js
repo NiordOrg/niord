@@ -183,8 +183,8 @@ angular.module('niord.admin')
      * Domains Admin Controller
      * Controller for the Admin domains page
      */
-    .controller('DomainAdminCtrl', ['$scope', 'growl', 'AuthService', 'AdminDomainService', 'DialogService',
-        function ($scope, growl, AuthService, AdminDomainService, DialogService) {
+    .controller('DomainAdminCtrl', ['$scope', 'growl', 'AuthService', 'AdminDomainService', 'DialogService', 'UploadFileService',
+        function ($scope, growl, AuthService, AdminDomainService, DialogService, UploadFileService) {
             'use strict';
 
             $scope.allDomains = [];
@@ -303,6 +303,15 @@ angular.module('niord.admin')
                     .createDomainInKeycloak(domain)
                     .success($scope.loadDomains)
                     .error($scope.displayError);
+            };
+
+
+            /** Opens the upload-domains dialog **/
+            $scope.uploadDomainsDialog = function () {
+                UploadFileService.showUploadFileDialog(
+                    'Upload Domains File',
+                    '/rest/domains/upload-domains',
+                    'json');
             };
         }])
 

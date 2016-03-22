@@ -20,6 +20,7 @@ import org.niord.model.vo.DomainVo;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.util.Objects;
 
 /**
  * Represents an application domain
@@ -52,6 +53,12 @@ public class Domain extends BaseEntity<Integer> {
 
     /** Constructor */
     public Domain(DomainVo domain) {
+        updateDomain(domain);
+    }
+
+
+    /** Updates this domain from the given domain */
+    public void updateDomain(DomainVo domain) {
         this.clientId = domain.getClientId();
         this.name = domain.getName();
         this.inKeycloak = domain.getInKeycloak();
@@ -67,6 +74,20 @@ public class Domain extends BaseEntity<Integer> {
         return domain;
     }
 
+
+    /**
+     * Checks if the values of the domain has changed.
+     * Only checks relevant values, not e.g. database id, created date, etc.
+     * Hence we do not use equals()
+     *
+     * @param template the template to compare with
+     * @return if the domain has changed
+     */
+    @Transient
+    public boolean hasChanged(Domain template) {
+        return !Objects.equals(clientId, template.getClientId()) ||
+                !Objects.equals(name, template.getName());
+    }
 
     /*************************/
     /** Getters and Setters **/

@@ -13,12 +13,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.core.chart.batch;
+package org.niord.core.domain.batch;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.util.JsonUtils;
-import org.niord.model.vo.ChartVo;
+import org.niord.model.vo.DomainVo;
 
 import javax.inject.Named;
 import java.io.Serializable;
@@ -26,45 +26,23 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Reads charts from a charts.json file.
+ * Reads domains from a domains.json file.
  * <p>
- * Please note, the actual chart-import.xml job file is not placed in the META-INF/batch-jobs of this project,
+ * Please note, the actual domain-import.xml job file is not placed in the META-INF/batch-jobs of this project,
  * but rather, in the META-INF/batch-jobs folder of the niord-web project.<br>
  * This is because of a class-loading bug in the Wildfly implementation. See e.g.
  * https://issues.jboss.org/browse/WFLY-4988
  * <p>
- * Format of json file is defined by the ChartVo class. Example:
+ * Format of json file is defined by the DomainVo class. Example:
  * <pre>
- * [
- *   {
- *     "chartNumber": "198",
- *     "name": "Østersøen, Fakse Bugt og Hjelm Bugt",
- *     "geometry": {
- *       "type": "Polygon",
- *       "coordinates": [
- *         [
- *           [ 12.0, 54.74166667 ],
- *           [ 12.76666667, 54.74166667 ],
- *           [ 12.76666667, 55.38333333 ],
- *           [ 12.0, 55.38333333 ],
- *           [ 12.0, 54.74166667 ]
- *         ]
- *       ]
- *     },
- *     "horizontalDatum": "WGS84",
- *     "scale": 75000
- *   },
- *   {
- *       etc, etc
- *   }
- * ]
+ * TBD
  * </pre>
  */
 @Named
-public class BatchChartImportReader extends AbstractItemHandler {
+public class BatchDomainImportReader extends AbstractItemHandler {
 
-    List<ChartVo> charts;
-    int chartNo = 0;
+    List<DomainVo> domains;
+    int domainNo = 0;
 
     /** {@inheritDoc} **/
     @Override
@@ -73,30 +51,30 @@ public class BatchChartImportReader extends AbstractItemHandler {
         // Get hold of the data file
         Path path = batchService.getBatchJobDataFile(jobContext.getInstanceId());
 
-        // Load the charts from the file
-        charts = JsonUtils.readJson(
-                new TypeReference<List<ChartVo>>(){},
+        // Load the domains from the file
+        domains = JsonUtils.readJson(
+                new TypeReference<List<DomainVo>>(){},
                 path);
 
         if (prevCheckpointInfo != null) {
-            chartNo = (Integer) prevCheckpointInfo;
+            domainNo = (Integer) prevCheckpointInfo;
         }
 
-        getLog().info("Start processing " + charts.size() + " charts from index " + chartNo);
+        getLog().info("Start processing " + domains.size() + " domains from index " + domainNo);
     }
 
     /** {@inheritDoc} **/
     @Override
     public Object readItem() throws Exception {
-        if (chartNo < charts.size()) {
+        if (domainNo < domains.size()) {
 
             // Every now and then, update the progress
-            if (chartNo % 10 == 0) {
-                updateProgress((int)(100.0 * chartNo / charts.size()));
+            if (domainNo % 10 == 0) {
+                updateProgress((int)(100.0 * domainNo / domains.size()));
             }
 
-            getLog().info("Reading chart no " + chartNo);
-            return charts.get(chartNo++);
+            getLog().info("Reading domain no " + domainNo);
+            return domains.get(domainNo++);
         }
         return null;
     }
@@ -104,6 +82,6 @@ public class BatchChartImportReader extends AbstractItemHandler {
     /** {@inheritDoc} **/
     @Override
     public Serializable checkpointInfo() throws Exception {
-        return chartNo;
+        return domainNo;
     }
 }

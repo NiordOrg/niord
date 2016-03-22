@@ -183,9 +183,9 @@ public class ChartRestService {
 
 
     /**
-     * Extracts the lights from the Excel sheet
-     * @param inputStream the Excel sheet input stream
-     * @param fileName the name of the PDF file
+     * Starts a chart import batch job
+     * @param inputStream the chart JSON input stream
+     * @param fileName the name of the file
      * @param txt a log of the import
      */
     private void startChartsImportBatchJob(InputStream inputStream, String fileName, StringBuilder txt) throws Exception {
