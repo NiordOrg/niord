@@ -40,6 +40,12 @@ public interface ILocalizedDesc {
     boolean descDefined();
 
     /**
+     * Copies the description values from the desc entity to this entity
+     * @param desc the description entity to copy from
+     */
+    void copyDesc(ILocalizedDesc desc);
+    
+    /**
      * Utility method that returns if at least one of the given fields in non-blank
      * @param fields the list of fields to check
      * @return if at least one of the given fields in non-blank

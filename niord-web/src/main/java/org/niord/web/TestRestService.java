@@ -284,6 +284,11 @@ public class TestRestService {
             return ILocalizedDesc.fieldsDefined(name);
         }
 
+        @Override
+        public void copyDesc(ILocalizedDesc desc) {
+
+        }
+
         public String getName() {
             return name;
         }
@@ -293,6 +298,7 @@ public class TestRestService {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class Area extends HierarchicalData<Area, AreaDesc> {
         double sortOrder;
 
@@ -356,6 +362,11 @@ public class TestRestService {
             return ILocalizedDesc.fieldsDefined(name);
         }
 
+        @Override
+        public void copyDesc(ILocalizedDesc desc) {
+
+        }
+
         public String getName() {
             return name;
         }
@@ -365,6 +376,7 @@ public class TestRestService {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class Category extends HierarchicalData<Category, CategoryDesc> {
         double sortOrder;
 

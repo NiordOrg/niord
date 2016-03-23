@@ -15,7 +15,7 @@
  */
 package org.niord.core.service;
 
-import org.niord.core.model.IEntity;
+import org.niord.core.model.BaseEntity;
 
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
@@ -25,7 +25,7 @@ import javax.persistence.criteria.CriteriaQuery;
 import java.util.List;
 
 /**
- * DAO-like base class for services that work on work on {@linkplain IEntity}
+ * DAO-like base class for services that work on work on {@linkplain BaseEntity}
  */
 @SuppressWarnings("unused")
 public abstract class BaseService {
@@ -55,7 +55,7 @@ public abstract class BaseService {
      * @param id the id of the entity
      * @return the entity with the given id or {@code null} if none is found
      */
-    public <E extends IEntity> E getByPrimaryKey(Class<E> clazz, Object id) {
+    public <E extends BaseEntity> E getByPrimaryKey(Class<E> clazz, Object id) {
         try {
             return em.find(clazz, id);
         } catch (EntityNotFoundException e) {
@@ -68,7 +68,7 @@ public abstract class BaseService {
      *
      * @param entity the entity to remove
      */
-    public void remove(IEntity entity) {
+    public void remove(BaseEntity entity) {
 
         em.remove(em.merge(entity));
     }
@@ -79,7 +79,7 @@ public abstract class BaseService {
      * @param entity the entity to persist or update
      * @return thed update entity
      */
-    public <E extends IEntity> E saveEntity(E entity) {
+    public <E extends BaseEntity> E saveEntity(E entity) {
         if (entity.isPersisted()) {
             // Update existing
             entity = em.merge(entity);
@@ -106,7 +106,7 @@ public abstract class BaseService {
      * @param entityType the class
      * @return all entities with the given class
      */
-    public <E extends IEntity> List<E> getAll(Class<E> entityType) {
+    public <E extends BaseEntity> List<E> getAll(Class<E> entityType) {
         em.clear();
 
         CriteriaBuilder cb = em.getCriteriaBuilder();
@@ -121,7 +121,7 @@ public abstract class BaseService {
      * @param entityType the class
      * @return the number of entities with the given class
      */
-    public <E extends IEntity> long count(Class<E> entityType) {
+    public <E extends BaseEntity> long count(Class<E> entityType) {
         em.clear();
 
         CriteriaBuilder qb = em.getCriteriaBuilder();

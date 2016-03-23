@@ -13,19 +13,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.core.model;
+package org.niord.core.settings;
 
-import java.io.Serializable;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Interface for all entities
+ * Dummy implementation for now
  */
-public interface IEntity<ID> extends Serializable {
+public class SettingsService {
 
-    ID getId();
+    static Map<String, Object> cache = new HashMap<>();
 
-    boolean isNew();
+    public Date getDate(String key) {
+        return (Date)cache.get(key);
+    }
 
-    boolean isPersisted();
-
+    public void setDate(String key, Date date) {
+        cache.put(key, date);
+    }
 }

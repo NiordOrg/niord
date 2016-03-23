@@ -15,38 +15,49 @@
  */
 package org.niord.core.model;
 
-import javax.persistence.*;
-import java.io.Serializable;
+import org.niord.model.ILocalizable;
+import org.niord.model.ILocalizedDesc;
+
+import javax.persistence.ManyToOne;
+import javax.persistence.MappedSuperclass;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
+import javax.validation.constraints.NotNull;
 
 /**
- * Base class for all entity beans
+ * Base class for localizable description entities.
  */
 @MappedSuperclass
-public abstract class BaseEntity<ID extends Serializable> {
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "lang", "entity_id" }))
+public abstract class DescEntity<E extends ILocalizable> extends BaseEntity<Integer> implements ILocalizedDesc {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(unique = true, nullable = false)
-    protected ID id;
+    @NotNull
+    protected String lang;
+
+    @ManyToOne
+    @NotNull
+    E entity;
 
     /*************************/
     /** Getters and Setters **/
     /*************************/
 
-    public ID getId() {
-        return this.id;
+    @Override
+    public String getLang() {
+        return lang;
     }
 
-    public void setId(ID id) {
-        this.id = id;
+    @Override
+    public void setLang(String lang) {
+        this.lang = lang;
     }
 
-    public boolean isNew() {
-        return getId() == null;
+    public E getEntity() {
+        return entity;
     }
 
-    public boolean isPersisted() {
-        return !isNew();
+    public void setEntity(E entity) {
+        this.entity = entity;
     }
 
 }

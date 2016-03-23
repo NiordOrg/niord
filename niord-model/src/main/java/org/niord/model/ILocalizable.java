@@ -55,11 +55,10 @@ public interface ILocalizable<D extends ILocalizedDesc> {
      */
     default D getDesc(String lang) {
         if (getDescs() != null) {
-            for (D desc : getDescs()) {
-                if (desc.getLang().equalsIgnoreCase(lang)) {
-                    return desc;
-                }
-            }
+            return getDescs().stream()
+                    .filter(desc -> desc.getLang().equalsIgnoreCase(lang))
+                    .findFirst()
+                    .orElse(null);
         }
         return null;
     }
@@ -89,6 +88,32 @@ public interface ILocalizable<D extends ILocalizedDesc> {
         }
         return desc;
     }
+
+
+    /**
+     * Copies the descriptive fields of the list of descriptions
+     * @param descs the description entities to copy
+     */
+    default void copyDescs(List<D> descs) {
+        if (descs != null && descs.size() > 0) {
+            descs.forEach(desc -> checkCreateDesc(desc.getLang()).copyDesc(desc));
+        }
+    }
+
+    /**
+     * Copies the descriptive fields of the list of descriptions.
+     * Subsequently removes descriptive entities left blank.
+     * @param descs the description entities to copy
+     */
+    default void copyDescsAndRemoveBlanks(List<D> descs) {
+        copyDescs(descs);
+
+        // Remove descriptive entities left blank
+        if (getDescs() != null) {
+            getDescs().removeIf(desc -> !desc.descDefined());
+        }
+    }
+
 
     /**
      * Sorts the descriptive entities to ensure that the given language is first

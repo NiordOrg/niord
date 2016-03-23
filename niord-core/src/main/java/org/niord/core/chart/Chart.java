@@ -29,6 +29,7 @@ import java.util.Objects;
  * Represents a chart
  */
 @Entity
+@Cacheable
 @Table(indexes = {
         @Index(name = "chart_chart_number", columnList="chartNumber", unique = true)
 })
