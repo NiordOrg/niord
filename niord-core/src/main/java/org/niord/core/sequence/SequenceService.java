@@ -17,6 +17,7 @@ package org.niord.core.sequence;
 
 import org.slf4j.Logger;
 
+import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.inject.Inject;
@@ -26,6 +27,7 @@ import java.util.Objects;
 /**
  * Provides an interface for managing sequences
  */
+@Stateless
 public class SequenceService {
 
     @Inject

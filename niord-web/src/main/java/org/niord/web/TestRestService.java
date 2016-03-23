@@ -157,6 +157,17 @@ public class TestRestService {
 
 
     @GET
+    @Path("/areas/all")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public List<Area> allAreas() {
+        return areas.stream()
+                .map(Area::childCopy)
+                .collect(Collectors.toList());
+    }
+
+    @GET
     @Path("/areas")
     @Produces("application/json;charset=UTF-8")
     @GZIP
@@ -301,6 +312,7 @@ public class TestRestService {
     @SuppressWarnings("unused")
     public static class Area extends HierarchicalData<Area, AreaDesc> {
         double sortOrder;
+        double siblingSortOrder;
 
         public AreaDesc getDesc(String lang) {
             return descs.stream()
@@ -334,12 +346,36 @@ public class TestRestService {
             return area;
         }
 
+
+        public Area childCopy() {
+            Area area = new Area();
+            area.setId(id);
+            area.setSiblingSortOrder(sortOrder);
+            if (descs != null) {
+                area.setDescs(new ArrayList<>(descs));
+            }
+            if (children != null) {
+                area.children = children.stream()
+                        .map(Area::childCopy)
+                        .collect(Collectors.toList());
+            }
+            return area;
+        }
+
         public double getSortOrder() {
             return sortOrder;
         }
 
         public void setSortOrder(double sortOrder) {
             this.sortOrder = sortOrder;
+        }
+
+        public double getSiblingSortOrder() {
+            return siblingSortOrder;
+        }
+
+        public void setSiblingSortOrder(double siblingSortOrder) {
+            this.siblingSortOrder = siblingSortOrder;
         }
     }
 

@@ -34,6 +34,7 @@ import javax.persistence.OrderBy;
 import javax.persistence.Transient;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -87,17 +88,34 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
 
     /** Constructor */
     public Area(AreaVo area) {
-        updateArea(area);
+        this(area, DataFilter.get().fields("geometry"));
+    }
+
+
+    /** Constructor */
+    public Area(AreaVo area, DataFilter filter) {
+        updateArea(area, filter);
     }
 
 
     /** Updates this area from the given area */
-    public void updateArea(AreaVo area) {
+    public void updateArea(AreaVo area, DataFilter filter) {
 
-        // NB: Ignore parent and children...
+        DataFilter compFilter = filter.forComponent(Area.class);
+
         this.id = area.getId();
-        this.geometry = GeoJsonUtils.toJts(area.getGeometry());
         this.siblingSortOrder = area.getSiblingSortOrder();
+        if (compFilter.includeGeometry()) {
+            this.geometry = GeoJsonUtils.toJts(area.getGeometry());
+        }
+        if (compFilter.includeParent() && area.getParent() != null) {
+            parent = new Area(area.getParent(), filter);
+        }
+        if (compFilter.includeChildren() && area.getChildren() != null) {
+            area.getChildren().stream()
+                    .map(a -> new Area(a, filter))
+                    .forEach(this::addChild);
+        }
         if (area.getDescs() != null) {
             area.getDescs().stream()
                     .forEach(desc -> createDesc(desc.getLang()).setName(desc.getName()));
@@ -138,6 +156,50 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
         return area;
     }
 
+
+    /**
+     * Checks if the values of the area has changed.
+     * Only checks relevant values, not e.g. database id, created date, etc.
+     * Hence we do not use equals()
+     *
+     * @param template the template to compare with
+     * @return if the area has changed
+     */
+    @Transient
+    public boolean hasChanged(Area template) {
+        return !Objects.equals(siblingSortOrder, template.getSiblingSortOrder()) ||
+                descsChanged(template) ||
+                parentChanged(template) ||
+                geometryChanged(template);
+    }
+
+
+    /** Checks if the geometry has changed */
+    protected boolean geometryChanged(Area template) {
+        if (geometry == null && template.getGeometry() == null) {
+            return false;
+        } else if (geometry == null || template.getGeometry() == null) {
+            return true;
+        }
+        return !geometry.equals(template.getGeometry());
+    }
+
+
+    /** Checks if the geometry has changed */
+    private boolean descsChanged(Area template) {
+        return descs.size() != template.getDescs().size() ||
+                descs.stream()
+                    .anyMatch(d -> template.getDesc(d.getLang()) == null ||
+                            !Objects.equals(d.getName(), template.getDesc(d.getLang()).getName()));
+    }
+
+    /** Checks if the parents have changed */
+    private boolean parentChanged(Area template) {
+        return (parent == null && template.getParent() != null) ||
+                (parent != null && template.getParent() == null) ||
+                (parent != null && template.getParent() != null &&
+                        !Objects.equals(parent.getId(), template.getParent().getId()));
+    }
 
     /** {@inheritDoc} */
     @Override

@@ -422,6 +422,10 @@ public class AreaService extends BaseService {
         }
 
         Date lastProcessedUpdate = settingsService.getDate(SETTING_AREA_LAST_UPDATED);
+        if (lastProcessedUpdate == null) {
+            lastProcessedUpdate = new Date(0);
+        }
+
         if (!lastAreaUpdate.after(lastProcessedUpdate)) {
             log.debug("No area tree changes since last execution of recomputeTreeSortOrder()");
             return false;
