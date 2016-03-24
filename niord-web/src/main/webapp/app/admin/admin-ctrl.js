@@ -192,8 +192,8 @@ angular.module('niord.admin')
      * Area Admin Controller
      * Controller for the Admin Areas page
      */
-    .controller('AreaAdminCtrl', ['$scope', 'growl', 'LangService', 'AdminAreaService', 'DialogService',
-        function ($scope, growl, LangService, AdminAreaService, DialogService) {
+    .controller('AreaAdminCtrl', ['$scope', 'growl', 'LangService', 'AdminAreaService', 'DialogService', 'UploadFileService',
+        function ($scope, growl, LangService, AdminAreaService, DialogService, UploadFileService) {
             'use strict';
 
             $scope.areas = [];
@@ -201,6 +201,7 @@ angular.module('niord.admin')
             $scope.editArea = undefined;
             $scope.action = "edit";
             $scope.areaFilter = '';
+            $scope.areaFeatureCollection = { type: 'FeatureCollection', features: [] };
 
 
             // Used to ensure that description entities have a "name" field
@@ -236,6 +237,7 @@ angular.module('niord.admin')
                 if ($scope.area) {
                     $scope.editArea.parent = { id: $scope.area.id };
                 }
+                $scope.areaFeatureCollection.features.length = 0;
                 $scope.areaForm.$setPristine()
             };
 
@@ -248,10 +250,15 @@ angular.module('niord.admin')
                         $scope.action = "edit";
                         $scope.area = LangService.checkDescs(data, ensureNameField);
                         $scope.editArea = angular.copy($scope.area);
+                        $scope.areaFeatureCollection.features.length = 0;
+                        if ($scope.editArea.geometry) {
+                            var feature = {type: 'Feature', geometry: $scope.editArea.geometry, properties: {}};
+                            $scope.areaFeatureCollection.features.push(feature);
+                        }
                         $scope.areaForm.$setPristine();
                         $scope.$$phase || $scope.$apply();
                     })
-                    .error ($scope.displayError);
+                    .error($scope.displayError);
             };
 
 
@@ -265,7 +272,7 @@ angular.module('niord.admin')
                         AdminAreaService
                             .moveArea(area.id, (parent) ? parent.id : undefined)
                             .success($scope.loadAreas)
-                            .error ($scope.displayError);
+                            .error($scope.displayError);
                     });
             };
 
@@ -275,7 +282,7 @@ angular.module('niord.admin')
                 AdminAreaService
                     .changeSortOrder($scope.area.id, moveUp)
                     .success($scope.loadAreas)
-                    .error ($scope.displayError);
+                    .error($scope.displayError);
             };
 
 
@@ -286,12 +293,19 @@ angular.module('niord.admin')
                     .success(function () {
                         growl.info('Tree Sort Order Updated');
                     })
-                    .error ($scope.displayError);
+                    .error($scope.displayError);
             };
 
 
             /** Saves the current area */
             $scope.saveArea = function () {
+                // Update the area geometry
+                delete $scope.editArea.geometry;
+                if ($scope.areaFeatureCollection.features.length > 0 &&
+                    $scope.areaFeatureCollection.features[0].geometry) {
+                    $scope.editArea.geometry = $scope.areaFeatureCollection.features[0].geometry;
+                }
+
                 if ($scope.action == 'add') {
                     AdminAreaService
                         .createArea($scope.editArea)
@@ -320,8 +334,16 @@ angular.module('niord.admin')
                             .success($scope.loadAreas)
                             .error ($scope.displayError);
                     });
-            }
+            };
 
+
+            /** Opens the upload-areas dialog **/
+            $scope.uploadAreasDialog = function () {
+                UploadFileService.showUploadFileDialog(
+                    'Upload Area JSON File',
+                    '/rest/areas/upload-areas',
+                    'json');
+            };
         }])
 
 

@@ -15,11 +15,15 @@
  */
 package org.niord.web;
 
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
+import org.niord.core.batch.BatchService;
+import org.niord.core.repo.RepositoryService;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.vo.AreaVo;
@@ -29,6 +33,8 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -40,9 +46,13 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -57,12 +67,17 @@ import java.util.stream.Collectors;
 @PermitAll
 public class AreaRestService {
 
+    @Context
+    ServletContext servletContext;
+
     @Inject
     Logger log;
 
     @Inject
     AreaService areaService;
 
+    @Inject
+    BatchService batchService;
 
     /**
      * Searches for areas matching the given name in the given language
@@ -128,7 +143,28 @@ public class AreaRestService {
     @GZIP
     @NoCache
     public List<AreaVo> getAreaRoots(@QueryParam("lang") String lang) {
-        DataFilter filter = DataFilter.get().lang(lang).fields(DataFilter.CHILDREN);
+
+        DataFilter filter = DataFilter.get()
+                .lang(lang)
+                .fields(DataFilter.CHILDREN);
+
+        return areaService.getAreaTree().stream()
+                .map(a -> a.toVo(filter))
+                .collect(Collectors.toList());
+    }
+
+
+    /** Returns all areas via a list of hierarchical root areas including geometries */
+    @GET
+    @Path("/all")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public List<AreaVo> getAll() {
+
+        DataFilter filter = DataFilter.get()
+                .fields(DataFilter.CHILDREN, DataFilter.GEOMETRY);
+
         return areaService.getAreaTree().stream()
                 .map(a -> a.toVo(filter))
                 .collect(Collectors.toList());
@@ -142,7 +178,7 @@ public class AreaRestService {
     @GZIP
     @NoCache
     public AreaVo getArea(@PathParam("areaId") Integer areaId) throws Exception {
-        log.info("Getting area " + areaId);
+        log.debug("Getting area " + areaId);
         Area area = areaService.getAreaDetails(areaId);
         // Return the area without parent and child areas
         return area == null ? null : area.toVo(DataFilter.get().fields("geometry"));
@@ -219,6 +255,56 @@ public class AreaRestService {
         return areaService.recomputeTreeSortOrder();
     }
 
+
+    /**
+     * Imports an uploaded Areas json file
+     *
+     * @param request the servlet request
+     * @return a status
+     */
+    @POST
+    @Path("/upload-areas")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("text/plain")
+    @RolesAllowed("admin")
+    public String importAreas(@Context HttpServletRequest request) throws Exception {
+
+        FileItemFactory factory = RepositoryService.newDiskFileItemFactory(servletContext);
+        ServletFileUpload upload = new ServletFileUpload(factory);
+
+        StringBuilder txt = new StringBuilder();
+        upload.parseRequest(request).stream()
+                .filter(item -> !item.isFormField())
+                .forEach(item -> {
+                    try {
+                        startAreasImportBatchJob(item.getInputStream(), item.getName(), txt);
+                    } catch (Exception e) {
+                        String errorMsg = "Error importing areas from " + item.getName() + ": " + e;
+                        log.error(errorMsg, e);
+                        txt.append(errorMsg);
+                    }
+                });
+
+        return txt.toString();
+    }
+
+
+    /**
+     * Starts a area import batch job
+     * @param inputStream the area JSON input stream
+     * @param fileName the name of the file
+     * @param txt a log of the import
+     */
+    private void startAreasImportBatchJob(InputStream inputStream, String fileName, StringBuilder txt) throws Exception {
+        batchService.startBatchJobWithDataFile(
+                "area-import",
+                inputStream,
+                fileName,
+                new Properties());
+
+        log.info("Started 'area-import' batch job with file " + fileName);
+        txt.append("Started 'area-import' batch job with file ").append(fileName);
+    }
 
     /**
      * ******************
