@@ -43,13 +43,12 @@ import java.util.stream.Collectors;
 @Entity
 @Cacheable
 @NamedQueries({
-        @NamedQuery(name  = "Area.searchAreas",
-                query = "select distinct a from Area a left join a.descs d where d.lang = :lang and lower(d.name) like lower(:term) "
-                      + "order by locate(lower(:sort), lower(d.name))"),
         @NamedQuery(name  = "Area.findRootAreas",
                 query = "select distinct a from Area a left join fetch a.children where a.parent is null"),
         @NamedQuery(name  = "Area.findAreasWithDescs",
                 query = "select distinct a from Area a left join fetch a.descs order by a.parent, a.siblingSortOrder"),
+        @NamedQuery(name  = "Area.findAreasWithIds",
+                query = "select distinct a from Area a left join fetch a.descs where a.id in (:ids)"),
         @NamedQuery(name  = "Area.findLastUpdated",
                 query = "select max(a.updated) from Area a")
 })
@@ -80,6 +79,7 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
     // the index of the area in an entire sorted area tree. Used for area sorting.
     @Column(columnDefinition="INT default 0")
     int treeSortOrder;
+
 
     /** Constructor */
     public Area() {
@@ -149,7 +149,7 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
         }
 
         if (!descs.isEmpty()) {
-            area.setDescs(descs.stream()
+            area.setDescs(getDescs(filter).stream()
                 .map(AreaDesc::toVo)
                 .collect(Collectors.toList()));
         }

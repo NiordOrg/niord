@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -56,22 +57,51 @@ public class AreaService extends BaseService {
      * Searches for areas matching the given term in the given language
      *
      * @param lang the language
-     * @param term the search term
+     * @param name the search term
      * @param limit the maximum number of results
      * @return the search result
      */
-    public List<Area> searchAreas(String lang, String term, int limit) {
-        List<Area> result = new ArrayList<>();
-        if (StringUtils.isNotBlank(term)) {
-            return em
-                    .createNamedQuery("Area.searchAreas", Area.class)
-                    .setParameter("lang", lang)
-                    .setParameter("term", "%" + term + "%")
-                    .setParameter("sort", term)
-                    .setMaxResults(limit)
-                    .getResultList();
+    @SuppressWarnings("all")
+    public List<Area> searchAreas(Integer parentId, String lang, String name, int limit) {
+
+        // Sanity check
+        if (StringUtils.isBlank(name)) {
+            return Collections.emptyList();
         }
-        return Collections.emptyList();
+
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Area> areaQuery = cb.createQuery(Area.class);
+
+        Root<Area> areaRoot = areaQuery.from(Area.class);
+
+        // Build the predicate
+        CriteriaHelper<Area> criteriaHelper = new CriteriaHelper<>(cb, areaQuery);
+
+        // Match the name
+        Join<Area, AreaDesc> descs = areaRoot.join("descs", JoinType.LEFT);
+        criteriaHelper.like(descs.get("name"), name);
+        // Optionally, match the language
+        if (StringUtils.isNotBlank(lang)) {
+            criteriaHelper.equals(descs.get("lang"), lang);
+        }
+
+        // Optionally, match the parent
+        if (parentId != null) {
+            areaRoot.join("parent", JoinType.LEFT);
+            Path<Area> parent = areaRoot.get("parent");
+            criteriaHelper.equals(parent.get("id"), parentId);
+        }
+
+        // Complete the query
+        areaQuery.select(areaRoot)
+                .distinct(true)
+                .where(criteriaHelper.where());
+                //.orderBy(cb.asc(cb.locate(cb.lower(descs.get("name")), name.toLowerCase())));
+
+        // Execute the query and update the search result
+        return em.createQuery(areaQuery)
+                .setMaxResults(limit)
+                .getResultList();
     }
 
 
@@ -104,6 +134,19 @@ public class AreaService extends BaseService {
      */
     public Area getAreaDetails(Integer id) {
         return getByPrimaryKey(Area.class, id);
+    }
+
+
+    /**
+     * Looks up the areas with the given IDs
+     *
+     * @param ids the ids of the area
+     * @return the area
+     */
+    public List<Area> getAreaDetails(Set<Integer> ids) {
+        return em.createNamedQuery("Area.findAreasWithIds", Area.class)
+                .setParameter("ids", ids)
+                .getResultList();
     }
 
 
@@ -313,47 +356,11 @@ public class AreaService extends BaseService {
      * @param parentId the parent ID. Optional
      * @return The matching area, or null if not found
      */
-    @SuppressWarnings("all")
     public Area findByName(String name, String lang, Integer parentId) {
-        // Sanity check
-        if (StringUtils.isBlank(name)) {
-            return null;
-        }
 
-        CriteriaBuilder builder = em.getCriteriaBuilder();
-        CriteriaQuery<Area> areaQuery = builder.createQuery(Area.class);
+        List<Area> areas = searchAreas(parentId, lang, name, 1);
 
-        Root<Area> areaRoot = areaQuery.from(Area.class);
-
-        // Build the predicate
-        CriteriaHelper<Area> criteriaHelper = new CriteriaHelper<>(builder, areaQuery);
-
-        // Match the name
-        Join<Area, AreaDesc> descs = areaRoot.join("descs", JoinType.LEFT);
-        criteriaHelper.like(descs.get("name"), name);
-        // Optionally, match the language
-        if (StringUtils.isNotBlank(lang)) {
-            criteriaHelper.equals(descs.get("lang"), lang);
-        }
-
-        // Optionally, match the parent
-        if (parentId != null) {
-            areaRoot.join("parent", JoinType.LEFT);
-            Path<Area> parent = areaRoot.get("parent");
-            criteriaHelper.equals(parent.get("id"), parentId);
-        }
-
-        // Complete the query
-        areaQuery.select(areaRoot)
-                .distinct(true)
-                .where(criteriaHelper.where());
-
-        // Execute the query and update the search result
-        List<Area> result = em
-                .createQuery(areaQuery)
-                .getResultList();
-
-        return result.size() > 0 ? result.get(0) : null;
+        return areas.isEmpty() ? null : areas.get(0);
     }
 
 

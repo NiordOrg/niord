@@ -15,8 +15,11 @@
  */
 package org.niord.model;
 
+import javax.persistence.Transient;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Interface to be implemented by localized entities
@@ -44,6 +47,33 @@ public interface ILocalizable<D extends ILocalizedDesc> {
             setDescs(new ArrayList<>());
         }
         return getDescs();
+    }
+
+    /**
+     * Returns the list of localized descriptions as specified by the data filter.
+     * <p>
+     * If no description matches the filter, the first available description is included.
+     *
+     * @param dataFilter defines the languages to include from the entity
+     * @return the list of localized descriptions as specified by the data filter
+     */
+    @Transient
+    default List<D> getDescs(DataFilter dataFilter) {
+        // Sanity checks
+        if (dataFilter == null || getDescs() == null) {
+            return getDescs();
+        }
+
+        // Collect the matching descriptions
+        List<D> result = getDescs().stream()
+                .filter(dataFilter::includeLang)
+                .collect(Collectors.toList());
+
+        // If no match is found, pick the first available
+        if (result.isEmpty() && !getDescs().isEmpty()) {
+            result = Collections.singletonList(getDescs().get(0));
+        }
+        return result;
     }
 
     /**

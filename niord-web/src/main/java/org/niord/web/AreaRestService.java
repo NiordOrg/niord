@@ -31,6 +31,7 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -39,8 +40,10 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -48,7 +51,7 @@ import java.util.stream.Collectors;
  * <p>
  * Sets up a timer that periodically re-computes the area tree sort order
  */
-@Path("/admin/areas")
+@Path("/areas")
 @Stateless
 @SecurityDomain("keycloak")
 @PermitAll
@@ -62,10 +65,10 @@ public class AreaRestService {
 
 
     /**
-     * Searches for areas matching the given term in the given language
+     * Searches for areas matching the given name in the given language
      *
      * @param lang  the language
-     * @param term  the search term
+     * @param name  the search name
      * @param limit the maximum number of results
      * @return the search result
      */
@@ -76,12 +79,44 @@ public class AreaRestService {
     @NoCache
     public List<AreaVo> searchAreas(
             @QueryParam("lang") String lang,
-            @QueryParam("term") String term,
+            @QueryParam("name") String name,
             @QueryParam("limit") int limit) {
-        log.info(String.format("Searching for areas lang=%s, term='%s', limit=%d", lang, term, limit));
-        DataFilter filter = DataFilter.get().fields(DataFilter.PARENT).lang(lang);
-        return areaService.searchAreas(lang, term, limit).stream()
+
+        log.debug(String.format("Searching for areas lang=%s, name='%s', limit=%d", lang, name, limit));
+
+        DataFilter filter = DataFilter.get()
+                .fields(DataFilter.PARENT)
+                .lang(lang);
+
+        return areaService.searchAreas(null, lang, name, limit).stream()
                 .map(a -> a.toVo(filter))
+                .collect(Collectors.toList());
+    }
+
+
+    /** Returns the area with the given IDs */
+    @GET
+    @Path("/search/{areaIds}")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public List<AreaVo> searchAreaIds(@PathParam("areaIds") String areaIds,
+                                      @QueryParam("lang") @DefaultValue("en") String lang,
+                                      @QueryParam("limit") @DefaultValue("1000") int limit) {
+
+        log.debug(String.format("Searching for areas ids=%s, lang=%s, limit=%d", areaIds, lang, limit));
+
+        Set<Integer> ids = Arrays.stream(areaIds.split(","))
+                .map(Integer::valueOf)
+                .collect(Collectors.toSet());
+
+        DataFilter filter = DataFilter.get()
+                .lang(lang)
+                .fields(DataFilter.PARENT);
+
+        return areaService.getAreaDetails(ids).stream()
+                .map(a -> a.toVo(filter))
+                .limit(limit)
                 .collect(Collectors.toList());
     }
 

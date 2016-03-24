@@ -294,7 +294,7 @@ angular.module('niord.messages')
                 if (params.area && params.area.length > 0) {
                     s.area.enabled = true;
                     var areas = (typeof params.area === 'string') ? params.area : params.area.join();
-                    $http.get('/rest/test/areas/' + areas + '?lang=' + $rootScope.language + '&limit=10')
+                    $http.get('/rest/areas/search/' + areas + '?lang=' + $rootScope.language + '&limit=10')
                         .then(function(response) {
                             s.area.areas = response.data;
                         });
@@ -375,7 +375,7 @@ angular.module('niord.messages')
                     return [];
                 }
                 return $http.get(
-                    '/rest/test/areas?name=' + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10'
+                    '/rest/areas/search?name=' + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10'
                 ).then(function(response) {
                     $scope.areas = response.data;
                 });

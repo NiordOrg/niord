@@ -45,7 +45,6 @@ public class TestRestService {
     @Inject
     FeatureService featureService;
 
-    List<Area> areas;
     List<Category> categories;
 
     @GET
@@ -86,21 +85,6 @@ public class TestRestService {
         try {
             ObjectMapper mapper = new ObjectMapper();
 
-            // Load areas
-            List<Area> areasDa = mapper.readValue(getClass().getResource("/areas_da.json"), new TypeReference<List<Area>>(){});
-            List<Area> areasEn = mapper.readValue(getClass().getResource("/areas_en.json"), new TypeReference<List<Area>>(){});
-            Map<Integer, Area> areasLookupDa = new HashMap<>();
-            Map<Integer, Area> areasLookupEn = new HashMap<>();
-            updateAreaLookup(areasLookupDa, areasDa);
-            updateAreaLookup(areasLookupEn, areasEn);
-            areasLookupDa.values().forEach(a -> {
-                if (areasLookupEn.containsKey(a.getId())) {
-                    a.getDescs().add(areasLookupEn.get(a.getId()).getDescs().get(0));
-                }
-            });
-            areas = new ArrayList<>(areasLookupDa.values());
-            System.out.println("**** LOADED " + areas.size() + " areas");
-
             // Load categories
             List<Category> categoriesDa = mapper.readValue(getClass().getResource("/categories_da.json"), new TypeReference<List<Category>>(){});
             List<Category> categoriesEn = mapper.readValue(getClass().getResource("/categories_en.json"), new TypeReference<List<Category>>(){});
@@ -119,18 +103,6 @@ public class TestRestService {
         } catch (IOException e) {
             // Prevent start-up
             throw new RuntimeException(e);
-        }
-    }
-
-    public void updateAreaLookup(Map<Integer, Area> lookup, List<Area> areas) {
-        if (areas != null) {
-            areas.forEach(a -> {
-                lookup.put(a.getId(), a);
-                if (a.getChildren() != null) {
-                    a.getChildren().forEach(c -> c.setParent(a));
-                }
-                updateAreaLookup(lookup, a.getChildren());
-            });
         }
     }
 
@@ -153,51 +125,6 @@ public class TestRestService {
     @RolesAllowed("clientuser")
     public String test() {
         return System.currentTimeMillis() + "";
-    }
-
-
-    @GET
-    @Path("/areas/all")
-    @Produces("application/json;charset=UTF-8")
-    @GZIP
-    @NoCache
-    public List<Area> allAreas() {
-        return areas.stream()
-                .map(Area::childCopy)
-                .collect(Collectors.toList());
-    }
-
-    @GET
-    @Path("/areas")
-    @Produces("application/json;charset=UTF-8")
-    @GZIP
-    @NoCache
-    public List<Area> searchAreas(@QueryParam("lang") @DefaultValue("en") String lang,
-                                  @QueryParam("name") @DefaultValue("") String name,
-                                  @QueryParam("limit") @DefaultValue("1000") int limit) {
-        return areas.stream()
-                .filter(a -> name.isEmpty()
-                        || (a.getDesc(lang) != null && a.getDesc(lang).getName().toLowerCase().contains(name.toLowerCase())))
-                .sorted((a1, a2) -> a1.getDesc(lang).getName().toLowerCase().compareTo(a2.getDesc(lang).getName().toLowerCase()))
-                .limit(limit)
-                .map(a -> a.parentCopy(lang))
-                .collect(Collectors.toList());
-    }
-
-    @GET
-    @Path("/areas/{areaIds}")
-    @Produces("application/json;charset=UTF-8")
-    @GZIP
-    @NoCache
-    public List<Area> getAreas(@PathParam("areaIds") String areaIds,
-                               @QueryParam("lang") @DefaultValue("en") String lang,
-                               @QueryParam("limit") @DefaultValue("1000") int limit) {
-        Set<String> ids = new HashSet<>(Arrays.asList(areaIds.split(",")));
-        return areas.stream()
-                .filter(a -> ids.contains(a.getId().toString()))
-                .limit(limit)
-                .map(a -> a.parentCopy(lang))
-                .collect(Collectors.toList());
     }
 
     @GET
@@ -273,109 +200,6 @@ public class TestRestService {
         @Override
         public void setDescs(List<TD> descs) {
             this.descs = descs;
-        }
-    }
-
-    public static class AreaDesc implements ILocalizedDesc, IJsonSerializable {
-        String lang;
-        String name;
-
-        @Override
-        public String getLang() {
-            return lang;
-        }
-
-        @Override
-        public void setLang(String lang) {
-            this.lang = lang;
-        }
-
-        @Override
-        public boolean descDefined() {
-            return ILocalizedDesc.fieldsDefined(name);
-        }
-
-        @Override
-        public void copyDesc(ILocalizedDesc desc) {
-
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-    }
-
-    @SuppressWarnings("unused")
-    public static class Area extends HierarchicalData<Area, AreaDesc> {
-        double sortOrder;
-        double siblingSortOrder;
-
-        public AreaDesc getDesc(String lang) {
-            return descs.stream()
-                    .filter(d -> d.getLang().equals(lang))
-                    .findFirst()
-                    .orElse(null);
-        }
-
-        @Override
-        public AreaDesc createDesc(String lang) {
-            AreaDesc desc = new AreaDesc();
-            desc.setLang(lang);
-            return desc;
-        }
-
-        /**
-         * Creates a copy of this area including parent areas but excluding child areas
-         * @return a parent-lineage copy of this area
-         */
-        public Area parentCopy(String lang) {
-            Area area = new Area();
-            area.setId(id);
-            area.setSortOrder(sortOrder);
-            if (descs != null) {
-                area.setDescs(new ArrayList<>(descs));
-                area.sortDescs(lang);
-            }
-            if (parent != null) {
-                area.setParent(parent.parentCopy(lang));
-            }
-            return area;
-        }
-
-
-        public Area childCopy() {
-            Area area = new Area();
-            area.setId(id);
-            area.setSiblingSortOrder(sortOrder);
-            if (descs != null) {
-                area.setDescs(new ArrayList<>(descs));
-            }
-            if (children != null) {
-                area.children = children.stream()
-                        .map(Area::childCopy)
-                        .collect(Collectors.toList());
-            }
-            return area;
-        }
-
-        public double getSortOrder() {
-            return sortOrder;
-        }
-
-        public void setSortOrder(double sortOrder) {
-            this.sortOrder = sortOrder;
-        }
-
-        public double getSiblingSortOrder() {
-            return siblingSortOrder;
-        }
-
-        public void setSiblingSortOrder(double siblingSortOrder) {
-            this.siblingSortOrder = siblingSortOrder;
         }
     }
 
