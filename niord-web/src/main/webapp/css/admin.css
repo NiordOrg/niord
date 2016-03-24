@@ -155,3 +155,33 @@ tr.batch-execution-row td div.progress {
     box-shadow: 2px 2px 4px rgba(50, 50, 50, 0.5);
     margin: 0 20px 0 0;
 }
+
+
+/** Area admin page **/
+
+.area-panel {
+    margin: 10px;
+    padding: 10px 20px 0 20px;
+}
+
+.area-tree {
+    margin-top: 10px;
+    max-height: 600px;
+    min-height: 200px;
+    overflow-y: scroll;
+    border: 1px solid lightgray;
+}
+
+@media (min-width: 1000px) {
+    .area-tree {
+        margin-top: 10px;
+        max-height: 600px;
+        min-height: 400px;
+        overflow-y: scroll;
+        border: 1px solid lightgray;
+    }
+}
+
+.area-tree ul.fancytree-container {
+    border: none;
+}

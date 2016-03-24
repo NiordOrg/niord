@@ -30,6 +30,97 @@ angular.module('niord.common')
                 this.changeLanguage(language);
             };
 
+
+            /** look for a description entity with the given language */
+            this.descForLanguage = function(elm, lang) {
+                if (elm && elm.descs) {
+                    for (var l = 0; l < elm.descs.length; l++) {
+                        if (elm.descs[l].lang == lang) {
+                            return elm.descs[l];
+                        }
+                    }
+                }
+                return undefined;
+            };
+
+
+            /** look for a description entity with the given language - falls back to using the first description */
+            this.descForLangOrDefault = function(elm, lang) {
+                lang = lang || $rootScope.language;
+                var desc = this.descForLanguage(elm, lang);
+                if (!desc && elm && elm.descs && elm.descs.length > 0) {
+                    desc = elm.descs[0];
+                }
+                return desc;
+            };
+
+
+            /** look for a description entity with the current language **/
+            this.desc = function(elm) {
+                return this.descForLanguage(elm, $rootScope.language);
+            };
+
+
+            /**
+             * Ensures that elm.descs contain a description entity for each supported language.
+             *
+             * The initFunc will be called for newly added description entities and should be used
+             * to initialize the fields to include, e.g. "description" or "name",...
+             *
+             * Optionally, an oldElm can be specified, from which the description entity will be picked
+             * if present
+             */
+            this.checkDescs = function (elm, initFunc, oldElm, languages) {
+                if (!elm.descs) {
+                    elm.descs = [];
+                }
+                if (!languages || languages.length == 0) {
+                    languages = $rootScope.modelLanguages;
+                }
+                for (var l = 0; l < languages.length; l++) {
+                    var lang = languages[l];
+                    var desc = this.descForLanguage(elm, lang);
+                    if (!desc && oldElm) {
+                        desc = this.descForLanguage(oldElm, lang);
+                        if (desc) {
+                            elm.descs.push(desc);
+                        }
+                    }
+                    if (!desc) {
+                        desc = { 'lang': lang };
+                        initFunc(desc);
+                        elm.descs.push(desc);
+                    }
+                }
+                // Lastly, sort by language
+                this.sortDescs(elm);
+                return elm;
+            };
+
+            /**
+             * Computes a sort value by comparing the desc language to the
+             * current language or else the index in the list of available languages.
+             */
+            function sortValue(desc) {
+                if (!desc.lang){
+                    return 1000;
+                } else if (desc.lang == $rootScope.language) {
+                    return -1;
+                }
+                var index = $.inArray(desc, $rootScope.languages);
+                return (index == -1) ? 999 : index;
+            }
+
+            
+            /** Sort the localized description entities by language */
+            this.sortDescs = function (elm) {
+                if (elm && elm.descs) {
+                    elm.descs.sort(function(d1, d2){
+                        return sortValue(d1) - sortValue(d2);
+                    });
+                }
+            }
+
         }])
 
 

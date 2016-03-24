@@ -1,0 +1,90 @@
+
+<admin-page title="Areas">
+
+    <div ng-controller="AreaAdminCtrl" ng-init="loadAreas()">
+
+        <div class="row">
+            <div class="col-md-6">
+                <button href class="btn btn-primary btn-sm" ng-click="loadAreas()">
+                    <span class="glyphicon glyphicon-refresh"></span> Reload
+                </button>
+                <button href class="btn btn-primary btn-sm" ng-click="newArea()">
+                    <span class="glyphicon glyphicon-plus"></span> Add
+                </button>
+                <button href class="btn btn-primary btn-sm" ng-click="deleteArea()" ng-disabled="area == undefined">
+                    <span class="glyphicon glyphicon-trash"></span> Delete...
+                </button>
+                <button href class="btn btn-primary btn-sm" ng-click="recomputeTreeSortOrder()"
+                        title="Re-index the tree when areas have been added, deleted or re-ordered">
+                    <span class="glyphicon glyphicon-globe"></span> Re-index
+                </button>
+            </div>
+        </div>
+
+        <div class="row">
+
+            <!-- Area tree -->
+            <div class="col-md-5 panel panel-default area-panel">
+                <div class="form-group">
+                    <div style="position: relative;">
+                        <input type="text" class="form-control input-sm" placeholder="Filter Areas" ng-model="areaFilter" />
+                        <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
+                              ng-click="areaFilter = ''" ng-show="areaFilter != ''"></span>
+                    </div>
+                    <div entity-tree entities="areas" filter="areaFilter"
+                         entity-selected="selectArea(entity)" entity-moved="moveArea(entity, parent)"
+                         class="area-tree"></div>
+                </div>
+            </div>
+
+            <!-- Area editor -->
+            <form name="areaForm" class="col-md-5 panel panel-default area-panel" role="form">
+                <fieldset  ng-disabled="editArea == undefined">
+                    <div class="form-group" ng-if="action == 'add'">
+                        <label class="control-label" for="parent">Parent Area</label>
+                        <div class="input-group input-group-sm">
+                            <input class="form-control" type="text" id="parent" ng-model="area.descs[0].name" disabled>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="control-label">Name</label>
+                        <div class="row">
+                            <div class="col-sm-6" ng-repeat="desc in editArea.descs">
+                                <input class="form-control input-sm" placeholder="Name" type="text" ng-model="desc.name" ng-required="$first"
+                                       bg-flag="desc.lang">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="control-label">Sorting</label>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <input class="form-control input-sm" placeholder="Sort Key" type="number"  step="any" ng-model="editArea.siblingSortOrder" ng-disabled="">
+                            </div>
+                            <div class="col-sm-6 btn-group">
+                                <button href class="btn btn-default btn-sm" ng-click="changeSiblingSortOrder(true)" title="Move Area Up"
+                                        ng-disabled="action == 'add' || !areaForm.$pristine">
+                                    <span class="glyphicon glyphicon-arrow-up"></span>
+                                </button>
+                                <button href class="btn btn-default btn-sm" ng-click="changeSiblingSortOrder(false)" title="Move Area Down"
+                                        ng-disabled="action == 'add' || !areaForm.$pristine">
+                                    <span class="glyphicon glyphicon-arrow-down"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <button href class="btn btn-primary btn-sm" ng-click="saveArea()" ng-disabled="areaForm.$pristine || areaForm.$invalid">
+                            <span class="glyphicon glyphicon-floppy-disk"></span> Save
+                        </button>
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+    </div>
+
+</admin-page>
+

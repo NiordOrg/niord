@@ -4,6 +4,9 @@
 angular.module('niord.admin')
 
     /**
+     * ********************************************************************************
+     * CommonAdminCtrl
+     * ********************************************************************************
      * Common Admin Controller
      * Will periodically reload batch status to display the number of running batch jobs in the admin page menu
      */
@@ -45,6 +48,9 @@ angular.module('niord.admin')
 
 
     /**
+     * ********************************************************************************
+     * ChartsAdminCtrl
+     * ********************************************************************************
      * Charts Admin Controller
      * Controller for the Admin Charts page
      */
@@ -180,6 +186,149 @@ angular.module('niord.admin')
 
 
     /**
+     * ********************************************************************************
+     * AreaAdminCtrl
+     * ********************************************************************************
+     * Area Admin Controller
+     * Controller for the Admin Areas page
+     */
+    .controller('AreaAdminCtrl', ['$scope', 'growl', 'LangService', 'AdminAreaService', 'DialogService',
+        function ($scope, growl, LangService, AdminAreaService, DialogService) {
+            'use strict';
+
+            $scope.areas = [];
+            $scope.area = undefined;
+            $scope.editArea = undefined;
+            $scope.action = "edit";
+            $scope.areaFilter = '';
+
+
+            // Used to ensure that description entities have a "name" field
+            function ensureNameField(desc) {
+                desc.name = '';
+            }
+
+
+            /** Displays the error message */
+            $scope.displayError = function () {
+                growl.error("Area operation failed");
+            };
+
+
+            /** Load the areas */
+            $scope.loadAreas = function() {
+                AdminAreaService
+                    .getAreas()
+                    .success(function (areas) {
+                        $scope.areas = areas;
+                        $scope.area = undefined;
+                        $scope.editArea = undefined;
+                        $scope.areaForm.$setPristine();
+                    })
+                    .error ($scope.displayError);
+            };
+
+
+            /** Creates a new area */
+            $scope.newArea = function() {
+                $scope.action = "add";
+                $scope.editArea = LangService.checkDescs({}, ensureNameField);
+                if ($scope.area) {
+                    $scope.editArea.parent = { id: $scope.area.id };
+                }
+                $scope.areaForm.$setPristine()
+            };
+
+
+            /** Called when an areas is selected */
+            $scope.selectArea = function (area) {
+                AdminAreaService
+                    .getArea(area)
+                    .success(function (data) {
+                        $scope.action = "edit";
+                        $scope.area = LangService.checkDescs(data, ensureNameField);
+                        $scope.editArea = angular.copy($scope.area);
+                        $scope.areaForm.$setPristine();
+                        $scope.$$phase || $scope.$apply();
+                    })
+                    .error ($scope.displayError);
+            };
+
+
+            /** Called when an area has been dragged to a new parent area */
+            $scope.moveArea = function (area, parent) {
+
+                // Get confirmation
+                DialogService.showConfirmDialog(
+                    "Move Area?", "Move " + area.descs[0].name + " to " + ((parent) ? parent.descs[0].name : "the root") + "?")
+                    .then(function() {
+                        AdminAreaService
+                            .moveArea(area.id, (parent) ? parent.id : undefined)
+                            .success($scope.loadAreas)
+                            .error ($scope.displayError);
+                    });
+            };
+
+
+            /** Called when the sibling area sort order has changed for the currently selected area */
+            $scope.changeSiblingSortOrder = function (moveUp) {
+                AdminAreaService
+                    .changeSortOrder($scope.area.id, moveUp)
+                    .success($scope.loadAreas)
+                    .error ($scope.displayError);
+            };
+
+
+            /** Will query the back-end to recompute the tree sort order */
+            $scope.recomputeTreeSortOrder = function () {
+                AdminAreaService
+                    .recomputeTreeSortOrder()
+                    .success(function () {
+                        growl.info('Tree Sort Order Updated');
+                    })
+                    .error ($scope.displayError);
+            };
+
+
+            /** Saves the current area */
+            $scope.saveArea = function () {
+                if ($scope.action == 'add') {
+                    AdminAreaService
+                        .createArea($scope.editArea)
+                        .success($scope.loadAreas)
+                        .error ($scope.displayError);
+
+                } else {
+                    AdminAreaService
+                        .updateArea($scope.editArea)
+                        .success($scope.loadAreas)
+                        .error ($scope.displayError);
+                }
+            };
+
+
+
+            /** Deletes the current area */
+            $scope.deleteArea = function () {
+
+                // Get confirmation
+                DialogService.showConfirmDialog(
+                    "Delete Area?", "Delete area " + $scope.area.descs[0].name + "?")
+                    .then(function() {
+                        AdminAreaService
+                            .deleteArea($scope.editArea)
+                            .success($scope.loadAreas)
+                            .error ($scope.displayError);
+                    });
+            }
+
+        }])
+
+
+    /**
+     * ********************************************************************************
+     * DomainAdminCtrl
+     * ********************************************************************************
      * Domains Admin Controller
      * Controller for the Admin domains page
      */
@@ -317,6 +466,9 @@ angular.module('niord.admin')
 
 
     /**
+     * ********************************************************************************
+     * BatchAdminCtrl
+     * ********************************************************************************
      * Batch Admin Controller
      */
     .controller('BatchAdminCtrl', ['$scope', '$interval', '$stateParams', '$uibModal', 'AdminBatchService',
@@ -477,7 +629,11 @@ angular.module('niord.admin')
 
         }])
 
+
     /**
+     * ********************************************************************************
+     * BatchLogFileDialogCtrl
+     * ********************************************************************************
      * Dialog Controller for the Batch job log file dialog
      */
     .controller('BatchLogFileDialogCtrl', ['$scope', 'AdminBatchService', 'instanceId',

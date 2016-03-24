@@ -286,7 +286,7 @@ angular.module('niord.messages')
                 if (params.chart && params.chart.length > 0) {
                     s.chart.enabled = true;
                     var charts = (typeof params.chart === 'string') ? params.chart : params.chart.join();
-                    $http.get('/rest/charts/' + charts + '?lang=' + $rootScope.language + '&limit=10')
+                    $http.get('/rest/charts/search/' + charts + '?lang=' + $rootScope.language + '&limit=10')
                         .then(function(response) {
                             s.chart.charts = response.data;
                         });

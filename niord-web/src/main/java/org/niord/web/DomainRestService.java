@@ -104,7 +104,7 @@ public class DomainRestService {
 
     /** Creates a new domain */
     @POST
-    @Path("/")
+    @Path("/domain/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({ "sysadmin" })
@@ -117,7 +117,7 @@ public class DomainRestService {
 
     /** Updates an existing domain */
     @PUT
-    @Path("/{clientId}")
+    @Path("/domain/{clientId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({ "sysadmin" })
@@ -134,7 +134,7 @@ public class DomainRestService {
 
     /** Deletes an existing domain */
     @DELETE
-    @Path("/{clientId}")
+    @Path("/domain/{clientId}")
     @Consumes("application/json;charset=UTF-8")
     @RolesAllowed({ "sysadmin" })
     @GZIP

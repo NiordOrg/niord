@@ -5,6 +5,9 @@
 angular.module('niord.admin')
 
     /**
+     * ********************************************************************************
+     * AdminChartService
+     * ********************************************************************************
      * Interface for calling chart related functions at the application server
      */
     .factory('AdminChartService', [ '$http', function($http) {
@@ -20,19 +23,19 @@ angular.module('niord.admin')
 
             /** Creates a new chart **/
             createChart: function(chart) {
-                return $http.post('/rest/charts', chart);
+                return $http.post('/rest/charts/chart/', chart);
             },
 
 
             /** Updates the given chart **/
             updateChart: function(chart) {
-                return $http.put('/rest/charts/' + encodeURIComponent(chart.chartNumber), chart);
+                return $http.put('/rest/charts/chart/' + encodeURIComponent(chart.chartNumber), chart);
             },
 
 
             /** Deletes the given chart **/
             deleteChart: function(chart) {
-                return $http.delete('/rest/charts/' + encodeURIComponent(chart.chartNumber));
+                return $http.delete('/rest/charts/chart/' + encodeURIComponent(chart.chartNumber));
             }
 
         };
@@ -40,6 +43,54 @@ angular.module('niord.admin')
 
 
     /**
+     * ********************************************************************************
+     * AdminAreaService
+     * ********************************************************************************
+     * Interface for calling area related functions at the application server
+     */
+    .factory('AdminAreaService', [ '$http', '$rootScope', function($http, $rootScope) {
+        'use strict';
+
+        return {
+            getAreas: function() {
+                return $http.get('/rest/areas/area-roots?lang=' + $rootScope.language);
+            },
+
+            getArea: function(area) {
+                return $http.get('/rest/areas/area/' + area.id);
+            },
+
+            createArea: function(area) {
+                return $http.post('/rest/areas/area/', area);
+            },
+
+            updateArea: function(area) {
+                return $http.put('/rest/areas/area/' + area.id, area);
+            },
+
+            deleteArea: function(area) {
+                return $http.delete('/rest/areas/area/' + area.id);
+            },
+
+            moveArea: function(areaId, parentId) {
+                return $http.put('/rest/areas/move-area', { areaId: areaId, parentId: parentId });
+            },
+
+            changeSortOrder: function(areaId, moveUp) {
+                return $http.put('/rest/areas/change-sort-order', { areaId: areaId, moveUp: moveUp });
+            },
+
+            recomputeTreeSortOrder: function() {
+                return $http.put('/rest/areas/recompute-tree-sort-order');
+            }
+
+        };
+    }])
+
+    /**
+     * ********************************************************************************
+     * AdminDomainService
+     * ********************************************************************************
      * Interface for calling domain related functions at the application server
      */
     .factory('AdminDomainService', [ '$http', function($http) {
@@ -55,19 +106,19 @@ angular.module('niord.admin')
 
             /** Creates a new domain **/
             createDomain: function(domain) {
-                return $http.post('/rest/domains', domain);
+                return $http.post('/rest/domains/domain/', domain);
             },
 
 
             /** Updates the given domain **/
             updateDomain: function(domain) {
-                return $http.put('/rest/domains/' + encodeURIComponent(domain.clientId), domain);
+                return $http.put('/rest/domains/domain/' + encodeURIComponent(domain.clientId), domain);
             },
 
 
             /** Deletes the given domain **/
             deleteDomain: function(domain) {
-                return $http.delete('/rest/domains/' + encodeURIComponent(domain.clientId));
+                return $http.delete('/rest/domains/domain/' + encodeURIComponent(domain.clientId));
             },
 
 
@@ -81,6 +132,9 @@ angular.module('niord.admin')
 
 
     /**
+     * ********************************************************************************
+     * AdminBatchService
+     * ********************************************************************************
      * Interface for calling batch-related functions at the application server
      */
     .factory('AdminBatchService', [ '$http', function($http) {

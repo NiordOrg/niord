@@ -66,7 +66,7 @@ public class ChartRestService {
 
     /** Returns the charts with the given comma-separated chart numbers */
     @GET
-    @Path("/{chartNumbers}")
+    @Path("/search/{chartNumbers}")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
@@ -108,7 +108,7 @@ public class ChartRestService {
 
     /** Creates a new chart */
     @POST
-    @Path("/")
+    @Path("/chart/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({ "admin" })
@@ -121,7 +121,7 @@ public class ChartRestService {
 
     /** Updates an existing chart */
     @PUT
-    @Path("/{chartNumber}")
+    @Path("/chart/{chartNumber}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({ "admin" })
@@ -138,7 +138,7 @@ public class ChartRestService {
 
     /** Deletes an existing chart */
     @DELETE
-    @Path("/{chartNumber}")
+    @Path("/chart/{chartNumber}")
     @Consumes("application/json;charset=UTF-8")
     @RolesAllowed({ "admin" })
     @GZIP

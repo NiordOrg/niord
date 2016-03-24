@@ -137,7 +137,7 @@ public class AreaRestService {
 
     /** Returns the area with the given ID */
     @GET
-    @Path("/{areaId}")
+    @Path("/area/{areaId}")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
@@ -150,7 +150,7 @@ public class AreaRestService {
 
     /** Creates a new area */
     @POST
-    @Path("/")
+    @Path("/area/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({"admin"})
@@ -164,7 +164,7 @@ public class AreaRestService {
 
     /** Updates an area */
     @PUT
-    @Path("/{areaId}")
+    @Path("/area/{areaId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({"admin"})
@@ -180,7 +180,7 @@ public class AreaRestService {
 
     /** Deletes the given area */
     @DELETE
-    @Path("/{areaId}")
+    @Path("/area/{areaId}")
     @RolesAllowed({"admin"})
     public boolean deleteArea(@PathParam("areaId") Integer areaId) throws Exception {
         log.info("Deleting area " + areaId);

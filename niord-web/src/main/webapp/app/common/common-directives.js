@@ -57,6 +57,7 @@ angular.module('niord.common')
 
     }])
 
+        
     /**
      * Emits a flag image
      */
@@ -347,23 +348,185 @@ angular.module('niord.common')
     }])
 
 
-    /** Formats a data using moment() **/
-    .filter('formatDate', [function () {
-        return function(input, format) {
-            format = format || 'lll';
-            return input ? moment(input).format(format) : '';
-        };
-    }])
+    /**
+     * Directive that wraps the fancytree jQuery plugin
+     * Used for hierarchical entities such as areas and categories
+     */
+    .directive('entityTree', [ function () {
+        'use strict';
+
+        return {
+            restrict: 'AE',
+            scope: {
+                entities:           '=',
+                filter:             '=',
+                sort :              '@',
+                entitySelected :    '&',
+                entityMoved :       '&'
+            },
+
+            link: function (scope, element, attrs) {
+
+                scope.sort = (attrs.sort !== undefined) ? attrs.sort : false;
+
+                // Initialize the tree
+                element.fancytree({
+                    source: [],
+                    keyboard: true,
+                    extensions: ["filter", "dnd"],
+                    filter: {
+                        mode: "hide"
+                    },
+                    dnd: {
+                        autoExpandMS: 400,
+                        draggable: {
+                            zIndex: 1000,
+                            scroll: false
+                        },
+                        preventVoidMoves: true,
+                        preventRecursiveMoves: true,
+                        dragStart: function() { return true; },
+                        dragEnter: function(node, data) {
+                            if (node.parent === data.otherNode.parent) {
+                                return ['over'];
+                            }
+                            return true;
+                        },
+                        dragOver: function(node, data) {},
+                        dragLeave: function(node, data) {},
+                        dragStop: function(node, data) {},
+                        dragDrop: function(node, data) {
+                            handleDragDrop(node, data);
+                        }
+                    },
+                    activate: function(event, data){
+                        var node = data.node;
+                        if (scope.entitySelected) {
+                            scope.entitySelected({ entity: node.data.entity });
+                        }
+                    }
+                });
+
+                var tree = element.fancytree("getTree");
+
+                /**
+                 * Convert the list of entities into the tree structure used by
+                 * https://github.com/mar10/fancytree/
+                 */
+                function toTreeData(entities, treeData, level) {
+                    for (var i = 0; i < entities.length; i++) {
+                        var entity = entities[i];
+                        var title = (entity.descs && entity.descs.length > 0) ? entity.descs[0].name : 'N/A';
+                        var node = { key: entity.id, title: title, folder: true, children: [], level: level, entity: entity };
+                        treeData.push(node);
+                        if (entity.children && entity.children.length > 0) {
+                            toTreeData(entity.children, node.children, level + 1);
+                        }
+                    }
+                }
+
+                /** Called when a dragged element has been dropped */
+                function handleDragDrop(node, data) {
+                    if (scope.entityMoved) {
+                        var entity = data.otherNode.data.entity;
+                        var parent = undefined;
+                        if (data.hitMode == 'before' || data.hitMode == 'after') {
+                            parent = (node.parent.data.entity) ? node.parent.data.entity : undefined;
+                        } else if (data.hitMode == 'over') {
+                            parent = node.data.entity;
+                        }
+                        scope.entityMoved({ entity: entity, parent: parent });
+
+                    } else {
+                        data.otherNode.moveTo(node, data.hitMode);
+                    }
+                }
+
+                /** Watch entities **/
+                scope.$watchCollection(function () {
+                    return scope.entities;
+                }, function (newValue) {
+                    if (tree.options.source && tree.options.source.length > 0) {
+                        scope.storeState();
+                    }
+                    var treeData = [];
+                    if (newValue) {
+                        toTreeData(newValue, treeData, 0);
+                    }
+                    tree.options.source = treeData;
+                    tree.reload();
+                    if (scope.sort) {
+                        tree.rootNode.sortChildren(null, true);
+                    }
+                    tree.clearFilter();
+                    scope.collapseAll();
+                    scope.restoreState();
+                    if (scope.filter) {
+                        tree.filterNodes(scope.filter);
+                    }
+                });
 
 
-    /** Formats a number using numeral() **/
-    .filter('numeral', [function () {
-        return function(input, format) {
-            format = format || '0,0';
-            return input ? numeral(input).format(format) : '';
+                /** Watch the filter **/
+                if (attrs.filter) {
+                    scope.$watch(function () {
+                        return scope.filter
+                    }, function (newValue) {
+                        var val = newValue || '';
+                        if (val != '') {
+                            tree.filterNodes(val);
+                            scope.expandAll();
+                        } else {
+                            tree.clearFilter();
+                            scope.collapseAll();
+                        }
+                    }, true);
+                };
+
+
+                /** Stores the current expanded state */
+                scope.storeState = function() {
+                    scope.expandedIds = [];
+                    scope.activeKey = tree.getActiveNode() ? tree.getActiveNode().key : undefined;
+                    tree.visit(function(node){
+                        if (node.expanded) {
+                            scope.expandedIds.push(node.key);
+                        }
+                    });
+                };
+
+
+                /** Restores the previously stored expanded state */
+                scope.restoreState = function() {
+                    if (scope.expandedIds) {
+                        tree.visit(function(node){
+                            node.setExpanded($.inArray(node.key, scope.expandedIds) > -1);
+                        });
+                    }
+                    if (scope.activeKey) {
+                        tree.activateKey(scope.activeKey);
+                    }
+                };
+
+
+                /** Collapses all tree nodes except the root node */
+                scope.collapseAll = function() {
+                    tree.visit(function(node){
+                        node.setExpanded(node.data.level == 0);
+                    });
+
+                };
+
+
+                /** Expands all tree nodes */
+                scope.expandAll = function() {
+                    tree.visit(function(node){
+                        node.setExpanded(true);
+                    });
+                };
+            }
         };
     }]);
-
 
 
 
