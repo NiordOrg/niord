@@ -216,6 +216,13 @@ angular.module('niord.admin')
             };
 
 
+            /** If the area form is visible set it to be pristine */
+            $scope.setPristine = function () {
+                if ($scope.areaForm) {
+                    $scope.areaForm.$setPristine();
+                }
+            };
+
             /** Load the areas */
             $scope.loadAreas = function() {
                 AdminAreaService
@@ -224,7 +231,7 @@ angular.module('niord.admin')
                         $scope.areas = areas;
                         $scope.area = undefined;
                         $scope.editArea = undefined;
-                        $scope.areaForm.$setPristine();
+                        $scope.setPristine();
                     })
                     .error ($scope.displayError);
             };
@@ -238,7 +245,7 @@ angular.module('niord.admin')
                     $scope.editArea.parent = { id: $scope.area.id };
                 }
                 $scope.areaFeatureCollection.features.length = 0;
-                $scope.areaForm.$setPristine()
+                $scope.setPristine();
             };
 
 
@@ -255,7 +262,7 @@ angular.module('niord.admin')
                             var feature = {type: 'Feature', geometry: $scope.editArea.geometry, properties: {}};
                             $scope.areaFeatureCollection.features.push(feature);
                         }
-                        $scope.areaForm.$setPristine();
+                        $scope.setPristine();
                         $scope.$$phase || $scope.$apply();
                     })
                     .error($scope.displayError);
