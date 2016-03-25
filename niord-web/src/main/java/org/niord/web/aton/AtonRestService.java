@@ -98,6 +98,7 @@ public class AtonRestService {
     public PagedSearchResultVo<AtonNodeVo> search(
             @QueryParam("name") String name,
             @QueryParam("chart") String[] charts,
+            @QueryParam("area") Integer[] areas,
             @QueryParam("minLat") Double minLat,
             @QueryParam("minLon") Double minLon,
             @QueryParam("maxLat") Double maxLat,
@@ -110,6 +111,7 @@ public class AtonRestService {
         param.setName(name);
         param.setExtent(minLat, minLon, maxLat, maxLon);
         param.setChartNumbers(charts);
+        param.setAreaIds(areas);
         param.maxSize(maxAtonNo);
         param.setEmptyOnOverflow(emptyOnOverflow);
 

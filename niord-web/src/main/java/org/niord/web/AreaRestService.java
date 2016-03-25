@@ -84,6 +84,7 @@ public class AreaRestService {
      *
      * @param lang  the language
      * @param name  the search name
+     * @param geometry  if true, only return areas with geometries
      * @param limit the maximum number of results
      * @return the search result
      */
@@ -95,15 +96,17 @@ public class AreaRestService {
     public List<AreaVo> searchAreas(
             @QueryParam("lang") String lang,
             @QueryParam("name") String name,
+            @QueryParam("geometry") @DefaultValue("false") boolean geometry,
             @QueryParam("limit") int limit) {
 
-        log.debug(String.format("Searching for areas lang=%s, name='%s', limit=%d", lang, name, limit));
+        log.debug(String.format("Searching for areas lang=%s, name='%s', geometry=%s, limit=%d",
+                lang, name, geometry, limit));
 
         DataFilter filter = DataFilter.get()
                 .fields(DataFilter.PARENT)
                 .lang(lang);
 
-        return areaService.searchAreas(null, lang, name, limit).stream()
+        return areaService.searchAreas(null, lang, name, geometry, limit).stream()
                 .map(a -> a.toVo(filter))
                 .collect(Collectors.toList());
     }

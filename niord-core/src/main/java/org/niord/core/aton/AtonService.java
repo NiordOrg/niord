@@ -24,6 +24,7 @@ import org.apache.lucene.search.MatchNoDocsQuery;
 import org.hibernate.search.jpa.FullTextEntityManager;
 import org.hibernate.search.jpa.FullTextQuery;
 import org.hibernate.search.jpa.Search;
+import org.niord.core.area.Area;
 import org.niord.core.chart.Chart;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.db.SpatialWithinPredicate;
@@ -267,6 +268,13 @@ public class AtonService extends BaseService {
             criteriaHelper
                     .add(new SpatialWithinPredicate(cb, atonRoot.get("geometry"), chartRoot.get("geometry")))
                     .in(chartRoot.get("chartNumber"), Arrays.asList(param.getChartNumbers()));
+        }
+
+        if (param.getAreaIds() != null && param.getAreaIds().length > 0) {
+            Root<Area> areaRoot = c.from(Area.class);
+            criteriaHelper
+                    .add(new SpatialWithinPredicate(cb, atonRoot.get("geometry"), areaRoot.get("geometry")))
+                    .in(areaRoot.get("id"), Arrays.asList(param.getAreaIds()));
         }
 
         return atonRoot;

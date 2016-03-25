@@ -12,6 +12,7 @@ public class AtonSearchParams extends PagedSearchParamsVo {
     private String name;
     private Geometry extent;
     private String[] chartNumbers;
+    private Integer[] areaIds;
     private boolean emptyOnOverflow;
 
     public void setExtent(Double minLat, Double minLon, Double maxLat, Double maxLon) {
@@ -51,6 +52,14 @@ public class AtonSearchParams extends PagedSearchParamsVo {
 
     public void setChartNumbers(String[] chartNumbers) {
         this.chartNumbers = chartNumbers;
+    }
+
+    public Integer[] getAreaIds() {
+        return areaIds;
+    }
+
+    public void setAreaIds(Integer[] areaIds) {
+        this.areaIds = areaIds;
     }
 
     public boolean isEmptyOnOverflow() {

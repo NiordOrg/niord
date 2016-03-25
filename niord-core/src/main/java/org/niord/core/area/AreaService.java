@@ -58,11 +58,12 @@ public class AreaService extends BaseService {
      *
      * @param lang the language
      * @param name the search term
+     * @param geometry  if true, only return areas with geometries
      * @param limit the maximum number of results
      * @return the search result
      */
     @SuppressWarnings("all")
-    public List<Area> searchAreas(Integer parentId, String lang, String name, int limit) {
+    public List<Area> searchAreas(Integer parentId, String lang, String name, boolean geometry, int limit) {
 
         // Sanity check
         if (StringUtils.isBlank(name)) {
@@ -90,6 +91,11 @@ public class AreaService extends BaseService {
             areaRoot.join("parent", JoinType.LEFT);
             Path<Area> parent = areaRoot.get("parent");
             criteriaHelper.equals(parent.get("id"), parentId);
+        }
+
+        // Optionally, require that the area has an associated geometry
+        if (geometry) {
+            criteriaHelper.add(cb.isNotNull(areaRoot.get("geometry")));
         }
 
         // Complete the query
@@ -358,7 +364,7 @@ public class AreaService extends BaseService {
      */
     public Area findByName(String name, String lang, Integer parentId) {
 
-        List<Area> areas = searchAreas(parentId, lang, name, 1);
+        List<Area> areas = searchAreas(parentId, lang, name, false, 1);
 
         return areas.isEmpty() ? null : areas.get(0);
     }
