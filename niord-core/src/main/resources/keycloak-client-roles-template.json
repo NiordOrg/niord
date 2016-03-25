@@ -1,0 +1,26 @@
+[ {
+  "id" : "5defcbfb-fd1b-4b38-8831-4fb489b96396",
+  "name" : "admin",
+  "scopeParamRequired" : false,
+  "composite" : true,
+  "composites" : {
+    "client" : {
+      "niord-client-nm" : [ "editor" ]
+    }
+  }
+}, {
+  "id" : "64af90a9-f0bc-47ea-a893-5b90c2098bd6",
+  "name" : "editor",
+  "scopeParamRequired" : false,
+  "composite" : false
+}, {
+  "id" : "ee5595ee-6c2a-4d1f-9d88-a7695db20a78",
+  "name" : "sysadmin",
+  "scopeParamRequired" : false,
+  "composite" : true,
+  "composites" : {
+    "client" : {
+      "niord-client-nm" : [ "admin" ]
+    }
+  }
+} ]

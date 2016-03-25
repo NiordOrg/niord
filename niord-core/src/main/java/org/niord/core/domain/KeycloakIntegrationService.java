@@ -15,13 +15,16 @@
  */
 package org.niord.core.domain;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
 import javax.naming.NamingException;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -67,9 +70,10 @@ public class KeycloakIntegrationService {
 
         // Create a template for the new client
         ObjectMapper mapper = new ObjectMapper();
-        ClientRepresentation client = mapper.readValue(
-                getClass().getResource("/keycloak-client-template.json"),
-                ClientRepresentation.class);
+        ClientRepresentation client = mapper
+                .readValue(
+                    getClass().getResource("/keycloak-client-template.json"),
+                    ClientRepresentation.class);
 
         // Instantiate it from the domain
         client.setId(null);
@@ -77,11 +81,56 @@ public class KeycloakIntegrationService {
         client.setName(domain.getName());
 
         // Create the client in Keycloak
-        return executeAdminOperation(keycloak -> keycloak
+        boolean success = executeAdminOperation(keycloak -> keycloak
                 .realm("niord")
                 .clients()
                 .create(client)
                 .getStatus() == 201);
+
+        if (!success) {
+            log.error("Failed creating client " + domain.getClientId());
+            return false;
+        }
+        log.info("Created client " + domain.getClientId());
+
+
+        // Create a template for the client roles
+        List<RoleRepresentation> roles =  mapper
+                .readValue(
+                        getClass().getResource("/keycloak-client-roles-template.json"),
+                        new TypeReference<List<RoleRepresentation>>(){});
+
+        // Instantiate the roles from the domain
+        roles.forEach(r -> {
+            r.setId(null);
+            // For composite roles, replace the template client id with the proper client id
+            if (r.isComposite() && r.getComposites().getClient().size() == 1) {
+                String templateClientId = r.getComposites().getClient().keySet().iterator().next();
+                List<String> compositeRoles = r.getComposites().getClient().remove(templateClientId);
+                r.getComposites().getClient().put(domain.getClientId(), compositeRoles);
+            }
+        });
+
+        /**
+         * TODO: The code below will fail because the .create() function will yield a 404 error
+         * Guessing it's an error in Keycloak, but need to investigate further.
+
+        // Create the client roles in Keycloak
+        for (RoleRepresentation role : roles) {
+            success = executeAdminOperation(keycloak -> {
+                keycloak.realm("niord")
+                        .clients()
+                        .get(domain.getClientId())
+                        .roles()
+                        .create(role);
+                // Sadly, no error handling when creating roles
+                return true;
+            });
+            log.info("Created role " + role + " for client " + domain.getClientId());
+        }
+         **/
+
+        return true;
     }
 
 
