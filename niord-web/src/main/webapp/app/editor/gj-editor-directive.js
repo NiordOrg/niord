@@ -36,7 +36,8 @@ angular.module('niord.editor')
                 openEditorMessage:  "@",
                 editType:           "@",
                 drawControls:       "@",
-                featureCollection:  "="
+                featureCollection:  "=",
+                onSave:             '&'
             },
             link: function(scope, element, attrs) {
 
@@ -279,6 +280,11 @@ angular.module('niord.editor')
                             var gjFeature = MapService.olToGjFeature(olFeature);
                             scope.featureCollection.features.push(gjFeature);
                         });
+
+                        // Check if we need to call onSave callback
+                        if (scope.onSave) {
+                            scope.onSave({featureCollection: scope.featureCollection});
+                        }
 
                     }
                     scope.mode = 'viewer';

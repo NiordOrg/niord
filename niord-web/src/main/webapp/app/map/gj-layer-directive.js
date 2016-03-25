@@ -109,6 +109,10 @@ angular.module('niord.map')
                                     maxZoom: maxZoom
                                 });
                             }
+
+                        } else if (scope.fitExtent == 'true') {
+                            map.getView().setCenter(MapService.fromLonLat(MapService.defaultCenterLonLat()));
+                            map.getView().setZoom(MapService.defaultZoomLevel());
                         }
                     };
 

@@ -321,6 +321,11 @@ angular.module('niord.admin')
             };
 
 
+            /** Called when the area geometry editor is saved */
+            $scope.geometrySaved = function () {
+                $scope.areaForm.$setDirty();
+            };
+
 
             /** Deletes the current area */
             $scope.deleteArea = function () {

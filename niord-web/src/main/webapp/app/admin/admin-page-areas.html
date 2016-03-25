@@ -39,15 +39,17 @@
                         <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
                               ng-click="areaFilter = ''" ng-show="areaFilter != ''"></span>
                     </div>
-                    <div entity-tree entities="areas" filter="areaFilter"
-                         entity-selected="selectArea(entity)" entity-moved="moveArea(entity, parent)"
+                    <div entity-tree entities="areas"
+                         filter="areaFilter"
+                         entity-selected="selectArea(entity)"
+                         entity-moved="moveArea(entity, parent)"
                          class="area-tree"></div>
                 </div>
             </div>
 
             <!-- Area editor -->
-            <form name="areaForm" class="col-md-5 panel panel-default area-panel" role="form">
-                <fieldset  ng-disabled="editArea == undefined">
+            <form ng-if="editArea" name="areaForm" class="col-md-5 panel panel-default area-panel" role="form">
+                <fieldset>
                     <div class="form-group" ng-if="action == 'add'">
                         <label class="control-label" for="parent">Parent Area</label>
                         <div class="input-group input-group-sm">
@@ -68,9 +70,6 @@
                     <div class="form-group">
                         <label class="control-label">Sorting</label>
                         <div class="row">
-                            <div class="col-sm-6">
-                                <input class="form-control input-sm" placeholder="Sort Key" type="number"  step="any" ng-model="editArea.siblingSortOrder" ng-disabled="">
-                            </div>
                             <div class="col-sm-6 btn-group">
                                 <button href class="btn btn-default btn-sm" ng-click="changeSiblingSortOrder(true)" title="Move Area Up"
                                         ng-disabled="action == 'add' || !areaForm.$pristine">
@@ -85,9 +84,13 @@
                     </div>
 
                     <div class="form-group">
-                        <gj-editor id="geometry-editor" class="geometry-editor"
-                                   draw-controls="point,polygon,select,remove"
-                                   edit-type="feature" feature-collection="areaFeatureCollection"></gj-editor>
+                        <label class="control-label">Extent</label>
+                        <gj-editor id="geometry-editor"
+                                   class="geometry-editor"
+                                   draw-controls="point,polyline,polygon,select,remove"
+                                   edit-type="feature"
+                                   feature-collection="areaFeatureCollection"
+                                   on-save="geometrySaved(featureCollection)"></gj-editor>
                     </div>
 
                     <div class="form-group">
