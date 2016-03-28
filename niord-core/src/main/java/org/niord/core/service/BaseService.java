@@ -23,6 +23,7 @@ import javax.persistence.EntityNotFoundException;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * DAO-like base class for services that work on work on {@linkplain BaseEntity}
@@ -129,4 +130,19 @@ public abstract class BaseService {
         cq.select(qb.count(cq.from(entityType)));
         return em.createQuery(cq).getSingleResult();
     }
+
+
+    /**
+     * Returns a list of persisted entities
+     * @param entityType the class
+     * @param entities the list of entities to look up persisted entities for
+     * @return the list of corresponding persisted entities
+     */
+    public <E extends BaseEntity> List<E> persistedList(Class<E> entityType, List<E> entities) {
+        return entities.stream()
+                .map(e -> getByPrimaryKey(entityType, e.getId()))
+                .filter(e -> e != null)
+                .collect(Collectors.toList());
+    }
+
 }

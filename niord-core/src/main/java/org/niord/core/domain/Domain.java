@@ -15,12 +15,17 @@
  */
 package org.niord.core.domain;
 
+import org.niord.core.area.Area;
 import org.niord.core.model.BaseEntity;
+import org.niord.model.DataFilter;
 import org.niord.model.vo.DomainVo;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Represents an application domain
@@ -43,6 +48,9 @@ public class Domain extends BaseEntity<Integer> {
     @NotNull
     String name;
 
+    @OneToMany(cascade = CascadeType.ALL)
+    List<Area> areas = new ArrayList<>();
+
     @Transient
     Boolean inKeycloak;
 
@@ -61,6 +69,11 @@ public class Domain extends BaseEntity<Integer> {
     public void updateDomain(DomainVo domain) {
         this.clientId = domain.getClientId();
         this.name = domain.getName();
+        if (domain.getAreas() != null) {
+            this.areas = domain.getAreas().stream()
+                .map(a -> new Area(a, DataFilter.get()))
+                .collect(Collectors.toList());
+        }
         this.inKeycloak = domain.getInKeycloak();
     }
 
@@ -71,6 +84,11 @@ public class Domain extends BaseEntity<Integer> {
         domain.setClientId(clientId);
         domain.setName(name);
         domain.setInKeycloak(inKeycloak);
+        if (!areas.isEmpty()) {
+            domain.setAreas(areas.stream()
+                .map(a -> a.toVo(DataFilter.get()))
+                .collect(Collectors.toList()));
+        }
         return domain;
     }
 
@@ -107,6 +125,14 @@ public class Domain extends BaseEntity<Integer> {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public List<Area> getAreas() {
+        return areas;
+    }
+
+    public void setAreas(List<Area> areas) {
+        this.areas = areas;
     }
 
     public Boolean getInKeycloak() {

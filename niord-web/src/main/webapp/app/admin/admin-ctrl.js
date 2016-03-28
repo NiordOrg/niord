@@ -434,6 +434,7 @@ angular.module('niord.admin')
                 $scope.editMode = 'add';
                 $scope.domain = angular.copy(domain);
                 $scope.domain.clientId = undefined;
+                $scope.areas.length = 0;
             };
 
 
@@ -441,6 +442,7 @@ angular.module('niord.admin')
             $scope.editDomain = function (domain) {
                 $scope.editMode = 'edit';
                 $scope.domain = angular.copy(domain);
+                $scope.areas.length = 0;
             };
 
 
@@ -495,6 +497,33 @@ angular.module('niord.admin')
                     'Upload Domains File',
                     '/rest/domains/upload-domains',
                     'json');
+            };
+
+
+            // Use for area selection
+            $scope.areas = [];
+            $scope.refreshAreas = function(name) {
+                if (!name || name.length == 0) {
+                    return [];
+                }
+                return AdminDomainService
+                    .searchAreas(name)
+                    .then(function(response) {
+                        $scope.areas = response.data;
+                    });
+            };
+
+
+            // Recursively formats the names of the parent lineage for areas and categories
+            $scope.formatParents = function(child) {
+                var txt = undefined;
+                if (child) {
+                    txt = (child.descs && child.descs.length > 0) ? child.descs[0].name : 'N/A';
+                    if (child.parent) {
+                        txt = $scope.formatParents(child.parent) + " - " + txt;
+                    }
+                }
+                return txt;
             };
         }])
 

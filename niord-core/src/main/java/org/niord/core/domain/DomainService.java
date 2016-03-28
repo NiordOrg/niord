@@ -15,6 +15,7 @@
  */
 package org.niord.core.domain;
 
+import org.niord.core.area.Area;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
@@ -96,6 +97,9 @@ public class DomainService extends BaseService {
         // Copy the domain data
         original.setName(domain.getName());
 
+        // Substitute the areas with the persisted ones
+        original.setAreas(persistedList(Area.class, domain.getAreas()));
+
         return saveEntity(original);
     }
 
@@ -111,6 +115,9 @@ public class DomainService extends BaseService {
             throw new IllegalArgumentException("Cannot create domain with duplicate client ID "
                     + domain.getClientId());
         }
+
+        // Substitute the areas with the persisted ones
+        domain.setAreas(persistedList(Area.class, domain.getAreas()));
 
         return saveEntity(domain);
     }

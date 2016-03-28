@@ -17,6 +17,8 @@ package org.niord.model.vo;
 
 import org.niord.model.IJsonSerializable;
 
+import java.util.List;
+
 /**
  * Represents an application domain
  */
@@ -24,6 +26,7 @@ public class DomainVo implements IJsonSerializable {
 
     private String clientId;
     private String name;
+    private List<AreaVo> areas;
     private Boolean inKeycloak;
 
     /*************************/
@@ -44,6 +47,14 @@ public class DomainVo implements IJsonSerializable {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public List<AreaVo> getAreas() {
+        return areas;
+    }
+
+    public void setAreas(List<AreaVo> areas) {
+        this.areas = areas;
     }
 
     public Boolean getInKeycloak() {

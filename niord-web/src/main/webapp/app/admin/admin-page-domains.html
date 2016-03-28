@@ -29,6 +29,26 @@
                             </div>
                         </div>
 
+                        <div class="form-group">
+                            <label class="col-sm-4">Areas</label>
+                            <div class="col-sm-8">
+                                <ui-select multiple id="areas" ng-model="domain.areas" >
+                                    <ui-select-match placeholder="Select areas">
+                                        {{$item.descs[0].name}}
+                                    </ui-select-match>
+                                    <ui-select-choices repeat="area in areas"
+                                                       refresh="refreshAreas($select.search)"
+                                                       refresh-delay="100">
+                                        <div>
+                                            <span ng-bind-html="area.descs[0].name | highlight: $select.search"></span>
+                                            <small ng-if="area.parent">({{formatParents(area.parent)}})</small>
+                                        </div>
+
+                                    </ui-select-choices>
+                                </ui-select>
+                            </div>
+                        </div>
+
                         <div class="form-group" ng-if="editMode == 'edit'">
                             <label for="keycloak" class="col-sm-4">Keycloak</label>
                             <div class="col-sm-8">
@@ -91,14 +111,18 @@
                     <table class='table table-condensed table-hover'>
                         <tr>
                             <th>Client ID</th>
-                            <th>Name</th>
                             <th>Keycloak</th>
+                            <th>Name</th>
+                            <th>Areas</th>
                             <th></th>
                         </tr>
                         <tr ng-repeat="domain in domains">
                             <td>{{domain.clientId}}</td>
-                            <td>{{domain.name}}</td>
                             <td><input type="checkbox" ng-model="domain.inKeycloak" disabled="disabled"></td>
+                            <td>{{domain.name}}</td>
+                            <td>
+                                <div ng-repeat="area in domain.areas">{{area.descs[0].name}}</div>
+                            </td>
                             <td nowrap align="right">
                                 <a href ng-click="editDomain(domain);" title="Edit Domain"><i class="glyphicon glyphicon-pencil"></i></a>
                                 &nbsp;

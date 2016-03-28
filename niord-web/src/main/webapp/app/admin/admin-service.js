@@ -93,7 +93,7 @@ angular.module('niord.admin')
      * ********************************************************************************
      * Interface for calling domain related functions at the application server
      */
-    .factory('AdminDomainService', [ '$http', function($http) {
+    .factory('AdminDomainService', [ '$http', '$rootScope', function($http, $rootScope) {
         'use strict';
 
         return {
@@ -125,6 +125,13 @@ angular.module('niord.admin')
             /** Creates the domain in Keycloak **/
             createDomainInKeycloak : function (domain) {
                 return $http.post('/rest/domains/keycloak', domain);
+            },
+
+
+            /** Returns the areas matching the given name */
+            searchAreas : function (name) {
+                return $http.get('/rest/areas/search?name='
+                    + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10')
             }
 
         };
