@@ -272,6 +272,47 @@ angular.module('niord.map')
 
 
     /**
+     * Used as a child-directive to ol-map and display a static image in the map.
+     *
+     * See: http://openlayers.org/en/v3.6.0/examples/static-image.html
+     */
+    .directive('staticImageLayer', ['MapService', function (MapService) {
+        return {
+            restrict: 'E',
+            replace: false,
+            require: '^olMap',
+            scope: {
+                url:        '=',
+                extent:     '='
+            },
+            link: function(scope, element, attrs, ctrl) {
+                var olScope = ctrl.getOpenlayersScope();
+                var olLayer;
+
+                olScope.getMap().then(function(map) {
+
+                    scope.$on('$destroy', function() {
+                        if (angular.isDefined(olLayer)) {
+                            map.removeLayer(olLayer);
+                        }
+                    });
+
+                    olLayer = new ol.layer.Image({
+                        source: new ol.source.ImageStatic({
+                            url: scope.url,
+                            imageExtent: MapService.fromLonLatExtent(scope.extent)
+                        })
+                    });
+
+                    map.addLayer(olLayer);
+                });
+
+            }
+        };
+    }])
+
+
+    /**
      * The map-tile-layer directive will add a simple tile layer to the map
      */
     .directive('mapTileLayer', ['$rootScope', 'MapService', function ($rootScope, MapService) {
