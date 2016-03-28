@@ -48,7 +48,7 @@ public class Domain extends BaseEntity<Integer> {
     @NotNull
     String name;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany
     List<Area> areas = new ArrayList<>();
 
     @Transient
