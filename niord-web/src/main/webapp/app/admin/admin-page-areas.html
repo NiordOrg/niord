@@ -48,8 +48,8 @@
             </div>
 
             <!-- Area editor -->
-            <form ng-if="editArea" name="areaForm" class="col-md-5 panel panel-default area-panel" role="form">
-                <fieldset>
+            <form name="areaForm" id="areaForm" class="col-md-5 panel panel-default area-panel" role="form">
+                <fieldset ng-if="editArea">
                     <div class="form-group" ng-if="action == 'add'">
                         <label class="control-label" for="parent">Parent Area</label>
                         <div class="input-group input-group-sm">
