@@ -21,7 +21,14 @@ import org.niord.core.model.BaseEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.vo.DomainVo;
 
-import javax.persistence.*;
+import javax.persistence.Cacheable;
+import javax.persistence.Entity;
+import javax.persistence.Index;
+import javax.persistence.ManyToMany;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,10 +57,10 @@ public class Domain extends BaseEntity<Integer> {
     @NotNull
     String name;
 
-    @OneToMany
+    @ManyToMany
     List<Area> areas = new ArrayList<>();
 
-    @OneToMany
+    @ManyToMany
     List<Category> categories = new ArrayList<>();
 
     @Transient
