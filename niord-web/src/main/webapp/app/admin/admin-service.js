@@ -138,7 +138,7 @@ angular.module('niord.admin')
 
             /** Returns all domain **/
             getDomains: function () {
-                return $http.get('/rest/domains/all');
+                return $http.get('/rest/domains/all?lang=' + $rootScope.language);
             },
 
 
@@ -169,6 +169,13 @@ angular.module('niord.admin')
             /** Returns the areas matching the given name */
             searchAreas : function (name) {
                 return $http.get('/rest/areas/search?name='
+                    + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10')
+            },
+
+
+            /** Returns the categories matching the given name */
+            searchCategories : function (name) {
+                return $http.get('/rest/categories/search?name='
                     + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10')
             }
 

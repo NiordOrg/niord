@@ -72,12 +72,24 @@ public class DomainRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<DomainVo> getAllDomains() {
+    public List<DomainVo> getAllDomains(@QueryParam("lang") String lang) {
 
         // Load the domains including their keycloak state
-        return domainService.getDomains(true).stream()
+        List<DomainVo> domains = domainService.getDomains(true).stream()
                 .map(Domain::toVo)
                 .collect(Collectors.toList());
+
+        // Sort areas and categories by language
+        domains.forEach(d -> {
+            if (d.getAreas() != null) {
+                d.getAreas().forEach(a -> a.sortDescs(lang));
+            }
+            if (d.getCategories() != null) {
+                d.getCategories().forEach(c -> c.sortDescs(lang));
+            }
+        });
+
+        return domains;
     }
 
 
@@ -92,7 +104,7 @@ public class DomainRestService {
                 .append("niordDomains = ");
         try {
             ObjectMapper mapper = new ObjectMapper();
-            js.append(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(getAllDomains()));
+            js.append(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(getAllDomains(null)));
         } catch (JsonProcessingException e) {
             js.append("[]");
         }

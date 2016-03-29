@@ -49,6 +49,26 @@
                             </div>
                         </div>
 
+                        <div class="form-group">
+                            <label class="col-sm-4">Categories</label>
+                            <div class="col-sm-8">
+                                <ui-select multiple id="categories" ng-model="domain.categories" >
+                                    <ui-select-match placeholder="Select categories">
+                                        {{$item.descs[0].name}}
+                                    </ui-select-match>
+                                    <ui-select-choices repeat="category in categories"
+                                                       refresh="refreshCategories($select.search)"
+                                                       refresh-delay="100">
+                                        <div>
+                                            <span ng-bind-html="category.descs[0].name | highlight: $select.search"></span>
+                                            <small ng-if="category.parent">({{formatParents(category.parent)}})</small>
+                                        </div>
+
+                                    </ui-select-choices>
+                                </ui-select>
+                            </div>
+                        </div>
+
                         <div class="form-group" ng-if="editMode == 'edit'">
                             <label for="keycloak" class="col-sm-4">Keycloak</label>
                             <div class="col-sm-8">
@@ -107,13 +127,14 @@
             </div>
 
             <div class="row" style="padding-top: 20px;">
-                <div class="col-sm-12 col-md-8">
+                <div class="col-sm-12 col-md-12">
                     <table class='table table-condensed table-hover'>
                         <tr>
                             <th>Client ID</th>
                             <th>Keycloak</th>
                             <th>Name</th>
                             <th>Areas</th>
+                            <th>Categories</th>
                             <th></th>
                         </tr>
                         <tr ng-repeat="domain in domains">
@@ -122,6 +143,9 @@
                             <td>{{domain.name}}</td>
                             <td>
                                 <div ng-repeat="area in domain.areas">{{area.descs[0].name}}</div>
+                            </td>
+                            <td>
+                                <div ng-repeat="category in domain.categories">{{category.descs[0].name}}</div>
                             </td>
                             <td nowrap align="right">
                                 <a href ng-click="editDomain(domain);" title="Edit Domain"><i class="glyphicon glyphicon-pencil"></i></a>

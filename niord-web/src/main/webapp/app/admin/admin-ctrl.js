@@ -502,8 +502,8 @@ angular.module('niord.admin')
      * Domains Admin Controller
      * Controller for the Admin domains page
      */
-    .controller('DomainAdminCtrl', ['$scope', 'growl', 'AuthService', 'AdminDomainService', 'DialogService', 'UploadFileService',
-        function ($scope, growl, AuthService, AdminDomainService, DialogService, UploadFileService) {
+    .controller('DomainAdminCtrl', ['$scope', 'growl', 'LangService', 'AuthService', 'AdminDomainService', 'DialogService', 'UploadFileService',
+        function ($scope, growl, LangService, AuthService, AdminDomainService, DialogService, UploadFileService) {
             'use strict';
 
             $scope.allDomains = [];
@@ -571,6 +571,7 @@ angular.module('niord.admin')
                 $scope.domain = angular.copy(domain);
                 $scope.domain.clientId = undefined;
                 $scope.areas.length = 0;
+                $scope.categories.length = 0;
             };
 
 
@@ -579,6 +580,7 @@ angular.module('niord.admin')
                 $scope.editMode = 'edit';
                 $scope.domain = angular.copy(domain);
                 $scope.areas.length = 0;
+                $scope.categories.length = 0;
             };
 
 
@@ -646,6 +648,20 @@ angular.module('niord.admin')
                     .searchAreas(name)
                     .then(function(response) {
                         $scope.areas = response.data;
+                    });
+            };
+
+
+            // Use for category selection
+            $scope.categories = [];
+            $scope.refreshCategories = function(name) {
+                if (!name || name.length == 0) {
+                    return [];
+                }
+                return AdminDomainService
+                    .searchCategories(name)
+                    .then(function(response) {
+                        $scope.categories = response.data;
                     });
             };
 

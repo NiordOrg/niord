@@ -16,6 +16,7 @@
 package org.niord.core.domain;
 
 import org.niord.core.area.Area;
+import org.niord.core.category.Category;
 import org.niord.core.model.BaseEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.vo.DomainVo;
@@ -52,6 +53,9 @@ public class Domain extends BaseEntity<Integer> {
     @OneToMany
     List<Area> areas = new ArrayList<>();
 
+    @OneToMany
+    List<Category> categories = new ArrayList<>();
+
     @Transient
     Boolean inKeycloak;
 
@@ -70,13 +74,21 @@ public class Domain extends BaseEntity<Integer> {
     public void updateDomain(DomainVo domain) {
         this.clientId = domain.getClientId();
         this.name = domain.getName();
+        this.inKeycloak = domain.getInKeycloak();
+
         this.areas.clear();
         if (domain.getAreas() != null) {
             this.areas = domain.getAreas().stream()
                 .map(a -> new Area(a, DataFilter.get()))
                 .collect(Collectors.toList());
         }
-        this.inKeycloak = domain.getInKeycloak();
+
+        this.categories.clear();
+        if (domain.getCategories() != null) {
+            this.categories = domain.getCategories().stream()
+                    .map(c -> new Category(c, DataFilter.get()))
+                    .collect(Collectors.toList());
+        }
     }
 
 
@@ -86,11 +98,19 @@ public class Domain extends BaseEntity<Integer> {
         domain.setClientId(clientId);
         domain.setName(name);
         domain.setInKeycloak(inKeycloak);
+
         if (!areas.isEmpty()) {
             domain.setAreas(areas.stream()
                 .map(a -> a.toVo(DataFilter.get()))
                 .collect(Collectors.toList()));
         }
+
+        if (!categories.isEmpty()) {
+            domain.setCategories(categories.stream()
+                    .map(c -> c.toVo(DataFilter.get()))
+                    .collect(Collectors.toList()));
+        }
+
         return domain;
     }
 
@@ -107,7 +127,8 @@ public class Domain extends BaseEntity<Integer> {
     public boolean hasChanged(Domain template) {
         return !Objects.equals(clientId, template.getClientId()) ||
                 !Objects.equals(name, template.getName()) ||
-                areasChanged(template);
+                areasChanged(template) ||
+                categoriesChanged(template);
     }
 
 
@@ -123,6 +144,21 @@ public class Domain extends BaseEntity<Integer> {
 
         return template.getAreas().stream()
                 .anyMatch(a -> !areaIds.contains(a.getId()));
+    }
+
+
+    /** Checks if the domains categories are different */
+    private boolean categoriesChanged(Domain template) {
+        if (categories.size() != template.getCategories().size()) {
+            return true;
+        }
+
+        Set<Integer> categoryIds = categories.stream()
+                .map(BaseEntity::getId)
+                .collect(Collectors.toSet());
+
+        return template.getCategories().stream()
+                .anyMatch(c -> !categoryIds.contains(c.getId()));
     }
 
     /*************************/
@@ -151,6 +187,14 @@ public class Domain extends BaseEntity<Integer> {
 
     public void setAreas(List<Area> areas) {
         this.areas = areas;
+    }
+
+    public List<Category> getCategories() {
+        return categories;
+    }
+
+    public void setCategories(List<Category> categories) {
+        this.categories = categories;
     }
 
     public Boolean getInKeycloak() {

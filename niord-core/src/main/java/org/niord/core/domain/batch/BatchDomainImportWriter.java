@@ -17,6 +17,7 @@ package org.niord.core.domain.batch;
 
 import org.niord.core.area.Area;
 import org.niord.core.batch.AbstractItemHandler;
+import org.niord.core.category.Category;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 
@@ -42,6 +43,9 @@ public class BatchDomainImportWriter extends AbstractItemHandler {
 
             // Replace areas with the persisted versions
             domain.setAreas(domainService.persistedList(Area.class, domain.getAreas()));
+
+            // Substitute the categories with the persisted ones
+            domain.setCategories(domainService.persistedList(Category.class, domain.getCategories()));
 
             domainService.saveEntity(domain);
         }
