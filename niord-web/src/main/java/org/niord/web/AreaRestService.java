@@ -103,7 +103,7 @@ public class AreaRestService {
                 lang, name, geometry, limit));
 
         DataFilter filter = DataFilter.get()
-                .fields(DataFilter.PARENT)
+                .fields(DataFilter.PARENT, DataFilter.GEOMETRY)
                 .lang(lang);
 
         return areaService.searchAreas(null, lang, name, geometry, limit).stream()
@@ -130,7 +130,7 @@ public class AreaRestService {
 
         DataFilter filter = DataFilter.get()
                 .lang(lang)
-                .fields(DataFilter.PARENT);
+                .fields(DataFilter.PARENT, DataFilter.GEOMETRY);
 
         return areaService.getAreaDetails(ids).stream()
                 .map(a -> a.toVo(filter))

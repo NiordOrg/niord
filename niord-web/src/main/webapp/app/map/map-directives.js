@@ -379,7 +379,6 @@ angular.module('niord.map')
     }])
 
 
-
     /**
      * The map-charts-layer directive will outline the given sea charts
      */
@@ -488,6 +487,109 @@ angular.module('niord.map')
         };
     }])
 
+
+    /**
+     * The map-areas-layer directive will outline the given areas
+     */
+    .directive('mapAreasLayer', ['$rootScope', 'MapService', function ($rootScope, MapService) {
+        return {
+            restrict: 'E',
+            replace: false,
+            require: '^olMap',
+            scope: {
+                name: '@',
+                visible: '=',
+                layerSwitcher: '=',
+                areas: '='
+            },
+            link: function(scope, element, attrs, ctrl) {
+                var olScope = ctrl.getOpenlayersScope();
+                var olLayer;
+                var areaColor = 'rgba(100, 100, 255, 0.8)';
+
+                olScope.getMap().then(function(map) {
+
+                    scope.$on('$destroy', function() {
+                        if (angular.isDefined(olLayer)) {
+                            map.removeLayer(olLayer);
+                        }
+                    });
+
+                    // Construct the layer
+                    var features = new ol.Collection();
+                    olLayer = new ol.layer.Vector({
+                        source: new ol.source.Vector({
+                            features: features,
+                            wrapX: false
+                        })
+                    });
+                    olLayer = MapService.initLayer(olLayer, scope.name, scope.visible, scope.layerSwitcher);
+                    map.addLayer(olLayer);
+
+
+                    // Supports dynamically adding and removing the layer from the layer switcher
+                    scope.$watch("layerSwitcher", function (layerSwitcher) {
+                        olLayer.set('displayInLayerSwitcher', layerSwitcher);
+                    }, true);
+
+
+                    // Creates a style with a label in the center
+                    scope.stylesForArea = function (feature, area) {
+                        var styles = [];
+
+                        // Add extent outline style
+                        styles.push(new ol.style.Style({
+                            stroke: new ol.style.Stroke({
+                                color: areaColor,
+                                width: 1,
+                                lineDash: [4,4]
+                            })
+                        }));
+
+                        // Add the area label style
+                        var areaName = area.descs[0].name;
+                        styles.push(new ol.style.Style({
+                            text: new ol.style.Text({
+                                font: '10px Arial',
+                                text: areaName,
+                                fill: new ol.style.Fill({color: areaColor}),
+                                textAlign: 'center'
+                            }),
+                            geometry: function(feature) {
+                                // Place the label in the center of the map extent
+                                var point = MapService.getGeometryCenter(feature.getGeometry());
+                                return (point) ? new ol.geom.Point(point) : null;
+                            }
+                        }));
+                        return styles;
+                    };
+
+
+                    // Updates the layer with the list of areas
+                    scope.updateAreas = function () {
+                        olLayer.getSource().clear();
+                        if (scope.areas && scope.areas.length > 0) {
+                            angular.forEach(scope.areas, function (area) {
+
+                                if (area.geometry) {
+
+                                    var geometry = MapService.gjToOlGeometry(area.geometry);
+                                    var feature = new ol.Feature();
+                                    feature.setGeometry(geometry);
+                                    feature.setStyle(scope.stylesForArea(feature, area));
+                                    olLayer.getSource().addFeature(feature);
+                                }
+                            });
+                        }
+                    };
+
+                    scope.$watchCollection("areas", scope.updateAreas, true);
+
+                });
+
+            }
+        };
+    }])
 
 
     /**
