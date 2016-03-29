@@ -25,6 +25,7 @@ import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -69,6 +70,7 @@ public class Domain extends BaseEntity<Integer> {
     public void updateDomain(DomainVo domain) {
         this.clientId = domain.getClientId();
         this.name = domain.getName();
+        this.areas.clear();
         if (domain.getAreas() != null) {
             this.areas = domain.getAreas().stream()
                 .map(a -> new Area(a, DataFilter.get()))
@@ -104,7 +106,23 @@ public class Domain extends BaseEntity<Integer> {
     @Transient
     public boolean hasChanged(Domain template) {
         return !Objects.equals(clientId, template.getClientId()) ||
-                !Objects.equals(name, template.getName());
+                !Objects.equals(name, template.getName()) ||
+                areasChanged(template);
+    }
+
+
+    /** Checks if the domains areas are different */
+    private boolean areasChanged(Domain template) {
+        if (areas.size() != template.getAreas().size()) {
+            return true;
+        }
+
+        Set<Integer> areaIds = areas.stream()
+                .map(BaseEntity::getId)
+                .collect(Collectors.toSet());
+
+        return template.getAreas().stream()
+                .anyMatch(a -> !areaIds.contains(a.getId()));
     }
 
     /*************************/

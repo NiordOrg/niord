@@ -15,6 +15,7 @@
  */
 package org.niord.core.domain.batch;
 
+import org.niord.core.area.Area;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
@@ -38,6 +39,10 @@ public class BatchDomainImportWriter extends AbstractItemHandler {
         long t0 = System.currentTimeMillis();
         for (Object i : items) {
             Domain domain = (Domain) i;
+
+            // Replace areas with the persisted versions
+            domain.setAreas(domainService.persistedList(Area.class, domain.getAreas()));
+
             domainService.saveEntity(domain);
         }
         getLog().info(String.format("Persisted %d domains in %d ms", items.size(), System.currentTimeMillis() - t0));
