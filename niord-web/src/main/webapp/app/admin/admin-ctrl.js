@@ -330,7 +330,9 @@ angular.module('niord.admin')
 
             /** Called when the area geometry editor is saved */
             $scope.geometrySaved = function () {
-                $scope.areaForm.$setDirty();
+                if ($scope.areaForm) {
+                    $scope.areaForm.$setDirty();
+                }
             };
 
 
