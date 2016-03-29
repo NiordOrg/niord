@@ -46,7 +46,7 @@ angular.module('niord.admin')
      * ********************************************************************************
      * AdminAreaService
      * ********************************************************************************
-     * Interface for calling area related functions at the application server
+     * Interface for calling area-related functions at the application server
      */
     .factory('AdminAreaService', [ '$http', '$rootScope', function($http, $rootScope) {
         'use strict';
@@ -86,6 +86,44 @@ angular.module('niord.admin')
 
         };
     }])
+
+
+    /**
+     * ********************************************************************************
+     * AdminCategoryService
+     * ********************************************************************************
+     * Interface for calling category-related functions at the application server
+     */
+    .factory('AdminCategoryService', [ '$http', '$rootScope', function($http, $rootScope) {
+        'use strict';
+
+        return {
+            getCategories: function() {
+                return $http.get('/rest/categories/category-roots?lang=' + $rootScope.language);
+            },
+
+            getCategory: function(category) {
+                return $http.get('/rest/categories/category/' + category.id);
+            },
+
+            createCategory: function(category) {
+                return $http.post('/rest/categories/category/', category);
+            },
+
+            updateCategory: function(category) {
+                return $http.put('/rest/categories/category/' + category.id, category);
+            },
+
+            deleteCategory: function(category) {
+                return $http.delete('/rest/categories/category/' + category.id);
+            },
+
+            moveCategory: function(categoryId, parentId) {
+                return $http.put('/rest/categories/move-category', { categoryId: categoryId, parentId: parentId });
+            }
+        };
+    }])
+
 
     /**
      * ********************************************************************************

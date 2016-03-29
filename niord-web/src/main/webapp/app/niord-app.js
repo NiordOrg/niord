@@ -109,6 +109,10 @@ var app = angular.module('niord.admin', [
                 url: "/areas",
                 templateUrl: "/app/admin/admin-page-areas.html"
             })
+            .state('admin.categories', {
+                url: "/categories",
+                templateUrl: "/app/admin/admin-page-categories.html"
+            })
             .state('admin.domains', {
                 url: "/domains",
                 templateUrl: "/app/admin/admin-page-domains.html",
