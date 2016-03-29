@@ -11,12 +11,23 @@
 
                 <div class="row">
                     <div class="form-controls col-sm-12 col-md-6 col-lg-8">
+
                         <div class="form-group">
-                            <label for="clientId" class="col-sm-4">Client ID</label>
+                            <label for="clientId" class="col-sm-4">Keycloak ID</label>
                             <div class="col-sm-8">
                                 <input type="text" id="clientId" name="clientId" class="form-control input-sm"
                                        focus="focusMe" ng-model="domain.clientId" ng-disabled="editMode == 'edit'"
                                        autocapitalize="off" autocorrect="off" autocomplete="off" required />
+                            </div>
+                        </div>
+
+                        <div class="form-group" ng-if="editMode == 'edit'">
+                            <label for="keycloak" class="col-sm-4">Keycloak Status</label>
+                            <div class="col-sm-8">
+                                <span ng-if="domain.inKeycloak"><i>Client "{{domain.clientId}}" exists in Keycloak</i></span>
+                                <button ng-if="!domain.inKeycloak" id="keycloak" class="btn btn-default btn-sm" ng-click="createInKeycloak(domain)">
+                                    Create in Keycloak
+                                </button>
                             </div>
                         </div>
 
@@ -69,15 +80,6 @@
                             </div>
                         </div>
 
-                        <div class="form-group" ng-if="editMode == 'edit'">
-                            <label for="keycloak" class="col-sm-4">Keycloak</label>
-                            <div class="col-sm-8">
-                                <span ng-if="domain.inKeycloak"><i>Client "{{domain.clientId}}" exists in Keycloak</i></span>
-                                <button ng-if="!domain.inKeycloak" id="keycloak" class="btn btn-default btn-sm" ng-click="createInKeycloak(domain)">
-                                    Create in Keycloak
-                                </button>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
@@ -130,16 +132,14 @@
                 <div class="col-sm-12 col-md-12">
                     <table class='table table-condensed table-hover'>
                         <tr>
-                            <th>Client ID</th>
-                            <th>Keycloak</th>
+                            <th>Keycloak ID</th>
                             <th>Name</th>
                             <th>Areas</th>
                             <th>Categories</th>
                             <th></th>
                         </tr>
                         <tr ng-repeat="domain in domains">
-                            <td>{{domain.clientId}}</td>
-                            <td><input type="checkbox" ng-model="domain.inKeycloak" disabled="disabled"></td>
+                            <td><input type="checkbox" ng-model="domain.inKeycloak" disabled="disabled"> {{domain.clientId}}</td>
                             <td>{{domain.name}}</td>
                             <td>
                                 <div ng-repeat="area in domain.areas">{{area.descs[0].name}}</div>
