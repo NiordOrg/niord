@@ -1,18 +1,12 @@
 package org.niord.web;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.geojson.FeatureService;
-import org.niord.model.IJsonSerializable;
-import org.niord.model.ILocalizable;
-import org.niord.model.ILocalizedDesc;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Singleton;
@@ -22,8 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
-import java.io.IOException;
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -44,8 +37,6 @@ public class TestRestService {
 
     @Inject
     FeatureService featureService;
-
-    List<Category> categories;
 
     @GET
     @Path("/shapes")
@@ -80,44 +71,6 @@ public class TestRestService {
                 .toGeoJson();
     }
 
-    @PostConstruct
-    public void init() {
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-
-            // Load categories
-            List<Category> categoriesDa = mapper.readValue(getClass().getResource("/categories_da.json"), new TypeReference<List<Category>>(){});
-            List<Category> categoriesEn = mapper.readValue(getClass().getResource("/categories_en.json"), new TypeReference<List<Category>>(){});
-            Map<Integer, Category> categoriesLookupDa = new HashMap<>();
-            Map<Integer, Category> categoriesLookupEn = new HashMap<>();
-            updateCategoryLookup(categoriesLookupDa, categoriesDa);
-            updateCategoryLookup(categoriesLookupEn, categoriesEn);
-            categoriesLookupDa.values().forEach(a -> {
-                if (categoriesLookupEn.containsKey(a.getId())) {
-                    a.getDescs().add(categoriesLookupEn.get(a.getId()).getDescs().get(0));
-                }
-            });
-            categories = new ArrayList<>(categoriesLookupDa.values());
-            System.out.println("**** LOADED " + categories.size() + " categories");
-
-        } catch (IOException e) {
-            // Prevent start-up
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void updateCategoryLookup(Map<Integer, Category> lookup, List<Category> categories) {
-        if (categories != null) {
-            categories.forEach(a -> {
-                lookup.put(a.getId(), a);
-                if (a.getChildren() != null) {
-                    a.getChildren().forEach(c -> c.setParent(a));
-                }
-                updateCategoryLookup(lookup, a.getChildren());
-            });
-        }
-    }
-
     @GET
     @Path("/xxx")
     @Produces("application/json;charset=UTF-8")
@@ -125,160 +78,6 @@ public class TestRestService {
     @RolesAllowed("clientuser")
     public String test() {
         return System.currentTimeMillis() + "";
-    }
-
-    @GET
-    @Path("/categories")
-    @Produces("application/json;charset=UTF-8")
-    @GZIP
-    @NoCache
-    public List<Category> searchCategories(@QueryParam("lang") @DefaultValue("en") String lang,
-                                  @QueryParam("name") @DefaultValue("") String name,
-                                  @QueryParam("limit") @DefaultValue("1000") int limit) {
-        return categories.stream()
-                .filter(a -> name.isEmpty()
-                        || (a.getDesc(lang) != null && a.getDesc(lang).getName().toLowerCase().contains(name.toLowerCase())))
-                .sorted((a1, a2) -> a1.getDesc(lang).getName().toLowerCase().compareTo(a2.getDesc(lang).getName().toLowerCase()))
-                .limit(limit)
-                .map(a -> a.parentCopy(lang))
-                .collect(Collectors.toList());
-    }
-
-    @GET
-    @Path("/categories/{categoryIds}")
-    @Produces("application/json;charset=UTF-8")
-    @GZIP
-    @NoCache
-    public List<Category> getCategories(@PathParam("categoryIds") String categoryIds,
-                               @QueryParam("lang") @DefaultValue("en") String lang,
-                               @QueryParam("limit") @DefaultValue("1000") int limit) {
-        Set<String> ids = new HashSet<>(Arrays.asList(categoryIds.split(",")));
-        return categories.stream()
-                .filter(a -> ids.contains(a.getId().toString()))
-                .limit(limit)
-                .map(a -> a.parentCopy(lang))
-                .collect(Collectors.toList());
-    }
-
-
-
-    public abstract static class HierarchicalData<T,TD extends ILocalizedDesc> implements ILocalizable<TD>, IJsonSerializable {
-        Integer id;
-        T parent;
-        List<T> children;
-        List<TD> descs;
-
-        public Integer getId() {
-            return id;
-        }
-
-        public void setId(Integer id) {
-            this.id = id;
-        }
-
-        public T getParent() {
-            return parent;
-        }
-
-        public void setParent(T parent) {
-            this.parent = parent;
-        }
-
-        public List<T> getChildren() {
-            return children;
-        }
-
-        public void setChildren(List<T> children) {
-            this.children = children;
-        }
-
-        @Override
-        public List<TD> getDescs() {
-            return descs;
-        }
-
-        @Override
-        public void setDescs(List<TD> descs) {
-            this.descs = descs;
-        }
-    }
-
-    public static class CategoryDesc implements ILocalizedDesc, IJsonSerializable {
-        String lang;
-        String name;
-
-        @Override
-        public String getLang() {
-            return lang;
-        }
-
-        @Override
-        public void setLang(String lang) {
-            this.lang = lang;
-        }
-
-        @Override
-        public boolean descDefined() {
-            return ILocalizedDesc.fieldsDefined(name);
-        }
-
-        @Override
-        public void copyDesc(ILocalizedDesc desc) {
-
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-    }
-
-    @SuppressWarnings("unused")
-    public static class Category extends HierarchicalData<Category, CategoryDesc> {
-        double sortOrder;
-
-        public CategoryDesc getDesc(String lang) {
-            return descs.stream()
-                    .filter(d -> d.getLang().equals(lang))
-                    .findFirst()
-                    .orElse(null);
-        }
-
-        @Override
-        public CategoryDesc createDesc(String lang) {
-            CategoryDesc desc = new CategoryDesc();
-            desc.setLang(lang);
-            return desc;
-        }
-
-        /**
-         * Creates a copy of this category including parent categories but excluding child categories
-         * @return a parent-lineage copy of this category
-         */
-        public Category parentCopy(String lang) {
-            Category category = new Category();
-            category.setId(id);
-            category.setSortOrder(sortOrder);
-            if (descs != null) {
-                category.setDescs(new ArrayList<>(descs));
-                category.sortDescs(lang);
-            }
-            if (parent != null) {
-                category.setParent(parent.parentCopy(lang));
-            }
-            return category;
-        }
-
-        public double getSortOrder() {
-            return sortOrder;
-        }
-
-        public void setSortOrder(double sortOrder) {
-            this.sortOrder = sortOrder;
-        }
     }
 
 }

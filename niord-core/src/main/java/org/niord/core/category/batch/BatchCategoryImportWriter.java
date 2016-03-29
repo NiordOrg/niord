@@ -13,36 +13,33 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.core.area.batch;
+package org.niord.core.category.batch;
 
-import org.niord.core.area.Area;
-import org.niord.core.area.AreaService;
 import org.niord.core.batch.AbstractItemHandler;
-import org.niord.model.DataFilter;
-import org.niord.model.vo.AreaVo;
+import org.niord.core.category.Category;
+import org.niord.core.category.CategoryService;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import java.util.List;
 
 /**
- * Filters areas that need to be a added or updated
+ * Persists the categories to the database
  */
 @Named
-public class BatchAreaImportProcessor extends AbstractItemHandler {
+public class BatchCategoryImportWriter extends AbstractItemHandler {
 
     @Inject
-    AreaService areaService;
+    CategoryService categoryService;
 
     /** {@inheritDoc} **/
     @Override
-    public Object processItem(Object item) throws Exception {
-
-        AreaVo areaVo = (AreaVo) item;
-
-        DataFilter filter = DataFilter.get().fields("geometry", "parent");
-        Area area = new Area(areaVo, filter);
-
-        getLog().info("Creating or updating area " + area);
-        return areaService.findOrCreateArea(area);
+    public void writeItems(List<Object> items) throws Exception {
+        long t0 = System.currentTimeMillis();
+        for (Object i : items) {
+            Category category = (Category) i;
+            categoryService.saveEntity(category);
+        }
+        getLog().info(String.format("Persisted %d categories in %d ms", items.size(), System.currentTimeMillis() - t0));
     }
 }

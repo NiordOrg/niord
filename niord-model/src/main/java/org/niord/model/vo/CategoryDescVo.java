@@ -21,7 +21,7 @@ import org.niord.model.ILocalizedDesc;
 /**
  * The entity description VO
  */
-public class AreaDescVo implements ILocalizedDesc, IJsonSerializable {
+public class CategoryDescVo implements ILocalizedDesc, IJsonSerializable {
 
     String lang;
     String name;
@@ -35,7 +35,7 @@ public class AreaDescVo implements ILocalizedDesc, IJsonSerializable {
     /** {@inheritDoc} */
     @Override
     public void copyDesc(ILocalizedDesc desc) {
-        this.name = ((AreaDescVo)desc).getName();
+        this.name = ((CategoryDescVo)desc).getName();
     }
 
     /*************************/

@@ -303,7 +303,7 @@ angular.module('niord.messages')
                 if (params.category && params.category.length > 0) {
                     s.category.enabled = true;
                     var categories = (typeof params.category === 'string') ? params.category : params.category.join();
-                    $http.get('/rest/test/categories/' + categories + '?lang=' + $rootScope.language + '&limit=10')
+                    $http.get('/rest/categories/search/' + categories + '?lang=' + $rootScope.language + '&limit=10')
                         .then(function(response) {
                             s.category.categories = response.data;
                         });
@@ -391,7 +391,7 @@ angular.module('niord.messages')
                     return [];
                 }
                 return $http.get(
-                    '/rest/test/categories?name=' + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10'
+                    '/rest/categories/search?name=' + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10'
                 ).then(function(response) {
                     $scope.categories = response.data;
                 });

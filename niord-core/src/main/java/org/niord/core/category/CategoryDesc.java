@@ -13,18 +13,51 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.model.vo;
+package org.niord.core.category;
 
-import org.niord.model.IJsonSerializable;
+import org.niord.core.model.DescEntity;
 import org.niord.model.ILocalizedDesc;
+import org.niord.model.vo.CategoryDescVo;
+
+import javax.persistence.Cacheable;
+import javax.persistence.Entity;
+import javax.validation.constraints.NotNull;
 
 /**
- * The entity description VO
+ * Localized contents for the Category entity
  */
-public class AreaDescVo implements ILocalizedDesc, IJsonSerializable {
+@Entity
+@Cacheable
+@SuppressWarnings("unused")
+public class CategoryDesc extends DescEntity<Category> {
 
-    String lang;
-    String name;
+    @NotNull
+    private String name;
+
+    /** Constructor */
+    public CategoryDesc() {
+    }
+
+
+    /** Constructor */
+    public CategoryDesc(CategoryDescVo desc) {
+        updateCategoryDesc(desc);
+    }
+
+
+    /** Updates this desc from the given desc */
+    public void updateCategoryDesc(CategoryDescVo desc) {
+        this.lang = desc.getLang();
+        this.name = desc.getName();
+    }
+
+    /** Converts this entity to a value object */
+    public CategoryDescVo toVo() {
+        CategoryDescVo desc = new CategoryDescVo();
+        desc.setLang(lang);
+        desc.setName(name);
+        return desc;
+    }
 
     /** {@inheritDoc} */
     @Override
@@ -32,25 +65,16 @@ public class AreaDescVo implements ILocalizedDesc, IJsonSerializable {
         return ILocalizedDesc.fieldsDefined(name);
     }
 
+
     /** {@inheritDoc} */
     @Override
     public void copyDesc(ILocalizedDesc desc) {
-        this.name = ((AreaDescVo)desc).getName();
+        this.name = ((CategoryDesc)desc).getName();
     }
 
     /*************************/
     /** Getters and Setters **/
     /*************************/
-
-    @Override
-    public String getLang() {
-        return lang;
-    }
-
-    @Override
-    public void setLang(String lang) {
-        this.lang = lang;
-    }
 
     public String getName() {
         return name;

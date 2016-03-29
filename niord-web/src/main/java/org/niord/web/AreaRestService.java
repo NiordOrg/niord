@@ -58,8 +58,6 @@ import java.util.stream.Collectors;
 
 /**
  * REST interface for accessing areas.
- * <p>
- * Sets up a timer that periodically re-computes the area tree sort order
  */
 @Path("/areas")
 @Stateless

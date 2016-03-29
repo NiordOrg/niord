@@ -24,7 +24,7 @@ import javax.inject.Named;
 import java.util.List;
 
 /**
- * Persists the charts to the database
+ * Persists the areas to the database
  */
 @Named
 public class BatchAreaImportWriter extends AbstractItemHandler {

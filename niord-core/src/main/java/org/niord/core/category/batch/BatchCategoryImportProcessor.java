@@ -13,36 +13,36 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.core.area.batch;
+package org.niord.core.category.batch;
 
-import org.niord.core.area.Area;
-import org.niord.core.area.AreaService;
 import org.niord.core.batch.AbstractItemHandler;
+import org.niord.core.category.Category;
+import org.niord.core.category.CategoryService;
 import org.niord.model.DataFilter;
-import org.niord.model.vo.AreaVo;
+import org.niord.model.vo.CategoryVo;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 
 /**
- * Filters areas that need to be a added or updated
+ * Filters categories that need to be a added or updated
  */
 @Named
-public class BatchAreaImportProcessor extends AbstractItemHandler {
+public class BatchCategoryImportProcessor extends AbstractItemHandler {
 
     @Inject
-    AreaService areaService;
+    CategoryService categoryService;
 
     /** {@inheritDoc} **/
     @Override
     public Object processItem(Object item) throws Exception {
 
-        AreaVo areaVo = (AreaVo) item;
+        CategoryVo categoryVo = (CategoryVo) item;
 
-        DataFilter filter = DataFilter.get().fields("geometry", "parent");
-        Area area = new Area(areaVo, filter);
+        DataFilter filter = DataFilter.get().fields("parent");
+        Category category = new Category(categoryVo, filter);
 
-        getLog().info("Creating or updating area " + area);
-        return areaService.findOrCreateArea(area);
+        getLog().info("Creating or updating category " + category);
+        return categoryService.findOrCreateCategory(category);
     }
 }

@@ -38,7 +38,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Business interface for accessing MSI-NM areas
+ * Business interface for accessing Niord areas
  */
 @Stateless
 @SuppressWarnings("unused")
@@ -346,9 +346,11 @@ public class AreaService extends BaseService {
 
         Area area = getByPrimaryKey(Area.class, areaId);
         if (area != null) {
+            // Remove parent area relation
             area.setParent(null);
             saveEntity(area);
             remove(area);
+            log.debug("Removed area " + areaId);
             return true;
         }
         return false;
