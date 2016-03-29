@@ -13,6 +13,7 @@ angular.module('niord.messages')
             'use strict';
 
             $scope.messageList = [];
+            $scope.totalMessageNo = 0;
             $scope.filterNames = [ 'text', 'type', 'status', 'tag', 'aton', 'chart', 'area', 'category', 'date' ];
             $scope.state = {
 
@@ -465,6 +466,7 @@ angular.module('niord.messages')
 
                 MapService.getAllFeatureCollections().success(function (featureCollections) {
                     $scope.messageList.length = 0;
+                    $scope.totalMessageNo = 0; // featureCollections.length;
                     angular.forEach(featureCollections, function (featureCollection) {
                         $scope.messageList.push(featureCollection);
                     });

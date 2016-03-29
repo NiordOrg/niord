@@ -450,3 +450,13 @@ body > .ui-select-container {
     background-color: #333;
     box-shadow: 0 0 1px 1px rgba(0, 0, 0, .2);
 }
+
+.empty-search-result {
+    font-size: 12px;
+    text-align: center;
+    background-color: white;
+    max-width: 240px;
+    padding: 10px;
+    margin: 20px auto;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}

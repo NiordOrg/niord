@@ -1,10 +1,17 @@
 
-<div>
+<div class="messages-details container-fluid">
+    <div class="row">
+        <div ng-if="messageList.length == 0">
+            <div ng-include="'/app/messages/messages-empty-search-result.html'"></div>
+        </div>
 
-    <h2>Message Details</h2>
-
-    <div ng-include="'/app/layout/footer.html'"></div>
+        <div ng-repeat="message in messageList" class="col-xs-11 col-sm-6 col-md-4 col-lg-3">
+            <ol-map style="height: 200px;margin:20px; border: 1px solid gray">
+                <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
+                <map-message-list-layer name="Message" visible="true" message-list="[message]" fit-extent="true"></map-message-list-layer>
+            </ol-map>
+        </div>
+    </div>
 </div>
 
-
-
+<div ng-include="'/app/layout/footer.html'"></div>

@@ -1,7 +1,10 @@
 
-<div>
-    
-    <h2>Message Table</h2>
-
-    <div ng-include="'/app/layout/footer.html'"></div>
+<div class="messages-details container-fluid">
+    <div class="row">
+        <div ng-if="messageList.length < 10">
+            <div ng-include="'/app/messages/messages-empty-search-result.html'"></div>
+        </div>
+    </div>
 </div>
+
+<div ng-include="'/app/layout/footer.html'"></div>
