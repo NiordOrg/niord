@@ -1,6 +1,5 @@
 package org.niord.core.user;
 
-import org.infinispan.Cache;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
@@ -27,7 +26,7 @@ import java.util.stream.Collectors;
  * In the REST endpoint, the ticket can be validated programmatically.
  */
 @ApplicationScoped
-public class TicketService extends BaseCache {
+public class TicketService extends BaseCache<String, String[]> {
 
     final static long LIFESPAN = 60 * 1000;    // 1 minute
 
@@ -35,6 +34,13 @@ public class TicketService extends BaseCache {
 
     @Inject
     private Logger log;
+
+
+    /** {@inheritDoc} */
+    @Override
+    public String getCacheId() {
+        return CACHE_ID;
+    }
 
 
     /**
@@ -98,23 +104,6 @@ public class TicketService extends BaseCache {
         return Arrays.asList(ticketRoles).stream()
                 .map(String::toLowerCase)
                 .anyMatch(roleSet::contains);
-    }
-
-    /**
-     * Returns a reference to the settings cache
-     * @return a reference to the settings cache
-     */
-    private Cache<String, String[]> getCache() {
-        return cacheContainer.getCache(CACHE_ID);
-    }
-
-    /**
-     * Clears the cache
-     */
-    @Override
-    public  void clearCache() {
-        log.info("Clearing cache " + CACHE_ID);
-        getCache().clear();
     }
 
     /**

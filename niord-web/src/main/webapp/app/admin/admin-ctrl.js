@@ -882,4 +882,56 @@ angular.module('niord.admin')
             };
 
             $scope.$watch("selection.file", $scope.reloadLogFile, true);
+        }])
+
+
+    /**
+     * ********************************************************************************
+     * SettingsAdminCtrl
+     * ********************************************************************************
+     * Settings Admin Controller
+     * Controller for the Admin settings page
+     */
+    .controller('SettingsAdminCtrl', ['$scope', 'growl', 'AdminSettingsService',
+        function ($scope, growl, AdminSettingsService) {
+            'use strict';
+
+            $scope.settings = [];
+            $scope.setting = undefined; // The setting being edited
+
+
+            /** Loads the settings from the back-end */
+            $scope.loadSettings = function() {
+                $scope.setting = undefined;
+                AdminSettingsService
+                    .getSettings()
+                    .success(function (settings) {
+                        $scope.settings = settings;
+                    });
+            };
+
+
+            /** Edits a setting **/
+            $scope.editSetting = function (setting) {
+                $scope.setting = angular.copy(setting);
+            };
+
+
+            /** Displays the error message */
+            $scope.displayError = function () {
+                growl.error("Error saving setting");
+            };
+
+
+            /** Saves the current setting being edited */
+            $scope.saveSetting = function () {
+                if ($scope.setting) {
+                    AdminSettingsService
+                        .updateSetting($scope.setting)
+                        .success($scope.loadSettings)
+                        .error($scope.displayError);
+                }
+            };
+
         }]);
+

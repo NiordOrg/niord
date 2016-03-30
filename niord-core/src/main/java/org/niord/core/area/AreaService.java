@@ -18,6 +18,7 @@ package org.niord.core.area;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.service.BaseService;
+import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
 import org.slf4j.Logger;
 
@@ -436,7 +437,7 @@ public class AreaService extends BaseService {
             return false;
         }
 
-        Date lastProcessedUpdate = settingsService.getDate(SETTING_AREA_LAST_UPDATED);
+        Date lastProcessedUpdate = settingsService.getDate(new Setting(SETTING_AREA_LAST_UPDATED, null, false));
         if (lastProcessedUpdate == null) {
             lastProcessedUpdate = new Date(0);
         }

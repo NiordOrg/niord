@@ -1,0 +1,83 @@
+[
+  {
+    "key"         : "baseUri",
+    "description" : "The base application server URI",
+    "value"       : "http://localhost:8080",
+    "web"         : false,
+    "editable"    : true
+  },
+  {
+    "key"         : "authServerUrl",
+    "description" : "The Keycloak URL",
+    "value"       : "/auth",
+    "web"         : false,
+    "editable"    : true
+  },
+  {
+    "key"         : "modelLanguages",
+    "description" : "The default message model languages",
+    "value"       : [ "en" ],
+    "type"        : "json",
+    "web"         : true,
+    "editable"    : true
+  },
+  {
+    "key"         : "editorLanguages",
+    "description" : "The languages available in the message editor",
+    "value"       : [ "en" ],
+    "type"        : "json",
+    "web"         : true,
+    "editable"    : true
+  },
+  {
+    "key"         : "siteLanguages",
+    "description" : "The languages of the website",
+    "value"       : [ "en" ],
+    "type"        : "json",
+    "web"         : true,
+    "editable"    : true
+  },
+  {
+    "key"         : "numeralLauguages",
+    "description" : "A mapping from the site languages to the corresponding Numeral.js language code",
+    "value"       : { "en": "en" },
+    "type"        : "json",
+    "web"         : true,
+    "editable"    : true
+  },
+  {
+    "key"         : "adminIntegrationPageEnabled",
+    "description" : "Flags if the 'Integration' admin page should be enabled",
+    "value"       : false,
+    "web"         : true,
+    "editable"    : true
+  },
+  {
+    "key"         : "mapDefaultZoomLevel",
+    "description" : "Default zoom level to use for maps",
+    "value"       : 6,
+    "web"         : true,
+    "editable"    : true
+  },
+  {
+    "key"         : "mapDefaultLatitude",
+    "description" : "Default latitude to use for maps",
+    "value"       : 56,
+    "web"         : true,
+    "editable"    : true
+  },
+  {
+    "key"         : "mapDefaultLongitude",
+    "description" : "Default longitude to use for maps",
+    "value"       : 11,
+    "web"         : true,
+    "editable"    : true
+  },
+  {
+    "key"         : "wmsLayerEnabled",
+    "description" : "Whether or not to display the WMS layer in maps",
+    "value"       : false,
+    "web"         : true,
+    "editable"    : true
+  }
+]

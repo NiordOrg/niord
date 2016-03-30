@@ -237,5 +237,26 @@ angular.module('niord.admin')
             }
 
         };
+    }])
+
+
+    /**
+     * ********************************************************************************
+     * AdminSettingsService
+     * ********************************************************************************
+     * Interface for calling system settings-related functions at the application server
+     */
+    .factory('AdminSettingsService', [ '$http', '$rootScope', function($http, $rootScope) {
+        'use strict';
+
+        return {
+            getSettings: function() {
+                return $http.get('/rest/settings/all');
+            },
+
+            updateSetting: function(setting) {
+                return $http.put('/rest/settings/setting/' + setting.key, setting);
+            }
+        };
     }]);
 

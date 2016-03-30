@@ -15,6 +15,7 @@
  */
 package org.niord.core.cache;
 
+import org.infinispan.Cache;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.global.GlobalConfiguration;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
@@ -29,7 +30,8 @@ import javax.inject.Inject;
 /**
  * Base class for Infinispan caches
  */
-public abstract class BaseCache {
+@SuppressWarnings("unused")
+public abstract class BaseCache<K, V> {
 
     @Inject
     private Logger log;
@@ -54,11 +56,27 @@ public abstract class BaseCache {
         }
     }
 
+    /** Returns the cache ID */
+    public abstract String getCacheId();
+
+
+    /**
+     * Returns a reference to the settings cache
+     * @return a reference to the settings cache
+     */
+    public Cache<K, V> getCache() {
+        return cacheContainer.getCache(getCacheId());
+    }
+
+
     /**
      * Clears the cache
      */
-    @SuppressWarnings("unused")
-    public abstract void clearCache();
+    public  void clearCache() {
+        log.info("Clearing cache " + getCacheId());
+        getCache().clear();
+    }
+
 
     /**
      * Must be implemented by sub-classes to define the local cache configuration
