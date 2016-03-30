@@ -79,6 +79,12 @@ input.ng-invalid-messageId {
     color: #ccc;
 }
 
+.crop-text {
+    white-space:nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .changed {
     background-color: yellow!important;
 }

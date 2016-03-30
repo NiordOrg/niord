@@ -108,6 +108,7 @@ public class SettingsRestService {
 
         String key;
         Object value;
+        String description;
 
         /**
          * Constructor
@@ -121,6 +122,7 @@ public class SettingsRestService {
         public SettingVo(Setting setting) {
             key = setting.getKey();
             value = setting.getValue();
+            description = setting.getDescription();
         }
 
         /**
@@ -130,6 +132,7 @@ public class SettingsRestService {
             Setting setting = new Setting();
             setting.setKey(key);
             setting.setValue(value);
+            setting.setDescription(description);
             return setting;
         }
 
@@ -147,6 +150,14 @@ public class SettingsRestService {
 
         public void setValue(Object value) {
             this.value = value;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
         }
     }
 }

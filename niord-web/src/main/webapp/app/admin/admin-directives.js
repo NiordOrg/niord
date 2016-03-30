@@ -14,7 +14,7 @@ angular.module('niord.common')
             replace: true,
             transclude: true,
             scope: {
-                title: "@"
+                adminPageTitle: "@"
             },
             link: function(scope) {
             }
