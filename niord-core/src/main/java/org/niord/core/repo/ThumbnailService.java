@@ -3,6 +3,7 @@ package org.niord.core.repo;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.settings.annotation.Setting;
 import org.slf4j.Logger;
 
 import javax.annotation.PostConstruct;
@@ -42,8 +43,8 @@ public class ThumbnailService {
     @Inject
     Logger log;
 
-    //@Inject
-    //@Setting(value = "vipsPath")
+    @Inject
+    @Setting(value = "vipsPath", description = "Path to vips command on Linux. Use for faster thumbnail generation.")
     String vipsCmd;
 
     Set<String> vipsFileTypes = new HashSet<>();

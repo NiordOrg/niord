@@ -18,6 +18,7 @@ package org.niord.web.map;
 import com.vividsolutions.jts.awt.PointShapeFactory;
 import com.vividsolutions.jts.awt.ShapeWriter;
 import com.vividsolutions.jts.geom.Geometry;
+import org.niord.core.settings.annotation.Setting;
 import org.niord.core.util.GeoJsonUtils;
 import org.niord.core.util.GlobalMercator;
 import org.niord.core.util.GraphicsUtils;
@@ -40,6 +41,8 @@ import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
 import java.util.Date;
 
+import static org.niord.core.settings.Setting.Type.Integer;
+
 /**
  * Returns and caches a thumbnail image for given locations.
  */
@@ -61,21 +64,25 @@ public abstract class AbstractMapImageServlet extends HttpServlet  {
     @Inject
     Logger log;
 
-    //@Inject
-    //@Setting(value = "mapImageServer", defaultValue = "http://staticmap.openstreetmap.de/staticmap.php")
-    String mapImageServer = "http://osm.e-navigation.net/staticmap.php";
+    @Inject
+    @Setting(value = "mapImageServer", defaultValue = "http://staticmap.openstreetmap.de/staticmap.php",
+            description = "URL of static-map service used for generation map thumbnails")
+    String mapImageServer;
 
-    //@Inject
-    //@Setting(value = "mapImageSize", defaultValue = "256")
-    Integer mapImageSize = 256;
+    @Inject
+    @Setting(value = "mapImageSize", defaultValue = "256", type = Integer,
+            description = "Size of map thumbnails")
+    Integer mapImageSize;
 
-    //@Inject
-    //@Setting(value = "mapImageIndent", defaultValue = "22")
-    Integer mapImageIndent = 22;
+    @Inject
+    @Setting(value = "mapImageIndent", defaultValue = "22", type = Integer,
+            description = "The indentation of map thumbnails")
+    Integer mapImageIndent;
 
-    //@Inject
-    //@Setting(value = "mapImageZoomLevel", defaultValue = "8")
-    Integer zoomLevel = 8;
+    @Inject
+    @Setting(value = "mapImageZoomLevel", defaultValue = "8", type = Integer,
+            description = "The map thumbnail zoom level used for single-position messages.")
+    Integer zoomLevel;
 
 
 

@@ -26,6 +26,8 @@ import org.niord.core.sequence.DefaultSequence;
 import org.niord.core.sequence.Sequence;
 import org.niord.core.sequence.SequenceService;
 import org.niord.core.service.BaseService;
+import org.niord.core.settings.Setting.Type;
+import org.niord.core.settings.annotation.Setting;
 import org.niord.core.user.UserService;
 import org.niord.core.util.JsonUtils;
 import org.niord.model.PagedSearchResultVo;
@@ -94,13 +96,14 @@ public class BatchService extends BaseService {
     @Inject
     SequenceService sequenceService;
 
-    //@Inject
-    //@Setting(value = "batchJobRootPath", defaultValue = "${user.home}/.niord/batch-jobs", substituteSystemProperties = true)
-    private Path batchJobRoot = Paths.get(System.getProperty("user.home") + "/.niord/batch-jobs");
+    @Inject
+    @Setting(value="batchJobRootPath", defaultValue="${niord.home}/batch-jobs", description="The root directory of the Niord batch jobs")
+    private Path batchJobRoot;
 
     // Delete execution files after 10 days
-    //@Setting...
-    private static final int batchFileExpiryDays = 10;
+    @Inject
+    @Setting(value="batchFileExpiryDays", defaultValue="10", description="Number of days after which batch job files are deleted", type = Type.Integer)
+    private int batchFileExpiryDays;
 
 
     /****************************/

@@ -896,6 +896,7 @@ angular.module('niord.admin')
         function ($scope, growl, AdminSettingsService, UploadFileService) {
             'use strict';
 
+            $scope.search = '';
             $scope.settings = [];
             $scope.setting = undefined; // The setting being edited
 

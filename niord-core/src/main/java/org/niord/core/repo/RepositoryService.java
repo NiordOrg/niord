@@ -80,7 +80,7 @@ public class RepositoryService {
 
     @Inject
     @Setting(value="repoRootPath", defaultValue="${niord.home}/repo", description="The root directory of the Niord repository")
-    Path repoRoot = Paths.get(System.getProperty("user.home") + "/.niord/repo");
+    Path repoRoot;
 
     @Inject
     @Setting(value="repoCacheTimeout", defaultValue="5", description="Cache timeout of repo files in minutes", type=Type.Integer)
