@@ -46,7 +46,7 @@ public class SiteConfigServletFilter extends AbstractTextResourceServletFilter {
             try {
                 // Add setting value as a $rootScope variable
                 str.append("    $rootScope.")
-                        .append(s.getKey())
+                        .append(escapeKey(s.getKey()))
                         .append(" = ")
                         .append(mapper.writeValueAsString(s.getValue()))
                         .append(";\n\n");
@@ -56,6 +56,12 @@ public class SiteConfigServletFilter extends AbstractTextResourceServletFilter {
             }
         });
         return str.toString();
+    }
+
+
+    /** Escape naughty characters in the key */
+    private String escapeKey(String key) {
+        return key.replace('.', '_').replace(' ', '_');
     }
 
 
