@@ -120,7 +120,8 @@ public class SettingsService extends BaseService {
         if (niordHome == null && settingMap.containsKey("niord.home")) {
             niordHome = settingMap.get("niord.home").getValue();
         }
-        if (niordHome != null) {
+        if (niordHome != null && niordHome instanceof String) {
+            niordHome = expandSettingValue((String)niordHome);
             Path niordFile = Paths.get(niordHome.toString(), "niord.json");
             if (Files.exists(niordFile) && Files.isRegularFile(niordFile)) {
                 List<Setting> settings = mapper.readValue(
