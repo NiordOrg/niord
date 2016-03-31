@@ -15,6 +15,7 @@
  */
 package org.niord.web.map;
 
+import org.niord.core.NiordApp;
 import org.niord.core.repo.RepositoryService;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
 import org.niord.web.TestRestService;
@@ -51,8 +52,8 @@ public class MessageMapImageServlet extends AbstractMapImageServlet  {
     @Inject
     RepositoryService repositoryService;
 
-
-    String baseUri = "http://localhost:8080";
+    @Inject
+    NiordApp app;
 
     /**
      * Main GET method
@@ -127,7 +128,7 @@ public class MessageMapImageServlet extends AbstractMapImageServlet  {
      */
     private synchronized Image getMsiImage() {
         if (msiImage == null) {
-            String imageUrl = baseUri + "/img/msi.png";
+            String imageUrl = app.getBaseUri() + "/img/msi.png";
             try {
                 msiImage = ImageIO.read(new URL(imageUrl));
             } catch (IOException e) {

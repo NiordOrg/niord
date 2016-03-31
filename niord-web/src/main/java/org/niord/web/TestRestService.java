@@ -3,6 +3,7 @@ package org.niord.web;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.domain.KeycloakIntegrationService;
 import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.geojson.FeatureService;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
@@ -12,10 +13,12 @@ import javax.annotation.security.RolesAllowed;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,14 +32,11 @@ import java.util.stream.Collectors;
 @PermitAll
 public class TestRestService {
 
-    @Context
-    HttpServletRequest request;
-
-    @Context
-    HttpServletResponse response;
-
     @Inject
     FeatureService featureService;
+
+    @Inject
+    KeycloakIntegrationService keycloakIntegrationService;
 
     @GET
     @Path("/shapes")
@@ -75,8 +75,14 @@ public class TestRestService {
     @Path("/xxx")
     @Produces("application/json;charset=UTF-8")
     @NoCache
-    @RolesAllowed("clientuser")
     public String test() {
+
+        try {
+            System.out.println("PUBLIC KEY " + keycloakIntegrationService.resolveKeycloakPublicKey());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         return System.currentTimeMillis() + "";
     }
 

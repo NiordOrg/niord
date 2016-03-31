@@ -4,6 +4,7 @@
             <module name="org.infinispan"/>
             <!--module name="org.dom4j"/-->
             <module name="org.keycloak.keycloak-adapter-spi"/>
+            <module name="org.apache.httpcomponents"/>
         </dependencies>
     </deployment>
 </jboss-deployment-structure>

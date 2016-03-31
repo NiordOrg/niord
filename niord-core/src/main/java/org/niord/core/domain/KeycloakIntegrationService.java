@@ -18,18 +18,28 @@ package org.niord.core.domain;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.PublishedRealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
-import org.niord.core.settings.Setting;
-import org.niord.core.settings.SettingsService;
+import org.niord.core.NiordApp;
+import org.niord.core.settings.annotation.Setting;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
 import javax.naming.NamingException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.PublicKey;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 
 /**
  * Provides an interface for Keycloak integration.
@@ -41,16 +51,74 @@ public class KeycloakIntegrationService {
     public static final String KEYCLOAK_REALM       = "niord";
     public static final String KEYCLOAK_WEB_CLIENT  = "niord-web";
 
-    public static final Setting KEYCLOAK_ADMIN_USER = new Setting("authServerAdminUser", null,
-            "The Keycloak user to use for creating Keycloak clients", true, false, true);
-    public static final Setting KEYCLOAK_ADMIN_PASSWORD = new Setting("authServerAdminPassword", null,
-            "The Keycloak password to use for creating Keycloak clients", true, false, true);
+
+    @Inject
+    @Setting(value = "authServerUrl", defaultValue = "/auth", description = "The Keycloak server url")
+    String authServerUrl;
+
+    @Inject
+    @Setting(value = "authServerAdminUser", description = "The Keycloak user to use for creating Keycloak clients")
+    String authServerAdminUser;
+
+    @Inject
+    @Setting(value = "authServerAdminPassword", description = "The Keycloak password to use for creating Keycloak clients")
+    String authServerAdminPassword;
+
+    @Inject
+    NiordApp app;
 
     @Inject
     private Logger log;
 
-    @Inject
-    private SettingsService settingsService;
+
+    /**
+     * Queries Keycloak for its public key
+     * @return the Keycloak public key
+     */
+    public PublicKey resolveKeycloakPublicKey() throws Exception {
+        String url = authServerUrl;
+        if (StringUtils.isBlank(url)) {
+            throw new Exception("No authServerUrl setting defined");
+        }
+
+        // Handle relative auth server url
+        if (!url.toLowerCase().startsWith("http")) {
+            String baseUri = app.getBaseUri();
+            if (!url.startsWith("/") && !baseUri.startsWith("/")) {
+                url = "/" + url;
+            } else if (url.startsWith("/") && baseUri.startsWith("/")) {
+                url = url.substring(1);
+            }
+            url = baseUri + url;
+        }
+
+        // TODO: Handle HTTPS ... look at org.keycloak.adapters.AdapterDeploymentContext
+        HttpClient client = HttpClientBuilder.create().build();
+        HttpGet getRealmInfo = new HttpGet(url + "/realms/" + KEYCLOAK_REALM);
+
+        HttpResponse response = client.execute(getRealmInfo);
+
+        int status = response.getStatusLine().getStatusCode();
+        if (status != 200) {
+            try {
+                response.getEntity().getContent().close();
+            } catch (IOException ignored) {
+            }
+            throw new Exception("Unable to resolve realm public key remotely, status = " + status);
+        }
+
+        HttpEntity entity = response.getEntity();
+        if (entity == null) {
+            throw new Exception("Unable to resolve realm public key remotely.  There was no entity.");
+        }
+
+        try (InputStream is = entity.getContent()) {
+            PublishedRealmRepresentation rep = new ObjectMapper()
+                    .readValue(is, PublishedRealmRepresentation.class);
+            return rep.getPublicKey();
+        }
+    }
+
 
     /**
      * Returns the list of Keycloak clients
@@ -171,18 +239,15 @@ public class KeycloakIntegrationService {
      */
     private Keycloak createKeycloakAdminClient() throws Exception {
 
-        String adminUser = settingsService.getString(KEYCLOAK_ADMIN_USER);
-        String adminPassword = settingsService.getString(KEYCLOAK_ADMIN_PASSWORD);
-
-        if (StringUtils.isBlank(adminUser) || StringUtils.isBlank(adminPassword)) {
+        if (StringUtils.isBlank(authServerAdminUser) || StringUtils.isBlank(authServerAdminPassword)) {
             throw new Exception("Keycloak admin user/password not properly defined");
         }
 
         return Keycloak.getInstance(
                 "http://localhost:8080/auth",
                 KEYCLOAK_REALM,
-                adminUser,
-                adminPassword,
+                authServerAdminUser,
+                authServerAdminPassword,
                 KEYCLOAK_WEB_CLIENT);
     }
 
