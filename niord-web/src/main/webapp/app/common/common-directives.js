@@ -105,6 +105,38 @@ angular.module('niord.common')
     }])
 
 
+    .directive('jsonData', [function () {
+        return {
+            restrict: 'E',
+            scope: {
+                data: "=",
+                json: "="
+            },
+            link: function(scope) {
+                try {
+                    scope.data = JSON.parse(scope.json);
+                } catch (e) {}
+                scope.$watch(
+                    function() { return scope.json; },
+                    function () {
+                        try {
+                            scope.data = JSON.parse(scope.json);
+                        } catch (e) {}
+                    },
+                    true);
+                scope.$watch(
+                    function() { return scope.data; },
+                    function () {
+                        try {
+                            scope.json = JSON.stringify(scope.data);
+                        } catch (e) {}
+                    },
+                    true);
+            }
+        };
+    }])
+
+
     /**
      * Defines a view mode filter panel
      */
