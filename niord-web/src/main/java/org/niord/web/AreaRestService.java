@@ -15,15 +15,11 @@
  */
 package org.niord.web;
 
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
-import org.niord.core.batch.BatchService;
-import org.niord.core.repo.RepositoryService;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.vo.AreaVo;
@@ -33,26 +29,13 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -63,19 +46,13 @@ import java.util.stream.Collectors;
 @Stateless
 @SecurityDomain("keycloak")
 @PermitAll
-public class AreaRestService {
-
-    @Context
-    ServletContext servletContext;
+public class AreaRestService extends AbstractBatchableRestService {
 
     @Inject
     Logger log;
 
     @Inject
     AreaService areaService;
-
-    @Inject
-    BatchService batchService;
 
     /**
      * Searches for areas matching the given name in the given language
@@ -269,43 +246,9 @@ public class AreaRestService {
     @Produces("text/plain")
     @RolesAllowed("admin")
     public String importAreas(@Context HttpServletRequest request) throws Exception {
-
-        FileItemFactory factory = RepositoryService.newDiskFileItemFactory(servletContext);
-        ServletFileUpload upload = new ServletFileUpload(factory);
-
-        StringBuilder txt = new StringBuilder();
-        upload.parseRequest(request).stream()
-                .filter(item -> !item.isFormField())
-                .forEach(item -> {
-                    try {
-                        startAreasImportBatchJob(item.getInputStream(), item.getName(), txt);
-                    } catch (Exception e) {
-                        String errorMsg = "Error importing areas from " + item.getName() + ": " + e;
-                        log.error(errorMsg, e);
-                        txt.append(errorMsg);
-                    }
-                });
-
-        return txt.toString();
+        return executeBatchJobFromUploadedFile(request, "area-import");
     }
 
-
-    /**
-     * Starts a area import batch job
-     * @param inputStream the area JSON input stream
-     * @param fileName the name of the file
-     * @param txt a log of the import
-     */
-    private void startAreasImportBatchJob(InputStream inputStream, String fileName, StringBuilder txt) throws Exception {
-        batchService.startBatchJobWithDataFile(
-                "area-import",
-                inputStream,
-                fileName,
-                new Properties());
-
-        log.info("Started 'area-import' batch job with file " + fileName);
-        txt.append("Started 'area-import' batch job with file ").append(fileName);
-    }
 
     /**
      * ******************

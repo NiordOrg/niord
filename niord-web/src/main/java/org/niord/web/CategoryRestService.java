@@ -15,15 +15,11 @@
  */
 package org.niord.web;
 
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.category.Category;
 import org.niord.core.category.CategoryService;
-import org.niord.core.batch.BatchService;
-import org.niord.core.repo.RepositoryService;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.vo.CategoryVo;
@@ -33,13 +29,14 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import java.io.InputStream;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -49,10 +46,7 @@ import java.util.stream.Collectors;
 @Stateless
 @SecurityDomain("keycloak")
 @PermitAll
-public class CategoryRestService {
-
-    @Context
-    ServletContext servletContext;
+public class CategoryRestService extends AbstractBatchableRestService {
 
     @Inject
     Logger log;
@@ -60,8 +54,6 @@ public class CategoryRestService {
     @Inject
     CategoryService categoryService;
 
-    @Inject
-    BatchService batchService;
 
     /**
      * Searches for categories matching the given name in the given language
@@ -232,43 +224,9 @@ public class CategoryRestService {
     @Produces("text/plain")
     @RolesAllowed("admin")
     public String importCategories(@Context HttpServletRequest request) throws Exception {
-
-        FileItemFactory factory = RepositoryService.newDiskFileItemFactory(servletContext);
-        ServletFileUpload upload = new ServletFileUpload(factory);
-
-        StringBuilder txt = new StringBuilder();
-        upload.parseRequest(request).stream()
-                .filter(item -> !item.isFormField())
-                .forEach(item -> {
-                    try {
-                        startCategoriesImportBatchJob(item.getInputStream(), item.getName(), txt);
-                    } catch (Exception e) {
-                        String errorMsg = "Error importing categories from " + item.getName() + ": " + e;
-                        log.error(errorMsg, e);
-                        txt.append(errorMsg);
-                    }
-                });
-
-        return txt.toString();
+        return executeBatchJobFromUploadedFile(request, "category-import");
     }
 
-
-    /**
-     * Starts a category import batch job
-     * @param inputStream the category JSON input stream
-     * @param fileName the name of the file
-     * @param txt a log of the import
-     */
-    private void startCategoriesImportBatchJob(InputStream inputStream, String fileName, StringBuilder txt) throws Exception {
-        batchService.startBatchJobWithDataFile(
-                "category-import",
-                inputStream,
-                fileName,
-                new Properties());
-
-        log.info("Started 'category-import' batch job with file " + fileName);
-        txt.append("Started 'category-import' batch job with file ").append(fileName);
-    }
 
     /**
      * ******************
