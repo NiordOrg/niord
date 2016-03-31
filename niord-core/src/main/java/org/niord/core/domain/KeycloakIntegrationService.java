@@ -17,9 +17,12 @@ package org.niord.core.domain;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang.StringUtils;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.niord.core.settings.Setting;
+import org.niord.core.settings.SettingsService;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
@@ -38,13 +41,16 @@ public class KeycloakIntegrationService {
     public static final String KEYCLOAK_REALM       = "niord";
     public static final String KEYCLOAK_WEB_CLIENT  = "niord-web";
 
+    public static final Setting KEYCLOAK_ADMIN_USER = new Setting("authServerAdminUser", null,
+            "The Keycloak user to use for creating Keycloak clients", true, false, true);
+    public static final Setting KEYCLOAK_ADMIN_PASSWORD = new Setting("authServerAdminPassword", null,
+            "The Keycloak password to use for creating Keycloak clients", true, false, true);
+
     @Inject
     private Logger log;
 
-    // TODO: Inject from settings
-    String adminUser = "sysadmin";
-    String adminPassword = "sysadmin";
-
+    @Inject
+    private SettingsService settingsService;
 
     /**
      * Returns the list of Keycloak clients
@@ -163,7 +169,15 @@ public class KeycloakIntegrationService {
      *
      * @return the Keycloak client
      */
-    private Keycloak createKeycloakAdminClient() {
+    private Keycloak createKeycloakAdminClient() throws Exception {
+
+        String adminUser = settingsService.getString(KEYCLOAK_ADMIN_USER);
+        String adminPassword = settingsService.getString(KEYCLOAK_ADMIN_PASSWORD);
+
+        if (StringUtils.isBlank(adminUser) || StringUtils.isBlank(adminPassword)) {
+            throw new Exception("Keycloak admin user/password not properly defined");
+        }
+
         return Keycloak.getInstance(
                 "http://localhost:8080/auth",
                 KEYCLOAK_REALM,
