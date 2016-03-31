@@ -15,6 +15,7 @@
  */
 package org.niord.core.settings;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.JpaJsonAttributeConverter;
 import org.niord.model.IJsonSerializable;
 
@@ -70,9 +71,17 @@ public class Setting implements IJsonSerializable {
 
     /** Constructor */
     public Setting(String key, Object value, boolean cached) {
+        this(key, value, null, cached, false, false);
+    }
+
+    /** Constructor */
+    public Setting(String key, Object value, String description, boolean cached, boolean web, boolean editable) {
         this.key = key;
         this.value = value;
+        this.description = StringUtils.defaultString(description, null);
         this.cached = cached;
+        this.web = web;
+        this.editable = editable;
         updateType();
     }
 

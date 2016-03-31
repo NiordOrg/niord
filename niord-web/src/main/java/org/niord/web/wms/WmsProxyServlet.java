@@ -15,6 +15,7 @@
  */
 package org.niord.web.wms;
 
+import org.niord.core.settings.annotation.Setting;
 import org.niord.core.util.WebUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -37,6 +38,8 @@ import java.util.stream.Collectors;
  * Proxy WMS data
  *
  * This servlet will mask out a couple of colours that makes the current Danish WMS service unusable...
+ *
+ * Define the settings for the "wmsLogin" and "wmsPassword" in the "${niord.home}/niord.json" settings file.
  */
 @WebServlet(value = "/wms/*")
 public class WmsProxyServlet extends HttpServlet {
@@ -50,15 +53,21 @@ public class WmsProxyServlet extends HttpServlet {
     @Inject
     Logger log;
 
+    @Inject
+    @Setting(value="wmsProvider", description="The WMS provider")
+    String wmsProvider;
 
+    @Inject
+    @Setting(value="wmsServiceName", description="The WMS service name")
+    String wmsServiceName;
 
-    String wmsProvider = "http://kortforsyningen.kms.dk/";
+    @Inject
+    @Setting(value="wmsLogin", description="The WMS user name")
+    String wmsLogin;
 
-    String wmsServiceName = "soe_enc";
-
-    String wmsLogin = "StatSofart";
-
-    String wmsPassword = "114karls";
+    @Inject
+    @Setting(value="wmsPassword", description="The WMS password")
+    String wmsPassword;
 
     /**
      * Main GET method

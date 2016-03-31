@@ -30,14 +30,15 @@ import javax.ejb.Startup;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.inject.Inject;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.regex.Matcher;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static org.keycloak.util.JsonSerialization.mapper;
 
 /**
  * Interface for accessing settings.
@@ -60,41 +61,78 @@ public class SettingsService extends BaseService {
     SettingsCache settingsCache;
 
     /**
-     * Called when the system starts up. Loads any settings from a settings file
+     * Called when the system starts up.
+     *
+     * First, loads all settings from the classpath "/niord.json" file.<br>
+     *
+     * Then, loads all settings from the "${niord.home}/niord.json" file
+     * and add these to the list of loaded settings.<br>
+     *
+     * Lastly, persists all the loaded settings that do not already exists in the database.
      */
     @PostConstruct
     public void loadSettingsFromPropertiesFile() {
         try {
-            // Read the settings from the "niord.json" file
-            ObjectMapper mapper = new ObjectMapper();
-            List<Setting> settings =  mapper.readValue(
-                            getClass().getResource(SETTINGS_FILE),
-                            new TypeReference<List<Setting>>(){});
+
+            // Read the settings from the "/niord.json" classpath file
+            Map<String, Setting> settingMap = loadSettingsFromClasspath();
+
+            // Read the settings from the "${niord.home}/niord.json" file
+            settingMap = loadSettingsFromNiordHome(settingMap);
 
             // Determine the keys that are not yet persisted to the database
-            Set<String> keys = settings.stream()
-                    .map(Setting::getKey)
-                    .collect(Collectors.toSet());
             em.createNamedQuery("Setting.findSettingsWithKeys", Setting.class)
-                    .setParameter("keys", keys)
+                    .setParameter("keys", settingMap.keySet())
                     .getResultList()
                     .stream()
                     .map(Setting::getKey)
-                    .forEach(keys::remove);
+                    .forEach(settingMap::remove);
 
             // Persist all settings not yet persisted to the database
-            settings.stream()
-                    .filter(s -> keys.contains(s.getKey()))
+            settingMap.values().stream()
                     .forEach(s -> {
                         s.updateType();
                         em.persist(s);
-                        log.info(String.format("Loaded setting %s from %s", s.getKey(), SETTINGS_FILE));
+                        log.info(String.format("Loaded setting %s from niord.json", s.getKey()));
                     });
+
         } catch (Exception e) {
             // Stop the application starting up
             throw new RuntimeException("Error loading settings from niord.json", e);
         }
     }
+
+
+    /** Called upon startup. Read the settings from the "/niord.json" classpath file */
+    private Map<String, Setting> loadSettingsFromClasspath() throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        List<Setting> settings = mapper.readValue(
+                getClass().getResource(SETTINGS_FILE),
+                new TypeReference<List<Setting>>(){});
+        return settings.stream()
+                .collect(Collectors.toMap(Setting::getKey, Function.identity()));
+    }
+
+
+    /** Called upon startup. Read the settings from the "${niord.home}/niord.json" file and update the settingMap */
+    private Map<String, Setting> loadSettingsFromNiordHome(Map<String, Setting> settingMap) throws IOException {
+        Object niordHome = peek("niord.home");
+        if (niordHome == null && settingMap.containsKey("niord.home")) {
+            niordHome = settingMap.get("niord.home").getValue();
+        }
+        if (niordHome != null) {
+            Path niordFile = Paths.get(niordHome.toString(), "niord.json");
+            if (Files.exists(niordFile) && Files.isRegularFile(niordFile)) {
+                List<Setting> settings = mapper.readValue(
+                        niordFile.toFile(),
+                        new TypeReference<List<Setting>>(){});
+                // Update (and overwrite) the setting map with these settings
+                settings.forEach(s -> settingMap.put(s.getKey(), s));
+            }
+        }
+        return settingMap;
+    }
+
 
     /**
      * Returns all settings that should be emitted to the web application
@@ -162,15 +200,64 @@ public class SettingsService extends BaseService {
         // Check if we need to substitute with system properties. Only applies to String-based settings.
         Object result = value.getElement();
         if (result != null && result instanceof String) {
-            String str = (String)result;
-            for (Object key : System.getProperties().keySet()) {
-                str = str.replaceAll("\\$\\{" + key + "\\}", Matcher.quoteReplacement(System.getProperty("" + key)));
-            }
-            result = str;
+            result = expandSettingValue((String)result);
         }
 
         return result;
     }
+
+
+    /**
+     * Returns the value associated with the setting.
+     * Always use the value from the database, and never creates the setting like "get()".
+     *
+     * @param key the setting key
+     * @return the associated value
+     */
+    public Object peek(String key) {
+        Objects.requireNonNull(key, "Must specify valid setting key");
+
+        Setting setting = em.find(Setting.class, key);
+        if (setting == null) {
+            return null;
+        }
+
+        // Check if we need to substitute with system properties. Only applies to String-based settings.
+        Object result = setting.getValue();
+        if (result != null && result instanceof String) {
+            result = expandSettingValue((String)result);
+        }
+
+        return result;
+    }
+
+
+    /**
+     * Replace any nested token with the format "${token}" with either the setting with the given name
+     * or with a System property with the given name.
+     *
+     * @param value the value to expand
+     * @return the expanded value
+     */
+    private String expandSettingValue(String value) {
+        SettingValueExpander valueExpander = new SettingValueExpander(value);
+        String token;
+        while ((token = valueExpander.nextToken()) != null) {
+            Object setting = peek(token);
+            if (setting != null) {
+                valueExpander.replaceToken(token, setting.toString());
+                continue;
+            }
+            String sysProp = System.getProperty(token);
+            if (StringUtils.isNotBlank(sysProp)) {
+                valueExpander.replaceToken(token, sysProp);
+                continue;
+            }
+            valueExpander.replaceToken(token, "");
+        }
+        return valueExpander.getValue();
+    }
+
 
     /**
      * Updates the database value of the given setting
@@ -529,7 +616,7 @@ public class SettingsService extends BaseService {
                 }
                 break;
         }
-        return new Setting(key, value, ann.cached());
+        return new Setting(key, value, ann.description(), ann.cached(), ann.web(), ann.editable());
     }
 
 }

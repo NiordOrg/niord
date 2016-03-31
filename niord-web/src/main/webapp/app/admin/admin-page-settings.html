@@ -40,12 +40,12 @@
                                 <input ng-if="setting.type == 'Float' || setting.type == 'Double'"
                                        type="number" step="any" class="form-control input-sm"
                                        ng-model="setting.value" />
-                                <textarea ng-if="setting.type === undefined || setting.type == 'String'"
+                                <input ng-if="setting.type === undefined || setting.type == 'String'"
                                         type="text" class="form-control input-sm"
                                         ng-model="setting.value"
-                                        autocapitalize="off" autocorrect="off" autocomplete="off" ></textarea>
+                                        autocapitalize="off" autocorrect="off" autocomplete="off" />
                                 <json-data ng-if="setting.type == 'json'" data="setting.value" json="jsonValue">
-                                    <textarea type="text" class="form-control input-sm"
+                                    <textarea class="form-control input-sm"
                                               ng-model="jsonValue"
                                               autocapitalize="off" autocorrect="off" autocomplete="off" ></textarea>
                                 </json-data>
@@ -104,7 +104,7 @@
                         </tr>
                         <tr ng-repeat="setting in settings | filter: { key: search }">
                             <td>{{setting.key}}</td>
-                            <td><div class="crop-text" style="width: 250px" tooltip="{{setting.description}}">{{setting.description}}</div></td>
+                            <td><div class="crop-text" style="width: 250px" uib-tooltip="{{setting.description}}">{{setting.description}}</div></td>
                             <td>{{setting.value}}</td>
                             <td nowrap align="right">
                                 <a href ng-click="editSetting(setting);" title="Edit Setting"><i class="glyphicon glyphicon-pencil"></i></a>

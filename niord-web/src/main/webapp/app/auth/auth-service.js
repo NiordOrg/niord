@@ -46,6 +46,8 @@ angular.module('niord.auth')
                         } else {
                             console.error("An unexpected server error has occurred " + response.status);
                         }
+                    } else if (response == "Failed to refresh token") {
+                        AuthService.logout();
                     }
                     return $q.reject(response);
                 }
@@ -107,7 +109,13 @@ function bootstrapKeycloak(angularAppName, onLoad) {
             }
             keycloak.login(loginOpts);
         };
-        
+
+
+        // Logs out Keycloak
+        auth.logout = function () {
+            keycloak.logout();
+            auth.loggedIn = false;
+        };
 
         // Register the Auth factory
         app.factory('AuthService', function() {

@@ -21,13 +21,12 @@ angular.module('niord.auth')
 
             /** Logs the user in via Keycloak **/
             $scope.login = function () {
-                AuthService.keycloak.login();
+                AuthService.login();
             };
 
             /** Logs the user out via Keycloak **/
             $scope.logout = function () {
-                AuthService.keycloak.logout();
-                AuthService.loggedIn = false;
+                AuthService.logout();
             };
 
             /** Enters the Keycloak account management **/

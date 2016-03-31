@@ -34,5 +34,8 @@ public @interface Setting {
     @Nonbinding String value() default "";
     @Nonbinding String defaultValue() default "";
     @Nonbinding org.niord.core.settings.Setting.Type type() default org.niord.core.settings.Setting.Type.String;
+    @Nonbinding String description() default "";
     @Nonbinding boolean cached() default true;
+    @Nonbinding boolean editable() default true;
+    @Nonbinding boolean web() default false;
 }

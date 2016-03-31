@@ -15,6 +15,7 @@
  */
 package org.niord.core.repo;
 
+import org.niord.core.settings.annotation.Setting;
 import org.niord.core.util.WebUtils;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
@@ -52,6 +53,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
+import static org.niord.core.settings.Setting.*;
+
 /**
  * A repository service.<br>
  * Streams files from the repository and facilitates uploading files to the repository.
@@ -69,18 +72,19 @@ import java.util.*;
 @Singleton
 @Lock(LockType.READ)
 @PermitAll
+@SuppressWarnings("unused")
 public class RepositoryService {
 
     @Context
     ServletContext servletContext;
 
-    //@Inject
-    //@Setting(value = "repoRootPath", defaultValue = "${user.home}/.msinm/repo", substituteSystemProperties = true)
+    @Inject
+    @Setting(value="repoRootPath", defaultValue="${niord.home}/repo", description="The root directory of the Niord repository")
     Path repoRoot = Paths.get(System.getProperty("user.home") + "/.niord/repo");
 
-    //@Inject
-    //@Setting(value = "repoCacheTimeoutMinutes", defaultValue = "5")
-    Long cacheTimeout = 5L;
+    @Inject
+    @Setting(value="repoCacheTimeout", defaultValue="5", description="Cache timeout of repo files in minutes", type=Type.Integer)
+    Integer cacheTimeout;
 
     @Inject
     Logger log;
@@ -91,14 +95,12 @@ public class RepositoryService {
     @Inject
     ThumbnailService thumbnailService;
 
-    //@Inject
-    //MsiNmApp app;
-
     /**
      * Initializes the repository
      */
     @PostConstruct
     public void init() {
+
         // Create the repo root directory
         if (!Files.exists(getRepoRoot())) {
             try {
@@ -169,7 +171,7 @@ public class RepositoryService {
         byte[] bytes = target.getBytes("utf-8");
 
         // MD5 hash the ID
-        MessageDigest md = null;
+        MessageDigest md;
         try {
             md = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException e) {
@@ -296,7 +298,7 @@ public class RepositoryService {
         }
 
         // Check if we can generate a thumbnail for image files
-        String thumbUri = null;
+        String thumbUri;
         Path thumbFile = thumbnailService.getThumbnail(f, iconSize);
         if (thumbFile != null) {
             thumbUri = "../" + getRepoUri(thumbFile);
@@ -496,7 +498,7 @@ public class RepositoryService {
     /**
      * Every hour, check the repo "temp" root, and delete old files and folders
      */
-    @Schedule(persistent = false, second = "50", minute = "22", hour = "*", dayOfWeek = "*", year = "*")
+    @Schedule(persistent = false, second = "50", minute = "22", hour = "*")
     public void cleanUpTempRoot() {
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DATE, -1);

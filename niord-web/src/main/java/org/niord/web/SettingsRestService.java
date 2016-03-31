@@ -76,9 +76,9 @@ public class SettingsRestService extends AbstractBatchableRestService {
 
 
     /**
-     * Returns all settings. Security is checked programmatically.
+     * Returns all editable settings. Security is checked programmatically.
      *
-     * @return returns all settings
+     * @return returns all editable settings
      */
     @GET
     @Path("/all")

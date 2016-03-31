@@ -1,5 +1,12 @@
 [
   {
+    "key"         : "niord.home",
+    "description" : "The root directory for the Niord application",
+    "value"       : "${user.home}/.niord",
+    "web"         : false,
+    "editable"    : true
+  },
+  {
     "key"         : "baseUri",
     "description" : "The base application server URI",
     "value"       : "http://localhost:8080",
