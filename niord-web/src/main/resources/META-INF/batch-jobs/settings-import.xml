@@ -1,0 +1,12 @@
+<job id="settings-import" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
+    <step id="setupStep" allow-start-if-complete="true" next="importSettingsStep">
+        <batchlet ref="jobStartBatchlet"/>
+    </step>
+    <step id="importSettingsStep">
+        <chunk item-count="10">
+            <reader ref="batchSettingsImportReader" />
+            <processor ref="batchSettingsImportProcessor"/>
+            <writer ref="batchSettingsImportWriter" />
+        </chunk>
+    </step>
+</job>

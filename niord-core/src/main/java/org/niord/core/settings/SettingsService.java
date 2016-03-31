@@ -189,10 +189,17 @@ public class SettingsService extends BaseService {
         setting = em.merge(setting);
 
         // Invalidate the cache
-        settingsCache.getCache().remove(setting.getKey());
+        evictFromCache(setting.getKey());
 
         return setting;
     }
+
+
+    /** Evicts any setting with the given key from the cache **/
+    public void evictFromCache(String key) {
+        settingsCache.getCache().remove(key);
+    }
+
 
     /**
      * Updates the database value of the given setting

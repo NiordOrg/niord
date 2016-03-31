@@ -21,13 +21,18 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
+import org.niord.core.user.TicketService;
 import org.niord.model.IJsonSerializable;
 import org.slf4j.Logger;
 
+import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -39,7 +44,7 @@ import java.util.stream.Collectors;
 @Stateless
 @SecurityDomain("keycloak")
 @RolesAllowed({"sysadmin"})
-public class SettingsRestService {
+public class SettingsRestService extends AbstractBatchableRestService {
 
     @Inject
     Logger log;
@@ -47,22 +52,68 @@ public class SettingsRestService {
     @Inject
     SettingsService settingsService;
 
+    @Inject
+    TicketService ticketService;
+
 
     /**
      * Returns all editable settings
+     *
      * @return returns all editable settings
      */
     @GET
-    @Path("/all")
+    @Path("/editable")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<SettingVo> getSettings() {
+    public List<SettingVo> getEditableSettings() {
         return settingsService
                 .getAllEditable()
                 .stream()
                 .map(SettingVo::new)
                 .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Returns all settings. Security is checked programmatically.
+     *
+     * @return returns all settings
+     */
+    @GET
+    @Path("/all")
+    @Produces("application/json;charset=UTF-8")
+    @PermitAll
+    @GZIP
+    @NoCache
+    public List<SettingVo> getSettings(@QueryParam("ticket") String ticket) {
+        // Check the ticket programmatically
+        if (!ticketService.validateTicket(ticket, "sysadmin")) {
+            throw new WebApplicationException(403);
+        }
+
+        return settingsService
+                .getAllEditable()
+                .stream()
+                .map(SettingVo::new)
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Returns a ticket to be used in a subsequent call to export settings data
+     *
+     * @return a ticket
+     */
+    @GET
+    @Path("/export-ticket")
+    @Produces("text/plain")
+    @RolesAllowed("admin")
+    @NoCache
+    public String getDownloadBatchDataFileTicket() {
+        // Because of the @RolesAllowed annotation, we know that the
+        // the callee has the "sysadmin" role
+        return ticketService.createTicketForRoles("sysadmin");
     }
 
 
@@ -94,6 +145,20 @@ public class SettingsRestService {
         return new SettingVo(settingsService.set(setting));
     }
 
+
+    /**
+     * Imports an uploaded settings json file
+     *
+     * @param request the servlet request
+     * @return a status
+     */
+    @POST
+    @Path("/upload-settings")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("text/plain")
+    public String importCharts(@Context HttpServletRequest request) throws Exception {
+        return executeBatchJobFromUploadedFile(request, "settings-import");
+    }
 
     /**
      * ******************

@@ -87,6 +87,7 @@
     border: 1px solid lightgray;
     background-color: #eee;
     min-height: 200px;
+    max-height: 350px;
     height: 100%;
     overflow: hidden;
     overflow-y: scroll;

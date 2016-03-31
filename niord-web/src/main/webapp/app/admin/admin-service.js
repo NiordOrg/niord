@@ -251,12 +251,17 @@ angular.module('niord.admin')
 
         return {
             getSettings: function() {
-                return $http.get('/rest/settings/all');
+                return $http.get('/rest/settings/editable');
             },
 
             updateSetting: function(setting) {
                 return $http.put('/rest/settings/setting/' + setting.key, setting);
+            },
+
+            getSettingsExportTicket: function () {
+                return $http.get('/rest/settings/export-ticket');
             }
+
         };
     }]);
 

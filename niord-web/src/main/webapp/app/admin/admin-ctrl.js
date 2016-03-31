@@ -638,7 +638,7 @@ angular.module('niord.admin')
             };
 
 
-            // Use for area selection
+            /** Use for area selection */
             $scope.areas = [];
             $scope.refreshAreas = function(name) {
                 if (!name || name.length == 0) {
@@ -652,7 +652,7 @@ angular.module('niord.admin')
             };
 
 
-            // Use for category selection
+            /** Use for category selection */
             $scope.categories = [];
             $scope.refreshCategories = function(name) {
                 if (!name || name.length == 0) {
@@ -666,7 +666,7 @@ angular.module('niord.admin')
             };
 
 
-            // Recursively formats the names of the parent lineage for areas and categories
+            /** Recursively formats the names of the parent lineage for areas and categories */
             $scope.formatParents = function(child) {
                 var txt = undefined;
                 if (child) {
@@ -705,8 +705,10 @@ angular.module('niord.admin')
             };
 
 
-            // Build a flat list of executions of all batch instances.
-            // This will make it easier to present the result in a table
+            /**
+             * Build a flat list of executions of all batch instances.
+             * This will make it easier to present the result in a table
+             */
             $scope.buildBatchExecutionList = function () {
                 $scope.executions.length = 0;
                 angular.forEach($scope.searchResult.data, function (instance) {
@@ -719,7 +721,7 @@ angular.module('niord.admin')
                 });
             };
 
-            // Loads the batch status
+            /** Loads the batch status */
             $scope.loadBatchStatus = function () {
                 AdminBatchService.getBatchStatus()
                     .success(function (status) {
@@ -729,10 +731,11 @@ angular.module('niord.admin')
             };
 
 
-            // Refresh batch status every 3 seconds
+            /** Refresh batch status every 3 seconds */
             var refreshInterval = $interval($scope.loadBatchStatus, 3 * 1000);
 
-            // Terminate the timer
+
+            /** Terminate the timer */
             $scope.$on("$destroy", function() {
                 if (refreshInterval) {
                     $interval.cancel(refreshInterval);
@@ -740,7 +743,7 @@ angular.module('niord.admin')
             });
 
 
-            // Loads "count" more batch instances
+            /** Loads "count" more batch instances */
             $scope.loadBatchInstances = function () {
                 if ($scope.batchName) {
                     AdminBatchService.getBatchInstances($scope.batchName, $scope.currentPage - 1, $scope.pageSize)
@@ -752,7 +755,7 @@ angular.module('niord.admin')
             };
 
 
-            // Called when the given batch type is displayed
+            /** Called when the given batch type is displayed */
             $scope.selectBatchType = function (name) {
                 $scope.batchName = name;
                 $scope.currentPage = 1;
@@ -764,11 +767,6 @@ angular.module('niord.admin')
                 $scope.executions.length = 0;
                 $scope.loadBatchInstances();
             };
-
-            /**
-             * public enum BatchStatus {STARTING, STARTED, STOPPING,
-			STOPPED, FAILED, COMPLETED, ABANDONED }
-             */
 
             /** Returns the color to use for a given status **/
             $scope.statusColor = function (execution) {
@@ -791,21 +789,23 @@ angular.module('niord.admin')
                 }
             };
 
-            // Stops the given batch job
+            /** Stops the given batch job */
             $scope.stop = function (execution) {
                 AdminBatchService
                     .stopBatchExecution(execution.executionId)
                     .success($scope.loadBatchInstances);
             };
 
-            // Restarts the given batch job
+
+            /** Restarts the given batch job */
             $scope.restart = function (execution) {
                 AdminBatchService
                     .restartBatchExecution(execution.executionId)
                     .success($scope.loadBatchInstances);
             };
 
-            // Abandon the given batch job
+
+            /** Abandon the given batch job */
             $scope.abandon = function (execution) {
                 AdminBatchService
                     .abandonBatchExecution(execution.executionId)
@@ -828,7 +828,7 @@ angular.module('niord.admin')
                     });
             };
 
-            // Open the logs dialo
+            /** Open the logs dialog */
             $scope.showLogFiles = function (instanceId) {
                 $uibModal.open({
                     controller: "BatchLogFileDialogCtrl",
@@ -860,7 +860,7 @@ angular.module('niord.admin')
             $scope.selection = { file: undefined };
             $scope.files = [];
 
-            // Load the log files
+            /** Load the log files */
             AdminBatchService.getBatchLogFiles($scope.instanceId)
                 .success(function (fileNames) {
                     $scope.files = fileNames;
@@ -892,8 +892,8 @@ angular.module('niord.admin')
      * Settings Admin Controller
      * Controller for the Admin settings page
      */
-    .controller('SettingsAdminCtrl', ['$scope', 'growl', 'AdminSettingsService',
-        function ($scope, growl, AdminSettingsService) {
+    .controller('SettingsAdminCtrl', ['$scope', 'growl', 'AdminSettingsService', 'UploadFileService',
+        function ($scope, growl, AdminSettingsService, UploadFileService) {
             'use strict';
 
             $scope.settings = [];
@@ -933,5 +933,23 @@ angular.module('niord.admin')
                 }
             };
 
-        }]);
+            /** Download the instance data file */
+            $scope.exportSettings = function () {
+                AdminSettingsService
+                    .getSettingsExportTicket()
+                    .success(function (ticket) {
+                        var link = document.createElement("a");
+                        link.href = '/rest/settings/all?ticket=' + ticket;
+                        link.click();
+                    });
+            };
 
+            /** Opens the upload-domains dialog **/
+            $scope.uploadSettingsDialog = function () {
+                UploadFileService.showUploadFileDialog(
+                    'Upload Settings File',
+                    '/rest/settings/upload-settings',
+                    'json');
+            };
+
+        }]);
