@@ -27,6 +27,36 @@ custom versions.
 
 For an example, please refer to [niord-dk](https://github.com/NiordOrg/niord-dk) - a Danish implementation of Niord.
 
+## Configuration
+
+Sensitive or environment-specific settings should be placed in a "${niord.home}/.niord.json" file. Example:
+
+    [
+      {
+        "key"         : "baseUri",
+        "description" : "The base application server URI",
+        "value"       : "https://niord.mydomain.com",
+        "web"         : false,
+        "editable"    : true
+      },
+      {
+        "key"         : "wmsLogin",
+        "description" : "The WMS login",
+        "value"       : "YOUR-SECRET-WMS-LOGIN",
+        "web"         : false,
+        "editable"    : true
+      },
+      {
+        "key"         : "wmsPassword",
+        "description" : "The WMS password",
+        "value"       : "YOUR-SECRET-WMS-PASSWORD",
+        "web"         : false,
+        "editable"    : true
+      }
+    ]
+
+
+
 ## Tips and Tricks
 
 *IntelliJ set-up:*
