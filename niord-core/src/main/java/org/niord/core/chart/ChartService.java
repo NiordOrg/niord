@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Business interface for accessing MSI-NM charts
+ * Business interface for accessing sea charts
  */
 @Stateless
 @SuppressWarnings("unused")

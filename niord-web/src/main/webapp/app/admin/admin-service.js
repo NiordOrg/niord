@@ -127,6 +127,44 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
+     * AdminMessageSeriesService
+     * ********************************************************************************
+     * Interface for calling message series related functions at the application server
+     */
+    .factory('AdminMessageSeriesService', [ '$http', function($http) {
+        'use strict';
+
+        return {
+
+            /** Returns all message series **/
+            getMessageSeries: function () {
+                return $http.get('/rest/message-series/all');
+            },
+
+
+            /** Creates a new message series **/
+            createMessageSeries: function(series) {
+                return $http.post('/rest/message-series/series/', series);
+            },
+
+
+            /** Updates the given message series **/
+            updateMessageSeries: function(series) {
+                return $http.put('/rest/message-series/series/' + series.id, series);
+            },
+
+
+            /** Deletes the given message series **/
+            deleteMessageSeries: function(series) {
+                return $http.delete('/rest/message-series/series/' + series.id);
+            }
+
+        };
+    }])
+
+
+    /**
+     * ********************************************************************************
      * AdminDomainService
      * ********************************************************************************
      * Interface for calling domain related functions at the application server

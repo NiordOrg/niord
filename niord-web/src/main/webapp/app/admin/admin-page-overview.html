@@ -14,6 +14,9 @@
         <dt><a href ui-sref="admin.categories">Categories</a></dt>
         <dd>Manage the list of categories used for grouping NW and NM messages.</dd>
 
+        <dt ng-if="hasRole('sysadmin')"><a href ui-sref="admin.series">Message Series</a></dt>
+        <dd ng-if="hasRole('sysadmin')">Manage the message series used for message series identifier.</dd>
+
         <dt ng-if="hasRole('sysadmin')"><a href ui-sref="admin.domains">Domains</a></dt>
         <dd ng-if="hasRole('sysadmin')">Manage the domains.</dd>
 

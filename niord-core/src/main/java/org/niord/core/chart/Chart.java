@@ -22,7 +22,6 @@ import org.niord.core.util.GeoJsonUtils;
 import org.niord.model.vo.ChartVo;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotNull;
 import java.util.Objects;
 
 /**
@@ -52,8 +51,7 @@ import java.util.Objects;
 @SuppressWarnings("unused")
 public class Chart extends VersionedEntity<Integer> {
 
-    @NotNull
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     String chartNumber;
 
     Integer internationalNumber;

@@ -1,0 +1,118 @@
+
+<admin-page admin-page-title="Message Series">
+
+    <div ng-controller="MessageSeriesAdminCtrl" ng-init="loadMessageSeries()">
+
+        <p>Add, modify and manage message series.</p>
+
+        <!-- Add/edit message series -->
+        <div ng-if="series !== undefined" style="margin-top: 20px">
+            <form name="edit_form" class="form-horizontal">
+
+                <div class="row">
+                    <div class="form-controls col-sm-12 col-md-6 col-lg-8">
+
+                        <div ng-if="editMode == 'edit'" class="form-group">
+                            <label class="col-sm-4">Message Series ID</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control input-sm"
+                                       focus="focusMe" ng-model="series.id" disabled="disabled" />
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4">Message Type</label>
+                            <div class="btn-group col-sm-8">
+                                <label class="btn btn-default btn-sm" ng-model="series.mainType" uib-btn-radio="'NW'">
+                                    Navigational Warnings
+                                </label>
+                                <label class="btn btn-default btn-sm" ng-model="series.mainType" uib-btn-radio="'NM'">
+                                    Notices to Mariners
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4">MRN Format</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control input-sm"
+                                       ng-model="series.mrnFormat" required
+                                       autocapitalize="off" autocorrect="off" autocomplete="off"/>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4">Short Format</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control input-sm"
+                                       ng-model="series.shortFormat"
+                                       autocapitalize="off" autocorrect="off" autocomplete="off"/>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;" class="row">
+                    <div class="col-sm-offset-4">
+                        <button type="submit" class="btn btn-default btn-sm" ng-click="loadMessageSeries()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary btn-sm" ng-click="saveMessageSeries(series)">
+                            <span class="glyphicon glyphicon-floppy-disk"></span>
+                            Save Message Series
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+
+        <!-- List message series -->
+        <div ng-show="series === undefined">
+
+            <div class="row">
+                <div class="col-xs-8 col-sm-6 col-md-4">
+                    <input class="form-control input-sm col-sm-2" ng-model="search" type="text" placeholder="Filter">
+                    <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
+                          ng-click="search = ''" ng-show="search != ''"></span>
+                </div>
+                <div class="col-xs-4 col-sm-6 col-md-8">
+                    <button type="submit" class="btn btn-primary btn-sm" ng-click="addMessageSeries()">
+                        <span class="glyphicon glyphicon-plus"></span> New Message Series
+                    </button>
+                </div>
+            </div>
+
+            <div class="row" style="padding-top: 20px;">
+                <div class="col-sm-12 col-md-12">
+                    <table class='table table-condensed table-hover'>
+                        <tr>
+                            <th>ID</th>
+                            <th>Type</th>
+                            <th>MRN Format</th>
+                            <th>Short Format</th>
+                            <th></th>
+                        </tr>
+                        <tr ng-repeat="series in messageSeries | filter: { mrnFormat: search }">
+                            <td>{{series.id}}</td>
+                            <td>{{series.mainType}}</td>
+                            <td>{{series.mrnFormat}}</td>
+                            <td>{{series.shortFormat}}</td>
+                            <td nowrap align="right">
+                                <a href ng-click="editMessageSeries(series);" title="Edit Message Series"><i class="glyphicon glyphicon-pencil"></i></a>
+                                &nbsp;
+                                <a href ng-click="copyMessageSeries(series);" title="Copy Message Series"><i class="glyphicon glyphicon-duplicate"></i></a>
+                                &nbsp;
+                                <a href ng-click="deleteMessageSeries(series);" title="Delete Message Series"><i class="glyphicon glyphicon-trash"></i></a>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</admin-page>
+

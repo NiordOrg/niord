@@ -497,6 +497,97 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
+     * MessageSeriesAdminCtrl
+     * ********************************************************************************
+     * Message Series Admin Controller
+     * Controller for the Admin message series page
+     */
+    .controller('MessageSeriesAdminCtrl', ['$scope', 'growl', 'AdminMessageSeriesService', 'DialogService',
+        function ($scope, growl, AdminMessageSeriesService, DialogService) {
+            'use strict';
+
+            $scope.messageSeries = [];
+            $scope.series = undefined; // The message series being edited
+            $scope.editMode = 'add';
+            $scope.search = '';
+
+
+            /** Loads the message series from the back-end */
+            $scope.loadMessageSeries = function() {
+                $scope.series = undefined;
+                AdminMessageSeriesService
+                    .getMessageSeries()
+                    .success(function (messageSeries) {
+                        $scope.messageSeries = messageSeries;
+                    });
+            };
+
+
+            /** Adds a new message series **/
+            $scope.addMessageSeries = function () {
+                $scope.editMode = 'add';
+                $scope.series = {
+                    mainType: 'NW',
+                    mrnFormat: '',
+                    shortFormat: undefined
+                };
+            };
+
+
+            /** Copies a message series **/
+            $scope.copyMessageSeries = function (series) {
+                $scope.editMode = 'add';
+                $scope.series = angular.copy(series);
+                $scope.series.id = undefined;
+            };
+
+
+            /** Edits a message series **/
+            $scope.editMessageSeries = function (series) {
+                $scope.editMode = 'edit';
+                $scope.series = angular.copy(series);
+            };
+
+
+            /** Displays the error message */
+            $scope.displayError = function () {
+                growl.error("Error saving message series");
+            };
+
+
+            /** Saves the current message series being edited */
+            $scope.saveMessageSeries = function () {
+
+                if ($scope.series && $scope.editMode == 'add') {
+                    AdminMessageSeriesService
+                        .createMessageSeries($scope.series)
+                        .success($scope.loadMessageSeries)
+                        .error($scope.displayError);
+                } else if ($scope.series && $scope.editMode == 'edit') {
+                    AdminMessageSeriesService
+                        .updateMessageSeries($scope.series)
+                        .success($scope.loadMessageSeries)
+                        .error($scope.displayError);
+                }
+            };
+
+
+            /** Deletes the given message series */
+            $scope.deleteMessageSeries = function (series) {
+                DialogService.showConfirmDialog(
+                    "Delete message series?", "Delete message series ID '" + series.mrnFormat + "'?")
+                    .then(function() {
+                        AdminMessageSeriesService
+                            .deleteMessageSeries(series)
+                            .success($scope.loadMessageSeries)
+                            .error($scope.displayError);
+                    });
+            };
+        }])
+
+
+    /**
+     * ********************************************************************************
      * DomainAdminCtrl
      * ********************************************************************************
      * Domains Admin Controller

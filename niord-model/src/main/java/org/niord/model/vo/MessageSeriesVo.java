@@ -18,39 +18,48 @@ package org.niord.model.vo;
 import org.niord.model.IJsonSerializable;
 
 /**
- * Represents a persisted message list filter
+ * Represents a message series
  */
-public class MessageFilterVo implements IJsonSerializable {
+public class MessageSeriesVo implements IJsonSerializable {
 
-    Long id;
-    String name;
-    String parameters;
+    Integer id;
+    String mainType;
+    String mrnFormat;
+    String shortFormat;
 
     /*************************/
     /** Getters and Setters **/
     /*************************/
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getMainType() {
+        return mainType;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setMainType(String mainType) {
+        this.mainType = mainType;
     }
 
-    public String getParameters() {
-        return parameters;
+    public String getMrnFormat() {
+        return mrnFormat;
     }
 
-    public void setParameters(String parameters) {
-        this.parameters = parameters;
+    public void setMrnFormat(String mrnFormat) {
+        this.mrnFormat = mrnFormat;
+    }
+
+    public String getShortFormat() {
+        return shortFormat;
+    }
+
+    public void setShortFormat(String shortFormat) {
+        this.shortFormat = shortFormat;
     }
 }
