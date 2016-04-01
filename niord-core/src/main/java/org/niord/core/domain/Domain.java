@@ -17,6 +17,7 @@ package org.niord.core.domain;
 
 import org.niord.core.area.Area;
 import org.niord.core.category.Category;
+import org.niord.core.message.MessageSeries;
 import org.niord.core.model.BaseEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.vo.DomainVo;
@@ -63,6 +64,9 @@ public class Domain extends BaseEntity<Integer> {
     @ManyToMany
     List<Category> categories = new ArrayList<>();
 
+    @ManyToMany
+    List<MessageSeries> messageSeries = new ArrayList<>();
+
     @Transient
     Boolean inKeycloak;
 
@@ -96,6 +100,13 @@ public class Domain extends BaseEntity<Integer> {
                     .map(c -> new Category(c, DataFilter.get()))
                     .collect(Collectors.toList());
         }
+
+        this.messageSeries.clear();
+        if (domain.getMessageSeries() != null) {
+            this.messageSeries = domain.getMessageSeries().stream()
+                    .map(MessageSeries::new)
+                    .collect(Collectors.toList());
+        }
     }
 
 
@@ -114,8 +125,14 @@ public class Domain extends BaseEntity<Integer> {
 
         if (!categories.isEmpty()) {
             domain.setCategories(categories.stream()
-                    .map(c -> c.toVo(DataFilter.get()))
-                    .collect(Collectors.toList()));
+                .map(c -> c.toVo(DataFilter.get()))
+                .collect(Collectors.toList()));
+        }
+
+        if (!messageSeries.isEmpty()) {
+            domain.setMessageSeries(messageSeries.stream()
+                .map(MessageSeries::toVo)
+                .collect(Collectors.toList()));
         }
 
         return domain;
@@ -134,38 +151,24 @@ public class Domain extends BaseEntity<Integer> {
     public boolean hasChanged(Domain template) {
         return !Objects.equals(clientId, template.getClientId()) ||
                 !Objects.equals(name, template.getName()) ||
-                areasChanged(template) ||
-                categoriesChanged(template);
+                hasChanged(areas, template.getAreas()) ||
+                hasChanged(categories, template.getCategories()) ||
+                hasChanged(messageSeries, template.getMessageSeries());
     }
 
 
-    /** Checks if the domains areas are different */
-    private boolean areasChanged(Domain template) {
-        if (areas.size() != template.getAreas().size()) {
+    /** Checks if the base entity lists are different */
+    private <T extends BaseEntity<Integer>> boolean hasChanged(List<T> list1, List<T> list2) {
+        if (list1.size() != list2.size()) {
             return true;
         }
 
-        Set<Integer> areaIds = areas.stream()
+        Set<Integer> ids = list1.stream()
                 .map(BaseEntity::getId)
                 .collect(Collectors.toSet());
 
-        return template.getAreas().stream()
-                .anyMatch(a -> !areaIds.contains(a.getId()));
-    }
-
-
-    /** Checks if the domains categories are different */
-    private boolean categoriesChanged(Domain template) {
-        if (categories.size() != template.getCategories().size()) {
-            return true;
-        }
-
-        Set<Integer> categoryIds = categories.stream()
-                .map(BaseEntity::getId)
-                .collect(Collectors.toSet());
-
-        return template.getCategories().stream()
-                .anyMatch(c -> !categoryIds.contains(c.getId()));
+        return list2.stream()
+                .anyMatch(e -> !ids.contains(e.getId()));
     }
 
     /*************************/
@@ -202,6 +205,14 @@ public class Domain extends BaseEntity<Integer> {
 
     public void setCategories(List<Category> categories) {
         this.categories = categories;
+    }
+
+    public List<MessageSeries> getMessageSeries() {
+        return messageSeries;
+    }
+
+    public void setMessageSeries(List<MessageSeries> messageSeries) {
+        this.messageSeries = messageSeries;
     }
 
     public Boolean getInKeycloak() {

@@ -28,6 +28,7 @@ public class DomainVo implements IJsonSerializable {
     private String name;
     private List<AreaVo> areas;
     private List<CategoryVo> categories;
+    private List<MessageSeriesVo> messageSeries;
     private Boolean inKeycloak;
 
     /*************************/
@@ -64,6 +65,14 @@ public class DomainVo implements IJsonSerializable {
 
     public void setCategories(List<CategoryVo> categories) {
         this.categories = categories;
+    }
+
+    public List<MessageSeriesVo> getMessageSeries() {
+        return messageSeries;
+    }
+
+    public void setMessageSeries(List<MessageSeriesVo> messageSeries) {
+        this.messageSeries = messageSeries;
     }
 
     public Boolean getInKeycloak() {

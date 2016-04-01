@@ -18,6 +18,7 @@ package org.niord.core.domain;
 import org.niord.core.area.Area;
 import org.niord.core.category.Category;
 import org.niord.core.keycloak.KeycloakIntegrationService;
+import org.niord.core.message.MessageSeries;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
@@ -105,6 +106,9 @@ public class DomainService extends BaseService {
         // Substitute the categories with the persisted ones
         original.setCategories(persistedList(Category.class, domain.getCategories()));
 
+        // Substitute the message series with the persisted ones
+        original.setMessageSeries(persistedList(MessageSeries.class, domain.getMessageSeries()));
+
         return saveEntity(original);
     }
 
@@ -126,6 +130,9 @@ public class DomainService extends BaseService {
 
         // Substitute the categories with the persisted ones
         domain.setCategories(persistedList(Category.class, domain.getCategories()));
+
+        // Substitute the message series with the persisted ones
+        domain.setMessageSeries(persistedList(MessageSeries.class, domain.getMessageSeries()));
 
         return saveEntity(domain);
     }

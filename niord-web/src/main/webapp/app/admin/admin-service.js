@@ -158,7 +158,6 @@ angular.module('niord.admin')
             deleteMessageSeries: function(series) {
                 return $http.delete('/rest/message-series/series/' + series.id);
             }
-
         };
     }])
 
@@ -214,6 +213,12 @@ angular.module('niord.admin')
             /** Returns the categories matching the given name */
             searchCategories : function (name) {
                 return $http.get('/rest/categories/search?name='
+                    + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10')
+            },
+
+            /** Returns the message series matching the given name */
+            searchMessageSeries : function (name) {
+                return $http.get('/rest/message-series/search?name='
                     + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10')
             }
 

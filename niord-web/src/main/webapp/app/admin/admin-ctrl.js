@@ -663,6 +663,7 @@ angular.module('niord.admin')
                 $scope.domain.clientId = undefined;
                 $scope.areas.length = 0;
                 $scope.categories.length = 0;
+                $scope.messageSeries.length = 0;
             };
 
 
@@ -672,6 +673,7 @@ angular.module('niord.admin')
                 $scope.domain = angular.copy(domain);
                 $scope.areas.length = 0;
                 $scope.categories.length = 0;
+                $scope.messageSeries.length = 0;
             };
 
 
@@ -753,6 +755,20 @@ angular.module('niord.admin')
                     .searchCategories(name)
                     .then(function(response) {
                         $scope.categories = response.data;
+                    });
+            };
+
+
+            /** Use for message series selection */
+            $scope.messageSeries = [];
+            $scope.refreshMessageSeries = function(name) {
+                if (!name || name.length == 0) {
+                    return [];
+                }
+                return AdminDomainService
+                    .searchMessageSeries(name)
+                    .then(function(response) {
+                        $scope.messageSeries = response.data;
                     });
             };
 

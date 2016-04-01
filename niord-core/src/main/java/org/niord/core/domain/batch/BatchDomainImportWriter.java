@@ -20,6 +20,7 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.category.Category;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.message.MessageSeries;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -46,6 +47,9 @@ public class BatchDomainImportWriter extends AbstractItemHandler {
 
             // Substitute the categories with the persisted ones
             domain.setCategories(domainService.persistedList(Category.class, domain.getCategories()));
+
+            // Substitute the message series with the persisted ones
+            domain.setMessageSeries(domainService.persistedList(MessageSeries.class, domain.getMessageSeries()));
 
             domainService.saveEntity(domain);
         }
