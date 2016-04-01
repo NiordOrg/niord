@@ -17,6 +17,8 @@ public class KeycloakJsonServletFilter extends AbstractTextResourceServletFilter
 
     final static int CACHE_SECONDS = 10 * 60; // 10 minutes
 
+    Map<String, String> keycloakDeployment;
+
     @Inject
     Logger log;
 
@@ -36,11 +38,19 @@ public class KeycloakJsonServletFilter extends AbstractTextResourceServletFilter
     String updateResponse(HttpServletRequest request, String response) {
 
         try {
-            Map<String, String> cfg = keycloakIntegrationService.createKeycloakDeploymentForWebApp();
+            if (keycloakDeployment == null) {
+                // If there are concurrent requests, only instantiate once
+                synchronized (this) {
+                    if (keycloakDeployment == null) {
+                        keycloakDeployment = keycloakIntegrationService.createKeycloakDeploymentForWebApp();
+                        log.info("Instantiated keycloak deployment for web application");
+                    }
+                }
+            }
 
             return new ObjectMapper()
                     .writerWithDefaultPrettyPrinter()
-                    .writeValueAsString(cfg);
+                    .writeValueAsString(keycloakDeployment);
         } catch (Exception e) {
             log.error("Failed generating proper Keycloak Deployment Configuration", e);
             return response;
