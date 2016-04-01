@@ -33,6 +33,7 @@ import org.keycloak.representations.idm.PublishedRealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.niord.core.NiordApp;
 import org.niord.core.domain.Domain;
+import org.niord.core.settings.SettingsService;
 import org.niord.core.settings.annotation.Setting;
 import org.slf4j.Logger;
 
@@ -41,8 +42,7 @@ import javax.naming.NamingException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.PublicKey;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.niord.core.settings.Setting.Type.Password;
@@ -58,6 +58,8 @@ public class KeycloakIntegrationService {
     public static final String KEYCLOAK_REALM       = "niord";
     public static final String KEYCLOAK_WEB_CLIENT  = "niord-web";
 
+    @Inject
+    SettingsService settingsService;
 
     @Inject
     @Setting(value = "authServerUrl", defaultValue = "/auth", description = "The Keycloak server url")
@@ -84,11 +86,11 @@ public class KeycloakIntegrationService {
 
     /**
      * Queries Keycloak for its public key.
-     * Please refer to Keycloaks AdapterDeploymentContext.
+     * Please refer to Keycloak's AdapterDeploymentContext.
      *
      * @return the Keycloak public key
      */
-    public PublicKey resolveKeycloakPublicKey() throws Exception {
+    public PublicKey resolveKeycloakPublicRealmKey() throws Exception {
         String url = authServerUrl;
         if (StringUtils.isBlank(url)) {
             throw new Exception("No authServerUrl setting defined");
@@ -134,7 +136,31 @@ public class KeycloakIntegrationService {
 
 
     /**
+     * Returns the Keycloak public key for the Niord realm.
+     * The public key is returned in the format used by keycloak.json.
+     * <p>
+     * If the setting for the public key has not been defined, the public key is
+     * fetched directly from Keycloak.
+     *
+     * @return the Keycloak public key
+     */
+    public String getKeycloakPublicRealmKey() throws Exception {
+        if (StringUtils.isNotBlank(authServerRealmKey)) {
+            return authServerRealmKey;
+        }
+
+        // Fetch the public key from Keycloak
+        PublicKey publicKey = resolveKeycloakPublicRealmKey();
+        authServerRealmKey = new String(Base64.getEncoder().encode(publicKey.getEncoded()), "utf-8");
+
+        // Update the underlying setting
+        settingsService.set("authServerRealmKey", authServerRealmKey);
+        return authServerRealmKey;
+    }
+
+    /**
      * Creates a new Keycloak deployment for the given domain client ID.
+     *
      * If the "authServerRealmKey" setting is defined, this is used as the realm public key,
      * otherwise, the public key is looked up from the Keycloak server
      *
@@ -144,19 +170,34 @@ public class KeycloakIntegrationService {
     public KeycloakDeployment createKeycloakDeploymentForDomain(String clientId) throws Exception {
         AdapterConfig cfg = new AdapterConfig();
         cfg.setRealm(KEYCLOAK_REALM);
+        cfg.setRealmKey(getKeycloakPublicRealmKey());
         cfg.setBearerOnly(true);
         cfg.setAuthServerUrl(authServerUrl);
         cfg.setSslRequired("external");
         cfg.setResource(clientId);
         cfg.setUseResourceRoleMappings(true);
 
-        if (StringUtils.isNotBlank(authServerRealmKey)) {
-            cfg.setRealmKey(authServerRealmKey);
-        }
+        return KeycloakDeploymentBuilder.build(cfg);
+    }
 
-        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(cfg);
-        deployment.setRealmKey(resolveKeycloakPublicKey());
-        return deployment;
+    /**
+     * Creates a new Keycloak deployment for the niord-web web application.
+     *
+     * If the "authServerRealmKey" setting is defined, this is used as the realm public key,
+     * otherwise, the public key is looked up from the Keycloak server
+     *
+     * @return the Keycloak deployment
+     */
+    public Map<String, String> createKeycloakDeploymentForWebApp() throws Exception {
+        Map<String, String> cfg = new HashMap<>();
+        cfg.put("realm", KEYCLOAK_REALM);
+        cfg.put("realm-public-key", getKeycloakPublicRealmKey());
+        cfg.put("public-client", "true");
+        cfg.put("auth-server-url", authServerUrl);
+        cfg.put("ssl-required", "external");
+        cfg.put("resource", KEYCLOAK_WEB_CLIENT);
+        cfg.put("use-resource-role-mappings", "true");
+        return cfg;
     }
 
 

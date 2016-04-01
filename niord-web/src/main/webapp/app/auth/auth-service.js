@@ -76,7 +76,7 @@ var auth = {};
  * @param angularAppName the angular modules
  */
 function bootstrapKeycloak(angularAppName, onLoad) {
-    var keycloak = new Keycloak('keycloak.json');
+    var keycloak = new Keycloak('/app/conf/keycloak.json');
     auth.loggedIn = false;
 
     var initProps = {};

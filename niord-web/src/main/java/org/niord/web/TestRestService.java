@@ -3,22 +3,18 @@ package org.niord.web;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
-import org.niord.core.keycloak.KeycloakIntegrationService;
 import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.geojson.FeatureService;
+import org.niord.core.keycloak.KeycloakIntegrationService;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
 
 import javax.annotation.security.PermitAll;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -74,15 +70,9 @@ public class TestRestService {
     @Path("/xxx")
     @Produces("application/json;charset=UTF-8")
     @NoCache
-    public String test() {
+    public Map<String, String> test() throws Exception {
 
-        try {
-            //System.out.println("PUBLIC KEY " + keycloakIntegrationService.createKeycloakDeploymentForDomain("ged"));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return System.currentTimeMillis() + "";
+        return keycloakIntegrationService.createKeycloakDeploymentForWebApp();
     }
 
 }
