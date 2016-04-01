@@ -25,8 +25,10 @@ import org.niord.core.user.TicketService;
 import org.niord.model.IJsonSerializable;
 import org.slf4j.Logger;
 
+import javax.annotation.Resource;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
+import javax.ejb.SessionContext;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -55,40 +57,27 @@ public class SettingsRestService extends AbstractBatchableRestService {
     @Inject
     TicketService ticketService;
 
-
-    /**
-     * Returns all editable settings
-     *
-     * @return returns all editable settings
-     */
-    @GET
-    @Path("/editable")
-    @Produces("application/json;charset=UTF-8")
-    @GZIP
-    @NoCache
-    public List<SettingVo> getEditableSettings() {
-        return settingsService
-                .getAllEditable()
-                .stream()
-                .map(SettingVo::new)
-                .collect(Collectors.toList());
-    }
-
+    @Resource
+    SessionContext ctx;
 
     /**
      * Returns all editable settings. Security is checked programmatically.
+     * Either the user must pass a ticket along, or else, usual security checks applies.
      *
      * @return returns all editable settings
      */
     @GET
-    @Path("/all")
+    @Path("/editable-settings")
     @Produces("application/json;charset=UTF-8")
-    @PermitAll
+    @PermitAll // Checked programmatically
     @GZIP
     @NoCache
     public List<SettingVo> getSettings(@QueryParam("ticket") String ticket) {
-        // Check the ticket programmatically
-        if (!ticketService.validateTicket(ticket, "sysadmin")) {
+        // If a ticket is defined, check if programmatically
+        if (StringUtils.isNotBlank(ticket) && !ticketService.validateTicket(ticket, "sysadmin")) {
+            throw new WebApplicationException(403);
+
+        } else if (StringUtils.isBlank(ticket) && !ctx.isCallerInRole("sysadmin")) {
             throw new WebApplicationException(403);
         }
 
@@ -187,7 +176,9 @@ public class SettingsRestService extends AbstractBatchableRestService {
          */
         public SettingVo(Setting setting) {
             key = setting.getKey();
-            value = setting.getValue();
+            if (setting.getType() != Setting.Type.Password) {
+                value = setting.getValue();
+            }
             description = setting.getDescription();
             type = setting.getType();
         }

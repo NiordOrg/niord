@@ -50,6 +50,7 @@ Sensitive or environment-specific settings should be placed in a "${niord.home}/
         "key"         : "authServerAdminPassword",
         "description" : "The Keycloak password to use for creating Keycloak clients",
         "value"       : "KEYCLOAK-ADMIN-PASSWORD",
+        "type"        : "Password",
         "web"         : false,
         "editable"    : true
       },
@@ -64,6 +65,7 @@ Sensitive or environment-specific settings should be placed in a "${niord.home}/
         "key"         : "wmsPassword",
         "description" : "The WMS password",
         "value"       : "YOUR-SECRET-WMS-PASSWORD",
+        "type"        : "Password",
         "web"         : false,
         "editable"    : true
       }

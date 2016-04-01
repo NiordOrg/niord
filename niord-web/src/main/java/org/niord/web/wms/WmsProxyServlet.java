@@ -34,6 +34,8 @@ import java.net.URL;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.niord.core.settings.Setting.Type.Password;
+
 /**
  * Proxy WMS data
  *
@@ -66,7 +68,7 @@ public class WmsProxyServlet extends HttpServlet {
     String wmsLogin;
 
     @Inject
-    @Setting(value="wmsPassword", description="The WMS password")
+    @Setting(value="wmsPassword", description="The WMS password", type = Password)
     String wmsPassword;
 
     /**

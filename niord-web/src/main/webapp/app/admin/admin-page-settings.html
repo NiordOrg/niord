@@ -40,6 +40,10 @@
                                 <input ng-if="setting.type == 'Float' || setting.type == 'Double'"
                                        type="number" step="any" class="form-control input-sm"
                                        ng-model="setting.value" />
+                                <input ng-if="setting.type === 'Password'"
+                                       type="password" class="form-control input-sm"
+                                       ng-model="setting.value"
+                                       autocapitalize="off" autocorrect="off" autocomplete="off" />
                                 <input ng-if="setting.type === undefined || setting.type == 'String'"
                                         type="text" class="form-control input-sm"
                                         ng-model="setting.value"
@@ -105,7 +109,8 @@
                         <tr ng-repeat="setting in settings | filter: { key: search }">
                             <td>{{setting.key}}</td>
                             <td><div class="crop-text" style="width: 250px" uib-tooltip="{{setting.description}}">{{setting.description}}</div></td>
-                            <td>{{setting.value}}</td>
+                            <td ng-if="setting.type != 'Password'">{{setting.value}}</td>
+                            <td ng-if="setting.type == 'Password'">********</td>
                             <td nowrap align="right">
                                 <a href ng-click="editSetting(setting);" title="Edit Setting"><i class="glyphicon glyphicon-pencil"></i></a>
                             </td>

@@ -42,6 +42,13 @@ public class BatchSettingsImportProcessor extends AbstractItemHandler {
         Object value = settingsService.get(setting);
 
         if (!Objects.equals(value, setting.getValue())) {
+
+            // When you create exports from the Settings Admin page, passwords will have no value.
+            // So, if this setting is an empty password, ignore it.
+            if (setting.getType() == Setting.Type.Password && setting.getValue() == null) {
+                return null;
+            }
+
             // Update the setting value
             getLog().info("Update setting value for " + setting.getKey());
             return setting;

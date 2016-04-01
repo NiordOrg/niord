@@ -35,7 +35,7 @@ import javax.persistence.*;
 })
 public class Setting implements IJsonSerializable {
 
-    public enum Type { String, Integer, Long, Float, Double, Date, Boolean, Path, json}
+    public enum Type { String, Password, Integer, Long, Float, Double, Date, Boolean, Path, json}
 
     @Id
     @Column(name="setting_key", unique = true, nullable = false)
@@ -50,8 +50,13 @@ public class Setting implements IJsonSerializable {
 
     private String description;
 
+    // Determines if the setting will be cached or read directly from the database
     private boolean cached;
+
+    // Determines if the setting will be emitted as a $rootScope variable on site-config.js
     private boolean web;
+
+    // Determines if a system admin can edit the setting on the Admin page.
     private boolean editable;
 
     /** Constructor */

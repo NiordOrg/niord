@@ -250,8 +250,8 @@ angular.module('niord.admin')
         'use strict';
 
         return {
-            getSettings: function() {
-                return $http.get('/rest/settings/editable');
+            getEditableSettings: function() {
+                return $http.get('/rest/settings/editable-settings');
             },
 
             updateSetting: function(setting) {

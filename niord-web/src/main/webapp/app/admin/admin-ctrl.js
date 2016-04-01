@@ -905,7 +905,7 @@ angular.module('niord.admin')
             $scope.loadSettings = function() {
                 $scope.setting = undefined;
                 AdminSettingsService
-                    .getSettings()
+                    .getEditableSettings()
                     .success(function (settings) {
                         $scope.settings = settings;
                     });
@@ -940,7 +940,7 @@ angular.module('niord.admin')
                     .getSettingsExportTicket()
                     .success(function (ticket) {
                         var link = document.createElement("a");
-                        link.href = '/rest/settings/all?ticket=' + ticket;
+                        link.href = '/rest/settings/editable-settings?ticket=' + ticket;
                         link.click();
                     });
             };

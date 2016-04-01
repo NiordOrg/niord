@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.niord.core.settings.Setting.Type.Password;
+
 
 /**
  * Provides an interface for Keycloak integration.
@@ -61,7 +63,7 @@ public class KeycloakIntegrationService {
     String authServerAdminUser;
 
     @Inject
-    @Setting(value = "authServerAdminPassword", description = "The Keycloak password to use for creating Keycloak clients")
+    @Setting(value = "authServerAdminPassword", type = Password, description = "The Keycloak password to use for creating Keycloak clients")
     String authServerAdminPassword;
 
     @Inject

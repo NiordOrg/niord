@@ -587,6 +587,7 @@ public class SettingsService extends BaseService {
         String defVal = ann.defaultValue();
         switch (ann.type()) {
             case String:
+            case Password:
                 value = ann.defaultValue();
                 break;
             case Integer:
