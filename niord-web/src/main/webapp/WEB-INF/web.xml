@@ -7,7 +7,7 @@
     <!-- User a Niord-specific KeycloakConfigResolver -->
     <context-param>
         <param-name>keycloak.config.resolver</param-name>
-        <param-value>org.niord.web.NiordKeycloakConfigResolver</param-value>
+        <param-value>org.niord.core.keycloak.NiordKeycloakConfigResolver</param-value>
     </context-param>
 
     <welcome-file-list>

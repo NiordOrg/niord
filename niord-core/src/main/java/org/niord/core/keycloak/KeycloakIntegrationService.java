@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.core.domain;
+package org.niord.core.keycloak;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,12 +22,17 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.impl.client.HttpClients;
+import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.niord.core.NiordApp;
+import org.niord.core.domain.Domain;
 import org.niord.core.settings.annotation.Setting;
 import org.slf4j.Logger;
 
@@ -59,6 +64,10 @@ public class KeycloakIntegrationService {
     String authServerUrl;
 
     @Inject
+    @Setting(value = "authServerRealmKey", description = "The public key associated with the Niord realm in Keycloak")
+    String authServerRealmKey;
+
+    @Inject
     @Setting(value = "authServerAdminUser", description = "The Keycloak user to use for creating Keycloak clients")
     String authServerAdminUser;
 
@@ -74,7 +83,9 @@ public class KeycloakIntegrationService {
 
 
     /**
-     * Queries Keycloak for its public key
+     * Queries Keycloak for its public key.
+     * Please refer to Keycloaks AdapterDeploymentContext.
+     *
      * @return the Keycloak public key
      */
     public PublicKey resolveKeycloakPublicKey() throws Exception {
@@ -86,16 +97,16 @@ public class KeycloakIntegrationService {
         // Handle relative auth server url
         if (!url.toLowerCase().startsWith("http")) {
             String baseUri = app.getBaseUri();
-            if (!url.startsWith("/") && !baseUri.startsWith("/")) {
+            if (!url.startsWith("/") && !baseUri.endsWith("/")) {
                 url = "/" + url;
-            } else if (url.startsWith("/") && baseUri.startsWith("/")) {
+            } else if (url.startsWith("/") && baseUri.endsWith("/")) {
                 url = url.substring(1);
             }
             url = baseUri + url;
         }
 
-        // TODO: Handle HTTPS ... look at org.keycloak.adapters.AdapterDeploymentContext
-        HttpClient client = HttpClientBuilder.create().build();
+        // TODO: Check if this works with https based on self-signed certificates
+        HttpClient client = HttpClients.custom().setHostnameVerifier(new AllowAllHostnameVerifier()).build();
         HttpGet getRealmInfo = new HttpGet(url + "/realms/" + KEYCLOAK_REALM);
 
         HttpResponse response = client.execute(getRealmInfo);
@@ -119,6 +130,33 @@ public class KeycloakIntegrationService {
                     .readValue(is, PublishedRealmRepresentation.class);
             return rep.getPublicKey();
         }
+    }
+
+
+    /**
+     * Creates a new Keycloak deployment for the given domain client ID.
+     * If the "authServerRealmKey" setting is defined, this is used as the realm public key,
+     * otherwise, the public key is looked up from the Keycloak server
+     *
+     * @param clientId the domain client ID
+     * @return the Keycloak deployment
+     */
+    public KeycloakDeployment createKeycloakDeploymentForDomain(String clientId) throws Exception {
+        AdapterConfig cfg = new AdapterConfig();
+        cfg.setRealm(KEYCLOAK_REALM);
+        cfg.setBearerOnly(true);
+        cfg.setAuthServerUrl(authServerUrl);
+        cfg.setSslRequired("external");
+        cfg.setResource(clientId);
+        cfg.setUseResourceRoleMappings(true);
+
+        if (StringUtils.isNotBlank(authServerRealmKey)) {
+            cfg.setRealmKey(authServerRealmKey);
+        }
+
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(cfg);
+        deployment.setRealmKey(resolveKeycloakPublicKey());
+        return deployment;
     }
 
 

@@ -13,10 +13,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.web;
+package org.niord.core;
 
 import org.junit.Test;
 import org.keycloak.adapters.spi.HttpFacade;
+import org.niord.core.domain.DomainResolver;
 
 import java.lang.reflect.Proxy;
 

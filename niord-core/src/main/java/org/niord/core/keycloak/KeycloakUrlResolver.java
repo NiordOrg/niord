@@ -13,120 +13,48 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.web;
+package org.niord.core.keycloak;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.HttpClient;
-import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.authentication.ClientCredentialsProvider;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.enums.TokenStore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Resolves the keycloak.json to use for a given request
- *
- * Currently, "/keycloak.json" will be loaded from class path.
- *
  * IMPORTANT: In order to handle relative auth-server-url's, various functions and helper classes
  * has been copied from Keycloak AdapterDeploymentContext class.
- * This should be kept up-to-date with future versions of Keycloak.
+ * <p>
+ * This class must thus be kept up-to-date with future versions of Keycloak.
  */
-public class NiordKeycloakConfigResolver implements KeycloakConfigResolver {
-
-    private final Map<String, KeycloakDeployment> cache = new ConcurrentHashMap<>();
-
-    private final Logger log = LoggerFactory.getLogger(NiordKeycloakConfigResolver.class);
-
-    private KeycloakDeployment noDeployment = new KeycloakDeployment();
-
-    private DomainResolver domainResolver = DomainResolver.newInstance();
-
-    /** {@inheritDoc} */
-    @Override
-    public KeycloakDeployment resolve(HttpFacade.Request request) {
-
-        // Resolves the domain, i.e. the Keycloak client ID, from the request
-        String clientId = domainResolver.resolveDomain(request);
-
-        if (StringUtils.isBlank(clientId)) {
-            return noDeployment;
-        }
-
-        // Look up, or create, cached Keycloak deployment for the client ID
-        KeycloakDeployment deployment = cache.get(clientId);
-        if (deployment == null) {
-            // If there are concurrent requests, only instantiate once
-            synchronized (cache) {
-                deployment = cache.get(clientId);
-                if (deployment == null) {
-                    deployment = instantiateDeployment(clientId);
-                }
-            }
-        }
-
-        if (deployment.getAuthServerBaseUrl() == null) {
-            return deployment;
-        }
-        return resolveUrls(deployment, request);
-    }
+public class KeycloakUrlResolver {
 
 
-    /** Instantiates and caches a keycloak deployment for the given client ID */
-    private KeycloakDeployment instantiateDeployment(String clientId) {
-
-        // not found on the simple cache, try to load it from the file system
-        InputStream is = getClass().getResourceAsStream("/keycloak.json");
-        if (is == null) {
-            throw new IllegalStateException("Not able to find the file /keycloak.json");
-        }
-
-        // Substitute the $CLIENT_ID
-        is = replaceResource(is, clientId);
-
-        // Instantiate and cache the new Keycloak deployment
-        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(is);
-        cache.put(clientId, deployment);
-
-        return deployment;
-    }
-
-
-    /** Substitute the $CLIENT_ID with the given client id */
-    private InputStream replaceResource(InputStream is, String clientId) {
-        try {
-            String keycloakJson = IOUtils.toString(is)
-                    .replace("$CLIENT_ID", clientId);
-
-            log.info("Caching Keycloak.json for client " + clientId);
-
-            return IOUtils.toInputStream(keycloakJson);
-        } catch (IOException e) {
-            // This should never happen
-            return is;
-        }
+    private KeycloakUrlResolver() {
     }
 
 
     /**
-     * IMPORTANT: This function has been copied (and modified) from the Keycloak AdapterDeploymentContext class.
+     * Factory method for creating a new URL resolver
+     * @return a new URL resolver
+     */
+    public static KeycloakUrlResolver newInstance() {
+        return new KeycloakUrlResolver();
+    }
+
+
+    /**
+     * This function has been copied (and modified) from the Keycloak AdapterDeploymentContext class.
      * It should be kept up-to-date with future versions of Keycloak.
      */
-    private KeycloakDeployment resolveUrls(KeycloakDeployment deployment, HttpFacade.Request facadeRequest) {
+    public KeycloakDeployment resolveUrls(KeycloakDeployment deployment, HttpFacade.Request facadeRequest) {
         if (deployment.getRelativeUrls() == RelativeUrlsUsed.NEVER) {
             // Absolute URI are already set to everything
             return deployment;
@@ -139,7 +67,7 @@ public class NiordKeycloakConfigResolver implements KeycloakConfigResolver {
 
 
     /**
-     * IMPORTANT: This function has been copied (and modified) from the Keycloak AdapterDeploymentContext class.
+     * This function has been copied (and modified) from the Keycloak AdapterDeploymentContext class.
      * It should be kept up-to-date with future versions of Keycloak.
      */
     private KeycloakUriBuilder getBaseBuilder(KeycloakDeployment deployment, HttpFacade.Request facadeRequest) {
@@ -150,7 +78,6 @@ public class NiordKeycloakConfigResolver implements KeycloakConfigResolver {
         if (deployment.getSslRequired().isRequired(facadeRequest.getRemoteAddr())) {
             scheme = "https";
             if (!request.getScheme().equals(scheme) && request.getPort() != -1) {
-                log.error("request scheme: " + request.getScheme() + " ssl required");
                 throw new RuntimeException("Can't resolve relative url from adapter config.");
             }
         }
@@ -474,5 +401,6 @@ public class NiordKeycloakConfigResolver implements KeycloakConfigResolver {
             delegate.setTurnOffChangeSessionIdOnLogin(turnOffChangeSessionIdOnLogin);
         }
     }
+
 
 }

@@ -1,9 +1,0 @@
-{
-  "realm": "niord",
-  "realm-public-key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqDqSUVICX9blL8j6mjppBnmrvQU3N/1eu58aRrnq4082j7IN+bBtfzDGkRYZfm7r8BXF0S2sLlqFuDSL1yKiV0TbMuBGehr/SwFiK0Frh7mk9LSKelZwPKLiKIgKOqdhTenP11EKNZA81dQu6VHDp+UXMXTCcXvkSca5jzs2WSsY+Ug0g6DWm1qvt3Nx9m5AEdi4XftbyIA6OFM1uJWOaqmKKUmfy34Gz8daZYPm/18tetafhUN9d4StexKh5hYCpWbLoX34uFtth2fwtPZK78STrdGVG5vh1jdNmOGOPEHtQVoQR3vagmYrfLI7/4fq0e12jkVlvQXmlC8bG+k8hQIDAQAB",
-  "bearer-only": true,
-  "auth-server-url": "/auth",
-  "ssl-required": "external",
-  "resource": "$CLIENT_ID",
-  "use-resource-role-mappings": true
-}

@@ -17,6 +17,7 @@ package org.niord.core.domain;
 
 import org.niord.core.area.Area;
 import org.niord.core.category.Category;
+import org.niord.core.keycloak.KeycloakIntegrationService;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
