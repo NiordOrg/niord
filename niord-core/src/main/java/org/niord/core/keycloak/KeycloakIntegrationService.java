@@ -84,16 +84,11 @@ public class KeycloakIntegrationService {
     private Logger log;
 
 
-    /**
-     * Queries Keycloak for its public key.
-     * Please refer to Keycloak's AdapterDeploymentContext.
-     *
-     * @return the Keycloak public key
-     */
-    public PublicKey resolveKeycloakPublicRealmKey() throws Exception {
+    /** Computes the fully-qualified URL to the Keycloak server */
+    private String resolveAuthServerUrl() {
         String url = authServerUrl;
         if (StringUtils.isBlank(url)) {
-            throw new Exception("No authServerUrl setting defined");
+            throw new RuntimeException("No authServerUrl setting defined");
         }
 
         // Handle relative auth server url
@@ -106,6 +101,19 @@ public class KeycloakIntegrationService {
             }
             url = baseUri + url;
         }
+
+        return url;
+    }
+
+    /**
+     * Queries Keycloak for its public key.
+     * Please refer to Keycloak's AdapterDeploymentContext.
+     *
+     * @return the Keycloak public key
+     */
+    public PublicKey resolveKeycloakPublicRealmKey() throws Exception {
+
+        String url = resolveAuthServerUrl();
 
         // TODO: Check if this works with https based on self-signed certificates
         HttpClient client = HttpClients.custom().setHostnameVerifier(new AllowAllHostnameVerifier()).build();
@@ -325,7 +333,7 @@ public class KeycloakIntegrationService {
         }
 
         return Keycloak.getInstance(
-                "http://localhost:8080/auth",
+                resolveAuthServerUrl(),
                 KEYCLOAK_REALM,
                 authServerAdminUser,
                 authServerAdminPassword,
