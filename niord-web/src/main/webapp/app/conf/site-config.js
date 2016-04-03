@@ -8,21 +8,33 @@ angular.module('niord.conf')
     .run(['$rootScope', '$window', '$translate', 'LangService', 'DomainService',
         function ($rootScope, $window, $translate, LangService, DomainService) {
 
+        /** SETTINGS START **/
+                
         /**
-         * The following SETTINGS comment is substituted with database settings by the SiteConfigServletFilter.
+         * Everything between the SETTINGS START and END comments is substituted 
+         * with database settings by the SiteConfigServletFilter.
          * Example settings:
-            $rootScope.adminIntegrationPageEnabled = true;
-            $rootScope.mapDefaultLatitude = 56;
-            $rootScope.mapDefaultLongitude = 11;
-            $rootScope.mapDefaultZoomLevel = 6;
-            $rootScope.modelLanguages = ["da","en"];
-            $rootScope.editorLanguages = ["da","en","gl"];
-            $rootScope.siteLanguages = ["da","en"];
-            $rootScope.numeralLauguages = {"da":"da-dk","en":"en"};
-            $rootScope.wmsLayerEnabled = true;
          */
+        
+        $rootScope.adminIntegrationPageEnabled = true;
+        $rootScope.mapDefaultLatitude = 56;
+        $rootScope.mapDefaultLongitude = 11;
+        $rootScope.mapDefaultZoomLevel = 6;
+        $rootScope.modelLanguages = ["da","en"];
+        $rootScope.editorLanguages = ["da","en","gl"];
+        $rootScope.siteLanguages = ["da","en"];
+        $rootScope.numeralLauguages = {"da":"da-dk","en":"en"};
+        $rootScope.wmsLayerEnabled = true;
 
-        /** SETTINGS **/
+        $rootScope.domains = [{
+                "clientId" : "niord-client-nw",
+                "name" : "NW"
+              }, {
+                "clientId" : "niord-client-nm",
+                "name" : "NM"
+              }];
+
+        /** SETTINGS END **/
 
         // Initialize the language support
         LangService.initLanguage();

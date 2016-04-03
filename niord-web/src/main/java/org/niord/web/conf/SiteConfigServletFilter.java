@@ -1,26 +1,36 @@
 package org.niord.web.conf;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.niord.core.settings.SettingsService;
+import org.niord.model.vo.DomainVo;
+import org.niord.web.DomainRestService;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
- * Loads the site-config.js file and injects relevant system configuration
+ * Loads the site-config.js file and injects relevant system configuration and domains
  */
 @WebFilter(urlPatterns={"/app/conf/site-config.js"})
 public class SiteConfigServletFilter extends AbstractTextResourceServletFilter {
 
     final static int CACHE_SECONDS = 60 * 60 * 2; // 2 hour
 
+    final static String SETTINGS_START  = "/** SETTINGS START **/";
+    final static String SETTINGS_END    = "/** SETTINGS END **/";
+
     @Inject
     Logger log;
 
     @Inject
     SettingsService settingsService;
+
+    @Inject
+    DomainRestService domainRestService;
 
     /** Constructor **/
     public SiteConfigServletFilter() {
@@ -59,6 +69,26 @@ public class SiteConfigServletFilter extends AbstractTextResourceServletFilter {
     }
 
 
+    /**
+     * Returns all domains formatted sa JSON.
+     */
+    private String getDomains() {
+        List<DomainVo> domains = domainRestService.getAllDomains(null, false);
+
+        StringBuilder js = new StringBuilder()
+                .append("    $rootScope.domains = ");
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            js.append(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(domains));
+        } catch (JsonProcessingException e) {
+            js.append("[]");
+        }
+
+        js.append(";\n\n");
+        return js.toString();
+
+    }
+
     /** Escape naughty characters in the key */
     private String escapeKey(String key) {
         return key.replace('.', '_').replace(' ', '_');
@@ -71,7 +101,16 @@ public class SiteConfigServletFilter extends AbstractTextResourceServletFilter {
     @Override
     String updateResponse(HttpServletRequest request, String response) {
 
-        response = response.replace("/** SETTINGS **/", getWebSettings());
+        int startIndex = response.indexOf(SETTINGS_START);
+        int endIndex = response.indexOf(SETTINGS_END) + SETTINGS_END.length();
+
+        if (startIndex != -1 && endIndex != -1) {
+            return response.substring(0, startIndex)
+                    + getWebSettings()
+                    + getDomains()
+                    + response.substring(endIndex);
+        }
+
         return response;
     }
 }

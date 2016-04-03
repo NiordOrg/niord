@@ -15,8 +15,6 @@
  */
 package org.niord.web;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
@@ -30,7 +28,17 @@ import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
@@ -79,27 +87,6 @@ public class DomainRestService extends AbstractBatchableRestService {
         });
 
         return domains;
-    }
-
-
-    /** Returns all domains as a javascript */
-    @GET
-    @Path("/all.js")
-    @Produces("application/javascript;charset=UTF-8")
-    @GZIP
-    public String getAllDomainsAsJavascript() {
-
-        StringBuilder js = new StringBuilder()
-                .append("niordDomains = ");
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            js.append(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(getAllDomains(null, false)));
-        } catch (JsonProcessingException e) {
-            js.append("[]");
-        }
-
-        js.append(";\n");
-        return js.toString();
     }
 
 

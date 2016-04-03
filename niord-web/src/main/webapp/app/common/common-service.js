@@ -148,8 +148,8 @@ angular.module('niord.common')
             /** Sets the initial application domain */
             this.initDomain = function () {
 
-                // Prune the list of niordDomains to be the one the user has roles for
-                $rootScope.domains = $.grep(niordDomains, function (domain) {
+                // Prune the list of domains to be the one the user has roles for
+                $rootScope.domains = $.grep($rootScope.domains, function (domain) {
                     return AuthService.hasRolesFor(domain.clientId);
                 });
 
