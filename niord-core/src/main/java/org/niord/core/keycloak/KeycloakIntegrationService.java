@@ -22,11 +22,15 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
+import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
@@ -35,14 +39,19 @@ import org.niord.core.NiordApp;
 import org.niord.core.domain.Domain;
 import org.niord.core.settings.SettingsService;
 import org.niord.core.settings.annotation.Setting;
+import org.niord.core.user.UserService;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
-import javax.naming.NamingException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.PublicKey;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.niord.core.settings.Setting.Type.Password;
@@ -57,6 +66,9 @@ public class KeycloakIntegrationService {
 
     public static final String KEYCLOAK_REALM       = "niord";
     public static final String KEYCLOAK_WEB_CLIENT  = "niord-web";
+
+    @Inject
+    UserService userService;
 
     @Inject
     SettingsService settingsService;
@@ -105,6 +117,7 @@ public class KeycloakIntegrationService {
         return url;
     }
 
+
     /**
      * Queries Keycloak for its public key.
      * Please refer to Keycloak's AdapterDeploymentContext.
@@ -113,33 +126,15 @@ public class KeycloakIntegrationService {
      */
     public PublicKey resolveKeycloakPublicRealmKey() throws Exception {
 
-        String url = resolveAuthServerUrl();
-
-        // TODO: Check if this works with https based on self-signed certificates
-        HttpClient client = HttpClients.custom().setHostnameVerifier(new AllowAllHostnameVerifier()).build();
-        HttpGet getRealmInfo = new HttpGet(url + "/realms/" + KEYCLOAK_REALM);
-
-        HttpResponse response = client.execute(getRealmInfo);
-
-        int status = response.getStatusLine().getStatusCode();
-        if (status != 200) {
-            try {
-                response.getEntity().getContent().close();
-            } catch (IOException ignored) {
-            }
-            throw new Exception("Unable to resolve realm public key remotely, status = " + status);
-        }
-
-        HttpEntity entity = response.getEntity();
-        if (entity == null) {
-            throw new Exception("Unable to resolve realm public key remotely.  There was no entity.");
-        }
-
-        try (InputStream is = entity.getContent()) {
-            PublishedRealmRepresentation rep = new ObjectMapper()
-                    .readValue(is, PublishedRealmRepresentation.class);
-            return rep.getPublicKey();
-        }
+        return executeAdminRequest(
+                new HttpGet(resolveAuthServerUrl() + "/realms/" + KEYCLOAK_REALM),
+                false, // Add auth header
+                is -> {
+                    PublishedRealmRepresentation rep = new ObjectMapper()
+                            .readValue(is, PublishedRealmRepresentation.class);
+                    log.debug("Read the niord realm representation");
+                    return rep.getPublicKey();
+                });
     }
 
 
@@ -166,6 +161,7 @@ public class KeycloakIntegrationService {
         return authServerRealmKey;
     }
 
+
     /**
      * Creates a new Keycloak deployment for the given domain client ID.
      *
@@ -187,6 +183,7 @@ public class KeycloakIntegrationService {
 
         return KeycloakDeploymentBuilder.build(cfg);
     }
+
 
     /**
      * Creates a new Keycloak deployment for the niord-web web application.
@@ -213,14 +210,29 @@ public class KeycloakIntegrationService {
      * Returns the list of Keycloak clients
      * @return the list of Keycloak clients
      */
-    public Set<String> getKeycloakDomainClients() throws Exception {
-        return executeAdminOperation(keycloak -> keycloak
-                .realm(KEYCLOAK_REALM)
-                .clients()
-                .findAll()
+    public List<ClientRepresentation> getKeycloakDomainClients() throws Exception {
+
+        return executeAdminRequest(
+                new HttpGet(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/clients"),
+                true, // Add auth header
+                is -> {
+                    List<ClientRepresentation> result = new ObjectMapper().readValue(is, new TypeReference<List<ClientRepresentation>>(){});
+                    log.debug("Read clients from Keycloak");
+                    return result;
+                });
+    }
+
+
+    /**
+     * Returns the list of Keycloak client ids
+     * @return the list of Keycloak client ids
+     */
+    public Set<String> getKeycloakDomainClientIds() throws Exception {
+
+        return getKeycloakDomainClients()
                 .stream()
                 .map(ClientRepresentation::getClientId)
-                .collect(Collectors.toSet()));
+                .collect(Collectors.toSet());
     }
 
 
@@ -231,24 +243,29 @@ public class KeycloakIntegrationService {
      */
     public boolean createKeycloakDomainClient(Domain domain) throws Exception {
 
+        // If the domain already exists, bail out
+        if (getKeycloakDomainClientIds().contains(domain.getClientId())) {
+            log.warn("Domain " + domain.getClientId() + " already exists");
+            return false;
+        }
+
         // Create a template for the new client
         ObjectMapper mapper = new ObjectMapper();
         ClientRepresentation client = mapper
                 .readValue(
-                    getClass().getResource("/keycloak-client-template.json"),
-                    ClientRepresentation.class);
+                        getClass().getResource("/keycloak-client-template.json"),
+                        ClientRepresentation.class);
 
         // Instantiate it from the domain
         client.setId(null);
         client.setClientId(domain.getClientId());
         client.setName(domain.getName());
 
+        HttpPost post = new HttpPost(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/clients");
+        post.setEntity(new StringEntity(mapper.writeValueAsString(client), ContentType.APPLICATION_JSON));
+
         // Create the client in Keycloak
-        boolean success = executeAdminOperation(keycloak -> keycloak
-                .realm("niord")
-                .clients()
-                .create(client)
-                .getStatus() == 201);
+        boolean success = executeAdminRequest(post, true, is -> true);
 
         if (!success) {
             log.error("Failed creating client " + domain.getClientId());
@@ -256,96 +273,104 @@ public class KeycloakIntegrationService {
         }
         log.info("Created client " + domain.getClientId());
 
+        // Get hold of the newly created client (with a proper ID)
+        client = getKeycloakDomainClients().stream()
+                .filter(c -> c.getClientId().equals(domain.getClientId()))
+                .findFirst()
+                .orElse(null);
+        String clientsUri = resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/clients/" + client.getId();
 
-        // Create a template for the client roles
-        List<RoleRepresentation> roles =  mapper
-                .readValue(
-                        getClass().getResource("/keycloak-client-roles-template.json"),
-                        new TypeReference<List<RoleRepresentation>>(){});
 
-        // Instantiate the roles from the domain
-        roles.forEach(r -> {
-            r.setId(null);
-            // For composite roles, replace the template client id with the proper client id
-            if (r.isComposite() && r.getComposites().getClient().size() == 1) {
-                String templateClientId = r.getComposites().getClient().keySet().iterator().next();
-                List<String> compositeRoles = r.getComposites().getClient().remove(templateClientId);
-                r.getComposites().getClient().put(domain.getClientId(), compositeRoles);
+        // Define the list of roles to set up for the client
+        RoleRepresentation[] roleReps = new RoleRepresentation[] {
+                new RoleRepresentation("editor", "Editor", false),
+                new RoleRepresentation("admin", "Administrator", false),
+                new RoleRepresentation("sysadmin", "System administrator", false),
+        };
+
+
+        // Create the roles in Keycloak
+        RoleRepresentation prevRole = null;
+        for (RoleRepresentation role : roleReps) {
+            // Post the new role
+            post = new HttpPost(clientsUri + "/roles");
+            post.setEntity(new StringEntity(mapper.writeValueAsString(role), ContentType.APPLICATION_JSON));
+            success &= executeAdminRequest(post, true, is -> true);
+            log.info("Created role " + role.getName() + " for client " + domain.getClientId());
+
+            // The roles are ordered, so that a roles is a composite of its previous roles
+            if (prevRole != null) {
+                updateCompositeRole(client.getClientId(), role, prevRole.getName());
+                post = new HttpPost(clientsUri + "/roles/" + role.getName() + "/composites");
+                post.setEntity(new StringEntity(mapper.writeValueAsString(role), ContentType.APPLICATION_JSON));
+                // Arghh - does not work
+                //success &= executeAdminRequest(post, true, is -> true);
             }
-        });
+            prevRole = role;
 
-        /**
-         * TODO: The code below will fail because the .create() function will yield a 404 error
-         * Guessing it's an error in Keycloak, but need to investigate further.
-
-        // Create the client roles in Keycloak
-        for (RoleRepresentation role : roles) {
-            success = executeAdminOperation(keycloak -> {
-                keycloak.realm("niord")
-                        .clients()
-                        .get(domain.getClientId())
-                        .roles()
-                        .create(role);
-                // Sadly, no error handling when creating roles
-                return true;
-            });
-            log.info("Created role " + role + " for client " + domain.getClientId());
         }
-         **/
 
-        return true;
+        return success;
+    }
+
+
+    /** Updates the composite relation of the role */
+    private void updateCompositeRole(String clientId, RoleRepresentation role, String... nestedRoles) {
+        Map<String, List<String>> clientRoles = new HashMap<>();
+        clientRoles.put(clientId, Arrays.asList(nestedRoles));
+        RoleRepresentation.Composites composites = new RoleRepresentation.Composites();
+        composites.setClient(clientRoles);
+        role.setComposites(composites);
     }
 
 
     /**
-     * Executes a Keycloak operation and returns the result.
-     * Guarantees that the Keycloak client is closed properly.
+     * Executes a Keycloak admin request and returns the result.
      *
-     * @param operation the Keycloak operation to execute
+     * @param request the Keycloak request to execute
+     * @param auth whether to add a Bearer authorization header or not
+     * @param responseHandler the response handler
      * @return the result
      */
-    private <R> R executeAdminOperation(KeycloakOperation<R> operation) throws Exception {
-        Keycloak keycloak = null;
+    private <R> R executeAdminRequest(HttpRequestBase request, boolean auth, KeycloakResponseHandler<R> responseHandler) throws Exception {
 
-        try {
-            keycloak = createKeycloakAdminClient();
-            return operation.execute(keycloak);
-        } finally {
-            if (keycloak != null) {
-                try {
-                    keycloak.close();
-                } catch (Exception ignored) {
-                }
+        if (auth) {
+            KeycloakPrincipal keycloakPrincipal = userService.getCalledPrincipal();
+            if (keycloakPrincipal == null) {
+                throw new Exception("Unable to execute request " + request.getURI() + ". User not authenticated");
             }
+            request.addHeader("Authorization", "Bearer " + keycloakPrincipal.getKeycloakSecurityContext().getTokenString());
+        }
+
+        // TODO: Check if this works with https based on self-signed certificates
+        HttpClient client = HttpClients.custom().setHostnameVerifier(new AllowAllHostnameVerifier()).build();
+
+        HttpResponse response = client.execute(request);
+
+        int status = response.getStatusLine().getStatusCode();
+        if (status != 200 && status != 201) {
+            try {
+                response.getEntity().getContent().close();
+            } catch (IOException ignored) {
+            }
+            throw new Exception("Unable to execute request " + request.getURI() + ", status = " + status);
+        }
+
+        HttpEntity entity = response.getEntity();
+        if (entity == null) {
+            throw new Exception("Unable to execute request " + request.getURI() + ".  There was no entity.");
+        }
+
+        try (InputStream is = entity.getContent()) {
+            return responseHandler.execute(is);
         }
     }
 
 
     /**
-     * Creates a new Keycloak Admin client. Must be closed after use.
-     *
-     * @return the Keycloak client
+     * Interface that is passed along to the executeAdminRequest() function and handles the response
      */
-    private Keycloak createKeycloakAdminClient() throws Exception {
-
-        if (StringUtils.isBlank(authServerAdminUser) || StringUtils.isBlank(authServerAdminPassword)) {
-            throw new Exception("Keycloak admin user/password not properly defined");
-        }
-
-        return Keycloak.getInstance(
-                resolveAuthServerUrl(),
-                KEYCLOAK_REALM,
-                authServerAdminUser,
-                authServerAdminPassword,
-                KEYCLOAK_WEB_CLIENT);
+    private interface KeycloakResponseHandler<R> {
+        R execute(InputStream in) throws IOException;
     }
-
-
-    /**
-     * Interface that represents a discrete Keycloak operation
-     */
-    private interface KeycloakOperation<R> {
-        R execute(Keycloak keycloak) throws NamingException;
-    }
-
 }

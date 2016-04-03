@@ -59,10 +59,12 @@ public class DomainRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<DomainVo> getAllDomains(@QueryParam("lang") String lang) {
+    public List<DomainVo> getAllDomains(
+            @QueryParam("lang") String lang,
+            @QueryParam("keycloakState") @DefaultValue("true") boolean keycloakState) {
 
-        // Load the domains including their keycloak state
-        List<DomainVo> domains = domainService.getDomains(true).stream()
+        // Load the domains including their keycloak state, if requested
+        List<DomainVo> domains = domainService.getDomains(keycloakState ).stream()
                 .map(Domain::toVo)
                 .collect(Collectors.toList());
 
@@ -91,7 +93,7 @@ public class DomainRestService extends AbstractBatchableRestService {
                 .append("niordDomains = ");
         try {
             ObjectMapper mapper = new ObjectMapper();
-            js.append(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(getAllDomains(null)));
+            js.append(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(getAllDomains(null, false)));
         } catch (JsonProcessingException e) {
             js.append("[]");
         }
@@ -111,7 +113,7 @@ public class DomainRestService extends AbstractBatchableRestService {
     @NoCache
     public DomainVo createDomain(DomainVo domain) throws Exception {
         log.info("Creating domain " + domain);
-        return domainService.createDomain(new Domain(domain)).toVo();
+        return domainService.createDomain(new Domain(domain), true).toVo();
     }
 
     /** Updates an existing domain */

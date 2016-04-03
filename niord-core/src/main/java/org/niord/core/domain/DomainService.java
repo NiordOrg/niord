@@ -73,7 +73,7 @@ public class DomainService extends BaseService {
         List<Domain> domains = getAll(Domain.class);
         if (keycloakState) {
             try {
-                Set<String> keycloakClients = keycloakService.getKeycloakDomainClients();
+                Set<String> keycloakClients = keycloakService.getKeycloakDomainClientIds();
                 domains.stream()
                         .forEach(d -> d.setInKeycloak(keycloakClients.contains(d.getClientId())));
             } catch (Exception e) {
@@ -118,7 +118,7 @@ public class DomainService extends BaseService {
      * @param domain the domain to create
      * @return the created domain
      */
-    public Domain createDomain(Domain domain) {
+    public Domain createDomain(Domain domain, boolean createInKeycloak) {
         Domain original = findByClientId(domain.getClientId());
         if (original != null) {
             throw new IllegalArgumentException("Cannot create domain with duplicate client ID "
@@ -134,7 +134,18 @@ public class DomainService extends BaseService {
         // Substitute the message series with the persisted ones
         domain.setMessageSeries(persistedList(MessageSeries.class, domain.getMessageSeries()));
 
-        return saveEntity(domain);
+        domain = saveEntity(domain);
+
+        // If request, create the domain in Keycloak - but do not throw an error in case of an error
+        if (createInKeycloak) {
+            try {
+                keycloakService.createKeycloakDomainClient(domain);
+            } catch (Exception e) {
+                log.error("Error creating new domain in Keycloak", e);
+            }
+        }
+
+        return domain;
     }
 
 

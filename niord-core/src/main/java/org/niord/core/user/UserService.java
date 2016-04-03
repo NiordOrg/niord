@@ -24,12 +24,9 @@ public class UserService extends BaseService {
     @Resource
     SessionContext ctx;
 
-    /**
-     * Returns the currently authenticated user.
-     * If necessary the user is created and updated in the database
-     * @return the currently authenticated user
-     */
-    public User currentUser() {
+
+    /** Returns the current Keycloak principal */
+    public KeycloakPrincipal getCalledPrincipal() {
         Principal principal = ctx.getCallerPrincipal();
 
         // Handle un-authenticated case
@@ -37,8 +34,22 @@ public class UserService extends BaseService {
             return null;
         }
 
+        return (KeycloakPrincipal) principal;
+    }
+
+    /**
+     * Returns the currently authenticated user.
+     * If necessary the user is created and updated in the database
+     * @return the currently authenticated user
+     */
+    public User currentUser() {
+
         // Get the current Keycloak principal
-        KeycloakPrincipal keycloakPrincipal = (KeycloakPrincipal) principal;
+        KeycloakPrincipal keycloakPrincipal = getCalledPrincipal();
+        if (keycloakPrincipal == null) {
+            return null;
+        }
+
         AccessToken token = keycloakPrincipal.getKeycloakSecurityContext().getToken();
 
         User user = findByUsername(token.getPreferredUsername());
