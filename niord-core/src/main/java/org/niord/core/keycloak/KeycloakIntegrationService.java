@@ -54,8 +54,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.niord.core.settings.Setting.Type.Password;
-
 
 /**
  * Provides an interface for Keycloak integration.
@@ -80,14 +78,6 @@ public class KeycloakIntegrationService {
     @Inject
     @Setting(value = "authServerRealmKey", description = "The public key associated with the Niord realm in Keycloak")
     String authServerRealmKey;
-
-    @Inject
-    @Setting(value = "authServerAdminUser", description = "The Keycloak user to use for creating Keycloak clients")
-    String authServerAdminUser;
-
-    @Inject
-    @Setting(value = "authServerAdminPassword", type = Password, description = "The Keycloak password to use for creating Keycloak clients")
-    String authServerAdminPassword;
 
     @Inject
     NiordApp app;

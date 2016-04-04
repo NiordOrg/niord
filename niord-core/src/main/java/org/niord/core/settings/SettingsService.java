@@ -218,6 +218,11 @@ public class SettingsService extends BaseService {
     public Object peek(String key) {
         Objects.requireNonNull(key, "Must specify valid setting key");
 
+        // If a corresponding system property is set, it takes precedence
+        if (System.getProperty(key) != null) {
+            return System.getProperty(key);
+        }
+
         Setting setting = em.find(Setting.class, key);
         if (setting == null) {
             return null;
