@@ -43,7 +43,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * REST interface for accessing message series.
+ * REST interface for managing message series.
  */
 @Path("/message-series")
 @Stateless
@@ -57,10 +57,6 @@ public class MessageSeriesRestService {
     @Inject
     MessageSeriesService messageSeriesService;
 
-
-    /****************************/
-    /** Message Series         **/
-    /****************************/
 
     /** Returns all message series */
     @GET

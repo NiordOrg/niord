@@ -7,9 +7,9 @@
  */
 angular.module('niord.messages')
     .controller('MessageListCtrl', ['$scope', '$rootScope', '$location', '$http', '$timeout',
-                'FilterService', 'MapService', 'AtonService',
+                'AuthService', 'FilterService', 'MapService', 'AtonService',
         function ($scope, $rootScope, $location, $http, $timeout,
-                  FilterService, MapService, AtonService) {
+                  AuthService, FilterService, MapService, AtonService) {
             'use strict';
 
             $scope.messageList = [];
@@ -414,9 +414,11 @@ angular.module('niord.messages')
             /*****************************/
 
             $scope.loadNamedFilters = function () {
-                FilterService
-                    .getFilters()
-                    .success(function (filters) { $scope.namedFilters = filters; });
+                if (AuthService.loggedIn) {
+                    FilterService
+                        .getFilters()
+                        .success(function (filters) { $scope.namedFilters = filters; });
+                }
             };
 
             $scope.namedFilters = [];

@@ -22,7 +22,7 @@ import org.niord.model.IJsonSerializable;
  */
 public class MessageFilterVo implements IJsonSerializable {
 
-    Long id;
+    Integer id;
     String name;
     String parameters;
 
@@ -30,11 +30,11 @@ public class MessageFilterVo implements IJsonSerializable {
     /** Getters and Setters **/
     /*************************/
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
