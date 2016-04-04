@@ -508,8 +508,6 @@ angular.module('niord.admin')
 
             $scope.messageSeries = [];
             $scope.series = undefined;  // The message series being edited
-            $scope.mrnPrefix = '';      // The MRN prefix of the message series being edited
-            $scope.mrnSuffix = '';      // The MRN suffix of the message series being edited
             $scope.editMode = 'add';
             $scope.search = '';
 
@@ -527,30 +525,34 @@ angular.module('niord.admin')
 
             /** Update the MRN prefix and suffix of the message series being edited */
             $scope.updateMrnFormat = function (updateSuffix) {
-                $scope.mrnPrefix = $scope.series.mainType == 'NW'
+                $scope.series.mrnPrefix = $scope.series.mainType == 'NW'
                     ? $rootScope.nwMrnPrefix
                     : $rootScope.nmMrnPrefix;
                 if (updateSuffix) {
-                    $scope.mrnSuffix = '';
+                    $scope.series.mrnSuffix = '';
                     if ($scope.series.mrnFormat &&
-                        $scope.series.mrnFormat.substring(0, $scope.mrnPrefix.length) === $scope.mrnPrefix) {
-                        $scope.mrnSuffix = $scope.series.mrnFormat.substring($scope.mrnPrefix.length);
+                        $scope.series.mrnFormat.substring(0, $scope.series.mrnPrefix.length) === $scope.series.mrnPrefix) {
+                        $scope.series.mrnSuffix = $scope.series.mrnFormat.substring($scope.series.mrnPrefix.length);
                     }
                 }
             };
 
 
             /** Called whenever the MRN suffix gets updated */
-            $scope.mrnSuffixUpdated = function (mrnSuffix) {
-                $scope.series.mrnFormat = $scope.mrnPrefix + mrnSuffix;
+            $scope.mrnSuffixUpdated = function () {
+                $scope.series.mrnFormat = $scope.series.mrnPrefix + $scope.series.mrnSuffix;
             };
 
 
             /** Inserts the token in the given field */
             $scope.insertToken = function (field, token) {
-                var id = '#' + field;
-                $(id).val($(id).val() + ':' + token);
-                $scope.$$phase || $scope.$apply();
+                if (field === 'mrnSuffix') {
+                    $scope.series.mrnSuffix += token;
+                } else {
+                    $scope.series.shortFormat += token;
+                }
+                $scope.mrnSuffixUpdated();
+                $scope.seriesForm.$setDirty();
             };
 
 
@@ -561,9 +563,10 @@ angular.module('niord.admin')
                     seriesId: '',
                     mainType: 'NW',
                     mrnFormat: '',
-                    shortFormat: undefined
+                    shortFormat: ''
                 };
                 $scope.updateMrnFormat(true);
+                $scope.seriesForm.$setPristine();
             };
 
 
@@ -573,6 +576,7 @@ angular.module('niord.admin')
                 $scope.series = angular.copy(series);
                 $scope.series.seriesId = undefined;
                 $scope.updateMrnFormat(true);
+                $scope.seriesForm.$setPristine();
             };
 
 
@@ -581,6 +585,7 @@ angular.module('niord.admin')
                 $scope.editMode = 'edit';
                 $scope.series = angular.copy(series);
                 $scope.updateMrnFormat(true);
+                $scope.seriesForm.$setPristine();
             };
 
 
@@ -592,6 +597,10 @@ angular.module('niord.admin')
 
             /** Saves the current message series being edited */
             $scope.saveMessageSeries = function () {
+                $scope.series.mrnFormat = $scope.series.mrnPrefix + $scope.series.mrnSuffix;
+                delete $scope.series.mrnPrefix;
+                delete $scope.series.mrnSuffix;
+
                 if ($scope.series && $scope.editMode == 'add') {
                     AdminMessageSeriesService
                         .createMessageSeries($scope.series)

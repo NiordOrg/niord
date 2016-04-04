@@ -6,8 +6,8 @@
         <p>Add, modify and manage message series.</p>
 
         <!-- Add/edit message series -->
-        <div ng-if="series !== undefined" style="margin-top: 20px">
-            <form name="edit_form" class="form-horizontal">
+        <div ng-show="series !== undefined" style="margin-top: 20px">
+            <form id="seriesForm" name="seriesForm" class="form-horizontal">
 
                 <div class="row">
                     <div class="form-controls col-sm-12 col-md-6 col-lg-8">
@@ -38,9 +38,9 @@
                             <label class="col-sm-4">MRN Format</label>
                             <div class="col-sm-8">
                                 <div class="input-group">
-                                    <div class="input-group-addon input-sm">{{mrnPrefix}}</div>
+                                    <div class="input-group-addon input-sm">{{series.mrnPrefix}}</div>
                                     <input type="text" id="mrnSuffix" class="form-control input-sm"
-                                           ng-model="mrnSuffix" ng-change="mrnSuffixUpdated(mrnSuffix)" required
+                                           ng-model="series.mrnSuffix" ng-change="mrnSuffixUpdated()" required
                                            autocapitalize="off" autocorrect="off" autocomplete="off"/>
                                     <div class="input-group-btn">
                                         <button type="button" class="btn btn-sm btn-default dropdown-toggle"
@@ -90,7 +90,7 @@
                             Cancel
                         </button>
                         <button type="submit" class="btn btn-primary btn-sm" ng-click="saveMessageSeries(series)"
-                                ng-disabled="edit_form.$pristine || edit_form.$invalid">
+                                ng-disabled="seriesForm.$pristine || seriesForm.$invalid">
                             <span class="glyphicon glyphicon-floppy-disk"></span>
                             Save Message Series
                         </button>
