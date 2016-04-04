@@ -39,9 +39,21 @@
                             <div class="col-sm-8">
                                 <div class="input-group">
                                     <div class="input-group-addon input-sm">{{mrnPrefix}}</div>
-                                    <input type="text" class="form-control input-sm"
+                                    <input type="text" id="mrnSuffix" class="form-control input-sm"
                                            ng-model="mrnSuffix" ng-change="mrnSuffixUpdated(mrnSuffix)" required
                                            autocapitalize="off" autocorrect="off" autocomplete="off"/>
+                                    <div class="input-group-btn">
+                                        <button type="button" class="btn btn-sm btn-default dropdown-toggle"
+                                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            insert <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-right">
+                                            <li><a href ng-click="insertToken('mrnSuffix', '${full-year}')">Year (4 digits)</a></li>
+                                            <li><a href ng-click="insertToken('mrnSuffix', '${year}')">Year (2 digits)</a></li>
+                                            <li><a href ng-click="insertToken('mrnSuffix', '${week}')">Week</a></li>
+                                            <li><a href ng-click="insertToken('mrnSuffix', '${number}')">Number (3 digits)</a></li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -49,9 +61,23 @@
                         <div class="form-group">
                             <label class="col-sm-4">Short Format</label>
                             <div class="col-sm-8">
-                                <input type="text" class="form-control input-sm"
-                                       ng-model="series.shortFormat"
-                                       autocapitalize="off" autocorrect="off" autocomplete="off"/>
+                                <div class="input-group">
+                                    <input type="text" id="shortFormat" class="form-control input-sm"
+                                           ng-model="series.shortFormat"
+                                           autocapitalize="off" autocorrect="off" autocomplete="off"/>
+                                    <div class="input-group-btn">
+                                        <button type="button" class="btn btn-sm btn-default dropdown-toggle"
+                                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            insert <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-right">
+                                            <li><a href ng-click="insertToken('shortFormat', '${full-year}')">Year (4 digits)</a></li>
+                                            <li><a href ng-click="insertToken('shortFormat', '${year}')">Year (2 digits)</a></li>
+                                            <li><a href ng-click="insertToken('shortFormat', '${week}')">Week</a></li>
+                                            <li><a href ng-click="insertToken('shortFormat', '${number}')">Number (3 digits)</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

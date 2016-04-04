@@ -546,6 +546,14 @@ angular.module('niord.admin')
             };
 
 
+            /** Inserts the token in the given field */
+            $scope.insertToken = function (field, token) {
+                var id = '#' + field;
+                $(id).val($(id).val() + ':' + token);
+                $scope.$$phase || $scope.$apply();
+            };
+
+
             /** Adds a new message series **/
             $scope.addMessageSeries = function () {
                 $scope.editMode = 'add';
