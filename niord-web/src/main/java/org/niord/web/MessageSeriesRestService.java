@@ -19,7 +19,7 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.message.MessageSeries;
-import org.niord.core.message.MessageService;
+import org.niord.core.message.MessageSeriesService;
 import org.niord.model.vo.MessageSeriesVo;
 import org.slf4j.Logger;
 
@@ -55,7 +55,7 @@ public class MessageSeriesRestService {
     Logger log;
 
     @Inject
-    MessageService messageService;
+    MessageSeriesService messageSeriesService;
 
 
     /****************************/
@@ -69,7 +69,7 @@ public class MessageSeriesRestService {
     @GZIP
     @NoCache
     public List<MessageSeriesVo> getAllMessageSeries() {
-        return messageService.getAllMessageSeries().stream()
+        return messageSeriesService.getAllMessageSeries().stream()
                 .map(MessageSeries::toVo)
                 .collect(Collectors.toList());
     }
@@ -85,7 +85,7 @@ public class MessageSeriesRestService {
             @PathParam("seriesIds") String seriesIds,
             @QueryParam("limit") @DefaultValue("100") int limit) {
 
-        return messageService.findByIds(seriesIds.split(",")).stream()
+        return messageSeriesService.findByIds(seriesIds.split(",")).stream()
                 .limit(limit)
                 .map(MessageSeries::toVo)
                 .collect(Collectors.toList());
@@ -101,7 +101,7 @@ public class MessageSeriesRestService {
     public List<MessageSeriesVo> searchMessageSeries(
             @QueryParam("name") @DefaultValue("") String name,
             @QueryParam("limit") @DefaultValue("100") int limit) {
-        return messageService.searchMessageSeries(name, limit).stream()
+        return messageSeriesService.searchMessageSeries(name, limit).stream()
                 .map(MessageSeries::toVo)
                 .collect(Collectors.toList());
     }
@@ -117,7 +117,7 @@ public class MessageSeriesRestService {
     @NoCache
     public MessageSeriesVo createMessageSeries(MessageSeriesVo seriesVo) throws Exception {
         log.info("Creating message series " + seriesVo);
-        return messageService.createMessageSeries(new MessageSeries(seriesVo)).toVo();
+        return messageSeriesService.createMessageSeries(new MessageSeries(seriesVo)).toVo();
     }
 
 
@@ -135,7 +135,7 @@ public class MessageSeriesRestService {
         }
 
         log.info("Updating message series " + seriesVo);
-        return messageService.updateMessageSeries(new MessageSeries(seriesVo)).toVo();
+        return messageSeriesService.updateMessageSeries(new MessageSeries(seriesVo)).toVo();
     }
 
 
@@ -148,7 +148,7 @@ public class MessageSeriesRestService {
     @NoCache
     public void deleteMessageSeries(@PathParam("seriesId") String seriesId) throws Exception {
         log.info("Deleting message series " + seriesId);
-        messageService.deleteMessageSeries(seriesId);
+        messageSeriesService.deleteMessageSeries(seriesId);
     }
 
 }

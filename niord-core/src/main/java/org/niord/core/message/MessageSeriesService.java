@@ -29,18 +29,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Business interface for accessing messages
+ * Business interface for managing message series
  */
 @Stateless
-public class MessageService extends BaseService {
+public class MessageSeriesService extends BaseService {
 
     @Inject
     private Logger log;
 
-
-    /****************************/
-    /** Message Series         **/
-    /****************************/
 
     /**
      * Returns the message series with the given series identifier
@@ -83,6 +79,7 @@ public class MessageService extends BaseService {
                 .collect(Collectors.toList());
     }
 
+
     /**
      * Returns all message series
      * @return the list of all message series
@@ -123,6 +120,8 @@ public class MessageService extends BaseService {
             throw new IllegalArgumentException("Cannot create message series with duplicate message series IDs"
                     + series.getSeriesId());
         }
+
+        log.info("Creating new message series " + series.getSeriesId());
         return saveEntity(series);
     }
 
@@ -143,6 +142,7 @@ public class MessageService extends BaseService {
         original.setMainType(series.getMainType());
         original.setShortFormat(series.getShortFormat());
 
+        log.info("Updating message series " + series.getSeriesId());
         return saveEntity(original);
     }
 
@@ -157,6 +157,7 @@ public class MessageService extends BaseService {
         // TODO: Check if there are message with the given message series
         MessageSeries original = findBySeriesId(seriesId);
         if (original != null) {
+            log.info("Removing message series " + seriesId);
             remove(original);
             return true;
         }
