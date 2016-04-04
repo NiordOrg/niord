@@ -18,7 +18,7 @@ package org.niord.core.domain;
 import org.niord.core.area.Area;
 import org.niord.core.category.Category;
 import org.niord.core.keycloak.KeycloakIntegrationService;
-import org.niord.core.message.MessageSeries;
+import org.niord.core.message.MessageService;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
@@ -37,6 +37,9 @@ public class DomainService extends BaseService {
 
     @Inject
     private KeycloakIntegrationService keycloakService;
+
+    @Inject
+    MessageService messageService;
 
     /**
      * Returns the domain with the given clientId
@@ -107,7 +110,7 @@ public class DomainService extends BaseService {
         original.setCategories(persistedList(Category.class, domain.getCategories()));
 
         // Substitute the message series with the persisted ones
-        original.setMessageSeries(persistedList(MessageSeries.class, domain.getMessageSeries()));
+        original.setMessageSeries(messageService.persistedMessageSeries(domain.getMessageSeries()));
 
         return saveEntity(original);
     }
@@ -132,7 +135,7 @@ public class DomainService extends BaseService {
         domain.setCategories(persistedList(Category.class, domain.getCategories()));
 
         // Substitute the message series with the persisted ones
-        domain.setMessageSeries(persistedList(MessageSeries.class, domain.getMessageSeries()));
+        domain.setMessageSeries(messageService.persistedMessageSeries(domain.getMessageSeries()));
 
         domain = saveEntity(domain);
 

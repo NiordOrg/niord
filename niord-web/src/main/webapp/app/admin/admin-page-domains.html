@@ -85,13 +85,13 @@
                             <div class="col-sm-8">
                                 <ui-select multiple id="messageSeries" ng-model="domain.messageSeries" >
                                     <ui-select-match placeholder="Select Message Series">
-                                        {{$item.mrnFormat}}
+                                        {{$item.seriesId}}
                                     </ui-select-match>
                                     <ui-select-choices repeat="series in messageSeries"
                                                        refresh="refreshMessageSeries($select.search)"
                                                        refresh-delay="100">
                                         <div>
-                                            <span ng-bind-html="series.mrnFormat | highlight: $select.search"></span>
+                                            <span ng-bind-html="series.seriesId | highlight: $select.search"></span>
                                         </div>
 
                                     </ui-select-choices>
@@ -168,7 +168,7 @@
                                 <div ng-repeat="category in domain.categories">{{category.descs[0].name}}</div>
                             </td>
                             <td>
-                                <div ng-repeat="series in domain.messageSeries">{{series.mrnFormat}}</div>
+                                <div ng-repeat="series in domain.messageSeries">{{series.seriesId}}</div>
                             </td>
                             <td nowrap align="right">
                                 <a href ng-click="editDomain(domain);" title="Edit Domain"><i class="glyphicon glyphicon-pencil"></i></a>

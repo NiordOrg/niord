@@ -38,10 +38,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -79,19 +77,15 @@ public class MessageSeriesRestService {
 
     /** Returns the message series with the given comma-separated ID's */
     @GET
-    @Path("/search/{ids}")
+    @Path("/search/{seriesIds}")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
     public List<MessageSeriesVo> getMessageSeries(
-            @PathParam("ids") String ids,
+            @PathParam("seriesIds") String seriesIds,
             @QueryParam("limit") @DefaultValue("100") int limit) {
 
-        Set<Integer> idSet = Arrays.stream(ids.split(","))
-                .map(Integer::valueOf)
-                .collect(Collectors.toSet());
-
-        return messageService.findByIds(idSet).stream()
+        return messageService.findByIds(seriesIds.split(",")).stream()
                 .limit(limit)
                 .map(MessageSeries::toVo)
                 .collect(Collectors.toList());
@@ -129,14 +123,14 @@ public class MessageSeriesRestService {
 
     /** Updates an existing message series */
     @PUT
-    @Path("/series/{id}")
+    @Path("/series/{seriesId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({ "sysadmin" })
     @GZIP
     @NoCache
-    public MessageSeriesVo updateMessageSeries(@PathParam("id") Integer id, MessageSeriesVo seriesVo) throws Exception {
-        if (!Objects.equals(id, seriesVo.getId())) {
+    public MessageSeriesVo updateMessageSeries(@PathParam("seriesId") String seriesId, MessageSeriesVo seriesVo) throws Exception {
+        if (!Objects.equals(seriesId, seriesVo.getSeriesId())) {
             throw new WebApplicationException(400);
         }
 
@@ -147,14 +141,14 @@ public class MessageSeriesRestService {
 
     /** Deletes an existing message series */
     @DELETE
-    @Path("/series/{id}")
+    @Path("/series/{seriesId}")
     @Consumes("application/json;charset=UTF-8")
     @RolesAllowed({ "sysadmin" })
     @GZIP
     @NoCache
-    public void deleteMessageSeries(@PathParam("id") Integer id) throws Exception {
-        log.info("Deleting message series " + id);
-        messageService.deleteMessageSeries(id);
+    public void deleteMessageSeries(@PathParam("seriesId") String seriesId) throws Exception {
+        log.info("Deleting message series " + seriesId);
+        messageService.deleteMessageSeries(seriesId);
     }
 
 }

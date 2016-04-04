@@ -527,6 +527,7 @@ angular.module('niord.admin')
             $scope.addMessageSeries = function () {
                 $scope.editMode = 'add';
                 $scope.series = {
+                    seriesId: '',
                     mainType: 'NW',
                     mrnFormat: '',
                     shortFormat: undefined
@@ -538,7 +539,7 @@ angular.module('niord.admin')
             $scope.copyMessageSeries = function (series) {
                 $scope.editMode = 'add';
                 $scope.series = angular.copy(series);
-                $scope.series.id = undefined;
+                $scope.series.seriesId = undefined;
             };
 
 
@@ -575,7 +576,7 @@ angular.module('niord.admin')
             /** Deletes the given message series */
             $scope.deleteMessageSeries = function (series) {
                 DialogService.showConfirmDialog(
-                    "Delete message series?", "Delete message series ID '" + series.mrnFormat + "'?")
+                    "Delete message series?", "Delete message series ID '" + series.seriesId + "'?")
                     .then(function() {
                         AdminMessageSeriesService
                             .deleteMessageSeries(series)

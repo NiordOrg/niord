@@ -21,9 +21,12 @@ import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Business interface for accessing messages
@@ -40,14 +43,14 @@ public class MessageService extends BaseService {
     /****************************/
 
     /**
-     * Returns the message series with the given MRN format
-     * @param mrnFormat the MRN format
-     * @return the message series with the given MRN format or null if not found
+     * Returns the message series with the given series identifier
+     * @param seriesId the series identifier
+     * @return the message series with the given series identifier or null if not found
      */
-    public MessageSeries findByMrnFormat(String mrnFormat) {
+    public MessageSeries findBySeriesId(String seriesId) {
         try {
-            return em.createNamedQuery("MessageSeries.findByMrnFormat", MessageSeries.class)
-                    .setParameter("mrnFormat", mrnFormat)
+            return em.createNamedQuery("MessageSeries.findBySeriesId", MessageSeries.class)
+                    .setParameter("seriesId", seriesId)
                     .getSingleResult();
         } catch (Exception e) {
             return null;
@@ -56,16 +59,29 @@ public class MessageService extends BaseService {
 
 
     /**
-     * Returns all message series with the given ids
-     * @param ids the ids of the message series to look up
-     * @return the list of all message series with the given ids
+     * Returns all message series with the given series IDs
+     * @param seriesIds the series IDs of the message series to look up
+     * @return the list of all message series with the given series IDs
      */
-    public List<MessageSeries> findByIds(Set<Integer> ids) {
-        return em.createNamedQuery("MessageSeries.findByIds", MessageSeries.class)
-                .setParameter("ids", ids)
+    public List<MessageSeries> findByIds(String... seriesIds) {
+        Set<String> serIds = new HashSet<>(Arrays.asList(seriesIds));
+        return em.createNamedQuery("MessageSeries.findBySeriesIds", MessageSeries.class)
+                .setParameter("seriesIds", serIds)
                 .getResultList();
     }
 
+
+    /**
+     * Returns a list of persisted message series based on a list of template message series
+     * @param series the list of message series to look up persisted series for
+     * @return the list of corresponding persisted series
+     */
+    public List<MessageSeries> persistedMessageSeries(List<MessageSeries> series) {
+        return series.stream()
+                .map(ms -> findBySeriesId(ms.getSeriesId()))
+                .filter(ms -> ms != null)
+                .collect(Collectors.toList());
+    }
 
     /**
      * Returns all message series
@@ -102,10 +118,10 @@ public class MessageService extends BaseService {
      * @return the persisted message series
      */
     public MessageSeries createMessageSeries(MessageSeries series) {
-        MessageSeries original = findByMrnFormat(series.getMrnFormat());
+        MessageSeries original = findBySeriesId(series.getSeriesId());
         if (original != null) {
-            throw new IllegalArgumentException("Cannot create message series with duplicate MRN format "
-                    + series.getMrnFormat());
+            throw new IllegalArgumentException("Cannot create message series with duplicate message series IDs"
+                    + series.getSeriesId());
         }
         return saveEntity(series);
     }
@@ -117,7 +133,11 @@ public class MessageService extends BaseService {
      * @return the persisted message series
      */
     public MessageSeries updateMessageSeries(MessageSeries series) {
-        MessageSeries original = getByPrimaryKey(MessageSeries.class, series.getId());
+        MessageSeries original = findBySeriesId(series.getSeriesId());
+        if (original == null) {
+            throw new IllegalArgumentException("Cannot update message series non-existing message series IDs"
+                    + series.getSeriesId());
+        }
 
         original.setMrnFormat(series.getMrnFormat());
         original.setMainType(series.getMainType());
@@ -128,15 +148,14 @@ public class MessageService extends BaseService {
 
 
     /**
-     * Deletes the message series with the given ID
-     * @param id the message series to delete
+     * Deletes the message series with the given Series ID
+     * @param seriesId the message series to delete
      * @return if the message was deleted
      */
-    public boolean deleteMessageSeries(Integer id) {
+    public boolean deleteMessageSeries(String seriesId) {
 
         // TODO: Check if there are message with the given message series
-
-        MessageSeries original = getByPrimaryKey(MessageSeries.class, id);
+        MessageSeries original = findBySeriesId(seriesId);
         if (original != null) {
             remove(original);
             return true;

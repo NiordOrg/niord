@@ -22,7 +22,7 @@ import org.niord.model.IJsonSerializable;
  */
 public class MessageSeriesVo implements IJsonSerializable {
 
-    Integer id;
+    String seriesId;
     String mainType;
     String mrnFormat;
     String shortFormat;
@@ -31,12 +31,12 @@ public class MessageSeriesVo implements IJsonSerializable {
     /** Getters and Setters **/
     /*************************/
 
-    public Integer getId() {
-        return id;
+    public String getSeriesId() {
+        return seriesId;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
+    public void setSeriesId(String seriesId) {
+        this.seriesId = seriesId;
     }
 
     public String getMainType() {

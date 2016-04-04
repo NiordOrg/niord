@@ -12,11 +12,11 @@
                 <div class="row">
                     <div class="form-controls col-sm-12 col-md-6 col-lg-8">
 
-                        <div ng-if="editMode == 'edit'" class="form-group">
+                        <div class="form-group">
                             <label class="col-sm-4">Message Series ID</label>
                             <div class="col-sm-8">
                                 <input type="text" class="form-control input-sm"
-                                       focus="focusMe" ng-model="series.id" disabled="disabled" />
+                                       focus="focusMe" ng-model="series.seriesId" ng-disabled="editMode == 'edit'" />
                             </div>
                         </div>
 
@@ -94,8 +94,8 @@
                             <th>Short Format</th>
                             <th></th>
                         </tr>
-                        <tr ng-repeat="series in messageSeries | filter: { mrnFormat: search }">
-                            <td>{{series.id}}</td>
+                        <tr ng-repeat="series in messageSeries | filter: { seriesId: search }">
+                            <td>{{series.seriesId}}</td>
                             <td>{{series.mainType}}</td>
                             <td>{{series.mrnFormat}}</td>
                             <td>{{series.shortFormat}}</td>

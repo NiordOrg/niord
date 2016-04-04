@@ -25,6 +25,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.validation.constraints.NotNull;
 
 
 /**
@@ -33,23 +34,28 @@ import javax.persistence.NamedQuery;
 @Entity
 @Cacheable
 @NamedQueries({
-        @NamedQuery(name="MessageSeries.findByMrnFormat",
-                query="SELECT ms FROM MessageSeries ms where ms.mrnFormat = :mrnFormat"),
-        @NamedQuery(name="MessageSeries.findByIds",
-                query="SELECT ms FROM MessageSeries ms where ms.id in (:ids)"),
+        @NamedQuery(name="MessageSeries.findBySeriesId",
+                query="SELECT ms FROM MessageSeries ms where ms.seriesId = :seriesId"),
+        @NamedQuery(name="MessageSeries.findBySeriesIds",
+                query="SELECT ms FROM MessageSeries ms where ms.seriesId in (:seriesIds)"),
         @NamedQuery(name  = "MessageSeries.searchMessageSeries",
-                query = "select ms FROM MessageSeries ms where lower(ms.mrnFormat) like lower(:term)")
+                query = "select ms FROM MessageSeries ms where lower(ms.mrnFormat) like lower(:term) "
+                      + "or lower(ms.seriesId) like lower(:term)")
 
 })
+@SuppressWarnings("unused")
 public class MessageSeries extends VersionedEntity<Integer> {
 
     public enum MainType { NW, NM }
 
+    @Column(unique = true, nullable = false)
+    String seriesId;
+
+    @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     MainType mainType;
 
-    @Column(unique = true, nullable = false)
+    @NotNull
     String mrnFormat;
 
     String shortFormat;
@@ -62,7 +68,7 @@ public class MessageSeries extends VersionedEntity<Integer> {
 
     /** Constructor */
     public MessageSeries(MessageSeriesVo series) {
-        this.id = series.getId();
+        this.seriesId = series.getSeriesId();
         this.mainType = MainType.valueOf(series.getMainType());
         this.mrnFormat = series.getMrnFormat();
         this.shortFormat = series.getShortFormat();
@@ -72,7 +78,7 @@ public class MessageSeries extends VersionedEntity<Integer> {
     /** Converts this entity to a value object */
     public MessageSeriesVo toVo() {
         MessageSeriesVo series = new MessageSeriesVo();
-        series.setId(id);
+        series.setSeriesId(seriesId);
         series.setMainType(mainType.toString());
         series.setMrnFormat(mrnFormat);
         series.setShortFormat(shortFormat);
@@ -82,6 +88,14 @@ public class MessageSeries extends VersionedEntity<Integer> {
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public String getSeriesId() {
+        return seriesId;
+    }
+
+    public void setSeriesId(String seriesId) {
+        this.seriesId = seriesId;
+    }
 
     public MainType getMainType() {
         return mainType;

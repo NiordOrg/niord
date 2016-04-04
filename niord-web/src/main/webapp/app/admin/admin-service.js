@@ -150,13 +150,13 @@ angular.module('niord.admin')
 
             /** Updates the given message series **/
             updateMessageSeries: function(series) {
-                return $http.put('/rest/message-series/series/' + series.id, series);
+                return $http.put('/rest/message-series/series/' + encodeURIComponent(series.seriesId), series);
             },
 
 
             /** Deletes the given message series **/
             deleteMessageSeries: function(series) {
-                return $http.delete('/rest/message-series/series/' + series.id);
+                return $http.delete('/rest/message-series/series/' + encodeURIComponent(series.seriesId));
             }
         };
     }])
