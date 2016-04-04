@@ -25,6 +25,8 @@ angular.module('niord.conf')
         $rootScope.siteLanguages = ["da","en"];
         $rootScope.numeralLauguages = {"da":"da-dk","en":"en"};
         $rootScope.wmsLayerEnabled = true;
+        $rootScope.nwMrnPrefix = "urn:mrn:iho:nw:";
+        $rootScope.nmMrnPrefix = "urn:mrn:iho:nm:";
 
         $rootScope.domains = [{
                 "clientId" : "niord-client-nw",

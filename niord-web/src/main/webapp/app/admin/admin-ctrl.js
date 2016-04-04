@@ -502,12 +502,14 @@ angular.module('niord.admin')
      * Message Series Admin Controller
      * Controller for the Admin message series page
      */
-    .controller('MessageSeriesAdminCtrl', ['$scope', 'growl', 'AdminMessageSeriesService', 'DialogService',
-        function ($scope, growl, AdminMessageSeriesService, DialogService) {
+    .controller('MessageSeriesAdminCtrl', ['$scope', '$rootScope', 'growl', 'AdminMessageSeriesService', 'DialogService',
+        function ($scope, $rootScope, growl, AdminMessageSeriesService, DialogService) {
             'use strict';
 
             $scope.messageSeries = [];
-            $scope.series = undefined; // The message series being edited
+            $scope.series = undefined;  // The message series being edited
+            $scope.mrnPrefix = '';      // The MRN prefix of the message series being edited
+            $scope.mrnSuffix = '';      // The MRN suffix of the message series being edited
             $scope.editMode = 'add';
             $scope.search = '';
 
@@ -523,6 +525,27 @@ angular.module('niord.admin')
             };
 
 
+            /** Update the MRN prefix and suffix of the message series being edited */
+            $scope.updateMrnFormat = function (updateSuffix) {
+                $scope.mrnPrefix = $scope.series.mainType == 'NW'
+                    ? $rootScope.nwMrnPrefix
+                    : $rootScope.nmMrnPrefix;
+                if (updateSuffix) {
+                    $scope.mrnSuffix = '';
+                    if ($scope.series.mrnFormat &&
+                        $scope.series.mrnFormat.substring(0, $scope.mrnPrefix.length) === $scope.mrnPrefix) {
+                        $scope.mrnSuffix = $scope.series.mrnFormat.substring($scope.mrnPrefix.length);
+                    }
+                }
+            };
+
+
+            /** Called whenever the MRN suffix gets updated */
+            $scope.mrnSuffixUpdated = function (mrnSuffix) {
+                $scope.series.mrnFormat = $scope.mrnPrefix + mrnSuffix;
+            };
+
+
             /** Adds a new message series **/
             $scope.addMessageSeries = function () {
                 $scope.editMode = 'add';
@@ -532,6 +555,7 @@ angular.module('niord.admin')
                     mrnFormat: '',
                     shortFormat: undefined
                 };
+                $scope.updateMrnFormat(true);
             };
 
 
@@ -540,6 +564,7 @@ angular.module('niord.admin')
                 $scope.editMode = 'add';
                 $scope.series = angular.copy(series);
                 $scope.series.seriesId = undefined;
+                $scope.updateMrnFormat(true);
             };
 
 
@@ -547,6 +572,7 @@ angular.module('niord.admin')
             $scope.editMessageSeries = function (series) {
                 $scope.editMode = 'edit';
                 $scope.series = angular.copy(series);
+                $scope.updateMrnFormat(true);
             };
 
 
@@ -558,7 +584,6 @@ angular.module('niord.admin')
 
             /** Saves the current message series being edited */
             $scope.saveMessageSeries = function () {
-
                 if ($scope.series && $scope.editMode == 'add') {
                     AdminMessageSeriesService
                         .createMessageSeries($scope.series)
