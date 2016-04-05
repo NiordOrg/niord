@@ -80,7 +80,8 @@ public abstract class AbstractBatchableRestService {
                         checkBatchJob(batchJobName, item, params);
                         startBatchJob(batchJobName, item, params, txt);
                     } catch (Exception e) {
-                        String errorMsg = "Error executing batch job " + batchJobName + " with file " + item.getName() + ": " + e;
+                        String errorMsg = "Error executing batch job " + batchJobName
+                                    + " with file " + item.getName() + ": " + e.getMessage();
                         log.error(errorMsg, e);
                         txt.append(errorMsg);
                     }
