@@ -19,6 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
 import org.niord.core.user.TicketService;

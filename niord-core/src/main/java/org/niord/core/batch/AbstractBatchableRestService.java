@@ -13,11 +13,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.web;
+package org.niord.core.batch;
 
+import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.niord.core.batch.BatchService;
 import org.niord.core.repo.RepositoryService;
 import org.slf4j.Logger;
 
@@ -25,7 +25,7 @@ import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Context;
-import java.io.InputStream;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -57,11 +57,28 @@ public abstract class AbstractBatchableRestService {
         ServletFileUpload upload = new ServletFileUpload(factory);
 
         StringBuilder txt = new StringBuilder();
-        upload.parseRequest(request).stream()
+
+        List<FileItem> items = upload.parseRequest(request);
+
+        // Collect properties from non-file form parameters
+        Properties params = new Properties();
+        items.stream()
+            .filter(FileItem::isFormField)
+            .forEach(item -> {
+                try {
+                    params.setProperty(item.getFieldName(), item.getString());
+                } catch (Exception ignored) {
+                }
+            });
+
+
+        // Start the batch job for each file item
+        items.stream()
                 .filter(item -> !item.isFormField())
                 .forEach(item -> {
                     try {
-                        startBatchJob(batchJobName, item.getInputStream(), item.getName(), txt);
+                        checkBatchJob(batchJobName, item, params);
+                        startBatchJob(batchJobName, item, params, txt);
                     } catch (Exception e) {
                         String errorMsg = "Error executing batch job " + batchJobName + " with file " + item.getName() + ": " + e;
                         log.error(errorMsg, e);
@@ -72,22 +89,35 @@ public abstract class AbstractBatchableRestService {
         return txt.toString();
     }
 
+    /**
+     * Allows sub-classes to validate the uploaded file and parameters.
+     * The method should throw an exception to prevent the batch job from running
+     *
+     * @param batchJobName the batch job name
+     * @param fileItem the file item
+     * @param params the non-file form parameters
+     */
+    @SuppressWarnings("unused")
+    protected void checkBatchJob(String batchJobName, FileItem fileItem, Properties params) throws Exception {
+        // By default, we accept the batch job
+    }
 
     /**
      * Starts the batch job on the given file
      *
-     * @param inputStream the batch job file input stream
-     * @param fileName the name of the file
+     * @param batchJobName the batch job name
+     * @param fileItem the file item
+     * @param params the non-file form parameters
      * @param txt a log of the import
      */
-    private void startBatchJob(String batchJobName, InputStream inputStream, String fileName, StringBuilder txt) throws Exception {
+    private void startBatchJob(String batchJobName, FileItem fileItem, Properties params, StringBuilder txt) throws Exception {
         batchService.startBatchJobWithDataFile(
                 batchJobName,
-                inputStream,
-                fileName,
-                new Properties());
+                fileItem.getInputStream(),
+                fileItem.getName(),
+                params);
 
-        String message = "Started batch job '" + batchJobName + "' with file " + fileName;
+        String message = "Started batch job '" + batchJobName + "' with file " + fileItem.getName();
         log.info(message);
         txt.append(message);
     }

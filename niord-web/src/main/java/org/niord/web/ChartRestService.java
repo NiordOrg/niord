@@ -18,6 +18,7 @@ package org.niord.web;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
 import org.niord.model.vo.ChartVo;
