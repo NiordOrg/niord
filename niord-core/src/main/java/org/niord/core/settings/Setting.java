@@ -125,6 +125,46 @@ public class Setting implements IJsonSerializable {
         }
     }
 
+
+    /*************************/
+    /** Method chaining     **/
+    /*************************/
+
+    public Setting key(String key) {
+        setKey(key);
+        return this;
+    }
+
+    public Setting value(Object value) {
+        setValue(value);
+        return this;
+    }
+
+    public Setting description(String description) {
+        setDescription(description);
+        return this;
+    }
+
+    public Setting cached(boolean cached) {
+        setCached(cached);
+        return this;
+    }
+
+    public Setting web(boolean web) {
+        setWeb(web);
+        return this;
+    }
+
+    public Setting editable(boolean editable) {
+        setEditable(editable);
+        return this;
+    }
+
+    public Setting type(Type type) {
+        setType(type);
+        return this;
+    }
+
     /*************************/
     /** Getters and Setters **/
     /*************************/
