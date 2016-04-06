@@ -46,6 +46,7 @@ public class DataFilter {
     public static final String PARENT_ID    = "parentId";
     public static final String CHILDREN     = "children";
     public static final String GEOMETRY     = "geometry";
+    public static final String DETAILS      = "details";
 
     private Set<String> fields = new HashSet<>();
     private String lang;

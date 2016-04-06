@@ -41,15 +41,10 @@ public class AreaDesc extends DescEntity<Area> {
 
     /** Constructor */
     public AreaDesc(AreaDescVo area) {
-        updateAreaDesc(area);
-    }
-
-
-    /** Updates this area from the given area */
-    public void updateAreaDesc(AreaDescVo area) {
-        this.lang = area.getLang();
+        super(area);
         this.name = area.getName();
     }
+
 
     /** Converts this entity to a value object */
     public AreaDescVo toVo() {

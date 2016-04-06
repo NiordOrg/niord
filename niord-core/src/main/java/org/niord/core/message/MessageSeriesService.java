@@ -16,15 +16,23 @@
 package org.niord.core.message;
 
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.NiordApp;
+import org.niord.core.sequence.DefaultSequence;
+import org.niord.core.sequence.Sequence;
+import org.niord.core.sequence.SequenceService;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -37,6 +45,11 @@ public class MessageSeriesService extends BaseService {
     @Inject
     private Logger log;
 
+    @Inject
+    SequenceService sequenceService;
+
+    @Inject
+    NiordApp app;
 
     /**
      * Returns the message series with the given series identifier
@@ -162,6 +175,66 @@ public class MessageSeriesService extends BaseService {
             return true;
         }
         return false;
+    }
+
+    /****************************/
+    /** Message MRN Generation **/
+    /****************************/
+
+    /**
+     * Creates a new message number specific for the given message series and year
+     *
+     * @param messageSeries the message series
+     * @param year      the year
+     * @return the new series identifier number
+     */
+    public Integer newMessageNumber(MessageSeries messageSeries, int year) {
+        String sequenceKey = String.format("MESSAGE_SERIES_NUMBER_%s_%d", messageSeries.getSeriesId(), year);
+        Sequence sequence = new DefaultSequence(sequenceKey, 1);
+        return (int) sequenceService.getNextValue(sequence);
+    }
+
+    /**
+     * Updates the message with a new message number, an MRN and a short ID
+     * according to the associated message series
+     *
+     * @param message the message to update with a new message number, MRN and short ID
+     */
+    public void createNewIdentifiers(Message message) {
+        MessageSeries messageSeries = message.getMessageSeries();
+        Date publishDate = message.getPublishDate();
+
+        if (messageSeries == null || publishDate == null) {
+            throw new IllegalArgumentException("Message series and publish date must be specified");
+        }
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(publishDate);
+
+        int year = cal.get(Calendar.YEAR);
+        int week = cal.get(Calendar.WEEK_OF_YEAR);
+        Integer number = newMessageNumber(messageSeries, year);
+
+        Map<String, String> params = new HashMap<>();
+        params.put("${year-2-digits}", String.valueOf(year).substring(2));
+        params.put("${year}", String.valueOf(year));
+        params.put("${week}", String.valueOf(week).substring(2));
+        params.put("${week-2-digits}", String.format("%02d", week));
+        params.put("${number}", String.valueOf(number));
+        params.put("${number-3-digits}", String.format("%03d", number));
+        params.put("${main-type}", message.getType().getMainType().toString());
+        params.put("${main-type-lower}", message.getType().getMainType().toString().toLowerCase());
+        params.put("${country}", app.getCountry());
+
+        message.setNumber(number);
+        message.setMrn(messageSeries.getMrnFormat());
+        message.setShortId(messageSeries.getShortFormat());
+        params.entrySet().forEach(e -> {
+            message.setMrn(message.getMrn().replace(e.getKey(), e.getValue()));
+            if (StringUtils.isNotBlank(message.getShortId())) {
+                message.setShortId(message.getShortId().replace(e.getKey(), e.getValue()));
+            }
+        });
+
     }
 
 }

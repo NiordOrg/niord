@@ -48,10 +48,12 @@
                                             insert <span class="caret"></span>
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-right">
-                                            <li><a href ng-click="insertToken('mrnSuffix', '${full-year}')">Year (4 digits)</a></li>
-                                            <li><a href ng-click="insertToken('mrnSuffix', '${year}')">Year (2 digits)</a></li>
+                                            <li><a href ng-click="insertToken('mrnSuffix', '${year}')">Year</a></li>
+                                            <li><a href ng-click="insertToken('mrnSuffix', '${year-2-digits}')">Year (2 digits)</a></li>
                                             <li><a href ng-click="insertToken('mrnSuffix', '${week}')">Week</a></li>
-                                            <li><a href ng-click="insertToken('mrnSuffix', '${number}')">Number (3 digits)</a></li>
+                                            <li><a href ng-click="insertToken('mrnSuffix', '${week-2-digits}')">Week (2 digits)</a></li>
+                                            <li><a href ng-click="insertToken('mrnSuffix', '${number}')">Number</a></li>
+                                            <li><a href ng-click="insertToken('mrnSuffix', '${number-3-digits}')">Number (3 digits)</a></li>
                                         </ul>
                                     </div>
                                 </div>
@@ -71,10 +73,12 @@
                                             insert <span class="caret"></span>
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-right">
-                                            <li><a href ng-click="insertToken('shortFormat', '${full-year}')">Year (4 digits)</a></li>
-                                            <li><a href ng-click="insertToken('shortFormat', '${year}')">Year (2 digits)</a></li>
+                                            <li><a href ng-click="insertToken('shortFormat', '${year}')">Year</a></li>
+                                            <li><a href ng-click="insertToken('shortFormat', '${year-2-digits}')">Year (2 digits)</a></li>
                                             <li><a href ng-click="insertToken('shortFormat', '${week}')">Week</a></li>
-                                            <li><a href ng-click="insertToken('shortFormat', '${number}')">Number (3 digits)</a></li>
+                                            <li><a href ng-click="insertToken('shortFormat', '${week-2-digits}')">Week (2 digits)</a></li>
+                                            <li><a href ng-click="insertToken('shortFormat', '${number}')">Number</a></li>
+                                            <li><a href ng-click="insertToken('shortFormat', '${number-3-digits}')">Number (3 digits)</a></li>
                                         </ul>
                                     </div>
                                 </div>

@@ -41,15 +41,10 @@ public class CategoryDesc extends DescEntity<Category> {
 
     /** Constructor */
     public CategoryDesc(CategoryDescVo desc) {
-        updateCategoryDesc(desc);
-    }
-
-
-    /** Updates this desc from the given desc */
-    public void updateCategoryDesc(CategoryDescVo desc) {
-        this.lang = desc.getLang();
+        super(desc);
         this.name = desc.getName();
     }
+
 
     /** Converts this entity to a value object */
     public CategoryDescVo toVo() {

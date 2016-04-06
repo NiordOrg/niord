@@ -15,7 +15,8 @@
  */
 package org.niord.core;
 
-import org.niord.core.settings.annotation.Setting;
+import org.niord.core.settings.Setting;
+import org.niord.core.settings.SettingsService;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -26,19 +27,33 @@ import javax.inject.Inject;
 @Stateless
 public class NiordApp {
 
-    @Inject
-    @Setting(value = "baseUri", defaultValue = "http://localhost:8080", description = "The base application server URI")
-    String baseUri;
+    private static final Setting BASE_URI =
+            new Setting("baseUri", "http://localhost:8080")
+                    .description("The base application server URI")
+                    .editable(true);
 
+    private static final Setting COUNTRY =
+            new Setting("country", "DK")
+                    .description("The country")
+                    .editable(true);
+
+    @Inject
+    SettingsService settingsService;
 
     /**
      * Returns the base URI used to access this application
      * @return the base URI used to access this application
      */
     public String getBaseUri() {
-        return baseUri;
+        return settingsService.getString(BASE_URI);
     }
 
-
+    /**
+     * Returns the country
+     * @return the country
+     */
+    public String getCountry() {
+        return settingsService.getString(COUNTRY);
+    }
 
 }

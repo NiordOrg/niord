@@ -18,48 +18,30 @@ package org.niord.model.vo;
 import org.niord.model.IJsonSerializable;
 
 /**
- * Represents a message series
+ * Defines a reference from one Message to another
  */
-public class MessageSeriesVo implements IJsonSerializable {
+public class ReferenceVo implements IJsonSerializable {
 
-    String seriesId;
-    MainType mainType;
-    String mrnFormat;
-    String shortFormat;
+    String messageId;
+    ReferenceType type;
 
     /*************************/
     /** Getters and Setters **/
     /*************************/
 
-    public String getSeriesId() {
-        return seriesId;
+    public String getMessageId() {
+        return messageId;
     }
 
-    public void setSeriesId(String seriesId) {
-        this.seriesId = seriesId;
+    public void setMessageId(String messageId) {
+        this.messageId = messageId;
     }
 
-    public MainType getMainType() {
-        return mainType;
+    public ReferenceType getType() {
+        return type;
     }
 
-    public void setMainType(MainType mainType) {
-        this.mainType = mainType;
-    }
-
-    public String getMrnFormat() {
-        return mrnFormat;
-    }
-
-    public void setMrnFormat(String mrnFormat) {
-        this.mrnFormat = mrnFormat;
-    }
-
-    public String getShortFormat() {
-        return shortFormat;
-    }
-
-    public void setShortFormat(String shortFormat) {
-        this.shortFormat = shortFormat;
+    public void setType(ReferenceType type) {
+        this.type = type;
     }
 }

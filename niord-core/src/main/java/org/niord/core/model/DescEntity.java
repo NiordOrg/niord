@@ -29,6 +29,7 @@ import javax.validation.constraints.NotNull;
  */
 @MappedSuperclass
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = { "lang", "entity_id" }))
+@SuppressWarnings("unused")
 public abstract class DescEntity<E extends ILocalizable> extends BaseEntity<Integer> implements ILocalizedDesc {
 
     @NotNull
@@ -37,6 +38,23 @@ public abstract class DescEntity<E extends ILocalizable> extends BaseEntity<Inte
     @ManyToOne
     @NotNull
     E entity;
+
+    /** Constructor **/
+    public DescEntity() {
+    }
+
+
+    /** Constructor **/
+    public DescEntity(ILocalizedDesc desc) {
+        this.lang = desc.getLang();
+    }
+
+
+    /** Constructor **/
+    public DescEntity(String lang, E entity) {
+        this.lang = lang;
+        this.entity = entity;
+    }
 
     /*************************/
     /** Getters and Setters **/

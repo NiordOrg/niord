@@ -17,49 +17,33 @@ package org.niord.model.vo;
 
 import org.niord.model.IJsonSerializable;
 
-/**
- * Represents a message series
- */
-public class MessageSeriesVo implements IJsonSerializable {
+import java.util.Date;
 
-    String seriesId;
-    MainType mainType;
-    String mrnFormat;
-    String shortFormat;
+/**
+ * Represents a single date interval for a message
+ */
+public class DateIntervalVo implements IJsonSerializable {
+
+    Date fromDate;
+    Date toDate;
 
     /*************************/
     /** Getters and Setters **/
     /*************************/
 
-    public String getSeriesId() {
-        return seriesId;
+    public Date getFromDate() {
+        return fromDate;
     }
 
-    public void setSeriesId(String seriesId) {
-        this.seriesId = seriesId;
+    public void setFromDate(Date fromDate) {
+        this.fromDate = fromDate;
     }
 
-    public MainType getMainType() {
-        return mainType;
+    public Date getToDate() {
+        return toDate;
     }
 
-    public void setMainType(MainType mainType) {
-        this.mainType = mainType;
-    }
-
-    public String getMrnFormat() {
-        return mrnFormat;
-    }
-
-    public void setMrnFormat(String mrnFormat) {
-        this.mrnFormat = mrnFormat;
-    }
-
-    public String getShortFormat() {
-        return shortFormat;
-    }
-
-    public void setShortFormat(String shortFormat) {
-        this.shortFormat = shortFormat;
+    public void setToDate(Date toDate) {
+        this.toDate = toDate;
     }
 }

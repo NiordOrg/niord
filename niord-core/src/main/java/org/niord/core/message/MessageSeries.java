@@ -16,6 +16,7 @@
 package org.niord.core.message;
 
 import org.niord.core.model.VersionedEntity;
+import org.niord.model.vo.MainType;
 import org.niord.model.vo.MessageSeriesVo;
 
 import javax.persistence.Cacheable;
@@ -41,12 +42,9 @@ import javax.validation.constraints.NotNull;
         @NamedQuery(name  = "MessageSeries.searchMessageSeries",
                 query = "select ms FROM MessageSeries ms where lower(ms.mrnFormat) like lower(:term) "
                       + "or lower(ms.seriesId) like lower(:term)")
-
 })
 @SuppressWarnings("unused")
 public class MessageSeries extends VersionedEntity<Integer> {
-
-    public enum MainType { NW, NM }
 
     @Column(unique = true, nullable = false)
     String seriesId;
@@ -69,7 +67,7 @@ public class MessageSeries extends VersionedEntity<Integer> {
     /** Constructor */
     public MessageSeries(MessageSeriesVo series) {
         this.seriesId = series.getSeriesId();
-        this.mainType = MainType.valueOf(series.getMainType());
+        this.mainType = series.getMainType();
         this.mrnFormat = series.getMrnFormat();
         this.shortFormat = series.getShortFormat();
     }
@@ -79,7 +77,7 @@ public class MessageSeries extends VersionedEntity<Integer> {
     public MessageSeriesVo toVo() {
         MessageSeriesVo series = new MessageSeriesVo();
         series.setSeriesId(seriesId);
-        series.setMainType(mainType.toString());
+        series.setMainType(mainType);
         series.setMrnFormat(mrnFormat);
         series.setShortFormat(shortFormat);
         return series;
