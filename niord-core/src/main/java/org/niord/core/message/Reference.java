@@ -45,6 +45,7 @@ public class Reference extends BaseEntity<Integer> {
     @NotNull
     ReferenceType type;
 
+    String description;
 
     /** Constructor */
     public Reference() {
@@ -55,6 +56,7 @@ public class Reference extends BaseEntity<Integer> {
     public Reference(ReferenceVo reference) {
         this.messageId = reference.getMessageId();
         this.type = reference.getType();
+        this.description = reference.getDescription();
     }
 
 
@@ -63,6 +65,7 @@ public class Reference extends BaseEntity<Integer> {
         ReferenceVo reference = new ReferenceVo();
         reference.setMessageId(messageId);
         reference.setType(type);
+        reference.setDescription(description);
         return reference;
     }
 
@@ -93,5 +96,13 @@ public class Reference extends BaseEntity<Integer> {
 
     public void setType(ReferenceType type) {
         this.type = type;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

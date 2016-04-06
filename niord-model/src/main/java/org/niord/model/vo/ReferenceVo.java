@@ -24,6 +24,7 @@ public class ReferenceVo implements IJsonSerializable {
 
     String messageId;
     ReferenceType type;
+    String description;
 
     /*************************/
     /** Getters and Setters **/
@@ -43,5 +44,13 @@ public class ReferenceVo implements IJsonSerializable {
 
     public void setType(ReferenceType type) {
         this.type = type;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }
