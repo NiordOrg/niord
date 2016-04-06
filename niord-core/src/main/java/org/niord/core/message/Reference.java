@@ -30,7 +30,7 @@ import javax.validation.constraints.NotNull;
  */
 @Entity
 @Table(indexes = {
-        @Index(name = "reference_mrn_k", columnList="mrn")
+        @Index(name = "reference_message_id_k", columnList="messageId")
 })
 @SuppressWarnings("unused")
 public class Reference extends BaseEntity<Integer> {
