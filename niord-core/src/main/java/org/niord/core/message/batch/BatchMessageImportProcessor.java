@@ -81,6 +81,15 @@ public class BatchMessageImportProcessor extends AbstractItemHandler {
         MessageVo messageVo = (MessageVo) item;
         Message message = new Message(messageVo);
 
+        // Process related message base data
+        processMessage(message);
+
+        return message;
+    }
+
+
+    /** Processes the message to ensure that related base data is created and valid */
+    protected Message processMessage(Message message) throws Exception {
         try {
             // Force status IMPORTED
             message.setStatus(Status.IMPORTED);
@@ -121,15 +130,13 @@ public class BatchMessageImportProcessor extends AbstractItemHandler {
             message.setCharts(charts);
 
             getLog().info("Processed message " + message);
+            return message;
 
         } catch (Exception e) {
             getLog().severe("Failed processing batch import message: " + e);
             throw e;
         }
-
-        return message;
     }
-
 
     /**
      * If the message series is not defined for the message, it may either have been defined

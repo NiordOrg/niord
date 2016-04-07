@@ -70,12 +70,20 @@ public class FeatureCollection extends BaseEntity<Integer> {
         return featureCollection;
     }
 
+
     /** Ensure that the UID is defined */
     @PrePersist
     protected void onCreate() {
         if (uid == null) {
             uid = UUID.randomUUID().toString();
         }
+    }
+
+
+    /** Adds a new feature to the collection */
+    public void addFeature(Feature feature) {
+        feature.setFeatureCollection(this);
+        features.add(feature);
     }
 
     public String getUid() {
