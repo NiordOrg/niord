@@ -34,6 +34,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.Index;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
@@ -54,6 +56,10 @@ import java.util.Set;
 @Entity
 @Table(indexes = {
         @Index(name = "message_mrn_k", columnList="mrn")
+})
+@NamedQueries({
+        @NamedQuery(name="Message.findUpdateMessages",
+                query="SELECT msg FROM Message msg where msg.updated > :date order by msg.updated asc")
 })
 @SuppressWarnings("unused")
 public class Message extends VersionedEntity<Integer> implements ILocalizable<MessageDesc> {

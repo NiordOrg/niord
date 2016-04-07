@@ -222,6 +222,21 @@ public class MessageService extends BaseService {
     }
 
 
+    /**
+     * Returns all messages updated after the given date
+     *
+     * @param date     the date
+     * @param maxCount the max number of entries to return
+     * @return all messages updated after the given date
+     */
+    public List<Message> findUpdatedMessages(Date date, int maxCount) {
+        return em
+                .createNamedQuery("Message.findUpdateMessages", Message.class)
+                .setParameter("date", date)
+                .setMaxResults(maxCount)
+                .getResultList();
+    }
+
     /***************************************/
     /** Message History methods           **/
     /***************************************/
