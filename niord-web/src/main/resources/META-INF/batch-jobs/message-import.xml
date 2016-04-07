@@ -1,0 +1,12 @@
+<job id="message-import" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
+    <step id="setupStep" allow-start-if-complete="true" next="importMessagesStep">
+        <batchlet ref="jobStartBatchlet"/>
+    </step>
+    <step id="importMessagesStep">
+        <chunk item-count="10">
+            <reader ref="batchMessageImportReader" />
+            <processor ref="batchMessageImportProcessor"/>
+            <writer ref="batchMessageImportWriter" />
+        </chunk>
+    </step>
+</job>
