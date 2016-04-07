@@ -432,7 +432,7 @@ angular.module('niord.map')
                         styles.push(new ol.style.Style({
                             stroke: new ol.style.Stroke({
                                 color: chartColor,
-                                width: 1,
+                                width: 2,
                                 lineDash: [4,4]
                             })
                         }));
@@ -541,7 +541,7 @@ angular.module('niord.map')
                         styles.push(new ol.style.Style({
                             stroke: new ol.style.Stroke({
                                 color: areaColor,
-                                width: 1,
+                                width: 2,
                                 lineDash: [4,4]
                             })
                         }));
