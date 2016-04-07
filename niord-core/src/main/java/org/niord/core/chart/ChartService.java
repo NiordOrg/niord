@@ -141,6 +141,20 @@ public class ChartService extends BaseService {
 
 
     /**
+     * Returns the chart matching the given chart template, or creates if it does not exists
+     * @param chartTemplate the chart template to find or create
+     * @return the chart
+     */
+    public Chart findOrCreateChart(Chart chartTemplate) {
+        Chart chart = findByChartNumber(chartTemplate.getChartNumber());
+        if (chart == null) {
+            chart = createChart(chartTemplate);
+        }
+        return chart;
+    }
+
+
+    /**
      * Deletes the chart
      * @param chartNumber the id of the chart to delete
      */
@@ -152,6 +166,19 @@ public class ChartService extends BaseService {
             return true;
         }
         return false;
+    }
+
+
+    /**
+     * Returns a list of persisted charts based on a list of template charts
+     * @param charts the list of charts to look up persisted charts for
+     * @return the list of corresponding persisted charts
+     */
+    public List<Chart> persistedCharts(List<Chart> charts) {
+        return charts.stream()
+                .map(c -> findByChartNumber(c.getChartNumber()))
+                .filter(c -> c != null)
+                .collect(Collectors.toList());
     }
 
 }

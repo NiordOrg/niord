@@ -157,7 +157,7 @@ public class BatchMessageImportReader extends AbstractItemHandler {
                 updateProgress((int)(100.0 * messageNo / messages.size()));
             }
 
-            getLog().info("Reading legacy NM no " + messageNo);
+            getLog().info("Reading message no " + messageNo);
             return messages.get(messageNo++);
         }
         return null;

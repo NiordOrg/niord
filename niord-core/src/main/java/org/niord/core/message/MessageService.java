@@ -18,7 +18,7 @@ package org.niord.core.message;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.niord.core.area.Area;
 import org.niord.core.category.Category;
-import org.niord.core.chart.Chart;
+import org.niord.core.chart.ChartService;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
@@ -47,6 +47,9 @@ public class MessageService extends BaseService {
 
     @Inject
     MessageSeriesService messageSeriesService;
+
+    @Inject
+    ChartService chartService;
 
 
     /***************************************/
@@ -103,12 +106,17 @@ public class MessageService extends BaseService {
             throw new Exception("Missing Message type");
         }
         message.updateStartAndEndDates();
-        if (message.getStartDate() == null) {
-            throw new Exception("Message start date must be specified");
+
+        // Set default values. Newly created message must either be IMPORTED or DRAFT
+        if (message.getStatus() != Status.IMPORTED) {
+            message.setStatus(Status.DRAFT);
+            message.setNumber(null);
         }
 
-        // Set default values
-        message.setStatus(Status.DRAFT);
+        // Substitute the message series with the persisted on
+        if (message.getMessageSeries() != null) {
+            message.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
+        }
 
         // Substitute the Area with a persisted one
         message.setAreas(persistedList(Area.class, message.getAreas()));
@@ -117,7 +125,7 @@ public class MessageService extends BaseService {
         message.setCategories(persistedList(Category.class, message.getCategories()));
 
         // Substitute the Charts with the persisted ones
-        message.setCharts(persistedList(Chart.class, message.getCharts()));
+        message.setCharts(chartService.persistedCharts(message.getCharts()));
 
         // Persist the message
         message = saveMessage(message);
@@ -145,7 +153,7 @@ public class MessageService extends BaseService {
 
         original.setMessageSeries(null);
         if (message.getMessageSeries() != null) {
-            original.setMessageSeries(getByPrimaryKey(MessageSeries.class, message.getMessageSeries().getId()));
+            original.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
         }
         original.setNumber(message.getNumber());
         original.setMrn(message.getMrn());
@@ -160,7 +168,7 @@ public class MessageService extends BaseService {
         original.setCategories(persistedList(Category.class, message.getCategories()));
 
         // Substitute the Charts with the persisted ones
-        original.setCharts(persistedList(Chart.class, message.getCharts()));
+        original.setCharts(chartService.persistedCharts(message.getCharts()));
 
         original.setHorizontalDatum(message.getHorizontalDatum());
         original.setGeometry(message.getGeometry());

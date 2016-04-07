@@ -16,6 +16,7 @@
 package org.niord.core.message.batch;
 
 import org.niord.core.batch.AbstractItemHandler;
+import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
 
 import javax.inject.Inject;
@@ -35,9 +36,13 @@ public class BatchMessageImportWriter extends AbstractItemHandler {
     @Override
     public void writeItems(List<Object> items) throws Exception {
         long t0 = System.currentTimeMillis();
+
+        // TODO: Handle tags
+
         for (Object i : items) {
-            // TODO
+            Message message = (Message)i;
+            messageService.createMessage(message);
         }
-        getLog().info(String.format("Persisted %d NWs in %d ms", items.size(), System.currentTimeMillis() - t0));
+        getLog().info(String.format("Persisted %d messages in %d ms", items.size(), System.currentTimeMillis() - t0));
     }
 }

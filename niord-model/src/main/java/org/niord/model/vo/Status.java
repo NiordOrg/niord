@@ -21,6 +21,12 @@ package org.niord.model.vo;
 public enum Status {
 
     /**
+     * Special status that is only used for imported message. These messages may have
+     * a message number, even if they are not published.
+     */
+    IMPORTED,
+
+    /**
      * Draft is the initial state of a message before it has been published
      */
     DRAFT,
