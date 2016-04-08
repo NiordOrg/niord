@@ -13,10 +13,10 @@ public abstract class PagedSearchParamsVo implements IJsonSerializable {
 
     public enum SortOrder { ASC, DESC }
 
-    int maxSize = Integer.MAX_VALUE;
-    int page = 0;
-    String sortBy;
-    SortOrder sortOrder;
+    protected  int maxSize = Integer.MAX_VALUE;
+    protected  int page = 0;
+    protected  String sortBy;
+    protected  SortOrder sortOrder;
 
 
     /** Helper method */

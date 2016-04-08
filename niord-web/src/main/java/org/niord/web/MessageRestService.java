@@ -72,13 +72,17 @@ public class MessageRestService {
             @QueryParam("query") String query,
             @QueryParam("status") Set<Status> statuses,
             @QueryParam("type") Set<Type> types,
-            @QueryParam("areas") Set<Integer> areaIds,
+            @QueryParam("area") Set<Integer> areaIds,
             @QueryParam("category") Set<Integer> categoryIds,
             @QueryParam("chart") Set<String> chartNumbers,
-            @QueryParam("tags") Set<String> tags,
-            @QueryParam("atonUids") Set<String> atonUids,
-            @QueryParam("from") Long fromDate,
-            @QueryParam("to") Long toDate,
+            @QueryParam("tag") Set<String> tags,
+            @QueryParam("atonUid") Set<String> atonUids,
+            @QueryParam("fromDate") Long fromDate,
+            @QueryParam("toDate") Long toDate,
+            @QueryParam("minLat") Double minLat,
+            @QueryParam("minLon") Double minLon,
+            @QueryParam("maxLat") Double maxLat,
+            @QueryParam("maxLon") Double maxLon,
             @QueryParam("maxSize") @DefaultValue("100") int maxSize,
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("sortBy") String sortBy,
@@ -97,6 +101,7 @@ public class MessageRestService {
                 .atonUids(atonUids)
                 .from(fromDate)
                 .to(toDate)
+                .extent(minLat, minLon, maxLat, maxLon)
                 .maxSize(maxSize)
                 .page(page)
                 .sortBy(sortBy)

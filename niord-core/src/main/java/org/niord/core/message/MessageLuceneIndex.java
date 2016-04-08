@@ -611,16 +611,17 @@ public class MessageLuceneIndex extends BaseService {
      * Performs a search in the index and returns the ids of matching messages
      *
      * @param freeTextSearch the search string
-     * @param field the field to search
+     * @param language the language to search
      * @param maxHits the max number of hits to return
      * @return the matching ids
      */
-    public List<Long> searchIndex(String freeTextSearch, String field, int maxHits) throws IOException, ParseException {
+    public List<Long> searchIndex(String freeTextSearch, String language, int maxHits) throws IOException, ParseException {
 
         Query query;
-        if (StringUtils.isNotBlank(freeTextSearch) && StringUtils.isNotBlank(field)) {
+        if (StringUtils.isNotBlank(freeTextSearch)) {
             // Normalize query text
             freeTextSearch = LuceneUtils.normalizeQuery(freeTextSearch);
+            String field = searchField(language);
 
             // Create a query parser with "or" operator as the default
             QueryParser parser = new ComplexPhraseQueryParser(

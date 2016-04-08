@@ -44,6 +44,8 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     String query;
     Date from;
     Date to;
+    Date updatedFrom;
+    Date updatedTo;
     Set<Status> statuses = new HashSet<>();
     Set<Type> types = new HashSet<>();
     Set<MainType> mainTypes = new HashSet<>();
@@ -55,12 +57,24 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     Geometry extent;
 
 
-    /**
-     * Returns whether or not the search requires a Lucene search
-     * @return whether or not the search requires a Lucene search
-     */
+    /** Returns whether or not the search requires a Lucene search */
     public boolean requiresLuceneSearch() {
         return isNotBlank(query);
+    }
+
+    /** Returns whether to sort by ID or not */
+    public boolean sortById() {
+        return "id".equalsIgnoreCase(sortBy);
+    }
+
+    /** Returns whether to sort by date or not */
+    public boolean sortByDate() {
+        return "date".equalsIgnoreCase(sortBy);
+    }
+
+    /** Returns whether to sort by area or not */
+    public boolean sortByArea() {
+        return "area".equalsIgnoreCase(sortBy);
     }
 
     /**
@@ -74,6 +88,8 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         if (isNotBlank(query)) { desc.add(String.format("Query: '%s'", query)); }
         if (from != null) { desc.add(String.format("From: %s", new SimpleDateFormat(DATE_FORMAT).format(from))); }
         if (to != null) { desc.add(String.format("To: %s", new SimpleDateFormat(DATE_FORMAT).format(to))); }
+        if (updatedFrom != null) { desc.add(String.format("Updated from: %s", new SimpleDateFormat(DATE_FORMAT).format(updatedFrom))); }
+        if (updatedTo != null) { desc.add(String.format("Updated to: %s", new SimpleDateFormat(DATE_FORMAT).format(updatedTo))); }
         if (statuses.size() > 0) { desc.add(String.format("Statuses: %s", statuses)); }
         if (types.size() > 0) { desc.add(String.format("Types: %s", types)); }
         if (mainTypes.size() > 0) { desc.add(String.format("Main types: %s", mainTypes)); }
@@ -134,6 +150,24 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public MessageSearchParams to(Long to) {
         this.to = to == null ? null : new Date(to);
+        return this;
+    }
+
+    public Date getUpdatedFrom() {
+        return updatedFrom;
+    }
+
+    public MessageSearchParams updatedFrom(Date updatedFrom) {
+        this.updatedFrom = updatedFrom;
+        return this;
+    }
+
+    public Date getUpdatedTo() {
+        return updatedTo;
+    }
+
+    public MessageSearchParams updatedTo(Date updatedTo) {
+        this.updatedTo = updatedTo;
         return this;
     }
 

@@ -59,7 +59,9 @@ import java.util.Set;
 })
 @NamedQueries({
         @NamedQuery(name="Message.findUpdateMessages",
-                query="SELECT msg FROM Message msg where msg.updated > :date order by msg.updated asc")
+                query="SELECT msg FROM Message msg where msg.updated > :date order by msg.updated asc"),
+        @NamedQuery(name="Message.findByIds",
+                query="SELECT msg FROM Message msg where msg.id in (:ids)")
 })
 @SuppressWarnings("unused")
 public class Message extends VersionedEntity<Integer> implements ILocalizable<MessageDesc> {

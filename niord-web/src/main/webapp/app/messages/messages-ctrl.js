@@ -12,13 +12,15 @@ angular.module('niord.messages')
                   AuthService, FilterService, MessageService, AtonService) {
             'use strict';
 
+            $scope.showFilter = true;
             $scope.messageList = [];
             $scope.totalMessageNo = 0;
             $scope.filterNames = [ 'text', 'type', 'status', 'tag', 'aton', 'chart', 'area', 'category', 'date' ];
             $scope.state = {
 
-                /** Map state **/
+                /** Map state. Also serves as a mandatory filter in map mode **/
                 map : {
+                    enabled: true,
                     reloadMap : false // can be used to trigger a map reload
                 },
 
@@ -38,6 +40,7 @@ angular.module('niord.messages')
                     enabled: false,
                     PUBLISHED: false,
                     DRAFT: false,
+                    IMPORTED: false,
                     VERIFIED: false,
                     CANCELLED: false,
                     EXPIRED: false,
@@ -90,6 +93,7 @@ angular.module('niord.messages')
                 }
             };
 
+
             // Clears the given filter
             $scope.clearFilter = function (name) {
                 var filter = $scope.state[name];
@@ -106,6 +110,7 @@ angular.module('niord.messages')
                     case 'status':
                         filter.PUBLISHED = false;
                         filter.DRAFT = false;
+                        filter.IMPORTED = false;
                         filter.VERIFIED = false;
                         filter.CANCELLED = false;
                         filter.EXPIRED = false;
@@ -147,15 +152,17 @@ angular.module('niord.messages')
                 var s = $scope.state;
 
                 // Handle map
-                if (s.map.zoom) {
-                    params += '&zoom=' + s.map.zoom;
-                }
-                if (s.map.center && s.map.center.length == 2) {
-                    params += '&lon=' + s.map.center[0] + '&lat=' + s.map.center[1];
-                }
-                if (s.map.extent && s.map.extent.length == 4) {
-                    params += '&minLon=' + s.map.extent[0] + '&minLat=' + s.map.extent[1] +
-                        '&maxLon=' + s.map.extent[2] + '&maxLat=' + s.map.extent[3];
+                if (s.map.enabled) {
+                    if (s.map.zoom) {
+                        params += '&zoom=' + s.map.zoom;
+                    }
+                    if (s.map.center && s.map.center.length == 2) {
+                        params += '&lon=' + s.map.center[0] + '&lat=' + s.map.center[1];
+                    }
+                    if (s.map.extent && s.map.extent.length == 4) {
+                        params += '&minLon=' + s.map.extent[0] + '&minLat=' + s.map.extent[1] +
+                            '&maxLon=' + s.map.extent[2] + '&maxLat=' + s.map.extent[3];
+                    }
                 }
 
                 // Handle Filters
@@ -163,12 +170,12 @@ angular.module('niord.messages')
                     params += '&query=' + encodeURIComponent(s.text.query);
                 }
                 if (s.type.enabled) {
-                    params += '&type=' + s.type.mainType;
+                    params += '&mainType=' + s.type.mainType;
                     if (s.type.nwType) {
-                        params += '&nwType=' + s.type.nwType;
+                        params += '&type=' + s.type.nwType;
                     }
                     if (s.type.nmType) {
-                        params += '&nmType=' + s.type.nmType;
+                        params += '&type=' + s.type.nmType;
                     }
                 }
                 if (s.status.enabled) {
@@ -177,6 +184,9 @@ angular.module('niord.messages')
                     }
                     if (s.status.DRAFT) {
                         params += '&status=DRAFT';
+                    }
+                    if (s.status.IMPORTED) {
+                        params += '&status=IMPORTED';
                     }
                     if (s.status.VERIFIED) {
                         params += '&status=VERIFIED';
@@ -254,12 +264,12 @@ angular.module('niord.messages')
                 }
                 if (params.type) {
                     s.type.enabled = true;
-                    s.type.mainType = params.type;
-                    if (params.nwType) {
+                    s.type.mainType = params.mainType;
+                    if (params.type && params.mainType == 'NW') {
                         s.type.nwType = params.nwType;
                     }
-                    if (params.nmType) {
-                        s.type.nmType = params.nmType;
+                    if (params.nmType && params.mainType == 'NM') {
+                        s.type.nmType = params.type;
                     }
                 }
                 if (params.status && params.status.length > 0) {
@@ -295,7 +305,7 @@ angular.module('niord.messages')
                 if (params.area && params.area.length > 0) {
                     s.area.enabled = true;
                     var areas = (typeof params.area === 'string') ? params.area : params.area.join();
-                    $http.get('/rest/areas/search/' + areas + '?lang=' + $rootScope.language + '&limit=10&geometry=true')
+                    $http.get('/rest/areas/search/' + areas + '?lang=' + $rootScope.language + '&limit=10')
                         .then(function(response) {
                             s.area.areas = response.data;
                         });
@@ -378,7 +388,7 @@ angular.module('niord.messages')
                 return $http.get(
                     '/rest/areas/search?name=' + encodeURIComponent(name) +
                     '&lang=' + $rootScope.language +
-                    '&limit=10&geometry=true'
+                    '&limit=10'
                 ).then(function(response) {
                     $scope.areas = response.data;
                 });
@@ -452,6 +462,28 @@ angular.module('niord.messages')
 
 
             /*****************************/
+            /** Utility functions       **/
+            /*****************************/
+
+
+            /** Returns the bottom-left point of the current map extent **/
+            $scope.extentBottomLeft = function () {
+                var extent = $scope.state.map.extent;
+                return extent
+                    ? { lon: extent[0], lat: extent[1] }
+                    : '';
+            };
+
+
+            /** Returns the top-right point of the current map extent **/
+            $scope.extentTopRight = function () {
+                var extent = $scope.state.map.extent;
+                return extent
+                    ? { lon: extent[2], lat: extent[3] }
+                    : '';
+            };
+
+            /*****************************/
             /** Message List Handling   **/
             /*****************************/
 
@@ -469,7 +501,10 @@ angular.module('niord.messages')
 
                 MessageService.search(params)
                     .success(function (result) {
-                        $scope.messageList = result.data;
+                        $scope.messageList.length = 0;
+                        for (var x = 0; x < result.data.length; x++) {
+                            $scope.messageList.push(result.data[x]);
+                        }
                         $scope.totalMessageNo = result.total;
                     });
 
@@ -482,5 +517,14 @@ angular.module('niord.messages')
             // Read the request filter parameters
             $scope.readRequestFilterParameters();
 
+
+            // Only apply the map extent as a filter if the map view mode used
+            $scope.$watch(
+                function () { return $location.path(); },
+                function (newValue) {
+                    $scope.state.map.enabled = newValue && newValue.endsWith('/map');
+                    $scope.showFilter = newValue && !newValue.endsWith('/selected');
+                },
+                true);
 
         }]);

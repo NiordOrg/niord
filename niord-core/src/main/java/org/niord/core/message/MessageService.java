@@ -18,20 +18,42 @@ package org.niord.core.message;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.niord.core.area.Area;
 import org.niord.core.category.Category;
+import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
+import org.niord.core.db.CriteriaHelper;
+import org.niord.core.db.SpatialWithinPredicate;
+import org.niord.core.geojson.Feature;
+import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
 import org.niord.model.PagedSearchResultVo;
 import org.niord.model.vo.MessageVo;
 import org.niord.model.vo.Status;
+import org.niord.model.vo.Type;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.persistence.Tuple;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import javax.persistence.criteria.Selection;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.niord.core.geojson.Feature.WGS84_SRID;
+import static org.niord.core.message.MessageSearchParams.SortOrder;
 
 /**
  * Business interface for managing messages
@@ -48,6 +70,9 @@ public class MessageService extends BaseService {
 
     @Inject
     MessageSeriesService messageSeriesService;
+
+    @Inject
+    MessageLuceneIndex messageLuceneIndex;
 
     @Inject
     ChartService chartService;
@@ -239,24 +264,216 @@ public class MessageService extends BaseService {
     }
 
 
+    /***************************************/
+    /** Message Searching                 **/
+    /***************************************/
+
+
     /**
      * Main message search function
      * @param params the search parameters
      * @return the search result
      */
     public PagedSearchResultVo<Message> search(MessageSearchParams params) {
+
         PagedSearchResultVo<Message> result = new PagedSearchResultVo<>();
 
-        List<Message> messages = getAll(Message.class);
-        result.setData(messages);
-        result.updateSize();
+        try {
+
+            List<Integer> pagedMsgIds = searchPagedMessageIds(params, result);
+
+            // Fetch the cached messages
+            List<Message> messages = getMessages(pagedMsgIds);
+            result.setData(messages);
+            result.updateSize();
+
+        } catch (Exception e) {
+            log.error("Error performing search " + params + ": " + e, e);
+        }
 
         return result;
     }
 
 
+    /**
+     * Returns the message with the given IDs
+     *
+     * @param ids the message IDs
+     * @return the message with the given IDs
+     */
+    private List<Message> getMessages(List<Integer> ids) {
+
+        if (ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // TODO: Caching
+        return em.createNamedQuery("Message.findByIds", Message.class)
+                .setParameter("ids", ids)
+                .getResultList();
+    }
+
+
+    /**
+     * Searches out the ID's of the paged result set of messages defined by the search parameters.
+     * Also fills out the total result count of the message search result.
+     *
+     * @param param the search parameters
+     * @param result the search result to update with the total result count
+     * @return the paged list of message ID's
+     */
+    @SuppressWarnings("all")
+    List<Integer> searchPagedMessageIds(MessageSearchParams param, PagedSearchResultVo<Message> result) throws Exception {
+
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<Tuple> tupleQuery = builder.createTupleQuery();
+
+        // Select messages
+        Root<Message> msgRoot = tupleQuery.from(Message.class);
+
+        // Build the predicates based on the search parameters
+        CriteriaHelper<Tuple> criteriaHelper = CriteriaHelper.initWithTupleQuery(em)
+                .between(msgRoot.get("created"), param.getFrom(), param.getTo())
+                .between(msgRoot.get("updated"), param.getUpdatedFrom(), param.getUpdatedTo());
+
+        // Compute the type closure
+        Set<Type> types = new HashSet<>();
+        types.addAll(param.getTypes());
+        param.getMainTypes().forEach(mt -> {
+            for (Type t : Type.values()) {
+                if (t.getMainType() == mt) {
+                    types.add(t);
+                }
+            }
+        });
+        if (!types.isEmpty()) {
+            criteriaHelper.in(msgRoot.get("type"), types);
+        }
+
+        // Statuses
+        if (!param.getStatuses().isEmpty()) {
+            criteriaHelper.in(msgRoot.get("status"), param.getStatuses());
+        }
+
+        // Search the Lucene index for free text search
+        if (param.requiresLuceneSearch()) {
+            List<Long> ids = messageLuceneIndex.searchIndex(param.getQuery(), param.getLanguage(), Integer.MAX_VALUE);
+            criteriaHelper.in(msgRoot.get("id"), ids);
+        }
+
+        // If we search by area or sort by area, join over...
+        javax.persistence.criteria.Path<Area> areaRoot = null;
+        if (param.sortByArea() || !param.getAreaIds().isEmpty()) {
+
+            Join<Message, Area> areas = msgRoot.join("areas", JoinType.LEFT);
+            Predicate[] areaMatch = new Predicate[param.getAreaIds().size()];
+            Iterator<Integer> i = param.getAreaIds().iterator();
+            for (int x = 0; x < areaMatch.length; x++) {
+                String lineage = em.find(Area.class, i.next()).getLineage();
+                areaMatch[x] = builder.like(areas.get("lineage"), lineage + "%");
+            }
+            criteriaHelper.add(builder.or(areaMatch));
+        }
+
+        // Filter on categories
+        if (!param.getCategoryIds().isEmpty()) {
+
+            Join<Message, Category> categories = msgRoot.join("categories", JoinType.LEFT);
+            Predicate[] categoryMatch = new Predicate[param.getCategoryIds().size()];
+            Iterator<Integer> i = param.getCategoryIds().iterator();
+            for (int x = 0; x < categoryMatch.length; x++) {
+                String lineage = em.find(Category.class, i.next()).getLineage();
+                categoryMatch[x] = builder.like(categories.get("lineage"), lineage + "%");
+            }
+            criteriaHelper.add(builder.or(categoryMatch));
+        }
+
+        // Filter on charts
+        if (!param.getChartNumbers().isEmpty()) {
+
+            Join<Message, Chart> charts = msgRoot.join("charts", JoinType.LEFT);
+            Predicate[] chartMatch = new Predicate[param.getChartNumbers().size()];
+            Iterator<String> i = param.getChartNumbers().iterator();
+            for (int x = 0; x < chartMatch.length; x++) {
+                chartMatch[x] = builder.equal(charts.get("chartNumber"), i.next());
+            }
+            criteriaHelper.add(builder.or(chartMatch));
+        }
+
+
+        // Geometry
+        if (param.getExtent() != null) {
+            param.getExtent().setSRID(WGS84_SRID);
+            Join<Message, FeatureCollection> fcRoot = msgRoot.join("geometry", JoinType.LEFT);
+            Join<FeatureCollection, Feature> fRoot = fcRoot.join("features", JoinType.LEFT);
+            criteriaHelper.add(new SpatialWithinPredicate(criteriaHelper.getCriteriaBuilder(), fRoot.get("geometry"), param.getExtent()));
+        }
+
+
+        // TODO
+        // atonUids, tags
+        // Errors Types, quoted text,
+
+
+        // Determine the fields to fetch
+        List<Selection<?>> fields = new ArrayList<>();
+        fields.add(msgRoot.get("id"));
+        if (param.sortByDate()) {
+            fields.add(msgRoot.get("startDate"));
+        } else if (param.sortById()) {
+            fields.add(msgRoot.get("mrn"));
+        } else if (param.sortByArea()) {
+            fields.add(areaRoot.get("treeSortOrder"));
+        }
+        Selection[] f = fields.toArray(new Selection<?>[fields.size()]);
+
+        // Complete the query and fetch the message id's (and fields used for sorting)
+        tupleQuery.multiselect(f)
+                .distinct(true)
+                .where(criteriaHelper.where());
+
+        // Sort the query
+        if (param.sortByDate()) {
+            if (param.getSortOrder() == SortOrder.ASC) {
+                tupleQuery.orderBy(builder.asc(msgRoot.get("validFrom")), builder.asc(msgRoot.get("id")));
+            } else {
+                tupleQuery.orderBy(builder.desc(msgRoot.get("validFrom")), builder.desc(msgRoot.get("id")));
+            }
+        } else if (param.sortById()) {
+            if (param.getSortOrder() == SortOrder.ASC) {
+                tupleQuery.orderBy(builder.asc(msgRoot.get("mrn")), builder.asc(msgRoot.get("id")));
+            } else {
+                tupleQuery.orderBy(builder.desc(msgRoot.get("mrn")), builder.desc(msgRoot.get("id")));
+            }
+        } else if (param.sortByArea()) {
+            if (param.getSortOrder() == SortOrder.ASC) {
+                tupleQuery.orderBy(builder.asc(areaRoot.get("treeSortOrder")), builder.asc(msgRoot.get("id")));
+            } else {
+                tupleQuery.orderBy(builder.desc(areaRoot.get("treeSortOrder")), builder.desc(msgRoot.get("id")));
+            }
+        }
+
+        // Execute the query
+        List<Tuple> totalResult = em
+                .createQuery(tupleQuery)
+                .getResultList();
+
+        // Register the total result
+        result.setTotal(totalResult.size());
+
+        List<Integer> msgIds = totalResult.stream()
+                .map(t -> (Integer) t.get(0))
+                .collect(Collectors.toList());
+
+        // Extract and return the paged sub-list
+        int startIndex = Math.min(msgIds.size(), param.getPage() * param.getMaxSize());
+        int endIndex = Math.min(msgIds.size(), startIndex + param.getMaxSize());
+        return msgIds.subList(startIndex, endIndex);
+    }
+
+
     /***************************************/
-    /** Message History methods           **/
+    /** Message History                   **/
     /***************************************/
 
 

@@ -1,7 +1,18 @@
 
-<div class="view-mode-filter">
+<div class="view-mode-filter" ng-show="showFilter">
 
     <div class="row">
+
+
+        <!-- Map Filter -->
+        <view-mode-filter-panel state="state" filter-name="map" closable="false" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
+            <div class="map-extent">
+                <span>&swarr; {{extentBottomLeft() | lonlat:{ decimals : 2, pp: true } }}</span>
+                &nbsp;
+                <span>&nearr; {{extentTopRight() | lonlat:{ decimals : 2, pp: true } }}</span>
+            </div>
+        </view-mode-filter-panel>
+
 
         <!-- Text Filter -->
         <view-mode-filter-panel state="state" filter-name="text" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
@@ -13,6 +24,7 @@
                       ng-click="state.text.query = ''" ng-show="state.text.query != ''"></span>
             </div>
         </view-mode-filter-panel>
+
 
         <!-- Type Filter -->
         <view-mode-filter-panel state="state" filter-name="type" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
@@ -37,10 +49,12 @@
             </div>
         </view-mode-filter-panel>
 
+
         <!-- Status Filter -->
         <view-mode-filter-panel state="state" filter-name="status" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
             <div class="btn-group">
                 <label class="btn btn-default btn-sm" ng-model="state.status.PUBLISHED" uib-btn-checkbox>Published</label>
+                <label class="btn btn-default btn-sm" ng-model="state.status.IMPORTED" uib-btn-checkbox>Imported</label>
                 <label class="btn btn-default btn-sm" ng-model="state.status.DRAFT" uib-btn-checkbox>Draft</label>
                 <label class="btn btn-default btn-sm" ng-model="state.status.VERIFIED" uib-btn-checkbox>Verified</label>
                 <label class="btn btn-default btn-sm" ng-model="state.status.CANCELLED" uib-btn-checkbox>Cancelled</label>
@@ -48,6 +62,7 @@
                 <label class="btn btn-default btn-sm" ng-model="state.status.DELETED" uib-btn-checkbox>Deleted</label>
             </div>
         </view-mode-filter-panel>
+
 
         <!-- Tag Filter -->
         <view-mode-filter-panel state="state" filter-name="tag" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
@@ -67,6 +82,7 @@
             </ui-select>
         </view-mode-filter-panel>
 
+
         <!-- AtoN Filter -->
         <view-mode-filter-panel state="state" filter-name="aton" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
             <ui-select multiple id="atons" ng-model="state.aton.atons" >
@@ -85,6 +101,7 @@
                 </ui-select-choices>
             </ui-select>
         </view-mode-filter-panel>
+
 
         <!-- Chart Filter -->
         <view-mode-filter-panel state="state" filter-name="chart" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
@@ -106,6 +123,7 @@
             </ui-select>
         </view-mode-filter-panel>
 
+
         <!-- Area Filter -->
         <view-mode-filter-panel state="state" filter-name="area" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
             <ui-select multiple id="areas" ng-model="state.area.areas" >
@@ -124,6 +142,7 @@
             </ui-select>
         </view-mode-filter-panel>
 
+
         <!-- Category Filter -->
         <view-mode-filter-panel state="state" filter-name="category" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
             <ui-select multiple id="categories" ng-model="state.category.categories" >
@@ -141,6 +160,7 @@
                 </ui-select-choices>
             </ui-select>
         </view-mode-filter-panel>
+
 
         <!-- Date Filter -->
         <view-mode-filter-panel state="state" filter-name="date" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
