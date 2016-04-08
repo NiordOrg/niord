@@ -75,13 +75,19 @@ import java.util.concurrent.Future;
 import static org.niord.core.settings.Setting.Type.Boolean;
 
 /**
- * Base class for Lucene index beans
+ * A Lucene index used for free-text searching all messages.
+ * <p>
+ * The index will initially index all messages, and subsequently check every minute
+ * for changed message to add or update in the index.
+ * <p>
+ * Note to self: Using "Hibernate Search" for message (as for AtoNs), was ruled out because it would
+ * be too complex to index all related entities by language.
  */
 @Singleton
 @Lock(LockType.READ)
 @Startup
 @SuppressWarnings("unused")
-public class MessageSearchService  extends BaseService {
+public class MessageLuceneIndex extends BaseService {
 
     final static String LUCENE_ID_FIELD             = "id";
     final static String LUCENE_SEARCH_FIELD         = "message";
@@ -97,7 +103,7 @@ public class MessageSearchService  extends BaseService {
 
     @Inject
     @Setting(value = "messageIndexDeleteOnStartup", defaultValue = "true", type = Boolean,
-            description = "Wheter the message index is re-created for each restart or not")
+            description = "Whether the message index is re-created for each restart or not")
     Boolean deleteOnStartup;
 
     @Inject
@@ -113,20 +119,11 @@ public class MessageSearchService  extends BaseService {
     NiordApp app;
 
 
-    // Used by Lucene
     DirectoryReader reader;
     int optimizeIndexCount = 0;
     boolean locked = false;
     boolean allMessagesIndexed;
 
-
-    /***************************************/
-    /** Message Search methods            **/
-    /***************************************/
-
-    /***************************************/
-    /** Lucene methods                    **/
-    /***************************************/
 
     /**
      * Initialize the index
