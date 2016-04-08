@@ -288,7 +288,7 @@ public class MessageService extends BaseService {
             result.updateSize();
 
         } catch (Exception e) {
-            log.error("Error performing search " + params + ": " + e, e);
+            log.error("Error performing search " + params + ": " + e);
         }
 
         return result;
