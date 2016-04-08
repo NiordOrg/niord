@@ -410,8 +410,15 @@ public class MessageService extends BaseService {
         }
 
 
+        // AtoN UIDs
+        if (!param.getAtonUids().isEmpty()) {
+            Join<Message, String> atonRoot = msgRoot.join("atonUids", JoinType.LEFT);
+            criteriaHelper.add(atonRoot.in(param.getAtonUids()));
+        }
+
+
         // TODO
-        // atonUids, tags
+        // tags
         // Errors Types, quoted text,
 
 

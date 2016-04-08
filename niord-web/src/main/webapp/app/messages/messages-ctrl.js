@@ -12,6 +12,8 @@ angular.module('niord.messages')
                   AuthService, FilterService, MessageService, AtonService) {
             'use strict';
 
+            var loadTimer;
+
             $scope.showFilter = true;
             $scope.messageList = [];
             $scope.totalMessageNo = 0;
@@ -77,6 +79,15 @@ angular.module('niord.messages')
                     toDate: undefined
                 }
             };
+
+
+            /** Destroy any pending message loading operations **/
+            $scope.$on('$destroy', function() {
+                if (angular.isDefined(loadTimer)) {
+                    $timeout.cancel(loadTimer);
+                    loadTimer = undefined;
+                }
+            });
 
             /*****************************/
             /** Filter Handling         **/
@@ -334,7 +345,10 @@ angular.module('niord.messages')
                     $scope.state.type.nmType = '';
                 }
 
-                $scope.refreshMessages();
+                if (loadTimer) {
+                    $timeout.cancel(loadTimer);
+                }
+                loadTimer = $timeout($scope.refreshMessages, 300);
             };
 
             // Use for tag selection
@@ -495,8 +509,6 @@ angular.module('niord.messages')
             // Called when the state have been updated
             $scope.refreshMessages = function () {
 
-                // TODO: use $timeout and cancel old timeout when new arrives...
-                
                 var params = $scope.toRequestFilterParameters();
 
                 MessageService.search(params)

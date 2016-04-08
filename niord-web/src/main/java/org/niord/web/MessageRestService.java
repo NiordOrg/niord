@@ -76,7 +76,7 @@ public class MessageRestService {
             @QueryParam("category") Set<Integer> categoryIds,
             @QueryParam("chart") Set<String> chartNumbers,
             @QueryParam("tag") Set<String> tags,
-            @QueryParam("atonUid") Set<String> atonUids,
+            @QueryParam("aton") Set<String> atonUids,
             @QueryParam("fromDate") Long fromDate,
             @QueryParam("toDate") Long toDate,
             @QueryParam("minLat") Double minLat,
