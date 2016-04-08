@@ -263,18 +263,18 @@ public class AtonService extends BaseService {
             criteriaHelper.add(new SpatialWithinPredicate(cb, atonRoot.get("geometry"), param.getExtent()));
         }
 
-        if (param.getChartNumbers() != null && param.getChartNumbers().length > 0) {
+        if (!param.getChartNumbers().isEmpty()) {
             Root<Chart> chartRoot = c.from(Chart.class);
             criteriaHelper
                     .add(new SpatialWithinPredicate(cb, atonRoot.get("geometry"), chartRoot.get("geometry")))
-                    .in(chartRoot.get("chartNumber"), Arrays.asList(param.getChartNumbers()));
+                    .in(chartRoot.get("chartNumber"), param.getChartNumbers());
         }
 
-        if (param.getAreaIds() != null && param.getAreaIds().length > 0) {
+        if (!param.getAreaIds().isEmpty()) {
             Root<Area> areaRoot = c.from(Area.class);
             criteriaHelper
                     .add(new SpatialWithinPredicate(cb, atonRoot.get("geometry"), areaRoot.get("geometry")))
-                    .in(areaRoot.get("id"), Arrays.asList(param.getAreaIds()));
+                    .in(areaRoot.get("id"), param.getAreaIds());
         }
 
         return atonRoot;

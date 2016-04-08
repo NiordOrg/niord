@@ -54,7 +54,7 @@
             <ui-select multiple id="tags" ng-model="state.tag.tags" >
                 <ui-select-match placeholder="Select Tags">
                     {{$item.uid}}
-                    <span ng-if="$item.name">{{$item.uid}}</span>
+                    <span ng-if="$item.uid">{{$item.uid}}</span>
                 </ui-select-match>
                 <ui-select-choices repeat="tag in tags"
                                    refresh="refreshTags($select.search)"

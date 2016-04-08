@@ -1,5 +1,10 @@
 package org.niord.model;
 
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 /**
  * Can be used as a base class for search parameters for paged search results
  */
@@ -13,31 +18,36 @@ public abstract class PagedSearchParamsVo implements IJsonSerializable {
     String sortBy;
     SortOrder sortOrder;
 
-    /** Getters **/
+
+    /** Helper method */
+    public final <T> Set<T> toSet(Set<T> arg) {
+        return arg == null ? new HashSet<>() : arg;
+    }
+
+    /** Helper method */
+    protected final <T, S> Set<T> toSet(Set<S> args, Function<S, T> mapper) {
+        return toSet(args).stream()
+                .map(mapper)
+                .collect(Collectors.toSet());
+    }
+
+    /*******************************************/
+    /** Method chaining Getters and Setters   **/
+    /*******************************************/
 
     public int getMaxSize() {
         return maxSize;
     }
-
-    public int getPage() {
-        return page;
-    }
-
-    public String getSortBy() {
-        return sortBy;
-    }
-
-    public SortOrder getSortOrder() {
-        return sortOrder;
-    }
-
-    /** Method-chaining setters **/
 
     public PagedSearchParamsVo maxSize(Integer maxSize) {
         if (maxSize != null) {
             this.maxSize = maxSize;
         }
         return this;
+    }
+
+    public int getPage() {
+        return page;
     }
 
     public PagedSearchParamsVo page(Integer page) {
@@ -47,14 +57,21 @@ public abstract class PagedSearchParamsVo implements IJsonSerializable {
         return this;
     }
 
+    public String getSortBy() {
+        return sortBy;
+    }
+
     public PagedSearchParamsVo sortBy(String sortBy) {
         this.sortBy = sortBy;
         return this;
+    }
+
+    public SortOrder getSortOrder() {
+        return sortOrder;
     }
 
     public PagedSearchParamsVo sortOrder(SortOrder sortOrder) {
         this.sortOrder = sortOrder;
         return this;
     }
-
 }

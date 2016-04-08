@@ -22,6 +22,7 @@ import org.niord.core.chart.ChartService;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
+import org.niord.model.PagedSearchResultVo;
 import org.niord.model.vo.MessageVo;
 import org.niord.model.vo.Status;
 import org.slf4j.Logger;
@@ -236,6 +237,23 @@ public class MessageService extends BaseService {
                 .setMaxResults(maxCount)
                 .getResultList();
     }
+
+
+    /**
+     * Main message search function
+     * @param params the search parameters
+     * @return the search result
+     */
+    public PagedSearchResultVo<Message> search(MessageSearchParams params) {
+        PagedSearchResultVo<Message> result = new PagedSearchResultVo<>();
+
+        List<Message> messages = getAll(Message.class);
+        result.setData(messages);
+        result.updateSize();
+
+        return result;
+    }
+
 
     /***************************************/
     /** Message History methods           **/

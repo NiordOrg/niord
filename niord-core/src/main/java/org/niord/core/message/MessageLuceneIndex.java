@@ -162,7 +162,7 @@ public class MessageLuceneIndex extends BaseService {
 
 
     /**
-     * Called every minute to update the Lucene index
+     * Called when the service starts up and then every minute to update the Lucene index
      */
     @Timeout
     @Schedule(persistent=false, second="38", minute="*/1", hour="*")

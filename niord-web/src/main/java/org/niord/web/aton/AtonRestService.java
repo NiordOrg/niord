@@ -33,6 +33,7 @@ import javax.inject.Inject;
 import javax.ws.rs.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -79,7 +80,7 @@ public class AtonRestService {
             @QueryParam("maxAtonNo") @DefaultValue("1000") int maxAtonNo
     ) {
         AtonSearchParams param = new AtonSearchParams();
-        param.setName(name);
+        param.name(name);
         param.maxSize(maxAtonNo);
 
         return atonService.search(param)
@@ -97,8 +98,8 @@ public class AtonRestService {
     @NoCache
     public PagedSearchResultVo<AtonNodeVo> search(
             @QueryParam("name") String name,
-            @QueryParam("chart") String[] charts,
-            @QueryParam("area") Integer[] areas,
+            @QueryParam("chart") Set<String> charts,
+            @QueryParam("area") Set<Integer> areas,
             @QueryParam("minLat") Double minLat,
             @QueryParam("minLon") Double minLon,
             @QueryParam("maxLat") Double maxLat,
@@ -107,13 +108,13 @@ public class AtonRestService {
             @QueryParam("emptyOnOverflow") @DefaultValue("false") boolean emptyOnOverflow
     ) {
 
-        AtonSearchParams param = new AtonSearchParams();
-        param.setName(name);
-        param.setExtent(minLat, minLon, maxLat, maxLon);
-        param.setChartNumbers(charts);
-        param.setAreaIds(areas);
+        AtonSearchParams param = new AtonSearchParams()
+            .name(name)
+            .extent(minLat, minLon, maxLat, maxLon)
+            .chartNumbers(charts)
+            .areaIds(areas)
+            .emptyOnOverflow(emptyOnOverflow);
         param.maxSize(maxAtonNo);
-        param.setEmptyOnOverflow(emptyOnOverflow);
 
         PagedSearchResultVo<AtonNode> atons = atonService.search(param);
 

@@ -64,15 +64,24 @@ public class GeoJsonUtils {
      * @param maxLon the maximum longitude
      * @return the corresponding JTS geometry
      */
-    public static Geometry toJtsExtent(double minLat, double minLon, double maxLat, double maxLon) {
-        double[][][] coords = {{
+    public static Geometry toJtsExtent(Double minLat, Double minLon, Double maxLat, Double maxLon) {
+
+        if (minLat != null || minLon != null || maxLat != null || maxLon != null) {
+            minLat = minLat != null ? minLat : -90.0;
+            minLon = minLon != null ? minLon : -180.0;
+            maxLat = maxLat != null ? maxLat : 90.0;
+            maxLon = maxLon != null ? maxLon : 180.0;
+
+            double[][][] coords = {{
                     {minLon, minLat},
                     {minLon, maxLat},
                     {maxLon, maxLat},
                     {maxLon, minLat},
                     {minLon, minLat}
             }};
-        return toJtsPolygon(coords);
+            return toJtsPolygon(coords);
+        }
+        return null;
     }
 
 

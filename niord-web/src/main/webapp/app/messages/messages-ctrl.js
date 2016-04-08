@@ -7,9 +7,9 @@
  */
 angular.module('niord.messages')
     .controller('MessageListCtrl', ['$scope', '$rootScope', '$location', '$http', '$timeout',
-                'AuthService', 'FilterService', 'MapService', 'AtonService',
+                'AuthService', 'FilterService', 'MessageService', 'AtonService',
         function ($scope, $rootScope, $location, $http, $timeout,
-                  AuthService, FilterService, MapService, AtonService) {
+                  AuthService, FilterService, MessageService, AtonService) {
             'use strict';
 
             $scope.messageList = [];
@@ -462,21 +462,20 @@ angular.module('niord.messages')
 
             // Called when the state have been updated
             $scope.refreshMessages = function () {
+
                 // TODO: use $timeout and cancel old timeout when new arrives...
+                
+                var params = $scope.toRequestFilterParameters();
 
-                // TODO: Test using feature collections as messages
-
-                MapService.getAllFeatureCollections().success(function (featureCollections) {
-                    $scope.messageList.length = 0;
-                    $scope.totalMessageNo = 0; // featureCollections.length;
-                    angular.forEach(featureCollections, function (featureCollection) {
-                        $scope.messageList.push(featureCollection);
+                MessageService.search(params)
+                    .success(function (result) {
+                        $scope.messageList = result.data;
+                        $scope.totalMessageNo = result.total;
                     });
-                });
 
 
                 // Update the request parameters
-                $location.search($scope.toRequestFilterParameters());
+                $location.search(params);
             };
 
 

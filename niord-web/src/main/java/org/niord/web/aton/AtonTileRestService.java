@@ -124,8 +124,8 @@ public class AtonTileRestService {
             double[] bounds = mercator.TileLatLonBounds(x, y, z);
 
             // Convert to mapExtents search parameters
-            AtonSearchParams param = new AtonSearchParams();
-            param.setExtent(-bounds[2], bounds[1], -bounds[0], bounds[3]);
+            AtonSearchParams param = new AtonSearchParams()
+                .extent(-bounds[2], bounds[1], -bounds[0], bounds[3]);
 
             // Compute the atons of the tile extent
             java.util.List<double[]> atonLonLast = atonService.searchPositions(param);
