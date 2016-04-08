@@ -219,7 +219,7 @@ public class MessageSearchService  extends BaseService {
      * @param doc the document to add the message to
      * @param message the message to add
      */
-    protected void addEntityToDocument(Document doc, Message message) {
+    protected void addMessageToDocument(Document doc, Message message) {
         // For each supported language, update a search field
         for (String language : app.getLanguages()) {
             String searchField = searchField(language);
@@ -283,10 +283,10 @@ public class MessageSearchService  extends BaseService {
             message.getAtonUids()
                     .forEach(a -> addPhraseSearchField(doc, searchField, a));
 
+            // TODO
             // Add geometry
-            if (message.getGeometry() != null) {
-                // TODO
-            }
+            //if (message.getGeometry() != null) {
+            //}
         }
     }
 
@@ -305,7 +305,7 @@ public class MessageSearchService  extends BaseService {
             Directory dir = FSDirectory.open(indexFolder);
             return new IndexWriter(dir, iwc);
         } catch (IOException ex) {
-            log.error("Failed to create Customer Lucene Index in folder " + indexFolder, ex);
+            log.error("Failed to create message Lucene Index in folder " + indexFolder, ex);
             throw ex;
         }
     }
@@ -370,7 +370,7 @@ public class MessageSearchService  extends BaseService {
 
 
     /**
-     * Call this to re-index the entity index completely
+     * Call this to re-index the message index completely
      * @throws IOException
      */
     @Asynchronous
@@ -381,7 +381,7 @@ public class MessageSearchService  extends BaseService {
 
 
     /**
-     * Call this to re-index the entity index completely
+     * Call this to re-index the message index completely
      * @throws IOException
      */
     public int recreateIndex() throws IOException {
@@ -396,7 +396,7 @@ public class MessageSearchService  extends BaseService {
             // delete the old index
             deleteIndex();
 
-            // Update all customers
+            // Update all messages
             return updateLuceneIndex(Integer.MAX_VALUE, true);
 
         } finally {
@@ -454,7 +454,7 @@ public class MessageSearchService  extends BaseService {
     /**
      * Updates the Lucene index
      *
-     * @param maxIndexCount max number of entities to index at a time
+     * @param maxIndexCount max number of messages to index at a time
      * @param force update even if the locked flag is set
      * @return the number of updates
      */
@@ -467,7 +467,7 @@ public class MessageSearchService  extends BaseService {
         Date lastUpdated = getLastUpdated();
 
         long t0 = System.currentTimeMillis();
-        log.debug(String.format("Indexing at most %d changed entities since %s", maxIndexCount, lastUpdated));
+        log.debug(String.format("Indexing at most %d changed messages since %s", maxIndexCount, lastUpdated));
 
         IndexWriter writer = null;
         try {
@@ -505,7 +505,7 @@ public class MessageSearchService  extends BaseService {
                 optimizeIndexCount = 0;
             }
 
-            log.info("Indexed " + updatedMessages.size() + " entities in "
+            log.info("Indexed " + updatedMessages.size() + " messages in "
                     + (System.currentTimeMillis() - t0) + " ms");
 
             return updatedMessages.size();
@@ -569,7 +569,7 @@ public class MessageSearchService  extends BaseService {
         doc.add(new StringField(LUCENE_ID_FIELD, message.getId().toString(), Field.Store.YES));
 
         // Add the message specific fields
-        addEntityToDocument(doc, message);
+        addMessageToDocument(doc, message);
 
         // Add the document to the index
         try {
@@ -611,7 +611,7 @@ public class MessageSearchService  extends BaseService {
     }
 
     /**
-     * Performs a search in the index and returns the ids of matching entities
+     * Performs a search in the index and returns the ids of matching messages
      *
      * @param freeTextSearch the search string
      * @param field the field to search
