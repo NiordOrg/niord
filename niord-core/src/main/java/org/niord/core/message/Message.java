@@ -123,6 +123,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     @ElementCollection
     List<String> atonUids = new ArrayList<>();
 
+    @ManyToMany(mappedBy = "messages")
+    List<MessageTag> tags = new ArrayList<>();
+
     Boolean originalInformation;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
@@ -429,6 +432,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setAtonUids(List<String> atonUids) {
         this.atonUids = atonUids;
+    }
+
+    public List<MessageTag> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<MessageTag> tags) {
+        this.tags = tags;
     }
 
     public Boolean getOriginalInformation() {

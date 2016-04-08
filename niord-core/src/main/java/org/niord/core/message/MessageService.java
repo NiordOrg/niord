@@ -417,9 +417,17 @@ public class MessageService extends BaseService {
         }
 
 
-        // TODO
-        // tags
-        // Errors Types, quoted text,
+        // Tags
+        if (!param.getTags().isEmpty()) {
+            Join<Message, MessageTag> tags = msgRoot.join("tags", JoinType.LEFT);
+            Predicate[] tagMatch = new Predicate[param.getTags().size()];
+            Iterator<String> i = param.getChartNumbers().iterator();
+            for (int x = 0; x < tagMatch.length; x++) {
+                // TODO: Handle non-existing tags
+                tagMatch[x] = builder.equal(tags.get("tagId"), i.next());
+            }
+            criteriaHelper.add(builder.or(tagMatch));
+        }
 
 
         // Determine the fields to fetch

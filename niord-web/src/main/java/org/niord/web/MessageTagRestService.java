@@ -33,9 +33,9 @@ public class MessageTagRestService {
             int weeksInYear = TimeUtils.getNumberOfWeeksInYear(year);
             for (int week = 1; week < weeksInYear; week++) {
                 MessageTagVo tag = new MessageTagVo();
-                tag.setCreatorId("NA");
+                tag.setShared(false);
                 tag.setShared(true);
-                tag.setUid(String.format("w%02d-%02d", week, year - 2000));
+                tag.setTagId(String.format("w%02d-%02d", week, year - 2000));
                 tags.add(tag);
             }
         }
@@ -71,7 +71,7 @@ public class MessageTagRestService {
                                           @QueryParam("limit") @DefaultValue("1000") int limit) {
         return tags.stream()
                 .filter(t -> name.isEmpty() ||
-                        t.getUid().toLowerCase().contains(name.toLowerCase()))
+                        t.getTagId().toLowerCase().contains(name.toLowerCase()))
                 .limit(limit)
                 .collect(Collectors.toList());
     }
@@ -79,14 +79,14 @@ public class MessageTagRestService {
 
     /** Returns the tags with the given IDs */
     @GET
-    @Path("/{tagUids}")
+    @Path("/{tagIds}")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<MessageTagVo> getTags(@PathParam("tagUids") String tagUids) {
-        Set<String> ids = new HashSet<>(Arrays.asList(tagUids.split(",")));
+    public List<MessageTagVo> getTags(@PathParam("tagIds") String tagIds) {
+        Set<String> ids = new HashSet<>(Arrays.asList(tagIds.split(",")));
         return tags.stream()
-                .filter(t -> ids.contains(t.getUid()))
+                .filter(t -> ids.contains(t.getTagId()))
                 .collect(Collectors.toList());
     }
 
@@ -100,9 +100,9 @@ public class MessageTagRestService {
     @NoCache
     public MessageTagVo createTag(MessageTagVo tag) {
         Objects.requireNonNull(tag);
-        Objects.requireNonNull(tag.getUid());
+        Objects.requireNonNull(tag.getTagId());
 
-        tag.setCreatorId("NA");
+        tag.setShared(false);
         tags.add(tag);
         return tag;
     }
@@ -110,10 +110,10 @@ public class MessageTagRestService {
 
     /** Deletes the tag with the given UID */
     @DELETE
-    @Path("/{tagUid}")
+    @Path("/{tagId}")
     @GZIP
     @NoCache
-    public void deleteTag(@PathParam("tagUid") String tagUid) {
+    public void deleteTag(@PathParam("tagId") String tagUid) {
         List<MessageTagVo> t = getTags(tagUid);
         if (!t.isEmpty()) {
             tags.remove(t.get(0));

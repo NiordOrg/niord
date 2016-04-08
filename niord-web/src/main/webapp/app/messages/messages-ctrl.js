@@ -214,7 +214,7 @@ angular.module('niord.messages')
                 }
                 if (s.tag.enabled) {
                     angular.forEach(s.tag.tags, function (tag) {
-                        params += '&tag=' + tag.uid;
+                        params += '&tag=' + tag.tagId;
                     })
                 }
                 if (s.aton.enabled) {

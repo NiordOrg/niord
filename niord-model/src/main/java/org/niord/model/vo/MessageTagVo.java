@@ -25,8 +25,7 @@ import java.util.Date;
 @SuppressWarnings("unused")
 public class MessageTagVo implements IJsonSerializable {
 
-    String uid;
-    String creatorId;
+    String tagId;
     boolean shared;
     Date expiryDate;
 
@@ -34,20 +33,12 @@ public class MessageTagVo implements IJsonSerializable {
     /** Getters and Setters **/
     /*************************/
 
-    public String getUid() {
-        return uid;
+    public String getTagId() {
+        return tagId;
     }
 
-    public void setUid(String uid) {
-        this.uid = uid;
-    }
-
-    public String getCreatorId() {
-        return creatorId;
-    }
-
-    public void setCreatorId(String creatorId) {
-        this.creatorId = creatorId;
+    public void setTagId(String tagId) {
+        this.tagId = tagId;
     }
 
     public boolean isShared() {
