@@ -108,11 +108,9 @@ angular.module('niord.messages')
                         olLayer.getSource().clear();
                         if (scope.messageList && scope.messageList.length > 0) {
                             angular.forEach(scope.messageList, function (message) {
-                                // TODO: For now messages are feature collections
-                                var featureCollection = message;
-                                if (featureCollection.features.length > 0) {
+                                if (message.geometry && message.geometry.features.length > 0) {
 
-                                    angular.forEach(featureCollection.features, function (gjFeature) {
+                                    angular.forEach(message.geometry.features, function (gjFeature) {
                                         var olFeature = MapService.gjToOlFeature(gjFeature);
                                         if (scope.showOutline == 'true') {
                                             var point = MapService.getGeometryCenter(olFeature.getGeometry());
