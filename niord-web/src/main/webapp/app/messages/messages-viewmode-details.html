@@ -1,5 +1,5 @@
 
-<div class="message-list-details container-fluid">
+<div class="message-list-details container">
     <div class="row">
         <div ng-if="messageList.length == 0">
             <div ng-include="'/app/messages/messages-empty-search-result.html'"></div>
@@ -12,7 +12,7 @@
                         <h2 class="msi-area-heading" style="margin-bottom: 5px;" msi-area="message.areaHeading"></h2>
                     </td>
                 </tr>
-                <tr ng-repeat-end render-message-details msg="message" message-list="messageList" ></tr>
+                <tr class="message-list-details-border" ng-repeat-end render-message-details msg="message" message-list="messageList" ></tr>
             </table>
         </div>
 

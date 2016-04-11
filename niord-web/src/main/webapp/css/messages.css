@@ -14,7 +14,10 @@
 /** View mode -> Grid **/
 
 .messages-list-grid {
-    margin: 10px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .grid-item {
@@ -71,10 +74,18 @@
     max-height: 100px;
 }
 
-/** View mode -> Grid **/
+/** View mode -> Details **/
 
 .message-list-details {
-    margin: 20px;
+    margin: 0 auto;
+    padding: 20px 30px;
+    background-color: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.message-list-details-border td {
+    border-bottom: 1px dotted lightgray!important;
+    padding: 20px 0;
 }
 
 
@@ -129,6 +140,10 @@
     font-size: 10px;
 }
 
+.message-details-image {
+    padding: 10px!important;
+}
+
 .message-details-image img {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
     border: 2px solid #fff;
@@ -141,7 +156,7 @@
 
 @media (min-width: 500px) {
     .message-details-image {
-        width: 130px;
+        width: 140px;
     }
     .message-details-image img {
         display: block;
@@ -152,7 +167,7 @@
 }
 @media (min-width: 800px) {
     .message-details-image {
-        width: 210px;
+        width: 220px;
     }
     .message-details-image img {
         width: 200px;
@@ -161,11 +176,8 @@
 }
 
 .message-details-item {
+    padding: 10px!important;
     font-size: 11px;
-}
-
-.message-details-item-spacing {
-    margin-bottom: 20px;
 }
 
 .message-details-item-field {
