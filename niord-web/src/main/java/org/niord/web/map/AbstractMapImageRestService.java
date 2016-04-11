@@ -22,12 +22,20 @@ import org.niord.core.settings.annotation.Setting;
 import org.niord.core.util.GeoJsonUtils;
 import org.niord.core.util.GlobalMercator;
 import org.niord.core.util.GraphicsUtils;
-import org.niord.model.vo.geojson.*;
+import org.niord.model.vo.geojson.FeatureCollectionVo;
+import org.niord.model.vo.geojson.FeatureVo;
+import org.niord.model.vo.geojson.GeometryCollectionVo;
+import org.niord.model.vo.geojson.GeometryVo;
+import org.niord.model.vo.geojson.LineStringVo;
+import org.niord.model.vo.geojson.MultiLineStringVo;
+import org.niord.model.vo.geojson.MultiPointVo;
+import org.niord.model.vo.geojson.MultiPolygonVo;
+import org.niord.model.vo.geojson.PointVo;
+import org.niord.model.vo.geojson.PolygonVo;
 import org.slf4j.Logger;
 
 import javax.imageio.ImageIO;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServlet;
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
@@ -46,10 +54,10 @@ import static org.niord.core.settings.Setting.Type.Integer;
 /**
  * Returns and caches a thumbnail image for given locations.
  */
-public abstract class AbstractMapImageServlet extends HttpServlet  {
+public abstract class AbstractMapImageRestService  {
 
     static final String STATIC_IMAGE_URL = "%s?center=%f,%f&zoom=%d&size=%dx%d";
-    static final String IMAGE_PLACEHOLDER = "/img/map_image_placeholder.png";
+    static final String IMAGE_PLACEHOLDER = "../img/map_image_placeholder.png";
 
     static final int ICON_SIZE = 20;
 

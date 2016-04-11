@@ -26,6 +26,7 @@ import org.niord.core.db.CriteriaHelper;
 import org.niord.core.db.SpatialWithinPredicate;
 import org.niord.core.geojson.Feature;
 import org.niord.core.geojson.FeatureCollection;
+import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
@@ -46,6 +47,7 @@ import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -63,6 +65,8 @@ import static org.niord.core.message.MessageSearchParams.SortOrder;
 @Stateless
 @SuppressWarnings("unused")
 public class MessageService extends BaseService {
+
+    public static String MESSAGE_REPO_FOLDER = "messages";
 
     @Inject
     private Logger log;
@@ -88,6 +92,8 @@ public class MessageService extends BaseService {
     @Inject
     ChartService chartService;
 
+    @Inject
+    RepositoryService repositoryService;
 
     /***************************************/
     /** Message methods                   **/
@@ -533,6 +539,59 @@ public class MessageService extends BaseService {
         return em.createNamedQuery("MessageHistory.findByMessageId", MessageHistory.class)
                 .setParameter("messageId", messageId)
                 .getResultList();
+    }
+
+
+    /***************************************/
+    /** Repo methods                      **/
+    /***************************************/
+
+    /**
+     * Returns the repository folder for the given message
+     * @param id the id of the message
+     * @return the associated repository folder
+     */
+    public java.nio.file.Path getMessageRepoFolder(Integer id) throws IOException {
+        return  repositoryService.getHashedSubfolder(MESSAGE_REPO_FOLDER, String.valueOf(id), true);
+    }
+
+    /**
+     * Returns the repository folder for the given message
+     * @param message the message
+     * @return the associated repository folder
+     */
+    public java.nio.file.Path getMessageRepoFolder(Message message) throws IOException {
+        return  getMessageRepoFolder(message.getId());
+    }
+
+    /**
+     * Returns the repository file for the given message file
+     * @param message the message
+     * @param name the file name
+     * @return the associated repository file
+     */
+    public java.nio.file.Path getMessageFileRepoPath(Message message, String name) throws IOException {
+        return  getMessageRepoFolder(message).resolve(name);
+    }
+
+    /**
+     * Returns the repository URI for the message folder
+     * @param message the message
+     * @return the associated repository URI
+     */
+    public String getMessageFolderRepoPath(Message message) throws IOException {
+        return repositoryService.getRepoPath(getMessageRepoFolder(message));
+    }
+
+    /**
+     * Returns the repository URI for the given message file
+     * @param message the message
+     * @param name the file name
+     * @return the associated repository URI
+     */
+    public String getMessageFileRepoUri(Message message, String name) throws IOException {
+        java.nio.file.Path file = getMessageRepoFolder(message).resolve(name);
+        return repositoryService.getRepoUri(file);
     }
 
 }

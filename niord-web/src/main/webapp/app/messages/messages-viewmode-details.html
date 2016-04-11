@@ -7,10 +7,8 @@
 
         <div ng-repeat="message in messageList" class="col-xs-11 col-sm-6 col-md-4 col-lg-3">
 
-            <ol-map ng-if="message.geometry" style="height: 200px;margin:20px; border: 1px solid gray">
-                <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
-                <map-message-list-layer name="Message" visible="true" message-list="[message]" fit-extent="true"></map-message-list-layer>
-            </ol-map>
+            <img class="map-image" ng-src="/rest/message-map-image/{{message.id}}.png" width="256" height="256"/>
+
             <div ng-if="message.descs[0].title">
                 <span if="message.number">{{message.number}} - </span>
                 {{message.descs[0].title}}
