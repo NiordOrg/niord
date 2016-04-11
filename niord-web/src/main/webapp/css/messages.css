@@ -7,6 +7,10 @@
     color: #8f2f7b;
 }
 
+.load-more-btn {
+    min-width: 300px;
+}
+
 /** View mode -> Grid **/
 
 .messages-list-grid {
@@ -66,6 +70,13 @@
     height: auto;
     max-height: 100px;
 }
+
+/** View mode -> Grid **/
+
+.message-list-details {
+    margin: 20px;
+}
+
 
 /** View mode -> Map **/
 

@@ -1,20 +1,29 @@
 
-<div class="messages-details container-fluid">
+<div class="message-list-details container-fluid">
     <div class="row">
         <div ng-if="messageList.length == 0">
             <div ng-include="'/app/messages/messages-empty-search-result.html'"></div>
         </div>
 
-        <div ng-repeat="message in messageList" class="col-xs-11 col-sm-6 col-md-4 col-lg-3">
+        <div>
+            <table class="table table-condensed">
+                <tr ng-repeat-start="message in messageList"  ng-if="message.areaHeading">
+                    <td colspan="2" style="border: none">
+                        <h2 class="msi-area-heading" style="margin-bottom: 5px;" msi-area="message.areaHeading"></h2>
+                    </td>
+                </tr>
+                <tr ng-repeat-end render-message-details msg="message" message-list="messageList" ></tr>
+            </table>
+        </div>
 
-            <img class="map-image" ng-src="/rest/message-map-image/{{message.id}}.png" width="256" height="256"/>
+    </div>
 
-            <div ng-if="message.descs[0].title">
-                <span if="message.number">{{message.number}} - </span>
-                {{message.descs[0].title}}
-            </div>
+    <div class="row" ng-if="messageList.length < totalMessageNo">
+        <div class="center" style="text-align: center">
+            <button class="btn btn-primary load-more-btn" ng-click="loadMore()">Load More</button>
         </div>
     </div>
+
 </div>
 
 <div ng-include="'/app/layout/footer.html'"></div>

@@ -1,7 +1,7 @@
 
-<td class="msi-details-image" style="border: none" ng-if="format == 'list'">
+<td class="message-details-image" style="border: none" ng-if="format == 'list'">
     <img ng-if="msg.id" ng-src="/rest/message-map-image/{{msg.id}}.png"
-         message-details-link="message.id" message-list="messageList"/>
+         message-details-link="msg.id" message-list="messages"/>
 </td>
 <td class="message-details-item" style="border: none">
 
