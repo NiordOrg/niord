@@ -1,0 +1,102 @@
+
+<td class="msi-details-image" style="border: none" ng-if="format == 'list'">
+    <img ng-if="msg.id" ng-src="/rest/message-map-image/{{msg.id}}.png"
+         message-details-link="message.id" message-list="messageList"/>
+</td>
+<td class="message-details-item" style="border: none">
+
+    <!-- Title line -->
+    <div ng-if="msg.originalInformation">&#10029;</div>
+    <div ng-if="msg.shortId">{{msg.shortId}}</div>
+    <div message-details-link="msg.id" message-list="messages" disabled="format == 'details'">
+        <strong>{{msg.descs[0].title}}</strong>
+        <span ng-if="msg.descs[0].lang != language" style="color: darkgray;">
+            ( <img ng-src="/img/flags/{{msg.descs[0].lang}}.png" style="height: 12px; opacity: 0.5;"/> )
+        </span>
+    </div>
+
+    <!-- Reference lines -->
+    <div class="row" ng-repeat="ref in msg.references">
+        <div class="col-sm-1 message-details-item-field" translate>FIELD_REFERENCE</div>
+        <div class="col-sm-11 message-details-item-value">
+            <span>{{ref.messageId}}</span>
+            <span ng-switch="ref.type">
+                <span ng-switch-when="REPETITION" translate>REF_REPETITION</span>
+                <span ng-switch-when="CANCELLATION" translate>REF_CANCELLED</span>
+                <span ng-switch-when="UPDATE" translate>REF_UPDATED</span>
+            </span>
+        </div>
+    </div>
+
+
+    <!-- Time line -->
+    <!-- Do NOT remove the ng-if="true" gibberish. Grotesquely, it fixes an iPad/iOS error -->
+    <!-- See: https://github.com/angular/angular.js/issues/9128 -->
+    <div class="row" ng-if="true">
+        <div class="col-sm-1 message-details-item-field" translate>FIELD_TIME</div>
+        <div class="col-sm-11 message-details-item-value">
+            <msi-valid-from-to msg="msg"></msi-valid-from-to>
+        </div>
+    </div>
+
+    <!-- Location line -->
+    <div class="row" ng-if="msg.geometry">
+        <div class="col-sm-1 message-details-item-field" translate>FIELD_LOCATION</div>
+        <div class="col-sm-11 message-details-item-value">
+            <div>
+                <span ng-if="msg.showLocations" ng-click="msg.showLocations = false" class="clickable" translate>HIDE_POS</span>
+                <span ng-if="!msg.showLocations" ng-click="msg.showLocations = true" class="clickable" translate>SHOW_POS</span>
+            </div>
+            <div ng-repeat="loc in msg.locations" ng-show="msg.showLocations">
+                <div ng-if="loc.descs[0].description">{{loc.descs[0].description}}</div>
+                <div ng-repeat="pt in loc.points">
+                    {{pt | lonlat}}<span ng-if="pt.descs[0].description">, {{pt.descs[0].description}}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details line -->
+    <div class="row" ng-if="msg.descs[0].description">
+        <div class="col-sm-1 message-details-item-field" translate>FIELD_DETAILS</div>
+        <div class="col-sm-11 message-details-item-value" ng-bind-html="msg.descs[0].description"></div>
+    </div>
+
+    <!-- Attachments -->
+    <div class="row" ng-if="msg.attachments">
+        <div class="col-sm-1 message-details-item-field">Attachments</div>
+        <div class="col-sm-11 message-details-item-value">
+            <span class="attachment-list" ng-repeat="file in msg.attachments">
+                <msi-attachment file="file" size="64" clickable="true"></msi-attachment>
+            </span>
+        </div>
+    </div>
+
+    <!-- Note line -->
+    <div class="row" ng-if="msg.descs[0].note">
+        <div class="col-sm-1 message-details-item-field" translate>FIELD_NOTE</div>
+        <div class="col-sm-11 message-details-item-value">{{msg.descs[0].note}}</div>
+    </div>
+
+    <!-- Charts line -->
+    <div class="row" ng-if="msg.charts.length > 0">
+        <div class="col-sm-1 message-details-item-field" translate>FIELD_CHARTS</div>
+        <div class="col-sm-11 message-details-item-value">
+            <span ng-repeat="chart in msg.charts"><span ng-if="!$first">, </span>{{chart.chartNumber}}
+                <span ng-if="chart.internationalNumber">(INT {{chart.internationalNumber}})</span></span>
+        </div>
+    </div>
+
+    <!-- Publication line -->
+    <div class="row" ng-if="msg.descs[0].publication">
+        <div class="col-sm-1 message-details-item-field" translate>FIELD_PUBLICATION</div>
+        <div class="col-sm-11 message-details-item-value">{{msg.descs[0].publication}}</div>
+    </div>
+
+    <!-- Source line -->
+    <div class="row" ng-if="msg.descs[0].source">
+        <div class="col-sm-12 message-details-item-value text-right">({{msg.descs[0].source}})</div>
+    </div>
+
+    <div class="message-details-item-spacing" ng-if="format == 'list'"></div>
+</td>

@@ -48,7 +48,20 @@ angular.module('niord.conf')
             'MENU_ACTION' : 'Action',
             'MENU_ACTION_PDF' : 'Generate PDF',
             'MENU_ACTION_SELECT_ALL' : 'Select all',
-            'MENU_ACTION_CLEAR_SELECTION' : 'Clear selection'
+            'MENU_ACTION_CLEAR_SELECTION' : 'Clear selection',
+
+            'FIELD_REFERENCE' : 'Reference',
+            'FIELD_TIME' : 'Time',
+            'FIELD_LOCATION' : 'Location',
+            'FIELD_DETAILS' : 'Details',
+            'FIELD_ATTACHMENTS' : 'Attachments',
+            'FIELD_NOTE' : 'Note',
+            'FIELD_CHARTS' : 'Charts',
+            'FIELD_PUBLICATION' : 'Publication',
+            'REF_REPETITION' : '(repetition)',
+            'REF_CANCELLED' : '(cancelled)',
+            'REF_UPDATED' : '(updated)'
+
         });
 
         $translateProvider.preferredLanguage('en');

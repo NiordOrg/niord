@@ -1,0 +1,57 @@
+<div>
+
+    <div class="modal-body print" style="padding-bottom: 0">
+
+        <div ng-if="warning">
+            <h2>{{warning}}</h2>
+        </div>
+
+        <div ng-if="msg">
+
+            <ol-map ng-if="msg.geometry" class="message-details-map">
+                <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
+                <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
+                                source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
+                <map-aton-layer atons="atons" name="AtoN" visible="false" layer-switcher="true"></map-aton-layer>
+                <map-message-details-layer name="Message" visible="true" message="msg.geometry" fit-extent="true"></map-message-details-layer>
+                <map-layer-switcher></map-layer-switcher>
+            </ol-map>
+
+
+            <button type="button" class="close message-details-close-btn" ng-click="$dismiss('aborted')">x</button>
+
+            <table class='table table-condensed'>
+                <tr render-message-details msg="msg" message-list="messages" format="details"></tr>
+            </table>
+
+        </div>
+
+        <div class="row" style="margin-top: 24px">
+
+            <div class="form-group col-xs-8" style="text-align: left">
+
+                <div class="btn-group" ng-if="pushedMessageIds.length == 1 && showNavigation">
+                    <button class="btn btn-primary btn-sm" ng-click="selectPrev()" ng-disabled="index < 1">
+                        <span class="glyphicon glyphicon-chevron-left"></span>
+                    </button>
+                    <button class="btn btn-primary btn-sm" ng-click="selectNext()"  ng-disabled="index >= messages.length - 1">
+                        <span class="glyphicon glyphicon-chevron-right"></span>
+                    </button>
+                </div>
+
+                <div class="btn-group" ng-if="pushedMessageIds.length > 1">
+                    <button class="btn btn-primary btn-sm" ng-click="back()">
+                        <span class="glyphicon glyphicon-step-backward"></span> back
+                    </button>
+                </div>
+
+                <msi-details-menu message-id="currentMessageId()" msg="msg" size="sm" dismiss-action="$dismiss('edit');"></msi-details-menu>
+            </div>
+
+
+            <div class="form-group col-xs-4" style="text-align: right">
+                <button class="btn btn-primary btn-sm" ng-click="$dismiss('aborted')">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

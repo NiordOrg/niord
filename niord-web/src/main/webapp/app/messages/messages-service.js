@@ -13,12 +13,22 @@ angular.module('niord.messages')
         return {
 
             /** Returns the message filters */
-            search: function(params) {
+            search: function(params, page, maxSize) {
+                page = page || 0;
+                maxSize = maxSize || 1000;
                 if (params.length >  0) {
                     params += '&';
                 }
-                params += 'lang=' + $rootScope.language;
+                params += 'lang=' + $rootScope.language
+                        + '&page=' + page
+                        + '&maxSize=' + maxSize;
                 return $http.get('/rest/messages/search?' + params);
+            },
+
+
+            /** Returns the message with the given ID */
+            details: function (id) {
+                return $http.get('/rest/messages/message/' + id + '?lang=' + $rootScope.language);
             }
         };
     }])

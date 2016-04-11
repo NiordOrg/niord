@@ -414,4 +414,57 @@ angular.module('niord.messages')
 
             }
         };
+    }])
+
+
+    /****************************************************************
+     * Binds a click event that will open the message details dialog
+     ****************************************************************/
+    .directive('messageDetailsLink', ['$rootScope',
+        function ($rootScope) {
+            'use strict';
+
+            return {
+                restrict: 'A',
+                scope: {
+                    messageDetailsLink: "=",
+                    messageList: "=",
+                    disabled: "=?"
+                },
+                link: function(scope, element) {
+
+                    if (!scope.disabled) {
+                        element.addClass('clickable');
+                        element.bind('click', function() {
+                            $rootScope.$broadcast('messageDetails', {
+                                messageId: scope.messageDetailsLink,
+                                messageList: scope.messageList
+                            });
+                        });
+                    }
+                }
+            };
+        }])
+
+
+    /********************************
+     * Renders the message details
+     ********************************/
+    .directive('renderMessageDetails', [ '$rootScope', function ($rootScope) {
+        'use strict';
+
+        return {
+            restrict: 'A',
+            templateUrl: '/app/messages/render-message-details.html',
+            replace: false,
+            scope: {
+                msg: "=",
+                messageList: "=",
+                format: "@"
+            },
+            link: function(scope) {
+                scope.language = $rootScope.language;
+                scope.format = scope.format || 'list';
+            }
+        };
     }]);

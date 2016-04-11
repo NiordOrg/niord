@@ -35,6 +35,7 @@ import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import java.util.Set;
@@ -58,6 +59,23 @@ public class MessageRestService {
     /***************************
      * Search functionality
      ***************************/
+
+    @GET
+    @Path("/message/{id}")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public MessageVo getMessage(
+            @PathParam("id") Integer id,
+            @QueryParam("lang") String language) throws Exception {
+
+        DataFilter filter = DataFilter.get()
+                .lang(language)
+                .fields(DataFilter.DETAILS, DataFilter.GEOMETRY, "Area.parent", "Category.parent");
+
+        return messageService.findById(id).toVo(filter);
+    }
+
 
     /**
      * Main search method
