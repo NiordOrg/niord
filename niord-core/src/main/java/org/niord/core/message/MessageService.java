@@ -23,7 +23,7 @@ import org.niord.core.category.CategoryService;
 import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
 import org.niord.core.db.CriteriaHelper;
-import org.niord.core.db.SpatialWithinPredicate;
+import org.niord.core.db.SpatialIntersectsPredicate;
 import org.niord.core.geojson.Feature;
 import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.repo.RepositoryService;
@@ -417,7 +417,7 @@ public class MessageService extends BaseService {
             param.getExtent().setSRID(WGS84_SRID);
             Join<Message, FeatureCollection> fcRoot = msgRoot.join("geometry", JoinType.LEFT);
             Join<FeatureCollection, Feature> fRoot = fcRoot.join("features", JoinType.LEFT);
-            criteriaHelper.add(new SpatialWithinPredicate(criteriaHelper.getCriteriaBuilder(), fRoot.get("geometry"), param.getExtent()));
+            criteriaHelper.add(new SpatialIntersectsPredicate(criteriaHelper.getCriteriaBuilder(), fRoot.get("geometry"), param.getExtent()));
         }
 
 
