@@ -1,8 +1,50 @@
 
-<div class="messages-details container-fluid">
+<div class="message-list-table container">
     <div class="row">
         <div ng-if="messageList.length < 10">
             <div ng-include="'/app/messages/messages-empty-search-result.html'"></div>
+        </div>
+    </div>
+
+    <table class='table table-condensed table-hover'>
+        <tr>
+            <th ng-click="toggleSortOrder('ID')" class="sortable">
+                ID
+                <span ng-if="sortBy == 'ID' && sortDesc"><small>&#9650;</small></span>
+                <span ng-if="sortBy == 'ID' && !sortDesc"><small>&#9660</small></span>
+            </th>
+            <th ng-click="toggleSortOrder('DATE')" class="sortable">
+                Date
+                <span ng-if="sortBy == 'DATE' && sortDesc"><small>&#9650;</small></span>
+                <span ng-if="sortBy == 'DATE' && !sortDesc"><small>&#9660</small></span>
+            </th>
+            <th>Title</th>
+            <th ng-click="toggleSortOrder('AREA')" class="sortable">
+                Area
+                <span ng-if="sortBy == 'AREA' && sortDesc"><small>&#9650;</small></span>
+                <span ng-if="sortBy == 'AREA' && !sortDesc"><small>&#9660</small></span>
+            </th>
+            <th>Action</th>
+        </tr>
+        <tr ng-repeat-start="message in messageList" ng-if="msg.areaHeading">
+            <td colspan="5"><h4 class="searchResultAreaHeading" msi-area="msg.areaHeading"></h4></td>
+        </tr>
+        <tr ng-repeat-end style="cursor: pointer">
+            <td nowrap message-details-link="message.id" message-list="messageList"><span>{{message.shortId}}</span></td>
+            <td nowrap message-details-link="message.id" message-list="messageList">
+                <msi-valid-from-to msg="msg"/>
+            </td>
+            <td message-details-link="message.id" message-list="messageList">{{message.descs[0].title}}</td>
+            <td message-details-link="message.id" message-list="messageList"><span msi-message-area="msg"></span></td>
+            <td>
+                <msi-details-menu message-id="msg.id" msg="msg" messages="searchResult.messages" show-view-action="true" size="xs" style="float: right;"></msi-details-menu>
+            </td>
+        </tr>
+    </table>
+
+    <div class="row" ng-if="messageList.length < totalMessageNo">
+        <div class="center" style="text-align: center">
+            <button class="btn btn-primary load-more-btn" ng-click="loadMore()">Load More</button>
         </div>
     </div>
 </div>
