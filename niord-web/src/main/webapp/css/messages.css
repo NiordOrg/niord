@@ -3,6 +3,65 @@
     background-color: #eee;
 }
 
+.searchResultAreaHeading {
+    color: #8f2f7b;
+}
+
+/** View mode -> Grid **/
+
+.messages-list-grid {
+    margin: 10px;
+}
+
+.grid-item {
+    border: 2px solid #fff;
+    position: relative;
+    margin: 1px;
+    width: 260px;
+    height: 260px;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.grid-item:hover {
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
+}
+
+.grid-map-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 256px;
+    height: 256px;
+}
+
+.grid-map-image-header {
+    background-color: rgba(247, 247, 247, 0.8);
+    font-size: 12px;
+    line-height: 15px;
+    position: absolute;
+    top: 0;
+    padding: 5px 8px 5px 5px;
+}
+
+.grid-map-image-details {
+    background-color: rgba(121, 171, 181, 0.8);
+    color: rgb(30, 30, 30);
+    display: block;
+    font-size: 12px;
+    height: 50px;
+    line-height: 15px;
+    opacity: 1;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 5px 8px 5px 8px;
+}
+
 /** View mode -> Map **/
 
 .message-list-map {
@@ -16,6 +75,6 @@
 
 .message-list-map .ol-zoom {
     top: auto;
-    bottom: 10px;
+    bottom: 20px;
 }
 

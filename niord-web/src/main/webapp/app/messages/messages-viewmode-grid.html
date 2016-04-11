@@ -1,17 +1,30 @@
 
-<div class="messages-details container-fluid">
+<div class="messages-list-grid container-fluid">
     <div class="row">
         <div ng-if="messageList.length == 0">
             <div ng-include="'/app/messages/messages-empty-search-result.html'"></div>
         </div>
 
-        <div ng-repeat="message in messageList" class="col-xs-11 col-sm-6 col-md-4 col-lg-3">
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 " ng-repeat-start="message in messageList" ng-if="msg.areaHeading">
+            <h4 class="searchResultAreaHeading" msi-area="msg.areaHeading"></h4>
+        </div>
+        <div ng-repeat-end class="col-xs-11 col-sm-6 col-md-4 col-lg-3" style="margin-bottom: 20px">
+            <div class="grid-item">
+                <img class="grid-map-image" ng-src="/rest/message-map-image/{{message.id}}.png" width="256" height="256"/>
 
-            <img class="map-image" ng-src="/rest/message-map-image/{{message.id}}.png" width="256" height="256"/>
-
-            <div ng-if="message.descs[0].title">
-                <span if="message.number">{{message.number}} - </span>
-                {{message.descs[0].title}}
+                <div class="grid-map-image-header">
+                    <div ng-if="message.shortId">{{message.shortId}}</div>
+                    <span ng-if="message.descs[0].title">{{message.descs[0].title}}</span>
+                    <span ng-if="message.descs[0].lang != language" style="color: darkgray;">
+                        <flag lang="message.descs[0].lang" style="height: 10px;"></flag>
+                    </span>
+                </div>
+                <div class="grid-map-image-details">
+                    <div class="grid-map-image-date">
+                        <small><msi-valid-from-to msg="message"/></small>
+                    </div>
+                    <strong msi-message-id="message"></strong>: <span ng-bind-html="message.descs[0].description"/>
+                </div>
             </div>
         </div>
     </div>
