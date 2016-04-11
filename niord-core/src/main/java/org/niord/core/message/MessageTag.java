@@ -43,12 +43,18 @@ import java.util.List;
     uniqueConstraints = @UniqueConstraint(columnNames = { "tagId", "user_id" })
 )
 @NamedQueries({
-        @NamedQuery(name= "MessageTag.findByUserAndIds",
-                query="SELECT t FROM MessageTag t where t.user = :user and t.id in (:ids)"),
-        @NamedQuery(name= "MessageTag.findByUserAndTagId",
-                query="SELECT t FROM MessageTag t where t.user = :user and t.tagId = :tagId"),
-        @NamedQuery(name="MessageTag.findByUser",
-            query="SELECT t FROM MessageTag t where t.user = :user")
+        @NamedQuery(name="MessageTag.findByUserAndTagIds",
+                query="SELECT t FROM MessageTag t where t.tagId in (:tagIds) and (t.user is null or t.user = :user)"),
+        @NamedQuery(name="MessageTag.findSharedByTagIds",
+                query="SELECT t FROM MessageTag t where t.tagId in (:tagIds) and t.user is null"),
+        @NamedQuery(name  = "MessageTag.searchSharedMessageTags",
+                query="SELECT t FROM MessageTag t where lower(t.tagId) like lower(:term) "
+                        + "and t.user is null"),
+        @NamedQuery(name  = "MessageTag.searchMessageTagsByUser",
+                query="SELECT t FROM MessageTag t where lower(t.tagId) like lower(:term) "
+                        + "and (t.user is null or t.user = :user)"),
+        @NamedQuery(name= "MessageTag.findExpiredMessageTags",
+                query="SELECT t FROM MessageTag t where t.expiryDate is not null and t.expiryDate > current_timestamp"),
 })
 @SuppressWarnings("unused")
 public class MessageTag extends BaseEntity<Integer> {

@@ -17,7 +17,9 @@ package org.niord.core.message;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.niord.core.area.Area;
+import org.niord.core.area.AreaService;
 import org.niord.core.category.Category;
+import org.niord.core.category.CategoryService;
 import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
 import org.niord.core.db.CriteriaHelper;
@@ -40,6 +42,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
@@ -47,7 +50,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -72,7 +74,16 @@ public class MessageService extends BaseService {
     MessageSeriesService messageSeriesService;
 
     @Inject
+    MessageTagService messageTagService;
+
+    @Inject
     MessageLuceneIndex messageLuceneIndex;
+
+    @Inject
+    AreaService areaService;
+
+    @Inject
+    CategoryService categoryService;
 
     @Inject
     ChartService chartService;
@@ -350,10 +361,12 @@ public class MessageService extends BaseService {
             criteriaHelper.in(msgRoot.get("type"), types);
         }
 
+
         // Statuses
         if (!param.getStatuses().isEmpty()) {
             criteriaHelper.in(msgRoot.get("status"), param.getStatuses());
         }
+
 
         // Search the Lucene index for free text search
         if (param.requiresLuceneSearch()) {
@@ -361,42 +374,34 @@ public class MessageService extends BaseService {
             criteriaHelper.in(msgRoot.get("id"), ids);
         }
 
-        // If we search by area or sort by area, join over...
-        javax.persistence.criteria.Path<Area> areaRoot = null;
-        if (param.sortByArea() || !param.getAreaIds().isEmpty()) {
 
+        // Filter by area, join over...
+        if (!param.getAreaIds().isEmpty()) {
             Join<Message, Area> areas = msgRoot.join("areas", JoinType.LEFT);
-            Predicate[] areaMatch = new Predicate[param.getAreaIds().size()];
-            Iterator<Integer> i = param.getAreaIds().iterator();
-            for (int x = 0; x < areaMatch.length; x++) {
-                String lineage = em.find(Area.class, i.next()).getLineage();
-                areaMatch[x] = builder.like(areas.get("lineage"), lineage + "%");
-            }
+            Predicate[] areaMatch = areaService.getAreaDetails(param.getAreaIds()).stream()
+                    .map(a -> builder.like(areas.get("lineage"), a.getLineage() + "%"))
+                    .toArray(Predicate[]::new);
             criteriaHelper.add(builder.or(areaMatch));
         }
+        Path<Area> areaRoot = param.sortByArea() ?  msgRoot.get("areas") : null;
+
 
         // Filter on categories
         if (!param.getCategoryIds().isEmpty()) {
-
             Join<Message, Category> categories = msgRoot.join("categories", JoinType.LEFT);
-            Predicate[] categoryMatch = new Predicate[param.getCategoryIds().size()];
-            Iterator<Integer> i = param.getCategoryIds().iterator();
-            for (int x = 0; x < categoryMatch.length; x++) {
-                String lineage = em.find(Category.class, i.next()).getLineage();
-                categoryMatch[x] = builder.like(categories.get("lineage"), lineage + "%");
-            }
+            Predicate[] categoryMatch = categoryService.getCategoryDetails(param.getCategoryIds()).stream()
+                    .map(c -> builder.like(categories.get("lineage"), c.getLineage() + "%"))
+                    .toArray(Predicate[]::new);
             criteriaHelper.add(builder.or(categoryMatch));
         }
 
+
         // Filter on charts
         if (!param.getChartNumbers().isEmpty()) {
-
             Join<Message, Chart> charts = msgRoot.join("charts", JoinType.LEFT);
-            Predicate[] chartMatch = new Predicate[param.getChartNumbers().size()];
-            Iterator<String> i = param.getChartNumbers().iterator();
-            for (int x = 0; x < chartMatch.length; x++) {
-                chartMatch[x] = builder.equal(charts.get("chartNumber"), i.next());
-            }
+            Predicate[] chartMatch = param.getChartNumbers().stream()
+                    .map(m -> builder.equal(charts.get("chartNumber"), m))
+                    .toArray(Predicate[]::new);
             criteriaHelper.add(builder.or(chartMatch));
         }
 
@@ -420,12 +425,10 @@ public class MessageService extends BaseService {
         // Tags
         if (!param.getTags().isEmpty()) {
             Join<Message, MessageTag> tags = msgRoot.join("tags", JoinType.LEFT);
-            Predicate[] tagMatch = new Predicate[param.getTags().size()];
-            Iterator<String> i = param.getChartNumbers().iterator();
-            for (int x = 0; x < tagMatch.length; x++) {
-                // TODO: Handle non-existing tags
-                tagMatch[x] = builder.equal(tags.get("tagId"), i.next());
-            }
+            String[] tagIds = param.getTags().toArray(new String[param.getTags().size()]);
+            Predicate[] tagMatch = messageTagService.findByUserAndTagIds(tagIds).stream()
+                    .map(t -> builder.equal(tags.get("tagId"), t.getTagId()))
+                    .toArray(Predicate[]::new);
             criteriaHelper.add(builder.or(tagMatch));
         }
 
