@@ -43,13 +43,13 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -304,7 +304,7 @@ public class MessageService extends BaseService {
             result.updateSize();
 
         } catch (Exception e) {
-            log.error("Error performing search " + params + ": " + e);
+            log.error("Error performing search " + params + ": " + e, e);
         }
 
         return result;
@@ -324,9 +324,15 @@ public class MessageService extends BaseService {
         }
 
         // TODO: Caching
-        return em.createNamedQuery("Message.findByIds", Message.class)
+
+        List<Message> messages = em.createNamedQuery("Message.findByIds", Message.class)
                 .setParameter("ids", ids)
                 .getResultList();
+
+        // Sort the result according to the order of the messages in the ID list
+        messages.sort((m1, m2) -> ids.indexOf(m1.getId()) - ids.indexOf(m2.getId()));
+
+        return messages;
     }
 
 
@@ -374,14 +380,17 @@ public class MessageService extends BaseService {
 
 
         // Filter by area, join over...
-        if (!param.getAreaIds().isEmpty()) {
-            Join<Message, Area> areas = msgRoot.join("areas", JoinType.LEFT);
-            Predicate[] areaMatch = areaService.getAreaDetails(param.getAreaIds()).stream()
-                    .map(a -> builder.like(areas.get("lineage"), a.getLineage() + "%"))
-                    .toArray(Predicate[]::new);
-            criteriaHelper.add(builder.or(areaMatch));
+        Join<Message, Area> areaRoot = null;
+        if (!param.getAreaIds().isEmpty() || param.sortByArea()) {
+            areaRoot = msgRoot.join("areas", JoinType.LEFT);
+            Join<Message, Area> areas = areaRoot;
+            if (!param.getAreaIds().isEmpty()) {
+                Predicate[] areaMatch = areaService.getAreaDetails(param.getAreaIds()).stream()
+                        .map(a -> builder.like(areas.get("lineage"), a.getLineage() + "%"))
+                        .toArray(Predicate[]::new);
+                criteriaHelper.add(builder.or(areaMatch));
+            }
         }
-        Path<Area> areaRoot = param.sortByArea() ?  msgRoot.get("areas") : null;
 
 
         // Filter on categories
@@ -451,9 +460,9 @@ public class MessageService extends BaseService {
         // Sort the query
         if (param.sortByDate()) {
             if (param.getSortOrder() == SortOrder.ASC) {
-                tupleQuery.orderBy(builder.asc(msgRoot.get("validFrom")), builder.asc(msgRoot.get("id")));
+                tupleQuery.orderBy(builder.asc(msgRoot.get("startDate")), builder.asc(msgRoot.get("id")));
             } else {
-                tupleQuery.orderBy(builder.desc(msgRoot.get("validFrom")), builder.desc(msgRoot.get("id")));
+                tupleQuery.orderBy(builder.desc(msgRoot.get("startDate")), builder.desc(msgRoot.get("id")));
             }
         } else if (param.sortById()) {
             if (param.getSortOrder() == SortOrder.ASC) {

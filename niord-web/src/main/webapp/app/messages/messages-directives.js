@@ -4,6 +4,37 @@
 angular.module('niord.messages')
 
     /**
+     * Replaces the content of the element with the area description
+     */
+    .directive('renderAreas', ['LangService', function (LangService) {
+        return {
+            restrict: 'A',
+            scope: {
+                renderAreas: "=",
+                areaDivider: "@"
+            },
+            link: function(scope, element, attrs) {
+                var divider = (attrs.areaDivider) ? attrs.areaDivider : " - ";
+
+                scope.updateAreas = function(areas) {
+                    var result = '';
+                    if (areas && areas.length > 0) {
+                        for (var area = areas[0]; area; area = area.parent) {
+                            var desc = LangService.desc(area);
+                            var areaName = (desc) ? desc.name : '';
+                            result = areaName + ((result.length > 0 && areaName.length > 0) ? divider : '') + result;
+                        }
+                    }
+                    element.html(result);
+                };
+
+                scope.$watchCollection("renderAreas", scope.updateAreas);
+            }
+        };
+    }])
+
+
+    /**
      * The map-message-list-layer directive supports drawing a list of messages on a map layer
      */
     .directive('mapMessageListLayer', ['$rootScope', 'MapService', function ($rootScope, MapService) {

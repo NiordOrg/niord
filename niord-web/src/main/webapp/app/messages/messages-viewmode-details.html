@@ -9,7 +9,7 @@
             <table class="table table-condensed">
                 <tr ng-repeat-start="message in messageList"  ng-if="message.areaHeading">
                     <td colspan="2" style="border: none">
-                        <h2 class="msi-area-heading" style="margin-bottom: 5px;" msi-area="message.areaHeading"></h2>
+                        <h4 class="message-list-area-heading" style="margin-bottom: 5px;" render-areas="[message.areaHeading]"></h4>
                     </td>
                 </tr>
                 <tr class="message-list-details-border" ng-repeat-end render-message-details msg="message" message-list="messageList" ></tr>

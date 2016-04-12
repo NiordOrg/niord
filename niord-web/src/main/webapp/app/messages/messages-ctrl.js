@@ -28,6 +28,10 @@ angular.module('niord.messages')
                     reloadMap : false // can be used to trigger a map reload
                 },
 
+                /** Sorting **/
+                sortBy : 'AREA',
+                sortOrder : 'ASC',
+
                 /** Filter state **/
                 text: {
                     enabled: false,
@@ -307,9 +311,12 @@ angular.module('niord.messages')
                     s.text.enabled = true;
                     s.text.query = params.query;
                 }
-                if (params.type) {
+                if (params.mainType) {
                     s.type.enabled = true;
                     s.type.mainType = params.mainType;
+                }
+                if (params.type) {
+                    s.type.enabled = true;
                     var types = (typeof params.type === 'string') ? [ params.type ] : params.type;
                     angular.forEach(types, function (type) {
                         s.type[type] = true;
@@ -366,7 +373,12 @@ angular.module('niord.messages')
                     s.date.fromDate = params.fromDate ? parseInt(params.fromDate) : undefined;
                     s.date.toDate = params.toDate ? parseInt(params.toDate) : undefined;
                 }
-
+                if (params.sortBy) {
+                    s.sortBy = params.sortBy;
+                }
+                if (params.sortOrder) {
+                    s.sortOrder = params.sortOrder;
+                }
             };
 
             // Called when the filter is updated
@@ -543,6 +555,32 @@ angular.module('niord.messages')
             /*****************************/
 
 
+            // Scans through the search result and marks all messages that should potentially display an area head line
+            $scope.checkGroupByArea = function (maxLevels) {
+                maxLevels = maxLevels || 2;
+                var lastAreaId = undefined;
+                if ($scope.messageList && $scope.messageList.length > 0 && $scope.state.sortBy == 'AREA') {
+                    for (var m = 0; m < $scope.messageList.length; m++) {
+                        var msg = $scope.messageList[m];
+                        if (msg.areas && msg.areas.length > 0) {
+                            var msgArea = msg.areas[0];
+                            var areas = [];
+                            for (var area = msgArea; area !== undefined; area = area.parent) {
+                                areas.unshift(area);
+                            }
+                            if (areas.length > 0) {
+                                area = areas[Math.min(areas.length - 1, maxLevels - 1)];
+                                if (!lastAreaId || area.id != lastAreaId) {
+                                    lastAreaId = area.id;
+                                    msg.areaHeading = area;
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+
             // Monitor changes to the state
             $scope.$watch("state", $scope.filterUpdated, true);
 
@@ -551,6 +589,10 @@ angular.module('niord.messages')
             $scope.refreshMessages = function (append) {
 
                 var params = $scope.toRequestFilterParameters();
+                if (params.length > 0) {
+                    params += '&';
+                }
+                params += 'sortBy=' + $scope.state.sortBy + '&sortOrder=' + $scope.state.sortOrder;
 
                 MessageService.search(params, $scope.page, $scope.maxSize)
                     .success(function (result) {
@@ -561,11 +603,32 @@ angular.module('niord.messages')
                             $scope.messageList.push(result.data[x]);
                         }
                         $scope.totalMessageNo = result.total;
+                        $scope.checkGroupByArea(2);
                     });
 
 
                 // Update the request parameters
                 $location.search(params);
+            };
+
+
+            // Toggle the sort order of the current sort field
+            $scope.toggleSortOrder = function(sortBy) {
+                if (sortBy == $scope.state.sortBy) {
+                    $scope.state.sortOrder = $scope.state.sortOrder == 'ASC' ? 'DESC' : 'ASC';
+                } else {
+                    $scope.state.sortBy = sortBy;
+                    $scope.state.sortOrder = 'ASC';
+                }
+            };
+
+
+            // Returns the sort indicator to display for the given field
+            $scope.sortIndicator = function(sortBy) {
+                if (sortBy == $scope.state.sortBy) {
+                    return $scope.state.sortOrder == 'DESC' ? '&#9650;' : '&#9660';
+                }
+                return "";
             };
 
 

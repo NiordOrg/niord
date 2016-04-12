@@ -5,8 +5,8 @@
             <div ng-include="'/app/messages/messages-empty-search-result.html'"></div>
         </div>
 
-        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 " ng-repeat-start="message in messageList" ng-if="msg.areaHeading">
-            <h4 class="searchResultAreaHeading" msi-area="msg.areaHeading"></h4>
+        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 " ng-repeat-start="message in messageList" ng-if="message.areaHeading">
+            <h4 class="message-list-area-heading" render-areas="[message.areaHeading]"></h4>
         </div>
         <div ng-repeat-end class="col-xs-11 col-sm-6 col-md-4 col-lg-3" style="margin-bottom: 20px">
             <div class="grid-item" message-details-link="message.id" message-list="messageList">
