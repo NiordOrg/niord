@@ -128,7 +128,7 @@ public class AreaService extends BaseService {
         // Extract the roots
         return areas.stream()
                 .filter(Area::isRootArea)
-                // TODO .sorted()
+                .sorted()
                 .collect(Collectors.toList());
     }
 
@@ -256,37 +256,40 @@ public class AreaService extends BaseService {
         Area area = getByPrimaryKey(Area.class, areaId);
         boolean updated = false;
 
-        // Non-root case
+        List<Area> siblings;
         if (area.getParent() != null) {
-            List<Area> siblings = area.getParent().getChildren();
-            int index = siblings.indexOf(area);
+            siblings = area.getParent().getChildren();
+        } else {
+            siblings = em
+                    .createNamedQuery("Area.findRootAreas", Area.class)
+                    .getResultList();
+        }
+        Collections.sort(siblings);
 
-            if (moveUp) {
-                if (index == 1) {
-                    area.setSiblingSortOrder(siblings.get(0).getSiblingSortOrder() - 10.0);
-                    updated = true;
-                } else if (index > 1) {
-                    double so1 =  siblings.get(index - 1).getSiblingSortOrder();
-                    double so2 =  siblings.get(index - 2).getSiblingSortOrder();
-                    area.setSiblingSortOrder((so1 + so2) / 2.0);
-                    updated = true;
-                }
+        int index = siblings.indexOf(area);
 
-            } else {
-                if (index == siblings.size() - 2) {
-                    area.setSiblingSortOrder(siblings.get(siblings.size() - 1).getSiblingSortOrder() + 10.0);
-                    updated = true;
-                } else if (index < siblings.size() - 2) {
-                    double so1 =  siblings.get(index + 1).getSiblingSortOrder();
-                    double so2 =  siblings.get(index + 2).getSiblingSortOrder();
-                    area.setSiblingSortOrder((so1 + so2) / 2.0);
-                    updated = true;
-                }
-
+        if (moveUp) {
+            if (index == 1) {
+                area.setSiblingSortOrder(siblings.get(0).getSiblingSortOrder() - 10.0);
+                updated = true;
+            } else if (index > 1) {
+                double so1 =  siblings.get(index - 1).getSiblingSortOrder();
+                double so2 =  siblings.get(index - 2).getSiblingSortOrder();
+                area.setSiblingSortOrder((so1 + so2) / 2.0);
+                updated = true;
             }
 
         } else {
-            log.debug("Changing sort order of roots noy yet handled");
+            if (index == siblings.size() - 2) {
+                area.setSiblingSortOrder(siblings.get(siblings.size() - 1).getSiblingSortOrder() + 10.0);
+                updated = true;
+            } else if (index < siblings.size() - 2) {
+                double so1 =  siblings.get(index + 1).getSiblingSortOrder();
+                double so2 =  siblings.get(index + 2).getSiblingSortOrder();
+                area.setSiblingSortOrder((so1 + so2) / 2.0);
+                updated = true;
+            }
+
         }
 
         if (updated) {
@@ -447,12 +450,10 @@ public class AreaService extends BaseService {
             return false;
         }
 
+        // Get root areas (sorted)
         List<Area> roots = em
                 .createNamedQuery("Area.findRootAreas", Area.class)
                 .getResultList();
-
-        // Sort the roots by sortOrder
-        Collections.sort(roots);
 
         // Re-compute the tree sort order
         List<Area> updated = new ArrayList<>();

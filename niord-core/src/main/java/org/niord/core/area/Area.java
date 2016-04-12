@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 @Cacheable
 @NamedQueries({
         @NamedQuery(name  = "Area.findRootAreas",
-                query = "select distinct a from Area a left join fetch a.children where a.parent is null"),
+                query = "select distinct a from Area a left join fetch a.children where a.parent is null order by a.siblingSortOrder"),
         @NamedQuery(name  = "Area.findAreasWithDescs",
                 query = "select distinct a from Area a left join fetch a.descs order by a.parent, a.siblingSortOrder"),
         @NamedQuery(name  = "Area.findAreasWithIds",
