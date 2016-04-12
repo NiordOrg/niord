@@ -51,7 +51,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -353,16 +352,9 @@ public class MessageService extends BaseService {
                 .between(msgRoot.get("created"), param.getFrom(), param.getTo())
                 .between(msgRoot.get("updated"), param.getUpdatedFrom(), param.getUpdatedTo());
 
-        // Compute the type closure
-        Set<Type> types = new HashSet<>();
-        types.addAll(param.getTypes());
-        param.getMainTypes().forEach(mt -> {
-            for (Type t : Type.values()) {
-                if (t.getMainType() == mt) {
-                    types.add(t);
-                }
-            }
-        });
+
+        // If no types have been defined, all types implied by the mainTypes are used
+        Set<Type> types = param.computeTypeClosure();
         if (!types.isEmpty()) {
             criteriaHelper.in(msgRoot.get("type"), types);
         }

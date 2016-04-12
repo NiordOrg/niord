@@ -37,8 +37,14 @@ angular.module('niord.messages')
                 type: {
                     enabled: false,
                     mainType: '',
-                    nwType: '',
-                    nmType: ''
+                    PERMANENT_NOTICE: false,
+                    TEMPORARY_NOTICE: false,
+                    PRELIMINARY_NOTICE: false,
+                    MISCELLANEOUS_NOTICE: false,
+                    COASTAL_WARNING: false,
+                    SUBAREA_WARNING: false,
+                    NAVAREA_WARNING: false,
+                    LOCAL_WARNING: false
                 },
                 status: {
                     enabled: false,
@@ -117,8 +123,14 @@ angular.module('niord.messages')
                         break;
                     case 'type':
                         filter.mainType = '';
-                        filter.nwType = '';
-                        filter.nmType = '';
+                        filter.PERMANENT_NOTICE = false;
+                        filter.TEMPORARY_NOTICE = false;
+                        filter.PRELIMINARY_NOTICE = false;
+                        filter.MISCELLANEOUS_NOTICE = false;
+                        filter.COASTAL_WARNING = false;
+                        filter.SUBAREA_WARNING = false;
+                        filter.NAVAREA_WARNING = false;
+                        filter.LOCAL_WARNING = false;
                         break;
                     case 'status':
                         filter.PUBLISHED = false;
@@ -183,12 +195,32 @@ angular.module('niord.messages')
                     params += '&query=' + encodeURIComponent(s.text.query);
                 }
                 if (s.type.enabled) {
-                    params += '&mainType=' + s.type.mainType;
-                    if (s.type.nwType) {
-                        params += '&type=' + s.type.nwType;
+                    if (s.type.mainType) {
+                        params += '&mainType=' + s.type.mainType;
                     }
-                    if (s.type.nmType) {
-                        params += '&type=' + s.type.nmType;
+                    if (s.type.PERMANENT_NOTICE) {
+                        params += '&type=PERMANENT_NOTICE';
+                    }
+                    if (s.type.TEMPORARY_NOTICE) {
+                        params += '&type=TEMPORARY_NOTICE';
+                    }
+                    if (s.type.PRELIMINARY_NOTICE) {
+                        params += '&type=PRELIMINARY_NOTICE';
+                    }
+                    if (s.type.MISCELLANEOUS_NOTICE) {
+                        params += '&type=MISCELLANEOUS_NOTICE';
+                    }
+                    if (s.type.COASTAL_WARNING) {
+                        params += '&type=COASTAL_WARNING';
+                    }
+                    if (s.type.SUBAREA_WARNING) {
+                        params += '&type=SUBAREA_WARNING';
+                    }
+                    if (s.type.NAVAREA_WARNING) {
+                        params += '&type=NAVAREA_WARNING';
+                    }
+                    if (s.type.LOCAL_WARNING) {
+                        params += '&type=LOCAL_WARNING';
                     }
                 }
                 if (s.status.enabled) {
@@ -278,12 +310,10 @@ angular.module('niord.messages')
                 if (params.type) {
                     s.type.enabled = true;
                     s.type.mainType = params.mainType;
-                    if (params.type && params.mainType == 'NW') {
-                        s.type.nwType = params.nwType;
-                    }
-                    if (params.nmType && params.mainType == 'NM') {
-                        s.type.nmType = params.type;
-                    }
+                    var types = (typeof params.type === 'string') ? [ params.type ] : params.type;
+                    angular.forEach(types, function (type) {
+                        s.type[type] = true;
+                    });
                 }
                 if (params.status && params.status.length > 0) {
                     s.status.enabled = true;
@@ -342,9 +372,17 @@ angular.module('niord.messages')
             // Called when the filter is updated
             $scope.filterUpdated = function () {
                 // Enforce validity of the filter selection
-                if ($scope.state.type.mainType == '') {
-                    $scope.state.type.nwType = '';
-                    $scope.state.type.nmType = '';
+                if ($scope.state.type.mainType != 'NM') {
+                    $scope.state.type.PERMANENT_NOTICE = false;
+                    $scope.state.type.TEMPORARY_NOTICE = false;
+                    $scope.state.type.PRELIMINARY_NOTICE = false;
+                    $scope.state.type.MISCELLANEOUS_NOTICE = false;
+                }
+                if ($scope.state.type.mainType != 'NW') {
+                    $scope.state.type.COASTAL_WARNING = false;
+                    $scope.state.type.SUBAREA_WARNING = false;
+                    $scope.state.type.NAVAREA_WARNING = false;
+                    $scope.state.type.LOCAL_WARNING = false;
                 }
 
                 if (loadTimer) {

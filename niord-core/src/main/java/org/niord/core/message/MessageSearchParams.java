@@ -77,6 +77,21 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         return "area".equalsIgnoreCase(sortBy);
     }
 
+
+    /**
+     * If no types have been defined, all types implied by the mainTypes are used
+     * @return the type closure
+     */
+    public Set<Type> computeTypeClosure() {
+        Set<Type> typeClosure = new HashSet<>();
+        typeClosure.addAll(getTypes());
+        if (typeClosure.isEmpty() && !getMainTypes().isEmpty()) {
+            getMainTypes().forEach(mt -> typeClosure.addAll(mt.getTypes()));
+        }
+        return typeClosure;
+    }
+
+
     /**
      * Returns a string representation of the search criteria
      * @return a string representation of the search criteria

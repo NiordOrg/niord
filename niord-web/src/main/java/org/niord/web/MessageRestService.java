@@ -24,6 +24,7 @@ import org.niord.core.message.MessageService;
 import org.niord.model.DataFilter;
 import org.niord.model.PagedSearchParamsVo.SortOrder;
 import org.niord.model.PagedSearchResultVo;
+import org.niord.model.vo.MainType;
 import org.niord.model.vo.MessageVo;
 import org.niord.model.vo.Status;
 import org.niord.model.vo.Type;
@@ -89,6 +90,7 @@ public class MessageRestService {
             @QueryParam("lang") String language,
             @QueryParam("query") String query,
             @QueryParam("status") Set<Status> statuses,
+            @QueryParam("mainType") Set<MainType> mainTypes,
             @QueryParam("type") Set<Type> types,
             @QueryParam("area") Set<Integer> areaIds,
             @QueryParam("category") Set<Integer> categoryIds,
@@ -111,6 +113,7 @@ public class MessageRestService {
         params.language(language)
                 .query(query)
                 .statuses(statuses)
+                .mainTypes(mainTypes)
                 .types(types)
                 .areaIds(areaIds)
                 .categoryIds(categoryIds)

@@ -34,18 +34,16 @@
                 <label class="btn btn-default btn-sm" ng-model="state.type.mainType" uib-btn-radio="'NM'">NM</label>
             </div>
             <div class="btn-group" ng-if="state.type.mainType == 'NW'">
-                <label class="btn btn-default btn-sm" ng-model="state.type.nwType" uib-btn-radio="''">All</label>
-                <label class="btn btn-default btn-sm" ng-model="state.type.nwType" uib-btn-radio="'LOCAL'">Local</label>
-                <label class="btn btn-default btn-sm" ng-model="state.type.nwType" uib-btn-radio="'COASTAL'">Coastal</label>
-                <label class="btn btn-default btn-sm" ng-model="state.type.nwType" uib-btn-radio="'SUBAREA'">Subarea</label>
-                <label class="btn btn-default btn-sm" ng-model="state.type.nwType" uib-btn-radio="'NAVAREA'">Navarea</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.LOCAL_WARNING" uib-btn-checkbox>Local</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.COASTAL_WARNING" uib-btn-checkbox>Coastal</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.SUBAREA_WARNING" uib-btn-checkbox>Subarea</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.NAVAREA_WARNING" uib-btn-checkbox>Navarea</label>
             </div>
             <div class="btn-group" ng-if="state.type.mainType == 'NM'">
-                <label class="btn btn-default btn-sm" ng-model="state.type.nmType" uib-btn-radio="''">All</label>
-                <label class="btn btn-default btn-sm" ng-model="state.type.nmType" uib-btn-radio="'TEMP'">Temp.</label>
-                <label class="btn btn-default btn-sm" ng-model="state.type.nmType" uib-btn-radio="'PRELIM'">Prelim.</label>
-                <label class="btn btn-default btn-sm" ng-model="state.type.nmType" uib-btn-radio="'PERM'">Perm.</label>
-                <label class="btn btn-default btn-sm" ng-model="state.type.nmType" uib-btn-radio="'MISC'">Misc.</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.TEMPORARY_NOTICE" uib-btn-checkbox>Temp.</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.PRELIMINARY_NOTICE" uib-btn-checkbox>Prelim.</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.PERMANENT_NOTICE" uib-btn-checkbox>Perm.</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.MISCELLANEOUS_NOTICE" uib-btn-checkbox>Misc.</label>
             </div>
         </view-mode-filter-panel>
 
