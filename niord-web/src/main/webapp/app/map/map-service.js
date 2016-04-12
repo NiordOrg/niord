@@ -282,10 +282,11 @@ angular.module('niord.map')
                 var that = this;
                 props = props || {};
                 index = index || 0;
+                var bufferFeature = props['parentFeatureId'];
                 if (g) {
                     if (g instanceof Array) {
                         if (g.length >= 2 && $.isNumeric(g[0])) {
-                            if (includeCoord) {
+                            if (includeCoord && !bufferFeature) {
                                 coords.push({
                                     lon: g[0],
                                     lat: g[1],
@@ -311,13 +312,13 @@ angular.module('niord.map')
                     } else if (g.type == 'MultiPolygon') {
                         for (var p = 0; p < g.coordinates.length; p++) {
                             // For polygons, do not include coordinates for interior rings
-                            for (var x = 0; x < g.coordinates[p].length; p++) {
+                            for (var x = 0; x < g.coordinates[p].length; x++) {
                                 index = that.serializeCoordinates(g.coordinates[p][x], coords, props, index, x == 0);
                             }
                         }
                     } else if (g.type == 'Polygon') {
                         // For polygons, do not include coordinates for interior rings
-                        for (var x = 0; x < g.coordinates.length; p++) {
+                        for (var x = 0; x < g.coordinates.length; x++) {
                             index = that.serializeCoordinates(g.coordinates[x], coords, props, index, x == 0);
                         }
                     } else if (g.type) {
