@@ -1,7 +1,7 @@
 
 <div class="message-list-table container">
     <div class="row">
-        <div ng-if="messageList.length < 10">
+        <div ng-if="messageList.length == 0">
             <div ng-include="'/app/messages/messages-empty-search-result.html'"></div>
         </div>
     </div>
@@ -29,7 +29,7 @@
         <tr ng-repeat-end style="cursor: pointer">
             <td nowrap message-details-link="message.id" message-list="messageList"><span>{{message.shortId}}</span></td>
             <td nowrap message-details-link="message.id" message-list="messageList">
-                <render-message-dates msg="msg"/>
+                <render-message-dates msg="message"/>
             </td>
             <td message-details-link="message.id" message-list="messageList">{{message.descs[0].title}}</td>
             <td message-details-link="message.id" message-list="messageList"><span render-areas="message.areas"></span></td>
