@@ -29,7 +29,7 @@
         <tr ng-repeat-end style="cursor: pointer">
             <td nowrap message-details-link="message.id" message-list="messageList"><span>{{message.shortId}}</span></td>
             <td nowrap message-details-link="message.id" message-list="messageList">
-                <msi-valid-from-to msg="msg"/>
+                <render-message-dates msg="msg"/>
             </td>
             <td message-details-link="message.id" message-list="messageList">{{message.descs[0].title}}</td>
             <td message-details-link="message.id" message-list="messageList"><span render-areas="message.areas"></span></td>

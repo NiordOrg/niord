@@ -35,6 +35,38 @@ angular.module('niord.messages')
 
 
     /**
+     * Prints the message date interval
+     */
+    .directive('renderMessageDates', ['$rootScope', function ($rootScope) {
+        return {
+            restrict: 'E',
+            scope: {
+                msg: "="
+            },
+            link: function(scope, element) {
+                var lang = $rootScope.language;
+                var time = '';
+                var from = moment(scope.msg.startDate);
+                time = from.locale(lang).format("lll");
+                if (scope.msg.endDate) {
+                    var to = moment(scope.msg.endDate);
+                    var fromDate = from.locale(lang).format("ll");
+                    var toDate = to.locale(lang).format("ll");
+                    var toDateTime = to.locale(lang).format("lll");
+                    if (fromDate == toDate) {
+                        // Same dates
+                        time += " - " + toDateTime.replace(toDate, '');
+                    } else {
+                        time += " - " + toDateTime;
+                    }
+                }
+                element.html(time);
+            }
+        };
+    }])
+
+
+    /**
      * The map-message-list-layer directive supports drawing a list of messages on a map layer
      */
     .directive('mapMessageListLayer', ['$rootScope', 'MapService', function ($rootScope, MapService) {

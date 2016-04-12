@@ -21,9 +21,9 @@
                 </div>
                 <div class="grid-map-image-details">
                     <div class="grid-map-image-date">
-                        <small><msi-valid-from-to msg="message"/></small>
+                        <small><render-message-dates msg="message"/></small>
                     </div>
-                    <strong msi-message-id="message"></strong>: <span ng-bind-html="message.descs[0].description"/>
+                    <strong>{{message.shortId}}</strong>: <span ng-bind-html="message.descs[0].description"/>
                 </div>
             </div>
         </div>
