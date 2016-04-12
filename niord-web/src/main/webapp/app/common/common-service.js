@@ -138,6 +138,7 @@ angular.module('niord.common')
                 if (domain) {
                     $rootScope.domain = domain;
                     $window.localStorage.domain = domain.clientId;
+                    $window.localStorage.lastDomain = domain.clientId;
                 } else  {
                     $rootScope.domain = undefined;
                     $window.localStorage.removeItem('domain');
@@ -153,7 +154,7 @@ angular.module('niord.common')
                     return AuthService.hasRolesFor(domain.clientId);
                 });
 
-                var domainId = $window.localStorage.domain;
+                var domainId = $window.localStorage.domain || $window.localStorage.lastDomain;
                 var matchingDomains = $.grep($rootScope.domains, function (domain) {
                     return domain.clientId == domainId;
                 });
