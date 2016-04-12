@@ -248,7 +248,7 @@ angular.module('niord.map')
     .filter('lonlat', ['$rootScope', function($rootScope) {
         return function(input, args) {
             args = args || {};
-            return input && input.lat && input.lon ? formatLatLon(input, args.decimals, args.pp) : '';
+            return input && input.lat && input.lon ? formatLatLon(input, args.decimals, args.pp).trim() : '';
         };
     }])
 

@@ -60,7 +60,9 @@ angular.module('niord.conf')
             'FIELD_PUBLICATION' : 'Publication',
             'REF_REPETITION' : '(repetition)',
             'REF_CANCELLED' : '(cancelled)',
-            'REF_UPDATED' : '(updated)'
+            'REF_UPDATED' : '(updated)',
+            'SHOW_POS' : 'Show positions',
+            'HIDE_POS' : 'Hide positions'
 
         });
 

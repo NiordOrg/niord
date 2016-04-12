@@ -450,7 +450,7 @@ angular.module('niord.messages')
     /********************************
      * Renders the message details
      ********************************/
-    .directive('renderMessageDetails', [ '$rootScope', function ($rootScope) {
+    .directive('renderMessageDetails', [ '$rootScope', 'MapService', function ($rootScope, MapService) {
         'use strict';
 
         return {
@@ -465,6 +465,16 @@ angular.module('niord.messages')
             link: function(scope) {
                 scope.language = $rootScope.language;
                 scope.format = scope.format || 'list';
+
+                scope.coordinates = [];
+
+                scope.serializeCoordinates = function () {
+                    // Compute on-demand
+                    if (scope.coordinates.length == 0 && scope.msg.geometry) {
+                        MapService.serializeCoordinates(scope.msg.geometry, scope.coordinates, {}, 0, true);
+                    }
+                    return scope.coordinates;
+                }
             }
         };
     }]);

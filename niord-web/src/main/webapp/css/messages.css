@@ -69,11 +69,6 @@
     padding: 5px 8px 5px 8px;
 }
 
-.grid-map-image-details:hover {
-    height: auto;
-    max-height: 100px;
-}
-
 /** View mode -> Details **/
 
 .message-list-details {
@@ -201,6 +196,15 @@
 
 .message-details-item-value ol {
     padding-left: 0;
+}
+
+ol.message-details-positions {
+    margin-left: 20px;
+    color: darkgray;
+}
+
+ol.message-details-positions li span {
+    color:#333;
 }
 
 

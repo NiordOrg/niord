@@ -277,6 +277,57 @@ angular.module('niord.map')
             /** GeoJSON Functionality    **/
             /** ************************ **/
 
+            /** Serializes the coordinates of a geometry */
+            this.serializeCoordinates = function (g, coords, props, index, includeCoord) {
+                var that = this;
+                props = props || {};
+                index = index || 0;
+                if (g) {
+                    if (g instanceof Array) {
+                        if (g.length >= 2 && $.isNumeric(g[0])) {
+                            if (includeCoord) {
+                                coords.push({
+                                    lon: g[0],
+                                    lat: g[1],
+                                    name: props['name:' + index + ':' + $rootScope.language]
+                                });
+                            }
+                            index++;
+                        } else {
+                            for (var x = 0; x < g.length; x++) {
+                                index = that.serializeCoordinates(g[x], coords, props, index, includeCoord);
+                            }
+                        }
+                    } else if (g.type == 'FeatureCollection') {
+                        for (var x = 0; g.features && x < g.features.length; x++) {
+                            index = that.serializeCoordinates(g.features[x], coords, props, index, includeCoord);
+                        }
+                    } else if (g.type == 'Feature') {
+                        index = that.serializeCoordinates(g.geometry, coords, g.properties, index, includeCoord);
+                    } else if (g.type == 'GeometryCollection') {
+                        for (var x = 0; g.geometries && x < g.geometries.length; x++) {
+                            index = that.serializeCoordinates(g.geometries[x], coords, props, index, includeCoord);
+                        }
+                    } else if (g.type == 'MultiPolygon') {
+                        for (var p = 0; p < g.coordinates.length; p++) {
+                            // For polygons, do not include coordinates for interior rings
+                            for (var x = 0; x < g.coordinates[p].length; p++) {
+                                index = that.serializeCoordinates(g.coordinates[p][x], coords, props, index, x == 0);
+                            }
+                        }
+                    } else if (g.type == 'Polygon') {
+                        // For polygons, do not include coordinates for interior rings
+                        for (var x = 0; x < g.coordinates.length; p++) {
+                            index = that.serializeCoordinates(g.coordinates[x], coords, props, index, x == 0);
+                        }
+                    } else if (g.type) {
+                        index = that.serializeCoordinates(g.coordinates, coords, props, index, includeCoord);
+                    }
+                }
+                return index;
+            };
+
+
             /** Converts an OL geometry to GeoJSON **/
             this.olToGjGeomtry = function (g) {
                 if (g.getType() != 'GeometryCollection') {
