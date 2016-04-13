@@ -519,7 +519,7 @@ public class MessageService extends BaseService {
 
             // Create a snapshot of the message
             ObjectMapper jsonMapper = new ObjectMapper();
-            MessageVo snapshot = message.toVo(DataFilter.get().fields("Message.details"));
+            MessageVo snapshot = message.toVo(DataFilter.get().fields(DataFilter.GEOMETRY, "Message.details"));
             hist.setSnapshot(jsonMapper.writeValueAsString(snapshot));
 
             saveEntity(hist);

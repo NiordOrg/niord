@@ -234,7 +234,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             message.checkCreateAtonUids().addAll(atonUids);
             message.setOriginalInformation(originalInformation);
         }
-        if (compFilter.anyOfFields(DataFilter.DETAILS, DataFilter.GEOMETRY) && geometry != null) {
+        if (compFilter.anyOfFields(DataFilter.GEOMETRY) && geometry != null) {
             message.setGeometry(geometry.toGeoJson());
         }
         if (compFilter.anyOfFields(DataFilter.DETAILS, "MessageDesc.title")) {
