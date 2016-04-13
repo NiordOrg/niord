@@ -16,6 +16,7 @@
 package org.niord.core.area;
 
 import com.vividsolutions.jts.geom.Geometry;
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.model.VersionedEntity;
 import org.niord.core.util.GeoJsonUtils;
 import org.niord.model.DataFilter;
@@ -33,8 +34,11 @@ import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 import javax.persistence.Transient;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -261,6 +265,51 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
     @Transient
     public boolean isRootArea() {
         return parent == null;
+    }
+
+
+    /**
+     * By convention, a list of areas will be emitted top-to-bottom. So, if we have a list with:
+     * [ Kattegat -> Danmark, Skagerak -> Danmark, Hamborg -> Tyskland ], the resulting title
+     * line should be: "Danmark. Tyskland. Kattegat. Skagerak. Hamborg."
+     * @param areas the areas to compute a title line prefix for
+     * @return the title line prefix
+     */
+    public static String computeAreaTitlePrefix(List<Area> areas, String language) {
+        List<List<String>> areaNames = new ArrayList<>();
+        int maxLevels = 0;
+        for (Area a  : areas) {
+            List<String> areaLineageNames = new ArrayList<>();
+            for (Area area = a; area != null; area = area.getParent()) {
+                AreaDesc desc = area.getDescs(DataFilter.get().lang(language)).get(0);
+                if (!StringUtils.isBlank(desc.getName())) {
+                    areaLineageNames.add(desc.getName());
+                }
+            }
+            Collections.reverse(areaLineageNames);
+            areaNames.add(areaLineageNames);
+            maxLevels = Math.max(maxLevels, areaLineageNames.size());
+        }
+
+        StringBuilder str = new StringBuilder();
+        for (int x = 0; x < maxLevels; x++) {
+            Set<String> emittedNames = new HashSet<>();
+            for (List<String> areaLineageNames : areaNames) {
+                if (areaLineageNames.size() > x) {
+                    String name = areaLineageNames.get(x);
+                    if (!emittedNames.contains(name)) {
+                        emittedNames.add(name);
+                        str.append(name);
+                        if (!name.endsWith(".")) {
+                            str.append(".");
+                        }
+                        str.append(" ");
+                    }
+                }
+            }
+        }
+
+        return str.toString().trim();
     }
 
 

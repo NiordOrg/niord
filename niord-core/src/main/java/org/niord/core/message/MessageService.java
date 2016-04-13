@@ -16,6 +16,7 @@
 package org.niord.core.message;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
 import org.niord.core.category.Category;
@@ -49,7 +50,6 @@ import javax.persistence.criteria.Selection;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -93,6 +93,7 @@ public class MessageService extends BaseService {
 
     @Inject
     RepositoryService repositoryService;
+
 
     /***************************************/
     /** Message methods                   **/
@@ -169,6 +170,9 @@ public class MessageService extends BaseService {
         // Substitute the Charts with the persisted ones
         message.setCharts(chartService.persistedCharts(message.getCharts()));
 
+        // Update title lines
+        updateMessageTitle(message);
+
         // Persist the message
         message = saveMessage(message);
         log.info("Saved message " + message);
@@ -235,6 +239,9 @@ public class MessageService extends BaseService {
         // Copy the area data
         original.copyDescsAndRemoveBlanks(message.getDescs());
 
+        // Update title lines
+        updateMessageTitle(original);
+
         // Persist the message
         original = saveMessage(original);
         log.info("Updated message " + original);
@@ -277,6 +284,36 @@ public class MessageService extends BaseService {
                 .setParameter("date", date)
                 .setMaxResults(maxCount)
                 .getResultList();
+    }
+
+
+    /**
+     * Updates the title line of the message based on area and subject
+     * TODO: Introduce attribute to flag if title is manually or automatically filled out
+     * @param message the message to update the title line for
+     */
+    public void updateMessageTitle(Message message) {
+        for (MessageDesc desc : message.getDescs()) {
+            if (StringUtils.isBlank(desc.getTitle())) {
+                StringBuilder title = new StringBuilder();
+                if (!message.getAreas().isEmpty()) {
+                    title.append(Area.computeAreaTitlePrefix(message.getAreas(), desc.getLang()));
+                }
+                if (StringUtils.isNotBlank(desc.getVicinity())) {
+                    title.append(" ").append(desc.getVicinity());
+                    if (!desc.getVicinity().endsWith(".")) {
+                        title.append(".");
+                    }
+                }
+                if (StringUtils.isNotBlank(desc.getSubject())) {
+                    title.append(" ").append(desc.getSubject());
+                    if (!desc.getSubject().endsWith(".")) {
+                        title.append(".");
+                    }
+                }
+                desc.setTitle(title.toString().trim());
+            }
+        }
     }
 
 
