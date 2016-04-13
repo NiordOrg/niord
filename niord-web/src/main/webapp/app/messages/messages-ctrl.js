@@ -594,7 +594,12 @@ angular.module('niord.messages')
                 }
                 params += 'sortBy=' + $scope.state.sortBy + '&sortOrder=' + $scope.state.sortOrder;
 
-                MessageService.search(params, $scope.page, $scope.maxSize)
+                var searchParams = params;
+                if ($scope.state.map.enabled) {
+                    searchParams += '&viewMode=map';
+                }
+
+                MessageService.search(searchParams, $scope.page, $scope.maxSize)
                     .success(function (result) {
                         if (!append) {
                             $scope.messageList.length = 0;

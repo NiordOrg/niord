@@ -106,7 +106,8 @@ public class MessageRestService {
             @QueryParam("maxSize") @DefaultValue("100") int maxSize,
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("sortBy") String sortBy,
-            @QueryParam("sortOrder") SortOrder sortOrder
+            @QueryParam("sortOrder") SortOrder sortOrder,
+            @QueryParam("viewMode") String viewMode
     ) throws Exception {
 
         MessageSearchParams params = new MessageSearchParams();
@@ -133,9 +134,9 @@ public class MessageRestService {
         log.info(String.format("Search [%s] returns %d of %d messages in %d ms",
                 params.toString(), searchResult.getData().size(), searchResult.getTotal(), System.currentTimeMillis() - t0));
 
-        DataFilter filter = DataFilter.get()
-                .lang(language)
-                .fields(DataFilter.DETAILS, "Area.parent", "Category.parent");
+        DataFilter filter = ("map".equalsIgnoreCase(viewMode))
+                ? DataFilter.get().lang(language).fields(DataFilter.GEOMETRY, "MessageDesc.title")
+                : DataFilter.get().lang(language).fields(DataFilter.DETAILS, "Area.parent", "Category.parent");
 
         return searchResult.map(m -> m.toVo(filter));
     }
