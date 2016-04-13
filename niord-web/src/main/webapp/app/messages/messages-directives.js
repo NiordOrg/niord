@@ -44,20 +44,26 @@ angular.module('niord.messages')
                 msg: "="
             },
             link: function(scope, element) {
-                var lang = $rootScope.language;
-                var time = '';
-                var from = moment(scope.msg.startDate);
-                time = from.locale(lang).format("lll");
-                if (scope.msg.endDate) {
-                    var to = moment(scope.msg.endDate);
-                    var fromDate = from.locale(lang).format("ll");
-                    var toDate = to.locale(lang).format("ll");
-                    var toDateTime = to.locale(lang).format("lll");
-                    if (fromDate == toDate) {
-                        // Same dates
-                        time += " - " + toDateTime.replace(toDate, '');
-                    } else {
-                        time += " - " + toDateTime;
+                // First check for a textual time description
+                var time;
+                var desc = scope.msg.descs[0];
+                if (desc && desc.time) {
+                    time = desc.time;
+                } else {
+                    var lang = $rootScope.language;
+                    var from = moment(scope.msg.startDate);
+                    time = from.locale(lang).format("lll");
+                    if (scope.msg.endDate) {
+                        var to = moment(scope.msg.endDate);
+                        var fromDate = from.locale(lang).format("ll");
+                        var toDate = to.locale(lang).format("ll");
+                        var toDateTime = to.locale(lang).format("lll");
+                        if (fromDate == toDate) {
+                            // Same dates
+                            time += " - " + toDateTime.replace(toDate, '');
+                        } else {
+                            time += " - " + toDateTime;
+                        }
                     }
                 }
                 element.html(time);
