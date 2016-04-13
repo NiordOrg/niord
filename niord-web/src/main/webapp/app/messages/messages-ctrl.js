@@ -401,7 +401,7 @@ angular.module('niord.messages')
                     $timeout.cancel(loadTimer);
                 }
                 $scope.page = 0;
-                loadTimer = $timeout($scope.refreshMessages, 300);
+                loadTimer = $timeout($scope.refreshMessages, 100);
             };
 
             // Use for tag selection
