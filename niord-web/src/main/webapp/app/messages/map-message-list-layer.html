@@ -1,0 +1,27 @@
+
+<div id="msg-info"/>
+
+<div class="map-general-messages" ng-if="generalMessages.length > 0">
+    <h4 translate>GENERAL_MSGS</h4>
+    <table>
+        <tr ng-repeat="msg in generalMessages">
+            <td style="border: none; padding-bottom: 10px; vertical-align: top">
+                <img ng-src="/img/msi.png"
+                     class="map-general-message-icon"
+                     message-details-link="msg.id" message-list="messages"/>
+            </td>
+            <td style="border: none; padding-bottom: 10px;">
+                <div message-details-link="msg.id" message-list="messages">
+                    <strong>{{msg.descs[0].title}}</strong>
+                    <span ng-if="msg.shortId">
+                        &nbsp;(<strong>{{msg.shortId}}</strong>)
+                    </span>
+                    <span ng-if="msg.descs[0].lang != language" style="color: darkgray;">
+                        ( <img ng-src="/img/flags/{{msg.descs[0].lang}}.png" style="height: 12px; opacity: 0.5;"/> )
+                    </span>
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+

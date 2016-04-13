@@ -103,6 +103,7 @@ public class MessageRestService {
             @QueryParam("minLon") Double minLon,
             @QueryParam("maxLat") Double maxLat,
             @QueryParam("maxLon") Double maxLon,
+            @QueryParam("includeGeneral") Boolean includeGeneral,
             @QueryParam("maxSize") @DefaultValue("100") int maxSize,
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("sortBy") String sortBy,
@@ -124,6 +125,7 @@ public class MessageRestService {
                 .from(fromDate)
                 .to(toDate)
                 .extent(minLat, minLon, maxLat, maxLon)
+                .includeGeneral(includeGeneral)
                 .maxSize(maxSize)
                 .page(page)
                 .sortBy(sortBy)

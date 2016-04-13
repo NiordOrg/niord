@@ -455,7 +455,18 @@ public class MessageService extends BaseService {
             param.getExtent().setSRID(WGS84_SRID);
             Join<Message, FeatureCollection> fcRoot = msgRoot.join("geometry", JoinType.LEFT);
             Join<FeatureCollection, Feature> fRoot = fcRoot.join("features", JoinType.LEFT);
-            criteriaHelper.add(new SpatialIntersectsPredicate(criteriaHelper.getCriteriaBuilder(), fRoot.get("geometry"), param.getExtent()));
+            Predicate geomPredicate = new SpatialIntersectsPredicate(
+                    criteriaHelper.getCriteriaBuilder(),
+                    fRoot.get("geometry"),
+                    param.getExtent());
+
+            if (param.getIncludeGeneral() != null && param.getIncludeGeneral().booleanValue()) {
+                // search for message with no geometry in addition to messages within extent
+                criteriaHelper.add(builder.or(builder.isNull(msgRoot.get("geometry")), geomPredicate));
+            } else {
+                // Only search for messages within extent
+                criteriaHelper.add(geomPredicate);
+            }
         }
 
 

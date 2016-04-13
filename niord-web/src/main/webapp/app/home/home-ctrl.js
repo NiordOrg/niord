@@ -10,7 +10,7 @@ angular.module('niord.home')
 
             $scope.init = function () {
 
-                MessageService.search('')
+                MessageService.search('viewMode=map&includeGeneral=false')
                     .success(function (result) {
                         $scope.messageList.length = 0;
                         for (var x = 0; x < result.data.length; x++) {

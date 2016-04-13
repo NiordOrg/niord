@@ -55,6 +55,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     Set<String> atonUids = new HashSet<>();
     Set<String> tags = new HashSet<>();
     Geometry extent;
+    Boolean includeGeneral; // If an extent is specified, use this to fetch messages with no geometry
 
 
     /** Returns whether or not the search requires a Lucene search */
@@ -269,6 +270,15 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public MessageSearchParams extent(Double minLat, Double minLon, Double maxLat, Double maxLon) {
         this.extent = GeoJsonUtils.toJtsExtent(minLat, minLon, maxLat, maxLon);
+        return this;
+    }
+
+    public Boolean getIncludeGeneral() {
+        return includeGeneral;
+    }
+
+    public MessageSearchParams includeGeneral(Boolean includeGeneral) {
+        this.includeGeneral = includeGeneral;
         return this;
     }
 

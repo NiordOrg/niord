@@ -596,7 +596,7 @@ angular.module('niord.messages')
 
                 var searchParams = params;
                 if ($scope.state.map.enabled) {
-                    searchParams += '&viewMode=map';
+                    searchParams += '&viewMode=map&includeGeneral=true';
                 }
 
                 MessageService.search(searchParams, $scope.page, $scope.maxSize)
@@ -652,8 +652,13 @@ angular.module('niord.messages')
             $scope.$watch(
                 function () { return $location.path(); },
                 function (newValue) {
+                    var wasMap = $scope.state.map.enabled;
                     $scope.state.map.enabled = newValue && newValue.endsWith('/map');
                     $scope.showFilter = newValue && !newValue.endsWith('/selected');
+                    var isMap = $scope.state.map.enabled;
+                    if (wasMap != isMap) {
+                        $scope.messageList.length = 0;
+                    }
                 },
                 true);
 

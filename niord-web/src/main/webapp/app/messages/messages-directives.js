@@ -79,7 +79,7 @@ angular.module('niord.messages')
         return {
             restrict: 'E',
             replace: false,
-            template: '<div id="msg-info"/>',
+            templateUrl: '/app/messages/map-message-list-layer.html',
             require: '^olMap',
             scope: {
                 name: '@',
@@ -87,6 +87,7 @@ angular.module('niord.messages')
                 layerSwitcher: '=',
                 messageList: '=',
                 showOutline: '@',
+                showGeneral: '@',
                 fitExtent: '@',
                 maxZoom: '@'
             },
@@ -95,6 +96,8 @@ angular.module('niord.messages')
                 var olLayer;
                 var maxZoom = scope.maxZoom ? parseInt(scope.maxZoom) : 10;
 
+                scope.generalMessages = []; // Messages with no geometry
+                scope.language = $rootScope.language;
 
                 olScope.getMap().then(function(map) {
 
@@ -175,6 +178,7 @@ angular.module('niord.messages')
 
                     scope.updateLayerFromMessageList = function () {
                         olLayer.getSource().clear();
+                        scope.generalMessages.length = 0;
                         if (scope.messageList && scope.messageList.length > 0) {
                             angular.forEach(scope.messageList, function (message) {
                                 if (message.geometry && message.geometry.features.length > 0) {
@@ -189,6 +193,8 @@ angular.module('niord.messages')
                                         }
                                         olLayer.getSource().addFeature(olFeature);
                                     });
+                                } else if (scope.showGeneral == 'true') {
+                                    scope.generalMessages.push(message);
                                 }
                             });
                             if (scope.fitExtent == 'true') {
@@ -277,6 +283,7 @@ angular.module('niord.messages')
             }
         };
     }])
+
 
     /**
      * The map-message-details directive supports drawing a single message on a map layer
