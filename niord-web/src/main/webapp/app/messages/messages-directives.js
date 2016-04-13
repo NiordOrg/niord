@@ -185,6 +185,7 @@ angular.module('niord.messages')
 
                                     angular.forEach(message.geometry.features, function (gjFeature) {
                                         var olFeature = MapService.gjToOlFeature(gjFeature);
+                                        olFeature.set('message', message);
                                         if (scope.showOutline == 'true') {
                                             var point = MapService.getGeometryCenter(olFeature.getGeometry());
                                             if (point) {
@@ -277,6 +278,42 @@ angular.module('niord.messages')
                         }
                         updateMsgTooltip(map.getEventPixel(evt.originalEvent));
                     });
+
+                    /***************************/
+                    /** Details dialog        **/
+                    /***************************/
+
+
+                    // Returns the list of messages for the given pixel
+                    scope.getMessagesForPixel = function (pixel) {
+                        var messages = [];
+                        map.forEachFeatureAtPixel(pixel, function(feature, layer) {
+                            if (layer  == olLayer && feature.get('message')) {
+                                messages.push(feature.get('message'));
+                            }
+                        });
+                        return messages;
+                    };
+
+
+                    // Open the message details dialog
+                    scope.showMessageInfo = function (message) {
+                        $rootScope.$broadcast('messageDetails', {
+                            messageId: message.id,
+                            messageList: scope.messageList
+                        });
+                    };
+
+
+                    // Show AtoN info dialog when an AtoN is clicked
+                    map.on('click', function(evt) {
+                        var messages = scope.getMessagesForPixel(map.getEventPixel(evt.originalEvent));
+                        if (messages.length >= 1) {
+                            info.tooltip('hide');
+                            scope.showMessageInfo(messages[0]);
+                        }
+                    });
+
 
                 });
 
