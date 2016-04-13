@@ -75,7 +75,8 @@ angular.module('niord.messages')
     /**
      * The map-message-list-layer directive supports drawing a list of messages on a map layer
      */
-    .directive('mapMessageListLayer', ['$rootScope', 'MapService', function ($rootScope, MapService) {
+    .directive('mapMessageListLayer', ['$rootScope', 'MapService', 'LangService',
+        function ($rootScope, MapService, LangService) {
         return {
             restrict: 'E',
             replace: false,
@@ -238,26 +239,53 @@ angular.module('niord.messages')
                     });
 
 
+                    // Composes the tooltip for a specific message
+                    function composeTooltip(feature) {
+                        var html = '';
+
+                        // Get the message description
+                        var message = feature.get('message');
+                        if (message) {
+                            if (message.shortId) {
+                                html += '<div>' + message.shortId + '</div>'
+                            }
+                            var desc = LangService.desc(message);
+                            if (desc && desc.title) {
+                                html += '<div><small>' + desc.title + '</small></div>'
+                            }
+                        }
+
+                        // Check if there is a feature specific description
+                        var name = feature.get('name#' + $rootScope.language);
+                        if (name) {
+                            html += '<div><small>' + name + '</small></div>';
+                        }
+
+                        if (html.length > 0) {
+                            html = '<div class="message-tooltip">' + html + '</div>';
+                        }
+
+                        return html;
+                    }
+
+
                     // Show tooltip info
                     var updateMsgTooltip = function(pixel) {
                         var features = scope.getFeatureForPixel(pixel);
-                        var langKey = "name#" + $rootScope.language;
 
                         // Build the html to display in the tooltip
                         var html = '';
-                        angular.forEach(features, function (feature) {
-                            var name = feature.get(langKey);
-                            if (name) {
-                                html += '<div><small>' + name + '</small></div>';
-                            }
-                        });
+                        for (var f = 0; f < features.length && f < 3; f++) {
+                            html += composeTooltip(features[f]);
+                        }
+
 
                         if (html.length > 0) {
 
                             // Update the tooltip
                             info.css({
                                 left: pixel[0] + 'px',
-                                top: (pixel[1] + 15) + 'px'
+                                top: (pixel[1] + 15) + 'px',
                             });
                             info.tooltip('hide')
                                 .attr('data-original-title', html)
@@ -297,10 +325,10 @@ angular.module('niord.messages')
 
 
                     // Open the message details dialog
-                    scope.showMessageInfo = function (message) {
+                    scope.showMessageInfo = function (message, messages) {
                         $rootScope.$broadcast('messageDetails', {
                             messageId: message.id,
-                            messageList: scope.messageList
+                            messageList: messages
                         });
                     };
 
@@ -310,7 +338,7 @@ angular.module('niord.messages')
                         var messages = scope.getMessagesForPixel(map.getEventPixel(evt.originalEvent));
                         if (messages.length >= 1) {
                             info.tooltip('hide');
-                            scope.showMessageInfo(messages[0]);
+                            scope.showMessageInfo(messages[0], messages);
                         }
                     });
 

@@ -435,6 +435,10 @@ body > .ui-select-container {
     border: 2px solid darkmagenta;
 }
 
+.message-tooltip:not(:last-child) {
+    border-bottom: 1px dotted gray;
+}
+
 #pos-tooltip {
     position: absolute;
     height: 1px;
