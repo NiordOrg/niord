@@ -7,41 +7,45 @@ angular.module('niord.editor')
     /**
      * Main message editor controller
      */
-    .controller('EditorCtrl', ['$scope', 'MapService',
-        function ($scope, MapService) {
+    .controller('EditorCtrl', ['$scope', '$stateParams', 'MessageService', 'MapService',
+        function ($scope, $stateParams, MessageService, MapService) {
             'use strict';
+
+            $scope.message = {
+                descs: []
+            };
+            $scope.featureCollection = {
+                features: []
+            };
+
+            // Load the message details
+            if ($stateParams.id) {
+                MessageService.details($stateParams.id)
+                    .success(function (message) {
+                        $scope.message = message;
+                        if (message.geometry) {
+                            $scope.featureCollection = message.geometry;
+                        } else {
+                            $scope.featureCollection = {
+                                features: []
+                            };
+                        }
+                    })
+            }
+
 
             $scope.featureCollections = [];
 
-            $scope.editFeatureCollection = function (index) {
-                $scope.$broadcast('gj-editor-edit', "gj-editor-" + index);
+            $scope.editFeatureCollection = function () {
+                $scope.$broadcast('gj-editor-edit', "message-geometry");
             };
-
-            $scope.loadFeatureCollections = function () {
-                MapService.getAllFeatureCollections().success(function (featureCollections) {
-                    $scope.featureCollections.length = 0;
-                    angular.forEach(featureCollections, function (featureCollection) {
-                        $scope.featureCollections.push(featureCollection);
-                    });
-                });
-            };
-
-            $scope.loadFeatureCollections();
 
             $scope.updateFeatureCollection = function (fc) {
-                MapService.updateFeatureCollection(fc)
-                    .success($scope.loadFeatureCollections);
+                MapService.updateFeatureCollection(fc);
             };
-
-
-            $scope.newFeatureCollection = function (fc) {
-                MapService.createFeatureCollection(fc)
-                    .success($scope.loadFeatureCollections);
-            };
-
-
-            $scope.openThumbnail = function (fc) {
-                window.open('/message-map-image/' + fc.id + '.png');
+            
+            $scope.openThumbnail = function () {
+                window.open('/message-map-image/' + $stateParams.id + '.png');
             }
 
         }])

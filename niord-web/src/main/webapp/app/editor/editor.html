@@ -4,20 +4,16 @@
 
 <div class="editor-page" ng-controller="EditorCtrl">
 
-    <h1>Editor</h1>
+    <h1>Editor-To-Be</h1>
 
-    <div ng-repeat="fc in featureCollections">
         <div>
-            <a href ng-click="editFeatureCollection($index)">Open</a>
-            <a href ng-click="updateFeatureCollection(fc)">Update</a>
-            <a href ng-click="newFeatureCollection(fc)">Save Copy</a>
-            <a href ng-click="openThumbnail(fc)">Image</a>
+            <a href ng-click="editFeatureCollection()">Open</a>
+            <a href ng-click="updateFeatureCollection(featureCollection)">Update</a>
+            <a href ng-click="openThumbnail()">Image</a>
         </div>
 
-        <gj-editor id="gj-editor-{{$index}}" class="editor-locations"
-                   edit-type="message" feature-collection="fc"></gj-editor>
-
-    </div>
+        <gj-editor id="message-geometry" class="editor-locations"
+                   edit-type="message" feature-collection="featureCollection"></gj-editor>
 
 </div>
 
