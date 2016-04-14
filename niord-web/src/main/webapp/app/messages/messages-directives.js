@@ -274,7 +274,6 @@ angular.module('niord.messages')
                     // Show tooltip info
                     var updateMsgTooltip = function(pixel) {
                         var messages = scope.getMessagesForPixel(pixel);
-                        console.log("XXXX " + messages.length);
 
                         // Build the html to display in the tooltip
                         var html = '';
