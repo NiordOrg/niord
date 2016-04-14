@@ -42,6 +42,8 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class Category extends VersionedEntity<Integer> implements ILocalizable<CategoryDesc> {
 
+    String mrn;
+
     @ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE, CascadeType.DETACH })
     private Category parent;
 
@@ -78,6 +80,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
         DataFilter compFilter = filter.forComponent(Category.class);
 
         this.id = category.getId();
+        this.mrn = category.getMrn();
         if (compFilter.includeParent() && category.getParent() != null) {
             parent = new Category(category.getParent(), filter);
         }
@@ -100,6 +103,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
 
         CategoryVo category = new CategoryVo();
         category.setId(id);
+        category.setMrn(mrn);
 
         if (compFilter.includeChildren()) {
             children.forEach(child -> category.checkCreateChildren().add(child.toVo(compFilter)));
@@ -132,7 +136,8 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
      */
     @Transient
     public boolean hasChanged(Category template) {
-        return descsChanged(template) ||
+        return !Objects.equals(mrn, template.getMrn()) ||
+                descsChanged(template) ||
                 parentChanged(template);
     }
 
@@ -202,6 +207,14 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public String getMrn() {
+        return mrn;
+    }
+
+    public void setMrn(String mrn) {
+        this.mrn = mrn;
+    }
 
     @Override
     public List<CategoryDesc> getDescs() {

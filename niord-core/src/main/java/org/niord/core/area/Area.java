@@ -181,6 +181,8 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
     @Transient
     public boolean hasChanged(Area template) {
         return !Objects.equals(siblingSortOrder, template.getSiblingSortOrder()) ||
+                !Objects.equals(mrn, template.getMrn()) ||
+                !Objects.equals(type, template.getType()) ||
                 descsChanged(template) ||
                 parentChanged(template) ||
                 geometryChanged(template);

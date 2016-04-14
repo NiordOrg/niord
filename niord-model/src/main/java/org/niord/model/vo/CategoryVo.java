@@ -27,6 +27,7 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializable {
     Integer id;
+    String mrn;
     CategoryVo parent;
     List<CategoryVo> children;
     List<CategoryDescVo> descs;
@@ -60,6 +61,14 @@ public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializab
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public String getMrn() {
+        return mrn;
+    }
+
+    public void setMrn(String mrn) {
+        this.mrn = mrn;
     }
 
     public CategoryVo getParent() {

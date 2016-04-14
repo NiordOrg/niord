@@ -146,6 +146,7 @@ public class CategoryService extends BaseService {
     public Category updateCategoryData(Category category) {
         Category original = getByPrimaryKey(Category.class, category.getId());
 
+        original.setMrn(category.getMrn());
         original.copyDescsAndRemoveBlanks(category.getDescs());
         original.updateLineage();
 
@@ -296,6 +297,9 @@ public class CategoryService extends BaseService {
 
     /**
      * Ensures that the template category and it's parents exists
+     *
+     * TODO: User Category.mrn as primary search criteria
+     *
      * @param templateCategory the template category
      * @return the category
      */
