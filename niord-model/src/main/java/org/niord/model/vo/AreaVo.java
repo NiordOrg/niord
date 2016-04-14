@@ -29,6 +29,8 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comparable<AreaVo> {
     Integer id;
+    String mrn;
+    AreaType type;
     AreaVo parent;
     GeometryVo geometry;
     List<AreaVo> children;
@@ -82,6 +84,22 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comp
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public String getMrn() {
+        return mrn;
+    }
+
+    public void setMrn(String mrn) {
+        this.mrn = mrn;
+    }
+
+    public AreaType getType() {
+        return type;
+    }
+
+    public void setType(AreaType type) {
+        this.type = type;
     }
 
     public AreaVo getParent() {

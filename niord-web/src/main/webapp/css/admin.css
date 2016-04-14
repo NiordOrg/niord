@@ -161,6 +161,7 @@ tr.batch-execution-row td div.progress {
 /** Area admin page **/
 
 .area-panel {
+    font-size: 12px;
     margin: 10px;
     padding: 10px 20px 0 20px;
 }

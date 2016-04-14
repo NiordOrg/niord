@@ -21,6 +21,7 @@ import org.niord.core.model.VersionedEntity;
 import org.niord.core.util.GeoJsonUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
+import org.niord.model.vo.AreaType;
 import org.niord.model.vo.AreaVo;
 
 import javax.persistence.Cacheable;
@@ -58,6 +59,10 @@ import java.util.stream.Collectors;
 })
 @SuppressWarnings("unused")
 public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaDesc>, Comparable<Area> {
+
+    String mrn;
+
+    AreaType type;
 
     @ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE, CascadeType.DETACH })
     private Area parent;
@@ -107,6 +112,8 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
 
         DataFilter compFilter = filter.forComponent(Area.class);
 
+        this.mrn = area.getMrn();
+        this.type = area.getType();
         this.id = area.getId();
         this.siblingSortOrder = area.getSiblingSortOrder();
         if (compFilter.includeGeometry()) {
@@ -134,6 +141,8 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
 
         AreaVo area = new AreaVo();
         area.setId(id);
+        area.setMrn(mrn);
+        area.setType(type);
         area.setSiblingSortOrder(siblingSortOrder);
 
         if (compFilter.includeGeometry()) {
@@ -316,6 +325,22 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public String getMrn() {
+        return mrn;
+    }
+
+    public void setMrn(String mrn) {
+        this.mrn = mrn;
+    }
+
+    public AreaType getType() {
+        return type;
+    }
+
+    public void setType(AreaType type) {
+        this.type = type;
+    }
 
     @Override
     public List<AreaDesc> getDescs() {

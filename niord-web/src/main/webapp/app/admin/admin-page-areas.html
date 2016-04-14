@@ -68,6 +68,28 @@
                     </div>
 
                     <div class="form-group">
+                        <label class="control-label">MRN</label>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <input class="form-control input-sm" placeholder="MRN" type="text" ng-model="editArea.mrn">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="control-label">Type</label>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <select class="form-control input-sm" ng-model="editArea.type">
+                                    <option value="">none</option>
+                                    <option value="COUNTRY">Coutry</option>
+                                    <option value="FIRING_AREA">Firing area</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
                         <label class="control-label">Sorting</label>
                         <div class="row">
                             <div class="col-sm-6 btn-group">

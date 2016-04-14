@@ -166,6 +166,8 @@ public class AreaService extends BaseService {
     public Area updateAreaData(Area area) {
         Area original = getByPrimaryKey(Area.class, area.getId());
 
+        original.setMrn(area.getMrn());
+        original.setType(area.getType());
         original.setSiblingSortOrder(area.getSiblingSortOrder());
         original.copyDescsAndRemoveBlanks(area.getDescs());
         original.setGeometry(area.getGeometry());
@@ -377,7 +379,10 @@ public class AreaService extends BaseService {
 
 
     /**
-     * Ensures that the template area and it's parents exists
+     * Ensures that the template area and it's parents exists.
+     *
+     * TODO: User Area.mrn as primary search criteria
+     *
      * @param templateArea the template area
      * @return the area
      */

@@ -312,6 +312,10 @@ angular.module('niord.admin')
                     $scope.areaFeatureCollection.features[0].geometry) {
                     $scope.editArea.geometry = $scope.areaFeatureCollection.features[0].geometry;
                 }
+                // Handle blank type
+                if ($scope.editArea.type == '') {
+                    delete $scope.editArea.type;
+                }
 
                 if ($scope.action == 'add') {
                     AdminAreaService
