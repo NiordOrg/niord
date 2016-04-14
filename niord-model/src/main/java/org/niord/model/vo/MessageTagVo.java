@@ -28,6 +28,7 @@ public class MessageTagVo implements IJsonSerializable {
     String tagId;
     boolean shared;
     Date expiryDate;
+    int messageCount;
 
     /*************************/
     /** Getters and Setters **/
@@ -55,5 +56,13 @@ public class MessageTagVo implements IJsonSerializable {
 
     public void setExpiryDate(Date expiryDate) {
         this.expiryDate = expiryDate;
+    }
+
+    public int getMessageCount() {
+        return messageCount;
+    }
+
+    public void setMessageCount(int messageCount) {
+        this.messageCount = messageCount;
     }
 }

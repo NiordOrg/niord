@@ -66,7 +66,7 @@ public abstract class AbstractBatchableRestService {
             .filter(FileItem::isFormField)
             .forEach(item -> {
                 try {
-                    params.setProperty(item.getFieldName(), item.getString());
+                    params.setProperty(item.getFieldName(), item.getString("UTF-8"));
                 } catch (Exception ignored) {
                 }
             });

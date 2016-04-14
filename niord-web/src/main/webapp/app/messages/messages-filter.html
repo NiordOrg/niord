@@ -64,19 +64,22 @@
 
         <!-- Tag Filter -->
         <view-mode-filter-panel state="state" filter-name="tag" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
-            <ui-select multiple id="tags" ng-model="state.tag.tags" >
-                <ui-select-match placeholder="Select Tags">
-                    {{$item.tagId}}
-                </ui-select-match>
-                <ui-select-choices repeat="tag in tags"
-                                   refresh="refreshTags($select.search)"
-                                   refresh-delay="100">
-                    <div>
-                        <span ng-bind-html="tag.tagId | highlight: $select.search"></span>
-                    </div>
+            <div class="input-group">
+                <ui-select multiple id="tags" ng-model="state.tag.tags" >
+                    <ui-select-match placeholder="Select Tags">
+                        {{$item.tagId}}
+                    </ui-select-match>
+                    <ui-select-choices repeat="tag in tags"
+                                       refresh="refreshTags($select.search)"
+                                       refresh-delay="100">
+                        <div>
+                            <span ng-bind-html="tag.tagId | highlight: $select.search"></span>
+                        </div>
 
-                </ui-select-choices>
-            </ui-select>
+                    </ui-select-choices>
+                </ui-select>
+                <span class="input-group-addon clickable" ng-click="openTagsDialog()"><span class="glyphicon glyphicon-tags"></span></span>
+            </div>
         </view-mode-filter-panel>
 
 

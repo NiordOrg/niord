@@ -48,12 +48,23 @@ public class MessageTagService extends BaseService {
     UserService userService;
 
     /**
-     * Returns the message tag with the given ID
+     * Returns the message tag with the given ID for the current user
      * @param tagId the tag ID
      * @return the message tag with the given tag identifier or null if not found
      */
     public MessageTag findByUserAndTagId(String tagId) {
-        List<MessageTag> tags = findByUserAndTagIds(tagId);
+        return findByUserAndTagId(userService.currentUser(), tagId);
+    }
+
+
+    /**
+     * Returns the message tag with the given ID for the given user
+     * @param user the user
+     * @param tagId the tag ID
+     * @return the message tag with the given tag identifier or null if not found
+     */
+    public MessageTag findByUserAndTagId(User user, String tagId) {
+        List<MessageTag> tags = findByUserAndTagIds(user, tagId);
         return tags.isEmpty() ? null : tags.get(0);
     }
 
@@ -64,7 +75,17 @@ public class MessageTagService extends BaseService {
      * @return the message tags with the given tag identifiers
      */
     public List<MessageTag> findByUserAndTagIds(String... tagIds) {
-        User user = userService.currentUser();
+        return findByUserAndTagIds(userService.currentUser(), tagIds);
+    }
+
+
+    /**
+     * Returns the message tags with the given tag IDs for the given user
+     * @param user the user
+     * @param tagIds the tag IDs
+     * @return the message tags with the given tag identifiers
+     */
+    public List<MessageTag> findByUserAndTagIds(User user, String... tagIds) {
         Set<String> idSet = new HashSet<>(Arrays.asList(tagIds));
         if (user == null) {
             return em.createNamedQuery("MessageTag.findSharedByTagIds", MessageTag.class)
@@ -86,7 +107,7 @@ public class MessageTagService extends BaseService {
      * @param limit the maximum number of results
      * @return the search result
      */
-    public List<MessageTag> searchMessageSeries(String term, int limit) {
+    public List<MessageTag> searchMessageTags(String term, int limit) {
 
         if (StringUtils.isNotBlank(term)) {
             User user = userService.currentUser();
@@ -110,6 +131,24 @@ public class MessageTagService extends BaseService {
 
 
     /**
+     * Returns all message tags for the current user
+     *
+     * @return the search result
+     */
+    public List<MessageTag> findByUser() {
+        User user = userService.currentUser();
+        if (user == null) {
+            return em.createNamedQuery("MessageTag.findShared", MessageTag.class)
+                    .getResultList();
+        } else {
+            return em.createNamedQuery("MessageTag.findByUser", MessageTag.class)
+                    .setParameter("user", user)
+                    .getResultList();
+        }
+    }
+
+
+    /**
      * Creates a new message tag from the given template
      * @param tag the new message tag
      * @return the persisted message tag
@@ -120,8 +159,6 @@ public class MessageTagService extends BaseService {
             throw new IllegalArgumentException("Cannot create message tag with duplicate message tag IDs"
                     + tag.getTagId());
         }
-
-        tag.setUser(userService.currentUser());
 
         // Replace the messages with the persisted messages
         tag.setMessages(persistedList(Message.class, tag.getMessages()));
@@ -136,7 +173,7 @@ public class MessageTagService extends BaseService {
      * @param tag the message tag to update
      * @return the persisted message tag
      */
-    public MessageTag updateMessageSeries(MessageTag tag) {
+    public MessageTag updateMessageTag(MessageTag tag) {
         MessageTag original = findByUserAndTagId(tag.getTagId());
         if (original == null) {
             throw new IllegalArgumentException("Cannot update non-existing message tag"
@@ -144,6 +181,7 @@ public class MessageTagService extends BaseService {
         }
 
         original.setExpiryDate(tag.getExpiryDate());
+        original.setUser(tag.getUser());
 
         // Replace the messages with the persisted messages
         original.setMessages(persistedList(Message.class, tag.getMessages()));
@@ -164,6 +202,25 @@ public class MessageTagService extends BaseService {
         if (original != null) {
             log.info("Removing message tag " + tagId);
             remove(original);
+            return true;
+        }
+        return false;
+    }
+
+
+    /**
+     * Clears all messages from the message tag with the given tag ID
+     * @param tagId the ID of the message tag to clear
+     * @return if the message tag was deleted
+     */
+    public boolean clearMessageTag(String tagId) {
+
+        MessageTag original = findByUserAndTagId(tagId);
+        if (original != null) {
+            log.info("Clearing message tag " + tagId);
+            original.getMessages().clear();
+            original.updateMessageCount();
+            saveEntity(original);
             return true;
         }
         return false;

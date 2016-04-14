@@ -19,11 +19,13 @@ import org.niord.core.model.BaseEntity;
 import org.niord.core.user.User;
 import org.niord.model.vo.MessageTagVo;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.PrePersist;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -43,6 +45,10 @@ import java.util.List;
     uniqueConstraints = @UniqueConstraint(columnNames = { "tagId", "user_id" })
 )
 @NamedQueries({
+        @NamedQuery(name="MessageTag.findByUser",
+                query="SELECT t FROM MessageTag t where t.user is null or t.user = :user"),
+        @NamedQuery(name="MessageTag.findShared",
+                query="SELECT t FROM MessageTag t where t.user is null"),
         @NamedQuery(name="MessageTag.findByUserAndTagIds",
                 query="SELECT t FROM MessageTag t where t.tagId in (:tagIds) and (t.user is null or t.user = :user)"),
         @NamedQuery(name="MessageTag.findSharedByTagIds",
@@ -54,7 +60,7 @@ import java.util.List;
                 query="SELECT t FROM MessageTag t where lower(t.tagId) like lower(:term) "
                         + "and (t.user is null or t.user = :user)"),
         @NamedQuery(name= "MessageTag.findExpiredMessageTags",
-                query="SELECT t FROM MessageTag t where t.expiryDate is not null and t.expiryDate > current_timestamp"),
+                query="SELECT t FROM MessageTag t where t.expiryDate is not null and t.expiryDate < current_timestamp"),
 })
 @SuppressWarnings("unused")
 public class MessageTag extends BaseEntity<Integer> {
@@ -71,6 +77,10 @@ public class MessageTag extends BaseEntity<Integer> {
     @ManyToMany
     List<Message> messages = new ArrayList<>();
 
+    // More efficient than counting related messages
+    @Column(columnDefinition="INT default 0")
+    int messageCount;
+
     /**
      * Constructor
      */
@@ -80,9 +90,10 @@ public class MessageTag extends BaseEntity<Integer> {
     /**
      * Constructor
      */
-    public MessageTag(MessageTagVo tag) {
+    public MessageTag(MessageTagVo tag, User user) {
         this.tagId = tag.getTagId();
         this.expiryDate = tag.getExpiryDate();
+        this.user = tag.isShared() ? null : user;
     }
 
 
@@ -90,10 +101,18 @@ public class MessageTag extends BaseEntity<Integer> {
     public MessageTagVo toVo() {
         MessageTagVo tag = new MessageTagVo();
         tag.setTagId(tagId);
-        tag.setShared(user != null);
+        tag.setExpiryDate(expiryDate);
+        tag.setShared(user == null);
+        tag.setMessageCount(messageCount);
         return tag;
     }
 
+
+    /** Update the number of messages */
+    @PrePersist
+    public void updateMessageCount() {
+        messageCount = messages.size();
+    }
 
     /*************************/
     /** Getters and Setters **/

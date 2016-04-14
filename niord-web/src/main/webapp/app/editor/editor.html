@@ -6,14 +6,18 @@
 
     <h1>Editor-To-Be</h1>
 
-        <div>
-            <a href ng-click="editFeatureCollection()">Open</a>
-            <a href ng-click="updateFeatureCollection(featureCollection)">Update</a>
-            <a href ng-click="openThumbnail()">Image</a>
-        </div>
+    <table class='table table-condensed'>
+        <tr render-message-details msg="message" message-list="[messages]" format="details"></tr>
+    </table>
 
-        <gj-editor id="message-geometry" class="editor-locations"
-                   edit-type="message" feature-collection="featureCollection"></gj-editor>
+    <div>
+        <a href ng-click="editFeatureCollection()">Open</a>
+        <a href ng-click="updateFeatureCollection(featureCollection)">Update</a>
+        <a href ng-click="openThumbnail()">Image</a>
+    </div>
+
+    <gj-editor id="message-geometry" class="editor-locations"
+               edit-type="message" feature-collection="featureCollection"></gj-editor>
 
 </div>
 

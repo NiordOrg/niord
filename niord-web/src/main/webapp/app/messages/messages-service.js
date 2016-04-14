@@ -29,6 +29,35 @@ angular.module('niord.messages')
             /** Returns the message with the given ID */
             details: function (id) {
                 return $http.get('/rest/messages/message/' + id + '?lang=' + $rootScope.language);
+            },
+
+
+            /** Returns the message tags for the current user */
+            tags: function () {
+                return $http.get('/rest/tags/');
+            },
+
+            /** Adds a new message tag */
+            createMessageTag: function (tag) {
+                return $http.post('/rest/tags/tag/', tag);
+            },
+
+
+            /** Adds a new message tag */
+            clearMessageTag: function (tag) {
+                return $http.delete('/rest/tags/tag/' + encodeURIComponent(tag.tagId) + "/messages");
+            },
+
+
+            /** Updates a message tag */
+            updateMessageTag: function (tag) {
+                return $http.put('/rest/tags/tag/' + encodeURIComponent(tag.tagId), tag);
+            },
+
+
+            /** Deletes a message tag */
+            deleteMessageTag: function (tag) {
+                return $http.delete('/rest/tags/tag/' + encodeURIComponent(tag.tagId));
             }
         };
     }])

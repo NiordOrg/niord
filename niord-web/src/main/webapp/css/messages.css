@@ -11,6 +11,15 @@
     min-width: 300px;
 }
 
+.message-tags-table {
+    width: 100%;
+    min-height: 200px;
+    max-height: 300px;
+    height: 100%;
+    overflow: hidden;
+    overflow-y: scroll;
+}
+
 /** View mode -> Grid **/
 
 .messages-list-grid {

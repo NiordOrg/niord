@@ -38,7 +38,8 @@
                 </li>
                 <li role="separator" class="divider" ng-if="namedFilters.length > 0"></li>
                 <li ng-repeat="filter in namedFilters">
-                    <a href><span ng-click="applyNamedFilter(filter)">{{filter.name}}</span> <span class="pull-right glyphicon glyphicon-trash" ng-click="removeNamedFilter(filter)"></span></a>
+                    <a href><span ng-click="applyNamedFilter(filter)">{{filter.name}}</span>
+                        <span class="pull-right glyphicon glyphicon-trash" ng-click="removeNamedFilter(filter)"></span></a>
                 </li>
                 <li role="separator" class="divider"></li>
                 <li><a ng-if="isLoggedIn" ng-click="clearAllFilters()" href translate>MENU_FILTER_CLEAR</a></li>
@@ -54,6 +55,13 @@
             </span>
             <ul class="dropdown-menu">
                 <li><a href translate>MENU_ACTION_PDF</a></li>
+                <li role="separator" class="divider"></li>
+                <li>
+                    <a href ng-click="openTagsDialog()">
+                        <span class="glyphicon glyphicon-tags"></span>&nbsp;
+                        <span translate>MENU_ACTION_TAGS</span>
+                    </a>
+                </li>
                 <li role="separator" class="divider"></li>
                 <li><a href ng-click="toggleSortOrder('AREA')">Area <small ng-bind-html="sortIndicator('AREA')"></small></a></li>
                 <li><a href ng-click="toggleSortOrder('ID')">ID <small ng-bind-html="sortIndicator('ID')"></small></a></li>

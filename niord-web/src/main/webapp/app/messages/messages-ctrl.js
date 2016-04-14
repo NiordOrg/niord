@@ -332,7 +332,7 @@ angular.module('niord.messages')
                 if (params.tag && params.tag.length > 0) {
                     s.tag.enabled = true;
                     var tags = (typeof params.tag === 'string') ? params.tag : params.tag.join();
-                    $http.get('/rest/tags/' + tags).then(function(response) {
+                    $http.get('/rest/tags/tag/' + tags).then(function(response) {
                         s.tag.tags = response.data;
                     });
                 }
@@ -486,6 +486,14 @@ angular.module('niord.messages')
                 return txt;
             };
 
+
+            /** Flags that a given tag has been selected in the tags dialog */
+            $scope.$on('messageTagSelected', function(event, data) {
+                $location.search('tag=' + data.tag.tagId);
+                $scope.readRequestFilterParameters();
+            });
+
+
             /*****************************/
             /** Named Filters Handling  **/
             /*****************************/
@@ -549,6 +557,13 @@ angular.module('niord.messages')
                     ? { lon: extent[2], lat: extent[3] }
                     : '';
             };
+
+
+            /** Opens the tags dialog */
+            $scope.openTagsDialog = function () {
+                $rootScope.$broadcast('messageTags', {});
+            };
+
 
             /*****************************/
             /** Message List Handling   **/
@@ -698,6 +713,14 @@ angular.module('niord.messages')
                 });
             });
 
+            $scope.$on('messageTags', function () {
+                $uibModal.open({
+                    controller: "MessageTagsDialogCtrl",
+                    templateUrl: "/app/messages/message-tags-dialog.html",
+                    size: 'md'
+                });
+            });
+
         }])
 
 
@@ -776,5 +799,110 @@ angular.module('niord.messages')
 
             $scope.loadMessageDetails();
 
+        }])
+
+
+    /*******************************************************************
+     * Controller that handles displaying message tags in a dialog
+     *******************************************************************/
+    .controller('MessageTagsDialogCtrl', ['$scope', '$rootScope', 'growl', 'MessageService', 'AuthService',
+        function ($scope, $rootScope, growl, MessageService, AuthService) {
+            'use strict';
+
+            $scope.isLoggedIn = AuthService.loggedIn;
+            $scope.search = '';
+            $scope.data = {
+                tags : []
+            };
+
+            /** Displays the error message */
+            $scope.displayError = function () {
+                growl.error("Error accessing tags");
+            };
+
+
+            // Load the message tags for the current user
+            $scope.loadTags = function() {
+                delete $scope.data.editTag;
+                delete $scope.data.editMode;
+                MessageService.tags()
+                    .success(function (tags) {
+                        $scope.data.tags.length = 0;
+                        angular.forEach(tags, function (tag) {
+                            $scope.data.tags.push(tag);
+                        });
+                    })
+                    .error($scope.displayError);
+            };
+            $scope.loadTags();
+
+
+            // Adds a new tag
+            $scope.addTag = function () {
+                $scope.data.editMode = 'add';
+                $scope.data.editTag = { tagId: '', shared: false, expiryDate: undefined };
+                //$scope.tagsForm.$setPristine();
+            };
+
+
+            // Edits an existing tag
+            $scope.editTag = function (tag) {
+                $scope.data.editMode = 'edit';
+                $scope.data.editTag = angular.copy(tag);
+                //$scope.tagsForm.$setPristine();
+            };
+
+
+            // Edits an existing tag
+            $scope.copyTag = function (tag) {
+                $scope.data.editMode = 'add';
+                $scope.data.editTag = angular.copy(tag);
+                //$scope.tagsForm.$setPristine();
+            };
+
+
+            // Deletes the given tag
+            $scope.deleteTag = function (tag) {
+                MessageService
+                    .deleteMessageTag(tag)
+                    .success($scope.loadTags)
+                    .error($scope.displayError);
+            };
+
+
+            // Clears messages from the given tag
+            $scope.clearTag = function (tag) {
+                MessageService
+                    .clearMessageTag(tag)
+                    .success($scope.loadTags)
+                    .error($scope.displayError);
+            };
+
+
+            // Saves the tag being edited
+            $scope.saveTag = function () {
+                if ($scope.data.editTag && $scope.data.editMode == 'add') {
+                    MessageService
+                        .createMessageTag($scope.data.editTag)
+                        .success($scope.loadTags)
+                        .error($scope.displayError);
+                } else if ($scope.data.editTag && $scope.data.editMode == 'edit') {
+                    MessageService
+                        .updateMessageTag($scope.data.editTag)
+                        .success($scope.loadTags)
+                        .error($scope.displayError);
+                }
+            };
+
+
+            // Navigate to the given link
+            $scope.navigateTag = function (tag) {
+                $scope.$close();
+                $rootScope.$broadcast('messageTagSelected', { tag: tag });
+                //location.href = '/#/messages/grid?tag=' + encodeURIComponent(tag.tagId);
+                //location.reload();
+            };
+
         }]);
+
 
