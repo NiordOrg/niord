@@ -56,6 +56,7 @@ public class BatchMessageImportWriter extends AbstractItemHandler {
             // Add the message to the tag
             if (tag != null && !tag.getMessages().stream().anyMatch(m -> m.getId().equals(message.getId()))) {
                 tag.getMessages().add(message);
+                message.getTags().add(tag);
             }
         }
 
