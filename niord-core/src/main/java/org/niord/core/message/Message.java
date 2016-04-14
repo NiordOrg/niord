@@ -56,7 +56,10 @@ import java.util.Set;
  */
 @Entity
 @Table(indexes = {
-        @Index(name = "message_mrn_k", columnList="mrn")
+        @Index(name = "message_mrn_k", columnList="mrn"),
+        @Index(name = "message_type_k", columnList="type"),
+        @Index(name = "message_main_type_k", columnList="mainType"),
+        @Index(name = "message_status_k", columnList="status")
 })
 @NamedQueries({
         @NamedQuery(name="Message.findUpdateMessages",

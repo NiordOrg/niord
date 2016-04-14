@@ -35,8 +35,8 @@ import java.util.Objects;
  */
 @Entity
 @Table(indexes = {
-        @Index(name = "aton_tag_k", columnList="k", unique = false),
-        @Index(name = "aton_tag_v", columnList="v", unique = false)
+        @Index(name = "aton_tag_k", columnList="k"),
+        @Index(name = "aton_tag_v", columnList="v")
 })
 @SuppressWarnings("unused")
 public class AtonTag extends BaseEntity<Integer> {
