@@ -226,15 +226,17 @@ angular.module('niord.messages')
 
 
                     // Returns the list of messages for the given pixel
-                    scope.getFeatureForPixel = function (pixel) {
-                        var msgs = [];
+                    scope.getMessagesForPixel = function (pixel) {
+                        var messageIds = {};
+                        var messages = [];
                         map.forEachFeatureAtPixel(pixel, function(feature, layer) {
-                            // test
-                            if (layer  == olLayer) {
-                                msgs.push(feature);
+                            var msg = feature.get('message');
+                            if (layer  == olLayer && msg && messageIds[msg.id] === undefined) {
+                                messages.push(msg);
+                                messageIds[msg.id] = msg.id;
                             }
                         });
-                        return msgs;
+                        return messages;
                     };
 
 
@@ -249,25 +251,16 @@ angular.module('niord.messages')
 
 
                     // Composes the tooltip for a specific message
-                    function composeTooltip(feature) {
+                    function composeTooltip(message) {
                         var html = '';
 
                         // Get the message description
-                        var message = feature.get('message');
-                        if (message) {
-                            if (message.shortId) {
-                                html += '<div>' + message.shortId + '</div>'
-                            }
-                            var desc = LangService.desc(message);
-                            if (desc && desc.title) {
-                                html += '<div><small>' + desc.title + '</small></div>'
-                            }
+                        if (message.shortId) {
+                            html += '<div>' + message.shortId + '</div>'
                         }
-
-                        // Check if there is a feature specific description
-                        var name = feature.get('name#' + $rootScope.language);
-                        if (name) {
-                            html += '<div><small>' + name + '</small></div>';
+                        var desc = LangService.desc(message);
+                        if (desc && desc.title) {
+                            html += '<div><small>' + desc.title + '</small></div>'
                         }
 
                         if (html.length > 0) {
@@ -280,12 +273,13 @@ angular.module('niord.messages')
 
                     // Show tooltip info
                     var updateMsgTooltip = function(pixel) {
-                        var features = scope.getFeatureForPixel(pixel);
+                        var messages = scope.getMessagesForPixel(pixel);
+                        console.log("XXXX " + messages.length);
 
                         // Build the html to display in the tooltip
                         var html = '';
-                        for (var f = 0; f < features.length && f < 3; f++) {
-                            html += composeTooltip(features[f]);
+                        for (var m = 0; m < messages.length && m < 3; m++) {
+                            html += composeTooltip(messages[m]);
                         }
 
 
@@ -319,18 +313,6 @@ angular.module('niord.messages')
                     /***************************/
                     /** Details dialog        **/
                     /***************************/
-
-
-                    // Returns the list of messages for the given pixel
-                    scope.getMessagesForPixel = function (pixel) {
-                        var messages = [];
-                        map.forEachFeatureAtPixel(pixel, function(feature, layer) {
-                            if (layer  == olLayer && feature.get('message')) {
-                                messages.push(feature.get('message'));
-                            }
-                        });
-                        return messages;
-                    };
 
 
                     // Open the message details dialog
