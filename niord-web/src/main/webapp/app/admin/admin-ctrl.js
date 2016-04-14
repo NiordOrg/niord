@@ -555,6 +555,7 @@ angular.module('niord.admin')
                 } else {
                     $scope.series.shortFormat += token;
                 }
+                $('#' + field).focus();
                 $scope.mrnSuffixUpdated();
                 $scope.seriesForm.$setDirty();
             };
