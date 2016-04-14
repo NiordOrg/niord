@@ -67,12 +67,6 @@ public class BatchDomainImportReader extends AbstractItemHandler {
     @Override
     public Object readItem() throws Exception {
         if (domainNo < domains.size()) {
-
-            // Every now and then, update the progress
-            if (domainNo % 10 == 0) {
-                updateProgress((int)(100.0 * domainNo / domains.size()));
-            }
-
             getLog().info("Reading domain no " + domainNo);
             return domains.get(domainNo++);
         }

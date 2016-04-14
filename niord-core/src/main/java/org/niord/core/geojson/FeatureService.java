@@ -1,21 +1,10 @@
 package org.niord.core.geojson;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vividsolutions.jts.geom.Geometry;
-import org.niord.core.conf.TextResource;
 import org.niord.core.service.BaseService;
-import org.niord.model.vo.geojson.FeatureCollectionVo;
-import org.niord.model.vo.geojson.FeatureVo;
-import org.niord.core.util.GeoJsonUtils;
 import org.slf4j.Logger;
 
-import javax.annotation.PostConstruct;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
+import javax.ejb.Stateless;
 import javax.inject.Inject;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,77 +14,12 @@ import static java.util.Objects.requireNonNull;
 /**
  * Feature service
  */
-@Singleton
-@Startup
-@Lock(LockType.READ)
+@Stateless
 public class FeatureService extends BaseService {
 
 
     @Inject
     private Logger log;
-
-    @Inject
-    @TextResource("/dk.json")
-    String dkJson;
-
-    @Inject
-    @TextResource("/no.json")
-    String noJson;
-
-    /**
-     * Persists the test data
-     */
-    @PostConstruct
-    @Lock(LockType.WRITE)
-    void init() {
-
-        int cnt = em.createQuery("select f from Feature f").getResultList().size();
-        if (cnt == 0) {
-            Arrays.asList("/dk.json", "/no.json").forEach(json -> {
-                try {
-                    ObjectMapper mapper = new ObjectMapper();
-
-                    FeatureCollectionVo featureCollection = mapper.readValue(
-                            getClass().getResource(json),
-                            FeatureCollectionVo.class);
-                    FeatureVo feature = featureCollection.getFeatures()[0];
-
-                    // Round to four decimals
-                    GeoJsonUtils.roundCoordinates(feature, 4);
-
-                    // Bizarrely, MarineRegions has coordinates in YX order instead of XY order
-                    GeoJsonUtils.swapCoordinates(feature);
-
-                    Geometry geometry = GeoJsonUtils.toJts(feature.getGeometry());
-
-                    Feature featureEntity = new Feature();
-                    featureEntity.setGeometry(geometry);
-
-                    FeatureCollection featureCollectionEntity = new FeatureCollection();
-                    featureCollectionEntity.getFeatures().add(featureEntity);
-                    featureEntity.setFeatureCollection(featureCollectionEntity);
-
-                    em.persist(featureCollectionEntity);
-                    log.info("****  Persisted feature collection");
-
-                } catch (Exception e) {
-                    log.error("Error saving test shape ", e);
-                }
-            });
-        }
-    }
-
-    /**
-    public List<Feature> findMatchingShapes(double lon, double lat) throws Exception {
-        WKTReader wktReader = new WKTReader();
-        Geometry shape = wktReader.read("POINT (" + lon + " " + lat + ")");
-        shape.setSRID(Feature.WGS84_SRID);
-
-        return em.createNamedQuery("Feature.hits", Feature.class)
-                .setParameter("pt", shape)
-                .getResultList();
-    }
-     **/
 
     public Feature findFeatureByUid(String uid) {
         return em.createNamedQuery("Feature.findByUid", Feature.class)

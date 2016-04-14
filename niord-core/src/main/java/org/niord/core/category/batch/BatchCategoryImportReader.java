@@ -102,12 +102,6 @@ public class BatchCategoryImportReader extends AbstractItemHandler {
     @Override
     public Object readItem() throws Exception {
         if (categoriesNo < categories.size()) {
-
-            // Every now and then, update the progress
-            if (categoriesNo % 10 == 0) {
-                updateProgress((int)(100.0 * categoriesNo / categories.size()));
-            }
-
             getLog().info("Reading category no " + categoriesNo);
             return categories.get(categoriesNo++);
         }

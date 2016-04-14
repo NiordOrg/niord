@@ -104,12 +104,6 @@ public class BatchAreaImportReader extends AbstractItemHandler {
     @Override
     public Object readItem() throws Exception {
         if (areasNo < areas.size()) {
-
-            // Every now and then, update the progress
-            if (areasNo % 10 == 0) {
-                updateProgress((int)(100.0 * areasNo / areas.size()));
-            }
-
             getLog().info("Reading area no " + areasNo);
             return areas.get(areasNo++);
         }

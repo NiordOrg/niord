@@ -22,6 +22,7 @@ import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
+import org.niord.model.vo.MainType;
 import org.niord.model.vo.MessageVo;
 import org.niord.model.vo.Status;
 import org.niord.model.vo.Type;
@@ -76,6 +77,10 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     // Unique within the current message series
     String shortId;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    MainType mainType;
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -169,6 +174,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         this.number = message.getNumber();
         this.mrn = message.getMrn();
         this.shortId = message.getShortId();
+        this.mainType = message.getMainType();
         this.type = message.getType();
         this.status = message.getStatus();
         if (message.getAreas() != null) {
@@ -199,7 +205,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             message.getDescs().forEach(desc -> createDesc(desc.getLang()).copyDesc(desc));
         }
 
-        updateStartAndEndDates();
+        onPersist();
     }
 
 
@@ -213,6 +219,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         message.setNumber(number);
         message.setMrn(mrn);
         message.setShortId(shortId);
+        message.setMainType(mainType);
         message.setType(type);
 
         if (compFilter.includeField(DataFilter.DETAILS)) {
@@ -248,7 +255,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     /** Whenever the message is persisted, re-compute the start and end dates */
     @PrePersist
-    protected void updateStartAndEndDates() {
+    protected void onPersist() {
         startDate = endDate = null;
         dateIntervals.forEach(di -> {
             if (startDate == null || startDate.after(di.getFromDate())) {
@@ -258,6 +265,11 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                 endDate = di.getToDate();
             }
         });
+
+        // Update the main type from the type
+        if (type != null) {
+            mainType = type.getMainType();
+        }
     }
 
 
@@ -320,6 +332,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setShortId(String shortId) {
         this.shortId = shortId;
+    }
+
+    public MainType getMainType() {
+        return mainType;
+    }
+
+    public void setMainType(MainType mainType) {
+        this.mainType = mainType;
     }
 
     public Type getType() {

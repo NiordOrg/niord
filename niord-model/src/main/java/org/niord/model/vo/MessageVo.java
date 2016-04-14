@@ -39,6 +39,7 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     Integer number;
     String mrn;
     String shortId;
+    MainType mainType;
     Type type;
     Status status;
     List<AreaVo> areas;
@@ -178,6 +179,14 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
 
     public void setShortId(String shortId) {
         this.shortId = shortId;
+    }
+
+    public MainType getMainType() {
+        return mainType;
+    }
+
+    public void setMainType(MainType mainType) {
+        this.mainType = mainType;
     }
 
     public Type getType() {

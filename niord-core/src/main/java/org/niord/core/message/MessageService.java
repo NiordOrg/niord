@@ -34,7 +34,6 @@ import org.niord.model.DataFilter;
 import org.niord.model.PagedSearchResultVo;
 import org.niord.model.vo.MessageVo;
 import org.niord.model.vo.Status;
-import org.niord.model.vo.Type;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
@@ -52,7 +51,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.niord.core.geojson.Feature.WGS84_SRID;
@@ -148,7 +146,10 @@ public class MessageService extends BaseService {
         if (message.getType() == null) {
             throw new Exception("Missing Message type");
         }
-        message.updateStartAndEndDates();
+        if (message.getMainType() == null) {
+            message.setMainType(message.getType().getMainType());
+        }
+        message.onPersist();
 
         // Set default values. Newly created message must either be IMPORTED or DRAFT
         if (message.getStatus() != Status.IMPORTED) {
@@ -205,6 +206,7 @@ public class MessageService extends BaseService {
         original.setMrn(message.getMrn());
         original.setShortId(message.getShortId());
         original.setType(message.getType());
+        original.setMainType(message.getMainType());
         original.setStatus(message.getStatus());
 
         // Substitute the Area with a persisted one
@@ -225,7 +227,7 @@ public class MessageService extends BaseService {
         original.setDateIntervals(message.getDateIntervals().stream()
             .map(di -> di.isNew() ? di : getByPrimaryKey(DateInterval.class, di.getId()))
             .collect(Collectors.toList()));
-        original.updateStartAndEndDates();
+        original.onPersist();
 
         original.setReferences(message.getReferences().stream()
             .map(r -> r.isNew() ? r : getByPrimaryKey(Reference.class, r.getId()))
@@ -293,7 +295,7 @@ public class MessageService extends BaseService {
      * @param message the message to update the title line for
      */
     public void updateMessageTitle(Message message) {
-        for (MessageDesc desc : message.getDescs()) {
+        message.getDescs().forEach(desc -> {
             if (StringUtils.isBlank(desc.getTitle())) {
                 StringBuilder title = new StringBuilder();
                 if (!message.getAreas().isEmpty()) {
@@ -313,7 +315,7 @@ public class MessageService extends BaseService {
                 }
                 desc.setTitle(title.toString().trim());
             }
-        }
+        });
     }
 
 
@@ -396,10 +398,12 @@ public class MessageService extends BaseService {
                 .between(msgRoot.get("updated"), param.getUpdatedFrom(), param.getUpdatedTo());
 
 
-        // If no types have been defined, all types implied by the mainTypes are used
-        Set<Type> types = param.computeTypeClosure();
-        if (!types.isEmpty()) {
-            criteriaHelper.in(msgRoot.get("type"), types);
+        // Main types and sub-types
+        if (!param.getMainTypes().isEmpty()) {
+            criteriaHelper.in(msgRoot.get("mainType"), param.getMainTypes());
+        }
+        if (!param.getTypes().isEmpty()) {
+            criteriaHelper.in(msgRoot.get("type"), param.getTypes());
         }
 
 

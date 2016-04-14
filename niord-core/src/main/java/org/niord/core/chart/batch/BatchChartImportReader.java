@@ -89,12 +89,6 @@ public class BatchChartImportReader extends AbstractItemHandler {
     @Override
     public Object readItem() throws Exception {
         if (chartNo < charts.size()) {
-
-            // Every now and then, update the progress
-            if (chartNo % 10 == 0) {
-                updateProgress((int)(100.0 * chartNo / charts.size()));
-            }
-
             getLog().info("Reading chart no " + chartNo);
             return charts.get(chartNo++);
         }
