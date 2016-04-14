@@ -113,32 +113,39 @@ angular.module('niord.messages')
                     /** Construct Layer       **/
                     /***************************/
 
-                    var styleImage = (scope.showOutline == 'true')
-                        ?  new ol.style.Circle({
-                                radius: 4,
-                                stroke: new ol.style.Stroke({
-                                    color: '#8B008B',
-                                    width: 1
-                                }),
-                                fill: new ol.style.Fill({
-                                    color: 'rgba(255, 0, 255, 0.6)'
-                                })
+                    var outlineStyle = new ol.style.Style({
+                        fill: new ol.style.Fill({ color: 'rgba(255, 0, 255, 0.2)' }),
+                        stroke: new ol.style.Stroke({ color: '#8B008B', width: 1 }),
+                        image: new ol.style.Circle({
+                            radius: 4,
+                            stroke: new ol.style.Stroke({
+                                color: '#8B008B',
+                                width: 1
+                            }),
+                            fill: new ol.style.Fill({
+                                color: 'rgba(255, 0, 255, 0.6)'
                             })
-                        : new ol.style.Icon({
-                                anchor: [0.5, 0.5],
-                                scale: 0.3,
-                                src: '/img/msi.png'
-                            });
+                        })
+                    });
 
-                    var style = new ol.style.Style({
-                        fill: new ol.style.Fill({
-                            color: 'rgba(255, 0, 255, 0.2)'
-                        }),
-                        stroke: new ol.style.Stroke({
-                            color: '#8B008B',
-                            width: 1
-                        }),
-                        image: styleImage
+                    var nwStyle = new ol.style.Style({
+                        fill: new ol.style.Fill({ color: 'rgba(255, 0, 255, 0.2)' }),
+                        stroke: new ol.style.Stroke({ color: '#8B008B', width: 1 }),
+                        image: new ol.style.Icon({
+                            anchor: [0.5, 0.5],
+                            scale: 0.3,
+                            src: '/img/msi.png'
+                        })
+                    });
+
+                    var nmStyle = new ol.style.Style({
+                        fill: new ol.style.Fill({ color: 'rgba(255, 0, 255, 0.2)' }),
+                        stroke: new ol.style.Stroke({ color: '#8B008B', width: 1 }),
+                        image: new ol.style.Icon({
+                            anchor: [0.5, 0.5],
+                            scale: 0.3,
+                            src: '/img/nm.png'
+                        })
                     });
 
                     var bufferedStyle = new ol.style.Style({
@@ -146,7 +153,7 @@ angular.module('niord.messages')
                             color: 'rgba(100, 50, 100, 0.2)'
                         }),
                         stroke: new ol.style.Stroke({
-                            color: 'rgba(100, 50, 100, 0.8)',
+                            color: 'rgba(100, 50, 100, 0.6)',
                             width: 1
                         })
                     });
@@ -160,12 +167,14 @@ angular.module('niord.messages')
                         }),
                         style: function(feature) {
                             var featureStyle;
-                            if (feature.get('parentFeatureId')) {
+                            if (scope.showOutline == 'true') {
+                                featureStyle = outlineStyle;
+                            } else if (feature.get('parentFeatureId')) {
                                 featureStyle = bufferedStyle;
                             } else {
-                                featureStyle = style;
+                                var message = feature.get('message');
+                                featureStyle = message.mainType == 'NW' ? nwStyle : nmStyle;
                             }
-
                             return [ featureStyle ];
                         }
                     });
@@ -360,13 +369,14 @@ angular.module('niord.messages')
             template: '<div id="msg-info"/>',
             require: '^olMap',
             scope: {
-                name: '@',
-                visible: '=',
-                layerSwitcher: '=',
-                message: '=',
-                showOutline: '@',
-                fitExtent: '@',
-                maxZoom: '@'
+                name:               '@',
+                visible:            '=',
+                layerSwitcher:      '=',
+                message:            '=?',
+                featureCollection:  '=?',
+                showOutline:        '@',
+                fitExtent:          '@',
+                maxZoom:            '@'
             },
             link: function(scope, element, attrs, ctrl) {
                 var olScope = ctrl.getOpenlayersScope();
@@ -387,32 +397,39 @@ angular.module('niord.messages')
                     /** Construct Layer       **/
                     /***************************/
 
-                    var styleImage = (scope.showOutline == 'true')
-                        ?  new ol.style.Circle({
-                        radius: 4,
-                        stroke: new ol.style.Stroke({
-                            color: '#8B008B',
-                            width: 1
-                        }),
-                        fill: new ol.style.Fill({
-                            color: 'rgba(255, 0, 255, 0.6)'
+                    var outlineStyle = new ol.style.Style({
+                        fill: new ol.style.Fill({ color: 'rgba(255, 0, 255, 0.2)' }),
+                        stroke: new ol.style.Stroke({ color: '#8B008B', width: 1 }),
+                        image: new ol.style.Circle({
+                            radius: 4,
+                            stroke: new ol.style.Stroke({
+                                color: '#8B008B',
+                                width: 1
+                            }),
+                            fill: new ol.style.Fill({
+                                color: 'rgba(255, 0, 255, 0.6)'
+                            })
                         })
-                    })
-                        : new ol.style.Icon({
-                        anchor: [0.5, 0.5],
-                        scale: 0.3,
-                        src: '/img/msi.png'
                     });
 
-                    var style = new ol.style.Style({
-                        fill: new ol.style.Fill({
-                            color: 'rgba(255, 0, 255, 0.2)'
-                        }),
-                        stroke: new ol.style.Stroke({
-                            color: '#8B008B',
-                            width: 1
-                        }),
-                        image: styleImage
+                    var nwStyle = new ol.style.Style({
+                        fill: new ol.style.Fill({ color: 'rgba(255, 0, 255, 0.2)' }),
+                        stroke: new ol.style.Stroke({ color: '#8B008B', width: 1 }),
+                        image: new ol.style.Icon({
+                            anchor: [0.5, 0.5],
+                            scale: 0.3,
+                            src: '/img/msi.png'
+                        })
+                    });
+
+                    var nmStyle = new ol.style.Style({
+                        fill: new ol.style.Fill({ color: 'rgba(255, 0, 255, 0.2)' }),
+                        stroke: new ol.style.Stroke({ color: '#8B008B', width: 1 }),
+                        image: new ol.style.Icon({
+                            anchor: [0.5, 0.5],
+                            scale: 0.3,
+                            src: '/img/nm.png'
+                        })
                     });
 
                     var bufferedStyle = new ol.style.Style({
@@ -420,10 +437,11 @@ angular.module('niord.messages')
                             color: 'rgba(100, 50, 100, 0.2)'
                         }),
                         stroke: new ol.style.Stroke({
-                            color: 'rgba(100, 50, 100, 0.8)',
+                            color: 'rgba(100, 50, 100, 0.6)',
                             width: 1
                         })
                     });
+
 
                     // Construct the layer
                     var features = new ol.Collection();
@@ -434,12 +452,17 @@ angular.module('niord.messages')
                         }),
                         style: function(feature) {
                             var featureStyle;
-                            if (feature.get('parentFeatureId')) {
+                            if (scope.showOutline == 'true') {
+                                featureStyle = outlineStyle;
+                            } else if (feature.get('parentFeatureId')) {
                                 featureStyle = bufferedStyle;
                             } else {
-                                featureStyle = style;
+                                if (scope.message) {
+                                    featureStyle = scope.message.mainType == 'NW' ? nwStyle : nmStyle;
+                                } else {
+                                    featureStyle = outlineStyle;
+                                }
                             }
-
                             return [ featureStyle ];
                         }
                     });
@@ -453,33 +476,42 @@ angular.module('niord.messages')
 
                     scope.updateLayerFromMessage = function () {
                         olLayer.getSource().clear();
-                        if (scope.message) {
-                            // TODO: For now messages are feature collections
-                            var featureCollection = scope.message;
-                            if (featureCollection.features.length > 0) {
 
-                                angular.forEach(featureCollection.features, function (gjFeature) {
-                                    var olFeature = MapService.gjToOlFeature(gjFeature);
-                                    if (scope.showOutline == 'true') {
-                                        var point = MapService.getGeometryCenter(olFeature.getGeometry());
-                                        if (point) {
-                                            olFeature.setGeometry(new ol.geom.Point(point));
-                                        }
+                        // Directive either initialized with "message" or "featureCollection"
+                        var featureCollection = undefined;
+                        if (scope.featureCollection) {
+                            featureCollection = scope.featureCollection;
+                        } else if (scope.message) {
+                            featureCollection = scope.message.geometry;
+                        }
+
+                        if (featureCollection.features.length > 0) {
+
+                            angular.forEach(featureCollection.features, function (gjFeature) {
+                                var olFeature = MapService.gjToOlFeature(gjFeature);
+                                if (scope.showOutline == 'true') {
+                                    var point = MapService.getGeometryCenter(olFeature.getGeometry());
+                                    if (point) {
+                                        olFeature.setGeometry(new ol.geom.Point(point));
                                     }
-                                    olLayer.getSource().addFeature(olFeature);
-                                });
-                            }
+                                }
+                                olLayer.getSource().addFeature(olFeature);
+                            });
+                        }
 
-                            if (scope.fitExtent == 'true' && olLayer.getSource().getFeatures().length > 0) {
-                                map.getView().fit(olLayer.getSource().getExtent(), map.getSize(), {
-                                    padding: [20, 20, 20, 20],
-                                    maxZoom: maxZoom
-                                });
-                            }
+                        if (scope.fitExtent == 'true' && olLayer.getSource().getFeatures().length > 0) {
+                            map.getView().fit(olLayer.getSource().getExtent(), map.getSize(), {
+                                padding: [20, 20, 20, 20],
+                                maxZoom: maxZoom
+                            });
                         }
                     };
 
-                    scope.$watch("message", scope.updateLayerFromMessage, true);
+                    if (scope.message) {
+                        scope.$watch("message", scope.updateLayerFromMessage, true);
+                    } else if (scope.featureCollection) {
+                        scope.$watch("featureCollection", scope.updateLayerFromMessage, true);
+                    }
 
 
                     /***************************/
