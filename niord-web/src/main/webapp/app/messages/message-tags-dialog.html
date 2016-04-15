@@ -30,14 +30,17 @@
                         <table class='table table-condensed'>
                             <tr>
                                 <th>tag</th>
-                                <th>shared</th>
-                                <th>expiry Date</th>
-                                <th>#messages</th>
-                                <th ng-if="isLoggedIn" align="right">action</th>
+                                <th>Type</th>
+                                <th>expiry date</th>
+                                <th style="text-align: right">#messages</th>
+                                <th ng-if="isLoggedIn" style="text-align: right">action</th>
                             </tr>
                             <tr ng-repeat="tag in data.tags | filter: { tagId: search }">
                                 <td><a href ng-click="navigateTag(tag)">{{tag.tagId}}</a></td>
-                                <td>{{tag.shared}}</td>
+                                <td>
+                                    <span ng-if="tag.shared">Shared</span>
+                                    <span ng-if="!tag.shared">Private</span>
+                                </td>
                                 <td>{{tag.expiryDate | formatDate : 'll'}}</td>
                                 <td align="right">
                                     {{tag.messageCount}}
