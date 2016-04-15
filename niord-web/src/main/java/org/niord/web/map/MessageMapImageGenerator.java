@@ -18,10 +18,13 @@ package org.niord.web.map;
 import com.vividsolutions.jts.awt.PointShapeFactory;
 import com.vividsolutions.jts.awt.ShapeWriter;
 import com.vividsolutions.jts.geom.Geometry;
+import org.niord.core.NiordApp;
+import org.niord.core.message.Message;
 import org.niord.core.settings.annotation.Setting;
 import org.niord.core.util.GeoJsonUtils;
 import org.niord.core.util.GlobalMercator;
 import org.niord.core.util.GraphicsUtils;
+import org.niord.model.vo.MainType;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
 import org.niord.model.vo.geojson.FeatureVo;
 import org.niord.model.vo.geojson.GeometryCollectionVo;
@@ -34,6 +37,10 @@ import org.niord.model.vo.geojson.PointVo;
 import org.niord.model.vo.geojson.PolygonVo;
 import org.slf4j.Logger;
 
+import javax.ejb.Lock;
+import javax.ejb.LockType;
+import javax.ejb.Singleton;
+import javax.ejb.Startup;
 import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import java.awt.*;
@@ -47,17 +54,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.Arrays;
-import java.util.Date;
 
 import static org.niord.core.settings.Setting.Type.Integer;
 
 /**
- * Returns and caches a thumbnail image for given locations.
+ * Generates message map thumbnail images.
  */
-public abstract class AbstractMapImageRestService  {
+@Singleton
+@Startup
+@Lock(LockType.READ)
+public class MessageMapImageGenerator {
 
     static final String STATIC_IMAGE_URL = "%s?center=%f,%f&zoom=%d&size=%dx%d";
-    static final String IMAGE_PLACEHOLDER = "../img/map_image_placeholder.png";
 
     static final int ICON_SIZE = 20;
 
@@ -71,6 +79,9 @@ public abstract class AbstractMapImageRestService  {
 
     @Inject
     Logger log;
+
+    @Inject
+    NiordApp app;
 
     @Inject
     @Setting(value = "mapImageServer", defaultValue = "http://staticmap.openstreetmap.de/staticmap.php",
@@ -92,6 +103,14 @@ public abstract class AbstractMapImageRestService  {
             description = "The map thumbnail zoom level used for single-position messages.")
     Integer zoomLevel;
 
+    private Image nwImage;
+    private Image nmImage;
+
+
+    /** Returns the size of the map image */
+    public java.lang.Integer getMapImageSize() {
+        return mapImageSize;
+    }
 
 
     /**
@@ -136,15 +155,15 @@ public abstract class AbstractMapImageRestService  {
 
     /**
      * Attempts to create a map image for the locations at the given path
-     * @param fc the feature collection
+     * @param message the feature collection
      * @param imageRepoPath the path of the image
-     * @param pointIndicator the image to use as a point indicator
-     * @param imageFileDate the date to set on newly create images
      * @return if the image file was properly created
      */
-    protected boolean createMapImage(FeatureCollectionVo fc, Path imageRepoPath, Image pointIndicator, Date imageFileDate) throws IOException {
+    public boolean generateMessageMapImage(Message message, Path imageRepoPath) throws IOException {
 
         long t0 = System.currentTimeMillis();
+
+        FeatureCollectionVo fc = message.getGeometry().toGeoJson();
 
         if (fc.getFeatures() != null && fc.getFeatures().length > 0) {
 
@@ -181,7 +200,7 @@ public abstract class AbstractMapImageRestService  {
 
             // Draw each feature
             Arrays.asList(fc.getFeatures())
-                    .forEach(f -> drawGeometry(f, f.getGeometry(), g2, pointIndicator));
+                    .forEach(f -> drawGeometry(f, f.getGeometry(), g2, getMessageImage(message)));
 
             // Draw labels
             Arrays.asList(fc.getFeatures())
@@ -194,7 +213,9 @@ public abstract class AbstractMapImageRestService  {
             image.flush();
 
             // Update the timestamp of the image file to match the change date of the message
-            Files.setLastModifiedTime(imageRepoPath, FileTime.fromMillis(imageFileDate.getTime()));
+            Files.setLastModifiedTime(
+                    imageRepoPath,
+                    FileTime.fromMillis(message.getUpdated().getTime()));
 
             log.info("Saved image for to file " + imageRepoPath + " in " +
                     (System.currentTimeMillis() - t0) + " ms");
@@ -366,4 +387,46 @@ public abstract class AbstractMapImageRestService  {
         return minZoomLevel;
     }
 
+    /**
+     * Depending on the type of message, return an MSI or an NM image
+     * @return the corresponding image
+     */
+    public Image getMessageImage(Message message) {
+        return message.getType().getMainType() == MainType.NM
+                ? getNmImage()
+                : getNwImage();
+    }
+
+
+    /**
+     * Returns the NW symbol image
+     * @return the NW symbol image
+     */
+    private synchronized Image getNwImage() {
+        if (nwImage == null) {
+            String imageUrl = app.getBaseUri() + "/img/msi.png";
+            try {
+                nwImage = ImageIO.read(new URL(imageUrl));
+            } catch (IOException e) {
+                log.error("This should never happen - could not load image from " + imageUrl);
+            }
+        }
+        return nwImage;
+    }
+
+    /**
+     * Returns the NM symbol image
+     * @return the NM symbol image
+     */
+    private synchronized Image getNmImage() {
+        if (nmImage == null) {
+            String imageUrl = app.getBaseUri() + "/img/nm.png";
+            try {
+                nmImage = ImageIO.read(new URL(imageUrl));
+            } catch (IOException e) {
+                log.error("This should never happen - could not load image from " + imageUrl);
+            }
+        }
+        return nmImage;
+    }
 }

@@ -15,40 +15,33 @@
  */
 package org.niord.web.map;
 
-import org.niord.core.NiordApp;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
-import org.niord.model.vo.MainType;
-import org.niord.model.vo.geojson.FeatureCollectionVo;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
-import javax.imageio.ImageIO;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
-import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
  * Returns and caches a thumbnail image for a message.
- * <p></p>
+ * <p>
  * Can be used e.g. for a grid layout in search results.
  */
 @javax.ws.rs.Path("/message-map-image")
 @Stateless
-public class MessageMapImageRestService extends AbstractMapImageRestService {
+public class MessageMapImageRestService {
 
-    private static Image nwImage;
-    private static Image nmImage;
+    static final String IMAGE_PLACEHOLDER = "../img/map_image_placeholder.png";
 
     @Inject
     Logger log;
@@ -57,7 +50,7 @@ public class MessageMapImageRestService extends AbstractMapImageRestService {
     MessageService messageService;
 
     @Inject
-    NiordApp app;
+    MessageMapImageGenerator messageMapImageGenerator;
 
     /**
      * Main GET method
@@ -74,10 +67,9 @@ public class MessageMapImageRestService extends AbstractMapImageRestService {
 
             if (message.getGeometry() != null && !message.getGeometry().getFeatures().isEmpty()) {
 
-                FeatureCollectionVo fc = message.getGeometry().toGeoJson();
 
                 // Construct the image file name for the message
-                String imageName = String.format("map_%d.png", mapImageSize);
+                String imageName = String.format("map_%d.png", messageMapImageGenerator.getMapImageSize());
 
                 // Create a hashed sub-folder for the image file
                 Path imageRepoPath = messageService.getMessageFileRepoPath(message, imageName);
@@ -87,11 +79,9 @@ public class MessageMapImageRestService extends AbstractMapImageRestService {
                 boolean imageFileExists = Files.exists(imageRepoPath);
                 if (!imageFileExists ||
                         message.getUpdated().getTime() > Files.getLastModifiedTime(imageRepoPath).toMillis()) {
-                    imageFileExists = createMapImage(
-                            fc,
-                            imageRepoPath,
-                            getMessageImage(message),
-                            message.getUpdated());
+                    imageFileExists = messageMapImageGenerator.generateMessageMapImage(
+                            message,
+                            imageRepoPath);
                 }
 
                 // Either return the image file, or a place holder image
@@ -114,49 +104,4 @@ public class MessageMapImageRestService extends AbstractMapImageRestService {
                 .temporaryRedirect(new URI(IMAGE_PLACEHOLDER))
                 .build();
     }
-
-
-    /**
-     * Depending on the type of message, return an MSI or an NM image
-     * @return the corresponding image
-     */
-    public Image getMessageImage(Message message) {
-        return message.getType().getMainType() == MainType.NM
-            ? getNmImage()
-            : getNwImage();
-    }
-
-
-    /**
-     * Returns the NW symbol image
-     * @return the NW symbol image
-     */
-    private synchronized Image getNwImage() {
-        if (nwImage == null) {
-            String imageUrl = app.getBaseUri() + "/img/msi.png";
-            try {
-                nwImage = ImageIO.read(new URL(imageUrl));
-            } catch (IOException e) {
-                log.error("This should never happen - could not load image from " + imageUrl);
-            }
-        }
-        return nwImage;
-    }
-
-    /**
-     * Returns the NM symbol image
-     * @return the NM symbol image
-     */
-    private synchronized Image getNmImage() {
-        if (nmImage == null) {
-            String imageUrl = app.getBaseUri() + "/img/nm.png";
-            try {
-                nmImage = ImageIO.read(new URL(imageUrl));
-            } catch (IOException e) {
-                log.error("This should never happen - could not load image from " + imageUrl);
-            }
-        }
-        return nmImage;
-    }
-
 }
