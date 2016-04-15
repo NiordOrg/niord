@@ -6,12 +6,13 @@ angular.module('niord.common')
     /**
      * Language Controller
      */
-    .controller('LangCtrl', ['$scope', 'LangService',
-        function ($scope, LangService) {
+    .controller('LangCtrl', ['$scope', '$window', 'LangService',
+        function ($scope, $window, LangService) {
             'use strict';
 
             $scope.changeLanguage = function (lang) {
                 LangService.changeLanguage(lang);
+                $window.location.reload();
             }
 
         }])
@@ -19,12 +20,13 @@ angular.module('niord.common')
     /**
      * Domain Controller
      */
-    .controller('DomainCtrl', ['$scope', 'DomainService',
-        function ($scope, DomainService) {
+    .controller('DomainCtrl', ['$scope', '$window', 'DomainService',
+        function ($scope, $window, DomainService) {
             'use strict';
 
             $scope.changeDomain = function (domain) {
                 DomainService.changeDomain(domain);
+                $window.location.reload();
             }
 
         }]);
