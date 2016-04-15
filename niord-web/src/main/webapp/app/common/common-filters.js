@@ -16,7 +16,7 @@ angular.module('niord.common')
     .filter('numeral', [function () {
         return function(input, format) {
             format = format || '0,0';
-            return input ? numeral(input).format(format) : '';
+            return input !== undefined ? numeral(input).format(format) : '';
         };
     }])
 

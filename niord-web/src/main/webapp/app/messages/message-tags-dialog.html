@@ -43,7 +43,7 @@
                                 </td>
                                 <td>{{tag.expiryDate | formatDate : 'll'}}</td>
                                 <td align="right">
-                                    {{tag.messageCount}}
+                                    {{tag.messageCount | numeral}}
                                     <a ng-if="isLoggedIn && tag.messageCount > 0" href ng-click="clearTag(tag);" title="Clear Tag Messages">clear</a>
                                     <span ng-if="isLoggedIn && tag.messageCount == 0" style="color: gray">clear</span>
                                 </td>
