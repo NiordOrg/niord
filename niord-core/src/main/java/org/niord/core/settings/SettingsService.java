@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.cache.CacheElement;
 import org.niord.core.service.BaseService;
+import org.niord.core.util.JsonUtils;
 import org.slf4j.Logger;
 
 import javax.annotation.PostConstruct;
@@ -470,6 +471,32 @@ public class SettingsService extends BaseService {
 
     public void setDate(String key, Date date) {
         set(key, date == null ? null : date.getTime());
+    }
+
+
+    /**
+     * Returns the setting from a JSON representation
+     *
+     * @param setting the source
+     * @return the associated value
+     */
+    public <T> T getFromJson(Setting setting, Class<T> dataClass) {
+        try {
+            return JsonUtils.fromJson(JsonUtils.toJson(get(setting)), dataClass);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    public <T> T getFromJson(String key, Class<T> dataClass) {
+        return getFromJson(new Setting(key), dataClass);
+    }
+
+    public void setAsJson(String key, Object data) {
+        try {
+            set(key, JsonUtils.toJson(data));
+        } catch (IOException ignored) {
+        }
     }
 
 

@@ -1,6 +1,8 @@
 package org.niord.core.user;
 
 import org.keycloak.KeycloakPrincipal;
+import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.representations.AccessToken;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
@@ -35,6 +37,26 @@ public class UserService extends BaseService {
         }
 
         return (KeycloakPrincipal) principal;
+    }
+
+
+    /** Returns the Keycloak resource (client) associated with the current user */
+    public String getCurrentResourceName() {
+
+        // Get the current Keycloak principal
+        KeycloakPrincipal keycloakPrincipal = getCalledPrincipal();
+        if (keycloakPrincipal == null) {
+            return null;
+        }
+
+        // Hmmm, is this really the best way to get the current resource name
+        KeycloakSecurityContext ctx = keycloakPrincipal.getKeycloakSecurityContext();
+        if (ctx instanceof RefreshableKeycloakSecurityContext) {
+            RefreshableKeycloakSecurityContext rctx = (RefreshableKeycloakSecurityContext)ctx;
+            return rctx.getDeployment().getResourceName();
+        }
+
+        return null;
     }
 
     /**

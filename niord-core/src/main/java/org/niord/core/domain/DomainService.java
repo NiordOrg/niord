@@ -15,11 +15,13 @@
  */
 package org.niord.core.domain;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.category.Category;
 import org.niord.core.keycloak.KeycloakIntegrationService;
 import org.niord.core.message.MessageSeriesService;
 import org.niord.core.service.BaseService;
+import org.niord.core.user.UserService;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
@@ -33,13 +35,27 @@ import java.util.Set;
 public class DomainService extends BaseService {
 
     @Inject
-    private Logger log;
+    Logger log;
 
     @Inject
-    private KeycloakIntegrationService keycloakService;
+    KeycloakIntegrationService keycloakService;
 
     @Inject
     MessageSeriesService messageSeriesService;
+
+    @Inject
+    UserService userService;
+
+
+    /** Returns the current domain or null if none are set */
+    public Domain currentDomain() {
+        String clientId = userService.getCurrentResourceName();
+        if (StringUtils.isNotBlank(clientId)) {
+            return findByClientId(clientId);
+        }
+        return null;
+    }
+
 
     /**
      * Returns the domain with the given clientId

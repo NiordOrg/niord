@@ -67,6 +67,30 @@ public class TimeUtils {
     }
 
     /**
+     * Returns a Date for the given year, month and day.
+     * Parameters left as null are ignored, so e.g. getDate(null, 0, 1) will return January 1st of the current year.
+     *
+     * @param year the year
+     * @param month the month of the year. NB: Months are zero-based.
+     * @param day the day of the month. NB: Days are one-based.
+     * @return the first day of the current year
+     */
+    public static Date getDate(Integer year, Integer month, Integer day) {
+        Calendar cal = Calendar.getInstance();
+        if (year != null) {
+            cal.set(Calendar.YEAR, year);
+        }
+        if (month != null) {
+            cal.set(Calendar.MONTH, month);
+        }
+        if (day != null) {
+            cal.set(Calendar.DAY_OF_MONTH, day);
+        }
+        return TimeUtils.resetTime(cal.getTime());
+    }
+
+
+    /**
      * Checks if the two Dates is for the same date
      * @param date1 the first date
      * @param date2 the second date

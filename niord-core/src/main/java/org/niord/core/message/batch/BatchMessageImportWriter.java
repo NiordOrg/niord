@@ -51,7 +51,12 @@ public class BatchMessageImportWriter extends AbstractItemHandler {
 
         for (Object i : items) {
             Message message = (Message)i;
-            messageService.createMessage(message);
+
+            if (message.isNew()) {
+                messageService.createMessage(message);
+            } else {
+                messageService.saveMessage(message);
+            }
 
             // Add the message to the tag
             if (tag != null && !tag.getMessages().stream().anyMatch(m -> m.getId().equals(message.getId()))) {

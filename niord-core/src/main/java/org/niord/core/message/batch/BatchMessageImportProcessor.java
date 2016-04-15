@@ -54,7 +54,7 @@ public class BatchMessageImportProcessor extends AbstractItemHandler {
 
 
     @Inject
-    MessageService messageService;
+    protected MessageService messageService;
 
     @Inject
     MessageSeriesService messageSeriesService;
@@ -91,8 +91,9 @@ public class BatchMessageImportProcessor extends AbstractItemHandler {
     /** Processes the message to ensure that related base data is created and valid */
     protected Message processMessage(Message message) throws Exception {
         try {
-            // Force status IMPORTED
-            message.setStatus(Status.IMPORTED);
+            if (message.getStatus() == null) {
+                message.setStatus(Status.IMPORTED);
+            }
 
             // Check that a message series is defined
             if (message.getMessageSeries() == null) {

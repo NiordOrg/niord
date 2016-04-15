@@ -110,6 +110,23 @@ public class MessageService extends BaseService {
 
 
     /**
+     * Returns the message with the given legacy id
+     *
+     * @param legacyId the id of the message
+     * @return the message with the given id or null if not found
+     */
+    public Message findByLegacyId(String legacyId) {
+        try {
+            return em.createNamedQuery("Message.findByLegacyId", Message.class)
+                    .setParameter("legacyId", legacyId)
+                    .getSingleResult();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
+    /**
      * Saves the message and evicts the message from the cache
      *
      * @param message the message to save
@@ -151,10 +168,9 @@ public class MessageService extends BaseService {
         }
         message.onPersist();
 
-        // Set default values. Newly created message must either be IMPORTED or DRAFT
-        if (message.getStatus() != Status.IMPORTED) {
+        // Set default status
+        if (message.getStatus() == null) {
             message.setStatus(Status.DRAFT);
-            message.setNumber(null);
         }
 
         // Substitute the message series with the persisted on
@@ -264,7 +280,7 @@ public class MessageService extends BaseService {
         Status prevStatus = message.getStatus();
 
         if ((prevStatus == Status.DRAFT || prevStatus == Status.VERIFIED) && status == Status.PUBLISHED) {
-            messageSeriesService.createNewIdentifiers(message);
+            messageSeriesService.updateMessageSeriesIdentifiers(message, true);
         }
 
         message.setStatus(status);

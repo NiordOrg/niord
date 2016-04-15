@@ -59,19 +59,24 @@ import java.util.Set;
         @Index(name = "message_mrn_k", columnList="mrn"),
         @Index(name = "message_type_k", columnList="type"),
         @Index(name = "message_main_type_k", columnList="mainType"),
-        @Index(name = "message_status_k", columnList="status")
+        @Index(name = "message_status_k", columnList="status"),
+        @Index(name = "message_legacy_id_k", columnList="legacyId")
 })
 @NamedQueries({
         @NamedQuery(name="Message.findUpdateMessages",
                 query="SELECT msg FROM Message msg where msg.updated > :date order by msg.updated asc"),
         @NamedQuery(name="Message.findByIds",
-                query="SELECT msg FROM Message msg where msg.id in (:ids)")
+                query="SELECT msg FROM Message msg where msg.id in (:ids)"),
+        @NamedQuery(name="Message.findByLegacyId",
+                query="SELECT msg FROM Message msg where msg.legacyId = :legacyId")
 })
 @SuppressWarnings("unused")
 public class Message extends VersionedEntity<Integer> implements ILocalizable<MessageDesc> {
 
     @ManyToOne
     MessageSeries messageSeries;
+
+    String legacyId;
 
     Integer number;
 
@@ -335,6 +340,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setShortId(String shortId) {
         this.shortId = shortId;
+    }
+
+    public String getLegacyId() {
+        return legacyId;
+    }
+
+    public void setLegacyId(String legacyId) {
+        this.legacyId = legacyId;
     }
 
     public MainType getMainType() {

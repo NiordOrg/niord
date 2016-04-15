@@ -195,37 +195,45 @@ public class MessageSeriesService extends BaseService {
     }
 
     /**
-     * Updates the message with a new message number, an MRN and a short ID
+     * Updates the message with (optionally) a new message number, an MRN and a short ID
      * according to the associated message series
      *
-     * @param message the message to update with a new message number, MRN and short ID
+     * @param message the message to (optionally) update with a new message number, MRN and short ID
      */
-    public void createNewIdentifiers(Message message) {
+    public void updateMessageSeriesIdentifiers(Message message, boolean assignMessageNumber) {
         MessageSeries messageSeries = message.getMessageSeries();
         Date publishDate = message.getPublishDate();
 
-        if (messageSeries == null || publishDate == null) {
-            throw new IllegalArgumentException("Message series and publish date must be specified");
+        if (messageSeries == null) {
+            throw new IllegalArgumentException("Message series must be specified");
+        }
+        if (publishDate == null) {
+            throw new IllegalArgumentException("Publish date must be specified");
         }
         Calendar cal = Calendar.getInstance();
         cal.setTime(publishDate);
 
         int year = cal.get(Calendar.YEAR);
         int week = cal.get(Calendar.WEEK_OF_YEAR);
-        Integer number = newMessageNumber(messageSeries, year);
+
+        // If requested assign a new message number
+        if (assignMessageNumber) {
+            message.setNumber(newMessageNumber(messageSeries, year));
+        }
 
         Map<String, String> params = new HashMap<>();
         params.put("${year-2-digits}", String.valueOf(year).substring(2));
         params.put("${year}", String.valueOf(year));
-        params.put("${week}", String.valueOf(week).substring(2));
+        params.put("${week}", String.format("%02d", week));
         params.put("${week-2-digits}", String.format("%02d", week));
-        params.put("${number}", String.valueOf(number));
-        params.put("${number-3-digits}", String.format("%03d", number));
+        params.put("${number}", message.getNumber() == null ? "" : String.valueOf(message.getNumber()));
+        params.put("${number-3-digits}", message.getNumber() == null ? "" : String.format("%03d", message.getNumber()));
         params.put("${main-type}", message.getType().getMainType().toString());
         params.put("${main-type-lower}", message.getType().getMainType().toString().toLowerCase());
         params.put("${country}", app.getCountry());
+        params.put("${id}", message.getId() == null ? "" : String.valueOf(message.getId()));
+        params.put("${legacy-id}", message.getLegacyId() == null ? "" : String.valueOf(message.getLegacyId()));
 
-        message.setNumber(number);
         message.setMrn(messageSeries.getMrnFormat());
         message.setShortId(messageSeries.getShortFormat());
         params.entrySet().forEach(e -> {
