@@ -793,7 +793,7 @@ angular.module('niord.messages')
                     })
                     .error(function (data) {
                         $scope.msg = undefined;
-                        growl.error('Message Lookup Failed');
+                        growl.error('Message Lookup Failed', { ttl: 5000 });
                     });
             };
 
@@ -817,7 +817,7 @@ angular.module('niord.messages')
 
             /** Displays the error message */
             $scope.displayError = function () {
-                growl.error("Error accessing tags");
+                growl.error("Error accessing tags", { ttl: 5000 });
             };
 
 

@@ -133,7 +133,7 @@ angular.module('niord.admin')
 
             /** Displays the error message */
             $scope.displayError = function () {
-                growl.error("Error saving chart");
+                growl.error("Error saving chart", { ttl: 5000 });
             };
 
 
@@ -212,7 +212,7 @@ angular.module('niord.admin')
 
             /** Displays the error message */
             $scope.displayError = function () {
-                growl.error("Area operation failed");
+                growl.error("Area operation failed", { ttl: 5000 });
             };
 
 
@@ -298,7 +298,7 @@ angular.module('niord.admin')
                 AdminAreaService
                     .recomputeTreeSortOrder()
                     .success(function () {
-                        growl.info('Tree Sort Order Updated');
+                        growl.info('Tree Sort Order Updated', { ttl: 3000 });
                     })
                     .error($scope.displayError);
             };
@@ -391,7 +391,7 @@ angular.module('niord.admin')
 
             /** Displays the error message */
             $scope.displayError = function () {
-                growl.error("Category operation failed");
+                growl.error("Category operation failed", { ttl: 5000 });
             };
 
 
@@ -596,7 +596,7 @@ angular.module('niord.admin')
 
             /** Displays the error message */
             $scope.displayError = function () {
-                growl.error("Error saving message series");
+                growl.error("Error saving message series", { ttl: 5000 });
             };
 
 
@@ -727,7 +727,7 @@ angular.module('niord.admin')
 
             /** Displays the error message */
             $scope.displayError = function () {
-                growl.error("Error saving domain");
+                growl.error("Error saving domain", { ttl: 5000 });
             };
 
 
@@ -1075,7 +1075,7 @@ angular.module('niord.admin')
 
             /** Displays the error message */
             $scope.displayError = function () {
-                growl.error("Error saving setting");
+                growl.error("Error saving setting", { ttl: 5000 });
             };
 
 

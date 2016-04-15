@@ -162,7 +162,7 @@ var app = angular.module('niord.admin', [
                 event.preventDefault();
                 if (AuthService.loggedIn) {
                     $state.go("home");
-                    growl.error("Access Denied :-(");
+                    growl.error("Access Denied :-(", { ttl: 5000 });
                 } else {
                     AuthService.login($location.absUrl());
                 }
