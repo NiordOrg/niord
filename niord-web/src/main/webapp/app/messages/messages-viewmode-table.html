@@ -41,7 +41,9 @@
 
     <div class="row" ng-if="messageList.length < totalMessageNo">
         <div class="center" style="text-align: center">
-            <button class="btn btn-primary load-more-btn" ng-click="loadMore()">Load More</button>
+            <button class="btn btn-primary load-more-btn" ng-click="loadMore()">
+                Load {{messageList.length | numeral}} - {{messageList.length + maxSize | numeral}} of {{totalMessageNo | numeral}} messages
+            </button>
         </div>
     </div>
 </div>
