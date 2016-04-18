@@ -185,12 +185,15 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         this.mainType = message.getMainType();
         this.type = message.getType();
         this.status = message.getStatus();
+        this.areas.clear();
         if (message.getAreas() != null) {
             message.getAreas().forEach(a -> areas.add(new Area(a, compFilter)));
         }
+        this.categories.clear();
         if (message.getCategories() != null) {
             message.getCategories().forEach(c -> categories.add(new Category(c, compFilter)));
         }
+        this.charts.clear();
         if (message.getCharts() != null) {
             message.getCharts().forEach(c -> charts.add(new Chart(c)));
         }
@@ -198,6 +201,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         if (message.getGeometry() != null) {
             this.geometry = FeatureCollection.fromGeoJson(message.getGeometry());
         }
+        this.dateIntervals.clear();
         if (message.getDateIntervals() != null) {
             message.getDateIntervals().forEach(di -> addDateInterval(new DateInterval(di)));
         }
@@ -245,6 +249,8 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             dateIntervals.forEach(d -> message.checkCreateDateIntervals().add(d.toVo()));
             message.setPublishDate(publishDate);
             message.setCancellationDate(cancellationDate);
+            message.setStartDate(startDate);
+            message.setEndDate(endDate);
             references.forEach(r -> message.checkCreateReferences().add(r.toVo()));
             message.checkCreateAtonUids().addAll(atonUids);
             message.setOriginalInformation(originalInformation);
