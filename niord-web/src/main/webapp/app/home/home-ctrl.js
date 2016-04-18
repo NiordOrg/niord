@@ -11,12 +11,12 @@ angular.module('niord.home')
             $scope.init = function () {
 
                 MessageService.publicMessages()
-                    .success(function (result) {
+                    .success(function (messages) {
                         $scope.messageList.length = 0;
-                        for (var x = 0; x < result.data.length; x++) {
-                            $scope.messageList.push(result.data[x]);
+                        for (var x = 0; x < messages.length; x++) {
+                            $scope.messageList.push(messages[x]);
                         }
-                        $scope.totalMessageNo = result.total;
+                        $scope.totalMessageNo = messages.length;
                     });
 
             };
