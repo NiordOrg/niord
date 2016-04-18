@@ -487,13 +487,6 @@ angular.module('niord.messages')
             };
 
 
-            /** Flags that a given tag has been selected in the tags dialog */
-            $scope.$on('messageTagSelected', function(event, data) {
-                $location.search('tag=' + data.tag.tagId);
-                $scope.readRequestFilterParameters();
-            });
-
-
             /*****************************/
             /** Named Filters Handling  **/
             /*****************************/
@@ -561,7 +554,13 @@ angular.module('niord.messages')
 
             /** Opens the tags dialog */
             $scope.openTagsDialog = function () {
-                $rootScope.$broadcast('messageTags', {});
+                MessageService.messageTagsDialog().result
+                    .then(function (tag) {
+                        if (tag) {
+                            $location.search('tag=' + tag.tagId);
+                            $scope.readRequestFilterParameters();
+                        }
+                    });
             };
 
 
@@ -681,50 +680,6 @@ angular.module('niord.messages')
         }])
 
 
-    /************************************************************
-     * Controller that handles displaying message details
-     ************************************************************/
-    .controller('MessageDetailsCtrl', ['$scope', '$uibModal',
-        function ($scope, $uibModal) {
-            'use strict';
-
-            function extractMessageIds(messages) {
-                var ids = [];
-                if (messages) {
-                    for (var i in messages) {
-                        ids.push(messages[i].id);
-                    }
-                }
-                return ids;
-            }
-
-            $scope.$on('messageDetails', function (event, data) {
-                $uibModal.open({
-                    controller: "MessageDialogCtrl",
-                    templateUrl: "/app/messages/message-details-dialog.html",
-                    size: 'lg',
-                    resolve: {
-                        messageId: function () {
-                            return data.messageId;
-                        },
-                        messages: function () {
-                            return extractMessageIds(data.messageList);
-                        }
-                    }
-                });
-            });
-
-            $scope.$on('messageTags', function () {
-                $uibModal.open({
-                    controller: "MessageTagsDialogCtrl",
-                    templateUrl: "/app/messages/message-tags-dialog.html",
-                    size: 'md'
-                });
-            });
-
-        }])
-
-
     /*******************************************************************
      * Controller that handles displaying message details in a dialog
      *******************************************************************/
@@ -806,8 +761,8 @@ angular.module('niord.messages')
     /*******************************************************************
      * Controller that handles displaying message tags in a dialog
      *******************************************************************/
-    .controller('MessageTagsDialogCtrl', ['$scope', '$rootScope', 'growl', 'MessageService', 'AuthService',
-        function ($scope, $rootScope, growl, MessageService, AuthService) {
+    .controller('MessageTagsDialogCtrl', ['$scope', 'growl', 'MessageService', 'AuthService',
+        function ($scope, growl, MessageService, AuthService) {
             'use strict';
 
             $scope.isLoggedIn = AuthService.loggedIn;
@@ -898,10 +853,7 @@ angular.module('niord.messages')
 
             // Navigate to the given link
             $scope.navigateTag = function (tag) {
-                $scope.$close();
-                $rootScope.$broadcast('messageTagSelected', { tag: tag });
-                //location.href = '/#/messages/grid?tag=' + encodeURIComponent(tag.tagId);
-                //location.reload();
+                $scope.$close(tag);
             };
 
         }]);

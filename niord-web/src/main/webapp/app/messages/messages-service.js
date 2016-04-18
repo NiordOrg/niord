@@ -7,8 +7,19 @@ angular.module('niord.messages')
     /**
      * Interface for calling the application server
      */
-    .factory('MessageService', [ '$rootScope', '$http', function($rootScope, $http) {
+    .factory('MessageService', [ '$rootScope', '$http', '$uibModal',
+        function($rootScope, $http, $uibModal) {
         'use strict';
+
+        function extractMessageIds(messages) {
+            var ids = [];
+            if (messages) {
+                for (var i in messages) {
+                    ids.push(messages[i].id);
+                }
+            }
+            return ids;
+        }
 
         return {
 
@@ -64,6 +75,34 @@ angular.module('niord.messages')
             /** Deletes a message tag */
             deleteMessageTag: function (tag) {
                 return $http.delete('/rest/tags/tag/' + encodeURIComponent(tag.tagId));
+            },
+
+
+            /** Opens a message details dialog **/
+            detailsDialog: function(messageId, messages) {
+                return $uibModal.open({
+                    controller: "MessageDialogCtrl",
+                    templateUrl: "/app/messages/message-details-dialog.html",
+                    size: 'lg',
+                    resolve: {
+                        messageId: function () {
+                            return messageId;
+                        },
+                        messages: function () {
+                            return extractMessageIds(messages);
+                        }
+                    }
+                });
+            },
+
+            
+            /** Opens the message tags dialog */
+            messageTagsDialog: function () {
+                return $uibModal.open({
+                    controller: "MessageTagsDialogCtrl",
+                    templateUrl: "/app/messages/message-tags-dialog.html",
+                    size: 'md'
+                });
             }
         };
     }])

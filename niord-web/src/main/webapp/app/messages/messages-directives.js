@@ -75,8 +75,8 @@ angular.module('niord.messages')
     /**
      * The map-message-list-layer directive supports drawing a list of messages on a map layer
      */
-    .directive('mapMessageListLayer', ['$rootScope', 'MapService', 'LangService',
-        function ($rootScope, MapService, LangService) {
+    .directive('mapMessageListLayer', ['$rootScope', 'MapService', 'LangService', 'MessageService',
+        function ($rootScope, MapService, LangService, MessageService) {
         return {
             restrict: 'E',
             replace: false,
@@ -316,10 +316,7 @@ angular.module('niord.messages')
 
                     // Open the message details dialog
                     scope.showMessageInfo = function (message, messages) {
-                        $rootScope.$broadcast('messageDetails', {
-                            messageId: message.id,
-                            messageList: messages
-                        });
+                        MessageService.detailsDialog(message.id, messages);
                     };
 
 
@@ -574,8 +571,8 @@ angular.module('niord.messages')
     /****************************************************************
      * Binds a click event that will open the message details dialog
      ****************************************************************/
-    .directive('messageDetailsLink', ['$rootScope',
-        function ($rootScope) {
+    .directive('messageDetailsLink', ['MessageService',
+        function (MessageService) {
             'use strict';
 
             return {
@@ -590,10 +587,7 @@ angular.module('niord.messages')
                     if (!scope.disabled) {
                         element.addClass('clickable');
                         element.bind('click', function() {
-                            $rootScope.$broadcast('messageDetails', {
-                                messageId: scope.messageDetailsLink,
-                                messageList: scope.messageList
-                            });
+                            MessageService.detailsDialog(scope.messageDetailsLink, scope.messageList);
                         });
                     }
                 }
