@@ -65,7 +65,7 @@ angular.module('niord.atons')
                     scope.editAton = function (aton) {
                         var atonCtx = scope.selection.get(AtonService.getAtonUid(scope.aton));
                         if (atonCtx != null) {
-                            $rootScope.$broadcast('edit-aton-details', atonCtx);
+                            AtonService.atonEditorDialog(atonCtx.aton, atonCtx.orig);
                         }
                     };
 

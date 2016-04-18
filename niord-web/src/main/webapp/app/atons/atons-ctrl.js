@@ -420,44 +420,6 @@ angular.module('niord.atons')
 
 
     /**
-     * Controller used for viewing and editing AtoN details
-     */
-    .controller('AtonDetailsCtrl', ['$scope', '$uibModal',
-        function ($scope, $uibModal) {
-            'use strict';
-
-            // Listens for 'show-aton-details' events for opening the AtoN details dialog
-            $scope.$on('show-aton-details', function (event, aton) {
-                $uibModal.open({
-                    controller: "EditAtonDetailsDialogCtrl",
-                    templateUrl: "/app/atons/aton-details-editor-dialog.html",
-                    size: 'md',
-                    keyboard: true,
-                    resolve: {
-                        atonCtx: function () { return { aton: aton, orig: aton }; },
-                        editable: function () { return false; }
-                    }
-                });
-            });
-
-            // Listens for 'edit-aton-details' events for opening the AtoN details editor dialog
-            $scope.$on('edit-aton-details', function (event, atonCtx) {
-                $uibModal.open({
-                    controller: "EditAtonDetailsDialogCtrl",
-                    templateUrl: "/app/atons/aton-details-editor-dialog.html",
-                    size: 'md',
-                    keyboard: false,
-                    resolve: {
-                        atonCtx: function () { return atonCtx; },
-                        editable: function () { return true; }
-                    }
-                });
-            });
-
-        }])
-
-
-    /**
      * Dialog Controller used for editing the details of an AtoN.
      *
      * Important: Only the local AtoN instance is updated. The

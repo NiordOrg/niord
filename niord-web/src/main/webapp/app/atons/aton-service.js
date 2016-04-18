@@ -7,7 +7,7 @@ angular.module('niord.atons')
     /**
      * Interface for calling the application server
      */
-    .factory('AtonService', [ '$http', function($http) {
+    .factory('AtonService', [ '$http', '$uibModal', function($http, $uibModal) {
         'use strict';
 
         /** Adds a the given AtoN tag as a parameter if well-defined */
@@ -97,6 +97,37 @@ angular.module('niord.atons')
             /** Returns the UID for the given AtoN */
             getAtonUid: function(aton) {
                 return aton ? aton.tags['seamark:ref'] : undefined;
+            },
+
+
+
+            /** Opens an AtoN details dialog **/
+            atonDetailsDialog: function(aton) {
+                return $uibModal.open({
+                    controller: "EditAtonDetailsDialogCtrl",
+                    templateUrl: "/app/atons/aton-details-editor-dialog.html",
+                    size: 'md',
+                    keyboard: true,
+                    resolve: {
+                        atonCtx: function () { return { aton: aton, orig: aton }; },
+                        editable: function () { return false; }
+                    }
+                });
+            },
+
+
+            /** Opens an AtoN editor dialog **/
+            atonEditorDialog: function(aton, orig) {
+                return $uibModal.open({
+                    controller: "EditAtonDetailsDialogCtrl",
+                    templateUrl: "/app/atons/aton-details-editor-dialog.html",
+                    size: 'md',
+                    keyboard: false,
+                    resolve: {
+                        atonCtx: function () { return { aton: aton, orig: orig }; },
+                        editable: function () { return true; }
+                    }
+                });
             },
 
 

@@ -371,7 +371,7 @@ angular.module('niord.atons')
 
                         // Open the AotN info dialog
                         scope.showAtonInfo = function (aton) {
-                            $rootScope.$broadcast('show-aton-details', aton);
+                            AtonService.atonDetailsDialog(aton);
                         };
 
 
