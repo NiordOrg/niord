@@ -131,6 +131,11 @@ public class MessageRestService {
                 .sortBy(sortBy)
                 .sortOrder(sortOrder);
 
+        // Return published messages if no status is defined
+        if (params.getStatuses().isEmpty()) {
+            params.getStatuses().add(Status.PUBLISHED);
+        }
+
         long t0 = System.currentTimeMillis();
         PagedSearchResultVo<Message> searchResult = messageService.search(params);
         log.info(String.format("Search [%s] returns %d of %d messages in %d ms",
