@@ -13,6 +13,12 @@ angular.module('niord.messages')
         return {
 
             /** Returns the message filters */
+            publicMessages: function() {
+                return $http.get('/rest/public/v1/messages?lang=' + $rootScope.language);
+            },
+
+
+            /** Returns the message filters */
             search: function(params, page, maxSize) {
                 page = page || 0;
                 maxSize = maxSize || 1000;

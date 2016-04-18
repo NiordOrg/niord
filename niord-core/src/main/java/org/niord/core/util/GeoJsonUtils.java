@@ -12,6 +12,9 @@ import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.geom.PrecisionModel;
+import com.vividsolutions.jts.io.ParseException;
+import com.vividsolutions.jts.io.WKTReader;
+import org.apache.commons.lang.StringUtils;
 import org.niord.model.vo.geojson.*;
 
 import java.math.BigDecimal;
@@ -20,6 +23,7 @@ import java.math.RoundingMode;
 /**
  * Utility functions for processing GeoJson data
  */
+@SuppressWarnings("unused")
 public class GeoJsonUtils {
 
     final static GeometryFactory factory = new GeometryFactory(new PrecisionModel(PrecisionModel.FLOATING));
@@ -42,6 +46,19 @@ public class GeoJsonUtils {
             c[0] = c[1];
             c[1] = tmp;
         });
+    }
+
+
+    /**
+     * Parses WKT into a JTS geometry
+     * @param wkt the well-known text
+     * @return the corresponding JTS geometry
+     */
+    public static Geometry wktToJts(String wkt) throws ParseException {
+        if (StringUtils.isNotBlank(wkt)) {
+            return new WKTReader().read(wkt);
+        }
+        return null;
     }
 
 
