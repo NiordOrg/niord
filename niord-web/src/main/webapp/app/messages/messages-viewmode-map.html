@@ -1,4 +1,44 @@
 
+<div class="selection-panel">
+    <div class="selection-panel-header">
+        <span style="color: white"><span ng-if="messageList.length < totalMessageNo">Partial </span>Search Result</span>
+        <button class="btn btn-xs btn-default pull-right" ng-click="showMapSelection = !showMapSelection">
+            <span class="glyphicon" ng-class="{'glyphicon-chevron-up': showMapSelection, 'glyphicon-chevron-down': !showMapSelection}"></span>
+        </button>
+    </div>
+    <div ng-if="showMapSelection" class="selection-panel-messages">
+        <div ng-if="messageList.length == 0">
+            <div ng-include="'/app/messages/messages-empty-search-result.html'"></div>
+        </div>
+
+        <table style="margin-top: 5px">
+            <tr ng-repeat="msg in messageList">
+                <td style="vertical-align: top">
+                    <img ng-src="/img/msi.png"
+                         class="map-general-message-icon"
+                         message-details-link="msg.id" message-list="messages"/>
+                </td>
+                <td>
+                    <div message-details-link="msg.id" message-list="messages">
+                        <span ng-if="msg.shortId">{{msg.shortId}}<br/></span>
+                        {{msg.descs[0].title}}
+                        <span ng-if="msg.descs[0].lang != language" style="color: darkgray;">
+                            <img ng-src="/img/flags/{{msg.descs[0].lang}}.png" style="height: 12px; opacity: 0.5;"/>
+                        </span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+    <div class="load-more-messages" ng-if="showMapSelection && messageList.length < totalMessageNo">
+        <div class="center">
+            <button class="btn btn-primary load-more-btn" ng-click="loadMore()">
+                Load {{messageList.length | numeral}} - {{messageList.length + maxSize | numeral}} of {{totalMessageNo | numeral}} messages
+            </button>
+        </div>
+    </div>
+</div>
+
 <ol-map class="message-list-map" map-state="state.map">
     <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
     <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
@@ -6,6 +46,6 @@
     <map-charts-layer name="Charts" visible="false" layer-switcher="state.chart.enabled" charts="state.chart.charts"></map-charts-layer>
     <map-areas-layer name="Areas" visible="false" layer-switcher="state.area.enabled" areas="state.area.areas"></map-areas-layer>
     <map-aton-layer name="AtoN" visible="false" layer-switcher="true"></map-aton-layer>
-    <map-message-list-layer name="Messages" visible="true" layer-switcher="true" message-list="messageList" show-general="true"></map-message-list-layer>
+    <map-message-list-layer name="Messages" visible="true" layer-switcher="true" message-list="messageList" show-general="false"></map-message-list-layer>
     <map-layer-switcher></map-layer-switcher>
 </ol-map>

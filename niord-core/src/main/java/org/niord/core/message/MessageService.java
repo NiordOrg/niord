@@ -410,7 +410,7 @@ public class MessageService extends BaseService {
 
         // Build the predicates based on the search parameters
         CriteriaHelper<Tuple> criteriaHelper = CriteriaHelper.initWithTupleQuery(em)
-                .between(msgRoot.get("created"), param.getFrom(), param.getTo())
+                .between(msgRoot.get("startDate"), param.getFrom(), param.getTo())
                 .between(msgRoot.get("updated"), param.getUpdatedFrom(), param.getUpdatedTo());
 
 

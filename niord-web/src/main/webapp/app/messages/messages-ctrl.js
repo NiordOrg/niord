@@ -671,6 +671,7 @@ angular.module('niord.messages')
                     $scope.state.map.enabled = newValue && newValue.endsWith('/map');
                     $scope.showFilter = newValue && !newValue.endsWith('/selected');
                     var isMap = $scope.state.map.enabled;
+                    $scope.maxSize = isMap ? 1000 : 100;
                     if (wasMap != isMap) {
                         $scope.messageList.length = 0;
                     }
