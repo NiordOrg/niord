@@ -44,7 +44,9 @@ import java.util.Set;
 /**
  * A public REST API for accessing Niord data.
  */
-@Api(value = "/api/v1", description = "Public API for accessing the Niord NW-NM system")
+@Api(value = "/api/v1",
+     description = "Public API for accessing the Niord NW-NM system",
+     tags = {"message_list"})
 @Path("/api/v1")
 @Stateless
 public class ApiRestService {
@@ -60,7 +62,8 @@ public class ApiRestService {
      * Returns all published messages.
      * Optionally, filter by a geometry defined by the WKT (well-known text) parameter.
      */
-    @ApiOperation(value = "Returns the public NW and NM messages",
+    @ApiOperation(
+            value = "Returns the public NW and NM messages",
             response = MessageVo.class,
             responseContainer = "List")
     @GET
@@ -75,7 +78,7 @@ public class ApiRestService {
             @ApiParam(value = "Either NW (navigational warnings) or NM (notices to mariners)", example="NW")
             @QueryParam("mainType") Set<MainType> mainTypes,
 
-            @ApiParam(value = "Well-Known Text for geographical extent", example="POLYGON((10 55, 10 56, 11 56, 11 55, 10 55))")
+            @ApiParam(value = "Well-Known Text for geographical extent", example="POLYGON((7 54, 7 57, 13 56, 13 57, 7 54))")
             @QueryParam("wkt") String wkt
 
     ) throws Exception {
