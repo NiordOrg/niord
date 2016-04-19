@@ -66,7 +66,7 @@ public class ApiRestService extends AbstractApiService {
     )
     @GET
     @Path("/messages")
-    @Produces({"application/json;charset=UTF-8", "text/xml;charset=UTF-8"})
+    @Produces({"application/json;charset=UTF-8", "application/xml;charset=UTF-8"})
     @GZIP
     @NoCache
     @Override
