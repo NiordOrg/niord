@@ -15,6 +15,7 @@
  */
 package org.niord.model.vo;
 
+import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizedDesc;
 
@@ -24,9 +25,10 @@ import javax.xml.bind.annotation.XmlType;
 /**
  * The message description VO
  */
-@SuppressWarnings("unused")
+@ApiModel(value = "MessageDesc", description = "Translatable fields of the Message model")
 @XmlType(propOrder = { "title", "subject", "description", "otherCategories",
         "time", "vicinity", "note", "publication", "source" })
+@SuppressWarnings("unused")
 public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
 
     String lang;

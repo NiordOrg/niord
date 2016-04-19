@@ -15,6 +15,7 @@
  */
 package org.niord.model.vo;
 
+import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizedDesc;
 
@@ -24,6 +25,7 @@ import javax.xml.bind.annotation.XmlType;
 /**
  * The entity description VO
  */
+@ApiModel(value = "CategoryDesc", description = "Translatable fields of the Category model")
 @XmlType(propOrder = { "name" })
 public class CategoryDescVo implements ILocalizedDesc, IJsonSerializable {
 
