@@ -16,8 +16,6 @@
         <jboss.bom.version>10.0.0.Final</jboss.bom.version>
         <keycloak.version>1.9.1.Final</keycloak.version>
         <jackson.version>2.5.4</jackson.version>
-        <swagger.version>1.5.8</swagger.version>
-        <swagger-ui.version>2.1.4</swagger-ui.version>
     </properties>
 
     <dependencyManagement>
