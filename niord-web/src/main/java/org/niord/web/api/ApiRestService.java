@@ -20,57 +20,56 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.niord.core.message.Message;
-import org.niord.core.message.MessageSearchParams;
-import org.niord.core.message.MessageService;
-import org.niord.model.DataFilter;
-import org.niord.model.PagedSearchParamsVo.SortOrder;
-import org.niord.model.PagedSearchResultVo;
+import org.niord.core.NiordApp;
 import org.niord.model.vo.MainType;
 import org.niord.model.vo.MessageVo;
-import org.niord.model.vo.Status;
-import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import java.util.Collections;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.SchemaOutputResolver;
+import javax.xml.transform.Result;
+import javax.xml.transform.stream.StreamResult;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
  * A public REST API for accessing Niord data.
+ * <p>
+ * Also, defined the Swagger API using annotations.
  */
 @Api(value = "/api/v1",
      description = "Public API for accessing the Niord NW-NM system",
      tags = {"message_list"})
 @Path("/api/v1")
 @Stateless
-public class ApiRestService {
+@SuppressWarnings("unused")
+public class ApiRestService extends AbstractApiService {
 
     @Inject
-    Logger log;
+    NiordApp app;
 
-    @Inject
-    MessageService messageService;
-
-
-    /**
-     * Returns all published messages.
-     * Optionally, filter by a geometry defined by the WKT (well-known text) parameter.
-     */
+    /** {@inheritDoc} */
     @ApiOperation(
             value = "Returns the public NW and NM messages",
             response = MessageVo.class,
-            responseContainer = "List")
+            responseContainer = "List"
+    )
     @GET
     @Path("/messages")
-    @Produces("application/json;charset=UTF-8")
+    @Produces({"application/json;charset=UTF-8", "text/xml;charset=UTF-8"})
     @GZIP
     @NoCache
+    @Override
     public List<MessageVo> search(
             @ApiParam(value = "Two-letter ISO 639-1 language code", example="en")
             @QueryParam("lang") String language,
@@ -82,28 +81,51 @@ public class ApiRestService {
             @QueryParam("wkt") String wkt
 
     ) throws Exception {
-
-        MessageSearchParams params = new MessageSearchParams();
-        params.language(language)
-                .statuses(Collections.singleton(Status.PUBLISHED))
-                .mainTypes(mainTypes)
-                .extent(wkt)
-                .includeGeneral(Boolean.TRUE) // Messages without a geometry may be included if WKT specified
-                .sortBy("AREA")
-                .sortOrder(SortOrder.ASC);
-
-        long t0 = System.currentTimeMillis();
-        PagedSearchResultVo<Message> searchResult = messageService.search(params);
-        log.info(String.format("Public search [%s] returns %d of %d messages in %d ms",
-                params.toString(), searchResult.getData().size(), searchResult.getTotal(), System.currentTimeMillis() - t0));
-
-        DataFilter filter = DataFilter.get()
-                .lang(language)
-                .fields(DataFilter.DETAILS, DataFilter.GEOMETRY, "Area.parent", "Category.parent");
-
-        return searchResult
-                .map(m -> m.toVo(filter))
-                .getData();
+        return super.search(language, mainTypes, wkt);
     }
 
+
+    /**
+     * Returns the XSD for the Message class.
+     * Two XSDs are produced, "schema1.xsd" and "schema2.xsd". The latter is the main schema for
+     * Message and will import the former.
+     * @return the XSD for the Message class
+     */
+    @ApiOperation(
+            value = "Returns XSD model of the Message class"
+    )
+    @GET
+    @Path("/xsd/{schemaFile}")
+    @Produces("application/xml;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public String getMessageXsd(
+            @ApiParam(value = "The schema file, either schema1.xsd or schema2.xsd", example="schema2.xsd")
+            @PathParam("schemaFile")
+            String schemaFile) throws Exception {
+
+        if (!schemaFile.equals("schema1.xsd") && !schemaFile.equals("schema2.xsd")) {
+            throw new Exception("Only 'schema1.xsd' and 'schema2.xsd' allowed");
+        }
+
+        JAXBContext jaxbContext = JAXBContext.newInstance(MessageVo.class);
+
+        Map<String, StringWriter> result = new HashMap<>();
+        SchemaOutputResolver sor = new SchemaOutputResolver() {
+            @Override
+            public Result createOutput(String namespaceURI, String suggestedFileName) throws IOException {
+                StringWriter out = new StringWriter();
+                result.put(suggestedFileName, out);
+                StreamResult result = new StreamResult(out);
+                result.setSystemId(app.getBaseUri() + "/rest/api/v1/xsd/" + suggestedFileName);
+                return result;
+            }
+
+        };
+
+        // Generate the schemas
+        jaxbContext.generateSchema(sor);
+
+        return result.get(schemaFile).toString();
+    }
 }

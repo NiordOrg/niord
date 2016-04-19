@@ -15,11 +15,20 @@
  */
 package org.niord.model.vo;
 
+import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
+
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
 /**
  * Represents a message series
  */
+@ApiModel(value = "MessageSeries", description = "A message series")
+@XmlRootElement(name = "messageSeries")
+@XmlType(propOrder = {
+        "seriesId", "mainType", "mrnFormat", "shortFormat"
+})
 public class MessageSeriesVo implements IJsonSerializable {
 
     String seriesId;

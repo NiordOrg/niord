@@ -15,15 +15,24 @@
  */
 package org.niord.model.vo;
 
+import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Value object for the {@code Category} model entity
  */
+@ApiModel(value = "Category", description = "Hierarchical category model")
+@XmlRootElement(name = "category")
+@XmlType(propOrder = {
+        "mrn", "parent", "children", "descs"
+})
 @SuppressWarnings("unused")
 public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializable {
     Integer id;
@@ -55,6 +64,7 @@ public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializab
     /** Getters and Setters **/
     /*************************/
 
+    @XmlAttribute
     public Integer getId() {
         return id;
     }

@@ -15,7 +15,6 @@
 
     <properties>
         <batik.version>1.8</batik.version>
-        <swagger.version>1.5.8</swagger.version>
         <swagger-ui.version>2.1.4</swagger-ui.version>
     </properties>
 

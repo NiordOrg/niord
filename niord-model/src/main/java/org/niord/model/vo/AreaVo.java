@@ -15,10 +15,14 @@
  */
 package org.niord.model.vo;
 
+import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 import org.niord.model.vo.geojson.GeometryVo;
 
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,6 +30,11 @@ import java.util.List;
 /**
  * Value object for the {@code Area} model entity
  */
+@ApiModel(value = "Area", description = "Hierarchical area model")
+@XmlRootElement(name = "area")
+@XmlType(propOrder = {
+        "mrn", "type", "parent", "geometry", "children", "descs"
+})
 @SuppressWarnings("unused")
 public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comparable<AreaVo> {
     Integer id;
@@ -78,6 +87,7 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comp
     /** Getters and Setters **/
     /*************************/
 
+    @XmlAttribute
     public Integer getId() {
         return id;
     }
@@ -126,6 +136,7 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comp
         this.children = children;
     }
 
+    @XmlAttribute
     public double getSiblingSortOrder() {
         return siblingSortOrder;
     }

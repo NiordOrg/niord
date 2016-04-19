@@ -48,7 +48,7 @@ public class SwaggerConfigServlet extends HttpServlet {
             BeanConfig beanConfig = new BeanConfig();
             beanConfig.setVersion("1.0.0");
             beanConfig.setBasePath("/rest");
-            beanConfig.setResourcePackage("org.niord.web.api");
+            beanConfig.setResourcePackage("org.niord.web.api,org.niord.model.vo,org.niord.model.vo.geojson");
             beanConfig.setScan(true);
             log.info("Initialized Swagger: " + app.getBaseUri() +  "/rest/swagger.json");
         } catch (ServletException e) {

@@ -15,11 +15,18 @@
  */
 package org.niord.model.vo;
 
+import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
+
+import javax.xml.bind.annotation.XmlType;
 
 /**
  * Defines a reference from one Message to another
  */
+@ApiModel(value = "Reference", description = "A message reference")
+@XmlType(propOrder = {
+        "messageId", "type", "description"
+})
 public class ReferenceVo implements IJsonSerializable {
 
     String messageId;

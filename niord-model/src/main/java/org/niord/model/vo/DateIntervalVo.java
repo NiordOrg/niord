@@ -15,13 +15,19 @@
  */
 package org.niord.model.vo;
 
+import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
 
+import javax.xml.bind.annotation.XmlType;
 import java.util.Date;
 
 /**
  * Represents a single date interval for a message
  */
+@ApiModel(value = "DateInterval", description = "Date interval")
+@XmlType(propOrder = {
+        "fromDate", "toDate"
+})
 public class DateIntervalVo implements IJsonSerializable {
 
     Date fromDate;

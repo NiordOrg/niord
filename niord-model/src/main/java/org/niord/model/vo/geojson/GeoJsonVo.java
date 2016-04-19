@@ -1,10 +1,28 @@
+/* Copyright (c) 2011 Danish Maritime Authority
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this library.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package org.niord.model.vo.geojson;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
 
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.bind.annotation.XmlTransient;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
@@ -12,6 +30,14 @@ import java.util.function.Consumer;
  * Base GeoJSON object as defined in the specification:
  * http://geojson.org/geojson-spec.html#geojson-objects
  */
+@ApiModel(
+        value = "GeoJson",
+        description = "Superclass for GeoJson types",
+        discriminator = "type",
+        subTypes = { PointVo.class, MultiPointVo.class, LineStringVo.class, MultiLineStringVo.class,
+                PolygonVo.class, MultiPolygonVo.class, GeometryCollectionVo.class, FeatureVo.class, FeatureCollectionVo.class
+        }
+)
 @JsonTypeInfo(property = "type", use = JsonTypeInfo.Id.NAME)
 @JsonSubTypes({
         @JsonSubTypes.Type(value = PointVo.class,               name = "Point"),
@@ -24,6 +50,9 @@ import java.util.function.Consumer;
         @JsonSubTypes.Type(value = FeatureVo.class,             name = "Feature"),
         @JsonSubTypes.Type(value = FeatureCollectionVo.class,   name = "FeatureCollection")
 })
+@XmlTransient
+@XmlSeeAlso({ PointVo.class, MultiPointVo.class, LineStringVo.class, MultiLineStringVo.class,
+        PolygonVo.class, MultiPolygonVo.class, GeometryCollectionVo.class, FeatureVo.class, FeatureCollectionVo.class })
 public abstract class GeoJsonVo implements IJsonSerializable {
 
     private static final ObjectMapper mapper = new ObjectMapper();

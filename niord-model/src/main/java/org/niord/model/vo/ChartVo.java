@@ -15,12 +15,21 @@
  */
 package org.niord.model.vo;
 
+import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.vo.geojson.GeometryVo;
+
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
 /**
  * Represents a chart
  */
+@ApiModel(value = "Chart", description = "Sea chart model")
+@XmlRootElement(name = "chart")
+@XmlType(propOrder = {
+        "chartNumber", "internationalNumber", "geometry", "horizontalDatum", "scale", "name"
+})
 public class ChartVo implements IJsonSerializable {
 
     String chartNumber;

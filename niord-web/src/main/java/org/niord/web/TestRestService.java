@@ -7,6 +7,7 @@ import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.geojson.FeatureService;
 import org.niord.core.keycloak.KeycloakIntegrationService;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
+import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
 import javax.ejb.Singleton;
@@ -26,6 +27,9 @@ import java.util.stream.Collectors;
 @SecurityDomain("keycloak")
 @PermitAll
 public class TestRestService {
+
+    @Inject
+    Logger log;
 
     @Inject
     FeatureService featureService;
@@ -51,6 +55,7 @@ public class TestRestService {
     @GZIP
     @NoCache
     public FeatureCollectionVo createFeatureCollection(FeatureCollectionVo fc) throws Exception {
+        log.info("Creating feature collection " + fc);
         return featureService.createFeatureCollection(FeatureCollection.fromGeoJson(fc))
                 .toGeoJson();
     }
@@ -62,6 +67,7 @@ public class TestRestService {
     @GZIP
     @NoCache
     public FeatureCollectionVo updateFeatureCollection(FeatureCollectionVo fc) throws Exception {
+        log.info("Updating feature collection " + fc);
         return featureService.updateFeatureCollection(FeatureCollection.fromGeoJson(fc))
                 .toGeoJson();
     }

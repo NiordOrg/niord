@@ -13,17 +13,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.model.vo.geojson;
+package org.niord.web.api;
 
-import javax.xml.bind.annotation.XmlSeeAlso;
-import javax.xml.bind.annotation.XmlType;
+import org.niord.model.vo.MainType;
+import org.niord.model.vo.MessageVo;
+
+import javax.ejb.Stateless;
+import javax.jws.WebMethod;
+import javax.jws.WebService;
+import java.util.List;
+import java.util.Set;
 
 /**
- * Base Geometry object as defined in the specification:
- * http://geojson.org/geojson-spec.html#geometry-objects
+ * A public web service API for accessing Niord data.
  */
-@XmlType(name = "geometry")
-@XmlSeeAlso({ PointVo.class, MultiPointVo.class, LineStringVo.class, MultiLineStringVo.class,
-        PolygonVo.class, MultiPolygonVo.class, GeometryCollectionVo.class })
-public abstract class GeometryVo extends GeoJsonVo {
+@WebService
+@Stateless
+@SuppressWarnings("unused")
+public class ApiWebService extends AbstractApiService {
+
+    /** {@inheritDoc} */
+    @WebMethod
+    @Override
+    public List<MessageVo> search(String language, Set<MainType> mainTypes, String wkt) throws Exception {
+        return super.search(language, mainTypes, wkt);
+    }
 }

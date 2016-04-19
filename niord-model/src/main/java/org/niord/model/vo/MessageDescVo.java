@@ -18,10 +18,15 @@ package org.niord.model.vo;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizedDesc;
 
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlType;
+
 /**
  * The message description VO
  */
 @SuppressWarnings("unused")
+@XmlType(propOrder = { "title", "subject", "description", "otherCategories",
+        "time", "vicinity", "note", "publication", "source" })
 public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
 
     String lang;
@@ -61,6 +66,7 @@ public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
     /** Getters and Setters **/
     /*************************/
 
+    @XmlAttribute
     @Override
     public String getLang() {
         return lang;

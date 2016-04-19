@@ -15,10 +15,14 @@
  */
 package org.niord.model.vo;
 
+import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
 
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -28,6 +32,14 @@ import java.util.Set;
 /**
  * Value object for the {@code Message} model entity
  */
+@ApiModel(value = "Message", description = "Main NW and NM message class")
+@XmlRootElement(name = "message")
+@XmlType(propOrder = {
+        "messageSeries", "number", "mrn", "shortId", "mainType", "type", "status",
+        "areas", "categories", "charts", "horizontalDatum", "geometry",
+        "startDate", "endDate", "publishDate", "cancellationDate", "dateIntervals",
+        "references", "atonUids", "originalInformation", "descs"
+})
 @SuppressWarnings("unused")
 public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable {
 
@@ -117,6 +129,7 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     /** Getters and Setters **/
     /*************************/
 
+    @XmlAttribute
     public Integer getId() {
         return id;
     }
@@ -125,6 +138,7 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
         this.id = id;
     }
 
+    @XmlAttribute
     public Date getCreated() {
         return created;
     }
@@ -133,6 +147,7 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
         this.created = created;
     }
 
+    @XmlAttribute
     public Date getUpdated() {
         return updated;
     }
@@ -141,6 +156,7 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
         this.updated = updated;
     }
 
+    @XmlAttribute
     public Integer getVersion() {
         return version;
     }
