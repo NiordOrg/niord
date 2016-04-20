@@ -47,10 +47,10 @@ import java.util.Set;
  * <p>
  * Also, defined the Swagger API using annotations.
  */
-@Api(value = "/api/v1",
+@Api(value = "/public/v1",
      description = "Public API for accessing the Niord NW-NM system",
      tags = {"message_list"})
-@Path("/api/v1")
+@Path("/public/v1")
 @Stateless
 @SuppressWarnings("unused")
 public class ApiRestService extends AbstractApiService {
@@ -117,7 +117,7 @@ public class ApiRestService extends AbstractApiService {
                 StringWriter out = new StringWriter();
                 result.put(suggestedFileName, out);
                 StreamResult result = new StreamResult(out);
-                result.setSystemId(app.getBaseUri() + "/rest/api/v1/xsd/" + suggestedFileName);
+                result.setSystemId(app.getBaseUri() + "/rest/public/v1/xsd/" + suggestedFileName);
                 return result;
             }
 
