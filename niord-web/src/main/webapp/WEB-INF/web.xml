@@ -10,6 +10,15 @@
         <param-value>org.niord.core.keycloak.NiordKeycloakConfigResolver</param-value>
     </context-param>
 
+    <filter>
+        <filter-name>CORS Filter</filter-name>
+        <filter-class>org.ebaysf.web.cors.CORSFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>CORS Filter</filter-name>
+        <url-pattern>/rest/public/*</url-pattern>
+    </filter-mapping>
+
     <welcome-file-list>
         <welcome-file>index.html</welcome-file>
     </welcome-file-list>
