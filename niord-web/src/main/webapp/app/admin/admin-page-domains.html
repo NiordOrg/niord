@@ -41,6 +41,16 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="timeZone" class="col-sm-4">Time Zone</label>
+                            <div class="col-sm-8">
+                                <select id="timeZone" name="timeZone" class="form-control input-sm"
+                                       ng-model="domain.timeZone" ng-options="tz for tz in timeZones">
+                                    <option style="display:none" value=""></option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
                             <label class="col-sm-4">Areas</label>
                             <div class="col-sm-8">
                                 <ui-select multiple id="areas" ng-model="domain.areas" >
@@ -153,6 +163,7 @@
                         <tr>
                             <th>Keycloak ID</th>
                             <th>Name</th>
+                            <th>Time Zone</th>
                             <th>Areas</th>
                             <th>Categories</th>
                             <th>Message Series</th>
@@ -161,6 +172,7 @@
                         <tr ng-repeat="domain in domains">
                             <td><input type="checkbox" ng-model="domain.inKeycloak" disabled="disabled"> {{domain.clientId}}</td>
                             <td>{{domain.name}}</td>
+                            <td>{{domain.timeZone}}</td>
                             <td>
                                 <div ng-repeat="area in domain.areas">{{area.descs[0].name}}</div>
                             </td>

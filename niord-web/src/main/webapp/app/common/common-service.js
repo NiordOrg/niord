@@ -139,6 +139,9 @@ angular.module('niord.common')
                     $rootScope.domain = domain;
                     $window.localStorage.domain = domain.clientId;
                     $window.localStorage.lastDomain = domain.clientId;
+                    if (domain.timeZone) {
+                        moment.tz.setDefault(domain.timeZone);
+                    }
                 } else  {
                     $rootScope.domain = undefined;
                     $window.localStorage.removeItem('domain');

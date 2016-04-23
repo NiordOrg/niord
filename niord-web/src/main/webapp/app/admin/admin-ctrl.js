@@ -650,6 +650,7 @@ angular.module('niord.admin')
             $scope.domain = undefined; // The domain being edited
             $scope.editMode = 'add';
             $scope.search = '';
+            $scope.timeZones = moment.tz.names();
 
 
             /** Computes the Keycloak URL */
@@ -699,8 +700,12 @@ angular.module('niord.admin')
                 $scope.editMode = 'add';
                 $scope.domain = {
                     clientId: undefined,
-                    name: undefined
+                    name: undefined,
+                    timeZone: moment.tz.guess()
                 };
+                $scope.areas.length = 0;
+                $scope.categories.length = 0;
+                $scope.messageSeries.length = 0;
             };
 
 

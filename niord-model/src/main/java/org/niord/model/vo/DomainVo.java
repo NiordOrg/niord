@@ -26,6 +26,7 @@ public class DomainVo implements IJsonSerializable {
 
     private String clientId;
     private String name;
+    private String timeZone;
     private List<AreaVo> areas;
     private List<CategoryVo> categories;
     private List<MessageSeriesVo> messageSeries;
@@ -49,6 +50,14 @@ public class DomainVo implements IJsonSerializable {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    public void setTimeZone(String timeZone) {
+        this.timeZone = timeZone;
     }
 
     public List<AreaVo> getAreas() {

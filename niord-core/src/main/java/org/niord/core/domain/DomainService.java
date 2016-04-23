@@ -118,6 +118,7 @@ public class DomainService extends BaseService {
 
         // Copy the domain data
         original.setName(domain.getName());
+        original.setTimeZone(domain.getTimeZone());
 
         // Substitute the areas with the persisted ones
         original.setAreas(persistedList(Area.class, domain.getAreas()));

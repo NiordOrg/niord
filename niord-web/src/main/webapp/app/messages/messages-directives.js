@@ -65,6 +65,7 @@ angular.module('niord.messages')
                             time += " - " + toDateTime;
                         }
                     }
+                    time += ' ' + from.format('z');
                 }
                 element.html(time);
             }

@@ -58,6 +58,8 @@ public class Domain extends BaseEntity<Integer> {
     @NotNull
     String name;
 
+    String timeZone;
+
     @ManyToMany
     List<Area> areas = new ArrayList<>();
 
@@ -85,6 +87,7 @@ public class Domain extends BaseEntity<Integer> {
     public void updateDomain(DomainVo domain) {
         this.clientId = domain.getClientId();
         this.name = domain.getName();
+        this.timeZone = domain.getTimeZone();
         this.inKeycloak = domain.getInKeycloak();
 
         this.areas.clear();
@@ -115,6 +118,7 @@ public class Domain extends BaseEntity<Integer> {
         DomainVo domain = new DomainVo();
         domain.setClientId(clientId);
         domain.setName(name);
+        domain.setTimeZone(timeZone);
         domain.setInKeycloak(inKeycloak);
 
         if (!areas.isEmpty()) {
@@ -151,6 +155,7 @@ public class Domain extends BaseEntity<Integer> {
     public boolean hasChanged(Domain template) {
         return !Objects.equals(clientId, template.getClientId()) ||
                 !Objects.equals(name, template.getName()) ||
+                !Objects.equals(timeZone, template.getTimeZone()) ||
                 hasChanged(areas, template.getAreas()) ||
                 hasChanged(categories, template.getCategories()) ||
                 hasChanged(messageSeries, template.getMessageSeries());
@@ -189,6 +194,14 @@ public class Domain extends BaseEntity<Integer> {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getTimeZone() {
+        return timeZone;
+    }
+
+    public void setTimeZone(String timeZone) {
+        this.timeZone = timeZone;
     }
 
     public List<Area> getAreas() {
