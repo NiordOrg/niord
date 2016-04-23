@@ -60,6 +60,12 @@ public class Domain extends BaseEntity<Integer> {
 
     String timeZone;
 
+    Float latitude;
+
+    Float longitude;
+
+    Integer zoomLevel;
+
     @ManyToMany
     List<Area> areas = new ArrayList<>();
 
@@ -88,6 +94,9 @@ public class Domain extends BaseEntity<Integer> {
         this.clientId = domain.getClientId();
         this.name = domain.getName();
         this.timeZone = domain.getTimeZone();
+        this.latitude = domain.getLat();
+        this.longitude = domain.getLon();
+        this.zoomLevel = domain.getZoomLevel();
         this.inKeycloak = domain.getInKeycloak();
 
         this.areas.clear();
@@ -119,6 +128,9 @@ public class Domain extends BaseEntity<Integer> {
         domain.setClientId(clientId);
         domain.setName(name);
         domain.setTimeZone(timeZone);
+        domain.setLat(latitude);
+        domain.setLon(longitude);
+        domain.setZoomLevel(zoomLevel);
         domain.setInKeycloak(inKeycloak);
 
         if (!areas.isEmpty()) {
@@ -156,6 +168,9 @@ public class Domain extends BaseEntity<Integer> {
         return !Objects.equals(clientId, template.getClientId()) ||
                 !Objects.equals(name, template.getName()) ||
                 !Objects.equals(timeZone, template.getTimeZone()) ||
+                !Objects.equals(latitude, template.getLatitude()) ||
+                !Objects.equals(longitude, template.getLongitude()) ||
+                !Objects.equals(zoomLevel, template.getZoomLevel()) ||
                 hasChanged(areas, template.getAreas()) ||
                 hasChanged(categories, template.getCategories()) ||
                 hasChanged(messageSeries, template.getMessageSeries());
@@ -202,6 +217,30 @@ public class Domain extends BaseEntity<Integer> {
 
     public void setTimeZone(String timeZone) {
         this.timeZone = timeZone;
+    }
+
+    public Float getLatitude() {
+        return latitude;
+    }
+
+    public void setLatitude(Float latitude) {
+        this.latitude = latitude;
+    }
+
+    public Float getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(Float longitude) {
+        this.longitude = longitude;
+    }
+
+    public Integer getZoomLevel() {
+        return zoomLevel;
+    }
+
+    public void setZoomLevel(Integer zoomLevel) {
+        this.zoomLevel = zoomLevel;
     }
 
     public List<Area> getAreas() {

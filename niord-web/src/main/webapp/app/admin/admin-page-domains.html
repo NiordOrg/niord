@@ -51,6 +51,18 @@
                         </div>
 
                         <div class="form-group">
+                            <label class="col-sm-4">Map Position</label>
+                            <div class="col-sm-8">
+                                <input latitude  type="text" ng-model="domain.lat" placeholder="Latitude"
+                                       class="form-control form-control-inline input-sm" style="width: 100px; height: 26px">
+                                <input longitude type="text" ng-model="domain.lon" placeholder="Longitude"
+                                       class="form-control form-control-inline input-sm" style="width: 100px; height: 26px">
+                                <input type="number" min="5" max="15" step="1" ng-model="domain.zoomLevel" placeholder="Zoom Level"
+                                       class="form-control form-control-inline input-sm" style="width: 100px; height: 26px">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
                             <label class="col-sm-4">Areas</label>
                             <div class="col-sm-8">
                                 <ui-select multiple id="areas" ng-model="domain.areas" >

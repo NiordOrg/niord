@@ -40,12 +40,18 @@ angular.module('niord.map')
 
             /** Returns the default center position of a map */
             this.defaultCenterLonLat = function () {
-                return [$rootScope.mapDefaultLongitude, $rootScope.mapDefaultLatitude];
+                if ($rootScope.domain && $rootScope.domain.lat && $rootScope.domain.lon) {
+                    return [ $rootScope.domain.lon, $rootScope.domain.lat ];
+                }
+                return [ $rootScope.mapDefaultLongitude, $rootScope.mapDefaultLatitude ];
             };
 
 
             /** Returns the default zoom level of a map */
             this.defaultZoomLevel = function () {
+                if ($rootScope.domain && $rootScope.domain.zoomLevel) {
+                    return $rootScope.domain.zoomLevel;
+                }
                 return $rootScope.mapDefaultZoomLevel;
             };
 
