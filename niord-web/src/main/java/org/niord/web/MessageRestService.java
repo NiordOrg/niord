@@ -18,9 +18,13 @@ package org.niord.web;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageSearchParams;
+import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
+import org.niord.core.model.BaseEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.PagedSearchParamsVo.SortOrder;
 import org.niord.model.PagedSearchResultVo;
@@ -39,7 +43,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * REST interface for managing messages.
@@ -55,6 +61,9 @@ public class MessageRestService {
 
     @Inject
     MessageService messageService;
+
+    @Inject
+    DomainService domainService;
 
 
     /***************************
@@ -89,9 +98,11 @@ public class MessageRestService {
     public PagedSearchResultVo<MessageVo> search(
             @QueryParam("lang") String language,
             @QueryParam("query") String query,
+            @QueryParam("domain") @DefaultValue("true") boolean domain, // By default, filter by current domain
             @QueryParam("status") Set<Status> statuses,
             @QueryParam("mainType") Set<MainType> mainTypes,
             @QueryParam("type") Set<Type> types,
+            @QueryParam("messageSeries") Set<String> seriesIds,
             @QueryParam("area") Set<Integer> areaIds,
             @QueryParam("category") Set<Integer> categoryIds,
             @QueryParam("chart") Set<String> chartNumbers,
@@ -117,6 +128,7 @@ public class MessageRestService {
                 .statuses(statuses)
                 .mainTypes(mainTypes)
                 .types(types)
+                .seriesIds(seriesIds)
                 .areaIds(areaIds)
                 .categoryIds(categoryIds)
                 .chartNumbers(chartNumbers)
@@ -131,10 +143,56 @@ public class MessageRestService {
                 .sortBy(sortBy)
                 .sortOrder(sortOrder);
 
-        // Return published messages if no status is defined
-        if (params.getStatuses().isEmpty()) {
-            params.getStatuses().add(Status.PUBLISHED);
+        Domain currentDomain = domainService.currentDomain();
+
+        // Enforce security rules - depends on whether the current user is in the context of a domain or not.
+        if (domain && currentDomain != null) {
+
+            Set<String> domainSeries = currentDomain.getMessageSeries().stream()
+                    .map(MessageSeries::getSeriesId)
+                    .collect(Collectors.toSet());
+
+            // Restrict message series IDs to valid ones for the current domain
+            params.seriesIds(
+                    params.getSeriesIds().stream()
+                    .filter(domainSeries::contains)
+                    .collect(Collectors.toSet())
+            );
+            // If no message series is specified, use the ones of the current domain
+            if (params.getSeriesIds().isEmpty()) {
+                params.seriesIds(domainSeries);
+            }
+
+            // If no areas specified, use the ones of the current domain
+            if (params.getAreaIds().isEmpty() && !currentDomain.getAreas().isEmpty()) {
+                params.areaIds(
+                        currentDomain.getAreas().stream()
+                                .map(BaseEntity::getId)
+                                .collect(Collectors.toSet())
+                );
+            }
+
+            // If no categories specified, use the ones of the current domain
+            if (params.getCategoryIds().isEmpty() && !currentDomain.getCategories().isEmpty()) {
+                params.categoryIds(
+                        currentDomain.getCategories().stream()
+                                .map(BaseEntity::getId)
+                                .collect(Collectors.toSet())
+                );
+            }
+
+            // Return published messages if no status is defined and no tags has been specified
+            if (params.getStatuses().isEmpty() && params.getTags().isEmpty()) {
+                params.getStatuses().add(Status.PUBLISHED);
+            }
+
+        } else {
+            // Return published messages if no tags has been specified
+            if (params.getTags().isEmpty()) {
+                params.statuses(Collections.singleton(Status.PUBLISHED));
+            }
         }
+
 
         long t0 = System.currentTimeMillis();
         PagedSearchResultVo<Message> searchResult = messageService.search(params);

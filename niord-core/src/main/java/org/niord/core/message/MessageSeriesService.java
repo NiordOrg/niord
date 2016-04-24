@@ -17,6 +17,8 @@ package org.niord.core.message;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.niord.core.sequence.DefaultSequence;
 import org.niord.core.sequence.Sequence;
 import org.niord.core.sequence.SequenceService;
@@ -25,6 +27,7 @@ import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.persistence.criteria.Predicate;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -47,6 +50,9 @@ public class MessageSeriesService extends BaseService {
 
     @Inject
     SequenceService sequenceService;
+
+    @Inject
+    DomainService domainService;
 
     @Inject
     NiordApp app;
@@ -106,17 +112,29 @@ public class MessageSeriesService extends BaseService {
      * Searches for message series matching the given term
      *
      * @param term the search term
+     * @param domain  restrict the search to the current domain or not
      * @param limit the maximum number of results
      * @return the search result
      */
-    public List<MessageSeries> searchMessageSeries(String term, int limit) {
+    public List<MessageSeries> searchMessageSeries(String term, boolean domain, int limit) {
+
+        // Optionally, filter by the domains associated with the current domain
+        Domain d = (domain) ? domainService.currentDomain() : null;
+        Set<String> currentSeriesIds = d == null
+                ? null
+                : d.getMessageSeries().stream()
+                    .map(MessageSeries::getSeriesId)
+                    .collect(Collectors.toSet());
 
         if (StringUtils.isNotBlank(term)) {
             return em
                     .createNamedQuery("MessageSeries.searchMessageSeries", MessageSeries.class)
                     .setParameter("term", "%" + term + "%")
                     .setMaxResults(limit)
-                    .getResultList();
+                    .getResultList()
+                    .stream()
+                    .filter(s -> currentSeriesIds == null || currentSeriesIds.contains(s.getSeriesId()))
+                    .collect(Collectors.toList());
         }
         return Collections.emptyList();
     }

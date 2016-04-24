@@ -60,6 +60,7 @@ public class AreaRestService extends AbstractBatchableRestService {
      *
      * @param lang  the language
      * @param name  the search name
+     * @param domain  restrict the search to the current domain or not
      * @param geometry  if true, only return areas with geometries
      * @param limit the maximum number of results
      * @return the search result
@@ -72,17 +73,18 @@ public class AreaRestService extends AbstractBatchableRestService {
     public List<AreaVo> searchAreas(
             @QueryParam("lang") String lang,
             @QueryParam("name") String name,
+            @QueryParam("domain") @DefaultValue("false") boolean domain,
             @QueryParam("geometry") @DefaultValue("false") boolean geometry,
             @QueryParam("limit") int limit) {
 
-        log.debug(String.format("Searching for areas lang=%s, name='%s', geometry=%s, limit=%d",
-                lang, name, geometry, limit));
+        log.debug(String.format("Searching for areas lang=%s, name='%s', domain=%s, geometry=%s, limit=%d",
+                lang, name, domain, geometry, limit));
 
         DataFilter filter = DataFilter.get()
                 .fields(DataFilter.PARENT, DataFilter.GEOMETRY)
                 .lang(lang);
 
-        return areaService.searchAreas(null, lang, name, geometry, limit).stream()
+        return areaService.searchAreas(null, lang, name, domain, geometry, limit).stream()
                 .map(a -> a.toVo(filter))
                 .collect(Collectors.toList());
     }

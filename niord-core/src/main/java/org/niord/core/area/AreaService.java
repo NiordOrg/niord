@@ -17,6 +17,8 @@ package org.niord.core.area;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.CriteriaHelper;
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
@@ -30,6 +32,7 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,18 +56,21 @@ public class AreaService extends BaseService {
     @Inject
     SettingsService settingsService;
 
+    @Inject
+    DomainService domainService;
 
     /**
      * Searches for areas matching the given term in the given language
      *
      * @param lang the language
      * @param name the search term
+     * @param domain  restrict the search to the current domain or not
      * @param geometry  if true, only return areas with geometries
      * @param limit the maximum number of results
      * @return the search result
      */
     @SuppressWarnings("all")
-    public List<Area> searchAreas(Integer parentId, String lang, String name, boolean geometry, int limit) {
+    public List<Area> searchAreas(Integer parentId, String lang, String name, boolean domain, boolean geometry, int limit) {
 
         // Sanity check
         if (StringUtils.isBlank(name)) {
@@ -92,6 +98,17 @@ public class AreaService extends BaseService {
             areaRoot.join("parent", JoinType.LEFT);
             Path<Area> parent = areaRoot.get("parent");
             criteriaHelper.equals(parent.get("id"), parentId);
+        }
+
+        // Optionally, filter by the domains associated with the current domain
+        if (domain) {
+            Domain d = domainService.currentDomain();
+            if (d != null && d.getAreas().size() > 0) {
+                Predicate[] areaMatch = d.getAreas().stream()
+                        .map(a -> cb.like(areaRoot.get("lineage"), a.getLineage() + "%"))
+                        .toArray(Predicate[]::new);
+                criteriaHelper.add(cb.or(areaMatch));
+            }
         }
 
         // Optionally, require that the area has an associated geometry
@@ -372,7 +389,7 @@ public class AreaService extends BaseService {
      */
     public Area findByName(String name, String lang, Integer parentId) {
 
-        List<Area> areas = searchAreas(parentId, lang, name, false, 1);
+        List<Area> areas = searchAreas(parentId, lang, name, false, false, 1);
 
         return areas.isEmpty() ? null : areas.get(0);
     }

@@ -179,6 +179,7 @@ angular.module('niord.atons')
                 }
                 return $http.get(
                     '/rest/areas/search?name=' + encodeURIComponent(name)
+                        + '&domain=' + ($rootScope.domain !== undefined)
                         + '&lang=' + $rootScope.language
                         + '&limit=10&geometry=true'
                 ).then(function(response) {

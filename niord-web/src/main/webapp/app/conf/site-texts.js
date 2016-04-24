@@ -34,6 +34,8 @@ angular.module('niord.conf')
             'VIEW_MODE_MAP': 'Map',
             'VIEW_MODE_SELECTION': 'Selection',
             'MENU_FILTER' : 'Filter',
+            'MENU_FILTER_DOMAIN' : 'Domain',
+            'MENU_FILTER_MESSAGESERIES' : 'Message Series',
             'MENU_FILTER_TEXT' : 'Text',
             'MENU_FILTER_TYPE' : 'Type',
             'MENU_FILTER_STATUS' : 'Status',

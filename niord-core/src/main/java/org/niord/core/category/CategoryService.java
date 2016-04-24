@@ -17,6 +17,8 @@ package org.niord.core.category;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.CriteriaHelper;
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
@@ -39,17 +41,20 @@ public class CategoryService extends BaseService {
     @Inject
     private Logger log;
 
+    @Inject
+    DomainService domainService;
 
     /**
      * Searches for categories matching the given term in the given language
      *
      * @param lang the language
      * @param name the search term
+     * @param domain  restrict the search to the current domain or not
      * @param limit the maximum number of results
      * @return the search result
      */
     @SuppressWarnings("all")
-    public List<Category> searchCategories(Integer parentId, String lang, String name, int limit) {
+    public List<Category> searchCategories(Integer parentId, String lang, String name, boolean domain, int limit) {
 
         // Sanity check
         if (StringUtils.isBlank(name)) {
@@ -77,6 +82,17 @@ public class CategoryService extends BaseService {
             categoryRoot.join("parent", JoinType.LEFT);
             Path<Category> parent = categoryRoot.get("parent");
             criteriaHelper.equals(parent.get("id"), parentId);
+        }
+
+        // Optionally, filter by the domains associated with the current domain
+        if (domain) {
+            Domain d = domainService.currentDomain();
+            if (d != null && d.getCategories().size() > 0) {
+                Predicate[] categoryMatch = d.getCategories().stream()
+                        .map(c -> cb.like(categoryRoot.get("lineage"), c.getLineage() + "%"))
+                        .toArray(Predicate[]::new);
+                criteriaHelper.add(cb.or(categoryMatch));
+            }
         }
 
         // Complete the query
@@ -289,7 +305,7 @@ public class CategoryService extends BaseService {
      */
     public Category findByName(String name, String lang, Integer parentId) {
 
-        List<Category> categories = searchCategories(parentId, lang, name, 1);
+        List<Category> categories = searchCategories(parentId, lang, name, false, 1);
 
         return categories.isEmpty() ? null : categories.get(0);
     }

@@ -436,6 +436,12 @@ public class MessageService extends BaseService {
         }
 
 
+        // Message series
+        if (!param.getSeriesIds().isEmpty()) {
+            criteriaHelper.in(msgRoot.get("messageSeries").get("seriesId"), param.getSeriesIds());
+        }
+
+
         // Filter by area, join over...
         Join<Message, Area> areaRoot = null;
         if (!param.getAreaIds().isEmpty() || param.sortByArea()) {

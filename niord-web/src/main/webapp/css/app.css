@@ -352,6 +352,15 @@ body > .ui-select-container {
     }
 }
 
+.view-mode-filter .domain-attr {
+    font-size: 10px;
+}
+
+.view-mode-filter .domain-attr:not(:last-child):after {
+    color: darkgray;
+    font-size: 10px;
+    content:' • ';
+}
 
 /** Maps **/
 

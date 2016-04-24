@@ -19,20 +19,24 @@ angular.module('niord.messages')
             $scope.showFilter = true;
             $scope.messageList = [];
             $scope.totalMessageNo = 0;
-            $scope.filterNames = [ 'text', 'type', 'status', 'tag', 'aton', 'chart', 'area', 'category', 'date' ];
+            $scope.filterNames = [ 'messageSeries', 'text', 'type', 'status', 'tag', 'aton', 'chart', 'area', 'category', 'date' ];
+            if ($rootScope.domain) {
+                $scope.filterNames.unshift('domain');
+            }
             $scope.state = {
+
+                /** Sorting **/
+                sortBy : 'AREA',
+                sortOrder : 'ASC',
 
                 /** Map state. Also serves as a mandatory filter in map mode **/
                 map : {
                     enabled: true,
                     reloadMap : false // can be used to trigger a map reload
                 },
-
-                /** Sorting **/
-                sortBy : 'AREA',
-                sortOrder : 'ASC',
-
-                /** Filter state **/
+                domain : {
+                    enabled: $rootScope.domain !== undefined
+                },
                 text: {
                     enabled: false,
                     focusField: '#query',
@@ -74,6 +78,11 @@ angular.module('niord.messages')
                     enabled: false,
                     focusField: '#charts > div > input.ui-select-search',
                     charts: []
+                },
+                messageSeries: {
+                    enabled: false,
+                    focusField: '#messageSeries > div > input.ui-select-search',
+                    series: []
                 },
                 area: {
                     enabled: false,
@@ -154,6 +163,9 @@ angular.module('niord.messages')
                     case 'chart':
                         filter.charts = [];
                         break;
+                    case 'messageSeries':
+                        filter.sereis = [];
+                        break;
                     case 'area':
                         filter.areas = [];
                         break;
@@ -195,6 +207,9 @@ angular.module('niord.messages')
                 }
 
                 // Handle Filters
+                if ($rootScope.domain && !s.domain.enabled) {
+                    params += '&domain=false'
+                }
                 if (s.text.enabled) {
                     params += '&query=' + encodeURIComponent(s.text.query);
                 }
@@ -265,6 +280,11 @@ angular.module('niord.messages')
                         params += '&chart=' + chart.chartNumber;
                     })
                 }
+                if (s.messageSeries.enabled) {
+                    angular.forEach(s.messageSeries.series, function (s) {
+                        params += '&messageSeries=' + s.seriesId;
+                    })
+                }
                 if (s.area.enabled) {
                     angular.forEach(s.area.areas, function (area) {
                         params += '&area=' + area.id;
@@ -307,6 +327,9 @@ angular.module('niord.messages')
                 }
 
                 // Handle filters
+                if ($rootScope.domain) {
+                    s.domain.enabled = params.domain != 'false';
+                }
                 if (params.query) {
                     s.text.enabled = true;
                     s.text.query = params.query;
@@ -352,6 +375,14 @@ angular.module('niord.messages')
                             s.chart.charts = response.data;
                         });
                 }
+                if (params.messageSeries && params.messageSeries.length > 0) {
+                    s.messageSeries.enabled = true;
+                    var series = (typeof params.messageSeries === 'string') ? params.messageSeries : params.messageSeries.join();
+                    $http.get('/rest/message-series/search/' + series + '?lang=' + $rootScope.language + '&limit=10')
+                        .then(function(response) {
+                            s.messageSeries.series = response.data;
+                        });
+                }
                 if (params.area && params.area.length > 0) {
                     s.area.enabled = true;
                     var areas = (typeof params.area === 'string') ? params.area : params.area.join();
@@ -381,8 +412,10 @@ angular.module('niord.messages')
                 }
             };
 
+            
             // Called when the filter is updated
             $scope.filterUpdated = function () {
+                
                 // Enforce validity of the filter selection
                 if ($scope.state.type.mainType != 'NM') {
                     $scope.state.type.PERMANENT_NOTICE = false;
@@ -396,6 +429,16 @@ angular.module('niord.messages')
                     $scope.state.type.NAVAREA_WARNING = false;
                     $scope.state.type.LOCAL_WARNING = false;
                 }
+                
+                if (!$scope.state.domain.enabled) {
+                    $scope.state.status.PUBLISHED = false;
+                    $scope.state.status.DRAFT = false;
+                    $scope.state.status.IMPORTED = false;
+                    $scope.state.status.VERIFIED = false;
+                    $scope.state.status.CANCELLED = false;
+                    $scope.state.status.EXPIRED = false;
+                    $scope.state.status.DELETED = false;
+                }
 
                 if (loadTimer) {
                     $timeout.cancel(loadTimer);
@@ -404,6 +447,7 @@ angular.module('niord.messages')
                 loadTimer = $timeout($scope.refreshMessages, 100);
             };
 
+            
             // Use for tag selection
             $scope.tags = [];
             $scope.refreshTags = function(name) {
@@ -446,6 +490,23 @@ angular.module('niord.messages')
             };
 
 
+            // Use for message series selection
+            $scope.messageSeries = [];
+            $scope.refreshMessageSeries = function(name) {
+                if (!name || name.length == 0) {
+                    return [];
+                }
+                return $http.get(
+                    '/rest/message-series/search?name=' + encodeURIComponent(name) +
+                    '&domain=' + $scope.state.domain.enabled +
+                    '&lang=' + $rootScope.language +
+                    '&limit=10'
+                ).then(function(response) {
+                    $scope.messageSeries = response.data;
+                });
+            };
+
+
             // Use for area selection
             $scope.areas = [];
             $scope.refreshAreas = function(name) {
@@ -454,6 +515,7 @@ angular.module('niord.messages')
                 }
                 return $http.get(
                     '/rest/areas/search?name=' + encodeURIComponent(name) +
+                    '&domain=' + $scope.state.domain.enabled +
                     '&lang=' + $rootScope.language +
                     '&limit=10'
                 ).then(function(response) {
@@ -468,7 +530,10 @@ angular.module('niord.messages')
                     return [];
                 }
                 return $http.get(
-                    '/rest/categories/search?name=' + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10'
+                    '/rest/categories/search?name=' + encodeURIComponent(name) +
+                    '&domain=' + $scope.state.domain.enabled +
+                    '&lang=' + $rootScope.language +
+                    '&limit=10'
                 ).then(function(response) {
                     $scope.categories = response.data;
                 });

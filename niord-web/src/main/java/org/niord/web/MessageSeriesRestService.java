@@ -96,8 +96,9 @@ public class MessageSeriesRestService {
     @NoCache
     public List<MessageSeriesVo> searchMessageSeries(
             @QueryParam("name") @DefaultValue("") String name,
+            @QueryParam("domain") @DefaultValue("false") boolean domain,
             @QueryParam("limit") @DefaultValue("100") int limit) {
-        return messageSeriesService.searchMessageSeries(name, limit).stream()
+        return messageSeriesService.searchMessageSeries(name, domain, limit).stream()
                 .map(MessageSeries::toVo)
                 .collect(Collectors.toList());
     }

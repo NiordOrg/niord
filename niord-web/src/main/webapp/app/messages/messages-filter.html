@@ -4,6 +4,17 @@
     <div class="row">
 
 
+        <!-- Domain Filter -->
+        <view-mode-filter-panel state="state" filter-name="domain" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
+            <div class="btn-group full-width" style="padding: 4px 0 0 4px;">
+                <span style="font-size: 12px">{{domain.name}}</span>
+                <span class="domain-attr" ng-repeat="series in domain.messageSeries">{{series.seriesId}}</span>
+                <span class="domain-attr" ng-repeat="area in domain.areas">{{area.descs[0].name}}</span>
+                <span class="domain-attr" ng-repeat="category in domain.categories">{{category.descs[0].name}}</span>
+            </div>
+        </view-mode-filter-panel>
+
+
         <!-- Map Filter -->
         <view-mode-filter-panel state="state" filter-name="map" closable="false" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
             <div class="map-extent">
@@ -51,13 +62,13 @@
         <!-- Status Filter -->
         <view-mode-filter-panel state="state" filter-name="status" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
             <div class="btn-group">
-                <label class="btn btn-default btn-sm" ng-model="state.status.PUBLISHED" uib-btn-checkbox>Published</label>
-                <label class="btn btn-default btn-sm" ng-model="state.status.IMPORTED" uib-btn-checkbox>Imported</label>
-                <label class="btn btn-default btn-sm" ng-model="state.status.DRAFT" uib-btn-checkbox>Draft</label>
-                <label class="btn btn-default btn-sm" ng-model="state.status.VERIFIED" uib-btn-checkbox>Verified</label>
-                <label class="btn btn-default btn-sm" ng-model="state.status.CANCELLED" uib-btn-checkbox>Cancelled</label>
-                <label class="btn btn-default btn-sm" ng-model="state.status.EXPIRED" uib-btn-checkbox>Expired</label>
-                <label class="btn btn-default btn-sm" ng-model="state.status.DELETED" uib-btn-checkbox>Deleted</label>
+                <label class="btn btn-default btn-sm" ng-disabled="!state.domain.enabled" ng-model="state.status.PUBLISHED" uib-btn-checkbox>Published</label>
+                <label class="btn btn-default btn-sm" ng-disabled="!state.domain.enabled" ng-model="state.status.IMPORTED" uib-btn-checkbox>Imported</label>
+                <label class="btn btn-default btn-sm" ng-disabled="!state.domain.enabled" ng-model="state.status.DRAFT" uib-btn-checkbox>Draft</label>
+                <label class="btn btn-default btn-sm" ng-disabled="!state.domain.enabled" ng-model="state.status.VERIFIED" uib-btn-checkbox>Verified</label>
+                <label class="btn btn-default btn-sm" ng-disabled="!state.domain.enabled" ng-model="state.status.CANCELLED" uib-btn-checkbox>Cancelled</label>
+                <label class="btn btn-default btn-sm" ng-disabled="!state.domain.enabled" ng-model="state.status.EXPIRED" uib-btn-checkbox>Expired</label>
+                <label class="btn btn-default btn-sm" ng-disabled="!state.domain.enabled" ng-model="state.status.DELETED" uib-btn-checkbox>Deleted</label>
             </div>
         </view-mode-filter-panel>
 
@@ -117,6 +128,24 @@
                         <span ng-bind-html="chart.chartNumber | highlight: $select.search"></span>
                         <span ng-if="chart.internationalNumber">(INT {{chart.internationalNumber}})</span>
                         <small ng-bind-html="chart.name | highlight: $select.search"></small>
+                    </div>
+
+                </ui-select-choices>
+            </ui-select>
+        </view-mode-filter-panel>
+
+
+        <!-- Message Series Filter -->
+        <view-mode-filter-panel state="state" filter-name="messageSeries" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
+            <ui-select multiple id="messageSeries" ng-model="state.messageSeries.series" >
+                <ui-select-match placeholder="Select Message Series">
+                    {{$item.seriesId}}
+                </ui-select-match>
+                <ui-select-choices repeat="series in messageSeries"
+                                   refresh="refreshMessageSeries($select.search)"
+                                   refresh-delay="100">
+                    <div>
+                        <span ng-bind-html="series.seriesId | highlight: $select.search"></span>
                     </div>
 
                 </ui-select-choices>

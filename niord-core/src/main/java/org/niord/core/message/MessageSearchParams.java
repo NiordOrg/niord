@@ -50,6 +50,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     Set<Status> statuses = new HashSet<>();
     Set<Type> types = new HashSet<>();
     Set<MainType> mainTypes = new HashSet<>();
+    Set<String> seriesIds = new HashSet<>();
     Set<Integer> areaIds = new HashSet<>();
     Set<Integer> categoryIds = new HashSet<>();
     Set<String> chartNumbers = new HashSet<>();
@@ -110,6 +111,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         if (statuses.size() > 0) { desc.add(String.format("Statuses: %s", statuses)); }
         if (types.size() > 0) { desc.add(String.format("Types: %s", types)); }
         if (mainTypes.size() > 0) { desc.add(String.format("Main types: %s", mainTypes)); }
+        if (seriesIds.size() > 0) { desc.add(String.format("Series ID's: %s", seriesIds)); }
         if (areaIds.size() > 0) { desc.add(String.format("Area ID's: %s", areaIds)); }
         if (categoryIds.size() > 0) { desc.add(String.format("Category ID's: %s", categoryIds)); }
         if (chartNumbers.size() > 0) { desc.add(String.format("Chart Numbers: %s", chartNumbers)); }
@@ -212,6 +214,15 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public MessageSearchParams mainTypes(Set<MainType> mainTypes) {
         this.mainTypes = toSet(mainTypes);
+        return this;
+    }
+
+    public Set<String> getSeriesIds() {
+        return seriesIds;
+    }
+
+    public MessageSearchParams seriesIds(Set<String> seriesIds) {
+        this.seriesIds = toSet(seriesIds);
         return this;
     }
 
