@@ -631,7 +631,7 @@ angular.module('niord.messages')
 
             /** Returns if the user should be allowed to select the given types for filtering */
             $scope.supportsType = function (type) {
-                if ($rootScope.domain) {
+                if ($rootScope.domain && $scope.state.domain.enabled) {
                     // When a domain is selected, check if any of the domain message series has the given type
                     var result = false;
                     if ($rootScope.domain.messageSeries) {
