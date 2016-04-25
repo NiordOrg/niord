@@ -22,6 +22,7 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
+import org.niord.core.model.BaseEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.PagedSearchParamsVo;
 import org.niord.model.PagedSearchResultVo;
@@ -74,6 +75,20 @@ public abstract class AbstractApiService {
                     domain.getMessageSeries().stream()
                         .map(MessageSeries::getSeriesId)
                         .collect(Collectors.toSet())
+                );
+
+                // Set the areas to be the ones defined by the domain
+                params.areaIds(
+                        domain.getAreas().stream()
+                                .map(BaseEntity::getId)
+                                .collect(Collectors.toSet())
+                );
+
+                // Set the categories to be the ones defined by the domain
+                params.categoryIds(
+                        domain.getCategories().stream()
+                                .map(BaseEntity::getId)
+                                .collect(Collectors.toSet())
                 );
             }
         }

@@ -74,7 +74,7 @@ public class ApiRestService extends AbstractApiService {
             @ApiParam(value = "Two-letter ISO 639-1 language code", example="en")
             @QueryParam("lang") String language,
 
-            @ApiParam(value = "The ID of the domain to select messages from", example="dma-nw")
+            @ApiParam(value = "The ID of the domain to select messages from", example="niord-client-nw")
             @QueryParam("domain") String domain,
 
             @ApiParam(value = "Either NW (navigational warnings) or NM (notices to mariners)", example="NW")
