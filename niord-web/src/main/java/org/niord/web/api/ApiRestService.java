@@ -74,6 +74,9 @@ public class ApiRestService extends AbstractApiService {
             @ApiParam(value = "Two-letter ISO 639-1 language code", example="en")
             @QueryParam("lang") String language,
 
+            @ApiParam(value = "The ID of the domain to select messages from", example="dma-nw")
+            @QueryParam("domain") String domain,
+
             @ApiParam(value = "Either NW (navigational warnings) or NM (notices to mariners)", example="NW")
             @QueryParam("mainType") Set<MainType> mainTypes,
 
@@ -81,7 +84,7 @@ public class ApiRestService extends AbstractApiService {
             @QueryParam("wkt") String wkt
 
     ) throws Exception {
-        return super.search(language, mainTypes, wkt);
+        return super.search(language, domain, mainTypes, wkt);
     }
 
 

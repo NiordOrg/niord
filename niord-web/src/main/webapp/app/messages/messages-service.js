@@ -25,7 +25,11 @@ angular.module('niord.messages')
 
             /** Returns the message filters */
             publicMessages: function() {
-                return $http.get('/rest/public/v1/messages?lang=' + $rootScope.language);
+                var params = 'lang=' + $rootScope.language;
+                if ($rootScope.domain) {
+                    params += '&domain=' + $rootScope.domain.clientId;
+                }
+                return $http.get('/rest/public/v1/messages?' + params);
             },
 
 

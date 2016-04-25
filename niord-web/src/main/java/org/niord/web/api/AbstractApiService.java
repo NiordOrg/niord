@@ -15,8 +15,12 @@
  */
 package org.niord.web.api;
 
+import org.apache.commons.lang.StringUtils;
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageSearchParams;
+import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
 import org.niord.model.DataFilter;
 import org.niord.model.PagedSearchParamsVo;
@@ -30,6 +34,7 @@ import javax.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Abstract base class for the API services
@@ -40,13 +45,16 @@ public abstract class AbstractApiService {
     Logger log;
 
     @Inject
+    DomainService domainService;
+
+    @Inject
     MessageService messageService;
 
     /**
      * Returns all published messages.
      * Optionally, filter by a geometry defined by the WKT (well-known text) parameter.
      */
-    public List<MessageVo> search(String language, Set<MainType> mainTypes, String wkt) throws Exception {
+    public List<MessageVo> search(String language, String domainId, Set<MainType> mainTypes, String wkt) throws Exception {
 
         MessageSearchParams params = new MessageSearchParams();
         params.language(language)
@@ -56,6 +64,19 @@ public abstract class AbstractApiService {
                 .includeGeneral(Boolean.TRUE) // Messages without a geometry may be included if WKT specified
                 .sortBy("AREA")
                 .sortOrder(PagedSearchParamsVo.SortOrder.ASC);
+
+        // Check if a domain has been specified
+        if (StringUtils.isNotBlank(domainId)) {
+            Domain domain = domainService.findByClientId(domainId);
+            if (domain != null) {
+                // Add the message series of the domain as a filter
+                params.seriesIds(
+                    domain.getMessageSeries().stream()
+                        .map(MessageSeries::getSeriesId)
+                        .collect(Collectors.toSet())
+                );
+            }
+        }
 
         long t0 = System.currentTimeMillis();
         PagedSearchResultVo<Message> searchResult = messageService.search(params);
