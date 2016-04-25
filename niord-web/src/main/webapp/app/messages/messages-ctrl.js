@@ -417,13 +417,13 @@ angular.module('niord.messages')
             $scope.filterUpdated = function () {
                 
                 // Enforce validity of the filter selection
-                if ($scope.state.type.mainType != 'NM') {
+                if ($scope.state.type.mainType == 'NW') {
                     $scope.state.type.PERMANENT_NOTICE = false;
                     $scope.state.type.TEMPORARY_NOTICE = false;
                     $scope.state.type.PRELIMINARY_NOTICE = false;
                     $scope.state.type.MISCELLANEOUS_NOTICE = false;
                 }
-                if ($scope.state.type.mainType != 'NW') {
+                if ($scope.state.type.mainType == 'NM') {
                     $scope.state.type.COASTAL_WARNING = false;
                     $scope.state.type.SUBAREA_WARNING = false;
                     $scope.state.type.NAVAREA_WARNING = false;
@@ -626,6 +626,35 @@ angular.module('niord.messages')
                             $scope.readRequestFilterParameters();
                         }
                     });
+            };
+
+
+            /** Returns if the user should be allowed to select the given types for filtering */
+            $scope.supportsType = function (type) {
+                if ($rootScope.domain) {
+                    // When a domain is selected, check if any of the domain message series has the given type
+                    var result = false;
+                    if ($rootScope.domain.messageSeries) {
+                        for (var x = 0; x < $rootScope.domain.messageSeries.length; x++) {
+                            result |= $rootScope.domain.messageSeries[x].mainType == type;
+                        }
+                    }
+                    return result;
+                }
+                // If no domain is selected, any type should be selectable
+                return true;
+            };
+
+
+            $scope.supportsNw = function (exclusively) {
+                return $scope.supportsType('NW') &&
+                    (!exclusively || !$scope.supportsType('NM'));
+            };
+
+
+            $scope.supportsNm = function (exclusively) {
+                return $scope.supportsType('NM') &&
+                    (!exclusively || !$scope.supportsType('NW'));
             };
 
 

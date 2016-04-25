@@ -39,18 +39,18 @@
 
         <!-- Type Filter -->
         <view-mode-filter-panel state="state" filter-name="type" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
-            <div class="btn-group" style="margin-right: 20px">
+            <div class="btn-group" style="margin-right: 20px" ng-if="supportsNw() && supportsNm()">
                 <label class="btn btn-default btn-sm" ng-model="state.type.mainType" uib-btn-radio="''">All</label>
                 <label class="btn btn-default btn-sm" ng-model="state.type.mainType" uib-btn-radio="'NW'">NW</label>
                 <label class="btn btn-default btn-sm" ng-model="state.type.mainType" uib-btn-radio="'NM'">NM</label>
             </div>
-            <div class="btn-group" ng-if="state.type.mainType == 'NW'">
+            <div class="btn-group" ng-if="state.type.mainType == 'NW' || supportsNw(true)">
                 <label class="btn btn-default btn-sm" ng-model="state.type.LOCAL_WARNING" uib-btn-checkbox>Local</label>
                 <label class="btn btn-default btn-sm" ng-model="state.type.COASTAL_WARNING" uib-btn-checkbox>Coastal</label>
                 <label class="btn btn-default btn-sm" ng-model="state.type.SUBAREA_WARNING" uib-btn-checkbox>Subarea</label>
                 <label class="btn btn-default btn-sm" ng-model="state.type.NAVAREA_WARNING" uib-btn-checkbox>Navarea</label>
             </div>
-            <div class="btn-group" ng-if="state.type.mainType == 'NM'">
+            <div class="btn-group" ng-if="state.type.mainType == 'NM' || supportsNm(true)">
                 <label class="btn btn-default btn-sm" ng-model="state.type.TEMPORARY_NOTICE" uib-btn-checkbox>Temp.</label>
                 <label class="btn btn-default btn-sm" ng-model="state.type.PRELIMINARY_NOTICE" uib-btn-checkbox>Prelim.</label>
                 <label class="btn btn-default btn-sm" ng-model="state.type.PERMANENT_NOTICE" uib-btn-checkbox>Perm.</label>
