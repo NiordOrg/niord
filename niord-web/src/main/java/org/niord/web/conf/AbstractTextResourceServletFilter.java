@@ -60,7 +60,12 @@ public abstract class AbstractTextResourceServletFilter implements Filter {
         txt = updateResponse(request, txt);
 
         // Write the result back to the response
-        WebUtils.cache(response, cacheTTL);
+        if (cacheTTL > 0) {
+            WebUtils.cache(response, cacheTTL);
+        } else {
+            WebUtils.nocache(response);
+        }
+
         response.setContentLength(txt.length());
         out.write(txt);
         out.flush();

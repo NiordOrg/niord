@@ -15,7 +15,7 @@ import java.util.Map;
 @WebFilter(urlPatterns={"/app/conf/keycloak.json"})
 public class KeycloakJsonServletFilter extends AbstractTextResourceServletFilter {
 
-    final static int CACHE_SECONDS = 10 * 60; // 10 minutes
+    final static int CACHE_SECONDS = 0; // Do not cache
 
     Map<String, String> keycloakDeployment;
 

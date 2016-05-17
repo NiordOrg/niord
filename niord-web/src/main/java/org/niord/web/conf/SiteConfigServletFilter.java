@@ -18,7 +18,7 @@ import java.util.List;
 @WebFilter(urlPatterns={"/app/conf/site-config.js"})
 public class SiteConfigServletFilter extends AbstractTextResourceServletFilter {
 
-    final static int CACHE_SECONDS = 60 * 60 * 2; // 2 hour
+    final static int CACHE_SECONDS = 0; // Do not cache
 
     final static String SETTINGS_START  = "/** SETTINGS START **/";
     final static String SETTINGS_END    = "/** SETTINGS END **/";
