@@ -36,7 +36,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * Processes imported messages.
@@ -151,8 +150,7 @@ public class BatchMessageImportProcessor extends AbstractItemHandler {
         }
 
         // Check if it is defined by batch job properties
-        Properties props = job.readProperties();
-        String seriesId = props.getProperty("seriesId");
+        String seriesId = job.getProperties().getProperty("seriesId");
         if (StringUtils.isNotBlank(seriesId)) {
             defaultMessageSeries = messageSeriesService.findBySeriesId(seriesId);
         }

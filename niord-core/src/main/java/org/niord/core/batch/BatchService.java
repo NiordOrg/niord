@@ -141,7 +141,9 @@ public class BatchService extends BaseService {
         job.setUser(userService.currentUser());
         job.setJobName(jobName);
         job.setJobNo(getNextJobNo(jobName));
-        job.writeProperties(properties);
+        if (properties != null) {
+            job.getProperties().putAll(properties);
+        }
         return job;
     }
 
@@ -571,7 +573,7 @@ public class BatchService extends BaseService {
                 i.setJobNo(data.getJobNo());
                 i.setUser(data.getUser() != null ? data.getUser().getName() : null);
                 i.setJobName(data.getJobName());
-                i.setProperties(data.readProperties());
+                i.setProperties(data.getProperties());
                 i.setProgress(data.getProgress());
             }
         }

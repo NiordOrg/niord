@@ -25,7 +25,6 @@ import javax.inject.Named;
 import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * Imports a list of messages from the messages.json file.
@@ -114,8 +113,7 @@ public class BatchMessageImportReader extends AbstractItemHandler {
     public void open(Serializable prevCheckpointInfo) throws Exception {
 
         // Validate that we have access to the "seriesId" properties
-        Properties props = job.readProperties();
-        if (StringUtils.isBlank(props.getProperty("seriesId"))) {
+        if (StringUtils.isBlank(job.getProperties().getProperty("seriesId"))) {
             getLog().severe("Missing seriesId batch property");
             throw new Exception("Missing seriesId batch property");
         }

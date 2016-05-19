@@ -26,7 +26,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * Persists the NWs to the database
@@ -82,8 +81,7 @@ public class BatchMessageImportWriter extends AbstractItemHandler {
             return tag;
         }
 
-        Properties props = job.readProperties();
-        String tagId = props.getProperty("tagName");
+        String tagId = job.getProperties().getProperty("tagName");
         if (StringUtils.isBlank(tagId)) {
             return null;
         }

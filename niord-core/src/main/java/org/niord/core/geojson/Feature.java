@@ -49,7 +49,7 @@ public class Feature extends BaseEntity<Integer> {
     @Column(columnDefinition = "GEOMETRY", nullable = false)
     private Geometry geometry;
 
-    @Column(name="properties")
+    @Column(name="properties", columnDefinition = "TEXT")
     @Convert(converter = JpaPropertiesAttributeConverter.class)
     private Properties properties = new Properties();
 

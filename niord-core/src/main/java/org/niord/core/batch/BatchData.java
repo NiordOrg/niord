@@ -15,13 +15,23 @@
  */
 package org.niord.core.batch;
 
+import org.niord.core.db.JpaPropertiesAttributeConverter;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.user.User;
-import org.niord.core.util.JsonUtils;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.Index;
+import javax.persistence.Lob;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.PrePersist;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Calendar;
@@ -62,8 +72,9 @@ public class BatchData extends BaseEntity<Integer> {
 
     String dataFileName;
 
-    @Lob
-    String properties;
+    @Column(name="properties", columnDefinition = "TEXT")
+    @Convert(converter = JpaPropertiesAttributeConverter.class)
+    Properties properties = new Properties();
 
     Integer progress;
 
@@ -87,23 +98,6 @@ public class BatchData extends BaseEntity<Integer> {
                 ", user=" + user +
                 ", dataFileName='" + dataFileName + '\'' +
                 '}';
-    }
-
-
-    /**
-     * Writes the Properties as JSON
-     * @param props the properties to write
-     */
-    public void writeProperties(Properties props) throws IOException {
-        this.properties = JsonUtils.toJson(props);
-    }
-
-
-    /**
-     * Reads the properties JSON as a Properties object
-     */
-    public Properties readProperties() throws IOException {
-        return JsonUtils.fromJson(this.properties, Properties.class);
     }
 
 
@@ -199,11 +193,11 @@ public class BatchData extends BaseEntity<Integer> {
         this.dataFileName = fileName;
     }
 
-    public String getProperties() {
+    public Properties getProperties() {
         return properties;
     }
 
-    public void setProperties(String properties) {
+    public void setProperties(Properties properties) {
         this.properties = properties;
     }
 
