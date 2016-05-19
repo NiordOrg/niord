@@ -21,7 +21,7 @@ public class FeatureName {
 
     enum Type { FeatureName, FeatureCoordName }
 
-    String key;
+    Object key;
     Object value;
     String language;
     int coordIndex;
@@ -29,14 +29,14 @@ public class FeatureName {
 
     /** Constructor **/
     @SuppressWarnings("unused")
-    public FeatureName(String key, Object value) {
+    public FeatureName(Object key, Object value) {
         this.key = key;
         this.value = value;
         parseKey();
     }
 
     /** Constructor **/
-    public FeatureName(Map.Entry<String, Object> kv) {
+    public FeatureName(Map.Entry<Object, Object> kv) {
         this.key = kv.getKey();
         this.value = kv.getValue();
         parseKey();
@@ -44,8 +44,8 @@ public class FeatureName {
 
     /** Parses the key to determine the kind of feature name property **/
     private void parseKey() {
-        Matcher m1 = FEATURE_NAME.matcher(key);
-        Matcher m2 = FEATURE_COORD_NAME.matcher(key);
+        Matcher m1 = FEATURE_NAME.matcher(key.toString());
+        Matcher m2 = FEATURE_COORD_NAME.matcher(key.toString());
         if (m1.matches()) {
             type = Type.FeatureName;
             language = m1.group(1);
@@ -71,7 +71,7 @@ public class FeatureName {
     }
 
     public String getKey() {
-        return key;
+        return key.toString();
     }
 
     public Object getValue() {

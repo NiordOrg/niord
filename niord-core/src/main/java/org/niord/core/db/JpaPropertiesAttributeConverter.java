@@ -22,22 +22,23 @@ import org.slf4j.LoggerFactory;
 
 import javax.persistence.AttributeConverter;
 import java.io.IOException;
+import java.util.Properties;
 
 /**
- * Use to convert a JPA database field to and fro JSON.
+ * Use to convert a JPA database field to and fro a Properties object by (de-)serializing as JSON.
  * Usage:
  * <pre>
- *     {@literal @}Convert(converter = JpaJsonAttributeConverter.class)
+ *     {@literal @}Convert(converter = JpaMapAttributeConverter.class)
  * </pre>
  */
-public class JpaJsonAttributeConverter implements AttributeConverter<Object, String> {
+public class JpaPropertiesAttributeConverter implements AttributeConverter<Properties, String> {
 
     private final static ObjectMapper objectMapper = new ObjectMapper();
-    private final static Logger log = LoggerFactory.getLogger(JpaJsonAttributeConverter.class);
+    private final static Logger log = LoggerFactory.getLogger(JpaPropertiesAttributeConverter.class);
 
     /** {@inheritDoc} */
     @Override
-    public String convertToDatabaseColumn(Object value) {
+    public String convertToDatabaseColumn(Properties value) {
 
         if (value == null) {
             return null;
@@ -46,24 +47,24 @@ public class JpaJsonAttributeConverter implements AttributeConverter<Object, Str
         try {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException ex) {
-            log.error("Error converting JSON to String: " + value);
+            log.error("Error converting Properties to String: " + value);
             return null;
         }
     }
 
     /** {@inheritDoc} */
     @Override
-    public Object convertToEntityAttribute(String value) {
+    public Properties convertToEntityAttribute(String value) {
 
         if (value == null) {
-            return null;
+            return new Properties();
         }
 
         try {
-            return objectMapper.readValue(value, Object.class);
+            return objectMapper.readValue(value, Properties.class);
         } catch (IOException ex) {
-            log.error("Error converting String to JSON: " + value);
-            return null;
+            log.error("Error converting String to Properties: " + value);
+            return new Properties();
         }
     }
 }

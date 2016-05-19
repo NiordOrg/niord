@@ -65,11 +65,11 @@ public class FeatureService extends BaseService {
         // If there are any links between features, via the "parentFeatureId" property, update it to the new UID
         fc.getFeatures().stream()
                 .filter(f -> f.getProperties().containsKey("parentFeatureId"))
-                .filter(f -> oldUids.containsKey(f.getProperties().get("parentFeatureId")))
+                .filter(f -> oldUids.containsKey(f.getProperties().getProperty("parentFeatureId")))
                 .forEach(f -> {
-                    String oldUid = f.getProperties().get("parentFeatureId");
+                    String oldUid = f.getProperties().getProperty("parentFeatureId");
                     String newUid = oldUids.get(oldUid);
-                    f.getProperties().put("parentFeatureId", newUid);
+                    f.getProperties().setProperty("parentFeatureId", newUid);
                 });
     }
 

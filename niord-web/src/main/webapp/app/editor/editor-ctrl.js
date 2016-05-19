@@ -45,7 +45,7 @@ angular.module('niord.editor')
             };
             
             $scope.openThumbnail = function () {
-                window.open('/message-map-image/' + $stateParams.id + '.png');
+                window.open('/rest/message-map-image/' + $stateParams.id + '.png');
             }
 
         }])

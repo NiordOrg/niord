@@ -20,8 +20,7 @@ import io.swagger.annotations.ApiModel;
 
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Properties;
 import java.util.function.Consumer;
 
 /**
@@ -34,7 +33,7 @@ public class FeatureVo extends GeoJsonVo {
 
     private Object id;
     private GeometryVo geometry;
-    private Map<String, Object> properties = new HashMap<>();
+    private Properties properties = new Properties();
 
     /** {@inheritDoc} */
     @Override
@@ -61,11 +60,11 @@ public class FeatureVo extends GeoJsonVo {
         this.geometry = geometry;
     }
 
-    public Map<String, Object> getProperties() {
+    public Properties getProperties() {
         return properties;
     }
 
-    public void setProperties(Map<String, Object> properties) {
+    public void setProperties(Properties properties) {
         this.properties = properties;
     }
 }

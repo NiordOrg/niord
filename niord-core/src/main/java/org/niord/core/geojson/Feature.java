@@ -1,18 +1,22 @@
 package org.niord.core.geojson;
 
 import com.vividsolutions.jts.geom.Geometry;
+import org.niord.core.db.JpaPropertiesAttributeConverter;
 import org.niord.core.model.BaseEntity;
-import org.niord.model.vo.geojson.FeatureVo;
 import org.niord.core.util.GeoJsonUtils;
+import org.niord.model.vo.geojson.FeatureVo;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Convert;
+import javax.persistence.Entity;
+import javax.persistence.Index;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.PrePersist;
+import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.Properties;
 import java.util.UUID;
 
 /**
@@ -45,11 +49,9 @@ public class Feature extends BaseEntity<Integer> {
     @Column(columnDefinition = "GEOMETRY", nullable = false)
     private Geometry geometry;
 
-    @ElementCollection
-    @JoinTable(name="FeatureProperties", joinColumns=@JoinColumn(name="id"))
-    @MapKeyColumn(name="name")
-    @Column(name="value")
-    private Map<String, String> properties = new HashMap<>();
+    @Column(name="properties")
+    @Convert(converter = JpaPropertiesAttributeConverter.class)
+    private Properties properties = new Properties();
 
     /** Ensure that the UID is defined */
     @PrePersist
@@ -70,7 +72,7 @@ public class Feature extends BaseEntity<Integer> {
         FeatureVo vo = new FeatureVo();
         vo.setGeometry(GeoJsonUtils.fromJts(geometry));
         vo.setId(uid);
-        FeaturePropertiesHandler.copyToVo(properties, vo.getProperties());
+        vo.getProperties().putAll(properties);
         return vo;
     }
 
@@ -80,7 +82,7 @@ public class Feature extends BaseEntity<Integer> {
         if (vo.getId() != null) {
             feature.setUid(vo.getId().toString());
         }
-        FeaturePropertiesHandler.copyFromVo(feature.getProperties(), vo.getProperties());
+        feature.getProperties().putAll(vo.getProperties());
         feature.setGeometry(GeoJsonUtils.toJts(vo.getGeometry()));
         return feature;
     }
@@ -112,66 +114,11 @@ public class Feature extends BaseEntity<Integer> {
         this.geometry = geometry;
     }
 
-    public Map<String, String> getProperties() {
+    public Properties getProperties() {
         return properties;
     }
 
-    public void setProperties(Map<String, String> properties) {
+    public void setProperties(Properties properties) {
         this.properties = properties;
-    }
-}
-
-
-/**
- * Feature properties could have been handled in many ways, e.g. saved wholly or partly encoded as JSON
- * or we could have implemented a FeatureProperties table with typed values. Except that a property
- * value may be another json object, etc.
- * <p>
- * However, in Niord we only support a small set of simple properties, so,  FeatureProperties is implemented
- * as a simple string-based name-value table. It still allow us to join over and make interesting queries, unlike
- * if the properties had been persisted as JSON.
- */
-@SuppressWarnings("unused")
-class FeaturePropertiesHandler {
-    final static List<String> PROPERTY_NAME_PREFIXES =
-            Arrays.asList("name", "restriction",
-                    "bufferRadius", "bufferRadiusType", "parentFeatureId"); // TODO AtoN
-
-    final static Set<String> NUMERIC_PROPERTIES =
-            new HashSet<>(Arrays.asList("bufferRadius"));
-
-    /** Checks that the property name is suppoerted **/
-    public static boolean supportedProperty(String name) {
-        if (name != null) {
-            for (String prefix : PROPERTY_NAME_PREFIXES) {
-                if (name.startsWith(prefix)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /** Copies the supported properties from the VO properties to the entity properties **/
-    public static void copyFromVo(Map<String, String> entityProps, Map<String, Object> voProps) {
-        voProps.entrySet().stream()
-                // Only persist supported property names:
-                .filter(e -> supportedProperty(e.getKey()))
-                // Only persist non-blank values:
-                .filter(e -> e.getValue() != null && !e.getValue().toString().isEmpty())
-                // Persist the property as a string
-                .forEach(e -> entityProps.put(e.getKey(), e.getValue().toString().trim()));
-    }
-
-    /** Copies the supported properties from the entity properties to the VO properties **/
-    public static void copyToVo(Map<String, String> entityProps, Map<String, Object> voProps) {
-        entityProps.entrySet().stream()
-                .forEach(e -> {
-                    if (NUMERIC_PROPERTIES.contains(e.getKey())) {
-                        voProps.put(e.getKey(), Double.valueOf(e.getValue()));
-                    } else {
-                        voProps.put(e.getKey(), e.getValue());
-                    }
-                });
     }
 }

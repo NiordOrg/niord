@@ -19,8 +19,7 @@ import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
 
 import javax.xml.bind.annotation.XmlType;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Properties;
 
 /**
  * Implementation of the Coordinate Reference System, as defined in
@@ -32,7 +31,7 @@ public class CrsVo implements IJsonSerializable {
 
     private String type;
 
-    private Map<String, Object> properties = new HashMap<>();
+    private Properties properties = new Properties();
 
     public String getType() {
         return type;
@@ -42,11 +41,11 @@ public class CrsVo implements IJsonSerializable {
         this.type = type;
     }
 
-    public Map<String, Object> getProperties() {
+    public Properties getProperties() {
 		return properties;
 	}
 
-    public void setProperties(Map<String, Object> properties) {
+    public void setProperties(Properties properties) {
 		this.properties = properties;
 	}
 
