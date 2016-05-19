@@ -14,7 +14,7 @@
         <table style="margin-top: 5px">
             <tr ng-repeat="msg in messageList">
                 <td style="vertical-align: top">
-                    <img ng-src="/img/msi.png"
+                    <img ng-src="/img/{{msg.mainType | lowercase}}.png"
                          class="map-general-message-icon"
                          message-details-link="msg.id" message-list="messages"/>
                 </td>

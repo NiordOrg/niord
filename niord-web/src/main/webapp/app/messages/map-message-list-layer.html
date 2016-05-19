@@ -6,7 +6,7 @@
     <table>
         <tr ng-repeat="msg in generalMessages">
             <td style="border: none; padding-bottom: 10px; vertical-align: top">
-                <img ng-src="/img/msi.png"
+                <img ng-src="/img/{{msg.mainType | lowercase}}.png"
                      class="map-general-message-icon"
                      message-details-link="msg.id" message-list="messages"/>
             </td>

@@ -404,7 +404,7 @@ public class MessageMapImageGenerator {
      */
     private synchronized Image getNwImage() {
         if (nwImage == null) {
-            String imageUrl = app.getBaseUri() + "/img/msi.png";
+            String imageUrl = app.getBaseUri() + "/img/nw.png";
             try {
                 nwImage = ImageIO.read(new URL(imageUrl));
             } catch (IOException e) {

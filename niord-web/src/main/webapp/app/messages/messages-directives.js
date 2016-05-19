@@ -135,7 +135,7 @@ angular.module('niord.messages')
                         image: new ol.style.Icon({
                             anchor: [0.5, 0.5],
                             scale: 0.3,
-                            src: '/img/msi.png'
+                            src: '/img/nw.png'
                         })
                     });
 
@@ -397,7 +397,7 @@ angular.module('niord.messages')
                         image: new ol.style.Icon({
                             anchor: [0.5, 0.5],
                             scale: 0.3,
-                            src: '/img/msi.png'
+                            src: '/img/nw.png'
                         })
                     });
 
