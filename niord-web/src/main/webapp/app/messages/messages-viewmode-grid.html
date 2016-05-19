@@ -9,21 +9,26 @@
             <h4 class="message-list-area-heading" render-areas="[message.areaHeading]"></h4>
         </div>
         <div ng-repeat-end class="col-xs-11 col-sm-6 col-md-4 col-lg-3" style="margin-bottom: 20px">
-            <div class="grid-item" message-details-link="message.id" message-list="messageList">
-                <img class="grid-map-image" ng-src="/rest/message-map-image/{{message.id}}.png" width="256" height="256"/>
+            <div class="grid-item message-details-menu-parent">
+                <div message-details-link="message.id" message-list="messageList">
+                    <img class="grid-map-image" ng-src="/rest/message-map-image/{{message.id}}.png" width="256" height="256"/>
 
-                <div class="grid-map-image-header">
-                    <div ng-if="message.shortId">{{message.shortId}}</div>
-                    <span ng-if="message.descs[0].title">{{message.descs[0].title}}</span>
+                    <div class="grid-map-image-header">
+                        <div ng-if="message.shortId">{{message.shortId}}</div>
+                        <span ng-if="message.descs[0].title">{{message.descs[0].title}}</span>
                     <span ng-if="message.descs[0].lang != language" style="color: darkgray;">
                         <flag lang="message.descs[0].lang" style="height: 10px;"></flag>
                     </span>
-                </div>
-                <div class="grid-map-image-details">
-                    <div class="grid-map-image-date">
-                        <small><render-message-dates msg="message"/></small>
                     </div>
-                    <span ng-bind-html="message.descs[0].description"/>
+                    <div class="grid-map-image-details">
+                        <div class="grid-map-image-date">
+                            <small><render-message-dates msg="message"/></small>
+                        </div>
+                        <span ng-bind-html="message.descs[0].description"/>
+                    </div>
+                </div>
+                <div class="grid-map-image-menu">
+                    <message-details-menu message-id="msg.id" msg="msg" messages="searchResult.messages" size="xs"></message-details-menu>
                 </div>
             </div>
         </div>

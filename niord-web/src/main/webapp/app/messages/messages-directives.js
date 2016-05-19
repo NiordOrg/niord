@@ -3,9 +3,9 @@
  */
 angular.module('niord.messages')
 
-    /**
+    /****************************************************************
      * Replaces the content of the element with the area description
-     */
+     ****************************************************************/
     .directive('renderAreas', ['LangService', function (LangService) {
         return {
             restrict: 'A',
@@ -34,9 +34,9 @@ angular.module('niord.messages')
     }])
 
 
-    /**
+    /****************************************************************
      * Prints the message date interval
-     */
+     ****************************************************************/
     .directive('renderMessageDates', ['$rootScope', function ($rootScope) {
         return {
             restrict: 'E',
@@ -73,9 +73,9 @@ angular.module('niord.messages')
     }])
 
 
-    /**
+    /****************************************************************
      * The map-message-list-layer directive supports drawing a list of messages on a map layer
-     */
+     ****************************************************************/
     .directive('mapMessageListLayer', ['$rootScope', 'MapService', 'LangService', 'MessageService',
         function ($rootScope, MapService, LangService, MessageService) {
         return {
@@ -338,9 +338,9 @@ angular.module('niord.messages')
     }])
 
 
-    /**
+    /****************************************************************
      * The map-message-details directive supports drawing a single message on a map layer
-     */
+     ****************************************************************/
     .directive('mapMessageDetailsLayer', ['$rootScope', 'MapService', function ($rootScope, MapService) {
         return {
             restrict: 'E',
@@ -607,9 +607,10 @@ angular.module('niord.messages')
             templateUrl: '/app/messages/render-message-details.html',
             replace: false,
             scope: {
-                msg: "=",
-                messageList: "=",
-                format: "@"
+                msg:            "=",
+                messageList:    "=",
+                format:         "@",
+                showDetailsMenu: "@"
             },
             link: function(scope) {
                 scope.language = $rootScope.language;
@@ -626,4 +627,59 @@ angular.module('niord.messages')
                 }
             }
         };
-    }]);
+    }])
+
+
+    /****************************************************************
+     * Adds a message details drop-down menu
+     ****************************************************************/
+    .directive('messageDetailsMenu', ['$rootScope', '$window',
+        function ($rootScope, $window) {
+            'use strict';
+
+            return {
+                restrict: 'E',
+                templateUrl: '/app/messages/message-details-menu.html',
+                scope: {
+                    messageId:      "=",     // NB: We supply both of "messageId" and "msg" because
+                    msg:            "=",     // the former may be invalid and the latter may be undefined.
+                    messages:       "=",
+                    style:          "@",
+                    size:           "@",
+                    dismissAction:  "&"
+                },
+                link: function(scope, element, attrs) {
+
+                    if (scope.style) {
+                        element.attr('style', scope.style);
+                    }
+
+                    if (scope.size) {
+                        $(element[0]).find('button').addClass("btn-" + scope.size);
+                    }
+
+                    scope.hasRole = $rootScope.hasRole;
+
+                    // Download the PDF for the message
+                    scope.pdf = function () {
+                        $window.location = '/rest/messages/message-pdf/' + scope.messageId + '.pdf?lang=' + $rootScope.language;
+                    };
+
+                    // Navigate to the message editor page
+                    scope.edit = function() {
+                        if (scope.dismissAction) {
+                            scope.dismissAction();
+                        }
+                    };
+
+                    // Navigate to the message manager page
+                    scope.manage = function() {
+                        if (scope.dismissAction) {
+                            scope.dismissAction();
+                        }
+                    };
+
+                }
+            }
+        }]);
+

@@ -58,14 +58,20 @@ angular.module('niord.auth')
     /**
      * Register global functions available on root scope
      */
-    .run(['$rootScope', '$location',
-        function ($rootScope, $location) {
+    .run(['$rootScope', '$location', 'AuthService',
+        function ($rootScope, $location, AuthService) {
 
             // Navigate to the given path
             $rootScope.go = function (path) {
                 $location.path(path);
             };
-            
+
+            /** Returns if the user has the given role in Keycloak **/
+            $rootScope.hasRole = function (role) {
+                return AuthService.keycloak.hasRealmRole(role) ||
+                    ($rootScope.domain && AuthService.keycloak.hasResourceRole(role, $rootScope.domain.clientId));
+            }
+
         }]);
 
 

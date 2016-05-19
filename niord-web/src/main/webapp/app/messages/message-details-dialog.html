@@ -21,7 +21,7 @@
             <button type="button" class="close message-details-close-btn" ng-click="$dismiss('aborted')">x</button>
 
             <table class='table table-condensed'>
-                <tr render-message-details msg="msg" message-list="messages" format="details"></tr>
+                <tr render-message-details msg="msg" message-list="messages" format="details" show-details-menu="false"></tr>
             </table>
 
         </div>
@@ -45,7 +45,7 @@
                     </button>
                 </div>
 
-                <msi-details-menu message-id="currentMessageId()" msg="msg" size="sm" dismiss-action="$dismiss('edit');"></msi-details-menu>
+                <message-details-menu message-id="currentMessageId()" msg="msg" size="sm" dismiss-action="$dismiss('edit');"></message-details-menu>
             </div>
 
 

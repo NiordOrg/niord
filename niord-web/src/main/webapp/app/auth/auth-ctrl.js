@@ -35,9 +35,6 @@ angular.module('niord.auth')
             };
 
             /** Returns if the user has the given role in Keycloak **/
-            $scope.hasRole = function (role) {
-                return AuthService.keycloak.hasRealmRole(role) ||
-                    ($rootScope.domain && AuthService.keycloak.hasResourceRole(role, $rootScope.domain.clientId));
-            }
+            $scope.hasRole = $rootScope.hasRole;
 
         }]);

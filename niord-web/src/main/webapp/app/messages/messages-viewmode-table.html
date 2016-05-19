@@ -26,7 +26,7 @@
         <tr ng-repeat-start="message in messageList" ng-if="message.areaHeading">
             <td colspan="5"><h4 class="message-list-area-heading" render-areas="[message.areaHeading]"></h4></td>
         </tr>
-        <tr ng-repeat-end style="cursor: pointer">
+        <tr ng-repeat-end class="message-details-menu-parent" style="cursor: pointer">
             <td nowrap message-details-link="message.id" message-list="messageList"><span>{{message.shortId}}</span></td>
             <td nowrap message-details-link="message.id" message-list="messageList">
                 <render-message-dates msg="message"/>
@@ -34,7 +34,7 @@
             <td message-details-link="message.id" message-list="messageList">{{message.descs[0].title}}</td>
             <td message-details-link="message.id" message-list="messageList"><span render-areas="message.areas"></span></td>
             <td>
-                <msi-details-menu message-id="msg.id" msg="msg" messages="searchResult.messages" show-view-action="true" size="xs" style="float: right;"></msi-details-menu>
+                <message-details-menu message-id="msg.id" msg="msg" messages="messageList" size="xs" style="float: right;"></message-details-menu>
             </td>
         </tr>
     </table>

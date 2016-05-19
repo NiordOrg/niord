@@ -78,6 +78,12 @@
     padding: 5px 8px 5px 8px;
 }
 
+.grid-map-image-menu {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+}
+
 /** View mode -> Details **/
 
 .message-list-details {
@@ -231,8 +237,17 @@ img.map-general-message-icon {
     z-index: 2000;
 }
 
-.message-details-action a {
+.message-details-menu a {
     font-size: 10px;
+}
+
+/** If the parent element has this class, the menu is only displayed when the mouse is over the parent */
+.message-details-menu-parent .message-details-menu {
+    display: none;
+}
+
+.message-details-menu-parent:hover .message-details-menu {
+    display: block;
 }
 
 .message-details-image {
