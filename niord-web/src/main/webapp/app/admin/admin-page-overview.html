@@ -26,6 +26,9 @@
         <dt ng-if="hasRole('admin')"><a href ui-sref="admin.batch">Batch Jobs</a></dt>
         <dd ng-if="hasRole('admin')">Monitor and manage batch jobs.</dd>
 
+        <dt ng-if="hasRole('sysadmin')"><a href ui-sref="admin.dictionaries">Dictionaries</a></dt>
+        <dd ng-if="hasRole('sysadmin')">Manage the dictionaries.</dd>
+
         <dt ng-if="hasRole('sysadmin')"><a href ui-sref="admin.settings">Settings</a></dt>
         <dd ng-if="hasRole('sysadmin')">Manage the system settings.</dd>
     </dl>

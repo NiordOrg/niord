@@ -285,6 +285,31 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
+     * AdminDictionariesService
+     * ********************************************************************************
+     * Interface for calling dictionaries-related functions at the application server
+     */
+    .factory('AdminDictionariesService', [ '$http', function($http) {
+        'use strict';
+
+        return {
+            getDictionaryNames: function() {
+                return $http.get('/rest/dictionaries/names');
+            },
+
+            getDictionary: function(name) {
+                return $http.get('/rest/dictionaries/dictionary/' + name + '/entries');
+            },
+
+            updateEntry: function(dict, entry) {
+                return $http.put('/rest/dictionaries/dictionary/' + dict.name + '/' + entry.key, entry);
+            }
+        };
+    }])
+
+
+    /**
+     * ********************************************************************************
      * AdminSettingsService
      * ********************************************************************************
      * Interface for calling system settings-related functions at the application server

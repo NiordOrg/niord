@@ -1047,6 +1047,58 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
+     * DictionariesAdminCtrl
+     * ********************************************************************************
+     * Dictionaries Admin Controller
+     * Controller for the Dictionaries settings page
+     */
+    .controller('DictionariesAdminCtrl', ['$scope', 'growl', 'AdminDictionariesService',
+        function ($scope, growl, AdminDictionariesService) {
+            'use strict';
+
+            $scope.search = '';
+            $scope.dictionary = [];
+            $scope.entry = undefined; // The entry being edited
+
+
+            /** Loads the settings from the back-end */
+            $scope.loadDictionaries = function() {
+                $scope.entry = undefined;
+                AdminDictionariesService
+                    .getDictionary('web')
+                    .success(function (dictionary) {
+                        $scope.dictionary = dictionary;
+                    });
+            };
+
+
+            /** Edits an entry **/
+            $scope.editEntry = function (entry) {
+                $scope.entry = angular.copy(entry);
+            };
+
+
+            /** Displays the error message */
+            $scope.displayError = function () {
+                growl.error("Error saving entry", { ttl: 5000 });
+            };
+
+
+            /** Saves the current entry being edited */
+            $scope.saveEntry = function () {
+                if ($scope.entry) {
+                    AdminDictionariesService
+                        .updateEntry($scope.dictionary, $scope.entry)
+                        .success($scope.loadDictionaries)
+                        .error($scope.displayError);
+                }
+            };
+
+        }])
+
+
+    /**
+     * ********************************************************************************
      * SettingsAdminCtrl
      * ********************************************************************************
      * Settings Admin Controller

@@ -14,6 +14,7 @@
                 &nbsp;<span uib-tooltip="{{batchStatus.runningExecutions}} running batch jobs" class="badge">{{batchStatus.runningExecutions}}</span>
             </a>
         </li>
+        <li ui-sref-active="active" ng-if="hasRole('sysadmin')"><a href ui-sref="admin.dictionaries">Dictionaries</a></li>
         <li ui-sref-active="active" ng-if="hasRole('sysadmin')"><a href ui-sref="admin.settings">Settings</a></li>
     </ul>
 </div>

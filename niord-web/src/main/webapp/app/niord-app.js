@@ -131,6 +131,11 @@ var app = angular.module('niord.admin', [
                 url: "/batch/:batchName",
                 templateUrl: "/app/admin/admin-page-batch.html"
             })
+            .state('admin.dictionaries', {
+                url: "/dictionaries",
+                templateUrl: "/app/admin/admin-page-dictionaries.html",
+                data: { rolesRequired: [ "sysadmin" ] }
+            })
             .state('admin.settings', {
                 url: "/settings",
                 templateUrl: "/app/admin/admin-page-settings.html",

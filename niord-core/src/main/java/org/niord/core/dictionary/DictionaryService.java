@@ -72,6 +72,19 @@ public class DictionaryService extends BaseService {
         Arrays.stream(DEFAULT_BUNDLES).forEach(this::loadResourceBundle);
     }
 
+
+    /**
+     * Returns the dictionary names
+     * @return the dictionary names
+     */
+    public List<String> getDictionaryNames() {
+        return getAll(Dictionary.class).stream()
+                .map(Dictionary::getName)
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+
     /**
      * Returns the dictionary with the given name
      * @param name the name
