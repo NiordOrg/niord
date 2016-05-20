@@ -20,7 +20,7 @@ angular.module('niord.conf')
             'MENU_LOGIN': 'Login',
             'MENU_LOGOUT': 'Logout',
 
-            'FOOTER_COPYRIGHT': '&copy; 2015 EfficienSea 2',
+            'FOOTER_COPYRIGHT': '&copy; 2016 EfficienSea 2',
             'FOOTER_LINK': 'http://efficiensea2.org',
             'FOOTER_DISCLAIMER': 'Disclaimer',
             'FOOTER_COOKIES': 'Cookies',
