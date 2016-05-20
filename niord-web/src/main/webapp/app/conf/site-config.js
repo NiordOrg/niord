@@ -21,7 +21,6 @@ angular.module('niord.conf')
         $rootScope.mapDefaultLongitude = 11;
         $rootScope.mapDefaultZoomLevel = 6;
         $rootScope.modelLanguages = ["da","en"];
-        $rootScope.editorLanguages = ["da","en","gl"];
         $rootScope.siteLanguages = ["da","en"];
         $rootScope.numeralLauguages = {"da":"da-dk","en":"en"};
         $rootScope.wmsLayerEnabled = true;
