@@ -9,6 +9,14 @@ angular.module('niord.conf')
 
         $translateProvider.useSanitizeValueStrategy('sanitize');
 
+        /** TRANSLATIONS START **/
+
+        /**
+         * Everything between the TRANSLATIONS START and END comments is substituted
+         * with database translations by the SiteTextsServletFilter.
+         * Example translations:
+         */
+
         $translateProvider.translations('en', {
             'LANG_EN' : 'English',
 
@@ -71,6 +79,8 @@ angular.module('niord.conf')
         });
 
         $translateProvider.preferredLanguage('en');
+
+        /** TRANSLATIONS END **/
 
     }]);
 

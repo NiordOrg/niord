@@ -102,9 +102,10 @@ public class SiteConfigServletFilter extends AbstractTextResourceServletFilter {
     String updateResponse(HttpServletRequest request, String response) {
 
         int startIndex = response.indexOf(SETTINGS_START);
-        int endIndex = response.indexOf(SETTINGS_END) + SETTINGS_END.length();
+        int endIndex = response.indexOf(SETTINGS_END);
 
         if (startIndex != -1 && endIndex != -1) {
+            endIndex += SETTINGS_END.length();
             return response.substring(0, startIndex)
                     + getWebSettings()
                     + getDomains()
