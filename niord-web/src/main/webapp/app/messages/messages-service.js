@@ -93,7 +93,7 @@ angular.module('niord.messages')
                             return messageId;
                         },
                         messages: function () {
-                            return extractMessageIds(messages);
+                            return messages && messages.length > 0 ? extractMessageIds(messages) : [ messageId ];
                         }
                     }
                 });
