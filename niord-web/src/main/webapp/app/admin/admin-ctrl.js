@@ -1052,29 +1052,40 @@ angular.module('niord.admin')
      * Dictionaries Admin Controller
      * Controller for the Dictionaries settings page
      */
-    .controller('DictionariesAdminCtrl', ['$scope', 'growl', 'AdminDictionariesService',
-        function ($scope, growl, AdminDictionariesService) {
+    .controller('DictionariesAdminCtrl', ['$scope', 'growl', 'LangService', 'DialogService', 'AdminDictionariesService',
+        function ($scope, growl, LangService, DialogService, AdminDictionariesService) {
             'use strict';
 
             $scope.search = '';
-            $scope.dictionary = [];
+            $scope.dictionaryNames = [];
+            $scope.currentDictionaryName = 'web';
+            $scope.entries = [];
             $scope.entry = undefined; // The entry being edited
+            $scope.editMode = 'add';
 
 
-            /** Loads the settings from the back-end */
-            $scope.loadDictionaries = function() {
-                $scope.entry = undefined;
+            /** Loads the dictionary names from the back-end */
+            $scope.loadDictionaryNames = function() {
                 AdminDictionariesService
-                    .getDictionary('web')
-                    .success(function (dictionary) {
-                        $scope.dictionary = dictionary;
+                    .getDictionaryNames()
+                    .success(function (names) {
+                        $scope.dictionaryNames = names;
+                        $scope.loadDictionaryEntries();
                     });
             };
 
 
-            /** Edits an entry **/
-            $scope.editEntry = function (entry) {
-                $scope.entry = angular.copy(entry);
+            /** Loads the dictionary entries from the back-end */
+            $scope.loadDictionaryEntries = function(name) {
+                $scope.entry = undefined;
+                if (name && $.inArray(name, $scope.dictionaryNames) > -1) {
+                    $scope.currentDictionaryName = name;
+                }
+                AdminDictionariesService
+                    .getDictionaryEntries($scope.currentDictionaryName)
+                    .success(function (dictionary) {
+                        $scope.entries = dictionary;
+                    });
             };
 
 
@@ -1084,16 +1095,66 @@ angular.module('niord.admin')
             };
 
 
+            // Used to ensure that description entities have a "value" field
+            function ensureValueField(desc) {
+                desc.value = '';
+            }
+
+
+            /** Adds an entry **/
+            $scope.addEntry = function () {
+                $scope.editMode = 'add';
+                $scope.entry = {
+                    key: '',
+                    descs: []
+                };
+                LangService.checkDescs($scope.entry, ensureValueField);
+            };
+
+
+            /** Edits an entry **/
+            $scope.editEntry = function (entry) {
+                $scope.editMode = 'edit';
+                $scope.entry = angular.copy(entry);
+                LangService.checkDescs($scope.entry, ensureValueField);
+            };
+
+
+            /** Copies an entry **/
+            $scope.copyEntry = function (entry) {
+                $scope.editMode = 'add';
+                $scope.entry = angular.copy(entry);
+                LangService.checkDescs($scope.entry, ensureValueField);
+            };
+
+
             /** Saves the current entry being edited */
             $scope.saveEntry = function () {
-                if ($scope.entry) {
+                if ($scope.entry && $scope.editMode == 'edit') {
                     AdminDictionariesService
-                        .updateEntry($scope.dictionary, $scope.entry)
-                        .success($scope.loadDictionaries)
+                        .updateEntry($scope.currentDictionaryName, $scope.entry)
+                        .success($scope.loadDictionaryEntries)
+                        .error($scope.displayError);
+                } else if ($scope.entry && $scope.editMode == 'add') {
+                    AdminDictionariesService
+                        .addEntry($scope.currentDictionaryName, $scope.entry)
+                        .success($scope.loadDictionaryEntries)
                         .error($scope.displayError);
                 }
             };
 
+
+            /** Deletes the given entry */
+            $scope.deleteEntry = function (entry) {
+                DialogService.showConfirmDialog(
+                    "Delete entry?", "Delete entry '" + entry.key + "'?")
+                    .then(function() {
+                        AdminDictionariesService
+                            .deleteEntry($scope.currentDictionaryName, entry)
+                            .success($scope.loadDictionaryEntries)
+                            .error($scope.displayError);
+                    });
+            };
         }])
 
 

@@ -297,12 +297,22 @@ angular.module('niord.admin')
                 return $http.get('/rest/dictionaries/names');
             },
 
-            getDictionary: function(name) {
-                return $http.get('/rest/dictionaries/dictionary/' + name + '/entries');
+            getDictionaryEntries: function(name) {
+                return $http.get('/rest/dictionaries/dictionary/' + encodeURIComponent(name) + '/entries');
             },
 
-            updateEntry: function(dict, entry) {
-                return $http.put('/rest/dictionaries/dictionary/' + dict.name + '/' + entry.key, entry);
+            addEntry: function(name, entry) {
+                return $http.post('/rest/dictionaries/dictionary/' + encodeURIComponent(name), entry);
+            },
+
+            updateEntry: function(name, entry) {
+                return $http.put('/rest/dictionaries/dictionary/' + encodeURIComponent(name) + '/'
+                    + encodeURIComponent(entry.key), entry);
+            },
+
+            deleteEntry: function(name, entry) {
+                return $http.delete('/rest/dictionaries/dictionary/' + encodeURIComponent(name) + '/'
+                    + encodeURIComponent(entry.key));
             }
         };
     }])

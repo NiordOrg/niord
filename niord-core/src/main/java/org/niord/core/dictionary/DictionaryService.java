@@ -74,7 +74,7 @@ public class DictionaryService extends BaseService {
 
 
     /**
-     * Returns the dictionary names
+     * Returns the dictionary names in sorted order
      * @return the dictionary names
      */
     public List<String> getDictionaryNames() {
@@ -103,19 +103,98 @@ public class DictionaryService extends BaseService {
 
 
     /**
-     * Creates or updates the given dictionary entry
-     * @param dict the dictionary
-     * @param lang the language of the resource bundle
-     * @param key the key
-     * @param value the value
+     * Adds the given dictionary entry template
+     * @param name the name of the dictionary
+     * @param entry the template dictionary entry to add
+     * @return the added dictionary entry
      */
-    public void updateEntry(Dictionary dict, String lang, String key, String value) {
-        DictionaryEntry entry = dict.getEntries().get(key);
-        if (entry == null) {
-            entry = dict.createEntry(key);
+    @Lock(LockType.WRITE)
+    public DictionaryEntry createEntry(String name, DictionaryEntry entry) {
+        Dictionary dict = findByName(name);
+        if (dict == null) {
+            throw new IllegalArgumentException("Non-existing dictionary: " + name);
         }
-        DictionaryEntryDesc desc = entry.checkCreateDesc(lang);
-        desc.setValue(value);
+
+        DictionaryEntry original = dict.getEntries().get(entry.getKey());
+        if (original != null) {
+            throw new IllegalArgumentException("Entry already exists: " + entry.getKey());
+        }
+
+        entry.getDescs().removeIf(desc -> !desc.descDefined());
+        if (entry.getDescs().isEmpty()) {
+            throw new IllegalArgumentException("No localized values defined for entry: " + entry.getKey());
+        }
+
+        entry.setDictionary(dict);
+        dict.getEntries().put(entry.getKey(), entry);
+        entry.getDescs().forEach(e -> e.setEntity(entry));
+
+        saveEntity(dict);
+
+        // Remove the cached dictionary
+        cachedDictionaries.remove(name);
+
+        return entry;
+    }
+
+
+    /**
+     * Updates the given dictionary entry template
+     * @param name the name of the dictionary
+     * @param entry the template dictionary entry to update
+     * @return the updated dictionary entry
+     */
+    @Lock(LockType.WRITE)
+    public DictionaryEntry updateEntry(String name, DictionaryEntry entry) {
+        Dictionary dict = findByName(name);
+        if (dict == null) {
+            throw new IllegalArgumentException("Non-existing dictionary: " + name);
+        }
+
+        DictionaryEntry original = dict.getEntries().get(entry.getKey());
+        if (original == null) {
+            throw new IllegalArgumentException("Non-existing dictionary entry: " + entry.getKey());
+        }
+
+        original.copyDescsAndRemoveBlanks(entry.getDescs());
+        original.getDescs().forEach(e -> e.setEntity(original));
+
+        saveEntity(original);
+
+        // Remove the cached dictionary
+        cachedDictionaries.remove(name);
+
+        return original;
+    }
+
+
+    /**
+     * Deletes the given dictionary key
+     * @param name the name of the dictionary
+     * @param key the dictionary key to delete
+     * @return if the entry was deleted
+     */
+    @Lock(LockType.WRITE)
+    public boolean deleteEntry(String name, String key) {
+        Dictionary dict = findByName(name);
+        if (dict == null) {
+            throw new IllegalArgumentException("Non-existing dictionary: " + name);
+        }
+
+        DictionaryEntry original = dict.getEntries().get(key);
+        if (original == null) {
+            return false;
+        }
+
+        dict.getEntries().remove(key);
+        original.setDictionary(null);
+        remove(original);
+        saveEntity(dict);
+
+        // Remove the cached dictionary
+        cachedDictionaries.remove(name);
+
+        return true;
     }
 
 
@@ -211,4 +290,21 @@ public class DictionaryService extends BaseService {
                     undefKeys.size(), name, System.currentTimeMillis() - t0));
         }
     }
+
+    /**
+     * Creates or updates the given dictionary entry
+     * @param dict the dictionary
+     * @param lang the language of the resource bundle
+     * @param key the key
+     * @param value the value
+     */
+    private void updateEntry(Dictionary dict, String lang, String key, String value) {
+        DictionaryEntry entry = dict.getEntries().get(key);
+        if (entry == null) {
+            entry = dict.createEntry(key);
+        }
+        DictionaryEntryDesc desc = entry.checkCreateDesc(lang);
+        desc.setValue(value);
+    }
+
 }

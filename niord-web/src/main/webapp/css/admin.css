@@ -217,3 +217,17 @@ tr.batch-execution-row td div.progress {
 .category-tree ul.fancytree-container {
     border: none;
 }
+
+
+/** Dictionary admin page **/
+
+.dictionary-table tr td {
+    font-size: 12px;
+}
+
+
+/** Settings admin page **/
+
+.settings-table tr td {
+    font-size: 12px;
+}
