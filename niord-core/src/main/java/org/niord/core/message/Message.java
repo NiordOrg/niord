@@ -68,7 +68,11 @@ import java.util.Set;
         @NamedQuery(name="Message.findByIds",
                 query="SELECT msg FROM Message msg where msg.id in (:ids)"),
         @NamedQuery(name="Message.findByLegacyId",
-                query="SELECT msg FROM Message msg where msg.legacyId = :legacyId")
+                query="SELECT msg FROM Message msg where msg.legacyId = :legacyId"),
+        @NamedQuery(name="Message.findByMrn",
+                query="SELECT msg FROM Message msg where msg.mrn = :mrn"),
+        @NamedQuery(name="Message.findByShortId",
+                query="SELECT msg FROM Message msg where msg.shortId = :shortId")
 })
 @SuppressWarnings("unused")
 public class Message extends VersionedEntity<Integer> implements ILocalizable<MessageDesc> {

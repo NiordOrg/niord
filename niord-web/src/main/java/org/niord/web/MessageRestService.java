@@ -43,6 +43,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -54,6 +55,7 @@ import java.util.stream.Collectors;
 @Stateless
 @SecurityDomain("keycloak")
 @PermitAll
+@SuppressWarnings("unused")
 public class MessageRestService {
 
     @Inject
@@ -70,20 +72,38 @@ public class MessageRestService {
      * Search functionality
      ***************************/
 
+    /**
+     * Resolves the database id of the given message id, which may be either a database id,
+     * or a short ID or an MRN of a message.
+     *
+     * @param messageId the mesage id to resolve
+     * @return the message id
+     */
+    private Integer resolveMessageId(String messageId) {
+        Message message = messageService.resolveMessage(messageId);
+        return message == null ? null : message.getId();
+    }
+
+
     @GET
-    @Path("/message/{id}")
+    @Path("/message/{messageId}")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
     public MessageVo getMessage(
-            @PathParam("id") Integer id,
+            @PathParam("messageId") String messageId,
             @QueryParam("lang") String language) throws Exception {
+
+        Message message = messageService.resolveMessage(messageId);
+        if (message == null) {
+            throw new WebApplicationException("Message " + messageId + " does not exist", 404);
+        }
 
         DataFilter filter = DataFilter.get()
                 .lang(language)
                 .fields(DataFilter.DETAILS, DataFilter.GEOMETRY, "Area.parent", "Category.parent");
 
-        return messageService.findById(id).toVo(filter);
+        return message.toVo(filter);
     }
 
 

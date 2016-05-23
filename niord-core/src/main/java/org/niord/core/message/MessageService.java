@@ -25,6 +25,8 @@ import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.db.SpatialIntersectsPredicate;
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.niord.core.geojson.Feature;
 import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.repo.RepositoryService;
@@ -51,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.niord.core.geojson.Feature.WGS84_SRID;
@@ -92,6 +95,9 @@ public class MessageService extends BaseService {
     @Inject
     RepositoryService repositoryService;
 
+    @Inject
+    DomainService domainService;
+
 
     /***************************************/
     /** Message methods                   **/
@@ -123,6 +129,87 @@ public class MessageService extends BaseService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+
+    /**
+     * Returns the messages with the given MRN. Really, there should only be at most one matching
+     * message, but message series may not have been defined properly...
+     *
+     * @param mrn the MRN of the messages
+     * @return the messages with the given MRN
+     */
+    public List<Message> findByMrn(String mrn) {
+        return em.createNamedQuery("Message.findByMrn", Message.class)
+                .setParameter("mrn", mrn)
+                .getResultList();
+    }
+
+
+    /**
+     * Returns the messages with the given short ID.
+     *
+     * @param shortId the short ID of the messages
+     * @return the messages with the given MRN
+     */
+    public List<Message> findByShortId(String shortId) {
+        return em.createNamedQuery("Message.findByShortId", Message.class)
+                .setParameter("shortId", shortId)
+                .getResultList();
+    }
+
+
+    /**
+     * Resolves the message with the given message id, which may be either a database id,
+     * or a short ID or an MRN of a message.
+     * If the are multiple matching messages, priority is given to a messages of the current domain.
+     *
+     * @param messageId the message id to resolve
+     * @return the matching message or null if none is found
+     */
+    public Message resolveMessage(String messageId) {
+        // Sanity check
+        if (StringUtils.isBlank(messageId)) {
+            return null;
+
+        } else if (StringUtils.isNumeric(messageId)) {
+            return findById(Integer.valueOf(messageId));
+        }
+
+        // Check if the message ID is an MRN
+        List<Message> messages = findByMrn(messageId);
+        if (!messages.isEmpty()) {
+            return resolveMessage(messages);
+        }
+
+        // Check if the message ID is a short ID
+        messages = findByShortId(messageId);
+        if (!messages.isEmpty()) {
+            return resolveMessage(messages);
+        }
+
+        // No joy
+        return null;
+    }
+
+
+    /** Returns a single message from the list - preferably from the current domain */
+    private Message resolveMessage(List<Message> messages) {
+        // Check if any of the messages belong to the current domain
+        Domain currentDomain = domainService.currentDomain();
+        if (currentDomain != null) {
+            Set<String> currentMessageSeries = currentDomain.getMessageSeries().stream()
+                    .map(MessageSeries::getSeriesId)
+                    .collect(Collectors.toSet());
+            return messages.stream()
+                    .filter(m -> m.getMessageSeries() != null)
+                    .filter(m -> currentMessageSeries.contains(m.getMessageSeries().getSeriesId()))
+                    .findFirst()
+                    .orElse(messages.get(0)); // No message for the current domain - return the first
+        }
+
+        // No current domain - just return the first message
+        return messages.get(0);
     }
 
 
