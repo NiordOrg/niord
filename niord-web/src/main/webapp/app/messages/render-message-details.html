@@ -1,16 +1,16 @@
 
 <td class="message-details-image" style="border: none" ng-if="format == 'list'">
     <img ng-if="msg.id" ng-src="/rest/message-map-image/{{msg.id}}.png"
-         message-details-link="msg.id" message-list="messages"/>
+         message-details-link="msg.id" message-list="messageList"/>
 </td>
 <td class="message-details-item message-details-menu-parent" style="border: none">
 
-    <message-details-menu ng-if="showDetailsMenu != 'false'" message-id="msg.id" msg="msg" messages="messages" size="xs" style="float: right;"></message-details-menu>
+    <message-details-menu ng-if="showDetailsMenu != 'false'" message-id="msg.id" msg="msg" messages="messageList" size="xs" style="float: right;"></message-details-menu>
 
     <!-- Title line -->
     <div ng-if="msg.originalInformation">&#10029;</div>
     <div ng-if="msg.shortId">{{msg.shortId}}</div>
-    <div message-details-link="msg.id" message-list="messages" disabled="format == 'details'">
+    <div message-details-link="msg.id" message-list="messageList" disabled="format == 'details'">
         <strong>{{msg.descs[0].title}}</strong>
         <span ng-if="msg.descs[0].lang != language" style="color: darkgray;">
             <img ng-src="/img/flags/{{msg.descs[0].lang}}.png" style="height: 12px; opacity: 0.5;"/>
@@ -21,7 +21,7 @@
     <div class="row" ng-repeat="ref in msg.references">
         <div class="col-sm-1 message-details-item-field" translate>FIELD_REFERENCE</div>
         <div class="col-sm-11 message-details-item-value">
-            <span>{{ref.messageId}}</span>
+            <a href ng-click="referenceClicked(ref.messageId)">{{ref.messageId}}</a>
             <span ng-switch="ref.type">
                 <span ng-switch-when="REPETITION" translate>REF_REPETITION</span>
                 <span ng-switch-when="CANCELLATION" translate>REF_CANCELLED</span>

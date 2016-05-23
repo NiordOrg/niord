@@ -43,7 +43,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -85,6 +84,16 @@ public class MessageRestService {
     }
 
 
+    /**
+     * Returns the message with the given message id, which may be either a database id,
+     * or a short ID or an MRN of a message.
+     *
+     * If no message exists with the given ID, null is returned.
+     *
+     * @param messageId the message ID
+     * @param language the language of the returned data
+     * @return the message or null
+     */
     @GET
     @Path("/message/{messageId}")
     @Produces("application/json;charset=UTF-8")
@@ -96,7 +105,7 @@ public class MessageRestService {
 
         Message message = messageService.resolveMessage(messageId);
         if (message == null) {
-            throw new WebApplicationException("Message " + messageId + " does not exist", 404);
+            return null;
         }
 
         DataFilter filter = DataFilter.get()
