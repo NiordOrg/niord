@@ -838,7 +838,7 @@ angular.module('niord.messages')
 
                 MessageService.details($scope.currentMessageId())
                     .success(function (data) {
-                        $scope.warning = (data) ? undefined : "Message not found";
+                        $scope.warning = (data) ? undefined : "Message " + $scope.currentMessageId() + " not found";
                         $scope.msg = data;
                     })
                     .error(function (data) {

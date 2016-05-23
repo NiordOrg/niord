@@ -27,6 +27,7 @@
                 <span ng-switch-when="CANCELLATION" translate>REF_CANCELLED</span>
                 <span ng-switch-when="UPDATE" translate>REF_UPDATED</span>
             </span>
+            <span ng-if="ref.description">{{ref.description}}</span>
         </div>
     </div>
 

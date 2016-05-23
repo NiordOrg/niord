@@ -3,7 +3,9 @@
     <div class="modal-body print" style="padding-bottom: 0">
 
         <div ng-if="warning">
-            <h2>{{warning}}</h2>
+            <div class="empty-search-result">
+                <p>{{warning}}</p>
+            </div>
         </div>
 
         <div ng-if="msg">
