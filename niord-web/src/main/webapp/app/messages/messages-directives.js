@@ -618,14 +618,28 @@ angular.module('niord.messages')
                 scope.language = $rootScope.language;
                 scope.format = scope.format || 'list';
 
-                scope.coordinates = [];
+                scope.featureCoordinates = [];
 
                 scope.serializeCoordinates = function () {
                     // Compute on-demand
-                    if (scope.coordinates.length == 0 && scope.msg.geometry) {
-                        MapService.serializeCoordinates(scope.msg.geometry, scope.coordinates, {}, 0, true);
+                    if (scope.featureCoordinates.length == 0 && scope.msg.geometry && scope.msg.geometry.features) {
+                        var index = 1;
+                        angular.forEach(scope.msg.geometry.features, function (feature) {
+                            var coords = [];
+                            MapService.serializeCoordinates(feature, coords);
+                            if (coords.length > 0) {
+                                console.log("XXX " + feature.properties);
+                                var name = feature.properties ? feature.properties['name#' + $rootScope.language] : undefined;
+                                scope.featureCoordinates.push({
+                                    coords: coords,
+                                    startIndex : index,
+                                    name: name
+                                });
+                                index += coords.length;
+                            }
+                        });
                     }
-                    return scope.coordinates;
+                    return scope.featureCoordinates;
                 };
 
 

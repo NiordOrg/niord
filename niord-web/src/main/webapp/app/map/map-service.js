@@ -284,51 +284,53 @@ angular.module('niord.map')
             /** ************************ **/
 
             /** Serializes the coordinates of a geometry */
-            this.serializeCoordinates = function (g, coords, props, index, includeCoord) {
+            this.serializeCoordinates = function (g, coords, props, index, polygonType) {
                 var that = this;
                 props = props || {};
                 index = index || 0;
-                var bufferFeature = props['parentFeatureId'];
                 if (g) {
                     if (g instanceof Array) {
                         if (g.length >= 2 && $.isNumeric(g[0])) {
+                            var bufferFeature = props['parentFeatureId'];
+                            var includeCoord = (polygonType != 'Exterior');
                             if (includeCoord && !bufferFeature) {
                                 coords.push({
                                     lon: g[0],
                                     lat: g[1],
-                                    name: props['name:' + index + ':' + $rootScope.language]
+                                    name: props['name#' + index + '#' + $rootScope.language]
                                 });
                             }
                             index++;
                         } else {
                             for (var x = 0; x < g.length; x++) {
-                                index = that.serializeCoordinates(g[x], coords, props, index, includeCoord);
+                                polygonType = (polygonType == 'Interior' && x == g.length - 1) ? 'Exterior' : polygonType;
+                                index = that.serializeCoordinates(g[x], coords, props, index, polygonType);
                             }
                         }
                     } else if (g.type == 'FeatureCollection') {
                         for (var x = 0; g.features && x < g.features.length; x++) {
-                            index = that.serializeCoordinates(g.features[x], coords, props, index, includeCoord);
+                            index = that.serializeCoordinates(g.features[x], coords);
                         }
                     } else if (g.type == 'Feature') {
-                        index = that.serializeCoordinates(g.geometry, coords, g.properties, index, includeCoord);
+                        index = that.serializeCoordinates(g.geometry, coords, g.properties, 0);
                     } else if (g.type == 'GeometryCollection') {
                         for (var x = 0; g.geometries && x < g.geometries.length; x++) {
-                            index = that.serializeCoordinates(g.geometries[x], coords, props, index, includeCoord);
+                            index = that.serializeCoordinates(g.geometries[x], coords, props, index);
                         }
                     } else if (g.type == 'MultiPolygon') {
                         for (var p = 0; p < g.coordinates.length; p++) {
                             // For polygons, do not include coordinates for interior rings
                             for (var x = 0; x < g.coordinates[p].length; x++) {
-                                index = that.serializeCoordinates(g.coordinates[p][x], coords, props, index, x == 0);
+                                index = that.serializeCoordinates(g.coordinates[p][x], coords, props, index, x == 0 ? 'Interior' : 'Exterior');
                             }
                         }
                     } else if (g.type == 'Polygon') {
                         // For polygons, do not include coordinates for interior rings
                         for (var x = 0; x < g.coordinates.length; x++) {
-                            index = that.serializeCoordinates(g.coordinates[x], coords, props, index, x == 0);
+                            index = that.serializeCoordinates(g.coordinates[x], coords, props, index, x == 0 ? 'Interior' : 'Exterior');
                         }
                     } else if (g.type) {
-                        index = that.serializeCoordinates(g.coordinates, coords, props, index, includeCoord);
+                        index = that.serializeCoordinates(g.coordinates, coords, props, index);
                     }
                 }
                 return index;

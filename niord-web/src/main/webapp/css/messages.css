@@ -304,8 +304,14 @@ img.map-general-message-icon {
     padding-left: 0;
 }
 
+.message-details-position-names {
+    margin-top: 10px;
+    text-decoration: underline;
+}
+
 ol.message-details-positions {
     margin-left: 20px;
+    margin-bottom: 0;
     color: darkgray;
 }
 
