@@ -4,37 +4,37 @@
 
         <li class="view-mode-menu-btn">
             <span ui-sref="messages.grid" ui-sref-active="active">
-                <span class="glyphicon glyphicon-th"></span> <span class="view-mode-menu-text" translate>VIEW_MODE_GRID</span>
+                <span class="glyphicon glyphicon-th"></span> <span class="view-mode-menu-text" translate>view_mode.grid</span>
             </span>
         </li>
 
         <li class="view-mode-menu-btn">
             <span ui-sref="messages.details" ui-sref-active="active">
-                <span class="glyphicon glyphicon-th-list"></span> <span class="view-mode-menu-text" translate>VIEW_MODE_DETAILS</span>
+                <span class="glyphicon glyphicon-th-list"></span> <span class="view-mode-menu-text" translate>view_mode.details</span>
             </span>
         </li>
 
         <li class="view-mode-menu-btn">
             <span ui-sref="messages.table" ui-sref-active="active">
-                <span class="glyphicon glyphicon-align-justify"></span> <span class="view-mode-menu-text" translate>VIEW_MODE_TABLE</span>
+                <span class="glyphicon glyphicon-align-justify"></span> <span class="view-mode-menu-text" translate>view_mode.table</span>
             </span>
         </li>
 
         <li class="view-mode-menu-btn">
             <span ui-sref="messages.map" ui-sref-active="active">
-                <span class="glyphicon glyphicon-globe"></span> <span class="view-mode-menu-text" translate>VIEW_MODE_MAP</span>
+                <span class="glyphicon glyphicon-globe"></span> <span class="view-mode-menu-text" translate>view_mode.map</span>
             </span>
         </li>
 
         <li class="dropdown view-mode-menu-btn" style="padding: 0 10px">
             <span class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                 <span class="glyphicon glyphicon-filter"></span>
-                <span class="view-mode-menu-text" translate>MENU_FILTER</span>
+                <span class="view-mode-menu-text" translate>menu.filter</span>
                 <span class="caret"></span>
             </span>
             <ul class="dropdown-menu">
                 <li ng-repeat="name in filterNames">
-                    <a ng-click="enableFilter(name, true)" href ng-bind-html="'MENU_FILTER_' + name | uppercase | translate"></a>
+                    <a ng-click="enableFilter(name, true)" href ng-bind-html="'menu.filter.' + name | translate"></a>
                 </li>
                 <li role="separator" class="divider" ng-if="namedFilters.length > 0"></li>
                 <li ng-repeat="filter in namedFilters">
@@ -42,24 +42,24 @@
                         <span class="pull-right glyphicon glyphicon-trash" ng-click="removeNamedFilter(filter)"></span></a>
                 </li>
                 <li role="separator" class="divider"></li>
-                <li><a ng-if="isLoggedIn" ng-click="clearAllFilters()" href translate>MENU_FILTER_CLEAR</a></li>
-                <li><a ng-if="isLoggedIn" ng-click="saveNamedFilter()" href translate>MENU_FILTER_SAVE</a></li>
+                <li><a ng-if="isLoggedIn" ng-click="clearAllFilters()" href translate>menu.filter.clear</a></li>
+                <li><a ng-if="isLoggedIn" ng-click="saveNamedFilter()" href translate>menu.filter.save</a></li>
             </ul>
         </li>
 
         <li class="dropdown view-mode-menu-btn" style="padding: 0 10px">
             <span class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                 <span class="glyphicon glyphicon-cog"></span>
-                <span class="view-mode-menu-text" translate>MENU_ACTION</span>
+                <span class="view-mode-menu-text" translate>menu.action</span>
                 <span class="caret"></span>
             </span>
             <ul class="dropdown-menu">
-                <li><a href translate>MENU_ACTION_PDF</a></li>
+                <li><a href translate>menu.action.pdf</a></li>
                 <li role="separator" class="divider"></li>
                 <li>
                     <a href ng-click="openTagsDialog()">
                         <span class="glyphicon glyphicon-tags"></span>&nbsp;
-                        <span translate>MENU_ACTION_TAGS</span>
+                        <span translate>menu.action.tags</span>
                     </a>
                 </li>
                 <li role="separator" class="divider"></li>

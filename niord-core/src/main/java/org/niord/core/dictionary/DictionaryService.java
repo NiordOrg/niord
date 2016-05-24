@@ -31,9 +31,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -46,7 +50,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class DictionaryService extends BaseService {
 
-    public static final String[] DEFAULT_BUNDLES = { "web" };
+    public static final String[] DEFAULT_BUNDLES = { "web", "message", "pdf" };
 
     @Inject
     private Logger log;
@@ -216,6 +220,42 @@ public class DictionaryService extends BaseService {
         }
 
         return dict;
+    }
+
+
+    /**
+     * Returns the given dictionaries as a ResourceBundle for the given language.
+     * Returns null if undefined.
+     * @param names the dictionary names
+     * @param language the language
+     * @return the dictionaries for the given language as a ResourceBundle
+     */
+    public ResourceBundle getDictionariesAsResourceBundle(String[] names, String language) {
+
+        // Construct a property file with all language-specific values from all included dictionaries
+        Properties langDict = new Properties();
+        for (String name : names) {
+            langDict.putAll(getCachedDictionary(name).toProperties(language));
+        }
+
+        // Convert the Properties object to a resource bundle
+        return new ResourceBundle() {
+
+            /** {@inheritDoc} **/
+            @Override
+            @SuppressWarnings("all")
+            protected Object handleGetObject(String key) {
+                return langDict.getProperty(key);
+            }
+
+            /** {@inheritDoc} **/
+            @Override
+            @SuppressWarnings("all")
+            public Enumeration<String> getKeys() {
+                Set<String> handleKeys = langDict.stringPropertyNames();
+                return Collections.enumeration(handleKeys);
+            }
+        };
     }
 
 

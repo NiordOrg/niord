@@ -19,6 +19,10 @@ import org.apache.commons.lang.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.examples.HtmlToPlainText;
 import org.jsoup.nodes.Document;
+import org.w3c.tidy.Tidy;
+
+import java.io.StringReader;
+import java.io.StringWriter;
 
 /**
  * Text utility methods
@@ -41,6 +45,7 @@ public class TextUtils {
         }
     }
 
+
     /**
      * Converts the text from plain text to html
      * @param text the text
@@ -52,4 +57,22 @@ public class TextUtils {
                 new String[]{"&amp;", "&quot;", "&lt;", "&gt;", "<br>", "&nbsp;&nbsp;&nbsp;"});
         return text;
     }
+
+
+    /**
+     * Use JTidy to clean up the HTML
+     * @param html the HTML to clean up
+     * @return the resulting XHTML
+     */
+    public static org.w3c.dom.Document cleanHtml(String html) {
+        Tidy tidy = new Tidy();
+
+        tidy.setShowWarnings(false); //to hide errors
+        tidy.setQuiet(true); //to hide warning
+
+        tidy.setXHTML(true);
+        return tidy.parseDOM(new StringReader(html), new StringWriter());
+    }
+
+
 }

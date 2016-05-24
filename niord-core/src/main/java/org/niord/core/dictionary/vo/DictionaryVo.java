@@ -19,6 +19,7 @@ import org.niord.model.IJsonSerializable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Models a named dictionary
@@ -27,6 +28,30 @@ public class DictionaryVo implements IJsonSerializable {
 
     String name;
     Map<String, DictionaryEntryVo> entries = new HashMap<>();
+
+
+    /**
+     * Creates a Properties object from the dictionary, containing the values for the given language
+     * where defined, and otherwise, any value.
+     * @param lang the language
+     * @return the Properties object for the dictionary
+     */
+    public Properties toProperties(String lang) {
+        Properties props = new Properties();
+        getEntries().values().stream()
+                .forEach(entry -> {
+                    DictionaryEntryDescVo desc = entry.getDesc(lang);
+                    // If the value descriptor does not exist for the given language - select the default instead
+                    if (desc == null && !entry.getDescs().isEmpty()) {
+                        desc = entry.getDescs().get(0);
+                    }
+                    if (desc != null && desc.getValue() != null) {
+                        props.setProperty(entry.getKey(), desc.getValue());
+                    }
+                });
+        return props;
+    }
+
 
     /*************************/
     /** Getters and Setters **/

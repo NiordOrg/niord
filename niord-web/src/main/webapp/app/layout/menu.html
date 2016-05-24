@@ -16,10 +16,10 @@
 
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav">
-                <li ui-sref-active="active"><a href ui-sref="messages" translate>MENU_MESSAGES</a></li>
-                <li ui-sref-active="active"><a href ui-sref="atons" translate>MENU_ATONS</a></li>
-                <li ui-sref-active="active"><a href ui-sref="editor" translate>MENU_EDITOR</a></li>
-                <li ng-if="hasRole('admin')" ui-sref-active="active"><a href ui-sref="admin" translate>MENU_ADMIN</a></li>
+                <li ui-sref-active="active"><a href ui-sref="messages" translate>menu.messages</a></li>
+                <li ui-sref-active="active"><a href ui-sref="atons" translate>menu.atons</a></li>
+                <li ui-sref-active="active"><a href ui-sref="editor" translate>menu.editor</a></li>
+                <li ng-if="hasRole('admin')" ui-sref-active="active"><a href ui-sref="admin" translate>menu.admin</a></li>
             </ul>
 
             <ul class="nav navbar-nav navbar-right">
@@ -41,7 +41,7 @@
                 </li>
 
                 <li ng-if="!isLoggedIn">
-                    <a ng-click="login()" href translate>MENU_LOGIN</a>
+                    <a ng-click="login()" href translate>menu.login</a>
                 </li>
 
                 <li ng-if="isLoggedIn">
@@ -51,7 +51,7 @@
                 </li>
 
                 <li ng-if="isLoggedIn">
-                    <a ng-click="logout()" href translate>MENU_LOGOUT</a>
+                    <a ng-click="logout()" href translate>menu.logout</a>
                 </li>
 
                 <li ng-if="siteLanguages.length > 1" class="dropdown" ng-controller="LangCtrl">
@@ -60,7 +60,7 @@
                     </a>
                     <ul class="dropdown-menu">
                         <li ng-repeat="lang in siteLanguages">
-                            <a href ng-click="changeLanguage(lang)"><flag lang="lang"></flag> &nbsp; {{'LANG_' + lang | uppercase | translate}}</a>
+                            <a href ng-click="changeLanguage(lang)"><flag lang="lang"></flag> &nbsp; {{'lang.' + lang | translate}}</a>
                         </li>
                     </ul>
                 </li>

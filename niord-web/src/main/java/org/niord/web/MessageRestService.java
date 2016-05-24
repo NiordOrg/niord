@@ -20,6 +20,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.fm.FmService;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
@@ -43,6 +44,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -66,6 +70,8 @@ public class MessageRestService {
     @Inject
     DomainService domainService;
 
+    @Inject
+    FmService fmService;
 
     /***************************
      * Search functionality
@@ -113,6 +119,52 @@ public class MessageRestService {
                 .fields(DataFilter.DETAILS, DataFilter.GEOMETRY, "Area.parent", "Category.parent");
 
         return message.toVo(filter);
+    }
+
+
+    /**
+     * Generates a PDF for the message with the given message id, which may be either a database id,
+     * or a short ID or an MRN of a message.
+     *
+     * @param messageId the message ID
+     * @param language the language of the returned data
+     * @return the message as a PDF
+     */
+    @GET
+    @Path("/message/{messageId}.pdf")
+    @Produces("application/pdf")
+    @NoCache
+    public Response generatePdfForMessage(
+            @PathParam("messageId") String messageId,
+            @QueryParam("lang") String language) throws Exception {
+
+        MessageVo message = getMessage(messageId, language);
+
+        try {
+            StreamingOutput stream = os -> {
+                try {
+                    fmService.newTemplateBuilder()
+                            .setTemplatePath("/templates/messages/message-details.ftl")
+                            .setData("msg", message)
+                            .setDictionaryNames("web", "message", "pdf")
+                            .setLanguage(language)
+                            .processPdf(os);
+                } catch (Exception e) {
+                    throw new WebApplicationException("Error generating PDF for message " + messageId, e);
+                }
+            };
+
+            return Response
+                    .ok(stream)
+                    .type("application/pdf")
+                    .header("Content-Disposition", "attachment; filename=\"message-" + messageId + ".pdf\"")
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Error generating PDF for message " + messageId, e);
+            throw e;
+        }
+
     }
 
 

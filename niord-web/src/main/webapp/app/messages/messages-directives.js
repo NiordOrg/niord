@@ -688,7 +688,7 @@ angular.module('niord.messages')
 
                     // Download the PDF for the message
                     scope.pdf = function () {
-                        $window.location = '/rest/messages/message-pdf/' + scope.messageId + '.pdf?lang=' + $rootScope.language;
+                        $window.location = '/rest/messages/message/' + scope.messageId + '.pdf?lang=' + $rootScope.language;
                     };
 
                     // Navigate to the message editor page

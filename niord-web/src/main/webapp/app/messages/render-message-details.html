@@ -19,13 +19,13 @@
 
     <!-- Reference lines -->
     <div class="row" ng-repeat="ref in msg.references">
-        <div class="col-sm-1 message-details-item-field" translate>FIELD_REFERENCE</div>
+        <div class="col-sm-1 message-details-item-field" translate>msg.field.reference</div>
         <div class="col-sm-11 message-details-item-value">
             <a href ng-click="referenceClicked(ref.messageId)">{{ref.messageId}}</a>
             <span ng-switch="ref.type">
-                <span ng-switch-when="REPETITION" translate>REF_REPETITION</span>
-                <span ng-switch-when="CANCELLATION" translate>REF_CANCELLED</span>
-                <span ng-switch-when="UPDATE" translate>REF_UPDATED</span>
+                <span ng-switch-when="REPETITION" translate>msg.reference.repetition</span>
+                <span ng-switch-when="CANCELLATION" translate>msg.reference.cancelled</span>
+                <span ng-switch-when="UPDATE" translate>msg.reference.updated</span>
             </span>
             <span ng-if="ref.description">{{ref.description}}</span>
         </div>
@@ -36,7 +36,7 @@
     <!-- Do NOT remove the ng-if="true" gibberish. Grotesquely, it fixes an iPad/iOS error -->
     <!-- See: https://github.com/angular/angular.js/issues/9128 -->
     <div class="row" ng-if="true">
-        <div class="col-sm-1 message-details-item-field" translate>FIELD_TIME</div>
+        <div class="col-sm-1 message-details-item-field" translate>msg.field.time</div>
         <div class="col-sm-11 message-details-item-value">
             <render-message-dates msg="msg"></render-message-dates>
         </div>
@@ -44,12 +44,12 @@
 
     <!-- Geometry line -->
     <div class="row" ng-if="msg.geometry">
-        <div class="col-sm-1 message-details-item-field" translate>FIELD_LOCATION</div>
+        <div class="col-sm-1 message-details-item-field" translate>msg.field.positions</div>
         <div class="col-sm-11 message-details-item-value">
             <div>
                 <span class="glyphicon glyphicon-map-marker" style="color: darkgray"></span>
-                <a href ng-if="msg.showLocations" ng-click="msg.showLocations = false" class="clickable" translate>HIDE_POS</a>
-                <a href ng-if="!msg.showLocations" ng-click="msg.showLocations = true" class="clickable" translate>SHOW_POS</a>
+                <a href ng-if="msg.showLocations" ng-click="msg.showLocations = false" class="clickable" translate>msg.hide_positions</a>
+                <a href ng-if="!msg.showLocations" ng-click="msg.showLocations = true" class="clickable" translate>msg.show_positions</a>
             </div>
             <div ng-if="msg.showLocations">
                 <div ng-repeat="featureCoords in serializeCoordinates()">
@@ -66,7 +66,7 @@
 
     <!-- Details line -->
     <div class="row" ng-if="msg.descs[0].description">
-        <div class="col-sm-1 message-details-item-field" translate>FIELD_DETAILS</div>
+        <div class="col-sm-1 message-details-item-field" translate>msg.field.details</div>
         <div class="col-sm-11 message-details-item-value" ng-bind-html="msg.descs[0].description"></div>
     </div>
 
@@ -82,13 +82,13 @@
 
     <!-- Note line -->
     <div class="row" ng-if="msg.descs[0].note">
-        <div class="col-sm-1 message-details-item-field" translate>FIELD_NOTE</div>
+        <div class="col-sm-1 message-details-item-field" translate>msg.field.note</div>
         <div class="col-sm-11 message-details-item-value">{{msg.descs[0].note}}</div>
     </div>
 
     <!-- Charts line -->
     <div class="row" ng-if="msg.charts.length > 0">
-        <div class="col-sm-1 message-details-item-field" translate>FIELD_CHARTS</div>
+        <div class="col-sm-1 message-details-item-field" translate>msg.field.charts</div>
         <div class="col-sm-11 message-details-item-value">
             <span ng-repeat="chart in msg.charts"><span ng-if="!$first">, </span>{{chart.chartNumber}}
                 <span ng-if="chart.internationalNumber">(INT {{chart.internationalNumber}})</span></span>
@@ -97,7 +97,7 @@
 
     <!-- Publication line -->
     <div class="row" ng-if="msg.descs[0].publication">
-        <div class="col-sm-1 message-details-item-field" translate>FIELD_PUBLICATION</div>
+        <div class="col-sm-1 message-details-item-field" translate>msg.field.publication</div>
         <div class="col-sm-11 message-details-item-value">{{msg.descs[0].publication}}</div>
     </div>
 
