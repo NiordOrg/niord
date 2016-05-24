@@ -55,11 +55,8 @@ public class SiteTextsServletFilter extends AbstractTextResourceServletFilter {
                     .append(lang)
                     .append("', {\n");
 
-            // Construct a property file with all language-specific values from all included dictionaries
-            Properties langDict = new Properties();
-            for (String name : WEB_DICTIONARIES) {
-                langDict.putAll(dictionaryService.getCachedDictionary(name).toProperties(lang));
-            }
+            // Construct a properties object with all language-specific values from all included dictionaries
+            Properties langDict = dictionaryService.getDictionariesAsProperties(WEB_DICTIONARIES, lang);
 
             // Generate the javascript key-values
             langDict.stringPropertyNames().stream()

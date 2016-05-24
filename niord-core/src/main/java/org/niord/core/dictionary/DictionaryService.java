@@ -224,6 +224,22 @@ public class DictionaryService extends BaseService {
 
 
     /**
+     * Returns the given dictionaries as a Properties object for the given language.
+     * Returns null if undefined.
+     * @param names the dictionary names
+     * @param language the language
+     * @return the dictionaries for the given language as a Properties object
+     */
+    public Properties getDictionariesAsProperties(String[] names, String language) {
+        Properties langDict = new Properties();
+        for (String name : names) {
+            langDict.putAll(getCachedDictionary(name).toProperties(language));
+        }
+        return langDict;
+    }
+
+
+    /**
      * Returns the given dictionaries as a ResourceBundle for the given language.
      * Returns null if undefined.
      * @param names the dictionary names
@@ -233,10 +249,7 @@ public class DictionaryService extends BaseService {
     public ResourceBundle getDictionariesAsResourceBundle(String[] names, String language) {
 
         // Construct a property file with all language-specific values from all included dictionaries
-        Properties langDict = new Properties();
-        for (String name : names) {
-            langDict.putAll(getCachedDictionary(name).toProperties(language));
-        }
+        Properties langDict = getDictionariesAsProperties(names, language);
 
         // Convert the Properties object to a resource bundle
         return new ResourceBundle() {
