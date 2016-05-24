@@ -20,6 +20,7 @@ import freemarker.template.Configuration;
 import freemarker.template.DefaultObjectWrapperBuilder;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.dictionary.DictionaryService;
@@ -48,6 +49,8 @@ import java.util.ResourceBundle;
 public class FmService {
 
     private static final String BUNDLE_PROPERTY = "text";
+
+    public enum ProcessFormat { TEXT, PDF }
 
     @Inject
     private Logger log;
@@ -170,30 +173,41 @@ public class FmService {
 
 
         /**
-         * Generates a PDF based on the Freemarker HTML template and streams it to the output stream
+         * Generates text or PDF based on the Freemarker HTML template and streams it to the output stream
          *
+         * @param format the output format
          * @param out the output stream
          */
-        public void processPdf(OutputStream out) throws Exception {
+        public void process(ProcessFormat format, OutputStream out) throws Exception {
 
             long t0 = System.currentTimeMillis();
             try {
-                // Process the template and clean up the resulting html
-                String html = process();
+                // Process the template
+                String result = process();
 
-                Document xhtmlContent = TextUtils.cleanHtml(html);
+                if (format == ProcessFormat.TEXT) {
+                    IOUtils.write(result, out, "UTF-8");
 
-                // Generate PDF from the HTML
-                ITextRenderer renderer = new ITextRenderer();
-                renderer.setDocument(xhtmlContent, fmService.getBaseUri());
-                renderer.layout();
-                renderer.createPDF(out);
+                    log.info("Completed Freemarker text generation for " + getTemplatePath()
+                            + " in " + (System.currentTimeMillis() - t0) + " ms");
 
-                log.info("Completed PDF generation for " + getTemplatePath()
-                        + " in " + (System.currentTimeMillis() - t0) + " ms");
+                } else if (format == ProcessFormat.PDF) {
+
+                    // Clean up the resulting html
+                    Document xhtmlContent = TextUtils.cleanHtml(result);
+
+                    // Generate PDF from the HTML
+                    ITextRenderer renderer = new ITextRenderer();
+                    renderer.setDocument(xhtmlContent, fmService.getBaseUri());
+                    renderer.layout();
+                    renderer.createPDF(out);
+
+                    log.info("Completed Freemarker PDF generation for " + getTemplatePath()
+                            + " in " + (System.currentTimeMillis() - t0) + " ms");
+                }
 
             } catch (Exception e) {
-                log.error("error generating PDF from template " + getTemplatePath() , e);
+                log.error("Error generating " + format + " from template " + getTemplatePath() , e);
                 throw e;
             }
         }
