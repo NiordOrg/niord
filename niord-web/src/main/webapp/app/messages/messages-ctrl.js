@@ -6,9 +6,9 @@
  * are updated. This allows e.g. for bookmarking of the current state.
  */
 angular.module('niord.messages')
-    .controller('MessageListCtrl', ['$scope', '$rootScope', '$location', '$http', '$timeout',
+    .controller('MessageListCtrl', ['$scope', '$rootScope', '$window', '$location', '$http', '$timeout',
                 'AuthService', 'FilterService', 'MessageService', 'AtonService',
-        function ($scope, $rootScope, $location, $http, $timeout,
+        function ($scope, $rootScope, $window, $location, $http, $timeout,
                   AuthService, FilterService, MessageService, AtonService) {
             'use strict';
 
@@ -597,6 +597,21 @@ angular.module('niord.messages')
             /*****************************/
             /** Utility functions       **/
             /*****************************/
+
+
+            /** Download the PDF for the current search result */
+            $scope.pdf = function () {
+
+                var params = $scope.toRequestFilterParameters();
+                if (params.length > 0) {
+                    params += '&';
+                }
+                params += 'sortBy=' + $scope.state.sortBy
+                    + '&sortOrder=' + $scope.state.sortOrder
+                    + '&lang=' + $rootScope.language;
+
+                $window.location = '/rest/messages/search.pdf?' + params;
+            };
 
 
             /** Returns the bottom-left point of the current map extent **/

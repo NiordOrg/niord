@@ -66,11 +66,22 @@
 </#macro>
 
 
+<#macro areaLineage area>
+    <#if area??>
+        <#if area.parent??>
+            <@areaLineage area=area.parent /> -
+        </#if>
+        <#if area.descs?has_content>${area.descs[0].name}</#if>
+    </#if>
+</#macro>
+
+
 <#macro renderMessage msg>
 <!-- Title line -->
-    <#if msg.originalInformation?has_content && msg.originalInformation>
+<#if msg.originalInformation?has_content && msg.originalInformation>
     <div>*</div>
-    </#if>
+</#if>
+
 <div>
     <a href="${baseUri}/#/message/${msg.id?c}" target="_blank">
         <#if msg.shortId?has_content><strong>${msg.shortId}.</strong></#if>
@@ -88,7 +99,7 @@
                     ${text("msg.field.reference")}
                 </td>
                 <td class="field-value">
-                    ${ref.messageId}
+                    <a href="${baseUri}/#/message/${ref.messageId}" target="_blank">${ref.messageId}</a>
 
                     <#if ref.type == 'REPETITION'>
                         (${text("msg.reference.repetition")})

@@ -135,6 +135,7 @@ public class MessageRestService {
      */
     @GET
     @Path("/message/{messageId}.pdf")
+    @GZIP
     @NoCache
     public Response generatePdfForMessage(
             @PathParam("messageId") String messageId,
@@ -170,7 +171,6 @@ public class MessageRestService {
             log.error("Error generating PDF for message " + messageId, e);
             throw e;
         }
-
     }
 
 
@@ -294,4 +294,95 @@ public class MessageRestService {
     }
 
 
+    /**
+     * Generates a PDF for the message search result.
+     *
+     * If the debug flag is set to true, the HTML that is used for the PDF is returned directly.
+     */
+    @GET
+    @Path("/search.pdf")
+    @GZIP
+    @NoCache
+    public Response generatePdfForSearch(
+            @QueryParam("lang") String language,
+            @QueryParam("query") String query,
+            @QueryParam("domain") @DefaultValue("true") boolean domain, // By default, filter by current domain
+            @QueryParam("status") Set<Status> statuses,
+            @QueryParam("mainType") Set<MainType> mainTypes,
+            @QueryParam("type") Set<Type> types,
+            @QueryParam("messageSeries") Set<String> seriesIds,
+            @QueryParam("area") Set<Integer> areaIds,
+            @QueryParam("category") Set<Integer> categoryIds,
+            @QueryParam("chart") Set<String> chartNumbers,
+            @QueryParam("tag") Set<String> tags,
+            @QueryParam("aton") Set<String> atonUids,
+            @QueryParam("fromDate") Long fromDate,
+            @QueryParam("toDate") Long toDate,
+            @QueryParam("minLat") Double minLat,
+            @QueryParam("minLon") Double minLon,
+            @QueryParam("maxLat") Double maxLat,
+            @QueryParam("maxLon") Double maxLon,
+            @QueryParam("includeGeneral") Boolean includeGeneral,
+            @QueryParam("sortBy") String sortBy,
+            @QueryParam("sortOrder") SortOrder sortOrder,
+            @QueryParam("debug") @DefaultValue("false") boolean debug
+    ) throws Exception {
+
+        // Perform a search for at most 1000 messages
+        PagedSearchResultVo<MessageVo> result = search(
+                language,
+                query,
+                domain,
+                statuses,
+                mainTypes,
+                types,
+                seriesIds,
+                areaIds,
+                categoryIds,
+                chartNumbers,
+                tags,
+                atonUids,
+                fromDate,
+                toDate,
+                minLat,
+                minLon,
+                maxLat,
+                maxLon,
+                includeGeneral,
+                1000,   // max-size
+                0,      // page
+                sortBy,
+                sortOrder,
+                null    // viewMode
+        );
+
+        try {
+            ProcessFormat format = debug ? ProcessFormat.TEXT : ProcessFormat.PDF;
+
+            StreamingOutput stream = os -> {
+                try {
+                    fmService.newTemplateBuilder()
+                            .setTemplatePath("/templates/messages/message-list.ftl")
+                            .setData("messages", result.getData())
+                            .setData("areaHeadings", "AREA".equalsIgnoreCase(sortBy))
+                            .setDictionaryNames("web", "message", "pdf")
+                            .setLanguage(language)
+                            .process(format, os);
+                } catch (Exception e) {
+                    throw new WebApplicationException("Error generating PDF for messages", e);
+                }
+            };
+
+            Response.ResponseBuilder response = Response.ok(stream);
+            return debug
+                    ? response.type("text/html;charset=UTF-8").build()
+                    : response.type("application/pdf")
+                    .header("Content-Disposition", "attachment; filename=\"messages.pdf\"")
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Error generating PDF for messages", e);
+            throw e;
+        }
+    }
 }
