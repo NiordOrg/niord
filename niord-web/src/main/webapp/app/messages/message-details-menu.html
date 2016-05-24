@@ -5,8 +5,17 @@
         <span class="caret"></span>
     </button>
     <ul class="dropdown-menu" style="right:0; left: auto" role="menu">
-        <li ng-if="hasRole('editor')"><a href ng-click="edit()" ng-href="/#/editor/{{messageId}}">Edit...</a></li>
-        <li ng-if="hasRole('editor')"><a href ng-click="manage()" ng-href="/#/editor/{{messageId}}">Manage...</a></li>
-        <li><a href ng-click="pdf()">Generate PDF</a></li>
+        <li ng-if="hasRole('editor')">
+            <a href ng-click="edit()" ng-href="/#/editor/{{messageId}}">
+                <span class="glyphicon glyphicon-pencil"></span>&nbsp;
+                <span translate>menu.action.edit</span>
+            </a>
+        </li>
+        <li>
+            <a href ng-click="pdf()">
+                <span class="glyphicon glyphicon-print"></span>&nbsp;
+                <span translate>menu.action.pdf</span>
+            </a>
+        </li>
     </ul>
 </div>

@@ -697,14 +697,6 @@ angular.module('niord.messages')
                             scope.dismissAction();
                         }
                     };
-
-                    // Navigate to the message manager page
-                    scope.manage = function() {
-                        if (scope.dismissAction) {
-                            scope.dismissAction();
-                        }
-                    };
-
                 }
             }
         }]);
