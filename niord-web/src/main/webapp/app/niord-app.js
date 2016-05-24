@@ -38,6 +38,10 @@ var app = angular.module('niord.admin', [
                 url: "/",
                 templateUrl: "/app/home/home.html"
             })
+            .state('home.message', {
+                url: "message/:messageId",
+                templateUrl: "/app/home/home.html"
+            })
 
 
             /** Editor **/

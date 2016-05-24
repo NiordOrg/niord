@@ -72,7 +72,7 @@
     <div>*</div>
     </#if>
 <div>
-    <a href="${baseUri}/index.html#/messages/${msg.id?c}" target="_blank">
+    <a href="${baseUri}/#/message/${msg.id?c}" target="_blank">
         <#if msg.shortId?has_content><strong>${msg.shortId}.</strong></#if>
         <#if msg.descs?has_content && msg.descs[0].title?has_content>${msg.descs[0].title}</#if>
     </a>
