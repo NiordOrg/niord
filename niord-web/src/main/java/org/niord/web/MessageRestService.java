@@ -21,6 +21,7 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.fm.FmService;
+import org.niord.core.fm.FmService.ProcessFormat;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
@@ -126,21 +127,25 @@ public class MessageRestService {
      * Generates a PDF for the message with the given message id, which may be either a database id,
      * or a short ID or an MRN of a message.
      *
+     * If the debug flag is set to true, the HTML that is used for the PDF is returned directly.
+     *
      * @param messageId the message ID
      * @param language the language of the returned data
      * @return the message as a PDF
      */
     @GET
     @Path("/message/{messageId}.pdf")
-    @Produces("application/pdf")
     @NoCache
     public Response generatePdfForMessage(
             @PathParam("messageId") String messageId,
-            @QueryParam("lang") String language) throws Exception {
+            @QueryParam("lang") String language,
+            @QueryParam("debug") @DefaultValue("false") boolean debug) throws Exception {
 
         MessageVo message = getMessage(messageId, language);
 
         try {
+            ProcessFormat format = debug ? ProcessFormat.TEXT : ProcessFormat.PDF;
+
             StreamingOutput stream = os -> {
                 try {
                     fmService.newTemplateBuilder()
@@ -148,17 +153,18 @@ public class MessageRestService {
                             .setData("msg", message)
                             .setDictionaryNames("web", "message", "pdf")
                             .setLanguage(language)
-                            .processPdf(os);
+                            .process(format, os);
                 } catch (Exception e) {
                     throw new WebApplicationException("Error generating PDF for message " + messageId, e);
                 }
             };
 
-            return Response
-                    .ok(stream)
-                    .type("application/pdf")
-                    .header("Content-Disposition", "attachment; filename=\"message-" + messageId + ".pdf\"")
-                    .build();
+            Response.ResponseBuilder response = Response.ok(stream);
+            return debug
+                    ? response.type("text/html;charset=UTF-8").build()
+                    : response.type("application/pdf")
+                        .header("Content-Disposition", "attachment; filename=\"message-" + messageId + ".pdf\"")
+                        .build();
 
         } catch (Exception e) {
             log.error("Error generating PDF for message " + messageId, e);
