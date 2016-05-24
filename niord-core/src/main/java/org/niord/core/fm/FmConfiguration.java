@@ -34,7 +34,7 @@ public class FmConfiguration {
      */
     @PostConstruct
     public void init() {
-        cfg = new Configuration(Configuration.VERSION_2_3_23);
+        cfg = new Configuration(Configuration.getVersion());
         cfg.setLocalizedLookup(true);
         cfg.setClassForTemplateLoading(getClass(), "/");
         cfg.setTemplateUpdateDelayMilliseconds(0);

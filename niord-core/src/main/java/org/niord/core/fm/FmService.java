@@ -15,9 +15,9 @@
  */
 package org.niord.core.fm;
 
-import freemarker.ext.beans.BeansWrapper;
 import freemarker.ext.beans.ResourceBundleModel;
 import freemarker.template.Configuration;
+import freemarker.template.DefaultObjectWrapperBuilder;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import org.apache.commons.lang.StringUtils;
@@ -93,7 +93,9 @@ public class FmService {
             }
             bundle = dictionaryService.getDictionariesAsResourceBundle(templateBuilder.getDictionaryNames(), language);
             if (bundle != null) {
-                ResourceBundleModel resourceBundleModel = new ResourceBundleModel(bundle, new BeansWrapper());
+                ResourceBundleModel resourceBundleModel = new ResourceBundleModel(
+                        bundle,
+                        new DefaultObjectWrapperBuilder(Configuration.getVersion()).build());
                 templateBuilder.getData().put(BUNDLE_PROPERTY, resourceBundleModel);
             }
         }
