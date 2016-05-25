@@ -31,6 +31,7 @@ import java.util.Date;
 @Entity
 public class DateInterval extends BaseEntity<Integer> {
 
+    @NotNull
     @ManyToOne
     Message message;
 

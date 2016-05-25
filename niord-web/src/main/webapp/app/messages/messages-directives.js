@@ -45,27 +45,30 @@ angular.module('niord.messages')
             },
             link: function(scope, element) {
                 // First check for a textual time description
-                var time;
+                var time = '';
                 var desc = scope.msg.descs[0];
                 if (desc && desc.time) {
                     time = desc.time;
-                } else {
+                } else if (scope.msg.dateIntervals) {
                     var lang = $rootScope.language;
-                    var from = moment(scope.msg.startDate);
-                    time = from.locale(lang).format("lll");
-                    if (scope.msg.endDate) {
-                        var to = moment(scope.msg.endDate);
-                        var fromDate = from.locale(lang).format("ll");
-                        var toDate = to.locale(lang).format("ll");
-                        var toDateTime = to.locale(lang).format("lll");
-                        if (fromDate == toDate) {
-                            // Same dates
-                            time += " - " + toDateTime.replace(toDate, '');
-                        } else {
-                            time += " - " + toDateTime;
+                    for (var x = 0; x < scope.msg.dateIntervals.length; x++) {
+                        var from = moment(scope.msg.dateIntervals[x].fromDate);
+                        time += from.locale(lang).format("lll");
+                        if (scope.msg.dateIntervals[x].toDate) {
+                            var to = moment(scope.msg.dateIntervals[x].toDate);
+                            var fromDate = from.locale(lang).format("ll");
+                            var toDate = to.locale(lang).format("ll");
+                            var toDateTime = to.locale(lang).format("lll");
+                            if (fromDate == toDate) {
+                                // Same dates
+                                time += " - " + toDateTime.replace(toDate, '');
+                            } else {
+                                time += " - " + toDateTime;
+                            }
                         }
+                        time += ' ' + from.format('z');
+                        time += '<br/>';
                     }
-                    time += ' ' + from.format('z');
                 }
                 element.html(time);
             }

@@ -82,35 +82,84 @@
     <div>*</div>
 </#if>
 
-<div>
-    <a href="${baseUri}/#/message/${msg.id?c}" target="_blank">
-        <#if msg.shortId?has_content><strong>${msg.shortId}.</strong></#if>
-        <#if msg.descs?has_content && msg.descs[0].title?has_content>${msg.descs[0].title}</#if>
-    </a>
-</div>
+<#if msg.shortId?has_content>
+    <div>
+        <strong>${msg.shortId}.</strong>
+    </div>
+</#if>
+
+<#if msg.descs?has_content && msg.descs[0].title?has_content>
+    <div>
+        <strong>
+            <a href="${baseUri}/#/message/${msg.id?c}" target="_blank">
+                ${msg.descs[0].title}
+            </a>
+        </strong>
+    </div>
+</#if>
+
 
 <table>
 
     <!-- Reference lines -->
     <#if msg.references?has_content>
-        <#list msg.references as ref>
-            <tr>
-                <td class="field-name">
-                    ${text("msg.field.reference")}
-                </td>
-                <td class="field-value">
-                    <a href="${baseUri}/#/message/${ref.messageId}" target="_blank">${ref.messageId}</a>
+        <tr>
+            <td class="field-name">
+                ${text("msg.field.reference")}
+            </td>
+            <td class="field-value">
+                <#list msg.references as ref>
+                    <div>
+                        <a href="${baseUri}/#/message/${ref.messageId}" target="_blank">${ref.messageId}</a>
 
-                    <#if ref.type == 'REPETITION'>
-                        (${text("msg.reference.repetition")})
-                    <#elseif ref.type == 'CANCELLATION'>
-                        (${text("msg.reference.cancelled")})
-                    <#elseif ref.type == 'UPDATE'>
-                        (${text("msg.reference.updated")})
-                    </#if>
-                </td>
-            </tr>
-        </#list>
+                        <#if ref.type == 'REPETITION'>
+                            ${text("msg.reference.repetition")}
+                        <#elseif ref.type == 'CANCELLATION'>
+                            ${text("msg.reference.cancelled")}
+                        <#elseif ref.type == 'UPDATE'>
+                            ${text("msg.reference.updated")}
+                        </#if>
+
+                        <#if ref.description?has_content>
+                            ${ref.description}
+                        </#if>
+                    </div>
+                </#list>
+            </td>
+        </tr>
+    </#if>
+
+
+    <!-- Time line -->
+    <tr>
+        <td class="field-name">${text("msg.field.time")}</td>
+        <td class="field-value">
+            <#if msg.descs?has_content && msg.descs[0].time?has_content>
+                <div>${msg.descs[0].time}</div>
+            <#elseif msg.dateIntervals?has_content>
+                <#list msg.dateIntervals as dateInterval>
+                    <div>
+                        ${dateInterval.fromDate?datetime}
+                        <#if dateInterval.toDate?has_content>
+                            - ${dateInterval.toDate?datetime}
+                        </#if>
+                    </div>
+                </#list>
+            </#if>
+        </td>
+    </tr>
+
+
+    <!-- Geometry line -->
+    <#if msg.geometry?has_content && msg.geometry.features?has_content>
+        <tr>
+            <td class="field-name">${text("msg.field.positions")}</td>
+            <td class="field-value">
+                <#list msg.geometry.features as feature>
+                    feature
+                </#list>
+            </td>
+        </tr>
     </#if>
 
 

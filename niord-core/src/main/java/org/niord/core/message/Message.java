@@ -182,6 +182,8 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         if (message.getMessageSeries() != null) {
             this.messageSeries = new MessageSeries(message.getMessageSeries());
         }
+        setCreated(message.getCreated());
+        setUpdated(message.getUpdated());
         this.id = message.getId();
         this.number = message.getNumber();
         this.mrn = message.getMrn();

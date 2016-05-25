@@ -296,8 +296,8 @@ public class MessageRestService {
                 params.toString(), searchResult.getData().size(), searchResult.getTotal(), System.currentTimeMillis() - t0));
 
         DataFilter filter = ("map".equalsIgnoreCase(viewMode))
-                ? DataFilter.get().lang(language).fields(DataFilter.GEOMETRY, "MessageDesc.title")
-                : DataFilter.get().lang(language).fields(DataFilter.DETAILS, DataFilter.GEOMETRY, "Area.parent", "Category.parent");
+                ? DataFilter.get().lang(language).fields("Message.geometry", "MessageDesc.title")
+                : DataFilter.get().lang(language).fields(DataFilter.DETAILS, "Message.geometry", "Area.parent", "Category.parent");
 
         return searchResult.map(m -> m.toVo(filter));
     }

@@ -99,6 +99,10 @@ public class BatchMessageImportProcessor extends AbstractItemHandler {
                 message.setMessageSeries(resolveDefaultMessageSeries());
             }
 
+            if (message.getNumber() != null && message.getMrn() == null) {
+                messageSeriesService.updateMessageSeriesIdentifiers(message, false);
+            }
+
             // Make sure areas are created
             List<Area> areas = new ArrayList<>();
             for (Area area : message.getAreas()) {
