@@ -186,7 +186,7 @@ public class BatchRestService {
             @QueryParam("ticket") String ticket) {
 
         // Check the ticket programmatically
-        if (!ticketService.validateTicket(ticket, "admin")) {
+        if (!ticketService.validateTicketForRoles(ticket, "admin")) {
             throw new WebApplicationException(403);
         }
 

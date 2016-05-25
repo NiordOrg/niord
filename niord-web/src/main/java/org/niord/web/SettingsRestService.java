@@ -75,7 +75,7 @@ public class SettingsRestService extends AbstractBatchableRestService {
     @NoCache
     public List<SettingVo> getSettings(@QueryParam("ticket") String ticket) {
         // If a ticket is defined, check if programmatically
-        if (StringUtils.isNotBlank(ticket) && !ticketService.validateTicket(ticket, "sysadmin")) {
+        if (StringUtils.isNotBlank(ticket) && !ticketService.validateTicketForRoles(ticket, "sysadmin")) {
             throw new WebApplicationException(403);
 
         } else if (StringUtils.isBlank(ticket) && !ctx.isCallerInRole("sysadmin")) {

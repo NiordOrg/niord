@@ -15,6 +15,7 @@
  */
 package org.niord.web;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
@@ -27,6 +28,7 @@ import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
 import org.niord.core.model.BaseEntity;
+import org.niord.core.user.TicketService;
 import org.niord.model.DataFilter;
 import org.niord.model.PagedSearchParamsVo.SortOrder;
 import org.niord.model.PagedSearchResultVo;
@@ -74,6 +76,10 @@ public class MessageRestService {
     @Inject
     FmService fmService;
 
+    @Inject
+    TicketService ticketService;
+
+
     /***************************
      * Search functionality
      ***************************/
@@ -109,6 +115,8 @@ public class MessageRestService {
     public MessageVo getMessage(
             @PathParam("messageId") String messageId,
             @QueryParam("lang") String language) throws Exception {
+
+        // TODO: Validate message series etc according to the current domain
 
         Message message = messageService.resolveMessage(messageId);
         if (message == null) {
@@ -206,7 +214,8 @@ public class MessageRestService {
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("sortBy") String sortBy,
             @QueryParam("sortOrder") SortOrder sortOrder,
-            @QueryParam("viewMode") String viewMode
+            @QueryParam("viewMode") String viewMode,
+            @QueryParam("ticket") String ticket
     ) throws Exception {
 
         MessageSearchParams params = new MessageSearchParams();
@@ -230,7 +239,7 @@ public class MessageRestService {
                 .sortBy(sortBy)
                 .sortOrder(sortOrder);
 
-        Domain currentDomain = domainService.currentDomain();
+        Domain currentDomain = currentDomain(ticket);
 
         // Enforce security rules - depends on whether the current user is in the context of a domain or not.
         if (domain && currentDomain != null) {
@@ -325,6 +334,7 @@ public class MessageRestService {
             @QueryParam("includeGeneral") Boolean includeGeneral,
             @QueryParam("sortBy") String sortBy,
             @QueryParam("sortOrder") SortOrder sortOrder,
+            @QueryParam("ticket") String ticket,
             @QueryParam("debug") @DefaultValue("false") boolean debug
     ) throws Exception {
 
@@ -353,7 +363,8 @@ public class MessageRestService {
                 0,      // page
                 sortBy,
                 sortOrder,
-                null    // viewMode
+                null,    // viewMode
+                ticket
         );
 
         try {
@@ -385,4 +396,40 @@ public class MessageRestService {
             throw e;
         }
     }
+
+
+    /***************************
+     * Ticket functionality
+     ***************************/
+
+
+    /**
+     * Returns a ticket to be used in a subsequent call to generated a PDF.
+     * This is needed because the URLs issued by the javascript client when generating a PDF
+     * are not ajax-based, and thus, do not get authorization and domain headers injected.
+     * @return a PDF ticket
+     */
+    @GET
+    @Path("/pdf-ticket")
+    @Produces("text/plain")
+    @NoCache
+    public String getPdfTicket() {
+        return ticketService.createTicketForDomain(domainService.currentDomain());
+    }
+
+
+    /**
+     * Resolves the current domain, either via the usual container managed approach or from
+     * a ticket request parameter issued via a previous call to "/pdf-ticket"
+     * @param ticket the request ticket
+     * @return the current domain
+     */
+    private Domain currentDomain(String ticket) {
+        Domain domain = domainService.currentDomain();
+        if (domain == null && StringUtils.isNotBlank(ticket)) {
+            domain = ticketService.resolveTicketDomain(ticket);
+        }
+        return domain;
+    }
+
 }

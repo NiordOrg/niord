@@ -53,6 +53,12 @@ angular.module('niord.messages')
             },
 
 
+            /** Returns the ticket that can be used to generate PDFs (since this is via a non-ajax call */
+            pdfTicket: function () {
+                return $http.get('/rest/messages/pdf-ticket');
+            },
+
+
             /** Returns the message tags for the current user */
             tags: function () {
                 return $http.get('/rest/tags/');

@@ -602,15 +602,19 @@ angular.module('niord.messages')
             /** Download the PDF for the current search result */
             $scope.pdf = function () {
 
-                var params = $scope.toRequestFilterParameters();
-                if (params.length > 0) {
-                    params += '&';
-                }
-                params += 'sortBy=' + $scope.state.sortBy
-                    + '&sortOrder=' + $scope.state.sortOrder
-                    + '&lang=' + $rootScope.language;
+                MessageService.pdfTicket()
+                    .success(function (ticket) {
+                        var params = $scope.toRequestFilterParameters();
+                        if (params.length > 0) {
+                            params += '&';
+                        }
+                        params += 'sortBy=' + $scope.state.sortBy
+                            + '&sortOrder=' + $scope.state.sortOrder
+                            + '&lang=' + $rootScope.language
+                            + '&ticket=' + encodeURIComponent(ticket);
 
-                $window.location = '/rest/messages/search.pdf?' + params;
+                        $window.location = '/rest/messages/search.pdf?' + params;
+                    });
             };
 
 

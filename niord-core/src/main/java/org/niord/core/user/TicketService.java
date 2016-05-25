@@ -1,13 +1,16 @@
 package org.niord.core.user;
 
+import org.infinispan.Cache;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.util.concurrent.IsolationLevel;
 import org.niord.core.cache.BaseCache;
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.slf4j.Logger;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.ejb.Singleton;
 import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.Set;
@@ -24,9 +27,14 @@ import java.util.stream.Collectors;
  * Instead, the download link should start by making an Ajax call to get a ticket, then
  * add the ticket to the link being opened as a ticket.
  * In the REST endpoint, the ticket can be validated programmatically.
+ * <p>
+ * The ticket may be associated with various types of data, known to be valid when the ticket
+ * was issued, i.e. the users roles or the current domain. If in a subsequent request the
+ * ticket is resolved, then the stored ticket data (roles or domain) can be trusted to be true
+ * even in an un-authorized request.
  */
-@ApplicationScoped
-public class TicketService extends BaseCache<String, String[]> {
+@Singleton
+public class TicketService extends BaseCache<String, TicketService.TicketData> {
 
     final static long LIFESPAN = 60 * 1000;    // 1 minute
 
@@ -34,6 +42,9 @@ public class TicketService extends BaseCache<String, String[]> {
 
     @Inject
     private Logger log;
+
+    @Inject
+    DomainService domainService;
 
 
     /** {@inheritDoc} */
@@ -43,8 +54,16 @@ public class TicketService extends BaseCache<String, String[]> {
     }
 
 
+    /** {@inheritDoc} */
+    @Override
+    public Cache<String, TicketData> getCache() {
+        // Prevent access to the cache
+        throw new RuntimeException("Illegal access to the underlying ticket cache");
+    }
+
+
     /**
-     * Issue a ticket for the given roles.
+     * Issues a ticket for the given roles.
      * The ticket will expire after 1 minute and can only be validated once.
      * <p>
      * If the roles are empty, the ticket applies to any roles.
@@ -59,7 +78,7 @@ public class TicketService extends BaseCache<String, String[]> {
         if (roles == null) {
             roles = new String[0];
         }
-        getCache().put(ticket, roles);
+        super.getCache().put(ticket, TicketData.rolesTicket(roles));
 
         return ticket;
     }
@@ -76,14 +95,15 @@ public class TicketService extends BaseCache<String, String[]> {
      * @param roles the roles to check validity for
      * @return if the ticket is valid for the give roles.
      */
-    public boolean validateTicket(String ticket, String... roles) {
+    public boolean validateTicketForRoles(String ticket, String... roles) {
 
         if (ticket == null) {
             return false;
         }
 
-        // Since the ticket is one-time, remove it from the cache
-        String[] ticketRoles = getCache().remove(ticket);
+        // Since the ticket is a one-time ticket, remove it from the cache
+        TicketData ticketData = super.getCache().remove(ticket);
+        String[] ticketRoles = ticketData != null ? ticketData.getRoles() : null;
 
         // Ticket not found (or expired)
         if (ticketRoles == null) {
@@ -106,6 +126,47 @@ public class TicketService extends BaseCache<String, String[]> {
                 .anyMatch(roleSet::contains);
     }
 
+
+    /**
+     * Issues a ticket for the given domain.
+     * The ticket will expire after 1 minute and can only be validated once.
+     *
+     * @param domain the domain the ticket should be tied to
+     * @return the ticket
+     */
+    public String createTicketForDomain(Domain domain) {
+
+        // Construct a unique ticket
+        String ticket = UUID.randomUUID().toString();
+        String domainClientId = (domain != null) ? domain.getClientId() : null;
+        super.getCache().put(ticket, TicketData.domainTicket(domainClientId));
+
+        return ticket;
+    }
+
+
+    /**
+     * Checks if the ticket is valid and returns the domain associated with the ticket.
+     * The check invalidates the ticket, so, the resolution can be done only once.
+     *
+     * @param ticket the ticket
+     * @return the domain associated with the ticket, or null if the ticket is invalid or no domain resolved.
+     */
+    public Domain resolveTicketDomain(String ticket) {
+
+        // Since the ticket is a one-time ticket, remove it from the cache
+        TicketData ticketData = super.getCache().remove(ticket);
+
+        String domainClientId = ticketData != null ? ticketData.getDomain() : null;
+
+        if (domainClientId != null) {
+            return domainService.findByClientId(domainClientId);
+        }
+
+        // No joy
+        return null;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -119,4 +180,37 @@ public class TicketService extends BaseCache<String, String[]> {
     }
 
 
+    /**
+     * Defines the data that may be associated with the ticket
+     */
+    public static class TicketData {
+        String[] roles;
+        String domain;
+
+        /** Prevent public instantiation **/
+        private TicketData() {
+        }
+
+        /** Creates ticket data holding the given roles */
+        public static TicketData rolesTicket(String[] roles) {
+            TicketData ticketData = new TicketData();
+            ticketData.roles = roles;
+            return ticketData;
+        }
+
+        /** Creates ticket data holding the given domain */
+        public static TicketData domainTicket(String domain) {
+            TicketData ticketData = new TicketData();
+            ticketData.domain = domain;
+            return ticketData;
+        }
+
+        public String[] getRoles() {
+            return roles;
+        }
+
+        public String getDomain() {
+            return domain;
+        }
+    }
 }

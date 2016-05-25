@@ -659,8 +659,8 @@ angular.module('niord.messages')
     /****************************************************************
      * Adds a message details drop-down menu
      ****************************************************************/
-    .directive('messageDetailsMenu', ['$rootScope', '$window',
-        function ($rootScope, $window) {
+    .directive('messageDetailsMenu', ['$rootScope', '$window', 'MessageService',
+        function ($rootScope, $window, MessageService) {
             'use strict';
 
             return {
@@ -688,7 +688,12 @@ angular.module('niord.messages')
 
                     // Download the PDF for the message
                     scope.pdf = function () {
-                        $window.location = '/rest/messages/message/' + scope.messageId + '.pdf?lang=' + $rootScope.language;
+                        MessageService.pdfTicket()
+                            .success(function (ticket) {
+                                $window.location = '/rest/messages/message/' + scope.messageId
+                                    + '.pdf?lang=' + $rootScope.language
+                                    + '&ticket=' + ticket;
+                            });
                     };
 
                     // Navigate to the message editor page
