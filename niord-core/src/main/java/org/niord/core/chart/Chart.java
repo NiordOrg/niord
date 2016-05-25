@@ -19,9 +19,17 @@ import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.model.VersionedEntity;
 import org.niord.core.util.GeoJsonUtils;
+import org.niord.model.DataFilter;
 import org.niord.model.vo.ChartVo;
 
-import javax.persistence.*;
+import javax.persistence.Cacheable;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Index;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 import java.util.Objects;
 
 /**
@@ -101,13 +109,24 @@ public class Chart extends VersionedEntity<Integer> {
 
     /** Converts this entity to a value object */
     public ChartVo toVo() {
+        return toVo(DataFilter.get().fields(DataFilter.ALL));
+    }
+
+    /** Converts this entity to a value object */
+    public ChartVo toVo(DataFilter filter) {
         ChartVo chart = new ChartVo();
         chart.setChartNumber(chartNumber);
         chart.setInternationalNumber(internationalNumber);
-        chart.setGeometry(GeoJsonUtils.fromJts(geometry));
-        chart.setHorizontalDatum(horizontalDatum);
-        chart.setScale(scale);
-        chart.setName(name);
+
+        DataFilter compFilter = filter.forComponent(Chart.class);
+        if (compFilter.includeGeometry()) {
+            chart.setGeometry(GeoJsonUtils.fromJts(geometry));
+        }
+        if (compFilter.includeField(DataFilter.DETAILS)) {
+            chart.setHorizontalDatum(horizontalDatum);
+            chart.setScale(scale);
+            chart.setName(name);
+        }
         return chart;
     }
 

@@ -248,9 +248,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                 message.setMessageSeries(messageSeries.toVo());
             }
             message.setStatus(status);
-            areas.forEach(a -> message.checkCreateAreas().add(a.toVo(compFilter)));
-            categories.forEach(c -> message.checkCreateCategories().add(c.toVo(compFilter)));
-            charts.forEach(c -> message.checkCreateCharts().add(c.toVo()));
+            areas.forEach(a -> message.checkCreateAreas().add(a.toVo(filter)));
+            categories.forEach(c -> message.checkCreateCategories().add(c.toVo(filter)));
+            charts.forEach(c -> message.checkCreateCharts().add(c.toVo(filter)));
             message.setHorizontalDatum(horizontalDatum);
             dateIntervals.forEach(d -> message.checkCreateDateIntervals().add(d.toVo()));
             message.setPublishDate(publishDate);
