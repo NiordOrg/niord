@@ -1,7 +1,7 @@
 package org.niord.core.aton;
 
 import com.vividsolutions.jts.geom.Geometry;
-import org.niord.core.geojson.GeoJsonUtils;
+import org.niord.core.geojson.JtsConverter;
 import org.niord.model.PagedSearchParamsVo;
 
 import java.util.HashSet;
@@ -42,7 +42,7 @@ public class AtonSearchParams extends PagedSearchParamsVo {
     }
 
     public AtonSearchParams extent(Double minLat, Double minLon, Double maxLat, Double maxLon) {
-        this.extent = GeoJsonUtils.toJtsExtent(minLat, minLon, maxLat, maxLon);
+        this.extent = JtsConverter.toJtsExtent(minLat, minLon, maxLat, maxLon);
         return this;
     }
 

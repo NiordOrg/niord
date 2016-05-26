@@ -1,11 +1,11 @@
 package org.niord.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.niord.core.geojson.GeoJsonUtils;
+import org.junit.Test;
+import org.niord.core.geojson.JtsConverter;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
 import org.niord.model.vo.geojson.GeoJsonVo;
 import org.niord.model.vo.geojson.GeometryVo;
-import org.junit.Test;
 
 import java.io.IOException;
 import java.util.function.Consumer;
@@ -38,9 +38,9 @@ public class GeoJsonTest {
             geometry.visitCoordinates(counter);
             System.out.println("#coords = " + counter);
 
-            com.vividsolutions.jts.geom.Geometry jts = GeoJsonUtils.toJts(geometry);
+            com.vividsolutions.jts.geom.Geometry jts = JtsConverter.toJts(geometry);
             System.out.println("-> JTS " + jts);
-            geometry = GeoJsonUtils.fromJts(jts);
+            geometry = JtsConverter.fromJts(jts);
             System.out.println("<- JTS " + geometry);
             geometry.visitCoordinates(counter.reset());
             System.out.println("#coords = " + counter);

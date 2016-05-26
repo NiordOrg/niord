@@ -69,7 +69,7 @@ public class Feature extends BaseEntity<Integer> {
     /** Converts this Feature entity to GeoJson */
     public FeatureVo toGeoJson() {
         FeatureVo vo = new FeatureVo();
-        vo.setGeometry(GeoJsonUtils.fromJts(geometry));
+        vo.setGeometry(JtsConverter.fromJts(geometry));
         vo.setId(uid);
         vo.getProperties().putAll(properties);
         return vo;
@@ -82,7 +82,7 @@ public class Feature extends BaseEntity<Integer> {
             feature.setUid(vo.getId().toString());
         }
         feature.getProperties().putAll(vo.getProperties());
-        feature.setGeometry(GeoJsonUtils.toJts(vo.getGeometry()));
+        feature.setGeometry(JtsConverter.toJts(vo.getGeometry()));
         return feature;
     }
 

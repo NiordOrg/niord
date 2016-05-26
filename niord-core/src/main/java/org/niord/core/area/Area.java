@@ -17,8 +17,8 @@ package org.niord.core.area;
 
 import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.geojson.JtsConverter;
 import org.niord.core.model.VersionedEntity;
-import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.vo.AreaType;
@@ -117,7 +117,7 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
         this.id = area.getId();
         this.siblingSortOrder = area.getSiblingSortOrder();
         if (compFilter.includeGeometry()) {
-            this.geometry = GeoJsonUtils.toJts(area.getGeometry());
+            this.geometry = JtsConverter.toJts(area.getGeometry());
         }
         if (compFilter.includeParent() && area.getParent() != null) {
             parent = new Area(area.getParent(), filter);
@@ -146,7 +146,7 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
         area.setSiblingSortOrder(siblingSortOrder);
 
         if (compFilter.includeGeometry()) {
-            area.setGeometry(GeoJsonUtils.fromJts(geometry));
+            area.setGeometry(JtsConverter.fromJts(geometry));
         }
 
         if (compFilter.includeChildren()) {
@@ -261,6 +261,7 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
 
     /** {@inheritDoc} */
     @Override
+    @SuppressWarnings("all")
     public int compareTo(Area area) {
         return (area == null || siblingSortOrder == area.getSiblingSortOrder())
                 ? 0

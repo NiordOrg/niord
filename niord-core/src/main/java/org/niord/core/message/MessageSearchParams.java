@@ -17,7 +17,7 @@ package org.niord.core.message;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.io.ParseException;
-import org.niord.core.geojson.GeoJsonUtils;
+import org.niord.core.geojson.JtsConverter;
 import org.niord.model.PagedSearchParamsVo;
 import org.niord.model.vo.MainType;
 import org.niord.model.vo.Status;
@@ -82,14 +82,14 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     /** Converts en extent defined by max and min lat-lons into a JTS geometry */
     public MessageSearchParams extent(Double minLat, Double minLon, Double maxLat, Double maxLon) {
-        this.extent = GeoJsonUtils.toJtsExtent(minLat, minLon, maxLat, maxLon);
+        this.extent = JtsConverter.toJtsExtent(minLat, minLon, maxLat, maxLon);
         return this;
     }
 
     /** Converts en extent defined by a WKT definition into a JTS geometry */
     public MessageSearchParams extent(String wkt) {
         try {
-            this.extent = GeoJsonUtils.wktToJts(wkt);
+            this.extent = JtsConverter.wktToJts(wkt);
         } catch (ParseException ignored) {
         }
         return this;

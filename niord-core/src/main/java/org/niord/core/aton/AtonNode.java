@@ -19,13 +19,24 @@ import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.annotations.IndexedEmbedded;
+import org.niord.core.geojson.JtsConverter;
 import org.niord.core.model.BaseEntity;
-import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.model.vo.aton.AtonNodeVo;
 import org.niord.model.vo.aton.AtonTagVo;
 
-import javax.persistence.*;
-import java.util.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
+import javax.persistence.PrePersist;
+import javax.persistence.Transient;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -121,7 +132,7 @@ public class AtonNode extends BaseEntity<Integer> {
         if (timestamp == null) {
             timestamp = new Date();
         }
-        geometry = GeoJsonUtils.toJtsPoint(lat, lon);
+        geometry = JtsConverter.toJtsPoint(lat, lon);
     }
 
 

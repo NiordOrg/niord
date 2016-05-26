@@ -20,9 +20,9 @@ import com.vividsolutions.jts.awt.ShapeWriter;
 import com.vividsolutions.jts.geom.Geometry;
 import org.niord.core.NiordApp;
 import org.niord.core.geojson.FeatureName;
+import org.niord.core.geojson.JtsConverter;
 import org.niord.core.message.Message;
 import org.niord.core.settings.annotation.Setting;
-import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.util.GlobalMercator;
 import org.niord.core.util.GraphicsUtils;
 import org.niord.model.vo.MainType;
@@ -349,7 +349,7 @@ public class MessageMapImageGenerator {
      */
     private Shape convertToShape(GeometryVo g) {
         try {
-            Geometry geometry = GeoJsonUtils.toJts(g);
+            Geometry geometry = JtsConverter.toJts(g);
             ShapeWriter writer = new ShapeWriter(null, new PointShapeFactory.Circle(3.0));
             return writer.toShape(geometry);
         } catch (Exception e) {

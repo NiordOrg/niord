@@ -17,8 +17,8 @@ package org.niord.core.chart;
 
 import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.geojson.JtsConverter;
 import org.niord.core.model.VersionedEntity;
-import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.vo.ChartVo;
 
@@ -101,7 +101,7 @@ public class Chart extends VersionedEntity<Integer> {
     public void updateChart(ChartVo chart) {
         this.chartNumber = chart.getChartNumber();
         this.internationalNumber = chart.getInternationalNumber();
-        this.geometry = GeoJsonUtils.toJts(chart.getGeometry());
+        this.geometry = JtsConverter.toJts(chart.getGeometry());
         this.horizontalDatum = chart.getHorizontalDatum();
         this.scale = chart.getScale();
         this.name = chart.getName();
@@ -120,7 +120,7 @@ public class Chart extends VersionedEntity<Integer> {
 
         DataFilter compFilter = filter.forComponent(Chart.class);
         if (compFilter.includeGeometry()) {
-            chart.setGeometry(GeoJsonUtils.fromJts(geometry));
+            chart.setGeometry(JtsConverter.fromJts(geometry));
         }
         if (compFilter.includeField(DataFilter.DETAILS)) {
             chart.setHorizontalDatum(horizontalDatum);
