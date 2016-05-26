@@ -104,6 +104,12 @@ public class DataFilter {
     }
 
 
+    /** Returns the current language setting of the data filter */
+    public String getLang() {
+        return lang;
+    }
+
+
     /**
      * Returns a copy of the data filter with fields for the given component.
      * The component part of any field is removed.

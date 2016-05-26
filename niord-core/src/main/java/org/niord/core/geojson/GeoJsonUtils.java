@@ -1,6 +1,8 @@
 package org.niord.core.geojson;
 
 import org.apache.commons.lang.StringUtils;
+import org.niord.model.vo.geojson.FeatureCollectionVo;
+import org.niord.model.vo.geojson.FeatureVo;
 import org.niord.model.vo.geojson.GeoJsonVo;
 import org.niord.model.vo.geojson.GeometryCollectionVo;
 import org.niord.model.vo.geojson.GeometryVo;
@@ -59,6 +61,29 @@ public class GeoJsonUtils {
     }
 
 
+    /** Sets a "language" feature property flag and optionally removes all names not of the given language */
+    public static <GJ extends GeoJsonVo> GJ setLanguage(GJ g, String language, boolean removeOtherNames) {
+        if (g == null || StringUtils.isBlank(language)) {
+            return g;
+        }
+        if (g instanceof FeatureCollectionVo) {
+            FeatureCollectionVo fc = (FeatureCollectionVo)g;
+            if (fc.getFeatures() != null) {
+                Arrays.stream(fc.getFeatures()).forEach(f -> setLanguage(f, language, removeOtherNames));
+            }
+        } else if (g instanceof FeatureVo) {
+            FeatureVo f = (FeatureVo) g;
+            f.getProperties().put("language", language);
+            if (removeOtherNames) {
+                f.getProperties().entrySet().removeIf(e -> {
+                    FeatureName name = new FeatureName(e);
+                    return name.isValid() && !language.equals(name.getLanguage());
+                });
+            }
+        }
+        return g;
+    }
+
     /**
      * Serializes the GeoJSON of the feature collection into a flat list of coordinates for each feature.
      * The list of coordinates can e.g. be used to present for an end-user, rather than the underlying GeoJSON.
@@ -77,23 +102,35 @@ public class GeoJsonUtils {
      * @param language the language
      * @return the serialized coordinates
      */
-    public static List<SerializedFeature> serializeFeatureCollection(FeatureCollection fc, String language) {
+    public static List<SerializedFeature> serializeFeatureCollection(FeatureCollectionVo fc, String language) {
         List<SerializedFeature> result = new ArrayList<>();
         if (fc != null) {
-            for (Feature feature : fc.getFeatures()) {
+            for (FeatureVo feature : fc.getFeatures()) {
                 if (feature.getProperties().containsKey("parentFeatureId")) {
                     continue;
                 }
+
+                // If no language param is defined, check if the feature defines a "language" property. Default to "en"
+                String featureLang = (String)feature.getProperties().get("language");
+                String lang = StringUtils.isBlank(language) ? StringUtils.defaultIfBlank(featureLang, "en") : language;
+
                 SerializedFeature sf = new SerializedFeature();
-                sf.setName(FeatureName.getFeatureName(feature.getProperties(), language));
+                sf.setName(FeatureName.getFeatureName(feature.getProperties(), lang));
                 AtomicInteger index = new AtomicInteger(0);
-                GeometryVo geometry = JtsConverter.fromJts(feature.getGeometry());
-                serializeGeometry(geometry, sf, feature.getProperties(), language, new AtomicInteger(0));
+                serializeGeometry(feature.getGeometry(), sf, feature.getProperties(), lang, new AtomicInteger(0));
                 if (StringUtils.isNotBlank(sf.getName()) || !sf.getCoordinates().isEmpty()) {
                     result.add(sf);
                 }
             }
         }
+
+        // Update the start indexes if the coordinates
+        int startIndex = 1;
+        for (SerializedFeature sf : result) {
+            sf.setStartIndex(startIndex);
+            startIndex += sf.getCoordinates().size();
+        }
+
         return result;
     }
 
@@ -179,14 +216,6 @@ public class GeoJsonUtils {
         String name;
         double[] coordinates;
 
-        @Override
-        public String toString() {
-            return "SerializedCoordinates{" +
-                    "name='" + name + '\'' +
-                    ", coordinates=" + Arrays.toString(coordinates) +
-                    '}';
-        }
-
         public String getName() {
             return name;
         }
@@ -209,15 +238,8 @@ public class GeoJsonUtils {
      */
     public static class SerializedFeature {
         String name;
+        int startIndex = 0;
         List<SerializedCoordinates> coordinates = new ArrayList<>();
-
-        @Override
-        public String toString() {
-            return "SerializedFeature{" +
-                    "name='" + name + '\'' +
-                    ", coordinates=" + coordinates +
-                    '}';
-        }
 
         public String getName() {
             return name;
@@ -225,6 +247,14 @@ public class GeoJsonUtils {
 
         public void setName(String name) {
             this.name = name;
+        }
+
+        public int getStartIndex() {
+            return startIndex;
+        }
+
+        public void setStartIndex(int startIndex) {
+            this.startIndex = startIndex;
         }
 
         public List<SerializedCoordinates> getCoordinates() {

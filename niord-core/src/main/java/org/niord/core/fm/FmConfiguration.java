@@ -39,6 +39,7 @@ public class FmConfiguration {
         cfg.setClassForTemplateLoading(getClass(), "/");
         cfg.setTemplateUpdateDelayMilliseconds(0);
         cfg.setTemplateExceptionHandler(TemplateExceptionHandler.HTML_DEBUG_HANDLER);
+        cfg.setObjectWrapper(new NiordAppObjectWrapper(cfg.getIncompatibleImprovements()));
     }
 
     /**

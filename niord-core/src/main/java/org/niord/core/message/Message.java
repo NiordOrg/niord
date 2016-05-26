@@ -19,6 +19,7 @@ import org.niord.core.area.Area;
 import org.niord.core.category.Category;
 import org.niord.core.chart.Chart;
 import org.niord.core.geojson.FeatureCollection;
+import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
@@ -263,6 +264,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         }
         if (compFilter.anyOfFields(DataFilter.GEOMETRY) && geometry != null) {
             message.setGeometry(geometry.toGeoJson());
+            GeoJsonUtils.setLanguage(message.getGeometry(), compFilter.getLang(), false);
         }
         if (compFilter.anyOfFields(DataFilter.DETAILS, "MessageDesc.title")) {
             getDescs(compFilter).stream()

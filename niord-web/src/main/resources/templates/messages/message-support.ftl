@@ -1,4 +1,6 @@
 
+<#assign formatPos = "org.niord.core.fm.LatLonDirective"?new()>
+
 <#macro messageStyles>
     <style type="text/css" media="all">
 
@@ -62,6 +64,24 @@
             padding-left: 0;
         }
 
+        .feature-name {
+            margin-top: 5px;
+            margin-bottom: 5px;
+            text-decoration: underline;
+        }
+
+        ol.feature-coordinates {
+            margin-left: 20px;
+            margin-bottom: 0;
+            margin-top: 0;
+        }
+
+        ol.feature-coordinates li {
+            color: darkgray;
+        }
+        ol.feature-coordinates li span {
+            color: black;
+        }
     </style>
 </#macro>
 
@@ -151,12 +171,25 @@
 
 
     <!-- Geometry line -->
-    <#if msg.geometry?has_content && msg.geometry.features?has_content>
+    <#if msg.geometry?has_content>
         <tr>
             <td class="field-name">${text("msg.field.positions")}</td>
             <td class="field-value">
-                <#list msg.geometry.features as feature>
-                    feature
+                <#list msg.geometry as feature>
+                    <#if feature.name?has_content>
+                        <div class="feature-name">${feature.name}</div>
+                    </#if>
+                    <#if feature.coordinates?has_content>
+                        <ol class="feature-coordinates" start="${feature.startIndex}">
+                        <#list feature.coordinates as coord>
+                            <li>
+                                <span>
+                                    <@formatPos lat=coord.coordinates[1] lon=coord.coordinates[0] /><#if coord.name?has_content>,&nbsp;${coord.name}</#if>
+                                </span>
+                            </li>
+                        </#list>
+                        </ol>
+                    </#if>
                 </#list>
             </td>
         </tr>

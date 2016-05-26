@@ -3,7 +3,6 @@ package org.niord.core;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
-import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.geojson.JtsConverter;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
@@ -65,8 +64,8 @@ public class GeoJsonTest {
 
         try {
             GeoJsonVo geojson = mapper.readValue(getClass().getResource("/featurename.json"), GeoJsonVo.class);
-            FeatureCollection fc = FeatureCollection.fromGeoJson((FeatureCollectionVo) geojson);
-            assertEquals(3, fc.getFeatures().size()); // NB: Last feature is a "buffer" affected area feature
+            FeatureCollectionVo fc = (FeatureCollectionVo) geojson;
+            assertEquals(3, fc.getFeatures().length); // NB: Last feature is a "buffer" affected area feature
 
             List<GeoJsonUtils.SerializedFeature> coords = GeoJsonUtils.serializeFeatureCollection(fc, "da");
 
