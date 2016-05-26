@@ -23,7 +23,6 @@ import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.Index;
-import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -36,7 +35,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Used for storing batch data associated with a JSR-352 batch instance.
@@ -74,7 +74,7 @@ public class BatchData extends BaseEntity<Integer> {
 
     @Column(name="properties", columnDefinition = "TEXT")
     @Convert(converter = JpaPropertiesAttributeConverter.class)
-    Properties properties = new Properties();
+    Map<String, Object> properties = new HashMap<>();
 
     Integer progress;
 
@@ -193,11 +193,11 @@ public class BatchData extends BaseEntity<Integer> {
         this.dataFileName = fileName;
     }
 
-    public Properties getProperties() {
+    public Map<String, Object> getProperties() {
         return properties;
     }
 
-    public void setProperties(Properties properties) {
+    public void setProperties(Map<String, Object> properties) {
         this.properties = properties;
     }
 

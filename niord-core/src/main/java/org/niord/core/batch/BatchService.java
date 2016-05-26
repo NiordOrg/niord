@@ -135,7 +135,7 @@ public class BatchService extends BaseService {
     /**
      * Creates and initializes a new batch job data entity
      */
-    private BatchData initBatchData(String jobName, Properties properties) throws IOException {
+    private BatchData initBatchData(String jobName, Map<String, Object> properties) throws IOException {
         // Construct a new batch data entity
         BatchData job = new BatchData();
         job.setUser(userService.currentUser());
@@ -153,7 +153,7 @@ public class BatchService extends BaseService {
      *
      * @param jobName the batch job name
      */
-    public long startBatchJobWithDeflatedData(String jobName, Object data, String dataFileName, Properties properties) throws Exception {
+    public long startBatchJobWithDeflatedData(String jobName, Object data, String dataFileName, Map<String, Object> properties) throws Exception {
 
         BatchData job = initBatchData(jobName, properties);
 
@@ -178,7 +178,7 @@ public class BatchService extends BaseService {
      *
      * @param jobName the batch job name
      */
-    public long startBatchJobWithJsonData(String jobName, Object data, String dataFileName, Properties properties) throws Exception {
+    public long startBatchJobWithJsonData(String jobName, Object data, String dataFileName, Map<String, Object> properties) throws Exception {
 
         BatchData job = initBatchData(jobName, properties);
 
@@ -199,7 +199,7 @@ public class BatchService extends BaseService {
      *
      * @param jobName the batch job name
      */
-    public long startBatchJobWithDataFile(String jobName, InputStream in, String dataFileName, Properties properties) throws IOException {
+    public long startBatchJobWithDataFile(String jobName, InputStream in, String dataFileName, Map<String, Object> properties) throws IOException {
 
         BatchData job = initBatchData(jobName, properties);
 
@@ -219,7 +219,7 @@ public class BatchService extends BaseService {
      *
      * @param jobName the batch job name
      */
-    public long startBatchJobWithDataFile(String jobName, Path file, Properties properties) throws IOException {
+    public long startBatchJobWithDataFile(String jobName, Path file, Map<String, Object> properties) throws IOException {
         if (!Files.isRegularFile(file)) {
             throw new IllegalArgumentException("Invalid file " + file);
         }
@@ -631,7 +631,7 @@ public class BatchService extends BaseService {
                 log.info("Found file " + file.getFileName() + " for batch job " + jobName);
 
                 try {
-                    startBatchJobWithDataFile(jobName, file, new Properties());
+                    startBatchJobWithDataFile(jobName, file, new HashMap<>());
                 } catch (IOException e) {
                     log.error("Failed starting batch job " + jobName + " with file " + file.getFileName());
                 } finally {

@@ -81,7 +81,7 @@ public class BatchMessageImportWriter extends AbstractItemHandler {
             return tag;
         }
 
-        String tagId = job.getProperties().getProperty("tagName");
+        String tagId = (String)job.getProperties().get("tagName");
         if (StringUtils.isBlank(tagId)) {
             return null;
         }

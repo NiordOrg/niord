@@ -20,7 +20,7 @@ import org.niord.model.IJsonSerializable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
 /**
  * Encapsulates a batch job instance.
@@ -37,7 +37,7 @@ public class BatchInstanceVo implements IJsonSerializable {
     String fileName;
     String user;
     String jobName;
-    Properties properties;
+    Map<String, Object> properties;
     Integer progress;
 
     /**
@@ -133,11 +133,11 @@ public class BatchInstanceVo implements IJsonSerializable {
         this.jobName = jobName;
     }
 
-    public Properties getProperties() {
+    public Map<String, Object> getProperties() {
         return properties;
     }
 
-    public void setProperties(Properties properties) {
+    public void setProperties(Map<String, Object> properties) {
         this.properties = properties;
     }
 

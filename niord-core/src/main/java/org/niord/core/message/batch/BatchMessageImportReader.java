@@ -113,7 +113,7 @@ public class BatchMessageImportReader extends AbstractItemHandler {
     public void open(Serializable prevCheckpointInfo) throws Exception {
 
         // Validate that we have access to the "seriesId" properties
-        if (StringUtils.isBlank(job.getProperties().getProperty("seriesId"))) {
+        if (StringUtils.isBlank((String)job.getProperties().get("seriesId"))) {
             getLog().severe("Missing seriesId batch property");
             throw new Exception("Missing seriesId batch property");
         }

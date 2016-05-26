@@ -25,8 +25,9 @@ import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Context;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
 /**
  * May be used as a super class for REST services that handles the uploading of a batch-job file
@@ -61,12 +62,12 @@ public abstract class AbstractBatchableRestService {
         List<FileItem> items = upload.parseRequest(request);
 
         // Collect properties from non-file form parameters
-        Properties params = new Properties();
+        Map<String, Object> params = new HashMap<>();
         items.stream()
             .filter(FileItem::isFormField)
             .forEach(item -> {
                 try {
-                    params.setProperty(item.getFieldName(), item.getString("UTF-8"));
+                    params.put(item.getFieldName(), item.getString("UTF-8"));
                 } catch (Exception ignored) {
                 }
             });
@@ -99,7 +100,7 @@ public abstract class AbstractBatchableRestService {
      * @param params the non-file form parameters
      */
     @SuppressWarnings("unused")
-    protected void checkBatchJob(String batchJobName, FileItem fileItem, Properties params) throws Exception {
+    protected void checkBatchJob(String batchJobName, FileItem fileItem, Map<String, Object> params) throws Exception {
         // By default, we accept the batch job
     }
 
@@ -111,7 +112,7 @@ public abstract class AbstractBatchableRestService {
      * @param params the non-file form parameters
      * @param txt a log of the import
      */
-    private void startBatchJob(String batchJobName, FileItem fileItem, Properties params, StringBuilder txt) throws Exception {
+    private void startBatchJob(String batchJobName, FileItem fileItem, Map<String, Object> params, StringBuilder txt) throws Exception {
         batchService.startBatchJobWithDataFile(
                 batchJobName,
                 fileItem.getInputStream(),

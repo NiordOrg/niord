@@ -154,7 +154,7 @@ public class BatchMessageImportProcessor extends AbstractItemHandler {
         }
 
         // Check if it is defined by batch job properties
-        String seriesId = job.getProperties().getProperty("seriesId");
+        String seriesId = (String)job.getProperties().get("seriesId");
         if (StringUtils.isNotBlank(seriesId)) {
             defaultMessageSeries = messageSeriesService.findBySeriesId(seriesId);
         }
