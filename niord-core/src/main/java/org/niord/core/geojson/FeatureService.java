@@ -53,7 +53,7 @@ public class FeatureService extends BaseService {
     private void assignNewFeatureUids(FeatureCollection fc) {
 
         // Assign new UIDs to the features, and record the old UIDs
-        Map<String, String> oldUids = new HashMap<>();
+        Map<Object, String> oldUids = new HashMap<>();
         fc.getFeatures().forEach(f -> {
             String oldUid = f.getUid();
             String newUid = f.assignNewUid();
@@ -65,11 +65,11 @@ public class FeatureService extends BaseService {
         // If there are any links between features, via the "parentFeatureId" property, update it to the new UID
         fc.getFeatures().stream()
                 .filter(f -> f.getProperties().containsKey("parentFeatureId"))
-                .filter(f -> oldUids.containsKey(f.getProperties().getProperty("parentFeatureId")))
+                .filter(f -> oldUids.containsKey(f.getProperties().get("parentFeatureId")))
                 .forEach(f -> {
-                    String oldUid = f.getProperties().getProperty("parentFeatureId");
+                    Object oldUid = f.getProperties().get("parentFeatureId");
                     String newUid = oldUids.get(oldUid);
-                    f.getProperties().setProperty("parentFeatureId", newUid);
+                    f.getProperties().put("parentFeatureId", newUid);
                 });
     }
 

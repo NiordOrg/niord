@@ -20,6 +20,7 @@ import com.vividsolutions.jts.awt.ShapeWriter;
 import com.vividsolutions.jts.geom.Geometry;
 import org.niord.core.NiordApp;
 import org.niord.core.geojson.FeatureName;
+import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.geojson.JtsConverter;
 import org.niord.core.message.Message;
 import org.niord.core.settings.annotation.Setting;
@@ -304,7 +305,7 @@ public class MessageMapImageGenerator {
                     if (fn.isFeatureName()) {
                         coord = f.computeCenter();
                     } else if (fn.isFeatureCoordName()) {
-                        coord = f.computeCoordinate(fn.getCoordIndex());
+                        coord = GeoJsonUtils.computeCoordinate(f, fn.getCoordIndex());
                     }
 
                     // Draw the label at the resolved coordinate

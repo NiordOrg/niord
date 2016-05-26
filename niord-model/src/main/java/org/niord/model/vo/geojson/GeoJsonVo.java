@@ -23,7 +23,6 @@ import org.niord.model.IJsonSerializable;
 
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlTransient;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
@@ -116,19 +115,6 @@ public abstract class GeoJsonVo implements IJsonSerializable {
     public double[] computeCenter() {
         double[] bbox = computeBBox();
         return new double[]{(bbox[0] + bbox[2]) / 2.0, (bbox[1] + bbox[3]) / 2.0};
-    }
-
-    /** Returns the n'th coordinate **/
-    public double[] computeCoordinate(int n) {
-        // Note to self: This can be implemented much more efficiently
-        AtomicInteger cnt = new AtomicInteger(0);
-        double[][] resultHolder = new double[1][];
-        visitCoordinates(xy -> {
-            if (cnt.getAndIncrement() == n) {
-                resultHolder[0] = xy;
-            }
-        });
-        return resultHolder[0];
     }
 
     public String getType() {

@@ -1,14 +1,21 @@
 package org.niord.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
+import org.niord.core.geojson.FeatureCollection;
+import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.geojson.JtsConverter;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
 import org.niord.model.vo.geojson.GeoJsonVo;
 import org.niord.model.vo.geojson.GeometryVo;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.function.Consumer;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * Test GeoJson classes
@@ -49,6 +56,44 @@ public class GeoJsonTest {
             e.printStackTrace();
         }
     }
+
+
+    @Test
+    public void serializeGeoJson() {
+
+        ObjectMapper mapper = new ObjectMapper();
+
+        try {
+            GeoJsonVo geojson = mapper.readValue(getClass().getResource("/featurename.json"), GeoJsonVo.class);
+            FeatureCollection fc = FeatureCollection.fromGeoJson((FeatureCollectionVo) geojson);
+            assertEquals(3, fc.getFeatures().size()); // NB: Last feature is a "buffer" affected area feature
+
+            List<GeoJsonUtils.SerializedFeature> coords = GeoJsonUtils.serializeFeatureCollection(fc, "da");
+
+            assertEquals(coords.size(), 2);
+            assertEquals(coords.get(0).getCoordinates().size(), 1);
+            assertNull(coords.get(0).getName());
+            assertEquals(coords.get(1).getCoordinates().size(), 4);
+            assertEquals(coords.get(1).getName(), "ged");
+            assertEquals(coords.get(1).getCoordinates().get(0).getName(), "aa");
+
+            coords.stream().forEach(sf -> {
+                System.out.println("Feature: " + sf.getName());
+                sf.getCoordinates().stream().forEach(sc -> {
+                    StringBuilder str = new StringBuilder();
+                    str.append(String.format("lat=%.2f, lon=%.2f", sc.getCoordinates()[1], sc.getCoordinates()[0]));
+                    if (StringUtils.isNotBlank(sc.getName())) {
+                        str.append(", ").append(sc.getName());
+                    }
+                    System.out.println("  " + str);
+                });
+            });
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     class CoordCounter implements Consumer<double[]> {
         int count = 0;

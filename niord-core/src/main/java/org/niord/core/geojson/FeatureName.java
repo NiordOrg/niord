@@ -36,7 +36,7 @@ public class FeatureName {
     }
 
     /** Constructor **/
-    public FeatureName(Map.Entry<Object, Object> kv) {
+    public FeatureName(Map.Entry<String, Object> kv) {
         this.key = kv.getKey();
         this.value = kv.getValue();
         parseKey();
@@ -56,6 +56,39 @@ public class FeatureName {
         } else {
             type = null;
         }
+    }
+
+    /**
+     * Returns the name in the given language of the feature as stored in the feature properties.
+     * Returns null if no feature name is found.
+     *
+     * @param properties the feature properties
+     * @param language the language
+     * @return the name in the given language of the feature, or null if not found
+     */
+    public static String getFeatureName(Map<String, Object> properties, String language) {
+        if (properties != null) {
+            Object name = properties.get("name#" + language);
+            return name == null ? null : name.toString();
+        }
+        return null;
+    }
+
+    /**
+     * Returns the name in the given language of the coordinate as stored in the feature properties.
+     * Returns null if no coordinate name is found.
+     *
+     * @param properties the feature properties
+     * @param language the language
+     * @param coordIndex the coordinate index
+     * @return the name in the given language of the coordinate, or null if not found
+     */
+    public static String getFeatureCoordinateName(Map<String, Object> properties, String language, int coordIndex) {
+        if (properties != null) {
+            Object name = properties.get("name#" + coordIndex + "#" + language );
+            return name == null ? null : name.toString();
+        }
+        return null;
     }
 
     public boolean isValid() {

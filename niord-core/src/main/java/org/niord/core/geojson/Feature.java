@@ -15,7 +15,8 @@ import javax.persistence.NamedQuery;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -50,7 +51,7 @@ public class Feature extends BaseEntity<Integer> {
 
     @Column(name="properties", columnDefinition = "TEXT")
     @Convert(converter = JpaPropertiesAttributeConverter.class)
-    private Properties properties = new Properties();
+    private Map<String, Object> properties = new HashMap<>();
 
     /** Ensure that the UID is defined */
     @PrePersist
@@ -113,11 +114,11 @@ public class Feature extends BaseEntity<Integer> {
         this.geometry = geometry;
     }
 
-    public Properties getProperties() {
+    public Map<String, Object> getProperties() {
         return properties;
     }
 
-    public void setProperties(Properties properties) {
+    public void setProperties(Map<String, Object> properties) {
         this.properties = properties;
     }
 }

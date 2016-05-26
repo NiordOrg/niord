@@ -16,29 +16,31 @@
 package org.niord.core.db;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.persistence.AttributeConverter;
 import java.io.IOException;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Use to convert a JPA database field to and fro a Properties object by (de-)serializing as JSON.
+ * Use to convert a JPA database field to and fro a Map<String, Object> object by (de-)serializing as JSON.
  * Usage:
  * <pre>
- *     {@literal @}Convert(converter = JpaMapAttributeConverter.class)
+ *     {@literal @}Convert(converter = JpaPropertiesAttributeConverter.class)
  * </pre>
  */
-public class JpaPropertiesAttributeConverter implements AttributeConverter<Properties, String> {
+public class JpaPropertiesAttributeConverter implements AttributeConverter<Map<String, Object>, String> {
 
     private final static ObjectMapper objectMapper = new ObjectMapper();
     private final static Logger log = LoggerFactory.getLogger(JpaPropertiesAttributeConverter.class);
 
     /** {@inheritDoc} */
     @Override
-    public String convertToDatabaseColumn(Properties value) {
+    public String convertToDatabaseColumn(Map<String, Object> value) {
 
         if (value == null) {
             return null;
@@ -54,17 +56,17 @@ public class JpaPropertiesAttributeConverter implements AttributeConverter<Prope
 
     /** {@inheritDoc} */
     @Override
-    public Properties convertToEntityAttribute(String value) {
+    public Map<String, Object> convertToEntityAttribute(String value) {
 
         if (value == null) {
-            return new Properties();
+            return new HashMap<>();
         }
 
         try {
-            return objectMapper.readValue(value, Properties.class);
+            return objectMapper.readValue(value, new TypeReference<Map<String, Object>>(){});
         } catch (IOException ex) {
             log.error("Error converting String to Properties: " + value);
-            return new Properties();
+            return new HashMap<>();
         }
     }
 }
