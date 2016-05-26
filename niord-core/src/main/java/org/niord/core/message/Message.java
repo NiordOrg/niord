@@ -245,7 +245,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             message.setUpdated(getUpdated());
             message.setVersion(getVersion());
             if (messageSeries != null) {
-                message.setMessageSeries(messageSeries.toVo());
+                message.setMessageSeries(messageSeries.toVo(filter));
             }
             message.setStatus(status);
             areas.forEach(a -> message.checkCreateAreas().add(a.toVo(filter)));

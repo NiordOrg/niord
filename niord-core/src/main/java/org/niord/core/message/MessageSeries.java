@@ -16,6 +16,7 @@
 package org.niord.core.message;
 
 import org.niord.core.model.VersionedEntity;
+import org.niord.model.DataFilter;
 import org.niord.model.vo.MainType;
 import org.niord.model.vo.MessageSeriesVo;
 
@@ -74,13 +75,22 @@ public class MessageSeries extends VersionedEntity<Integer> {
 
 
     /** Converts this entity to a value object */
-    public MessageSeriesVo toVo() {
+    public MessageSeriesVo toVo(DataFilter filter) {
         MessageSeriesVo series = new MessageSeriesVo();
         series.setSeriesId(seriesId);
-        series.setMainType(mainType);
-        series.setMrnFormat(mrnFormat);
-        series.setShortFormat(shortFormat);
+
+        DataFilter compFilter = filter.forComponent(MessageSeries.class);
+        if (compFilter.includeField(DataFilter.DETAILS)) {
+            series.setMainType(mainType);
+            series.setMrnFormat(mrnFormat);
+            series.setShortFormat(shortFormat);
+        }
         return series;
+    }
+
+    /** Converts this entity to a value object */
+    public MessageSeriesVo toVo() {
+        return toVo(DataFilter.get().fields(DataFilter.ALL));
     }
 
     /*************************/
