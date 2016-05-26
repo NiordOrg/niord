@@ -125,7 +125,7 @@ public class MessageRestService {
 
         DataFilter filter = DataFilter.get()
                 .lang(language)
-                .fields(DataFilter.DETAILS, DataFilter.GEOMETRY, "Area.parent", "Category.parent");
+                .fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
 
         return message.toVo(filter);
     }
