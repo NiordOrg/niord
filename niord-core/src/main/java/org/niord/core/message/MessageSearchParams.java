@@ -17,7 +17,7 @@ package org.niord.core.message;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.io.ParseException;
-import org.niord.core.util.GeoJsonUtils;
+import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.model.PagedSearchParamsVo;
 import org.niord.model.vo.MainType;
 import org.niord.model.vo.Status;

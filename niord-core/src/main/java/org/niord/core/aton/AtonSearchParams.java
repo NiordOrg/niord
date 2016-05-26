@@ -1,7 +1,7 @@
 package org.niord.core.aton;
 
 import com.vividsolutions.jts.geom.Geometry;
-import org.niord.core.util.GeoJsonUtils;
+import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.model.PagedSearchParamsVo;
 
 import java.util.HashSet;

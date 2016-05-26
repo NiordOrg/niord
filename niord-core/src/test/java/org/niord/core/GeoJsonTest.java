@@ -1,7 +1,7 @@
 package org.niord.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.niord.core.util.GeoJsonUtils;
+import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
 import org.niord.model.vo.geojson.GeoJsonVo;
 import org.niord.model.vo.geojson.GeometryVo;

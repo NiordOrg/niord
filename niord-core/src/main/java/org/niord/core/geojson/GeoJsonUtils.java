@@ -1,4 +1,4 @@
-package org.niord.core.util;
+package org.niord.core.geojson;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;

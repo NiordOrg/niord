@@ -3,7 +3,6 @@ package org.niord.core.geojson;
 import com.vividsolutions.jts.geom.Geometry;
 import org.niord.core.db.JpaPropertiesAttributeConverter;
 import org.niord.core.model.BaseEntity;
-import org.niord.core.util.GeoJsonUtils;
 import org.niord.model.vo.geojson.FeatureVo;
 
 import javax.persistence.Column;

@@ -18,7 +18,7 @@ package org.niord.core.chart;
 import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.model.VersionedEntity;
-import org.niord.core.util.GeoJsonUtils;
+import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.vo.ChartVo;
 
