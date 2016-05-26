@@ -19,6 +19,7 @@ import com.vividsolutions.jts.awt.PointShapeFactory;
 import com.vividsolutions.jts.awt.ShapeWriter;
 import com.vividsolutions.jts.geom.Geometry;
 import org.niord.core.NiordApp;
+import org.niord.core.geojson.FeatureName;
 import org.niord.core.message.Message;
 import org.niord.core.settings.annotation.Setting;
 import org.niord.core.geojson.GeoJsonUtils;

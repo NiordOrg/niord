@@ -1,4 +1,4 @@
-package org.niord.web.map;
+package org.niord.core.geojson;
 
 import java.util.Map;
 import java.util.regex.Matcher;
