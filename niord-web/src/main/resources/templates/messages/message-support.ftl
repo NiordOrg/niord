@@ -9,7 +9,7 @@
 
         /** General page rules **/
         @page {
-            size: ${pageSize!"a4"} ${pageOrientation!"portrait"};
+            size: ${pageSize!"A4"} ${pageOrientation!"portrait"};
             margin: 2cm 1.5cm;
             padding: 0;
 

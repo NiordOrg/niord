@@ -148,7 +148,7 @@ public class MessageRestService {
     public Response generatePdfForMessage(
             @PathParam("messageId") String messageId,
             @QueryParam("lang") String language,
-            @QueryParam("pageSize") @DefaultValue("a4") String pageSize,
+            @QueryParam("pageSize") @DefaultValue("A4") String pageSize,
             @QueryParam("pageOrientation") @DefaultValue("portrait") String pageOrientation,
             @QueryParam("debug") @DefaultValue("false") boolean debug) throws Exception {
 
@@ -344,7 +344,7 @@ public class MessageRestService {
             @QueryParam("sortBy") String sortBy,
             @QueryParam("sortOrder") SortOrder sortOrder,
             @QueryParam("ticket") String ticket,
-            @QueryParam("pageSize") @DefaultValue("a4") String pageSize,
+            @QueryParam("pageSize") @DefaultValue("A4") String pageSize,
             @QueryParam("pageOrientation") @DefaultValue("portrait") String pageOrientation,
             @QueryParam("debug") @DefaultValue("false") boolean debug
     ) throws Exception {
