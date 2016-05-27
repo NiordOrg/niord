@@ -9,7 +9,7 @@
 
     <!-- Title line -->
     <div ng-if="msg.originalInformation">&#10029;</div>
-    <div ng-if="msg.shortId">{{msg.shortId}}</div>
+    <div ng-if="msg.shortId"><strong>{{msg.shortId}}</strong></div>
     <div message-details-link="msg.id" message-list="messageList" disabled="format == 'details'">
         <strong>{{msg.descs[0].title}}</strong>
         <span ng-if="msg.descs[0].lang != language" style="color: darkgray;">
