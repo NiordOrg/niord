@@ -13,17 +13,10 @@
 
 <#assign areaHeadingId=-9999999 />
 
-<#function areaHeading area="area" >
-  <#if area?? && (!area.parent?? || (area.parent?? && !area.parent.parent??))>
-      <#return area/>
-  </#if>
-  <#if area?? >
-      <#return areaHeading(area.parent) />
-  </#if>
-  <#return NULL/>
-</#function>
-
 <h1>${text("pdf.list.title")}</h1>
+
+<@renderTOC areaHeadings=areaHeadings />
+
 <table class="message-table">
     <#list messages as msg>
 
@@ -32,7 +25,7 @@
             <#if areaHeadings && area?? && area.id != areaHeadingId>
                 <#assign areaHeadingId=area.id />
                 <tr>
-                    <td colspan="2"><h4 style="color: #8f2f7b; font-size: 16px;"><@areaLineage area=areaHeading(area) /></h4></td>
+                    <td colspan="2"><h4 style="color: #8f2f7b; font-size: 16px;" id="${areaHeadingId?c}"><@areaLineage area=areaHeading(area) /></h4></td>
                 </tr>
             </#if>
         </#if>

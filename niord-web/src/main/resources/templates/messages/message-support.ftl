@@ -1,6 +1,9 @@
 
 <#assign formatPos = "org.niord.core.fm.LatLonDirective"?new()>
 
+<!-- ***************************************  -->
+<!-- Commonly used message styles             -->
+<!-- ***************************************  -->
 <#macro messageStyles>
     <style type="text/css" media="all">
 
@@ -28,6 +31,10 @@
             margin: 0;
             padding: 0;
             height: 0;
+        }
+
+        ol.toc a::after {
+            content: leader('.') target-counter(attr(href), page);
         }
 
         table.message-table tr, table.message-table tr {
@@ -86,6 +93,9 @@
 </#macro>
 
 
+<!-- ***************************************  -->
+<!-- Renders the parent-first area lineage    -->
+<!-- ***************************************  -->
 <#macro areaLineage area>
     <#if area??>
         <#if area.parent??>
@@ -96,158 +106,202 @@
 </#macro>
 
 
+<!-- ***************************************  -->
+<!-- Returns the two root-most area headings  -->
+<!-- ***************************************  -->
+<#function areaHeading area="area" >
+    <#if area?? && (!area.parent?? || (area.parent?? && !area.parent.parent??))>
+        <#return area/>
+    </#if>
+    <#if area?? >
+        <#return areaHeading(area.parent) />
+    </#if>
+    <#return NULL/>
+</#function>
+
+
+<!-- ***************************************  -->
+<!-- Renders the TOC for area-headings        -->
+<!-- ***************************************  -->
+<#macro renderTOC areaHeadings>
+    <#if areaHeadings>
+
+        <#assign tocAreaHeadingId=-9999999 />
+
+        <div>
+            <h2>${text("pdf.toc")}</h2>
+            <ol class='toc'>
+                <#list messages as msg>
+                    <#if msg.areas?has_content>
+                        <#assign area=areaHeading(msg.areas[0]) />
+                        <#if area?? && area.id != tocAreaHeadingId>
+                            <#assign tocAreaHeadingId=area.id />
+                            <li><a href='#${tocAreaHeadingId?c}'><@areaLineage area=areaHeading(area) /></a></li>
+                        </#if>
+                    </#if>
+                </#list>
+            </ol>
+        </div>
+        <div class="page-break">&nbsp;</div>
+    </#if>
+</#macro>
+
+
+<!-- ***************************************  -->
+<!-- Renders a message                        -->
+<!-- ***************************************  -->
 <#macro renderMessage msg>
-<!-- Title line -->
-<#if msg.originalInformation?has_content && msg.originalInformation>
-    <div>*</div>
-</#if>
+    <!-- Title line -->
+    <#if msg.originalInformation?has_content && msg.originalInformation>
+        <div>*</div>
+    </#if>
 
-<#if msg.shortId?has_content>
-    <div>
-        <strong>${msg.shortId}.</strong>
-    </div>
-</#if>
+    <#if msg.shortId?has_content>
+        <div>
+            <strong>${msg.shortId}.</strong>
+        </div>
+    </#if>
 
-<#if msg.descs?has_content && msg.descs[0].title?has_content>
-    <div>
-        <strong>
-            <a href="${baseUri}/#/message/${msg.id?c}" target="_blank">
-                ${msg.descs[0].title}
-            </a>
-        </strong>
-    </div>
-</#if>
+    <#if msg.descs?has_content && msg.descs[0].title?has_content>
+        <div>
+            <strong>
+                <a href="${baseUri}/#/message/${msg.id?c}" target="_blank">
+                    ${msg.descs[0].title}
+                </a>
+            </strong>
+        </div>
+    </#if>
 
 
-<table>
+    <table>
 
-    <!-- Reference lines -->
-    <#if msg.references?has_content>
+        <!-- Reference lines -->
+        <#if msg.references?has_content>
+            <tr>
+                <td class="field-name">
+                    ${text("msg.field.reference")}
+                </td>
+                <td class="field-value">
+                    <#list msg.references as ref>
+                        <div>
+                            <a href="${baseUri}/#/message/${ref.messageId}" target="_blank">${ref.messageId}</a>
+
+                            <#if ref.type == 'REPETITION'>
+                                ${text("msg.reference.repetition")}
+                            <#elseif ref.type == 'CANCELLATION'>
+                                ${text("msg.reference.cancelled")}
+                            <#elseif ref.type == 'UPDATE'>
+                                ${text("msg.reference.updated")}
+                            </#if>
+
+                            <#if ref.description?has_content>
+                                ${ref.description}
+                            </#if>
+                        </div>
+                    </#list>
+                </td>
+            </tr>
+        </#if>
+
+
+        <!-- Time line -->
         <tr>
-            <td class="field-name">
-                ${text("msg.field.reference")}
-            </td>
+            <td class="field-name">${text("msg.field.time")}</td>
             <td class="field-value">
-                <#list msg.references as ref>
-                    <div>
-                        <a href="${baseUri}/#/message/${ref.messageId}" target="_blank">${ref.messageId}</a>
+                <#if msg.descs?has_content && msg.descs[0].time?has_content>
+                    <div>${msg.descs[0].time}</div>
+                <#elseif msg.dateIntervals?has_content>
+                    <#list msg.dateIntervals as dateInterval>
+                        <div>
+                            ${dateInterval.fromDate?datetime}
+                            <#if dateInterval.toDate?has_content>
+                                - ${dateInterval.toDate?datetime}
+                            </#if>
+                        </div>
+                    </#list>
+                </#if>
+            </td>
+        </tr>
 
-                        <#if ref.type == 'REPETITION'>
-                            ${text("msg.reference.repetition")}
-                        <#elseif ref.type == 'CANCELLATION'>
-                            ${text("msg.reference.cancelled")}
-                        <#elseif ref.type == 'UPDATE'>
-                            ${text("msg.reference.updated")}
+
+        <!-- Geometry line -->
+        <#if msg.geometry?has_content>
+            <tr>
+                <td class="field-name">${text("msg.field.positions")}</td>
+                <td class="field-value">
+                    <#list msg.geometry as feature>
+                        <#if feature.name?has_content>
+                            <div class="feature-name">${feature.name}</div>
                         </#if>
-
-                        <#if ref.description?has_content>
-                            ${ref.description}
+                        <#if feature.coordinates?has_content>
+                            <ol class="feature-coordinates" start="${feature.startIndex}">
+                            <#list feature.coordinates as coord>
+                                <li>
+                                    <span>
+                                        <@formatPos lat=coord.coordinates[1] lon=coord.coordinates[0] /><#if coord.name?has_content>,&nbsp;${coord.name}</#if>
+                                    </span>
+                                </li>
+                            </#list>
+                            </ol>
                         </#if>
-                    </div>
-                </#list>
-            </td>
-        </tr>
-    </#if>
+                    </#list>
+                </td>
+            </tr>
+        </#if>
 
 
-    <!-- Time line -->
-    <tr>
-        <td class="field-name">${text("msg.field.time")}</td>
-        <td class="field-value">
-            <#if msg.descs?has_content && msg.descs[0].time?has_content>
-                <div>${msg.descs[0].time}</div>
-            <#elseif msg.dateIntervals?has_content>
-                <#list msg.dateIntervals as dateInterval>
-                    <div>
-                        ${dateInterval.fromDate?datetime}
-                        <#if dateInterval.toDate?has_content>
-                            - ${dateInterval.toDate?datetime}
-                        </#if>
-                    </div>
-                </#list>
-            </#if>
-        </td>
-    </tr>
+        <!-- Details line -->
+        <#if msg.descs?has_content && msg.descs[0].description?has_content>
+            <tr>
+                <td class="field-name">${text("msg.field.details")}</td>
+                <td class="field-value">
+                ${msg.descs[0].description}
+                </td>
+            </tr>
+        </#if>
 
+        <!-- Note line -->
+        <#if msg.descs?has_content && msg.descs[0].note?has_content>
+            <tr>
+                <td class="field-name">${text("msg.field.note")}</td>
+                <td class="field-value">
+                ${msg.descs[0].note}
+                </td>
+            </tr>
+        </#if>
 
-    <!-- Geometry line -->
-    <#if msg.geometry?has_content>
-        <tr>
-            <td class="field-name">${text("msg.field.positions")}</td>
-            <td class="field-value">
-                <#list msg.geometry as feature>
-                    <#if feature.name?has_content>
-                        <div class="feature-name">${feature.name}</div>
-                    </#if>
-                    <#if feature.coordinates?has_content>
-                        <ol class="feature-coordinates" start="${feature.startIndex}">
-                        <#list feature.coordinates as coord>
-                            <li>
-                                <span>
-                                    <@formatPos lat=coord.coordinates[1] lon=coord.coordinates[0] /><#if coord.name?has_content>,&nbsp;${coord.name}</#if>
-                                </span>
-                            </li>
-                        </#list>
-                        </ol>
-                    </#if>
-                </#list>
-            </td>
-        </tr>
-    </#if>
+        <!-- Charts line -->
+        <#if msg.charts?has_content>
+            <tr>
+                <td class="field-name">${text("msg.field.charts")}</td>
+                <td class="field-value">
+                    <#list msg.charts as chart>
+                    ${chart.chartNumber}
+                        <#if chart.internationalNumber?has_content>(INT ${chart.internationalNumber?c})</#if>
+                        <#if chart_has_next>, </#if>
+                    </#list>
+                </td>
+            </tr>
+        </#if>
 
+        <!-- Publication line -->
+        <#if msg.descs?has_content && msg.descs[0].publication?has_content>
+            <tr>
+                <td class="field-name">${text("msg.field.publication")}</td>
+                <td class="field-value">
+                ${msg.descs[0].publication}
+                </td>
+            </tr>
+        </#if>
 
-    <!-- Details line -->
-    <#if msg.descs?has_content && msg.descs[0].description?has_content>
-        <tr>
-            <td class="field-name">${text("msg.field.details")}</td>
-            <td class="field-value">
-            ${msg.descs[0].description}
-            </td>
-        </tr>
-    </#if>
+        <!-- Source line -->
+        <#if msg.descs?has_content && msg.descs[0].source?has_content>
+            <tr>
+                <td class="field-name" colspan="2">
+                    (${msg.descs[0].source})
+                </td>
+            </tr>
+        </#if>
 
-    <!-- Note line -->
-    <#if msg.descs?has_content && msg.descs[0].note?has_content>
-        <tr>
-            <td class="field-name">${text("msg.field.note")}</td>
-            <td class="field-value">
-            ${msg.descs[0].note}
-            </td>
-        </tr>
-    </#if>
-
-    <!-- Charts line -->
-    <#if msg.charts?has_content>
-        <tr>
-            <td class="field-name">${text("msg.field.charts")}</td>
-            <td class="field-value">
-                <#list msg.charts as chart>
-                ${chart.chartNumber}
-                    <#if chart.internationalNumber?has_content>(INT ${chart.internationalNumber?c})</#if>
-                    <#if chart_has_next>, </#if>
-                </#list>
-            </td>
-        </tr>
-    </#if>
-
-    <!-- Publication line -->
-    <#if msg.descs?has_content && msg.descs[0].publication?has_content>
-        <tr>
-            <td class="field-name">${text("msg.field.publication")}</td>
-            <td class="field-value">
-            ${msg.descs[0].publication}
-            </td>
-        </tr>
-    </#if>
-
-    <!-- Source line -->
-    <#if msg.descs?has_content && msg.descs[0].source?has_content>
-        <tr>
-            <td class="field-name" colspan="2">
-                (${msg.descs[0].source})
-            </td>
-        </tr>
-    </#if>
-
-</table>
+    </table>
 </#macro>
