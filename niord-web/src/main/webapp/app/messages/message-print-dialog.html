@@ -1,0 +1,42 @@
+<div>
+
+    <div class="modal-header" style="text-align: center; padding: 5px 15px">
+        <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
+        <h4>Print {{totalMessageNo}} messages</h4>
+    </div>
+
+    <div class="modal-body print" style="padding-bottom: 0">
+        <div>
+            <table cellspacing="5">
+                <tr>
+                    <td align="right">Layout </td>
+                    <td>
+                        <div class="btn-group" style="margin: 5px">
+                            <label class="btn btn-default btn-sm" ng-model="data.pageOrientation" uib-btn-radio="'portrait'">portrait</label>
+                            <label class="btn btn-default btn-sm" ng-model="data.pageOrientation" uib-btn-radio="'landscape'">landscape</label>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right">Paper size </td>
+                    <td>
+                        <div class="btn-group" style="margin: 5px">
+                            <select class="form-control input-sm" ng-model="data.pageSize">
+                                <option value="a4">A4</option>
+                                <option value="letter">US Letter</option>
+                            </select>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="row" style="margin-top: 24px;">
+            <div class="form-group col-xs-12" style="text-align: right">
+                <button class="btn btn-default btn-sm" ng-click="$dismiss('aborted')">Close</button>
+                &nbsp;
+                <button id="printBtn" class="btn btn-primary btn-sm" ng-click="print()">Print</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -689,13 +689,29 @@ angular.module('niord.messages')
 
                     scope.hasRole = $rootScope.hasRole;
 
-                    // Download the PDF for the message
+
+                    /** Opens the message print dialog */
                     scope.pdf = function () {
+                        MessageService.messagePrintDialog(1).result
+                            .then(scope.generatePdf);
+                    };
+
+
+                    /** Download the PDF for the current message */
+                    scope.generatePdf = function (printSettings) {
                         MessageService.pdfTicket()
                             .success(function (ticket) {
-                                $window.location = '/rest/messages/message/' + scope.messageId
-                                    + '.pdf?lang=' + $rootScope.language
-                                    + '&ticket=' + ticket;
+
+                                var params = 'lang=' + $rootScope.language + '&ticket=' + ticket;
+
+                                if (printSettings && printSettings.pageOrientation) {
+                                    params += '&pageOrientation=' + printSettings.pageOrientation;
+                                }
+                                if (printSettings && printSettings.pageSize) {
+                                    params += '&pageSize=' + printSettings.pageSize;
+                                }
+
+                                $window.location = '/rest/messages/message/' + scope.messageId + '.pdf?' + params;
                             });
                     };
 

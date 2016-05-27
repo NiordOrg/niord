@@ -148,6 +148,8 @@ public class MessageRestService {
     public Response generatePdfForMessage(
             @PathParam("messageId") String messageId,
             @QueryParam("lang") String language,
+            @QueryParam("pageSize") @DefaultValue("a4") String pageSize,
+            @QueryParam("pageOrientation") @DefaultValue("portrait") String pageOrientation,
             @QueryParam("debug") @DefaultValue("false") boolean debug) throws Exception {
 
         MessageVo message = getMessage(messageId, language);
@@ -160,6 +162,8 @@ public class MessageRestService {
                     fmService.newTemplateBuilder()
                             .setTemplatePath("/templates/messages/message-details.ftl")
                             .setData("msg", message)
+                            .setData("pageSize", pageSize)
+                            .setData("pageOrientation", pageOrientation)
                             .setDictionaryNames("web", "message", "pdf")
                             .setLanguage(language)
                             .process(format, os);
@@ -340,6 +344,8 @@ public class MessageRestService {
             @QueryParam("sortBy") String sortBy,
             @QueryParam("sortOrder") SortOrder sortOrder,
             @QueryParam("ticket") String ticket,
+            @QueryParam("pageSize") @DefaultValue("a4") String pageSize,
+            @QueryParam("pageOrientation") @DefaultValue("portrait") String pageOrientation,
             @QueryParam("debug") @DefaultValue("false") boolean debug
     ) throws Exception {
 
@@ -382,6 +388,8 @@ public class MessageRestService {
                             .setData("messages", result.getData())
                             .setData("areaHeadings", "AREA".equalsIgnoreCase(sortBy))
                             .setData("searchCriteria", result.getDescription())
+                            .setData("pageSize", pageSize)
+                            .setData("pageOrientation", pageOrientation)
                             .setDictionaryNames("web", "message", "pdf")
                             .setLanguage(language)
                             .process(format, os);

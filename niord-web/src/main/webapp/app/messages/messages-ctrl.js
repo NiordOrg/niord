@@ -599,8 +599,15 @@ angular.module('niord.messages')
             /*****************************/
 
 
-            /** Download the PDF for the current search result */
+            /** Opens the message print dialog */
             $scope.pdf = function () {
+                MessageService.messagePrintDialog($scope.totalMessageNo).result
+                    .then($scope.generatePdf);
+            };
+
+
+            /** Download the PDF for the current search result */
+            $scope.generatePdf = function (printSettings) {
 
                 MessageService.pdfTicket()
                     .success(function (ticket) {
@@ -612,6 +619,13 @@ angular.module('niord.messages')
                             + '&sortOrder=' + $scope.state.sortOrder
                             + '&lang=' + $rootScope.language
                             + '&ticket=' + encodeURIComponent(ticket);
+
+                        if (printSettings && printSettings.pageOrientation) {
+                            params += '&pageOrientation=' + printSettings.pageOrientation;
+                        }
+                        if (printSettings && printSettings.pageSize) {
+                            params += '&pageSize=' + printSettings.pageSize;
+                        }
 
                         $window.location = '/rest/messages/search.pdf?' + params;
                     });
@@ -967,6 +981,46 @@ angular.module('niord.messages')
             // Navigate to the given link
             $scope.navigateTag = function (tag) {
                 $scope.$close(tag);
+            };
+
+        }])
+
+
+
+    /*******************************************************************
+     * Controller that handles the message Print dialog
+     *******************************************************************/
+    .controller('MessagePrintDialogCtrl', ['$scope', '$document', '$window', 'total',
+        function ($scope, $document, $window, total) {
+            'use strict';
+
+            $scope.totalMessageNo = total;
+
+            $scope.data = {
+                pageSize : 'a4',
+                pageOrientation: 'portrait'
+            };
+
+            if ($window.localStorage.printSettings) {
+                angular.copy(angular.fromJson($window.localStorage.printSettings), $scope.data);
+            }
+
+            // Register and unregister event-handler to listen for return key
+            var eventTypes = "keydown keypress";
+            function eventHandler(event) {
+                if (event.which === 13) {
+                    $scope.print();
+                }
+            }
+            $document.bind(eventTypes, eventHandler);
+            $scope.$on('$destroy', function () {
+                $document.unbind(eventTypes, eventHandler);
+            });
+
+            // Close the print dialog and return the print settings to the callee
+            $scope.print = function () {
+                $window.localStorage.printSettings = angular.toJson($scope.data);
+                $scope.$close($scope.data);
             };
 
         }]);
