@@ -47,7 +47,6 @@
             margin-top: 0.5cm;
             display: block;
             position: running(footer);
-            border-top: 0.05em solid gray;
             padding-top: 5px;
             color: darkgray;
         }
