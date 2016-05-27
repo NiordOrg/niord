@@ -289,11 +289,16 @@ public class MessageRestService {
             }
         }
 
-
+        // Perform the search
         long t0 = System.currentTimeMillis();
         PagedSearchResultVo<Message> searchResult = messageService.search(params);
+
+        // Record a textual description of the search
+        String description = params.toString();
+        searchResult.setDescription(description);
+
         log.info(String.format("Search [%s] returns %d of %d messages in %d ms",
-                params.toString(), searchResult.getData().size(), searchResult.getTotal(), System.currentTimeMillis() - t0));
+                description, searchResult.getData().size(), searchResult.getTotal(), System.currentTimeMillis() - t0));
 
         DataFilter filter = ("map".equalsIgnoreCase(viewMode))
                 ? DataFilter.get().lang(language).fields("Message.geometry", "MessageDesc.title")
@@ -376,6 +381,7 @@ public class MessageRestService {
                             .setTemplatePath("/templates/messages/message-list.ftl")
                             .setData("messages", result.getData())
                             .setData("areaHeadings", "AREA".equalsIgnoreCase(sortBy))
+                            .setData("searchCriteria", result.getDescription())
                             .setDictionaryNames("web", "message", "pdf")
                             .setLanguage(language)
                             .process(format, os);

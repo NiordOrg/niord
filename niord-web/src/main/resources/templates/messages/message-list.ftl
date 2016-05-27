@@ -11,9 +11,28 @@
 </head>
 <body>
 
+<@renderDefaultHeaderAndFooter headerText="Generated ${.now?datetime}"/>
+
 <#assign areaHeadingId=-9999999 />
 
 <h1>${text("pdf.list.title")}</h1>
+
+<div style="margin: 1cm 0">
+    <table border="0">
+        <tr>
+            <th align="right" valign="top" nowrap>Generated: &nbsp;</th>
+            <td>${.now?datetime}</td>
+        </tr>
+        <tr>
+            <th align="right" valign="top" nowrap>Criteria: &nbsp;</th>
+            <td><small>${searchCriteria}</small></td>
+        </tr>
+        <tr>
+            <th align="right" valign="top" nowrap>Result: &nbsp;</th>
+            <td>${messages?size} messages</td>
+        </tr>
+    </table>
+</div>
 
 <@renderTOC areaHeadings=areaHeadings />
 

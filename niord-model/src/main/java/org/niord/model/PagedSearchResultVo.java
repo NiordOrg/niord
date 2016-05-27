@@ -19,6 +19,9 @@ public class PagedSearchResultVo<T> implements IJsonSerializable {
     long total;
     int size;
 
+    // Optionally, specify a description - e.g. textual description of the search criteria
+    String description;
+
     /**
      * Paginates a content list according to the page number and size
      * @param content the list to paginate
@@ -87,6 +90,7 @@ public class PagedSearchResultVo<T> implements IJsonSerializable {
         PagedSearchResultVo<S> result = new PagedSearchResultVo<>();
         result.setSize(getSize());
         result.setTotal(getTotal());
+        result.setDescription(getDescription());
         result.setData(
                 getData() == null
                 ? null
@@ -126,5 +130,13 @@ public class PagedSearchResultVo<T> implements IJsonSerializable {
 
     public void setSize(int size) {
         this.size = size;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

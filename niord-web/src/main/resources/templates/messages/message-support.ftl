@@ -7,10 +7,67 @@
 <#macro messageStyles>
     <style type="text/css" media="all">
 
+        /** General page rules **/
         @page {
             size: a4 portrait;
-            margin: 1.5cm 1.5cm;
-            padding:0;
+            margin: 2cm 1.5cm;
+            padding: 0;
+
+            @top-center {
+                content: element(header);
+                vertical-align: bottom;
+            }
+
+            @bottom-center {
+                content: element(footer);
+                vertical-align: top;
+            }
+        }
+
+        /** First page rules **/
+        @page :first {
+            margin: 1.5cm;
+            @top-center {
+                content: element(first-page-header);
+            }
+            @bottom-center {
+                content: element(first-page-footer);
+            }
+        }
+
+        div.header {
+            display: block;
+            position: running(header);
+            border-bottom: 0.05em solid gray;
+            padding-bottom: 5px;
+            color: darkgray;
+        }
+
+        div.footer {
+            margin-top: 0.5cm;
+            display: block;
+            position: running(footer);
+            border-top: 0.05em solid gray;
+            padding-top: 5px;
+            color: darkgray;
+        }
+
+        div.first-page-header {
+            display: block;
+            position: running(first-page-header);
+        }
+
+        div.first-page-footer {
+            display: block;
+            position: running(first-page-footer);
+        }
+
+        #pagenumber:before {
+            content: counter(page);
+        }
+
+        #pagecount:before {
+            content: counter(pages);
         }
 
         body{
@@ -90,6 +147,26 @@
             color: black;
         }
     </style>
+</#macro>
+
+
+<!-- ***************************************  -->
+<!-- Renders the default headers and footers  -->
+<!-- ***************************************  -->
+<#macro renderDefaultHeaderAndFooter headerText>
+    <div class="first-page-header">
+    </div>
+    <div class="header">
+        <span style="float: left">${headerText}</span>
+        <span style="float: right">${text("pdf.page")} <span id="pagenumber"></span></span>
+        &nbsp;
+    </div>
+
+    <div class="first-page-footer">
+    </div>
+    <div class="footer">
+        <div style="text-align: center"><img src="/img/company-logo.png" style="height: 1cm"></div>
+    </div>
 </#macro>
 
 
