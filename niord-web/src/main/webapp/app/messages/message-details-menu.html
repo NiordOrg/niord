@@ -11,11 +11,13 @@
                 <span translate>menu.action.edit</span>
             </a>
         </li>
+        <li ng-if="hasRole('editor')" role="separator" class="divider"></li>
         <li>
             <a href ng-click="pdf()">
                 <span class="glyphicon glyphicon-print"></span>&nbsp;
                 <span translate>menu.action.pdf</span>
             </a>
         </li>
+        <li role="separator" class="divider"></li>
     </ul>
 </div>

@@ -8,7 +8,7 @@
     <message-details-menu ng-if="showDetailsMenu != 'false'" message-id="msg.id" msg="msg" messages="messageList" size="xs" style="float: right;"></message-details-menu>
 
     <!-- Title line -->
-    <div ng-if="msg.originalInformation">&#10029;</div>
+    <div ng-if="msg.originalInformation">&#9733;</div>
     <div ng-if="msg.shortId"><strong>{{msg.shortId}}</strong></div>
     <div message-details-link="msg.id" message-list="messageList" disabled="format == 'details'">
         <strong>{{msg.descs[0].title}}</strong>
