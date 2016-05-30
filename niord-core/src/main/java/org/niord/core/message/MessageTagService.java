@@ -16,6 +16,8 @@
 package org.niord.core.message;
 
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
 import org.niord.core.user.UserService;
@@ -24,11 +26,13 @@ import org.slf4j.Logger;
 import javax.ejb.Schedule;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 /**
@@ -47,57 +51,136 @@ public class MessageTagService extends BaseService {
     @Inject
     UserService userService;
 
+    @Inject
+    DomainService domainService;
+
     /**
-     * Returns the message tag with the given ID for the current user
+     * Returns the message tag with the given ID for the current user and domain
      * @param tagId the tag ID
      * @return the message tag with the given tag identifier or null if not found
      */
-    public MessageTag findByUserAndTagId(String tagId) {
-        return findByUserAndTagId(userService.currentUser(), tagId);
+    public MessageTag findTag(String tagId) {
+        return findTag(userService.currentUser(), domainService.currentDomain(), tagId);
     }
 
 
     /**
-     * Returns the message tag with the given ID for the given user
+     * Returns the message tag with the given ID for the given user and domain
      * @param user the user
+     * @param domain the domain
      * @param tagId the tag ID
-     * @return the message tag with the given tag identifier or null if not found
+     * @return the matching message tag or null if not found
      */
-    public MessageTag findByUserAndTagId(User user, String tagId) {
-        List<MessageTag> tags = findByUserAndTagIds(user, tagId);
+    public MessageTag findTag(User user, Domain domain, String tagId) {
+        List<MessageTag> tags = findTags(user, domain, tagId);
         return tags.isEmpty() ? null : tags.get(0);
     }
 
 
     /**
-     * Returns the message tags with the given tag IDs for the current user
+     * Returns the message tags with the given tag IDs for the current user and domain
      * @param tagIds the tag IDs
      * @return the message tags with the given tag identifiers
      */
-    public List<MessageTag> findByUserAndTagIds(String... tagIds) {
-        return findByUserAndTagIds(userService.currentUser(), tagIds);
+    public List<MessageTag> findTags(String... tagIds) {
+        return findTags(userService.currentUser(), domainService.currentDomain(), tagIds);
     }
 
 
     /**
-     * Returns the message tags with the given tag IDs for the given user
+     * Returns the message tags with the given tag IDs for the given user and domain
      * @param user the user
+     * @param domain the domain
      * @param tagIds the tag IDs
      * @return the message tags with the given tag identifiers
      */
-    public List<MessageTag> findByUserAndTagIds(User user, String... tagIds) {
+    public List<MessageTag> findTags(User user, Domain domain, String... tagIds) {
         Set<String> idSet = new HashSet<>(Arrays.asList(tagIds));
-        if (user == null) {
-            return em.createNamedQuery("MessageTag.findSharedByTagIds", MessageTag.class)
-                    .setParameter("tagIds", idSet)
-                    .getResultList();
-        } else {
-            return em.createNamedQuery("MessageTag.findByUserAndTagIds", MessageTag.class)
+
+        List<MessageTag> result = new ArrayList<>();
+
+        if (user != null && !idSet.isEmpty()) {
+            em.createNamedQuery("MessageTag.findTagsByUser", MessageTag.class)
                     .setParameter("user", user)
                     .setParameter("tagIds", idSet)
-                    .getResultList();
+                    .getResultList()
+                    .stream()
+                    .forEach(t -> {
+                        result.add(t);
+                        idSet.remove(t.getTagId());
+                    });
         }
+
+        if (domain != null && !idSet.isEmpty()) {
+            em.createNamedQuery("MessageTag.findTagsByDomain", MessageTag.class)
+                    .setParameter("domain", domain)
+                    .setParameter("tagIds", idSet)
+                    .getResultList()
+                    .stream()
+                    .forEach(t -> {
+                        result.add(t);
+                        idSet.remove(t.getTagId());
+                    });
+        }
+
+        if (!idSet.isEmpty()) {
+            result.addAll(em.createNamedQuery("MessageTag.findPublicTags", MessageTag.class)
+                    .setParameter("tagIds", idSet)
+                    .getResultList());
+        }
+
+        Collections.sort(result);
+        return result;
     }
+
+
+    /**
+     * Returns all message tags for the current user
+     *
+     * @return the search result
+     */
+    public List<MessageTag> findUserTags() {
+        List<MessageTag> result = new ArrayList<>();
+        Set<String> idSet = new HashSet<>();
+
+        User user = userService.currentUser();
+        if (user != null) {
+            em.createNamedQuery("MessageTag.findByUser", MessageTag.class)
+                    .setParameter("user", user)
+                    .getResultList()
+                    .stream()
+                    .forEach(t -> {
+                        result.add(t);
+                        idSet.add(t.getTagId());
+                    });
+        }
+
+        Domain domain = domainService.currentDomain();
+        if (domain != null) {
+            em.createNamedQuery("MessageTag.findByDomain", MessageTag.class)
+                    .setParameter("domain", domain)
+                    .getResultList()
+                    .stream()
+                    .filter(t -> !idSet.contains(t.getTagId()))
+                    .forEach(t -> {
+                        result.add(t);
+                        idSet.add(t.getTagId());
+                    });
+        }
+
+        em.createNamedQuery("MessageTag.findPublic", MessageTag.class)
+                .getResultList()
+                .stream()
+                .filter(t -> !idSet.contains(t.getTagId()))
+                .forEach(t -> {
+                    result.add(t);
+                    idSet.add(t.getTagId());
+                });
+
+        Collections.sort(result);
+        return result;
+    }
+
 
 
     /**
@@ -109,42 +192,10 @@ public class MessageTagService extends BaseService {
      */
     public List<MessageTag> searchMessageTags(String term, int limit) {
 
-        if (StringUtils.isNotBlank(term)) {
-            User user = userService.currentUser();
-            if (user == null) {
-                return em
-                        .createNamedQuery("MessageTag.searchSharedMessageTags", MessageTag.class)
-                        .setParameter("term", "%" + term + "%")
-                        .setMaxResults(limit)
-                        .getResultList();
-            } else {
-                return em
-                        .createNamedQuery("MessageTag.searchMessageTagsByUser", MessageTag.class)
-                        .setParameter("term", "%" + term + "%")
-                        .setParameter("user", user)
-                        .setMaxResults(limit)
-                        .getResultList();
-            }
-        }
-        return Collections.emptyList();
-    }
-
-
-    /**
-     * Returns all message tags for the current user
-     *
-     * @return the search result
-     */
-    public List<MessageTag> findByUser() {
-        User user = userService.currentUser();
-        if (user == null) {
-            return em.createNamedQuery("MessageTag.findShared", MessageTag.class)
-                    .getResultList();
-        } else {
-            return em.createNamedQuery("MessageTag.findByUser", MessageTag.class)
-                    .setParameter("user", user)
-                    .getResultList();
-        }
+        return findUserTags()
+                .stream()
+                .filter(t -> StringUtils.isBlank(term) || t.getTagId().toLowerCase().contains(term.toLowerCase()))
+                .collect(Collectors.toList());
     }
 
 
@@ -154,7 +205,7 @@ public class MessageTagService extends BaseService {
      * @return the persisted message tag
      */
     public MessageTag createMessageTag(MessageTag tag) {
-        List<MessageTag> originals = findByUserAndTagIds(tag.getTagId());
+        List<MessageTag> originals = findTags(tag.getTagId());
         if (!originals.isEmpty()) {
             throw new IllegalArgumentException("Cannot create message tag with duplicate message tag IDs"
                     + tag.getTagId());
@@ -174,14 +225,16 @@ public class MessageTagService extends BaseService {
      * @return the persisted message tag
      */
     public MessageTag updateMessageTag(MessageTag tag) {
-        MessageTag original = findByUserAndTagId(tag.getTagId());
+        MessageTag original = findTag(tag.getTagId());
         if (original == null) {
             throw new IllegalArgumentException("Cannot update non-existing message tag"
                     + tag.getTagId());
         }
 
         original.setExpiryDate(tag.getExpiryDate());
+        original.setType(tag.getType());
         original.setUser(tag.getUser());
+        original.setDomain(tag.getDomain());
 
         // Replace the messages with the persisted messages
         original.setMessages(persistedList(Message.class, tag.getMessages()));
@@ -198,7 +251,7 @@ public class MessageTagService extends BaseService {
      */
     public boolean deleteMessageTag(String tagId) {
 
-        MessageTag original = findByUserAndTagId(tagId);
+        MessageTag original = findTag(tagId);
         if (original != null) {
             log.info("Removing message tag " + tagId);
             remove(original);
@@ -215,7 +268,7 @@ public class MessageTagService extends BaseService {
      */
     public boolean clearMessageTag(String tagId) {
 
-        MessageTag original = findByUserAndTagId(tagId);
+        MessageTag original = findTag(tagId);
         if (original != null) {
             log.info("Clearing message tag " + tagId);
             original.getMessages().clear();

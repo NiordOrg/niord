@@ -36,6 +36,7 @@ public class BatchInstanceVo implements IJsonSerializable {
     long jobNo;
     String fileName;
     String user;
+    String domain;
     String jobName;
     Map<String, Object> properties;
     Integer progress;
@@ -123,6 +124,14 @@ public class BatchInstanceVo implements IJsonSerializable {
 
     public void setUser(String user) {
         this.user = user;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
     }
 
     public String getJobName() {

@@ -25,8 +25,10 @@ import java.util.Date;
 @SuppressWarnings("unused")
 public class MessageTagVo implements IJsonSerializable {
 
+    public enum MessageTagType { PRIVATE, DOMAIN, PUBLIC }
+
     String tagId;
-    boolean shared;
+    MessageTagType type;
     Date expiryDate;
     int messageCount;
 
@@ -42,12 +44,12 @@ public class MessageTagVo implements IJsonSerializable {
         this.tagId = tagId;
     }
 
-    public boolean isShared() {
-        return shared;
+    public MessageTagType getType() {
+        return type;
     }
 
-    public void setShared(boolean shared) {
-        this.shared = shared;
+    public void setType(MessageTagType type) {
+        this.type = type;
     }
 
     public Date getExpiryDate() {

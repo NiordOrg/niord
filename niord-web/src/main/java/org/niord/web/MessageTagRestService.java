@@ -3,6 +3,8 @@ package org.niord.web;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
 import org.niord.core.user.User;
@@ -47,6 +49,9 @@ public class MessageTagRestService {
     @Inject
     UserService userService;
 
+    @Inject
+    DomainService domainService;
+
 
     /** Returns the tags with the given IDs */
     @GET
@@ -55,7 +60,7 @@ public class MessageTagRestService {
     @GZIP
     @NoCache
     public List<MessageTagVo> searchTags() {
-        return messageTagService.findByUser().stream()
+        return messageTagService.findUserTags().stream()
                 .map(MessageTag::toVo)
                 .collect(Collectors.toList());
     }
@@ -82,7 +87,7 @@ public class MessageTagRestService {
     @GZIP
     @NoCache
     public List<MessageTagVo> getTags(@PathParam("tagIds") String tagIds) {
-        return messageTagService.findByUserAndTagIds(tagIds.split(",")).stream()
+        return messageTagService.findTags(tagIds.split(",")).stream()
                 .map(MessageTag::toVo)
                 .collect(Collectors.toList());
     }
@@ -98,7 +103,8 @@ public class MessageTagRestService {
     @RolesAllowed({"editor"})
     public MessageTagVo createTag(MessageTagVo tag) {
         User user = userService.currentUser();
-        return messageTagService.createMessageTag(new MessageTag(tag, user)).toVo();
+        Domain domain = domainService.currentDomain();
+        return messageTagService.createMessageTag(new MessageTag(tag, user, domain)).toVo();
     }
 
 
@@ -115,7 +121,8 @@ public class MessageTagRestService {
             throw new WebApplicationException(400);
         }
         User user = userService.currentUser();
-        return messageTagService.updateMessageTag(new MessageTag(tag, user)).toVo();
+        Domain domain = domainService.currentDomain();
+        return messageTagService.updateMessageTag(new MessageTag(tag, user, domain)).toVo();
     }
 
 
@@ -129,6 +136,7 @@ public class MessageTagRestService {
         log.info("Deleting tag " + tagId);
         return messageTagService.deleteMessageTag(tagId);
     }
+
 
     /** Clears messages from the given tag */
     @DELETE

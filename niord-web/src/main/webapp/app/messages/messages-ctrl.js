@@ -923,8 +923,7 @@ angular.module('niord.messages')
             // Adds a new tag
             $scope.addTag = function () {
                 $scope.data.editMode = 'add';
-                $scope.data.editTag = { tagId: '', shared: false, expiryDate: undefined };
-                //$scope.tagsForm.$setPristine();
+                $scope.data.editTag = { tagId: '', type: 'PRIVATE', expiryDate: undefined };
             };
 
 
@@ -932,7 +931,6 @@ angular.module('niord.messages')
             $scope.editTag = function (tag) {
                 $scope.data.editMode = 'edit';
                 $scope.data.editTag = angular.copy(tag);
-                //$scope.tagsForm.$setPristine();
             };
 
 
@@ -940,7 +938,6 @@ angular.module('niord.messages')
             $scope.copyTag = function (tag) {
                 $scope.data.editMode = 'add';
                 $scope.data.editTag = angular.copy(tag);
-                //$scope.tagsForm.$setPristine();
             };
 
 

@@ -22,6 +22,7 @@ import org.niord.core.batch.vo.BatchExecutionVo;
 import org.niord.core.batch.vo.BatchInstanceVo;
 import org.niord.core.batch.vo.BatchStatusVo;
 import org.niord.core.batch.vo.BatchTypeVo;
+import org.niord.core.domain.DomainService;
 import org.niord.core.sequence.DefaultSequence;
 import org.niord.core.sequence.Sequence;
 import org.niord.core.sequence.SequenceService;
@@ -91,6 +92,9 @@ public class BatchService extends BaseService {
     UserService userService;
 
     @Inject
+    DomainService domainService;
+
+    @Inject
     JobOperator jobOperator;
 
     @Inject
@@ -139,6 +143,7 @@ public class BatchService extends BaseService {
         // Construct a new batch data entity
         BatchData job = new BatchData();
         job.setUser(userService.currentUser());
+        job.setDomain(domainService.currentDomain());
         job.setJobName(jobName);
         job.setJobNo(getNextJobNo(jobName));
         if (properties != null) {
@@ -572,6 +577,7 @@ public class BatchService extends BaseService {
                 i.setFileName(data.getDataFileName());
                 i.setJobNo(data.getJobNo());
                 i.setUser(data.getUser() != null ? data.getUser().getName() : null);
+                i.setDomain(data.getDomain() != null ? data.getDomain().getClientId() : null);
                 i.setJobName(data.getJobName());
                 i.setProperties(data.getProperties());
                 i.setProgress(data.getProgress());

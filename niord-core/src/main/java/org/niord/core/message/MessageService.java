@@ -594,8 +594,8 @@ public class MessageService extends BaseService {
         if (!param.getTags().isEmpty()) {
             Join<Message, MessageTag> tags = msgRoot.join("tags", JoinType.LEFT);
             String[] tagIds = param.getTags().toArray(new String[param.getTags().size()]);
-            Predicate[] tagMatch = messageTagService.findByUserAndTagIds(tagIds).stream()
-                    .map(t -> builder.equal(tags.get("tagId"), t.getTagId()))
+            Predicate[] tagMatch = messageTagService.findTags(tagIds).stream()
+                    .map(t -> builder.equal(tags.get("id"), t.getId()))
                     .toArray(Predicate[]::new);
             criteriaHelper.add(builder.or(tagMatch));
         }

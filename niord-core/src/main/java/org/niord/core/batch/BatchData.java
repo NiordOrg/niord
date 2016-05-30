@@ -16,6 +16,7 @@
 package org.niord.core.batch;
 
 import org.niord.core.db.JpaPropertiesAttributeConverter;
+import org.niord.core.domain.Domain;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.user.User;
 
@@ -70,6 +71,9 @@ public class BatchData extends BaseEntity<Integer> {
     @ManyToOne
     User user;
 
+    @ManyToOne
+    Domain domain;
+
     String dataFileName;
 
     @Column(name="properties", columnDefinition = "TEXT")
@@ -96,6 +100,7 @@ public class BatchData extends BaseEntity<Integer> {
                 ", jobNo=" + jobNo +
                 ", instanceId=" + instanceId +
                 ", user=" + user +
+                ", domain=" + domain +
                 ", dataFileName='" + dataFileName + '\'' +
                 '}';
     }
@@ -183,6 +188,14 @@ public class BatchData extends BaseEntity<Integer> {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public Domain getDomain() {
+        return domain;
+    }
+
+    public void setDomain(Domain domain) {
+        this.domain = domain;
     }
 
     public String getDataFileName() {

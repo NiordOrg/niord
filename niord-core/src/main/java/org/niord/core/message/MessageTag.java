@@ -15,12 +15,17 @@
  */
 package org.niord.core.message;
 
+import org.niord.core.domain.Domain;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.user.User;
 import org.niord.model.vo.MessageTagVo;
+import org.niord.model.vo.MessageTagVo.MessageTagType;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.Index;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
@@ -37,39 +42,48 @@ import java.util.List;
 
 /**
  * Tags represents a named collection of messages.
- * They may be shared, or tied to a specific user.
+ * They may be private, i.e. only accessible for the user that created it, tied to a domain or public.
  * Also, they may have an expiry date, after which they are purged.
  */
 @Entity
 @Table(
-    uniqueConstraints = @UniqueConstraint(columnNames = { "tagId", "user_id" })
+    uniqueConstraints = @UniqueConstraint(columnNames = { "tagId", "user_id", "domain_id" }),
+        indexes = {
+                @Index(name = "message_tag_type_k", columnList="type"),
+                @Index(name = "message_tag_id_k", columnList="tagId")
+        }
 )
 @NamedQueries({
         @NamedQuery(name="MessageTag.findByUser",
-                query="SELECT t FROM MessageTag t where t.user is null or t.user = :user"),
-        @NamedQuery(name="MessageTag.findShared",
-                query="SELECT t FROM MessageTag t where t.user is null"),
-        @NamedQuery(name="MessageTag.findByUserAndTagIds",
-                query="SELECT t FROM MessageTag t where t.tagId in (:tagIds) and (t.user is null or t.user = :user)"),
-        @NamedQuery(name="MessageTag.findSharedByTagIds",
-                query="SELECT t FROM MessageTag t where t.tagId in (:tagIds) and t.user is null"),
-        @NamedQuery(name  = "MessageTag.searchSharedMessageTags",
-                query="SELECT t FROM MessageTag t where lower(t.tagId) like lower(:term) "
-                        + "and t.user is null"),
-        @NamedQuery(name  = "MessageTag.searchMessageTagsByUser",
-                query="SELECT t FROM MessageTag t where lower(t.tagId) like lower(:term) "
-                        + "and (t.user is null or t.user = :user)"),
+                query="SELECT t FROM MessageTag t where t.type = 'PRIVATE' and t.user = :user"),
+        @NamedQuery(name="MessageTag.findByDomain",
+                query="SELECT t FROM MessageTag t where t.type = 'DOMAIN' and t.domain = :domain"),
+        @NamedQuery(name="MessageTag.findPublic",
+                query="SELECT t FROM MessageTag t where t.type = 'PUBLIC'"),
+        @NamedQuery(name="MessageTag.findTagsByUser",
+                query="SELECT t FROM MessageTag t where t.tagId in (:tagIds) and t.type = 'PRIVATE' and t.user = :user"),
+        @NamedQuery(name="MessageTag.findTagsByDomain",
+                query="SELECT t FROM MessageTag t where t.tagId in (:tagIds) and t.type = 'DOMAIN' and t.domain = :domain"),
+        @NamedQuery(name="MessageTag.findPublicTags",
+                query="SELECT t FROM MessageTag t where t.tagId in (:tagIds) and t.type = 'PUBLIC'"),
         @NamedQuery(name= "MessageTag.findExpiredMessageTags",
                 query="SELECT t FROM MessageTag t where t.expiryDate is not null and t.expiryDate < current_timestamp"),
 })
 @SuppressWarnings("unused")
-public class MessageTag extends BaseEntity<Integer> {
+public class MessageTag extends BaseEntity<Integer> implements Comparable<MessageTag> {
 
     @NotNull
     String tagId;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    MessageTagType type;
+
     @ManyToOne
     User user;
+
+    @ManyToOne
+    Domain domain;
 
     @Temporal(TemporalType.TIMESTAMP)
     Date expiryDate;
@@ -90,10 +104,12 @@ public class MessageTag extends BaseEntity<Integer> {
     /**
      * Constructor
      */
-    public MessageTag(MessageTagVo tag, User user) {
+    public MessageTag(MessageTagVo tag, User user, Domain domain) {
         this.tagId = tag.getTagId();
+        this.type = tag.getType();
         this.expiryDate = tag.getExpiryDate();
-        this.user = tag.isShared() ? null : user;
+        this.user = user;
+        this.domain = domain;
     }
 
 
@@ -102,7 +118,7 @@ public class MessageTag extends BaseEntity<Integer> {
         MessageTagVo tag = new MessageTagVo();
         tag.setTagId(tagId);
         tag.setExpiryDate(expiryDate);
-        tag.setShared(user == null);
+        tag.setType(type);
         tag.setMessageCount(messageCount);
         return tag;
     }
@@ -113,6 +129,15 @@ public class MessageTag extends BaseEntity<Integer> {
     public void updateMessageCount() {
         messageCount = messages.size();
     }
+
+
+    /** {@inheritDoc} */
+    @Override
+    @SuppressWarnings("all")
+    public int compareTo(MessageTag t) {
+        return t == null ? -1 : tagId.toLowerCase().compareTo(t.getTagId().toLowerCase());
+    }
+
 
     /*************************/
     /** Getters and Setters **/
@@ -126,12 +151,28 @@ public class MessageTag extends BaseEntity<Integer> {
         this.tagId = tagId;
     }
 
+    public MessageTagType getType() {
+        return type;
+    }
+
+    public void setType(MessageTagType type) {
+        this.type = type;
+    }
+
     public User getUser() {
         return user;
     }
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public Domain getDomain() {
+        return domain;
+    }
+
+    public void setDomain(Domain domain) {
+        this.domain = domain;
     }
 
     public Date getExpiryDate() {
