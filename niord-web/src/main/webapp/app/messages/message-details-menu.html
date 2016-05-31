@@ -19,7 +19,7 @@
                 <span translate>menu.action.pdf</span>
             </a>
         </li>
-        <li role="separator" class="divider"></li>
+        <li ng-if="isLoggedIn" role="separator" class="divider"></li>
         <li ng-if="isLoggedIn">
             <a href ng-click="addToTagDialog()">
                 <span class="glyphicon glyphicon-tags"></span>&nbsp;
