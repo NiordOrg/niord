@@ -55,82 +55,33 @@ public class MessageTagService extends BaseService {
     DomainService domainService;
 
     /**
-     * Returns the message tag with the given ID for the current user and domain
+     * Returns the message tag with the given ID
      * @param tagId the tag ID
      * @return the message tag with the given tag identifier or null if not found
      */
     public MessageTag findTag(String tagId) {
-        return findTag(userService.currentUser(), domainService.currentDomain(), tagId);
-    }
-
-
-    /**
-     * Returns the message tag with the given ID for the given user and domain
-     * @param user the user
-     * @param domain the domain
-     * @param tagId the tag ID
-     * @return the matching message tag or null if not found
-     */
-    public MessageTag findTag(User user, Domain domain, String tagId) {
-        List<MessageTag> tags = findTags(user, domain, tagId);
+        List<MessageTag> tags = findTags(tagId);
         return tags.isEmpty() ? null : tags.get(0);
     }
 
 
     /**
-     * Returns the message tags with the given tag IDs for the current user and domain
+     * Returns the message tags with the given tag IDs
      * @param tagIds the tag IDs
      * @return the message tags with the given tag identifiers
      */
     public List<MessageTag> findTags(String... tagIds) {
-        return findTags(userService.currentUser(), domainService.currentDomain(), tagIds);
-    }
+        if (tagIds == null || tagIds.length == 0) {
+            return Collections.emptyList();
+        }
 
-
-    /**
-     * Returns the message tags with the given tag IDs for the given user and domain
-     * @param user the user
-     * @param domain the domain
-     * @param tagIds the tag IDs
-     * @return the message tags with the given tag identifiers
-     */
-    public List<MessageTag> findTags(User user, Domain domain, String... tagIds) {
         Set<String> idSet = new HashSet<>(Arrays.asList(tagIds));
-
-        List<MessageTag> result = new ArrayList<>();
-
-        if (user != null && !idSet.isEmpty()) {
-            em.createNamedQuery("MessageTag.findTagsByUser", MessageTag.class)
-                    .setParameter("user", user)
-                    .setParameter("tagIds", idSet)
-                    .getResultList()
-                    .stream()
-                    .forEach(t -> {
-                        result.add(t);
-                        idSet.remove(t.getTagId());
-                    });
-        }
-
-        if (domain != null && !idSet.isEmpty()) {
-            em.createNamedQuery("MessageTag.findTagsByDomain", MessageTag.class)
-                    .setParameter("domain", domain)
-                    .setParameter("tagIds", idSet)
-                    .getResultList()
-                    .stream()
-                    .forEach(t -> {
-                        result.add(t);
-                        idSet.remove(t.getTagId());
-                    });
-        }
-
-        if (!idSet.isEmpty()) {
-            result.addAll(em.createNamedQuery("MessageTag.findPublicTags", MessageTag.class)
-                    .setParameter("tagIds", idSet)
-                    .getResultList());
-        }
-
-        Collections.sort(result);
-        return result;
+        return em.createNamedQuery("MessageTag.findTagsByTagIds", MessageTag.class)
+                .setParameter("tagIds", idSet)
+                .getResultList()
+                .stream()
+                .sorted()
+                .collect(Collectors.toList());
     }
 
 
@@ -141,41 +92,23 @@ public class MessageTagService extends BaseService {
      */
     public List<MessageTag> findUserTags() {
         List<MessageTag> result = new ArrayList<>();
-        Set<String> idSet = new HashSet<>();
 
         User user = userService.currentUser();
         if (user != null) {
-            em.createNamedQuery("MessageTag.findByUser", MessageTag.class)
+            result.addAll(em.createNamedQuery("MessageTag.findByUser", MessageTag.class)
                     .setParameter("user", user)
-                    .getResultList()
-                    .stream()
-                    .forEach(t -> {
-                        result.add(t);
-                        idSet.add(t.getTagId());
-                    });
+                    .getResultList());
         }
 
         Domain domain = domainService.currentDomain();
         if (domain != null) {
-            em.createNamedQuery("MessageTag.findByDomain", MessageTag.class)
+            result.addAll(em.createNamedQuery("MessageTag.findByDomain", MessageTag.class)
                     .setParameter("domain", domain)
-                    .getResultList()
-                    .stream()
-                    .filter(t -> !idSet.contains(t.getTagId()))
-                    .forEach(t -> {
-                        result.add(t);
-                        idSet.add(t.getTagId());
-                    });
+                    .getResultList());
         }
 
-        em.createNamedQuery("MessageTag.findPublic", MessageTag.class)
-                .getResultList()
-                .stream()
-                .filter(t -> !idSet.contains(t.getTagId()))
-                .forEach(t -> {
-                    result.add(t);
-                    idSet.add(t.getTagId());
-                });
+        result.addAll(em.createNamedQuery("MessageTag.findPublic", MessageTag.class)
+                .getResultList());
 
         Collections.sort(result);
         return result;
@@ -194,7 +127,7 @@ public class MessageTagService extends BaseService {
 
         return findUserTags()
                 .stream()
-                .filter(t -> StringUtils.isBlank(term) || t.getTagId().toLowerCase().contains(term.toLowerCase()))
+                .filter(t -> StringUtils.isBlank(term) || t.getName().toLowerCase().contains(term.toLowerCase()))
                 .collect(Collectors.toList());
     }
 
@@ -205,11 +138,14 @@ public class MessageTagService extends BaseService {
      * @return the persisted message tag
      */
     public MessageTag createMessageTag(MessageTag tag) {
-        List<MessageTag> originals = findTags(tag.getTagId());
-        if (!originals.isEmpty()) {
+        MessageTag original = findTag(tag.getTagId());
+        if (original != null) {
             throw new IllegalArgumentException("Cannot create message tag with duplicate message tag IDs"
                     + tag.getTagId());
         }
+
+        tag.setUser(userService.currentUser());
+        tag.setDomain(domainService.currentDomain());
 
         // Replace the messages with the persisted messages
         tag.setMessages(persistedList(Message.class, tag.getMessages()));
@@ -233,8 +169,11 @@ public class MessageTagService extends BaseService {
 
         original.setExpiryDate(tag.getExpiryDate());
         original.setType(tag.getType());
-        original.setUser(tag.getUser());
-        original.setDomain(tag.getDomain());
+        original.setName(tag.getName());
+
+        // TODO: Should we override the user and domain? Ban the user changing the type?
+        //tag.setUser(userService.currentUser());
+        //tag.setDomain(domainService.currentDomain());
 
         // Replace the messages with the persisted messages
         original.setMessages(persistedList(Message.class, tag.getMessages()));

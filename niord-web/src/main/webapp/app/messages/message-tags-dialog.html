@@ -35,8 +35,8 @@
                                 <th style="text-align: right">#messages</th>
                                 <th ng-if="isLoggedIn" style="text-align: right">action</th>
                             </tr>
-                            <tr ng-repeat="tag in data.tags | filter: { tagId: search }">
-                                <td><a href ng-click="navigateTag(tag)">{{tag.tagId}}</a></td>
+                            <tr ng-repeat="tag in data.tags | filter: { name: search }">
+                                <td><a href ng-click="navigateTag(tag)">{{tag.name}}</a></td>
                                 <td>
                                     <span>{{tag.type | lowercase}}</span>
                                 </td>
@@ -67,10 +67,10 @@
             <form name="tagsForm" class="form-horizontal">
 
                 <div class="form-group">
-                    <label for="tagId" class="col-sm-4">Tag Name</label>
+                    <label for="name" class="col-sm-4">Tag Name</label>
                     <div class="col-sm-8">
-                        <input type="text" id="tagId" name="tagId" class="form-control input-sm"
-                               focus="focusMe" ng-model="data.editTag.tagId" ng-disabled="data.editMode == 'edit'"
+                        <input type="text" id="name" name="name" class="form-control input-sm"
+                               focus="focusMe" ng-model="data.editTag.name" ng-disabled="data.editMode == 'edit'"
                                autocapitalize="off" autocorrect="off" autocomplete="off" required />
                     </div>
                 </div>

@@ -923,7 +923,7 @@ angular.module('niord.messages')
             // Adds a new tag
             $scope.addTag = function () {
                 $scope.data.editMode = 'add';
-                $scope.data.editTag = { tagId: '', type: 'PRIVATE', expiryDate: undefined };
+                $scope.data.editTag = { tagId: '', name: '', type: 'PRIVATE', expiryDate: undefined };
             };
 
 

@@ -15,6 +15,7 @@
  */
 package org.niord.core.message;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.domain.Domain;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.user.User;
@@ -39,6 +40,7 @@ import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Tags represents a named collection of messages.
@@ -48,10 +50,10 @@ import java.util.List;
 @Entity
 @Table(
     uniqueConstraints = @UniqueConstraint(columnNames = { "tagId", "user_id", "domain_id" }),
-        indexes = {
-                @Index(name = "message_tag_type_k", columnList="type"),
-                @Index(name = "message_tag_id_k", columnList="tagId")
-        }
+    indexes = {
+            @Index(name = "message_tag_type_k", columnList="type"),
+            @Index(name = "message_tag_id_k", columnList="tagId")
+    }
 )
 @NamedQueries({
         @NamedQuery(name="MessageTag.findByUser",
@@ -60,12 +62,8 @@ import java.util.List;
                 query="SELECT t FROM MessageTag t where t.type = 'DOMAIN' and t.domain = :domain"),
         @NamedQuery(name="MessageTag.findPublic",
                 query="SELECT t FROM MessageTag t where t.type = 'PUBLIC'"),
-        @NamedQuery(name="MessageTag.findTagsByUser",
-                query="SELECT t FROM MessageTag t where t.tagId in (:tagIds) and t.type = 'PRIVATE' and t.user = :user"),
-        @NamedQuery(name="MessageTag.findTagsByDomain",
-                query="SELECT t FROM MessageTag t where t.tagId in (:tagIds) and t.type = 'DOMAIN' and t.domain = :domain"),
-        @NamedQuery(name="MessageTag.findPublicTags",
-                query="SELECT t FROM MessageTag t where t.tagId in (:tagIds) and t.type = 'PUBLIC'"),
+        @NamedQuery(name="MessageTag.findTagsByTagIds",
+                query="SELECT t FROM MessageTag t where t.tagId in (:tagIds)"),
         @NamedQuery(name= "MessageTag.findExpiredMessageTags",
                 query="SELECT t FROM MessageTag t where t.expiryDate is not null and t.expiryDate < current_timestamp"),
 })
@@ -78,6 +76,9 @@ public class MessageTag extends BaseEntity<Integer> implements Comparable<Messag
     @NotNull
     @Enumerated(EnumType.STRING)
     MessageTagType type;
+
+    @NotNull
+    String name;
 
     @ManyToOne
     User user;
@@ -104,12 +105,11 @@ public class MessageTag extends BaseEntity<Integer> implements Comparable<Messag
     /**
      * Constructor
      */
-    public MessageTag(MessageTagVo tag, User user, Domain domain) {
+    public MessageTag(MessageTagVo tag) {
         this.tagId = tag.getTagId();
+        this.name = tag.getName();
         this.type = tag.getType();
         this.expiryDate = tag.getExpiryDate();
-        this.user = user;
-        this.domain = domain;
     }
 
 
@@ -117,6 +117,7 @@ public class MessageTag extends BaseEntity<Integer> implements Comparable<Messag
     public MessageTagVo toVo() {
         MessageTagVo tag = new MessageTagVo();
         tag.setTagId(tagId);
+        tag.setName(name);
         tag.setExpiryDate(expiryDate);
         tag.setType(type);
         tag.setMessageCount(messageCount);
@@ -127,6 +128,9 @@ public class MessageTag extends BaseEntity<Integer> implements Comparable<Messag
     /** Update the number of messages */
     @PrePersist
     public void updateMessageCount() {
+        if (StringUtils.isBlank(tagId)) {
+            tagId = UUID.randomUUID().toString();
+        }
         messageCount = messages.size();
     }
 
@@ -157,6 +161,14 @@ public class MessageTag extends BaseEntity<Integer> implements Comparable<Messag
 
     public void setType(MessageTagType type) {
         this.type = type;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public User getUser() {

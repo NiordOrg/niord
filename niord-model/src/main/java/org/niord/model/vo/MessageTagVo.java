@@ -29,6 +29,7 @@ public class MessageTagVo implements IJsonSerializable {
 
     String tagId;
     MessageTagType type;
+    String name;
     Date expiryDate;
     int messageCount;
 
@@ -50,6 +51,14 @@ public class MessageTagVo implements IJsonSerializable {
 
     public void setType(MessageTagType type) {
         this.type = type;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public Date getExpiryDate() {

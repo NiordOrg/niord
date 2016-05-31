@@ -3,12 +3,8 @@ package org.niord.web;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
-import org.niord.core.domain.Domain;
-import org.niord.core.domain.DomainService;
 import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
-import org.niord.core.user.User;
-import org.niord.core.user.UserService;
 import org.niord.model.vo.MessageTagVo;
 import org.slf4j.Logger;
 
@@ -46,20 +42,13 @@ public class MessageTagRestService {
     @Inject
     MessageTagService messageTagService;
 
-    @Inject
-    UserService userService;
-
-    @Inject
-    DomainService domainService;
-
-
-    /** Returns the tags with the given IDs */
+    /** Returns all tags available to the current user */
     @GET
     @Path("/")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<MessageTagVo> searchTags() {
+    public List<MessageTagVo> findUserTags() {
         return messageTagService.findUserTags().stream()
                 .map(MessageTag::toVo)
                 .collect(Collectors.toList());
@@ -102,9 +91,7 @@ public class MessageTagRestService {
     @NoCache
     @RolesAllowed({"editor"})
     public MessageTagVo createTag(MessageTagVo tag) {
-        User user = userService.currentUser();
-        Domain domain = domainService.currentDomain();
-        return messageTagService.createMessageTag(new MessageTag(tag, user, domain)).toVo();
+        return messageTagService.createMessageTag(new MessageTag(tag)).toVo();
     }
 
 
@@ -120,9 +107,7 @@ public class MessageTagRestService {
         if (!Objects.equals(tagId, tag.getTagId())) {
             throw new WebApplicationException(400);
         }
-        User user = userService.currentUser();
-        Domain domain = domainService.currentDomain();
-        return messageTagService.updateMessageTag(new MessageTag(tag, user, domain)).toVo();
+        return messageTagService.updateMessageTag(new MessageTag(tag)).toVo();
     }
 
 

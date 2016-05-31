@@ -78,13 +78,13 @@
             <div class="input-group">
                 <ui-select multiple id="tags" ng-model="state.tag.tags" >
                     <ui-select-match placeholder="Select Tags">
-                        {{$item.tagId}}
+                        {{$item.name}}
                     </ui-select-match>
                     <ui-select-choices repeat="tag in tags"
                                        refresh="refreshTags($select.search)"
                                        refresh-delay="100">
                         <div>
-                            <span ng-bind-html="tag.tagId | highlight: $select.search"></span>
+                            <span ng-bind-html="tag.name | highlight: $select.search"></span>
                         </div>
 
                     </ui-select-choices>

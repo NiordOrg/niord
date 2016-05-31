@@ -86,7 +86,7 @@ public class BatchMessageImportWriter extends AbstractItemHandler {
             return null;
         }
 
-        tag = messageTagService.findTag(job.getUser(), job.getDomain(), tagId);
+        tag = messageTagService.findTag(tagId);
         return tag;
     }
 }
