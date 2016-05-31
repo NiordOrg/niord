@@ -977,6 +977,7 @@ angular.module('niord.messages')
 
             // Navigate to the given link
             $scope.navigateTag = function (tag) {
+                MessageService.saveLastMessageTagSelection(tag);
                 $scope.$close(tag);
             };
 
@@ -999,7 +1000,10 @@ angular.module('niord.messages')
             };
 
             if ($window.localStorage.printSettings) {
-                angular.copy(angular.fromJson($window.localStorage.printSettings), $scope.data);
+                try {
+                    angular.copy(angular.fromJson($window.localStorage.printSettings), $scope.data);
+                } catch (error) {
+                }
             }
 
             // Register and unregister event-handler to listen for return key

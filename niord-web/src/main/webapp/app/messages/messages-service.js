@@ -7,8 +7,8 @@ angular.module('niord.messages')
     /**
      * Interface for calling the application server
      */
-    .factory('MessageService', [ '$rootScope', '$http', '$uibModal',
-        function($rootScope, $http, $uibModal) {
+    .factory('MessageService', [ '$rootScope', '$http', '$window', '$uibModal',
+        function($rootScope, $http, $window, $uibModal) {
         'use strict';
 
         function extractMessageIds(messages) {
@@ -64,9 +64,28 @@ angular.module('niord.messages')
                 return $http.get('/rest/tags/');
             },
 
+
+            /** Returns the message tags which contain the message with the given ID */
+            tagsForMessage: function (messageId) {
+                return $http.get('/rest/tags/message/' + messageId);
+            },
+
+
             /** Adds a new message tag */
             createMessageTag: function (tag) {
                 return $http.post('/rest/tags/tag/', tag);
+            },
+
+
+            /** Removes a message from a message tag */
+            removeMessageFromTag: function (tag, messageId) {
+                return $http.delete('/rest/tags/tag/' + encodeURIComponent(tag.tagId) + "/message/" + messageId);
+            },
+
+
+            /** Adds a message to a message tag */
+            addMessageToTag: function (tag, messageId) {
+                return $http.put('/rest/tags/tag/' + encodeURIComponent(tag.tagId) + "/message/" + messageId);
             },
 
 
@@ -113,6 +132,28 @@ angular.module('niord.messages')
                     templateUrl: "/app/messages/message-tags-dialog.html",
                     size: 'md'
                 });
+            },
+
+
+            /** Record the last message tag selection **/
+            saveLastMessageTagSelection: function (tag) {
+                if (tag) {
+                    $window.sessionStorage.lastTagSelection = angular.toJson(tag);
+                } else {
+                    $window.sessionStorage.removeItem('lastTagSelection')
+                }
+            },
+
+
+            /** Returns the last message tag selection - or null if undefined **/
+            getLastMessageTagSelection: function () {
+                if ($window.sessionStorage.lastTagSelection) {
+                    try {
+                        return angular.fromJson($window.sessionStorage.lastTagSelection);
+                    } catch (error) {
+                    }
+                }
+                return null;
             },
 
 

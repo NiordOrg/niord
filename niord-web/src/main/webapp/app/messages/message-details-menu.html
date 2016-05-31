@@ -1,6 +1,7 @@
 
 <div class="btn-group message-details-menu">
-    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
+        ng-click="menuClicked()">
         <span class="glyphicon glyphicon-cog"></span>
         <span class="caret"></span>
     </button>
@@ -19,5 +20,23 @@
             </a>
         </li>
         <li role="separator" class="divider"></li>
+        <li ng-if="isLoggedIn">
+            <a href ng-click="addToTagDialog()">
+                <span class="glyphicon glyphicon-tags"></span>&nbsp;
+                <span translate>menu.action.add_to_tag</span>
+            </a>
+        </li>
+        <li ng-if="isLoggedIn && lastSelectedMessageTag">
+            <a href ng-click="addToLastSelectedTag()">
+                <span class="glyphicon glyphicon-tags"></span>&nbsp;
+                {{ 'menu.action.add_to_named_tag' | translate : '{tag : "' + lastSelectedMessageTag + '"}' }}
+            </a>
+        </li>
+        <li ng-repeat="tag in messageTags">
+            <a href ng-click="removeFromTag(tag)">
+                <span class="glyphicon glyphicon-tags"></span>&nbsp;
+                {{ 'menu.action.remove_from_named_tag' | translate : '{tag : "' + tag.name + '"}' }}
+            </a>
+        </li>
     </ul>
 </div>

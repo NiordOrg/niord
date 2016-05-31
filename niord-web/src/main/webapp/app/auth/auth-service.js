@@ -70,7 +70,10 @@ angular.module('niord.auth')
             $rootScope.hasRole = function (role) {
                 return AuthService.keycloak.hasRealmRole(role) ||
                     ($rootScope.domain && AuthService.keycloak.hasResourceRole(role, $rootScope.domain.clientId));
-            }
+            };
+
+            /** Returns if the user is logged in **/
+            $rootScope.isLoggedIn = AuthService.loggedIn;
 
         }]);
 

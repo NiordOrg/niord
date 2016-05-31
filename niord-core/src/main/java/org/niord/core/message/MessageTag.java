@@ -62,6 +62,8 @@ import java.util.UUID;
                 query="SELECT t FROM MessageTag t where t.type = 'PUBLIC'"),
         @NamedQuery(name="MessageTag.findTagsByTagIds",
                 query="SELECT t FROM MessageTag t where t.tagId in (:tagIds)"),
+        @NamedQuery(name="MessageTag.findTagsByMessageId",
+                query="SELECT t FROM MessageTag t join t.messages m where t.tagId in (:tagIds) and m.id = :messageId"),
         @NamedQuery(name= "MessageTag.findExpiredMessageTags",
                 query="SELECT t FROM MessageTag t where t.expiryDate is not null and t.expiryDate < current_timestamp"),
 })
@@ -199,5 +201,9 @@ public class MessageTag extends BaseEntity<Integer> implements Comparable<Messag
 
     public void setMessages(List<Message> messages) {
         this.messages = messages;
+    }
+
+    public int getMessageCount() {
+        return messageCount;
     }
 }

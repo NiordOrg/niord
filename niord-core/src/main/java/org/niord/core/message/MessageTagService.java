@@ -34,6 +34,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.niord.model.vo.MessageTagVo.MessageTagType.DOMAIN;
+import static org.niord.model.vo.MessageTagVo.MessageTagType.PRIVATE;
+
 
 /**
  * Business interface for managing message tags.
@@ -75,13 +78,28 @@ public class MessageTagService extends BaseService {
             return Collections.emptyList();
         }
 
+        User user = userService.currentUser();
+        Domain domain = domainService.currentDomain();
+
         Set<String> idSet = new HashSet<>(Arrays.asList(tagIds));
         return em.createNamedQuery("MessageTag.findTagsByTagIds", MessageTag.class)
                 .setParameter("tagIds", idSet)
                 .getResultList()
                 .stream()
+                .filter(t -> validateAccess(t, user, domain))
                 .sorted()
                 .collect(Collectors.toList());
+    }
+
+
+    /** Validate that the user has access to the given tag */
+    private boolean validateAccess(MessageTag tag, User user, Domain domain) {
+        if (tag.getType() == PRIVATE) {
+            return user != null && tag.getUser() != null && user.getId().equals(tag.getUser().getId());
+        } else if (tag.getType() == DOMAIN) {
+            return domain != null && tag.getDomain() != null && domain.getId().equals(tag.getDomain().getId());
+        }
+        return true;
     }
 
 
@@ -112,6 +130,31 @@ public class MessageTagService extends BaseService {
 
         Collections.sort(result);
         return result;
+    }
+
+
+    /**
+     * Returns the message tags which contain the message with the given ID
+     * @param messageId the tag IDs
+     * @return the message tags which contain the message with the given ID
+     */
+    public List<MessageTag> findTagsByMessageId(Integer messageId) {
+        if (messageId == null) {
+            return Collections.emptyList();
+        }
+
+        // Only search tags that the user has access to
+        Set<String> idSet = findUserTags().stream()
+                .map(MessageTag::getTagId)
+                .collect(Collectors.toSet());
+
+        return em.createNamedQuery("MessageTag.findTagsByMessageId", MessageTag.class)
+                .setParameter("tagIds", idSet)
+                .setParameter("messageId", messageId)
+                .getResultList()
+                .stream()
+                .sorted()
+                .collect(Collectors.toList());
     }
 
 
@@ -220,6 +263,63 @@ public class MessageTagService extends BaseService {
 
 
     /**
+     * Adds a message to the given tag
+     * @param tagId the ID of the message tag to add the message to
+     * @param messageId the id of the message to add
+     * @return the updated message tag
+     */
+    public MessageTag addMessageToTag(String tagId, Integer messageId) {
+        MessageTag tag = findTag(tagId);
+        if (tag == null) {
+            throw new IllegalArgumentException("No message tag with ID " + tagId);
+        }
+
+        Message message = getByPrimaryKey(Message.class, messageId);
+        if (message == null) {
+            throw new IllegalArgumentException("No message with ID " + tagId);
+        }
+
+        if (!tag.getMessages().contains(message)) {
+            tag.getMessages().add(message);
+            tag.updateMessageCount();
+            saveEntity(tag);
+            log.info("Added message " + messageId + " to tag " + tag.getName());
+        }
+
+        return tag;
+    }
+
+
+    /**
+     * Removes a message from the given tag
+     * @param tagId the ID of the message tag to remove the message from
+     * @param messageId the id of the message to remove
+     * @return if the message was removed
+     */
+    public boolean removeMessageFromTag(String tagId, Integer messageId) {
+        MessageTag tag = findTag(tagId);
+        if (tag == null) {
+            throw new IllegalArgumentException("No message tag with ID " + tagId);
+        }
+
+        Message message = getByPrimaryKey(Message.class, messageId);
+        if (message == null) {
+            throw new IllegalArgumentException("No message with ID " + tagId);
+        }
+
+        if (tag.getMessages().contains(message)) {
+            tag.getMessages().remove(message);
+            tag.updateMessageCount();
+            saveEntity(tag);
+            log.info("Removed message " + messageId + " from tag " + tag.getName());
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /**
      * Every hour, expired message tags will be removed
      */
     @Schedule(persistent=false, second="22", minute="22", hour="*/1")
@@ -231,4 +331,5 @@ public class MessageTagService extends BaseService {
             log.info("Removed " + expiredTags + " expired message tags");
         }
     }
+
 }

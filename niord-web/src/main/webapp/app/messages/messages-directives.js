@@ -662,8 +662,8 @@ angular.module('niord.messages')
     /****************************************************************
      * Adds a message details drop-down menu
      ****************************************************************/
-    .directive('messageDetailsMenu', ['$rootScope', '$window', 'MessageService',
-        function ($rootScope, $window, MessageService) {
+    .directive('messageDetailsMenu', ['$rootScope', '$window', 'growl', 'MessageService',
+        function ($rootScope, $window, growl, MessageService) {
             'use strict';
 
             return {
@@ -688,8 +688,65 @@ angular.module('niord.messages')
                     }
 
                     scope.hasRole = $rootScope.hasRole;
+                    scope.isLoggedIn = $rootScope.isLoggedIn;
+                    scope.messageTags = [];
 
 
+                    /** Called when the dropdown is about to be displayed **/
+                    scope.menuClicked = function() {
+                        if (scope.isLoggedIn) {
+                            var tag = MessageService.getLastMessageTagSelection();
+                            scope.lastSelectedMessageTag = (tag) ? tag.name : undefined;
+
+                            MessageService.tagsForMessage(scope.messageId)
+                                .success(function (messageTags) {
+                                    scope.messageTags = messageTags;
+
+                                    // If the current message is already associated with the last selected tag,
+                                    // Do not provide a link to add it again.
+                                    for (var x = 0; x < messageTags.length; x++) {
+                                        if (tag && tag.tagId == messageTags[x].tagId) {
+                                            scope.lastSelectedMessageTag = undefined;
+                                        }
+                                    }
+                                })
+                        }
+                    };
+
+
+                    /** Adds the current message to the given tag **/
+                    scope.addToTag = function (tag) {
+                        if (tag) {
+                            MessageService.addMessageToTag(tag, scope.messageId)
+                                .success(function () {
+                                    growl.info("Added message to " + tag.name, { ttl: 3000 })
+                                })
+                        }
+                    };
+
+
+                    /** Adds the current message to the tag selected via the Message Tag dialog */
+                    scope.addToTagDialog = function () {
+                        MessageService.messageTagsDialog().result
+                            .then(scope.addToTag);
+                    };
+
+
+                    /** Adds the current message to the last selected tag */
+                    scope.addToLastSelectedTag = function () {
+                        scope.addToTag(MessageService.getLastMessageTagSelection());
+                    };
+
+
+                    /** Removes the current message from the given tag */
+                    scope.removeFromTag = function (tag) {
+                        MessageService.removeMessageFromTag(tag, scope.messageId)
+                            .success(function () {
+                                growl.info("Removed message from " + tag.name, { ttl: 3000 })
+                            })
+                    };
+
+                    
                     /** Opens the message print dialog */
                     scope.pdf = function () {
                         MessageService.messagePrintDialog(1).result

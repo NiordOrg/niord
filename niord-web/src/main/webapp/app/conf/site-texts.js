@@ -7,7 +7,7 @@ angular.module('niord.conf')
 
     .config(['$translateProvider', function ($translateProvider) {
 
-        $translateProvider.useSanitizeValueStrategy('sanitize');
+        $translateProvider.useSanitizeValueStrategy('sanitizeParameters');
 
         /** TRANSLATIONS START **/
 

@@ -69,6 +69,19 @@ public class MessageTagRestService {
     }
 
 
+    /** Returns the tags which contain the message with the given ID */
+    @GET
+    @Path("/message/{messageId}")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public List<MessageTagVo> findTagsByMessageId(@PathParam("messageId") Integer messageId) {
+        return messageTagService.findTagsByMessageId(messageId).stream()
+                .map(MessageTag::toVo)
+                .collect(Collectors.toList());
+    }
+
+
     /** Returns the tags with the given IDs */
     @GET
     @Path("/tag/{tagIds}")
@@ -132,6 +145,31 @@ public class MessageTagRestService {
     public boolean clearTag(@PathParam("tagId") String tagId) {
         log.info("Clearing tag " + tagId);
         return messageTagService.clearMessageTag(tagId);
+    }
+
+
+    /** Adds a message to the given tag */
+    @PUT
+    @Path("/tag/{tagId}/message/{messageId}")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public MessageTagVo addMessageToTag(@PathParam("tagId") String tagId, @PathParam("messageId") Integer messageId) {
+        log.info("Adding message " + messageId + " to tag " + tagId);
+        return messageTagService.addMessageToTag(tagId, messageId).toVo();
+    }
+
+
+    /** Removes a message from the given tag */
+    @DELETE
+    @Path("/tag/{tagId}/message/{messageId}")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public boolean removeMessageFromTag(@PathParam("tagId") String tagId, @PathParam("messageId") Integer messageId) {
+        log.info("Removing message " + messageId + " from tag " + tagId);
+        return messageTagService.removeMessageFromTag(tagId, messageId);
     }
 
 }
