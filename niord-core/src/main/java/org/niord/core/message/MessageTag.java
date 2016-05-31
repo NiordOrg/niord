@@ -35,7 +35,6 @@ import javax.persistence.PrePersist;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Date;
@@ -49,7 +48,6 @@ import java.util.UUID;
  */
 @Entity
 @Table(
-    uniqueConstraints = @UniqueConstraint(columnNames = { "tagId", "user_id", "domain_id" }),
     indexes = {
             @Index(name = "message_tag_type_k", columnList="type"),
             @Index(name = "message_tag_id_k", columnList="tagId")
@@ -70,7 +68,7 @@ import java.util.UUID;
 @SuppressWarnings("unused")
 public class MessageTag extends BaseEntity<Integer> implements Comparable<MessageTag> {
 
-    @NotNull
+    @Column(unique = true, nullable = false)
     String tagId;
 
     @NotNull
