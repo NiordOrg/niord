@@ -28,6 +28,7 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 
 import static org.niord.model.vo.MessageTagVo.MessageTagType.DOMAIN;
 import static org.niord.model.vo.MessageTagVo.MessageTagType.PRIVATE;
+import static org.niord.model.vo.MessageTagVo.MessageTagType.TEMP;
 
 
 /**
@@ -47,6 +49,8 @@ import static org.niord.model.vo.MessageTagVo.MessageTagType.PRIVATE;
 @Stateless
 @SuppressWarnings("unused")
 public class MessageTagService extends BaseService {
+
+    public static final int TEMP_TAG_EXPIRY_MINUTES = 5; // 5 minutes
 
     @Inject
     Logger log;
@@ -199,6 +203,33 @@ public class MessageTagService extends BaseService {
 
 
     /**
+     * Creates a new temporary, short-lived message tag from the given messages
+     * @param messageIds the new message ids
+     * @return the persisted message tag
+     */
+    public MessageTag createTempMessageTag(List<Integer> messageIds) {
+        // Compute expiry time
+        Calendar expiryTime = Calendar.getInstance();
+        expiryTime.add(Calendar.MINUTE, TEMP_TAG_EXPIRY_MINUTES);
+
+        // Create the temporary
+        MessageTag tag = new MessageTag();
+        tag.setType(TEMP);
+        tag.setExpiryDate(expiryTime.getTime());
+        tag.setUser(userService.currentUser());
+        tag.setDomain(domainService.currentDomain());
+
+        // Add the messages to the tag
+        tag.setMessages(persistedListForIds(Message.class, messageIds));
+        tag.updateMessageCount();
+
+        tag = saveEntity(tag);
+        log.info("Created temp message tag " + tag.getTagId() + " for " + tag.getMessageCount() + " messages");
+        return tag;
+    }
+
+
+    /**
      * Updates an existing message tag from the given template
      * @param tag the message tag to update
      * @return the persisted message tag
@@ -268,16 +299,15 @@ public class MessageTagService extends BaseService {
      * @param messageIds the id of the messages to add
      * @return the updated message tag
      */
-    public MessageTag addMessageToTag(String tagId, Set<Integer> messageIds) {
+    public MessageTag addMessageToTag(String tagId, List<Integer> messageIds) {
         MessageTag tag = findTag(tagId);
         if (tag == null) {
             throw new IllegalArgumentException("No message tag with ID " + tagId);
         }
 
         int prevMsgCnt = tag.getMessages().size();
-        for (Integer messageId : messageIds) {
-            Message message = getByPrimaryKey(Message.class, messageId);
-            if (message != null && !tag.getMessages().contains(message)) {
+        for (Message message : persistedListForIds(Message.class, messageIds)) {
+            if (!tag.getMessages().contains(message)) {
                 tag.getMessages().add(message);
             }
         }
@@ -298,16 +328,15 @@ public class MessageTagService extends BaseService {
      * @param messageIds the id of the messages to remove
      * @return the updated message tag
      */
-    public MessageTag removeMessageFromTag(String tagId, Set<Integer> messageIds) {
+    public MessageTag removeMessageFromTag(String tagId, List<Integer> messageIds) {
         MessageTag tag = findTag(tagId);
         if (tag == null) {
             throw new IllegalArgumentException("No message tag with ID " + tagId);
         }
 
         int prevMsgCnt = tag.getMessages().size();
-        for (Integer messageId : messageIds) {
-            Message message = getByPrimaryKey(Message.class, messageId);
-            if (message != null && tag.getMessages().contains(message)) {
+        for (Message message : persistedListForIds(Message.class, messageIds)) {
+            if (tag.getMessages().contains(message)) {
                 tag.getMessages().remove(message);
             }
         }

@@ -25,7 +25,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -137,6 +136,20 @@ public class MessageTagRestService {
     }
 
 
+    /** Creates a new tag from the given template */
+    @POST
+    @Path("/temp-tag/")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public MessageTagVo createTempTag(List<Integer> messageIds) {
+        // TODO: Validate access to the messages for the current user
+        return messageTagService.createTempMessageTag(messageIds).toVo();
+    }
+
+
     /** Clears messages from the given tag */
     @DELETE
     @Path("/tag/{tagId}/messages")
@@ -157,7 +170,7 @@ public class MessageTagRestService {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public MessageTagVo addMessageToTag(@PathParam("tagId") String tagId, Set<Integer> messageIds) {
+    public MessageTagVo addMessageToTag(@PathParam("tagId") String tagId, List<Integer> messageIds) {
         log.info("Adding messages " + messageIds + " to tag " + tagId);
 
         // TODO: Validate access to the messages for the current user
@@ -173,7 +186,7 @@ public class MessageTagRestService {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public MessageTagVo removeMessageFromTag(@PathParam("tagId") String tagId, Set<Integer> messageIds) {
+    public MessageTagVo removeMessageFromTag(@PathParam("tagId") String tagId, List<Integer> messageIds) {
         log.info("Removing messages " + messageIds + " from tag " + tagId);
 
         // TODO: Validate access to the messages for the current user

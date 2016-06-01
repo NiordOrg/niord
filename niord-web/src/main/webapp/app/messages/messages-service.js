@@ -77,6 +77,12 @@ angular.module('niord.messages')
             },
 
 
+            /** Creates a temporary, short-lived message tag for the given message IDs */
+            createTempMessageTag: function (messageIds) {
+                return $http.post('/rest/tags/temp-tag/', messageIds);
+            },
+
+
             /** Removes the messages from a message tag */
             removeMessagesFromTag: function (tag, messageIds) {
                 return $http.put('/rest/tags/tag/' + encodeURIComponent(tag.tagId) + "/remove-messages", messageIds);

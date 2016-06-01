@@ -22,6 +22,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -141,6 +142,19 @@ public abstract class BaseService {
     public <E extends BaseEntity> List<E> persistedList(Class<E> entityType, List<E> entities) {
         return entities.stream()
                 .map(e -> getByPrimaryKey(entityType, e.getId()))
+                .filter(e -> e != null)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns a list of persisted entities for the given IDs
+     * @param entityType the class
+     * @param ids the list of IDs to look up persisted entities for
+     * @return the list of corresponding persisted entities
+     */
+    public <ID extends Serializable, E extends BaseEntity<ID>> List<E> persistedListForIds(Class<E> entityType, List<ID> ids) {
+        return ids.stream()
+                .map(id -> getByPrimaryKey(entityType, id))
                 .filter(e -> e != null)
                 .collect(Collectors.toList());
     }

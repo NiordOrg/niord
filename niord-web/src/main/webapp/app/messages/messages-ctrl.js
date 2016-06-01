@@ -692,7 +692,7 @@ angular.module('niord.messages')
 
 
             /*****************************/
-            /** Utility functions       **/
+            /** Print PDF functions     **/
             /*****************************/
 
 
@@ -703,12 +703,28 @@ angular.module('niord.messages')
             };
 
 
+            /** Opens the message print dialog for the current selection */
+            $scope.pdfForSelection = function () {
+                MessageService.messagePrintDialog($scope.selection.size()).result
+                    .then(function (printSettings) {
+                        // Generate a temporary, short-lived message tag for the selection
+                        MessageService.createTempMessageTag($scope.selection.keys)
+                            .success(function (tag) {
+                                var params = 'tag=' + encodeURIComponent(tag.tagId);
+                                $scope.generatePdf(printSettings, params);
+                            })
+                    });
+            };
+
+
             /** Download the PDF for the current search result */
-            $scope.generatePdf = function (printSettings) {
+            $scope.generatePdf = function (printSettings, params) {
 
                 MessageService.pdfTicket()
                     .success(function (ticket) {
-                        var params = $scope.toRequestFilterParameters();
+                        if (!params) {
+                            params = $scope.toRequestFilterParameters();
+                        }
                         if (params.length > 0) {
                             params += '&';
                         }
@@ -727,6 +743,11 @@ angular.module('niord.messages')
                         $window.location = '/rest/messages/search.pdf?' + params;
                     });
             };
+
+
+            /*****************************/
+            /** Utility functions       **/
+            /*****************************/
 
 
             /** Returns the bottom-left point of the current map extent **/

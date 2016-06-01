@@ -25,7 +25,7 @@ import java.util.Date;
 @SuppressWarnings("unused")
 public class MessageTagVo implements IJsonSerializable {
 
-    public enum MessageTagType { PRIVATE, DOMAIN, PUBLIC }
+    public enum MessageTagType { PRIVATE, DOMAIN, PUBLIC, TEMP }
 
     String tagId;
     MessageTagType type;
