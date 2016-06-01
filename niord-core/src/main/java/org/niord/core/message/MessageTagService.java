@@ -360,7 +360,7 @@ public class MessageTagService extends BaseService {
                 .getResultList();
         if (!expiredTags.isEmpty()) {
             expiredTags.forEach(this::remove);
-            log.info("Removed " + expiredTags + " expired message tags");
+            log.info("Removed " + expiredTags.size() + " expired message tags");
         }
     }
 
