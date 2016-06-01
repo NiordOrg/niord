@@ -736,7 +736,7 @@ angular.module('niord.messages')
                     /** Adds the current message to the given tag **/
                     scope.addToTag = function (tag) {
                         if (tag) {
-                            MessageService.addMessageToTag(tag, scope.messageId)
+                            MessageService.addMessagesToTag(tag, [ scope.messageId ])
                                 .success(function () {
                                     growl.info("Added message to " + tag.name, { ttl: 3000 })
                                 })
@@ -759,7 +759,7 @@ angular.module('niord.messages')
 
                     /** Removes the current message from the given tag */
                     scope.removeFromTag = function (tag) {
-                        MessageService.removeMessageFromTag(tag, scope.messageId)
+                        MessageService.removeMessagesFromTag(tag, [ scope.messageId ])
                             .success(function () {
                                 growl.info("Removed message from " + tag.name, { ttl: 3000 })
                             })

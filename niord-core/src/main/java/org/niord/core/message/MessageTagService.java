@@ -263,27 +263,29 @@ public class MessageTagService extends BaseService {
 
 
     /**
-     * Adds a message to the given tag
+     * Adds messages to the given tag
      * @param tagId the ID of the message tag to add the message to
-     * @param messageId the id of the message to add
+     * @param messageIds the id of the messages to add
      * @return the updated message tag
      */
-    public MessageTag addMessageToTag(String tagId, Integer messageId) {
+    public MessageTag addMessageToTag(String tagId, Set<Integer> messageIds) {
         MessageTag tag = findTag(tagId);
         if (tag == null) {
             throw new IllegalArgumentException("No message tag with ID " + tagId);
         }
 
-        Message message = getByPrimaryKey(Message.class, messageId);
-        if (message == null) {
-            throw new IllegalArgumentException("No message with ID " + tagId);
+        int prevMsgCnt = tag.getMessages().size();
+        for (Integer messageId : messageIds) {
+            Message message = getByPrimaryKey(Message.class, messageId);
+            if (message != null && !tag.getMessages().contains(message)) {
+                tag.getMessages().add(message);
+            }
         }
 
-        if (!tag.getMessages().contains(message)) {
-            tag.getMessages().add(message);
+        if (tag.getMessages().size() != prevMsgCnt) {
             tag.updateMessageCount();
             saveEntity(tag);
-            log.info("Added message " + messageId + " to tag " + tag.getName());
+            log.info("Added " + (tag.getMessages().size() - prevMsgCnt) + " messages to tag " + tag.getName());
         }
 
         return tag;
@@ -291,27 +293,29 @@ public class MessageTagService extends BaseService {
 
 
     /**
-     * Removes a message from the given tag
+     * Removes messages from the given tag
      * @param tagId the ID of the message tag to remove the message from
-     * @param messageId the id of the message to remove
-     * @return if the message was removed
+     * @param messageIds the id of the messages to remove
+     * @return if any messages was removed
      */
-    public boolean removeMessageFromTag(String tagId, Integer messageId) {
+    public boolean removeMessageFromTag(String tagId, Set<Integer> messageIds) {
         MessageTag tag = findTag(tagId);
         if (tag == null) {
             throw new IllegalArgumentException("No message tag with ID " + tagId);
         }
 
-        Message message = getByPrimaryKey(Message.class, messageId);
-        if (message == null) {
-            throw new IllegalArgumentException("No message with ID " + tagId);
+        int prevMsgCnt = tag.getMessages().size();
+        for (Integer messageId : messageIds) {
+            Message message = getByPrimaryKey(Message.class, messageId);
+            if (message != null && tag.getMessages().contains(message)) {
+                tag.getMessages().remove(message);
+            }
         }
 
-        if (tag.getMessages().contains(message)) {
-            tag.getMessages().remove(message);
+        if (tag.getMessages().size() != prevMsgCnt) {
             tag.updateMessageCount();
             saveEntity(tag);
-            log.info("Removed message " + messageId + " from tag " + tag.getName());
+            log.info("Removed " + (prevMsgCnt - tag.getMessages().size()) + " messages from tag " + tag.getName());
             return true;
         }
 

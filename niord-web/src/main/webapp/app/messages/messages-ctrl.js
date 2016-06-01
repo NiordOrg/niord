@@ -6,9 +6,9 @@
  * are updated. This allows e.g. for bookmarking of the current state.
  */
 angular.module('niord.messages')
-    .controller('MessageListCtrl', ['$scope', '$rootScope', '$window', '$location', '$http', '$timeout',
+    .controller('MessageListCtrl', ['$scope', '$rootScope', '$window', '$location', '$http', '$timeout', 'growl',
                 'AuthService', 'FilterService', 'MessageService', 'AtonService',
-        function ($scope, $rootScope, $window, $location, $http, $timeout,
+        function ($scope, $rootScope, $window, $location, $http, $timeout, growl,
                   AuthService, FilterService, MessageService, AtonService) {
             'use strict';
 
@@ -648,6 +648,50 @@ angular.module('niord.messages')
 
 
             /*****************************/
+            /** Message Tag functions   **/
+            /*****************************/
+
+            /** Opens the tags dialog */
+            $scope.openTagsDialog = function () {
+                MessageService.messageTagsDialog().result
+                    .then(function (tag) {
+                        if (tag) {
+                            $location.search('tag=' + tag.tagId);
+                            $scope.readRequestFilterParameters();
+                        }
+                    });
+            };
+
+
+            /** Adds the currently selected messages to the tag selected via the Message Tag dialog */
+            $scope.addToTagDialog = function () {
+                MessageService.messageTagsDialog().result
+                    .then(function (tag) {
+                        if (tag && !$scope.selection.isEmpty()) {
+                            MessageService.addMessagesToTag(tag, $scope.selection.keys)
+                                .success(function () {
+                                    growl.info("Added messages to " + tag.name, { ttl: 3000 })
+                                })
+                        }
+                    });
+            };
+
+
+            /** Removes the currently selected messages from the tag selected via the Message Tag dialog */
+            $scope.removeFromTagDialog = function () {
+                MessageService.messageTagsDialog().result
+                    .then(function (tag) {
+                        if (tag && !$scope.selection.isEmpty()) {
+                            MessageService.removeMessagesFromTag(tag, $scope.selection.keys)
+                                .success(function () {
+                                    growl.info("Removed message from " + tag.name, { ttl: 3000 })
+                                })
+                        }
+                    });
+            };
+
+
+            /*****************************/
             /** Utility functions       **/
             /*****************************/
 
@@ -700,18 +744,6 @@ angular.module('niord.messages')
                 return extent
                     ? { lon: extent[2], lat: extent[3] }
                     : '';
-            };
-
-
-            /** Opens the tags dialog */
-            $scope.openTagsDialog = function () {
-                MessageService.messageTagsDialog().result
-                    .then(function (tag) {
-                        if (tag) {
-                            $location.search('tag=' + tag.tagId);
-                            $scope.readRequestFilterParameters();
-                        }
-                    });
             };
 
 

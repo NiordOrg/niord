@@ -16,26 +16,26 @@
         <li>
             <a href ng-click="pdf()">
                 <span class="glyphicon glyphicon-print"></span>&nbsp;
-                <span translate>menu.action.pdf</span>
+                <span translate>menu.action.print</span>
             </a>
         </li>
         <li ng-if="isLoggedIn" role="separator" class="divider"></li>
         <li ng-if="isLoggedIn">
             <a href ng-click="addToTagDialog()">
                 <span class="glyphicon glyphicon-tags"></span>&nbsp;
-                <span translate>menu.action.add_to_tag</span>
+                <span translate>menu.action.tag.add</span>
             </a>
         </li>
         <li ng-if="isLoggedIn && lastSelectedMessageTag">
             <a href ng-click="addToLastSelectedTag()">
                 <span class="glyphicon glyphicon-tags"></span>&nbsp;
-                {{ 'menu.action.add_to_named_tag' | translate : '{tag : "' + lastSelectedMessageTag + '"}' }}
+                {{ 'menu.action.tag.add_named' | translate : '{tag : "' + lastSelectedMessageTag + '"}' }}
             </a>
         </li>
         <li ng-repeat="tag in messageTags">
             <a href ng-click="removeFromTag(tag)">
                 <span class="glyphicon glyphicon-tags"></span>&nbsp;
-                {{ 'menu.action.remove_from_named_tag' | translate : '{tag : "' + tag.name + '"}' }}
+                {{ 'menu.action.tag.remove_named' | translate : '{tag : "' + tag.name + '"}' }}
             </a>
         </li>
     </ul>

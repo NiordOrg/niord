@@ -65,19 +65,31 @@
                 <li>
                     <a href ng-click="pdf()">
                         <span class="glyphicon glyphicon-print"></span>&nbsp;
-                        <span translate>menu.action.pdf</span>
+                        <span translate>menu.action.print</span>
                     </a>
                 </li>
-                <li role="separator" class="divider"></li>
-                <li>
-                    <a href ng-click="openTagsDialog()">
+                <li ng-if="selection.size() > 0">
+                    <a href ng-click="pdf()">
+                        <span class="glyphicon glyphicon-print"></span>&nbsp;
+                        <span translate>menu.action.print.selection</span>
+                    </a>
+                </li>
+                <li ng-if="selection.size() > 0" role="separator" class="divider"></li>
+                <li ng-if="selection.size() > 0">
+                    <a href ng-click="addToTagDialog()">
                         <span class="glyphicon glyphicon-tags"></span>&nbsp;
-                        <span translate>menu.action.tags</span>
+                        <span translate>menu.action.tag.add_selection</span>
+                    </a>
+                </li>
+                <li ng-if="selection.size() > 0">
+                    <a href ng-click="removeFromTagDialog()">
+                        <span class="glyphicon glyphicon-tags"></span>&nbsp;
+                        <span translate>menu.action.tag.remove_selection</span>
                     </a>
                 </li>
                 <li role="separator" class="divider"></li>
-                <li><a href ng-click="selectAll()" translate>menu.action.select_all</a></li>
-                <li><a href ng-click="clearSelection()" translate>menu.action.clear_selection</a></li>
+                <li><a href ng-click="selectAll()" translate>menu.action.select.all</a></li>
+                <li  ng-if="selection.size() > 0"><a href ng-click="clearSelection()" translate>menu.action.select.none</a></li>
                 <li role="separator" class="divider"></li>
                 <li><a href ng-click="toggleSortOrder('AREA')">Area <small ng-bind-html="sortIndicator('AREA')"></small></a></li>
                 <li><a href ng-click="toggleSortOrder('ID')">ID <small ng-bind-html="sortIndicator('ID')"></small></a></li>

@@ -56,9 +56,9 @@ angular.module('niord.conf')
             'menu.filter.save' : 'Save Filter...',
             'menu.filter.clear' : 'Clear Filter',
             'menu.action' : 'Action',
-            'menu.action.pdf' : 'Generate PDF',
-            'menu.action.select_all' : 'Select all',
-            'menu.action.clear_selection' : 'Clear selection',
+            'menu.action.print' : 'Print...',
+            'menu.action.select.all' : 'Select all',
+            'menu.action.select.none' : 'Clear selection',
             'menu.action.tags' : 'Tags...',
 
             'msg.field.reference' : 'Reference',
