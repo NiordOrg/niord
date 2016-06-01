@@ -19,6 +19,7 @@ angular.module('niord.messages')
             $scope.showFilter = true;
             $scope.messageList = [];
             $scope.selection = new Map();
+            $scope.selectionList = []; // Flattened list of selected messages
             $scope.totalMessageNo = 0;
             $scope.filterNames = [ 'messageSeries', 'text', 'type', 'status', 'tag', 'aton', 'chart', 'area', 'category', 'date' ];
             if ($rootScope.domain) {
@@ -562,6 +563,7 @@ angular.module('niord.messages')
                 return $scope.selection.get(message.id) !== undefined;
             };
 
+
             // Toggle the selection state of the message
             $scope.toggleSelectMessage = function (message) {
                 if ($scope.isSelected(message)) {
@@ -570,6 +572,13 @@ angular.module('niord.messages')
                     $scope.selection.put(message.id, angular.copy(message));
                 }
             };
+
+
+            // Whenever the selection changes, push all selected messages into the "selectionList" array
+            $scope.$watchCollection("selection.keys", function () {
+                $scope.selectionList.length = 0;
+                $scope.selectionList.push.apply($scope.selectionList, $scope.selection.values());
+            });
 
             /*****************************/
             /** Named Filters Handling  **/
