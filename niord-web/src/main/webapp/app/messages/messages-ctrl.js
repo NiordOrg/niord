@@ -905,7 +905,8 @@ angular.module('niord.messages')
 
             // Returns if the given message is selected or not
             $scope.isSelected = function () {
-                return $scope.currentMessageId() && $scope.selection.get($scope.currentMessageId()) !== undefined;
+                return $scope.selection && $scope.currentMessageId() &&
+                    $scope.selection.get($scope.currentMessageId()) !== undefined;
             };
 
 
@@ -913,7 +914,7 @@ angular.module('niord.messages')
             $scope.toggleSelectMessage = function () {
                 if ($scope.isSelected()) {
                     $scope.selection.remove($scope.currentMessageId());
-                } else if ($scope.msg) {
+                } else if ($scope.msg && $scope.selection) {
                     $scope.selection.put($scope.currentMessageId(), angular.copy($scope.msg));
                 }
             };
