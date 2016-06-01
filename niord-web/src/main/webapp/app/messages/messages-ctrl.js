@@ -1018,8 +1018,8 @@ angular.module('niord.messages')
     /*******************************************************************
      * Controller that handles displaying message tags in a dialog
      *******************************************************************/
-    .controller('MessageTagsDialogCtrl', ['$scope', 'growl', 'MessageService', 'AuthService',
-        function ($scope, growl, MessageService, AuthService) {
+    .controller('MessageTagsDialogCtrl', ['$scope', '$timeout', 'growl', 'MessageService', 'AuthService',
+        function ($scope, $timeout, growl, MessageService, AuthService) {
             'use strict';
 
             $scope.isLoggedIn = AuthService.loggedIn;
@@ -1049,6 +1049,8 @@ angular.module('niord.messages')
             };
             $scope.loadTags();
 
+            // Set focus to the tag filter input field
+            $timeout(function () { $('#tagIdFilter').focus() }, 200);
 
             // Adds a new tag
             $scope.addTag = function () {

@@ -13,7 +13,7 @@
 
             <div class="row">
                 <div class="col-xs-8 col-sm-6 col-md-4">
-                    <input class="form-control input-sm col-sm-2" ng-model="search" type="text" placeholder="Filter">
+                    <input id="tagIdFilter" class="form-control input-sm col-sm-2" ng-model="search" type="text" placeholder="Filter">
                     <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
                           ng-click="search = ''" ng-show="search != ''"></span>
                 </div>
@@ -70,7 +70,7 @@
                     <label for="name" class="col-sm-4">Tag Name</label>
                     <div class="col-sm-8">
                         <input type="text" id="name" name="name" class="form-control input-sm"
-                               focus="focusMe" ng-model="data.editTag.name" ng-disabled="data.editMode == 'edit'"
+                               ng-model="data.editTag.name" ng-disabled="data.editMode == 'edit'"
                                autocapitalize="off" autocorrect="off" autocomplete="off" required />
                     </div>
                 </div>
