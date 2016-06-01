@@ -16,11 +16,11 @@
             </span>
         </li>
 
-        <li class="view-mode-menu-btn" ng-if="selection.size() > 0">
+        <li class="view-mode-menu-btn">
             <span ui-sref="atons.selected" ui-sref-active="active">
                 <span class="glyphicon glyphicon-star"></span>
                 <span class="view-mode-menu-text" translate>view_mode.selection</span>
-                <span class="badge">{{selection.size()}}</span>
+                <span class="badge" ng-if="selection.size() > 0">{{selection.size()}}</span>
             </span>
         </li>
 
