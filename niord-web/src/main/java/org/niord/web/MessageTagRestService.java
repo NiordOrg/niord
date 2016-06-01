@@ -23,7 +23,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -152,38 +151,33 @@ public class MessageTagRestService {
 
     /** Adds messages to the given tag */
     @PUT
-    @Path("/tag/{tagId}/message/{messageIds}")
+    @Path("/tag/{tagId}/add-messages")
+    @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public MessageTagVo addMessageToTag(@PathParam("tagId") String tagId, @PathParam("messageIds") String messageIds) {
+    public MessageTagVo addMessageToTag(@PathParam("tagId") String tagId, Set<Integer> messageIds) {
         log.info("Adding messages " + messageIds + " to tag " + tagId);
 
-        Set<Integer> ids = Arrays.stream(messageIds.split(","))
-                .map(Integer::valueOf)
-                .collect(Collectors.toSet());
-
         // TODO: Validate access to the messages for the current user
-        return messageTagService.addMessageToTag(tagId, ids).toVo();
+        return messageTagService.addMessageToTag(tagId, messageIds).toVo();
     }
 
 
     /** Removes messages from the given tag */
-    @DELETE
-    @Path("/tag/{tagId}/message/{messageIds}")
+    @PUT
+    @Path("/tag/{tagId}/remove-messages")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public boolean removeMessageFromTag(@PathParam("tagId") String tagId, @PathParam("messageIds") String messageIds) {
+    public MessageTagVo removeMessageFromTag(@PathParam("tagId") String tagId, Set<Integer> messageIds) {
         log.info("Removing messages " + messageIds + " from tag " + tagId);
 
-        Set<Integer> ids = Arrays.stream(messageIds.split(","))
-                .map(Integer::valueOf)
-                .collect(Collectors.toSet());
-
         // TODO: Validate access to the messages for the current user
-        return messageTagService.removeMessageFromTag(tagId, ids);
+        return messageTagService.removeMessageFromTag(tagId, messageIds).toVo();
     }
 
 }

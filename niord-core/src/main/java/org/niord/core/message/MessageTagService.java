@@ -284,7 +284,7 @@ public class MessageTagService extends BaseService {
 
         if (tag.getMessages().size() != prevMsgCnt) {
             tag.updateMessageCount();
-            saveEntity(tag);
+            tag = saveEntity(tag);
             log.info("Added " + (tag.getMessages().size() - prevMsgCnt) + " messages to tag " + tag.getName());
         }
 
@@ -296,9 +296,9 @@ public class MessageTagService extends BaseService {
      * Removes messages from the given tag
      * @param tagId the ID of the message tag to remove the message from
      * @param messageIds the id of the messages to remove
-     * @return if any messages was removed
+     * @return the updated message tag
      */
-    public boolean removeMessageFromTag(String tagId, Set<Integer> messageIds) {
+    public MessageTag removeMessageFromTag(String tagId, Set<Integer> messageIds) {
         MessageTag tag = findTag(tagId);
         if (tag == null) {
             throw new IllegalArgumentException("No message tag with ID " + tagId);
@@ -314,12 +314,11 @@ public class MessageTagService extends BaseService {
 
         if (tag.getMessages().size() != prevMsgCnt) {
             tag.updateMessageCount();
-            saveEntity(tag);
+            tag = saveEntity(tag);
             log.info("Removed " + (prevMsgCnt - tag.getMessages().size()) + " messages from tag " + tag.getName());
-            return true;
         }
 
-        return false;
+        return tag;
     }
 
 

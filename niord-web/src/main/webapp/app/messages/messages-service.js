@@ -79,13 +79,13 @@ angular.module('niord.messages')
 
             /** Removes the messages from a message tag */
             removeMessagesFromTag: function (tag, messageIds) {
-                return $http.delete('/rest/tags/tag/' + encodeURIComponent(tag.tagId) + "/message/" + messageIds.join());
+                return $http.put('/rest/tags/tag/' + encodeURIComponent(tag.tagId) + "/remove-messages", messageIds);
             },
 
 
             /** Adds the messages to a message tag */
             addMessagesToTag: function (tag, messageIds) {
-                return $http.put('/rest/tags/tag/' + encodeURIComponent(tag.tagId) + "/message/" + messageIds.join());
+                return $http.put('/rest/tags/tag/' + encodeURIComponent(tag.tagId) + "/add-messages", messageIds);
             },
 
 
