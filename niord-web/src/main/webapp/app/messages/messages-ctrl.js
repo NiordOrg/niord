@@ -18,7 +18,7 @@ angular.module('niord.messages')
             $scope.maxSize = 100;
             $scope.showFilter = true;
             $scope.messageList = [];
-            $scope.selection = new Map();
+            $scope.selection = $rootScope.messageSelection;
             $scope.selectionList = []; // Flattened list of selected messages
             $scope.totalMessageNo = 0;
             $scope.filterNames = [ 'messageSeries', 'text', 'type', 'status', 'tag', 'aton', 'chart', 'area', 'category', 'date' ];

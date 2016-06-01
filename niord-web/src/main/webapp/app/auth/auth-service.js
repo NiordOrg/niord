@@ -75,6 +75,10 @@ angular.module('niord.auth')
             /** Returns if the user is logged in **/
             $rootScope.isLoggedIn = AuthService.loggedIn;
 
+            /** Create a global selection cache for messages and AtoNs **/
+            $rootScope.messageSelection = new Map();
+            $rootScope.atonSelection = new Map();
+
         }]);
 
 

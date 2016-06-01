@@ -58,7 +58,7 @@ angular.module('niord.atons')
             };
 
             // Selected AtoNs
-            $scope.selection = new Map();
+            $scope.selection = $rootScope.atonSelection;
 
             // The GeoJSON FeatureCollection defined by the selected AtoNs
             $scope.featureCollection = {
