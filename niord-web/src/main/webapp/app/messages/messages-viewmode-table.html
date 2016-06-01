@@ -22,7 +22,7 @@
                 <span ng-if="state.sortBy == 'AREA'"><small ng-bind-html="sortIndicator('AREA')"></small></span>
             </th>
             <th><span class="glyphicon glyphicon-cog"></span></th>
-            <th><span class="glyphicon glyphicon-star"></span></th>
+            <th><span class="glyphicon glyphicon-star" ng-click="toggleSelectAll()"></span></th>
         </tr>
         <tr ng-repeat-start="message in messageList" ng-if="message.areaHeading">
             <td colspan="6"><h4 class="message-list-area-heading" render-areas="[message.areaHeading]"></h4></td>

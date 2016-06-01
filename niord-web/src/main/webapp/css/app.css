@@ -304,6 +304,16 @@ li.view-mode-menu-btn span {
     font-size: 12px;
 }
 
+li.view-mode-menu-btn .badge {
+    display: none;
+    background-color:darkred;
+    color: lightgray;
+}
+
+li.view-mode-menu-btn .active .badge {
+    color: white;
+}
+
 .view-mode-menu .active {
     color: #ffffff;
 }
@@ -348,6 +358,10 @@ body > .ui-select-container {
 
 @media (min-width: 800px) {
     .view-mode-menu-text {
+        display: inherit;
+    }
+
+    li.view-mode-menu-btn .badge {
         display: inherit;
     }
 }

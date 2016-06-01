@@ -573,6 +573,31 @@ angular.module('niord.messages')
                 }
             };
 
+            /** Clears the message selection **/
+            $scope.clearSelection = function () {
+                $scope.selection.clear();
+            };
+
+
+            /** Selects all messages **/
+            $scope.selectAll = function () {
+                angular.forEach($scope.messageList, function (message) {
+                    if (!$scope.isSelected(message)) {
+                        $scope.selection.put(message.id, angular.copy(message));
+                    }
+                })
+            };
+
+
+            /** Toggles between selecting all or none of the messages **/
+            $scope.toggleSelectAll = function () {
+                if ($scope.selection.size() > 0) {
+                    $scope.clearSelection();
+                } else {
+                    $scope.selectAll();
+                }
+            };
+
 
             // Whenever the selection changes, push all selected messages into the "selectionList" array
             $scope.$watchCollection("selection.keys", function () {
