@@ -73,6 +73,10 @@ var app = angular.module('niord.admin', [
                 url: "/table",
                 templateUrl: "/app/messages/messages-viewmode-table.html"
             })
+            .state('messages.selected', {
+                url: "/selected",
+                templateUrl: "/app/messages/messages-viewmode-selected.html"
+            })
 
 
 

@@ -26,6 +26,14 @@
             </span>
         </li>
 
+        <li class="view-mode-menu-btn" ng-if="selection.size() > 0">
+            <span ui-sref="messages.selected" ui-sref-active="active">
+                <span class="glyphicon glyphicon-star"></span>
+                <span class="view-mode-menu-text" translate>view_mode.selection</span>
+                <span class="badge">{{selection.size()}}</span>
+            </span>
+        </li>
+
         <li class="dropdown view-mode-menu-btn" style="padding: 0 10px">
             <span class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                 <span class="glyphicon glyphicon-filter"></span>

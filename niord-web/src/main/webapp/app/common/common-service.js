@@ -321,6 +321,16 @@ function Map() {
         return entries;
     };
 
+    this.values = function () {
+        var len = this.keys.length;
+        var values = new Array(len);
+        for (var i = 0; i < len; i++) {
+            var key = this.keys[i];
+            values[i] = this.data[key]
+        }
+        return values;
+    };
+
     this.isEmpty = function () {
         return this.keys.length == 0;
     };

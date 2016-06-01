@@ -7,7 +7,7 @@
     </div>
 
     <table class='table table-condensed' ng-if="messageList.length > 0">
-        <tr>
+        <tr style="background-color: lightgray">
             <th ng-click="toggleSortOrder('ID')" class="clickable">
                 ID
                 <span ng-if="state.sortBy == 'ID'"><small ng-bind-html="sortIndicator('ID')"></small></span>
@@ -21,23 +21,32 @@
                 Area
                 <span ng-if="state.sortBy == 'AREA'"><small ng-bind-html="sortIndicator('AREA')"></small></span>
             </th>
-            <th>Action</th>
+            <th><span class="glyphicon glyphicon-cog"></span></th>
+            <th><span class="glyphicon glyphicon-star"></span></th>
         </tr>
         <tr ng-repeat-start="message in messageList" ng-if="message.areaHeading">
-            <td colspan="5"><h4 class="message-list-area-heading" render-areas="[message.areaHeading]"></h4></td>
+            <td colspan="6"><h4 class="message-list-area-heading" render-areas="[message.areaHeading]"></h4></td>
         </tr>
-        <tr ng-repeat-end class="message-details-menu-parent">
+        <tr ng-repeat-end class="message-details-menu-parent" ng-class="{ 'message-row-selected' : isSelected(message) }">
             <td nowrap><span>{{message.shortId}}</span></td>
             <td nowrap>
                 <render-message-dates msg="message"/>
             </td>
-            <td message-details-link="message.id" message-list="messageList">
+            <td message-details-link="message.id" message-list="messageList"  selection="selection">
                 <span class="glyphicon glyphicon-new-window"></span>&nbsp;
                 {{message.descs[0].title}}
             </td>
             <td><span render-areas="message.areas"></span></td>
-            <td  class="message-list-table-action">
-                <message-details-menu message-id="message.id" msg="message" messages="messageList" size="xs" style="float: right;"></message-details-menu>
+            <td  class="message-list-table-action" width="50" nowrap>
+                <message-details-menu message-id="message.id" msg="message" messages="messageList" size="xs"
+                                      style="float: right;"></message-details-menu>
+            </td>
+            <td>
+                <div >
+                    <span class="select-btn" ng-click="toggleSelectMessage(message)">
+                        <span class="glyphicon glyphicon-star"></span>
+                    </span>
+                </div>
             </td>
         </tr>
     </table>

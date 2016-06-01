@@ -9,8 +9,8 @@
             <h4 class="message-list-area-heading" render-areas="[message.areaHeading]"></h4>
         </div>
         <div ng-repeat-end class="col-xs-11 col-sm-6 col-md-4 col-lg-3" style="margin-bottom: 20px">
-            <div class="grid-item message-details-menu-parent">
-                <div message-details-link="message.id" message-list="messageList">
+            <div class="grid-item message-details-menu-parent message-selector-parent">
+                <div message-details-link="message.id" message-list="messageList" selection="selection">
                     <img class="grid-map-image" ng-src="/rest/message-map-image/{{message.id}}.png" width="256" height="256"/>
 
                     <div class="grid-map-image-header">
@@ -27,6 +27,9 @@
                         <span ng-bind-html="message.descs[0].description"/>
                     </div>
                 </div>
+                <span class="select-btn" ng-click="toggleSelectMessage(message)" ng-class="{'message-selected' : isSelected(message)}">
+                    <span class="glyphicon glyphicon-star"></span>
+                </span>
                 <div class="grid-map-image-menu">
                     <message-details-menu message-id="message.id" msg="message" messages="messageList" size="xs"></message-details-menu>
                 </div>

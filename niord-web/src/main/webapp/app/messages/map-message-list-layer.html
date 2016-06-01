@@ -8,10 +8,10 @@
             <td style="border: none; padding-bottom: 10px; vertical-align: top">
                 <img ng-src="/img/{{msg.mainType | lowercase}}.png"
                      class="map-general-message-icon"
-                     message-details-link="msg.id" message-list="messages"/>
+                     message-details-link="msg.id" message-list="messages" selection="selection"/>
             </td>
             <td style="border: none; padding-bottom: 10px;">
-                <div message-details-link="msg.id" message-list="messages">
+                <div message-details-link="msg.id" message-list="messages" selection="selection">
                     <strong>{{msg.descs[0].title}}</strong>
                     <span ng-if="msg.shortId">
                         &nbsp;(<strong>{{msg.shortId}}</strong>)

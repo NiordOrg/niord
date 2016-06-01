@@ -91,6 +91,7 @@ angular.module('niord.messages')
                 visible: '=',
                 layerSwitcher: '=',
                 messageList: '=',
+                selection: '=',
                 showOutline: '@',
                 showGeneral: '@',
                 fitExtent: '@',
@@ -320,7 +321,7 @@ angular.module('niord.messages')
 
                     // Open the message details dialog
                     scope.showMessageInfo = function (message, messages) {
-                        MessageService.detailsDialog(message.id, messages);
+                        MessageService.detailsDialog(message.id, messages, scope.selection);
                     };
 
 
@@ -584,6 +585,7 @@ angular.module('niord.messages')
                 scope: {
                     messageDetailsLink: "=",
                     messageList: "=",
+                    selection: "=",
                     disabled: "=?"
                 },
                 link: function(scope, element) {
@@ -591,7 +593,7 @@ angular.module('niord.messages')
                     if (!scope.disabled) {
                         element.addClass('clickable');
                         element.bind('click', function() {
-                            MessageService.detailsDialog(scope.messageDetailsLink, scope.messageList);
+                            MessageService.detailsDialog(scope.messageDetailsLink, scope.messageList, scope.selection);
                         });
                     }
                 }
@@ -613,6 +615,7 @@ angular.module('niord.messages')
             scope: {
                 msg:            "=",
                 messageList:    "=",
+                selection:      "=",
                 format:         "@",
                 showDetailsMenu: "@",
                 showDetails:    "&"
@@ -643,6 +646,22 @@ angular.module('niord.messages')
                         });
                     }
                     return scope.featureCoordinates;
+                };
+
+
+                // Returns if the given message is selected or not
+                scope.isSelected = function () {
+                    return scope.selection.get(scope.msg.id) !== undefined;
+                };
+
+
+                // Toggle the selection state of the message
+                scope.toggleSelectMessage = function () {
+                    if (scope.isSelected()) {
+                        scope.selection.remove(scope.msg.id);
+                    } else if (scope.msg) {
+                        scope.selection.put(scope.msg.id, angular.copy(scope.msg));
+                    }
                 };
 
 

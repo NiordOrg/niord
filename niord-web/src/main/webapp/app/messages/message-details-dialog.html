@@ -47,7 +47,14 @@
                     </button>
                 </div>
 
-                <message-details-menu message-id="currentMessageId()" msg="msg" size="sm" dismiss-action="$dismiss('edit');"></message-details-menu>
+                <div class="btn-group">
+                    <button class="btn btn-sm" ng-class="selectBtnClass()" ng-click="toggleSelectMessage()">
+                        <span class="glyphicon glyphicon-star"></span>
+                    </button>
+                </div>
+
+                <message-details-menu message-id="currentMessageId()" msg="msg" size="sm"
+                                      dismiss-action="$dismiss('edit');"></message-details-menu>
             </div>
 
 

@@ -108,7 +108,7 @@ angular.module('niord.messages')
 
 
             /** Opens a message details dialog **/
-            detailsDialog: function(messageId, messages) {
+            detailsDialog: function(messageId, messages, selection) {
                 return $uibModal.open({
                     controller: "MessageDialogCtrl",
                     templateUrl: "/app/messages/message-details-dialog.html",
@@ -119,6 +119,9 @@ angular.module('niord.messages')
                         },
                         messages: function () {
                             return messages && messages.length > 0 ? extractMessageIds(messages) : [ messageId ];
+                        },
+                        selection: function () {
+                            return selection;
                         }
                     }
                 });

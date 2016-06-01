@@ -1,16 +1,23 @@
 
 <td class="message-details-image" style="border: none" ng-if="format == 'list'">
-    <img ng-if="msg.id" ng-src="/rest/message-map-image/{{msg.id}}.png"
-         message-details-link="msg.id" message-list="messageList"/>
+    <div class="message-selector-parent">
+        <img ng-if="msg.id" ng-src="/rest/message-map-image/{{msg.id}}.png"
+             message-details-link="msg.id" message-list="messageList" selection="selection"/>
+        <span ng-if="showDetailsMenu != 'false'" class="select-btn"
+              ng-click="toggleSelectMessage()" ng-class="{'message-selected' : isSelected()}">
+            <span class="glyphicon glyphicon-star"></span>
+        </span>
+    </div>
 </td>
-<td class="message-details-item message-details-menu-parent" style="border: none">
+<td class="message-details-item" style="border: none">
 
-    <message-details-menu ng-if="showDetailsMenu != 'false'" message-id="msg.id" msg="msg" messages="messageList" size="xs" style="float: right;"></message-details-menu>
+    <message-details-menu ng-if="showDetailsMenu != 'false'" style="float: right;"
+                          message-id="msg.id" msg="msg" messages="messageList" size="xs"></message-details-menu>
 
     <!-- Title line -->
     <div ng-if="msg.originalInformation">&#9733;</div>
     <div ng-if="msg.shortId"><strong>{{msg.shortId}}</strong></div>
-    <div message-details-link="msg.id" message-list="messageList" disabled="format == 'details'">
+    <div message-details-link="msg.id" message-list="messageList"  selection="selection" disabled="format == 'details'">
         <strong>{{msg.descs[0].title}}</strong>
         <span ng-if="msg.descs[0].lang != language" style="color: darkgray;">
             <img ng-src="/img/flags/{{msg.descs[0].lang}}.png" style="height: 12px; opacity: 0.5;"/>

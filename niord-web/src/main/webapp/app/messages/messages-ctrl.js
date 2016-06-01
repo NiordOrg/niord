@@ -18,6 +18,7 @@ angular.module('niord.messages')
             $scope.maxSize = 100;
             $scope.showFilter = true;
             $scope.messageList = [];
+            $scope.selection = new Map();
             $scope.totalMessageNo = 0;
             $scope.filterNames = [ 'messageSeries', 'text', 'type', 'status', 'tag', 'aton', 'chart', 'area', 'category', 'date' ];
             if ($rootScope.domain) {
@@ -553,6 +554,24 @@ angular.module('niord.messages')
 
 
             /*****************************/
+            /** Selection Handling      **/
+            /*****************************/
+
+            // Returns if the given message is selected or not
+            $scope.isSelected = function (message) {
+                return $scope.selection.get(message.id) !== undefined;
+            };
+
+            // Toggle the selection state of the message
+            $scope.toggleSelectMessage = function (message) {
+                if ($scope.isSelected(message)) {
+                    $scope.selection.remove(message.id);
+                } else {
+                    $scope.selection.put(message.id, angular.copy(message));
+                }
+            };
+
+            /*****************************/
             /** Named Filters Handling  **/
             /*****************************/
 
@@ -810,14 +829,15 @@ angular.module('niord.messages')
     /*******************************************************************
      * Controller that handles displaying message details in a dialog
      *******************************************************************/
-    .controller('MessageDialogCtrl', ['$scope', '$window', 'growl', 'MessageService', 'messageId', 'messages',
-        function ($scope, $window, growl, MessageService, messageId, messages) {
+    .controller('MessageDialogCtrl', ['$scope', '$window', 'growl', 'MessageService', 'messageId', 'messages', 'selection',
+        function ($scope, $window, growl, MessageService, messageId, messages, selection) {
             'use strict';
 
             $scope.warning = undefined;
             $scope.messages = messages;
             $scope.pushedMessageIds = [];
             $scope.pushedMessageIds[0] = messageId;
+            $scope.selection = selection;
 
             $scope.msg = undefined;
             $scope.index = $.inArray(messageId, messages);
@@ -874,7 +894,7 @@ angular.module('niord.messages')
                         $scope.warning = (data) ? undefined : "Message " + $scope.currentMessageId() + " not found";
                         $scope.msg = data;
                     })
-                    .error(function (data) {
+                    .error(function () {
                         $scope.msg = undefined;
                         growl.error('Message Lookup Failed', { ttl: 5000 });
                     });
@@ -882,6 +902,28 @@ angular.module('niord.messages')
 
             $scope.loadMessageDetails();
 
+
+            // Returns if the given message is selected or not
+            $scope.isSelected = function () {
+                return $scope.currentMessageId() && $scope.selection.get($scope.currentMessageId()) !== undefined;
+            };
+
+
+            // Toggle the selection state of the message
+            $scope.toggleSelectMessage = function () {
+                if ($scope.isSelected()) {
+                    $scope.selection.remove($scope.currentMessageId());
+                } else if ($scope.msg) {
+                    $scope.selection.put($scope.currentMessageId(), angular.copy($scope.msg));
+                }
+            };
+
+
+            // Returns the select button class
+            $scope.selectBtnClass = function () {
+                return $scope.isSelected() ? "btn-danger" : "btn-default";
+            };
+            
         }])
 
 

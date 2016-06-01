@@ -1,0 +1,27 @@
+
+<div class="messages-list-details container">
+    <div class="row">
+        <div ng-if="selection.isEmpty()">
+            <div>
+                <div class="empty-search-result">
+                    <p>No messages selected</p>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <table class="table table-condensed">
+                <tr ng-repeat-start="message in selection.values()"  ng-if="message.areaHeading">
+                    <td colspan="2" style="border: none">
+                        <h4 class="message-list-area-heading" style="margin-bottom: 5px;" render-areas="[message.areaHeading]"></h4>
+                    </td>
+                </tr>
+                <tr class="message-list-details-border" ng-repeat-end render-message-details msg="message" message-list="selection.values()"></tr>
+            </table>
+        </div>
+
+    </div>
+
+</div>
+
+<div ng-include="'/app/layout/footer.html'"></div>
