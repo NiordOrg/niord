@@ -11,13 +11,9 @@
 
         <div>
             <table class="table table-condensed">
-                <tr ng-repeat-start="message in selectionList"  ng-if="message.areaHeading">
-                    <td colspan="2" style="border: none">
-                        <h4 class="message-list-area-heading" style="margin-bottom: 5px;" render-areas="[message.areaHeading]"></h4>
-                    </td>
+                <tr ng-repeat="message in selectionList" class="message-list-details-border"
+                    render-message-details msg="message" message-list="selectionList" selection="selection">
                 </tr>
-                <tr class="message-list-details-border" ng-repeat-end
-                    render-message-details msg="message" message-list="selectionList" selection="selection"></tr>
             </table>
         </div>
 
