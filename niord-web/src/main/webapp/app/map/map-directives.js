@@ -357,6 +357,9 @@ angular.module('niord.map')
                             olLayer = new ol.layer.Tile({
                                 source: new ol.source.OSM()
                             });
+                            if ($rootScope['osmSourceUrl'] && $rootScope['osmSourceUrl'].length > 0) {
+                                olLayer.getSource().setUrl($rootScope['osmSourceUrl']);
+                            }
                             break;
 
                         case 'WMS':
