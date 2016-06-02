@@ -48,6 +48,7 @@ angular.module('niord.editor')
                 scope.editorId = attrs['id'] + '-editor';
                 scope.languages = $rootScope.modelLanguages;
                 scope.editType = scope.editType || 'features';
+                scope.wmsLayerEnabled = $rootScope.wmsLayerEnabled;
 
                 /** The corresponding non-buffered OpenLayer features being edited **/
                 scope.features = [];
