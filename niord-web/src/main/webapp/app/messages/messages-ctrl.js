@@ -1127,7 +1127,7 @@ angular.module('niord.messages')
             $scope.totalMessageNo = total;
 
             $scope.data = {
-                pageSize : 'a4',
+                pageSize : 'A4',
                 pageOrientation: 'portrait'
             };
 
