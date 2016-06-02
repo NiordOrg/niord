@@ -377,7 +377,7 @@ angular.module('niord.editor')
                     var isPolygon = parentType == 'Exterior' || parentType == 'Interior';
 
                     angular.forEach(coords, function (coord, index) {
-                        var posLangKey = 'name#' + coordIndex;
+                        var posLangKey = 'name:' + coordIndex;
 
                         // For polygons, skip the last coordinate
                         if (isPolygon && index == coords.length - 1) {
@@ -404,7 +404,7 @@ angular.module('niord.editor')
 
                         if (hasLanguageDescs) {
                             angular.forEach($rootScope.modelLanguages, function (lang) {
-                                var langKey = posLangKey + '#' + lang;
+                                var langKey = posLangKey + ':' + lang;
                                 var title = scope.feature.get(langKey);
                                 posNode.expanded |= title && title.length > 0;
                                 var langNode = {

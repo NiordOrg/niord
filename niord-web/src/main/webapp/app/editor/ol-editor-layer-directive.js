@@ -162,7 +162,7 @@ angular.module('niord.editor')
 
                     function updateNames(feature, name) {
                         angular.forEach($rootScope.modelLanguages, function (lang) {
-                            feature.set('name#' + lang, name);
+                            feature.set('name:' + lang, name);
                         });
                     }
 
@@ -565,7 +565,7 @@ angular.module('niord.editor')
                     // Show tooltip info
                     var updateMsgTooltip = function(pixel) {
                         var features = scope.getFeatureForPixel(pixel);
-                        var langKey = "name#" + $rootScope.language;
+                        var langKey = "name:" + $rootScope.language;
 
                         // Build the html to display in the tooltip
                         var html = '';

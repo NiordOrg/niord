@@ -297,7 +297,7 @@ angular.module('niord.map')
                                 coords.push({
                                     lon: g[0],
                                     lat: g[1],
-                                    name: props['name#' + index + '#' + $rootScope.language]
+                                    name: props['name:' + index + ':' + $rootScope.language]
                                 });
                             }
                             index++;
@@ -454,8 +454,8 @@ angular.module('niord.map')
 /** Utility classes    **/
 /** ****************** **/
 
-var featureNameKey = new RegExp("^name#([a-zA-Z_]+)$");
-var coordinateNameKey = new RegExp("^name#(\\d+)#([a-zA-Z_]+)$");
+var featureNameKey = new RegExp("^name:([a-zA-Z_]+)$");
+var coordinateNameKey = new RegExp("^name:(\\d+):([a-zA-Z_]+)$");
 
 function FeatureName (key, val) {
     this.key = key;
@@ -503,7 +503,7 @@ FeatureName.prototype.getValue = function() {
 FeatureName.prototype.offset = function(offset) {
     if (this.isFeatureCoordName()) {
         this.coordIndex += offset;
-        this.key = 'name#' + this.coordIndex + '#' + this.language;
+        this.key = 'name:' + this.coordIndex + ':' + this.language;
     }
 };
 

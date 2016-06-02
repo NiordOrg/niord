@@ -528,7 +528,7 @@ angular.module('niord.messages')
                     // Show tooltip info
                     var updateMsgTooltip = function(pixel) {
                         var features = scope.getFeatureForPixel(pixel);
-                        var langKey = "name#" + $rootScope.language;
+                        var langKey = "name:" + $rootScope.language;
 
                         // Build the html to display in the tooltip
                         var html = '';
@@ -634,8 +634,7 @@ angular.module('niord.messages')
                             var coords = [];
                             MapService.serializeCoordinates(feature, coords);
                             if (coords.length > 0) {
-                                console.log("XXX " + feature.properties);
-                                var name = feature.properties ? feature.properties['name#' + $rootScope.language] : undefined;
+                                var name = feature.properties ? feature.properties['name:' + $rootScope.language] : undefined;
                                 scope.featureCoordinates.push({
                                     coords: coords,
                                     startIndex : index,

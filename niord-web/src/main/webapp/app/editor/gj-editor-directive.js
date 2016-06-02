@@ -237,7 +237,7 @@ angular.module('niord.editor')
                         featureCtx.showRestriction = featureCtx.restriction && featureCtx.restriction.length > 0;
                         featureCtx.showName = false;
                         angular.forEach(scope.languages, function (lang) {
-                            if (featureCtx['name#' + lang] && featureCtx['name#' + lang].length > 0) {
+                            if (featureCtx['name:' + lang] && featureCtx['name:' + lang].length > 0) {
                                 featureCtx.showName = true;
                             }
                         });

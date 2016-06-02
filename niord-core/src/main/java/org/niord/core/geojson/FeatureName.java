@@ -9,15 +9,15 @@ import java.util.regex.Pattern;
  *
  * These are stored as properties in a GeoJson feature using the following patterns
  * <ul>
- *     <li>Feature name: "name#lang" - where lang is the 2 character language code.</li>
- *     <li>Feature coordinate name: "name#index#lang" - where index is the coordinate index
+ *     <li>Feature name: "name:lang" - where lang is the 2 character language code.</li>
+ *     <li>Feature coordinate name: "name:index:lang" - where index is the coordinate index
  *             and lang is the 2 character language code.</li>
  * </ul>
  */
 public class FeatureName {
 
-    private static Pattern FEATURE_NAME = Pattern.compile("^name#([a-zA-Z_]+)$");
-    private static Pattern FEATURE_COORD_NAME = Pattern.compile("^name#(\\d+)#([a-zA-Z_]+)$");
+    private static Pattern FEATURE_NAME = Pattern.compile("^name:([a-zA-Z_]+)$");
+    private static Pattern FEATURE_COORD_NAME = Pattern.compile("^name:(\\d+):([a-zA-Z_]+)$");
 
     enum Type { FeatureName, FeatureCoordName }
 
@@ -68,7 +68,7 @@ public class FeatureName {
      */
     public static String getFeatureName(Map<String, Object> properties, String language) {
         if (properties != null) {
-            Object name = properties.get("name#" + language);
+            Object name = properties.get("name:" + language);
             return name == null ? null : name.toString();
         }
         return null;
@@ -85,7 +85,7 @@ public class FeatureName {
      */
     public static String getFeatureCoordinateName(Map<String, Object> properties, String language, int coordIndex) {
         if (properties != null) {
-            Object name = properties.get("name#" + coordIndex + "#" + language );
+            Object name = properties.get("name:" + coordIndex + ":" + language );
             return name == null ? null : name.toString();
         }
         return null;
