@@ -18,7 +18,6 @@ angular.module('niord.editor')
                 visible:        '=',
                 layerSwitcher:  '=',
                 features:       '=',
-                bufferFeatures: '=',
                 drawControl:    '='
             },
             link: function(scope, element, attrs, ctrl) {
@@ -354,16 +353,14 @@ angular.module('niord.editor')
                         try {
 
                             olLayer.getSource().clear(true);
+                            bufferLayer.getSource().clear(true);
                             if (scope.features) {
                                 angular.forEach(scope.features, function (feature) {
-                                    olLayer.getSource().addFeature(feature);
-                                });
-                            }
-
-                            bufferLayer.getSource().clear(true);
-                            if (scope.bufferFeatures) {
-                                angular.forEach(scope.bufferFeatures, function (feature) {
-                                    bufferLayer.getSource().addFeature(feature);
+                                    if (feature.get('parentFeatureId')) {
+                                        bufferLayer.getSource().addFeature(feature);
+                                    } else {
+                                        olLayer.getSource().addFeature(feature);
+                                    }
                                 });
                             }
                         } finally {

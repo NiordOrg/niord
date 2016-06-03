@@ -97,8 +97,20 @@
     cursor: pointer;
 }
 
+.gj-editor .buffer-feature-panel-header {
+    padding: 5px;
+    background-color: darkgray;
+    color: white;
+}
+
+.gj-editor .buffer-feature-panel-header a {
+    color: white;
+    font-size: 11px;
+    cursor: pointer;
+}
+
 .gj-editor .feature-panel-info {
-    padding: 0 5px 0 5px;
+    padding: 0 5px 5px 5px;
 }
 
 .gj-editor .feature-panel-info table {
@@ -126,6 +138,15 @@
 
 .gj-editor .feature-panel-info label {
     font-size: 11px;
+}
+
+.gj-editor .feature-panel-info .feature-aton {
+    display: inline-block;
+    width: 100%;
+}
+
+.gj-editor .aton-grid-item {
+    margin: 0!important;
 }
 
 @media (min-width: 600px) {

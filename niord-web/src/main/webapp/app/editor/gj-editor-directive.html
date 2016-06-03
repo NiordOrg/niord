@@ -67,7 +67,8 @@
                         <ul uib-dropdown-menu class="dropdown-menu" role="menu" aria-labelledby="single-button">
                             <li role="menuitem"><a href ng-click="clearAll()">Clear all</a></li>
                             <li role="menuitem"><a href ng-click="zoomToExtent()">Zoom to extent</a></li>
-                            <li role="menuitem"><a href="alert('TBD')">Import...</a></li>
+                            <li class="divider"></li>
+                            <li role="menuitem"><a href ng-click="addBufferedFeature()">Add buffer</a></li>
                             <li class="divider"></li>
                             <li role="menuitem"><a href ng-click="merge()">Merge</a></li>
                             <li role="menuitem"><a href ng-click="split()">Split</a></li>
@@ -82,8 +83,10 @@
             </div>
 
             <div ng-if="showFeatureData" class="feature-collection-panel">
+
                 <div ng-repeat="featureCtx in featureContexts" class="feature-panel">
-                    <div class="feature-panel-header">
+
+                    <div ng-if="!featureCtx.parentFeatureId" class="feature-panel-header">
                         <span>
                             <input type="checkbox" ng-model="featureCtx.selected" ng-change="selectionUpdated(featureCtx)">
                             Location #{{$index + 1}} &nbsp;
@@ -95,13 +98,25 @@
                             <a href ng-click="moveFeatureDown(featureCtx)"><i class="glyphicon glyphicon-arrow-down"></i></a>
                         </span>
                     </div>
+                    <div ng-if="featureCtx.parentFeatureId" class="buffer-feature-panel-header">
+                        <span>
+                            <span class="glyphicon glyphicon-lock"></span>
+                            Buffer Location #{{$index + 1}} &nbsp;
+                        </span>
+                        <span class="pull-right">
+                            <a href ng-click="deleteFeature(featureCtx.id)"><i class="glyphicon glyphicon-trash"></i></a>
+                            <a href ng-click="moveFeatureUp(featureCtx)"><i class="glyphicon glyphicon-arrow-up"></i></a>
+                            <a href ng-click="moveFeatureDown(featureCtx)"><i class="glyphicon glyphicon-arrow-down"></i></a>
+                        </span>
+                    </div>
+
                     <div class="feature-panel-info" ng-if="editType == 'message'">
                         <div style="text-align: center; font-size: 11px; padding: 5px 0 5px 0;">
                             <div class="btn-group btn-group-justified">
-                                <label class="btn btn-default btn-xs" ng-model="featureCtx.showName" uib-btn-checkbox >Name</label>
-                                <label class="btn btn-default btn-xs" ng-model="featureCtx.showRadius" uib-btn-checkbox >Radius</label>
+                                <label ng-if="!featureCtx.parentFeatureId" class="btn btn-default btn-xs" ng-model="featureCtx.showName" uib-btn-checkbox >Name</label>
+                                <label ng-if="featureCtx.parentFeatureId"  class="btn btn-default btn-xs" ng-model="featureCtx.showRadius" uib-btn-checkbox >Radius</label>
                                 <label class="btn btn-default btn-xs" ng-model="featureCtx.showRestriction" uib-btn-checkbox >Restriction</label>
-                                <label class="btn btn-default btn-xs" ng-model="featureCtx.showAtoN" uib-btn-checkbox >AtoN</label>
+                                <label ng-if="featureCtx.type == 'Point'" class="btn btn-default btn-xs" ng-model="featureCtx.showAton" uib-btn-checkbox >AtoN</label>
                             </div>
                         </div>
                         <table>
@@ -133,22 +148,25 @@
                                 <td width="*">
                                     <select class="form-control input-sm" ng-model="featureCtx.restriction"  ng-change='restrictionUpdated(featureCtx)'>
                                         <option value=""></option>
-                                        <option value="affected">Affected Area</option>
-                                        <option value="restricted">Restricted Area</option>
-                                        <option value="prohibited">Prohibited Area</option>
+                                        <option value="affected">Affected</option>
+                                        <option value="restricted">Restricted</option>
+                                        <option value="speed-restricted">Speed restricted</option>
+                                        <option value="prohibited">Prohibited</option>
+                                        <option value="stopping-prohibited">Stopping prohibited</option>
                                     </select>
                                 </td>
                             </tr>
-                            <tr ng-show="featureCtx.showAtoN">
-                                <td width="60">AtoN ID</td>
-                                <td width="*">
-                                    <input type="text" ng-model="featureCtx.atonUid" ng-change='atonUpdated(featureCtx)'
-                                           placeholder="Aid-to-Navigation ID">
+                            <tr ng-show="featureCtx.showAton && featureCtx.aton">
+                                <td colspan="2">
+                                    <span class="feature-aton">
+                                        <aton-list-details aton="featureCtx.aton" orig-aton="featureCtx.origAton"
+                                                           editable="true" selectable="false"></aton-list-details>
+                                    </span>
                                 </td>
                             </tr>
                         </table>
                     </div>
-                    <div class="feature-geometry-tree">
+                    <div class="feature-geometry-tree" ng-if="!featureCtx.parentFeatureId">
                         <ol-editor-tree feature="features[$index]" edit-type="{{editType}}" tabindex="-1"></ol-editor-tree>
                     </div>
                 </div>
@@ -160,7 +178,7 @@
             <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
             <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
                             source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
-            <map-aton-layer name="AtoN" visible="false" layer-switcher="true"></map-aton-layer>
+            <map-aton-layer name="AtoN" visible="false" layer-switcher="true" aton-selected="atonSelected(aton)"></map-aton-layer>
             <map-ol-editor-layer name="Locations" visible="true" layer-switcher="false"
                                  features="features" buffer-features="bufferFeatures" draw-control="drawControl"></map-ol-editor-layer>
             <map-position-tooltip></map-position-tooltip>

@@ -4,7 +4,7 @@
 angular.module('niord.atons')
 
     /**
-     * Renders the AtoN details
+     * Renders the AtoN details.
      */
     .directive('atonListDetails', ['$rootScope', 'MapService', 'AtonService',
         function ($rootScope, MapService, AtonService) {
@@ -13,82 +13,98 @@ angular.module('niord.atons')
                 replace: false,
                 templateUrl: '/app/atons/aton-list-details.html',
                 scope: {
-                    aton: '=',
-                    selection: '=',
-                    zoomBtn: '@',
-                    editable: '@'
+                    aton:       '=',
+                    origAton:   '=',
+                    selection:  '=',
+                    zoomBtn:    '@',
+                    editable:   '@',
+                    draggable:  '@',
+                    selectable: '@'
                 },
                 link: function(scope) {
 
                     scope.showZoomBtn = scope.zoomBtn == 'true';
-                    scope.showDndBtn = scope.editable == 'true';
+                    scope.showDndBtn = scope.draggable == 'true';
                     scope.showEditBtn = scope.editable == 'true';
+                    scope.showSelectBtn = scope.selectable == 'true';
+
+                    
+                    // Returns the AtoN context associated with the current AtoN
+                    scope.getAtonCtx = function() {
+                        if  (scope.selection) {
+                            return scope.selection.get(AtonService.getAtonUid(scope.aton));
+                        } else {
+                            return { aton: scope.aton, orig: scope.origAton };
+                        }
+                    };
+
 
                     // Returns if the given AtoN is selected or not
-                    scope.isSelected = function (aton) {
-                        return scope.selection.get(AtonService.getAtonUid(aton)) !== undefined;
+                    scope.isSelected = function () {
+                        return scope.getAtonCtx() !== undefined;
                     };
 
                     // Toggle the selection state of the AtoN
-                    scope.toggleSelectAton = function (aton) {
-                        if (scope.isSelected(aton)) {
-                            scope.unselectAton(aton);
+                    scope.toggleSelectAton = function () {
+                        if (scope.isSelected()) {
+                            scope.unselectAton();
                         } else {
-                            scope.selectAton(aton);
+                            scope.selectAton();
                         }
                     };
 
                     // Selects the given AtoN
-                    scope.selectAton = function (aton) {
-                        if (!scope.isSelected(aton)) {
+                    scope.selectAton = function () {
+                        if (scope.selection && !scope.isSelected()) {
                             // NB: We add a copy that can be modified on the selection page
-                            scope.selection.put(AtonService.getAtonUid(aton), {
-                                aton: angular.copy(aton),
-                                orig: aton
+                            scope.selection.put(AtonService.getAtonUid(scope.aton), {
+                                aton: angular.copy(scope.aton),
+                                orig: scope.aton
                             });
                         }
                     };
 
                     // De-selects the given AtoN
-                    scope.unselectAton = function (aton) {
-                        if (scope.isSelected(aton)) {
-                            scope.selection.remove(AtonService.getAtonUid(aton));
+                    scope.unselectAton = function () {
+                        if (scope.selection && scope.isSelected()) {
+                            scope.selection.remove(AtonService.getAtonUid(scope.aton));
                         }
                     };
 
                     // Zooms in on the map
-                    scope.zoomToAton = function (aton) {
-                        $rootScope.$broadcast('zoom-to-aton', aton);
+                    scope.zoomToAton = function () {
+                        $rootScope.$broadcast('zoom-to-aton', scope.aton);
                     };
 
                     // Edits the attributes of the AtoN
-                    scope.editAton = function (aton) {
-                        var atonCtx = scope.selection.get(AtonService.getAtonUid(scope.aton));
+                    scope.editAton = function () {
+                        var atonCtx = scope.getAtonCtx();
                         if (atonCtx != null) {
-                            AtonService.atonEditorDialog(atonCtx.aton, atonCtx.orig);
+                            var orig = atonCtx.orig ? atonCtx.orig : angular.copy(scope.aton);
+                            AtonService.atonEditorDialog(atonCtx.aton, orig);
                         }
                     };
 
                     // Returns if the given attribute is changed compared with the original
                     scope.changed = function (attr) {
-                        var atonCtx = scope.selection.get(AtonService.getAtonUid(scope.aton));
+                        var atonCtx = scope.getAtonCtx();
                         if (attr) {
-                            return atonCtx != null && !angular.equals(atonCtx.orig[attr], atonCtx.aton[attr]);
+                            return atonCtx != null && atonCtx.orig != null && !angular.equals(atonCtx.orig[attr], atonCtx.aton[attr]);
                         }
                         // If no attribute is specified, check if there are any changes
-                        return atonCtx != null && !angular.equals(atonCtx.orig, atonCtx.aton);
+                        return atonCtx != null && atonCtx.orig != null && !angular.equals(atonCtx.orig, atonCtx.aton);
                     };
 
                     // Returns if the icon has changed
                     scope.iconChanged = function () {
-                        var atonCtx = scope.selection.get(AtonService.getAtonUid(scope.aton));
-                        return atonCtx != null && atonCtx.orig.iconUrl != atonCtx.aton.iconUrl;
+                        var atonCtx = scope.getAtonCtx();
+                        return atonCtx != null && atonCtx.orig != null && atonCtx.orig.iconUrl != atonCtx.aton.iconUrl;
                     };
 
                     // Returns if the position has changed
                     scope.posChanged = function () {
-                        var atonCtx = scope.selection.get(AtonService.getAtonUid(scope.aton));
-                        return atonCtx != null && (
+                        var atonCtx = scope.getAtonCtx();
+                        return atonCtx != null && atonCtx.orig != null && (
                             (atonCtx.orig.lat != scope.aton.lat) ||
                             (atonCtx.orig.lon != scope.aton.lon));
                     };
