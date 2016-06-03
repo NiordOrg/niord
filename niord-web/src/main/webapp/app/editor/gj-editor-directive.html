@@ -68,8 +68,8 @@
                             <li role="menuitem"><a href ng-click="clearAll()">Clear all</a></li>
                             <li role="menuitem"><a href ng-click="zoomToExtent()">Zoom to extent</a></li>
                             <li class="divider"></li>
-                            <li role="menuitem"><a href ng-click="addBufferedFeature()">Add buffer</a></li>
-                            <li class="divider"></li>
+                            <li role="menuitem" ng-if="editType == 'message'"><a href ng-click="addBufferedFeature()">Add buffer</a></li>
+                            <li class="divider" ng-if="editType == 'message'"></li>
                             <li role="menuitem"><a href ng-click="merge()">Merge</a></li>
                             <li role="menuitem"><a href ng-click="split()">Split</a></li>
                             <li role="menuitem"><a href ng-click="difference()">Subtract</a></li>
