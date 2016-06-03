@@ -338,7 +338,7 @@ angular.module('niord.map')
 
 
             /** Converts an OL geometry to GeoJSON **/
-            this.olToGjGeomtry = function (g) {
+            this.olToGjGeometry = function (g) {
                 if (g.getType() != 'GeometryCollection') {
                     return geoJsonFormat.writeGeometryObject(g, {
                         dataProjection: proj4326,
@@ -353,7 +353,7 @@ angular.module('niord.map')
                     geometries: []
                 };
                 angular.forEach(g.getGeometries(), function (geom) {
-                    gc.geometries.push(that.olToGjGeomtry(geom));
+                    gc.geometries.push(that.olToGjGeometry(geom));
                 });
                 return gc;
             };
@@ -372,7 +372,7 @@ angular.module('niord.map')
                 // Hack to circumvent bug:
                 // ol.format.GeoJSON does not properly convert "GeometryCollection"
                 if (feature.getGeometry().getType() == 'GeometryCollection') {
-                    gjFeature.geometry = this.olToGjGeomtry(feature.getGeometry());
+                    gjFeature.geometry = this.olToGjGeometry(feature.getGeometry());
                 }
 
                 return gjFeature;

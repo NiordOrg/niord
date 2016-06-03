@@ -25,7 +25,9 @@ angular.module('niord.editor')
     /**
      * Defines the GeoJSON FeatureCollection Editor
      */
-    .directive('gjEditor', ['$document', '$rootScope', 'MapService', function ($document, $rootScope, MapService) {
+    .directive('gjEditor', ['$document', '$rootScope', '$uibModal', 'MapService',
+        function ($document, $rootScope, $uibModal, MapService) {
+
         return {
             restrict: 'E',
             templateUrl: '/app/editor/gj-editor-directive.html',
@@ -320,6 +322,35 @@ angular.module('niord.editor')
                         scope.featureContexts.push(featureCtx);
                         broadcast('feature-added', bufferFeature.getId());
 
+                    });
+                };
+
+
+                /** Creates an area feature for the selected area **/
+                scope.addAreaFeature = function () {
+                    // Get the user to pick an area with a geometry
+                    $uibModal.open({
+                            controller: "AreaSelectorDialogCtrl",
+                            templateUrl: "/app/editor/area-selector-dialog.html",
+                            size: 'sm'
+                    }).result.then(function (area) {
+                        if (area && area.geometry) {
+                            var feature = new ol.Feature();
+                            MapService.checkCreateId(feature);
+                            feature.setGeometry(MapService.gjToOlGeometry(area.geometry));
+                            feature.set('restriction', 'affected');
+                            feature.set('areaId', area.id);
+                            angular.forEach(area.descs, function (desc) {
+                                feature.set('name:' + desc.lang, desc.name);
+                            });
+                            scope.features.push(feature);
+
+                            var featureCtx = createFeatureCtxFromFeature(feature);
+                            featureCtx.showName = true;
+                            featureCtx.showRestriction = true;
+                            scope.featureContexts.push(featureCtx);
+                            broadcast('feature-added', feature.getId());
+                        }
                     });
                 };
 
@@ -659,5 +690,70 @@ angular.module('niord.editor')
                 });
             }
         };
-    }]);
+    }])
+
+
+
+    /*******************************************************************
+     * Controller that handles selecting an area in a dialog
+     *******************************************************************/
+    .controller('AreaSelectorDialogCtrl', ['$scope', '$rootScope', '$http', '$timeout',
+        function ($scope, $rootScope, $http, $timeout) {
+            'use strict';
+
+            $scope.data = {
+                area: undefined
+            };
+
+            /** Searches areas associated with the current domain, which have a geometry */
+            $scope.searchAreas = function (name) {
+                return $http.get('/rest/areas/search?name=' + encodeURIComponent(name)
+                    + '&domain=' + ($rootScope.domain !== undefined)
+                    + '&lang=' + $rootScope.language
+                    + '&limit=10&geometry=true');
+            };
+
+            $scope.areas = [];
+            $scope.refreshAreas = function(name) {
+                if (!name || name.length == 0) {
+                    return [];
+                }
+                return $scope
+                    .searchAreas(name)
+                    .then(function(response) {
+                        $scope.areas = response.data;
+                    });
+            };
+
+            /** Recursively formats the names of the parent lineage for areas */
+            $scope.formatParents = function(child) {
+                var txt = undefined;
+                if (child) {
+                    txt = (child.descs && child.descs.length > 0) ? child.descs[0].name : 'N/A';
+                    if (child.parent) {
+                        txt = $scope.formatParents(child.parent) + " - " + txt;
+                    }
+                }
+                return txt;
+            };
+
+
+            /** Returns the fully loaded area to the callee **/
+            $scope.areaSelected = function () {
+                if ($scope.data.area) {
+                    return $http.get('/rest/areas/area/' + $scope.data.area.id)
+                            .success(function (area) {
+                                $scope.$close(area);
+                            })
+                }
+            };
+
+
+            // Initially, give focus to the area field
+            $timeout(function () {
+                $('#area').controller('uiSelect').activate(false, true);
+            }, 100);
+
+        }]);
+
 
