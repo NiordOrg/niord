@@ -29,13 +29,14 @@ angular.module('niord.atons')
                 template: '<div id="aton-info"/>',
                 require: '^olMap',
                 scope: {
-                    name: '@',
-                    atons: '=',
-                    selection: '=',
-                    visible: '=',
-                    layerSwitcher: '=',
-                    maxAtonNo: '=',
-                    minZoomLevel: '='
+                    name:           '@',
+                    atons:          '=',
+                    selection:      '=',
+                    visible:        '=',
+                    layerSwitcher:  '=',
+                    maxAtonNo:      '=',
+                    minZoomLevel:   '=',
+                    atonSelected:   '&'
                 },
                 link: function(scope, element, attrs, ctrl) {
                     var olScope = ctrl.getOpenlayersScope();
@@ -371,7 +372,13 @@ angular.module('niord.atons')
 
                         // Open the AotN info dialog
                         scope.showAtonInfo = function (aton) {
-                            AtonService.atonDetailsDialog(aton);
+                            var selectable = attrs.atonSelected !== undefined;
+                            AtonService.atonDetailsDialog(aton, selectable).result
+                                .then(function (aton) {
+                                    if (aton && selectable) {
+                                        scope.atonSelected({aton: aton});
+                                    }
+                                });
                         };
 
 

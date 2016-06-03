@@ -426,11 +426,12 @@ angular.module('niord.atons')
      * Important: Only the local AtoN instance is updated. The
      * AtoN is not persisted to the database.
      */
-    .controller('EditAtonDetailsDialogCtrl', ['$scope', '$rootScope', '$timeout', 'AtonService', 'atonCtx', 'editable',
-        function ($scope, $rootScope, $timeout, AtonService, atonCtx, editable) {
+    .controller('EditAtonDetailsDialogCtrl', ['$scope', '$rootScope', '$timeout', 'AtonService', 'atonCtx', 'editable', 'selectable',
+        function ($scope, $rootScope, $timeout, AtonService, atonCtx, editable, selectable) {
             'use strict';
 
             $scope.editable = editable;
+            $scope.selectable = selectable;
             $scope.aton = angular.copy(atonCtx.aton);
             $scope.tags = [];
             $scope.newTag = { k: '', v: '' };

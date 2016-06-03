@@ -102,7 +102,7 @@ angular.module('niord.atons')
 
 
             /** Opens an AtoN details dialog **/
-            atonDetailsDialog: function(aton) {
+            atonDetailsDialog: function(aton, selectable) {
                 return $uibModal.open({
                     controller: "EditAtonDetailsDialogCtrl",
                     templateUrl: "/app/atons/aton-details-editor-dialog.html",
@@ -110,7 +110,8 @@ angular.module('niord.atons')
                     keyboard: true,
                     resolve: {
                         atonCtx: function () { return { aton: aton, orig: aton }; },
-                        editable: function () { return false; }
+                        editable: function () { return false; },
+                        selectable: function () { return selectable }
                     }
                 });
             },
@@ -125,7 +126,8 @@ angular.module('niord.atons')
                     keyboard: false,
                     resolve: {
                         atonCtx: function () { return { aton: aton, orig: orig }; },
-                        editable: function () { return true; }
+                        editable: function () { return true; },
+                        selectable: function () { return false }
                     }
                 });
             },

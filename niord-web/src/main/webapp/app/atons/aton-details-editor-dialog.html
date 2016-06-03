@@ -108,6 +108,7 @@
 
     <div ng-if="!editable" class="modal-footer">
         <button class="btn btn-sm" ng-click="$dismiss('aborted')">Close</button>
+        <button ng-if="selectable" class="btn btn-sm btn-primary" ng-click="$close(aton)">Select</button>
     </div>
 
     <div ng-if="editable" class="modal-footer">
