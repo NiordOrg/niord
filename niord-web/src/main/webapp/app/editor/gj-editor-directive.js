@@ -299,10 +299,29 @@ angular.module('niord.editor')
                 };
 
 
+                /** If the feature has an associated AtoN, return maximum range. Otherwise return default range */
+                function checkGetAtonRange(feature, defaultRange) {
+                    var range = defaultRange;
+                    var aton = feature.get('aton');
+                    if (aton && aton.tags) {
+                        var atonRange = 0;
+                        angular.forEach(aton.tags, function (v, k) {
+                            if (k && k.match('range$') == 'range' && !isNaN(v)) {
+                                atonRange = Math.max(atonRange, +v);
+                            }
+                        });
+                        if (atonRange > 0) {
+                            range = atonRange;
+                        }
+                    }
+                    return range;
+                }
+
+
                 /** Creates buffered features for the current selection **/
                 scope.addBufferedFeature = function () {
                     angular.forEach(scope.selection, function (feature) {
-                        var bufferRadius = 1.0;
+                        var bufferRadius = checkGetAtonRange(feature, 1.0);
                         var bufferRadiusType = 'nm';
                         var bufferFeature = MapService.bufferedOLFeature(feature, toMeters(bufferRadius, bufferRadiusType));
                         MapService.checkCreateId(bufferFeature);
