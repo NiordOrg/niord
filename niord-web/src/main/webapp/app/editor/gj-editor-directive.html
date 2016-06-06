@@ -170,7 +170,7 @@
                             </tr>
                         </table>
                     </div>
-                    <div class="feature-geometry-tree" ng-if="!featureCtx.parentFeatureId">
+                    <div class="feature-geometry-tree" ng-if="!featureCtx.parentFeatureId && !featureCtx.aton">
                         <ol-editor-tree feature="features[$index]" edit-type="{{editType}}" tabindex="-1"></ol-editor-tree>
                     </div>
                 </div>
