@@ -93,30 +93,36 @@ angular.module('niord.editor')
                 }
 
                 /** Finds the feature with the given ID */
-                function findByFeatureId(features, id) {
-                    for (var x = 0; x < features.length; x++) {
-                        if (features[x].getId() == id) {
-                            return features[x];
+                function findFeatureById(id) {
+                    for (var x = 0; x < scope.features.length; x++) {
+                        if (scope.features[x].getId() == id) {
+                            return scope.features[x];
                         }
                     }
                     return null;
                 }
 
-                /** Finds the item with the given property value */
-                function findByProperty(list, key, value) {
-                    for (var x = 0; x < list.length; x++) {
-                        if (list[x][key] == value) {
-                            return list[x];
+                /** Finds the feature context with the given ID */
+                function findFeatureContextById(id) {
+                    for (var x = 0; x < scope.featureContexts.length; x++) {
+                        if (scope.featureContexts[x].id == id) {
+                            return scope.featureContexts[x];
                         }
                     }
                     return null;
                 }
 
+                /** Finds the derived feature contexts for the feature with the given ID */
+                function findBufferedFeatureContexts(parentFeatureId) {
+                    return $.grep(scope.featureContexts, function (featureCtx) {
+                        return featureCtx['parentFeatureId'] == parentFeatureId;
+                    });
+                }
 
                 /** Copy named properties from an OL feature to the feature context **/
-                function copyPropertiesFromFeature(feature, featureCtx, namePrefixes) {
+                function copyPropertiesFromFeature(feature, featureCtx) {
                     angular.forEach(feature.getKeys(), function (key) {
-                        angular.forEach(namePrefixes, function (prefix) {
+                        angular.forEach(featureCtxPrefixes, function (prefix) {
                             if (key.indexOf(prefix) == 0) {
                                 featureCtx[key] = feature.get(key);
                             }
@@ -124,11 +130,10 @@ angular.module('niord.editor')
                     });
                 }
 
-
                 /** Copy named properties from a feature context to the OL feature **/
-                function copyPropertiesToFeature(feature, featureCtx, namePrefixes) {
+                function copyPropertiesToFeature(feature, featureCtx) {
                     angular.forEach(featureCtx, function (value, key) {
-                        angular.forEach(namePrefixes, function (prefix) {
+                        angular.forEach(featureCtxPrefixes, function (prefix) {
                             if (key.indexOf(prefix) == 0) {
                                 if (value) {
                                     feature.set(key, value);
@@ -142,8 +147,8 @@ angular.module('niord.editor')
 
                 /** Updates the feature from the feature context **/
                 function updateFeatureFromFeatureCtx(featureCtx) {
-                    var feature = findByFeatureId(scope.features, featureCtx.id);
-                    copyPropertiesToFeature(feature, featureCtx, featureCtxPrefixes);
+                    var feature = findFeatureById(featureCtx.id);
+                    copyPropertiesToFeature(feature, featureCtx);
                 }
 
 
@@ -159,7 +164,7 @@ angular.module('niord.editor')
                             bufferRadiusType: undefined,
                             aton: undefined
                         };
-                        copyPropertiesFromFeature(feature, featureCtx, featureCtxPrefixes);
+                        copyPropertiesFromFeature(feature, featureCtx);
                         return featureCtx;
                     }
                     return null;
@@ -520,22 +525,21 @@ angular.module('niord.editor')
 
                 /** Deletes the feature **/
                 scope.deleteFeature = function (id) {
-                    var feature = findByFeatureId(scope.features, id);
+                    var feature = findFeatureById(id);
                     if (feature) {
                         removeFromArray(scope.features, feature);
                         broadcast('feature-unselected', id);
                         broadcast('feature-removed', id);
                     }
 
-                    var featureCtx = findByProperty(scope.featureContexts, "id", id);
+                    var featureCtx = findFeatureContextById(id);
                     if (featureCtx) {
                         removeFromArray(scope.featureContexts, featureCtx);
 
-                        // Check if there was an associated buffer-feature
-                        var bufferFeatureCtx = findByProperty(scope.featureContexts, 'parentFeatureId', featureCtx.id);
-                        if (bufferFeatureCtx) {
+                        // Check if there was an associated buffer-features
+                        angular.forEach(findBufferedFeatureContexts(featureCtx.id), function (bufferFeatureCtx) {
                             scope.deleteFeature(bufferFeatureCtx.id);
-                        }
+                        });
                     }
 
                     // Update the list of selected features
@@ -563,8 +567,8 @@ angular.module('niord.editor')
                 scope.radiusUpdated = function (featureCtx) {
                     var dist = toMeters(featureCtx.bufferRadius, featureCtx.bufferRadiusType);
 
-                    var feature = findByFeatureId(scope.features, featureCtx.id);
-                    var parentFeature = findByFeatureId(scope.features, featureCtx.parentFeatureId);
+                    var feature = findFeatureById(featureCtx.id);
+                    var parentFeature = findFeatureById(featureCtx.parentFeatureId);
                     if (!feature || !parentFeature) {
                         return;
                     }
@@ -592,7 +596,7 @@ angular.module('niord.editor')
                 scope.atonSelected = function (origAton) {
                     var g = new ol.geom.Point(MapService.fromLonLat([origAton.lon, origAton.lat]));
                     var feature = scope.createNewFeature(g);
-                    var featureCtx = findByProperty(scope.featureContexts, "id", feature.getId());
+                    var featureCtx = findFeatureContextById(feature.getId());
                     featureCtx.aton = angular.copy(origAton);
                     featureCtx.origAton = origAton;
                     featureCtx.showAton = true;
@@ -603,7 +607,7 @@ angular.module('niord.editor')
 
                 /** Called when an AtoN has been edited in the AtoN editor dialog **/
                 scope.atonEdited = function (aton, featureCtx) {
-                    var feature = findByFeatureId(scope.features, featureCtx.id);
+                    var feature = findFeatureById(featureCtx.id);
                     if (aton && Object.keys(aton.tags).length > 0) {
                         featureCtx.aton = angular.copy(aton);
 
@@ -614,6 +618,11 @@ angular.module('niord.editor')
 
                         updateFeatureFromFeatureCtx(featureCtx);
                         broadcast('feature-modified', feature.getId());
+
+                        // Check if we need to update an associated buffered features
+                        angular.forEach(findBufferedFeatureContexts(featureCtx.id), function (bufferFeatureCtx) {
+                            scope.radiusUpdated(bufferFeatureCtx);
+                        });
 
                     } else if (featureCtx.aton) {
                         featureCtx.aton = undefined;
@@ -626,7 +635,7 @@ angular.module('niord.editor')
 
                 /** Creates an AtoN associated with the given point **/
                 scope.createAton = function (featureCtx) {
-                    var feature = findByFeatureId(scope.features, featureCtx.id);
+                    var feature = findFeatureById(featureCtx.id);
                     if (feature && featureCtx.type == 'Point') {
                         var lonLat = MapService.toLonLat(feature.getGeometry().getCoordinates());
                         var aton = {
@@ -645,7 +654,7 @@ angular.module('niord.editor')
 
                 /** Updates an associated AtoN whenever a feature has been updated **/
                 scope.updateAton = function (featureCtx) {
-                    var feature = findByFeatureId(scope.features, featureCtx.id);
+                    var feature = findFeatureById(featureCtx.id);
                     if (feature && featureCtx.aton) {
                         var lonLat = MapService.toLonLat(feature.getGeometry().getCoordinates());
                         featureCtx.aton.lon = lonLat[0];
@@ -700,7 +709,7 @@ angular.module('niord.editor')
                     var featureCtx, feature;
                     switch (msg.type) {
                         case 'feature-added':
-                            featureCtx = createFeatureCtxFromFeature(findByFeatureId(scope.features, msg.featureId));
+                            featureCtx = createFeatureCtxFromFeature(findFeatureById(msg.featureId));
                             if (featureCtx) {
                                 scope.featureContexts.push(featureCtx);
                                 scope.$$phase || scope.$apply();
@@ -717,24 +726,23 @@ angular.module('niord.editor')
                             broadcast('feature-modified', msg.featureId, msg.scope);
 
                             // Check if any associated AtoN needs to be updated
-                            featureCtx = createFeatureCtxFromFeature(findByFeatureId(scope.features, msg.featureId));
+                            featureCtx = createFeatureCtxFromFeature(findFeatureById(msg.featureId));
                             scope.updateAton(featureCtx);
 
                             // Check if we need to update an associated buffered feature
-                            featureCtx = findByProperty(scope.featureContexts, "parentFeatureId", msg.featureId);
-                            if (featureCtx) {
-                                scope.radiusUpdated(featureCtx);
-                            }
+                            angular.forEach(findBufferedFeatureContexts(msg.featureId), function (bufferFeatureCtx) {
+                                scope.radiusUpdated(bufferFeatureCtx);
+                            });
                             break;
 
                         case 'feature-order-changed':
                             break;
 
                         case 'name-updated':
-                            feature = findByFeatureId(scope.features, msg.featureId);
-                            featureCtx = findByProperty(scope.featureContexts, "id", msg.featureId);
+                            feature = findFeatureById(msg.featureId);
+                            featureCtx = findFeatureContextById(msg.featureId);
                             if (feature && featureCtx) {
-                                copyPropertiesFromFeature(feature, featureCtx, featureCtxPrefixes);
+                                copyPropertiesFromFeature(feature, featureCtx);
                             }
                             // Notify other sub-directives
                             broadcast('name-updated', msg.featureId, msg.scope);
@@ -742,7 +750,7 @@ angular.module('niord.editor')
 
                         case 'feature-selected':
                         case 'feature-unselected':
-                            featureCtx = findByProperty(scope.featureContexts, "id", msg.featureId);
+                            featureCtx = findFeatureContextById(msg.featureId);
                             if (featureCtx) {
                                 featureCtx.selected = (msg.type == 'feature-selected');
                                 updateSelectedFeatures();
