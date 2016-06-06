@@ -82,7 +82,7 @@
                 </div>
             </div>
 
-            <div ng-if="showFeatureData" class="feature-collection-panel">
+            <div ng-if="showFeatureData" class="feature-collection-panel" ng-sortable="featureSortableCfg">
 
                 <div ng-repeat="featureCtx in featureContexts" class="feature-panel">
 
@@ -93,9 +93,8 @@
                             <a href ng-click="zoomFeature(featureCtx.id)"><i class="glyphicon glyphicon-arrow-right"></i></a>
                         </span>
                         <span class="pull-right">
-                            <a href ng-click="deleteFeature(featureCtx.id)"><i class="glyphicon glyphicon-trash"></i></a>
-                            <a href ng-click="moveFeatureUp(featureCtx)"><i class="glyphicon glyphicon-arrow-up"></i></a>
-                            <a href ng-click="moveFeatureDown(featureCtx)"><i class="glyphicon glyphicon-arrow-down"></i></a>
+                            <a href ng-click="deleteFeature(featureCtx.id)"><i class="glyphicon glyphicon-trash"></i></a>&nbsp;
+                            <span class="glyphicon glyphicon-move move-btn"></span>
                         </span>
                     </div>
                     <div ng-if="featureCtx.parentFeatureId" class="buffer-feature-panel-header">
@@ -104,9 +103,8 @@
                             Buffer Location #{{$index + 1}} &nbsp;
                         </span>
                         <span class="pull-right">
-                            <a href ng-click="deleteFeature(featureCtx.id)"><i class="glyphicon glyphicon-trash"></i></a>
-                            <a href ng-click="moveFeatureUp(featureCtx)"><i class="glyphicon glyphicon-arrow-up"></i></a>
-                            <a href ng-click="moveFeatureDown(featureCtx)"><i class="glyphicon glyphicon-arrow-down"></i></a>
+                            <a href ng-click="deleteFeature(featureCtx.id)"><i class="glyphicon glyphicon-trash"></i></a>&nbsp;
+                            <span class="glyphicon glyphicon-move move-btn"></span>
                         </span>
                     </div>
 

@@ -543,25 +543,19 @@ angular.module('niord.editor')
                 };
 
 
-                /** Swaps the feature with the previous feature **/
-                scope.moveFeatureUp = function (featureCtx) {
-                    var index = $.inArray(featureCtx, scope.featureContexts);
-                    if (index != -1) {
-                        swapElements(scope.features, index, index - 1);
-                        swapElements(scope.featureContexts, index, index - 1);
-                        broadcast('feature-order-changed', featureCtx.id);
-                    }
+                /** Called when a feature has been dragged to a new position **/
+                scope.updateFeatureOrder = function (evt) {
+                    // Feature contexts have already been updated. Swap features
+                    var oldIndex = evt.oldIndex;
+                    var newIndex = evt.newIndex;
+                    swapElements(scope.features, oldIndex, newIndex);
+                    broadcast('feature-order-changed', scope.featureContexts[newIndex].id);
                 };
 
-
-                /** Swaps the feature with the next feature **/
-                scope.moveFeatureDown = function (featureCtx) {
-                    var index = $.inArray(featureCtx, scope.featureContexts);
-                    if (index != -1) {
-                        swapElements(scope.features, index, index + 1);
-                        swapElements(scope.featureContexts, index, index + 1);
-                        broadcast('feature-order-changed', featureCtx.id);
-                    }
+                scope.featureSortableCfg = {
+                    group: 'feature',
+                    handle: '.move-btn',
+                    onEnd: scope.updateFeatureOrder
                 };
 
 
