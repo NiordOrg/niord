@@ -157,11 +157,15 @@
                                     </select>
                                 </td>
                             </tr>
-                            <tr ng-show="featureCtx.showAton && featureCtx.aton">
+                            <tr ng-show="featureCtx.showAton">
                                 <td colspan="2">
-                                    <span class="feature-aton">
+                                    <span ng-if="featureCtx.aton"  class="feature-aton">
                                         <aton-list-details aton="featureCtx.aton" orig-aton="featureCtx.origAton"
+                                                           aton-edited="atonEdited(aton, userData)" user-data="featureCtx"
                                                            editable="true" selectable="false"></aton-list-details>
+                                    </span>
+                                    <span ng-if="!featureCtx.aton">
+                                        <button type="btn btn-xs" ng-click="createAton(featureCtx)">Create AtoN...</button>
                                     </span>
                                 </td>
                             </tr>

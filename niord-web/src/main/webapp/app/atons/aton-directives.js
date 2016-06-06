@@ -19,9 +19,11 @@ angular.module('niord.atons')
                     zoomBtn:    '@',
                     editable:   '@',
                     draggable:  '@',
-                    selectable: '@'
+                    selectable: '@',
+                    atonEdited: '&',
+                    userData:   '='
                 },
-                link: function(scope) {
+                link: function(scope, element, attrs) {
 
                     scope.showZoomBtn = scope.zoomBtn == 'true';
                     scope.showDndBtn = scope.draggable == 'true';
@@ -81,7 +83,12 @@ angular.module('niord.atons')
                         var atonCtx = scope.getAtonCtx();
                         if (atonCtx != null) {
                             var orig = atonCtx.orig ? atonCtx.orig : angular.copy(scope.aton);
-                            AtonService.atonEditorDialog(atonCtx.aton, orig);
+                            AtonService.atonEditorDialog(atonCtx.aton, orig).result
+                                .then(function (aton) {
+                                    if (attrs.atonEdited) {
+                                        scope.atonEdited({aton: aton, userData: scope.userData });
+                                    }
+                                });
                         }
                     };
 

@@ -23,8 +23,8 @@ angular.module('niord.editor')
     /**
      * Defines the GeoJSON FeatureCollection Editor
      */
-    .directive('gjEditor', ['$document', '$rootScope', '$uibModal', 'MapService',
-        function ($document, $rootScope, $uibModal, MapService) {
+    .directive('gjEditor', ['$document', '$rootScope', '$uibModal', 'MapService', 'AtonService',
+        function ($document, $rootScope, $uibModal, MapService, AtonService) {
 
         return {
             restrict: 'E',
@@ -138,7 +138,7 @@ angular.module('niord.editor')
                 }
 
                 /** Updates the feature from the feature context **/
-                function updateFeaturesFromFeatureCtx(featureCtx) {
+                function updateFeatureFromFeatureCtx(featureCtx) {
                     var feature = findByFeatureId(scope.features, featureCtx.id);
                     copyPropertiesToFeature(feature, featureCtx, featureCtxPrefixes);
                 }
@@ -556,21 +556,21 @@ angular.module('niord.editor')
                     }
 
                     feature.setGeometry(MapService.bufferedOLGeometry(parentFeature.getGeometry(), dist));
-                    updateFeaturesFromFeatureCtx(featureCtx);
+                    updateFeatureFromFeatureCtx(featureCtx);
                     broadcast('feature-modified', feature.getId());
                 };
 
 
                 /** Called when the feature name is updated **/
                 scope.nameUpdated = function (featureCtx) {
-                    updateFeaturesFromFeatureCtx(featureCtx);
+                    updateFeatureFromFeatureCtx(featureCtx);
                     broadcast('name-updated', featureCtx.id);
                 };
 
 
                 /** Called when the feature restriction is updated **/
                 scope.restrictionUpdated = function (featureCtx) {
-                    updateFeaturesFromFeatureCtx(featureCtx);
+                    updateFeatureFromFeatureCtx(featureCtx);
                 };
 
 
@@ -582,8 +582,63 @@ angular.module('niord.editor')
                     featureCtx.aton = angular.copy(origAton);
                     featureCtx.origAton = origAton;
                     featureCtx.showAton = true;
-                    updateFeaturesFromFeatureCtx(featureCtx);
+                    updateFeatureFromFeatureCtx(featureCtx);
                     broadcast('feature-added', feature.getId());
+                };
+
+
+                /** Called when an AtoN has been edited in the AtoN editor dialog **/
+                scope.atonEdited = function (aton, featureCtx) {
+                    var feature = findByFeatureId(scope.features, featureCtx.id);
+                    if (aton && Object.keys(aton.tags).length > 0) {
+                        featureCtx.aton = angular.copy(aton);
+
+                        // Update the Point position of the feature from the AtoN
+                        var geom = new ol.geom.Point();
+                        geom.setCoordinates(MapService.fromLonLat([aton.lon, aton.lat]));
+                        feature.setGeometry(geom);
+
+                        updateFeatureFromFeatureCtx(featureCtx);
+                        broadcast('feature-modified', feature.getId());
+
+                    } else if (featureCtx.aton) {
+                        featureCtx.aton = undefined;
+                        featureCtx.origAton = undefined;
+                        updateFeatureFromFeatureCtx(featureCtx);
+                        broadcast('feature-modified', feature.getId());
+                    }
+                };
+
+
+                /** Creates an AtoN associated with the given point **/
+                scope.createAton = function (featureCtx) {
+                    var feature = findByFeatureId(scope.features, featureCtx.id);
+                    if (feature && featureCtx.type == 'Point') {
+                        var lonLat = MapService.toLonLat(feature.getGeometry().getCoordinates());
+                        var aton = {
+                            lon: lonLat[0],
+                            lat: lonLat[1],
+                            tags: {}
+                        };
+                        AtonService.atonEditorDialog(aton, angular.copy(aton)).result
+                            .then(function(editedAton) {
+                                featureCtx.origAton = editedAton;
+                                scope.atonEdited(editedAton, featureCtx);
+                            });
+                    }
+                };
+
+
+                /** Updates an associated AtoN whenever a feature has been updated **/
+                scope.updateAton = function (featureCtx) {
+                    var feature = findByFeatureId(scope.features, featureCtx.id);
+                    if (feature && featureCtx.aton) {
+                        var lonLat = MapService.toLonLat(feature.getGeometry().getCoordinates());
+                        featureCtx.aton.lon = lonLat[0];
+                        featureCtx.aton.lat = lonLat[1];
+                        updateFeatureFromFeatureCtx(featureCtx);
+                        scope.$$phase || scope.$apply();
+                    }
                 };
 
 
@@ -646,6 +701,10 @@ angular.module('niord.editor')
                         case 'feature-modified':
                             // Notify other sub-directives
                             broadcast('feature-modified', msg.featureId, msg.scope);
+
+                            // Check if any associated AtoN needs to be updated
+                            featureCtx = createFeatureCtxFromFeature(findByFeatureId(scope.features, msg.featureId));
+                            scope.updateAton(featureCtx);
 
                             // Check if we need to update an associated buffered feature
                             featureCtx = findByProperty(scope.featureContexts, "parentFeatureId", msg.featureId);
