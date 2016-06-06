@@ -69,10 +69,10 @@
                             <li role="menuitem"><a href ng-click="zoomToExtent()">Zoom to extent</a></li>
                             <li role="menuitem" ng-if="editType == 'message'"><a href ng-click="addAreaFeature()">Add Area...</a></li>
                             <li class="divider" ng-if="editType == 'message' && selection.length > 0"></li>
-                            <li role="menuitem" ng-if="editType == 'message' && selection.length > 0"><a href ng-click="addBufferedFeature()">Add buffer</a></li>
-                            <li role="menuitem" ng-if="selection.length > 1"><a href ng-click="merge()">Merge</a></li>
-                            <li role="menuitem" ng-if="selection.length > 0"><a href ng-click="split()">Split</a></li>
-                            <li role="menuitem" ng-if="selection.length == 2"><a href ng-click="difference()">Subtract</a></li>
+                            <li role="menuitem" ng-if="editType == 'message' && selection.length > 0"><a href ng-click="addBufferedFeature()">Add affected area</a></li>
+                            <li role="menuitem" ng-if="selection.length > 1"><a href ng-click="merge()">Merge geometries</a></li>
+                            <li role="menuitem" ng-if="selection.length > 0"><a href ng-click="split()">Split geometries</a></li>
+                            <li role="menuitem" ng-if="selection.length == 2"><a href ng-click="difference()">Subtract geometries</a></li>
                         </ul>
                     </span>
 
