@@ -10,11 +10,9 @@
  *                    functionality, such as allowing the user to specify names for each feature and position,
  *                    an affected radius, etc.</li>
  * </ul>
- * The GeoJson feature collection is divided into three lists:
+ * The GeoJson feature collection is divided into two lists:
  * <ul>
- *     <li>features: List of non-buffered OpenLayers Features, that can be edited in the data tree-view or map view.</li>
- *     <li>bufferFeatures: List of buffered OpenLayers Features that cannot be edited directly. They are tied to
- *         a non-buffered Feature via a parentFeatureId attribute + radius attributes that define the buffer.</li>
+ *     <li>features: List of OpenLayers Features that can be edited in the data tree-view or map view.</li>
  *     <li>featureContexts: Angular is not really suited to $watch Features, which may be really large. Thus, for each
  *         feature, a feature context will be maintained, which contains editable attributes and a possible relation
  *         to a buffered feature.</li>
