@@ -50,10 +50,13 @@ angular.module('niord.editor')
                 scope.editType = scope.editType || 'features';
                 scope.wmsLayerEnabled = $rootScope.wmsLayerEnabled;
 
-                /** The corresponding non-buffered OpenLayer features being edited **/
+                /** The OpenLayer features being edited **/
                 scope.features = [];
 
-                /** Meta-data for the non-buffered OpenLayer features being edited **/
+                /** The currently selected features **/
+                scope.selection = [];
+
+                /** Meta-data for the features being edited **/
                 scope.featureContexts = [];
                 var featureCtxPrefixes = [ 'name', 'restriction', 'parentFeatureId',
                     'bufferRadius', 'bufferRadiusType', 'restriction', 'aton' ];
@@ -163,15 +166,15 @@ angular.module('niord.editor')
                 }
 
 
-                /** Returns the list of selected features **/
-                function selectedFeatures() {
-                    var selected = [];
+                /** Updates the list of selected features **/
+                function updateSelectedFeatures() {
+                    scope.selection.length = 0;
                     angular.forEach(scope.features, function (feature) {
                         if (feature.get('selected') === true) {
-                            selected.push(feature);
+                            scope.selection.push(feature);
                         }
                     });
-                    return selected;
+                    return scope.selection;
                 }
 
 
@@ -260,16 +263,11 @@ angular.module('niord.editor')
                 /** Action Menu Functions    **/
                 /** ************************ **/
 
-                /** Returns the number of selected features **/
-                scope.selectionNo = function () {
-                    return selectedFeatures().length;
-                };
-
-
                 /** Clears the feature collection **/
                 scope.clearAll = function () {
                     scope.features.length = 0;
                     scope.featureContexts.length = 0;
+                    updateSelectedFeatures();
                     broadcast('refresh-all');
                 };
 
@@ -303,7 +301,7 @@ angular.module('niord.editor')
 
                 /** Creates buffered features for the current selection **/
                 scope.addBufferedFeature = function () {
-                    angular.forEach(selectedFeatures(), function (feature) {
+                    angular.forEach(scope.selection, function (feature) {
                         var bufferRadius = 1.0;
                         var bufferRadiusType = 'nm';
                         var bufferFeature = MapService.bufferedOLFeature(feature, toMeters(bufferRadius, bufferRadiusType));
@@ -401,7 +399,7 @@ angular.module('niord.editor')
 
                 /** Merges the selected features **/
                 scope.merge = function () {
-                    var selected = selectedFeatures();
+                    var selected = angular.copy(scope.selection);
                     if (selected.length < 2) {
                         return;
                     }
@@ -433,7 +431,7 @@ angular.module('niord.editor')
 
                 /** Splits the selected features into sub-geometries **/
                 scope.split = function () {
-                    var selected = selectedFeatures();
+                    var selected = angular.copy(scope.selection);
 
                     angular.forEach(selected, function (feature) {
                         var geom = feature.getGeometry();
@@ -466,7 +464,7 @@ angular.module('niord.editor')
 
                 /** Creates the difference between two geometries **/
                 scope.difference = function () {
-                    var selected = selectedFeatures();
+                    var selected = angular.copy(scope.selection);
                     if (selected.length != 2) {
                         return;
                     }
@@ -520,6 +518,9 @@ angular.module('niord.editor')
                             scope.deleteFeature(bufferFeatureCtx.id);
                         }
                     }
+
+                    // Update the list of selected features
+                    updateSelectedFeatures();
                 };
 
 
@@ -731,6 +732,7 @@ angular.module('niord.editor')
                             featureCtx = findByProperty(scope.featureContexts, "id", msg.featureId);
                             if (featureCtx) {
                                 featureCtx.selected = (msg.type == 'feature-selected');
+                                updateSelectedFeatures();
                                 scope.$$phase || $rootScope.$$phase || scope.$apply();
                             }
                             break;

@@ -67,13 +67,12 @@
                         <ul uib-dropdown-menu class="dropdown-menu" role="menu" aria-labelledby="single-button">
                             <li role="menuitem"><a href ng-click="clearAll()">Clear all</a></li>
                             <li role="menuitem"><a href ng-click="zoomToExtent()">Zoom to extent</a></li>
-                            <li class="divider"></li>
-                            <li role="menuitem" ng-if="editType == 'message'"><a href ng-click="addBufferedFeature()">Add buffer</a></li>
                             <li role="menuitem" ng-if="editType == 'message'"><a href ng-click="addAreaFeature()">Add Area...</a></li>
-                            <li class="divider" ng-if="editType == 'message'"></li>
-                            <li role="menuitem"><a href ng-click="merge()">Merge</a></li>
-                            <li role="menuitem"><a href ng-click="split()">Split</a></li>
-                            <li role="menuitem"><a href ng-click="difference()">Subtract</a></li>
+                            <li class="divider" ng-if="editType == 'message' && selection.length > 0"></li>
+                            <li role="menuitem" ng-if="editType == 'message' && selection.length > 0"><a href ng-click="addBufferedFeature()">Add buffer</a></li>
+                            <li role="menuitem" ng-if="selection.length > 1"><a href ng-click="merge()">Merge</a></li>
+                            <li role="menuitem" ng-if="selection.length > 0"><a href ng-click="split()">Split</a></li>
+                            <li role="menuitem" ng-if="selection.length == 2"><a href ng-click="difference()">Subtract</a></li>
                         </ul>
                     </span>
 
