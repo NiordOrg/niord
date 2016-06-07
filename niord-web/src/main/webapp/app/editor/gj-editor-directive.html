@@ -69,7 +69,10 @@
                             <li role="menuitem"><a href ng-click="zoomToExtent()">Zoom to extent</a></li>
                             <li role="menuitem" ng-if="editType == 'message'"><a href ng-click="addAreaFeature()">Add Area...</a></li>
                             <li class="divider" ng-if="editType == 'message' && selection.length > 0"></li>
-                            <li role="menuitem" ng-if="editType == 'message' && selection.length > 0"><a href ng-click="addBufferedFeature()">Add affected area</a></li>
+                            <li role="menuitem" ng-if="canAddBufferedFeature('radius')"><a href ng-click="addBufferedFeature('radius')">Add affected radius</a></li>
+                            <li role="menuitem" ng-if="canAddBufferedFeature('path')"><a href ng-click="addBufferedFeature('path')">Add affected path</a></li>
+                            <li role="menuitem" ng-if="canAddBufferedFeature('area')"><a href ng-click="addBufferedFeature('area')">Add affected area</a></li>
+                            <li class="divider" ng-if="editType == 'message' && selection.length > 0"></li>
                             <li role="menuitem" ng-if="selection.length > 1"><a href ng-click="merge()">Merge geometries</a></li>
                             <li role="menuitem" ng-if="selection.length > 0"><a href ng-click="split()">Split geometries</a></li>
                             <li role="menuitem" ng-if="selection.length == 2"><a href ng-click="difference()">Subtract geometries</a></li>
@@ -86,7 +89,7 @@
 
                 <div ng-repeat="featureCtx in featureContexts" class="feature-panel">
 
-                    <div ng-if="!featureCtx.parentFeatureId" class="feature-panel-header">
+                    <div ng-if="!featureCtx.parentFeatureIds" class="feature-panel-header">
                         <span>
                             <input type="checkbox" ng-model="featureCtx.selected" ng-change="selectionUpdated(featureCtx)">
                             Location #{{$index + 1}} &nbsp;
@@ -97,7 +100,7 @@
                             <span class="glyphicon glyphicon-move move-btn"></span>
                         </span>
                     </div>
-                    <div ng-if="featureCtx.parentFeatureId" class="buffer-feature-panel-header">
+                    <div ng-if="featureCtx.parentFeatureIds" class="buffer-feature-panel-header">
                         <span>
                             <span class="glyphicon glyphicon-lock"></span>
                             Buffer Location #{{$index + 1}} &nbsp;
@@ -111,8 +114,8 @@
                     <div class="feature-panel-info" ng-if="editType == 'message'">
                         <div style="text-align: center; font-size: 11px; padding: 5px 0 5px 0;">
                             <div class="btn-group btn-group-justified">
-                                <label ng-if="!featureCtx.parentFeatureId" class="btn btn-default btn-xs" ng-model="featureCtx.showName" uib-btn-checkbox >Name</label>
-                                <label ng-if="featureCtx.parentFeatureId"  class="btn btn-default btn-xs" ng-model="featureCtx.showRadius" uib-btn-checkbox >Radius</label>
+                                <label ng-if="!featureCtx.parentFeatureIds" class="btn btn-default btn-xs" ng-model="featureCtx.showName" uib-btn-checkbox >Name</label>
+                                <label ng-if="featureCtx.parentFeatureIds"  class="btn btn-default btn-xs" ng-model="featureCtx.showRadius" uib-btn-checkbox >Radius</label>
                                 <label class="btn btn-default btn-xs" ng-model="featureCtx.showRestriction" uib-btn-checkbox >Restriction</label>
                                 <label ng-if="featureCtx.type == 'Point'" class="btn btn-default btn-xs" ng-model="featureCtx.showAton" uib-btn-checkbox >AtoN</label>
                             </div>
@@ -168,7 +171,7 @@
                             </tr>
                         </table>
                     </div>
-                    <div class="feature-geometry-tree" ng-if="!featureCtx.parentFeatureId && !featureCtx.aton">
+                    <div class="feature-geometry-tree" ng-if="!featureCtx.parentFeatureIds && !featureCtx.aton">
                         <ol-editor-tree feature="features[$index]" edit-type="{{editType}}" tabindex="-1"></ol-editor-tree>
                     </div>
                 </div>

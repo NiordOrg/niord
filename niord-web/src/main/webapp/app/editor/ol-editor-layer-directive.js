@@ -356,7 +356,7 @@ angular.module('niord.editor')
                             bufferLayer.getSource().clear(true);
                             if (scope.features) {
                                 angular.forEach(scope.features, function (feature) {
-                                    if (feature.get('parentFeatureId')) {
+                                    if (feature.get('parentFeatureIds')) {
                                         bufferLayer.getSource().addFeature(feature);
                                     } else {
                                         olLayer.getSource().addFeature(feature);

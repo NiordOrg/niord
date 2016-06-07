@@ -165,6 +165,11 @@ angular.module('niord.map')
 
             /** Creates a geometry that has been buffered with the given distance. **/
             this.bufferedOLGeometry = function (olGeometry, distInMeters) {
+                // Sanity check
+                if (distInMeters <= 0) {
+                    return olGeometry;
+                }
+
                 var jstsOlParser = new jsts.io.olParser();
 
                 // convert the GeoJson geometry to a JSTS geometry
@@ -291,7 +296,7 @@ angular.module('niord.map')
                 if (g) {
                     if (g instanceof Array) {
                         if (g.length >= 2 && $.isNumeric(g[0])) {
-                            var bufferFeature = props['parentFeatureId'];
+                            var bufferFeature = props['parentFeatureIds'];
                             var includeCoord = (polygonType != 'Exterior');
                             if (includeCoord && !bufferFeature) {
                                 coords.push({

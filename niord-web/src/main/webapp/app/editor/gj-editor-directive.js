@@ -23,8 +23,8 @@ angular.module('niord.editor')
     /**
      * Defines the GeoJSON FeatureCollection Editor
      */
-    .directive('gjEditor', ['$document', '$rootScope', '$uibModal', 'MapService', 'AtonService',
-        function ($document, $rootScope, $uibModal, MapService, AtonService) {
+    .directive('gjEditor', ['$document', '$rootScope', '$uibModal', 'growl', 'MapService', 'AtonService',
+        function ($document, $rootScope, $uibModal, growl, MapService, AtonService) {
 
         return {
             restrict: 'E',
@@ -58,7 +58,7 @@ angular.module('niord.editor')
 
                 /** Meta-data for the features being edited **/
                 scope.featureContexts = [];
-                var featureCtxPrefixes = [ 'name', 'restriction', 'parentFeatureId',
+                var featureCtxPrefixes = [ 'name', 'restriction', 'parentFeatureIds',
                     'bufferRadius', 'bufferRadiusType', 'restriction', 'aton' ];
 
                 scope.showDrawControls = {
@@ -112,11 +112,23 @@ angular.module('niord.editor')
                     return null;
                 }
 
-                /** Finds the derived feature contexts for the feature with the given ID */
-                function findBufferedFeatureContexts(parentFeatureId) {
+                /** Finds the buffered feature contexts for the feature with the given ID */
+                function findBufferedFeatureContexts(featureId) {
                     return $.grep(scope.featureContexts, function (featureCtx) {
-                        return featureCtx['parentFeatureId'] == parentFeatureId;
+                        return featureCtx['parentFeatureIds'] && featureCtx['parentFeatureIds'].indexOf(featureId) != -1;
                     });
+                }
+
+                /** Finds the parent features defined by the comma-separated parentFeatureIds string **/
+                function findParentFeatures(parentFeatureIds) {
+                    if (parentFeatureIds) {
+                        var idLookup = {};
+                        angular.forEach(parentFeatureIds.split(','), function (id) { idLookup[id] = id; });
+                        return $.grep(scope.features, function (feature) {
+                            return idLookup[feature.getId()] !== undefined;
+                        });
+                    }
+                    return [];
                 }
 
                 /** Copy named properties from an OL feature to the feature context **/
@@ -172,7 +184,7 @@ angular.module('niord.editor')
 
 
                 /** Updates the list of selected features **/
-                function updateSelectedFeatures() {
+                function recomputeFeatureSelection() {
                     scope.selection.length = 0;
                     angular.forEach(scope.features, function (feature) {
                         if (feature.get('selected') === true) {
@@ -272,7 +284,7 @@ angular.module('niord.editor')
                 scope.clearAll = function () {
                     scope.features.length = 0;
                     scope.featureContexts.length = 0;
-                    updateSelectedFeatures();
+                    recomputeFeatureSelection();
                     broadcast('refresh-all');
                 };
 
@@ -323,26 +335,96 @@ angular.module('niord.editor')
                 }
 
 
-                /** Creates buffered features for the current selection **/
-                scope.addBufferedFeature = function () {
-                    angular.forEach(scope.selection, function (feature) {
-                        var bufferRadius = checkGetAtonRange(feature, 1.0);
-                        var bufferRadiusType = 'nm';
-                        var bufferFeature = MapService.bufferedOLFeature(feature, toMeters(bufferRadius, bufferRadiusType));
-                        MapService.checkCreateId(bufferFeature);
-                        bufferFeature.set('parentFeatureId', feature.getId());
-                        bufferFeature.set('restriction', 'affected');
-                        bufferFeature.set('bufferRadius', bufferRadius);
-                        bufferFeature.set('bufferRadiusType', bufferRadiusType);
-                        scope.features.push(bufferFeature);
+                /** Computes the affected geometry of the parent features */
+                function updateBufferedFeatureGeometry(feature) {
+                    var parentFeatureIds = feature.get('parentFeatureIds');
+                    var bufferType = feature.get('bufferType') || 'radius';
+                    var bufferRadius = feature.get('bufferRadius');
+                    var bufferRadiusType = feature.get('bufferRadiusType');
 
-                        var featureCtx = createFeatureCtxFromFeature(bufferFeature);
-                        featureCtx.showRadius = true;
-                        featureCtx.showRestriction = true;
-                        scope.featureContexts.push(featureCtx);
-                        broadcast('feature-added', bufferFeature.getId());
-
+                    var features = findParentFeatures(parentFeatureIds);
+                    var allPoints = true;
+                    angular.forEach(features, function (feature) {
+                        allPoints = allPoints && feature.getGeometry() != null && feature.getGeometry().getType() == 'Point';
                     });
+
+                    var geom;
+                    if (bufferType == 'radius') {
+                        geom = mergeFeatureGeometries(features);
+                    } else if (allPoints) {
+                        var coords = [];
+                        angular.forEach(features, function (f) {
+                            coords.push(f.getGeometry().getCoordinates());
+                        });
+                        if (bufferType == 'path') {
+                            geom = new ol.geom.LineString(coords);
+                        } else if (bufferType == 'area') {
+                            coords.push(coords[0]);
+                            geom = new ol.geom.Polygon([ coords ]);
+                        }
+                    } else {
+                        throw "Invalid type " + bufferType;
+                    }
+
+                    if (geom) {
+                        if (bufferRadius && bufferRadius > 0) {
+                            geom = MapService.bufferedOLGeometry(geom, toMeters(bufferRadius, bufferRadiusType))
+                        }
+                        feature.setGeometry(geom);
+                    }
+                }
+
+
+                /** Checks if the current selection can be used to add a buffered feature of the given type */
+                scope.canAddBufferedFeature = function (bufferType) {
+                    if (scope.editType == 'message' && scope.selection.length > 0) {
+                        var allPoints = true;
+                        angular.forEach(scope.selection, function (feature) {
+                            allPoints = allPoints && feature.getGeometry() != null && feature.getGeometry().getType() == 'Point';
+                        });
+                        if (bufferType == 'radius') {
+                            return true;
+                        } else if (bufferType == 'path' && scope.selection.length > 1 && allPoints) {
+                            return true;
+                        } else if (bufferType == 'area' && scope.selection.length > 2 && allPoints) {
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+
+
+                /** Creates buffered features for the current selection **/
+                scope.addBufferedFeature = function (bufferType) {
+                    if (scope.selection.length == 0) {
+                        return;
+                    }
+
+                    var featureIds = [];
+                    angular.forEach(scope.selection, function (feature) { featureIds.push(feature.getId()) });
+
+                    var bufferFeature = new ol.Feature();
+                    MapService.checkCreateId(bufferFeature);
+                    bufferFeature.set('parentFeatureIds', featureIds.join());
+                    bufferFeature.set('restriction', 'affected');
+                    bufferFeature.set('bufferType', bufferType);
+                    if (bufferType == 'radius') {
+                        bufferFeature.set('bufferRadius', checkGetAtonRange(scope.selection[0], 1.0));
+                        bufferFeature.set('bufferRadiusType', 'nm');
+                    }
+                    try {
+                        updateBufferedFeatureGeometry(bufferFeature);
+                    } catch (err) {
+                        growl.error("Error creating affected " + bufferType + ":\n" + err, { ttl: 5000 });
+                        return;
+                    }
+                    scope.features.push(bufferFeature);
+
+                    var featureCtx = createFeatureCtxFromFeature(bufferFeature);
+                    featureCtx.showRadius = bufferType == 'radius';
+                    featureCtx.showRestriction = true;
+                    scope.featureContexts.push(featureCtx);
+                    broadcast('feature-added', bufferFeature.getId());
                 };
 
 
@@ -421,18 +503,15 @@ angular.module('niord.editor')
                 }
 
 
-                /** Merges the selected features **/
-                scope.merge = function () {
-                    var selected = angular.copy(scope.selection);
-                    if (selected.length < 2) {
-                        return;
-                    }
+                /** Merges the given features **/
+                function mergeFeatureGeometries(features) {
+
                     // NB: This could have been implemented easily with JSTS's union() feature.
                     //     However, in some cases this causes an error.
 
                     // Compute the type of the merged feature
                     var type = undefined;
-                    angular.forEach(selected, function (feature) {
+                    angular.forEach(features, function (feature) {
                         type = computeMergeType(type, feature.getGeometry().getType());
                     });
 
@@ -441,8 +520,23 @@ angular.module('niord.editor')
                     if (type == 'GeometryCollection') {
                         geom.setGeometries([]);
                     }
-                    angular.forEach(selected, function (feature) {
+                    angular.forEach(features, function (feature) {
                         geom = mergeGeometries(geom, feature.getGeometry());
+                        // TODO: Copy name properties
+                    });
+                    return geom;
+                }
+
+
+                /** Merges the selected features **/
+                scope.merge = function () {
+                    var selected = angular.copy(scope.selection);
+                    if (selected.length < 2) {
+                        return;
+                    }
+
+                    var geom = mergeFeatureGeometries(selected);
+                    angular.forEach(selected, function (feature) {
                         scope.deleteFeature(feature.getId());
                         // TODO: Copy name properties
                     });
@@ -543,7 +637,7 @@ angular.module('niord.editor')
                     }
 
                     // Update the list of selected features
-                    updateSelectedFeatures();
+                    recomputeFeatureSelection();
                 };
 
 
@@ -553,7 +647,13 @@ angular.module('niord.editor')
                     var oldIndex = evt.oldIndex;
                     var newIndex = evt.newIndex;
                     swapElements(scope.features, oldIndex, newIndex);
+                    recomputeFeatureSelection();
                     broadcast('feature-order-changed', scope.featureContexts[newIndex].id);
+
+                    // Check if we need to update an associated buffered features
+                    angular.forEach(findBufferedFeatureContexts(scope.featureContexts[newIndex].id), function (bufferFeatureCtx) {
+                        scope.checkUpdateBufferedFeature(bufferFeatureCtx);
+                    });
                 };
 
                 scope.featureSortableCfg = {
@@ -563,19 +663,20 @@ angular.module('niord.editor')
                 };
 
 
+                /** Updates the buffered feature */
+                scope.checkUpdateBufferedFeature = function (featureCtx) {
+                    var feature = findFeatureById(featureCtx.id);
+                    if (feature && feature.get('bufferType')) {
+                        updateFeatureFromFeatureCtx(featureCtx);
+                        updateBufferedFeatureGeometry(feature);
+                        broadcast('feature-modified', feature.getId());
+                    }
+                };
+
+
                 /** Called when the feature radius is updated **/
                 scope.radiusUpdated = function (featureCtx) {
-                    var dist = toMeters(featureCtx.bufferRadius, featureCtx.bufferRadiusType);
-
-                    var feature = findFeatureById(featureCtx.id);
-                    var parentFeature = findFeatureById(featureCtx.parentFeatureId);
-                    if (!feature || !parentFeature) {
-                        return;
-                    }
-
-                    feature.setGeometry(MapService.bufferedOLGeometry(parentFeature.getGeometry(), dist));
-                    updateFeatureFromFeatureCtx(featureCtx);
-                    broadcast('feature-modified', feature.getId());
+                    scope.checkUpdateBufferedFeature(featureCtx);
                 };
 
 
@@ -621,7 +722,7 @@ angular.module('niord.editor')
 
                         // Check if we need to update an associated buffered features
                         angular.forEach(findBufferedFeatureContexts(featureCtx.id), function (bufferFeatureCtx) {
-                            scope.radiusUpdated(bufferFeatureCtx);
+                            scope.checkUpdateBufferedFeature(bufferFeatureCtx);
                         });
 
                     } else if (featureCtx.aton) {
@@ -731,7 +832,7 @@ angular.module('niord.editor')
 
                             // Check if we need to update an associated buffered feature
                             angular.forEach(findBufferedFeatureContexts(msg.featureId), function (bufferFeatureCtx) {
-                                scope.radiusUpdated(bufferFeatureCtx);
+                                scope.checkUpdateBufferedFeature(bufferFeatureCtx);
                             });
                             break;
 
@@ -753,7 +854,7 @@ angular.module('niord.editor')
                             featureCtx = findFeatureContextById(msg.featureId);
                             if (featureCtx) {
                                 featureCtx.selected = (msg.type == 'feature-selected');
-                                updateSelectedFeatures();
+                                recomputeFeatureSelection();
                                 scope.$$phase || $rootScope.$$phase || scope.$apply();
                             }
                             break;

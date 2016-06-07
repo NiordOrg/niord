@@ -5,9 +5,11 @@ import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -47,7 +49,7 @@ public class FeatureService extends BaseService {
 
     /**
      * Assigns new UIDs to all features in a feature collection (e.g. for when a feature collection is copied).
-     * Make sure that features with a "parentFeatureId" property gets updated to reference the new UID.
+     * Make sure that features with a "parentFeatureIds" property gets updated to reference the new UID.
      * @param fc the feature collection to update.
      */
     private void assignNewFeatureUids(FeatureCollection fc) {
@@ -62,14 +64,17 @@ public class FeatureService extends BaseService {
             }
         });
 
-        // If there are any links between features, via the "parentFeatureId" property, update it to the new UID
+        // If there are any links between features, via the "parentFeatureIds" comma-separated feature id property,
+        // update it to the new UID
         fc.getFeatures().stream()
-                .filter(f -> f.getProperties().containsKey("parentFeatureId"))
-                .filter(f -> oldUids.containsKey(f.getProperties().get("parentFeatureId")))
+                .filter(f -> f.getProperties().containsKey("parentFeatureIds"))
                 .forEach(f -> {
-                    Object oldUid = f.getProperties().get("parentFeatureId");
-                    String newUid = oldUids.get(oldUid);
-                    f.getProperties().put("parentFeatureId", newUid);
+                    String parentFeatureIds = (String)f.getProperties().get("parentFeatureIds");
+                    String newParentFeatureIds = Arrays.stream(parentFeatureIds.split(","))
+                            .map(id -> oldUids.containsKey(id) ? oldUids.get(id) : id)
+                            .filter(id -> id != null)
+                            .collect(Collectors.joining(","));
+                    f.getProperties().put("parentFeatureIds", newParentFeatureIds);
                 });
     }
 

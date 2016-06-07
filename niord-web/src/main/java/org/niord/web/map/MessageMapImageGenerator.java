@@ -366,7 +366,7 @@ public class MessageMapImageGenerator {
      */
     private boolean isBufferGeometry(FeatureVo f) {
         return f.getProperties() != null &&
-                f.getProperties().containsKey("parentFeatureId");
+                f.getProperties().containsKey("parentFeatureIdsq");
     }
 
     /**

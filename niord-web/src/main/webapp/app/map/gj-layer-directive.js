@@ -80,7 +80,7 @@ angular.module('niord.map')
                             wrapX: false
                         }),
                         style: function(feature) {
-                            if (feature.get('parentFeatureId')) {
+                            if (feature.get('parentFeatureIds')) {
                                 return [ bufferedStyle ];
                             }
                             return [ style ];

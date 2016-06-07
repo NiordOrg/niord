@@ -174,7 +174,7 @@ angular.module('niord.messages')
                             var featureStyle;
                             if (scope.showOutline == 'true') {
                                 featureStyle = outlineStyle;
-                            } else if (feature.get('parentFeatureId')) {
+                            } else if (feature.get('parentFeatureIds')) {
                                 featureStyle = bufferedStyle;
                             } else {
                                 var message = feature.get('message');
@@ -437,7 +437,7 @@ angular.module('niord.messages')
                             var featureStyle;
                             if (scope.showOutline == 'true') {
                                 featureStyle = outlineStyle;
-                            } else if (feature.get('parentFeatureId')) {
+                            } else if (feature.get('parentFeatureIds')) {
                                 featureStyle = bufferedStyle;
                             } else {
                                 if (scope.message) {
