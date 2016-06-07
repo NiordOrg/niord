@@ -56,10 +56,10 @@ angular.module('niord.editor')
 
                     var bufferedStyle = new ol.style.Style({
                         fill: new ol.style.Fill({
-                            color: 'rgba(100, 50, 100, 0.2)'
+                            color: 'rgba(100, 70, 100, 0.1)'
                         }),
                         stroke: new ol.style.Stroke({
-                            color: 'rgba(100, 50, 100, 0.8)',
+                            color: 'rgba(100, 70, 100, 0.5)',
                             width: 1
                         })
                     });
@@ -339,6 +339,7 @@ angular.module('niord.editor')
                     drag.on("modifyend", scope.featureModified);
                     remove.on("featureremove", scope.featureRemoved);
                     olLayer.getSource().on("addfeature", scope.featureAdded);
+                    bufferLayer.getSource().on("addfeature", scope.featureAdded);
 
 
                     /***************************/
@@ -442,9 +443,17 @@ angular.module('niord.editor')
 
                     /** Updates the styles for the given feature **/
                     scope.updateFeatureStyle = function (id) {
+                        var styles;
                         var feature = olLayer.getSource().getFeatureById(id);
+
                         if (feature) {
-                            var styles = feature.get('selected') ? [ selectedStyle ] : [ normalStyle ];
+                            styles = feature.get('selected') ? [ selectedStyle ] : [ normalStyle ];
+                        } else {
+                            feature = bufferLayer.getSource().getFeatureById(id);
+                            styles = [ bufferedStyle ];
+                        }
+
+                        if (feature) {
                             var featureNames = FeatureName.readFeatureNames(feature);
 
                             angular.forEach(featureNames, function (name) {

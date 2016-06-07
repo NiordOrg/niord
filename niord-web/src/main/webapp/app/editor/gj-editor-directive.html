@@ -103,7 +103,7 @@
                     <div ng-if="featureCtx.parentFeatureIds" class="buffer-feature-panel-header">
                         <span>
                             <span class="glyphicon glyphicon-lock"></span>
-                            Buffer Location #{{$index + 1}} &nbsp;
+                            Affected area #{{$index + 1}} &nbsp;
                         </span>
                         <span class="pull-right">
                             <a href ng-click="deleteFeature(featureCtx.id)"><i class="glyphicon glyphicon-trash"></i></a>&nbsp;
@@ -114,7 +114,7 @@
                     <div class="feature-panel-info" ng-if="editType == 'message'">
                         <div style="text-align: center; font-size: 11px; padding: 5px 0 5px 0;">
                             <div class="btn-group btn-group-justified">
-                                <label ng-if="!featureCtx.parentFeatureIds" class="btn btn-default btn-xs" ng-model="featureCtx.showName" uib-btn-checkbox >Name</label>
+                                <label class="btn btn-default btn-xs" ng-model="featureCtx.showName" uib-btn-checkbox >Name</label>
                                 <label ng-if="featureCtx.parentFeatureIds"  class="btn btn-default btn-xs" ng-model="featureCtx.showRadius" uib-btn-checkbox >Radius</label>
                                 <label class="btn btn-default btn-xs" ng-model="featureCtx.showRestriction" uib-btn-checkbox >Restriction</label>
                                 <label ng-if="featureCtx.type == 'Point'" class="btn btn-default btn-xs" ng-model="featureCtx.showAton" uib-btn-checkbox >AtoN</label>
