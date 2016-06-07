@@ -70,7 +70,7 @@ angular.module('niord.atons')
                 group: 'aton',
                 handle: '.move-btn',
                 onEnd: function () {
-                    $scope.updateFeatureCollectionCoords();
+                    $scope.updateFeatureCollection();
                 }
             };
 
@@ -271,60 +271,16 @@ angular.module('niord.atons')
             };
 
 
-            /** Update the coordinates of the feature collection from the AtoNs **/
-            $scope.updateFeatureCollectionCoords = function () {
-                // First, remove features with empty AtoN lists
-                $scope.featureCollection.features = $.grep($scope.featureCollection.features, function(feature){
-                    return feature.properties.atons.length > 0;
-                });
-
-                // Next, set validity of features
-                angular.forEach($scope.featureCollection.features, function (feature) {
-                    var type = feature.geometry.type;
-                    var atonNo = feature.properties.atons.length;
-                    feature.properties.valid = (type == 'Point' && atonNo == 1) ||
-                        (type == 'MultiPoint' && atonNo >= 1) ||
-                        (type == 'LineString' && atonNo > 1) ||
-                        (type == 'Polygon' && atonNo > 2);
-                });
-
-                // Update the coordinates of each feature from the AtoN list
-                angular.forEach($scope.featureCollection.features, function (feature) {
-                    var aton = feature.properties.atons[0];
-                    switch (feature.geometry.type) {
-                        case 'Point':
-                            feature.geometry.coordinates = [ aton.lon, aton.lat ];
-                            break;
-                        case 'MultiPoint':
-                        case 'LineString':
-                            feature.geometry.coordinates = [];
-                            angular.forEach(feature.properties.atons, function (aton) {
-                                feature.geometry.coordinates.push([aton.lon, aton.lat]);
-                            });
-                            break;
-                        case 'Polygon':
-                            feature.geometry.coordinates = [[]];
-                            angular.forEach(feature.properties.atons, function (aton) {
-                                feature.geometry.coordinates[0].push([aton.lon, aton.lat]);
-                            });
-                            feature.geometry.coordinates[0].push([aton.lon, aton.lat]);
-                            break;
-                    }
-                });
-            };
-
             /** Updates the FeatureCollection based on the currently selected AtoNs **/
             $scope.updateFeatureCollection = function () {
 
                 // Remove AtoNs from the features that is no longer present in the selection
                 var featureAtonUids = {};
+                $scope.featureCollection.features =  $.grep($scope.featureCollection.features, function(feature) {
+                    return $scope.isSelected(feature.properties.aton);
+                });
                 angular.forEach($scope.featureCollection.features, function (feature) {
-                    feature.properties.atons = $.grep(feature.properties.atons, function(aton) {
-                        return $scope.isSelected(aton);
-                    });
-                    angular.forEach(feature.properties.atons, function (aton) {
-                        featureAtonUids[AtonService.getAtonUid(aton)] = true;
-                    });
+                    featureAtonUids[AtonService.getAtonUid(feature.properties.aton)] = true;
                 });
 
                 // Determine newly selected AtoNs
@@ -334,21 +290,19 @@ angular.module('niord.atons')
 
                 // Add features for the new AtoNs
                 angular.forEach(newAtonUids, function (atonUid) {
+                    var aton = $scope.selection.get(atonUid).aton;
                     var feature = {
                         type: 'Feature',
                         properties: {
-                            atons: [ $scope.selection.get(atonUid).aton ]
+                            aton: aton
                         },
                         geometry: {
                             type: 'Point',
-                            coordinates: []
+                            coordinates: [ aton.lon, aton.lat ]
                         }
                     };
                     $scope.featureCollection.features.push(feature);
                 });
-
-                // Update the feature coordinates
-                $scope.updateFeatureCollectionCoords();
             };
 
             $scope.$watchCollection("selection.keys", $scope.updateFeatureCollection, true);
@@ -358,41 +312,6 @@ angular.module('niord.atons')
                     $scope.updateFeatureCollection();
                 }
             });
-
-            /** Utility function that swaps two elements of an array **/
-            function swapElements(arr, index1, index2) {
-                if (index1 >= 0 && index1 < arr.length &&
-                    index2 >= 0 && index2 < arr.length) {
-                    var tmp = arr[index1];
-                    arr[index1] = arr[index2];
-                    arr[index2] = tmp;
-                }
-            }
-
-
-            /** Deletes the given feature from the FeatureCollection **/
-            $scope.deleteFeature = function (feature) {
-                angular.forEach(feature.properties.atons, function (aton) {
-                    $scope.selection.remove(AtonService.getAtonUid(aton));
-                });
-            };
-
-
-            /** Decrease the index of the feature in the FeatureCollection **/
-            $scope.moveFeatureUp = function (feature) {
-                var index = $.inArray(feature, $scope.featureCollection.features);
-                if (index != -1) {
-                    swapElements($scope.featureCollection.features, index, index - 1);
-                }
-            };
-
-            /** Increase the index of the feature in the FeatureCollection **/
-            $scope.moveFeatureDown = function (feature) {
-                var index = $.inArray(feature, $scope.featureCollection.features);
-                if (index != -1) {
-                    swapElements($scope.featureCollection.features, index, index + 1);
-                }
-            };
 
             /*****************************/
             /** Utility functions       **/

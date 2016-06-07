@@ -98,38 +98,12 @@ div.map-extent span::first-letter {
     margin-bottom: 10px;
 }
 
-.aton-feature-panel {
-    width: 100%;
-    font-size: 11px;
-    margin-bottom: 5px;
-    border: 1px solid #646;
-    background-color: lightgray;
-}
-
-.aton-feature-panel .aton-grid-item {
-    margin: 4px 0 0 4px;
-}
-
-.aton-feature-panel-header {
-    text-align: center;
-    padding: 5px;
-    background-color: #757;
-    color: white;
-}
-
-.aton-feature-panel-header a {
-    color: white;
-    cursor: pointer;
-    margin-left: 5px;
-}
-
-.aton-feature-panel .feature-aton {
-    display: inline-block;
-    width: 280px;
-}
-
-.invalid-aton-feature {
-    background-color: red;
+.aton-feature-collection-panel {
+    margin: 10px 5px 5px 0;
+    padding: 10px;
+    border: 1px solid lightgray;
+    background-color: #eee;
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .aton-selection-map {
@@ -141,10 +115,6 @@ div.map-extent span::first-letter {
 @media (min-width: 600px) {
     .aton-selection-map {
         height: 300px;
-    }
-
-    .aton-feature-panel .feature-aton {
-        width: 320px;
     }
 }
 
