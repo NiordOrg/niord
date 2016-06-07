@@ -263,6 +263,10 @@ angular.module('niord.editor')
                         // Convert to GeoJson feature collection
                         angular.forEach(scope.features, function (olFeature) {
                             var gjFeature = MapService.olToGjFeature(olFeature);
+
+                            // Clear non-supported feature properties
+                            delete gjFeature.properties.selected;
+
                             scope.featureCollection.features.push(gjFeature);
                         });
 
