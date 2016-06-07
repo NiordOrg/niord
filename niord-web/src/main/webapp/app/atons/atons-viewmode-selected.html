@@ -8,7 +8,9 @@
             <div ng-sortable="atonSortableCfg" class="row aton-feature-collection-panel">
 
                 <div ng-if="featureCollection.features.length == 0" style="text-align: center">
-                    <h4>No AtoN's selected</h4>
+                    <div class="empty-search-result">
+                        <p>No AtoN's selected</p>
+                    </div>
                 </div>
 
                 <div ng-repeat="feature in featureCollection.features" class="col-xs-12 col-sm-12 col-md-11 col-lg-6">
