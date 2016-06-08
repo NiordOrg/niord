@@ -94,6 +94,7 @@ public class GeoJsonUtils {
      * When serializing coordinates, adhere to a couple of rules:
      * <li>
      *     <ul>If the "parentFeatureIds" feature property is defined, skip the coordinates.</ul>
+     *     <ul>If the "restriction" feature property has the value "affected", skip the coordinates.</ul>
      *     <ul>For polygon linear rings, skip the last coordinate (which is identical to the first).</ul>
      *     <ul>For (multi-)polygons, only include the exterior ring, not the interior ring.</ul>
      * </li>
@@ -106,7 +107,8 @@ public class GeoJsonUtils {
         List<SerializedFeature> result = new ArrayList<>();
         if (fc != null) {
             for (FeatureVo feature : fc.getFeatures()) {
-                if (feature.getProperties().containsKey("parentFeatureIds")) {
+                if (feature.getProperties().containsKey("parentFeatureIds") ||
+                        "affected".equals(feature.getProperties().get("restriction"))) {
                     continue;
                 }
 

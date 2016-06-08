@@ -297,8 +297,9 @@ angular.module('niord.map')
                     if (g instanceof Array) {
                         if (g.length >= 2 && $.isNumeric(g[0])) {
                             var bufferFeature = props['parentFeatureIds'];
+                            var affectedArea = props['restriction'] == 'affected';
                             var includeCoord = (polygonType != 'Exterior');
-                            if (includeCoord && !bufferFeature) {
+                            if (includeCoord && !bufferFeature && !affectedArea) {
                                 coords.push({
                                     lon: g[0],
                                     lat: g[1],
