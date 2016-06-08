@@ -305,13 +305,21 @@ angular.module('niord.atons')
                 });
             };
 
+            // Whenever the selection changes, update the feature collection
             $scope.$watchCollection("selection.keys", $scope.updateFeatureCollection, true);
 
-            $scope.$on('aton-updated', function (event, aton) {
-                if ($scope.isSelected(aton)) {
-                    $scope.updateFeatureCollection();
-                }
-            });
+
+            /** Call-back function called when an AtoN has been edited **/
+            $scope.atonEdited = function(aton) {
+                // Update the feature coordinates of the edited AtoN
+                var atonUid = AtonService.getAtonUid(aton);
+                angular.forEach($scope.featureCollection.features, function (feature) {
+                    var featureAton = feature.properties.aton;
+                    if (AtonService.getAtonUid(featureAton) == atonUid) {
+                        feature.geometry.coordinates = [ featureAton.lon, featureAton.lat ];
+                    }
+                });
+            };
 
 
             /*****************************/

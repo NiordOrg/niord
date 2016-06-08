@@ -15,7 +15,8 @@
 
                 <div ng-repeat="feature in featureCollection.features" class="col-xs-12 col-sm-12 col-md-11 col-lg-6">
                     <span class="feature-aton">
-                        <aton-list-details aton="feature.properties.aton" selection="selection" selectable="true" draggable="true" editable="true"></aton-list-details>
+                        <aton-list-details aton="feature.properties.aton" selection="selection" selectable="true"
+                                           draggable="true" editable="true" aton-edited="atonEdited(aton)"></aton-list-details>
                     </span>
                 </div>
             </div>
