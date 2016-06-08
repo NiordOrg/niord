@@ -50,6 +50,9 @@ var app = angular.module('niord.admin', [
                 templateUrl: "/app/editor/editor.html",
                 data: { rolesRequired: ["editor", "admin", "sysadmin"] }
             })
+            .state('editor.template', {
+                url: "/template",
+            })
 
 
             /** Messages **/

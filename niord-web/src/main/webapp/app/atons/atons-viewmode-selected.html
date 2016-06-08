@@ -33,12 +33,16 @@
                         <option value="1">Buoy unlit</option>
                         <option value="2">Buoy missing</option>
                         <option value="2">Buoy off station</option>
-                        <option value="3">Buoy off withdrawn</option>
+                        <option value="3">Buoy withdrawn</option>
                     </select>
                 </div>
                 <div style="margin-top: 10px">
-                    <button class="btn btn-sm btn-primary">New NW</button>
-                    <button class="btn btn-sm btn-primary">New NM</button>
+                    <button class="btn btn-sm btn-default" ng-click="clearSelection()"
+                            ng-disabled="selection.isEmpty()">Clear selection</button>&nbsp;&nbsp;
+                    <button class="btn btn-sm btn-primary" ng-if="canCreateMessage('NW')" ng-click="createMessage('NW')"
+                            ng-disabled="selection.isEmpty()">New NW</button>
+                    <button class="btn btn-sm btn-primary" ng-if="canCreateMessage('NM')" ng-click="createMessage('NM')"
+                            ng-disabled="selection.isEmpty()">New NM</button>
                 </div>
             </div>
 

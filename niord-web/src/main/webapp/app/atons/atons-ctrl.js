@@ -10,8 +10,8 @@ angular.module('niord.atons')
     /**
      * Controller used on the AtoN page
      */
-    .controller('AtonsCtrl', ['$scope', '$rootScope', '$location', '$http', '$timeout', 'AtonService',
-        function ($scope, $rootScope, $location, $http, $timeout, AtonService) {
+    .controller('AtonsCtrl', ['$scope', '$rootScope', '$location', '$http', '$timeout', '$state', 'AtonService',
+        function ($scope, $rootScope, $location, $http, $timeout, $state, AtonService) {
             'use strict';
 
             /*****************************/
@@ -312,6 +312,40 @@ angular.module('niord.atons')
                     $scope.updateFeatureCollection();
                 }
             });
+
+
+            /*****************************/
+            /** Create NW + NM          **/
+            /*****************************/
+
+
+            /** Returns if the current user in the current domain can create messages of the given mainType **/
+            $scope.canCreateMessage = function (mainType) {
+                if ($rootScope.domain && $rootScope.domain.messageSeries) {
+                    var nwSeries = $.grep($rootScope.domain.messageSeries, function (series) {
+                        return series.mainType == mainType;
+                    });
+                    return nwSeries.length > 0;
+                }
+                return false;
+            };
+
+
+            /** Create a message of the given mainType and AtoN selection **/
+            $scope.createMessage = function (mainType) {
+                if (!$scope.canCreateMessage(mainType)) {
+                    return;
+                }
+
+                // Create a new template message and reset the current AtoN selection
+                $rootScope.templateMessage.mainType = mainType;
+                $rootScope.templateMessage.geometry = angular.copy($scope.featureCollection);
+                $scope.clearSelection();
+
+                // Navigate to the message editor page
+                $state.go('editor.template');
+            };
+
 
             /*****************************/
             /** Utility functions       **/

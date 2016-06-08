@@ -78,6 +78,11 @@ angular.module('niord.auth')
             /** Create a global selection cache for messages and AtoNs **/
             $rootScope.messageSelection = new Map();
             $rootScope.atonSelection = new Map();
+            $rootScope.templateMessage = {
+                mainType: undefined,
+                geometry: undefined,
+                descs: []
+            }
 
         }]);
 
