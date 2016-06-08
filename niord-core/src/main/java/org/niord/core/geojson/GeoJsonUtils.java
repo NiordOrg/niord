@@ -98,6 +98,8 @@ public class GeoJsonUtils {
      *     <ul>For polygon linear rings, skip the last coordinate (which is identical to the first).</ul>
      *     <ul>For (multi-)polygons, only include the exterior ring, not the interior ring.</ul>
      * </li>
+     * <p>
+     * This implementation should be kept in sync with the {@code MapService.serializeCoordinates()} JavaScript function.
      *
      * @param fc the feature collection to serialize
      * @param language the language
