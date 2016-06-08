@@ -292,13 +292,13 @@ angular.module('niord.map')
              * Serializes the coordinates of a geometry
              * <p>
              * When serializing coordinates, adhere to a couple of rules:
-             * <li>
-             *     <ul>If the "parentFeatureIds" feature property is defined, skip the coordinates.</ul>
-             *     <ul>If the "restriction" feature property has the value "affected", skip the coordinates.</ul>
-             *     <ul>For polygon linear rings, skip the last coordinate (which is identical to the first).</ul>
-             *     <ul>For (multi-)polygons, only include the exterior ring, not the interior ring.</ul>
-             * </li>
-             * This implementation should be kept in sync with the {@code GeoJsonUtils.serializeFeatureCollection()}
+             * <ul>
+             *     <li>If the "parentFeatureIds" feature property is defined, skip the coordinates.</li>
+             *     <li>If the "restriction" feature property has the value "affected", skip the coordinates.</li>
+             *     <li>For polygon linear rings, skip the last coordinate (which is identical to the first).</li>
+             *     <li>For (multi-)polygons, only include the exterior ring, not the interior ring.</li>
+             * </ul>
+             * This implementation should be kept in sync with the GeoJsonUtils.serializeFeatureCollection()
              * back-end function.
              */
             this.serializeCoordinates = function (g, coords, props, index, polygonType) {
