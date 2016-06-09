@@ -423,6 +423,23 @@ public class MessageService extends BaseService {
 
 
     /***************************************/
+    /** Message Sorting                  **/
+    /***************************************/
+
+
+    /**
+     * Generate a sorting order for the message within its associated area.
+     * The area-sort value is based on the message center latitude and longitude, and the sorting type for
+     * its first associated area.
+     */
+    public void computeMessageAreaSortingOrder(Message message) {
+        double areaSortOrder = areaService.computeMessageAreaSortingOrder(message);
+        message.setAreaSortOrder(areaSortOrder);
+        saveMessage(message);
+    }
+
+
+    /***************************************/
     /** Message Searching                 **/
     /***************************************/
 
@@ -610,6 +627,7 @@ public class MessageService extends BaseService {
             fields.add(msgRoot.get("mrn"));
         } else if (param.sortByArea()) {
             fields.add(areaRoot.get("treeSortOrder"));
+            fields.add(msgRoot.get("areaSortOrder"));
         }
         Selection[] f = fields.toArray(new Selection<?>[fields.size()]);
 
@@ -633,9 +651,9 @@ public class MessageService extends BaseService {
             }
         } else if (param.sortByArea()) {
             if (param.getSortOrder() == SortOrder.ASC) {
-                tupleQuery.orderBy(builder.asc(areaRoot.get("treeSortOrder")), builder.asc(msgRoot.get("id")));
+                tupleQuery.orderBy(builder.asc(areaRoot.get("treeSortOrder")), builder.asc(msgRoot.get("areaSortOrder")));
             } else {
-                tupleQuery.orderBy(builder.desc(areaRoot.get("treeSortOrder")), builder.desc(msgRoot.get("id")));
+                tupleQuery.orderBy(builder.desc(areaRoot.get("treeSortOrder")), builder.desc(msgRoot.get("areaSortOrder")));
             }
         }
 

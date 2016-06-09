@@ -304,6 +304,17 @@ angular.module('niord.admin')
             };
 
 
+            /** Will query the back-end to recompute the published messages area-sort order */
+            $scope.recomputePublishedMessagesSortOrder = function () {
+                AdminAreaService
+                    .recomputePublishedMessagesSortOrder()
+                    .success(function () {
+                        growl.info('Tree Sort Order Updated', { ttl: 3000 });
+                    })
+                    .error($scope.displayError);
+            };
+
+
             /** Saves the current area */
             $scope.saveArea = function () {
                 // Update the area geometry
@@ -312,9 +323,12 @@ angular.module('niord.admin')
                     $scope.areaFeatureCollection.features[0].geometry) {
                     $scope.editArea.geometry = $scope.areaFeatureCollection.features[0].geometry;
                 }
-                // Handle blank type
+                // Handle blank type2
                 if ($scope.editArea.type == '') {
                     delete $scope.editArea.type;
+                }
+                if ($scope.editArea.messageSorting == '') {
+                    delete $scope.editArea.messageSorting;
                 }
 
                 if ($scope.action == 'add') {

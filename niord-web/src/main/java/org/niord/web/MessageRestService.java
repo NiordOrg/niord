@@ -39,10 +39,12 @@ import org.niord.model.vo.Type;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -411,6 +413,37 @@ public class MessageRestService {
         }
     }
 
+
+    /***************************
+     * Sorting functionality
+     ***************************/
+
+
+    /** Re-computes the area sort order of published messages in the current domain */
+    @PUT
+    @Path("/recompute-area-sort-order")
+    @RolesAllowed({"admin"})
+    public void reindexPublishedMessageAreaSorting() {
+
+        // Search for published message in the curretn domain
+        Domain domain = domainService.currentDomain();
+        Set<String> messageSeries = domain.getMessageSeries().stream()
+                .map(MessageSeries::getSeriesId)
+                .collect(Collectors.toSet());
+
+        MessageSearchParams params = new MessageSearchParams();
+        params.statuses(Collections.singleton(Status.PUBLISHED))
+                .seriesIds(messageSeries);
+
+        // Perform the search and update the area sort order of the messages
+        long t0 = System.currentTimeMillis();
+        PagedSearchResultVo<Message> searchResult = messageService.search(params);
+        searchResult.getData().stream()
+                .forEach(m -> messageService.computeMessageAreaSortingOrder(m));
+
+        log.info(String.format("Updates area sort order for  %d messages in %d ms",
+                searchResult.getData().size(), System.currentTimeMillis() - t0));
+    }
 
     /***************************
      * Ticket functionality

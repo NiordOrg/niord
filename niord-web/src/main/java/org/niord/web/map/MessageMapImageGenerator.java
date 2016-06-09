@@ -205,8 +205,9 @@ public class MessageMapImageGenerator {
                     .forEach(f -> drawGeometry(f, f.getGeometry(), g2, getMessageImage(message)));
 
             // Draw labels
-            Arrays.asList(fc.getFeatures())
-                    .forEach(f -> drawLabels(f, g2, "da"));
+            // Disabled for now - if enabled, we need to generate one image per language...
+            //Arrays.asList(fc.getFeatures())
+            //        .forEach(f -> drawLabels(f, g2, "da"));
 
             g2.dispose();
 
@@ -288,6 +289,7 @@ public class MessageMapImageGenerator {
      * @param g2 the graphical context
      * @param lang the language code
      */
+    @SuppressWarnings("unused")
     private void drawLabels(FeatureVo f, Graphics2D g2, String lang) {
         // Sanity check
         if (f.getProperties() == null) {

@@ -14,6 +14,16 @@
                 <button href class="btn btn-primary btn-sm" ng-click="deleteArea()" ng-disabled="area == undefined">
                     <span class="glyphicon glyphicon-trash"></span> Delete...
                 </button>
+                <span class="btn-group">
+                    <button href class="btn btn-primary btn-sm" ng-click="changeSiblingSortOrder(true)" title="Move Area Up"
+                            ng-disabled="action == 'add' || !area || !areaForm.$pristine">
+                        <span class="glyphicon glyphicon-arrow-up"></span>
+                    </button>
+                    <button href class="btn btn-primary btn-sm" ng-click="changeSiblingSortOrder(false)" title="Move Area Down"
+                            ng-disabled="action == 'add' || !area || !areaForm.$pristine">
+                        <span class="glyphicon glyphicon-arrow-down"></span>
+                    </button>
+                </span>
                 <span class="btn-group" style="margin-left: 5px;" uib-dropdown>
                     <button id="single-button" type="button" class="btn btn-primary btn-sm" uib-dropdown-toggle>
                         <span class="glyphicon glyphicon-cog"></span>
@@ -24,6 +34,7 @@
                         <li role="menuitem"><a href ng-click="uploadAreasDialog()">Import...</a></li>
                         <li role="separator" class="divider"></li>
                         <li role="menuitem"><a href ng-click="recomputeTreeSortOrder()">Re-index areas</a></li>
+                        <li role="menuitem"><a href ng-click="recomputePublishedMessagesSortOrder()">Re-index published messages</a></li>
                     </ul>
                 </span>
             </div>
@@ -79,7 +90,7 @@
                     <div class="form-group">
                         <label class="control-label">Type</label>
                         <div class="row">
-                            <div class="col-sm-6">
+                            <div class="col-sm-4">
                                 <select class="form-control input-sm" ng-model="editArea.type">
                                     <option value="">none</option>
                                     <option value="COUNTRY">Country</option>
@@ -90,17 +101,27 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="control-label">Sorting</label>
+                        <label class="control-label">Message Sorting</label>
                         <div class="row">
-                            <div class="col-sm-6 btn-group">
-                                <button href class="btn btn-default btn-sm" ng-click="changeSiblingSortOrder(true)" title="Move Area Up"
-                                        ng-disabled="action == 'add' || !areaForm.$pristine">
-                                    <span class="glyphicon glyphicon-arrow-up"></span>
-                                </button>
-                                <button href class="btn btn-default btn-sm" ng-click="changeSiblingSortOrder(false)" title="Move Area Down"
-                                        ng-disabled="action == 'add' || !areaForm.$pristine">
-                                    <span class="glyphicon glyphicon-arrow-down"></span>
-                                </button>
+                            <div class="col-sm-4">
+                                <select class="form-control input-sm" ng-model="editArea.messageSorting">
+                                    <option value="">none</option>
+                                    <option value="NS">North-South</option>
+                                    <option value="SN">South-North</option>
+                                    <option value="EW">East-West</option>
+                                    <option value="WE">West-East</option>
+                                    <option value="CW">Clockwise</option>
+                                    <option value="CCW">Counter-clockwise</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-8" ng-if="editArea.messageSorting == 'CW' || editArea.messageSorting == 'CCW'"
+                                style="padding-left:0">
+                                <input latitude  type="text" ng-model="editArea.originLatitude" placeholder="Latitude"
+                                       class="form-control form-control-inline input-sm" style="width: 90px; height: 26px">
+                                <input longitude type="text" ng-model="editArea.originLongitude" placeholder="Longitude"
+                                       class="form-control form-control-inline input-sm" style="width: 90px; height: 26px">
+                                <input type="number" min="0" max="360" step="1" ng-model="editArea.originAngle" placeholder="Angle"
+                                       class="form-control form-control-inline input-sm no-spinner" style="width: 70px; height: 26px">
                             </div>
                         </div>
                     </div>

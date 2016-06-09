@@ -29,6 +29,7 @@ import org.niord.model.vo.Status;
 import org.niord.model.vo.Type;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -105,6 +106,10 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     @ManyToMany
     List<Area> areas = new ArrayList<>();
+
+    // The areaSortOrder is used to sort the message within its associated area
+    @Column(columnDefinition="DOUBLE default 0.0")
+    double areaSortOrder;
 
     @ManyToMany
     List<Category> categories = new ArrayList<>();
@@ -394,6 +399,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setAreas(List<Area> areas) {
         this.areas = areas;
+    }
+
+    public double getAreaSortOrder() {
+        return areaSortOrder;
+    }
+
+    public void setAreaSortOrder(double areaSortOrder) {
+        this.areaSortOrder = areaSortOrder;
     }
 
     public List<Category> getCategories() {

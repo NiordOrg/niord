@@ -23,6 +23,7 @@ import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.vo.AreaType;
 import org.niord.model.vo.AreaVo;
+import org.niord.model.vo.AreaVo.AreaMessageSorting;
 
 import javax.persistence.Cacheable;
 import javax.persistence.CascadeType;
@@ -89,6 +90,11 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
     @Column(columnDefinition="INT default 0")
     int treeSortOrder;
 
+    AreaMessageSorting messageSorting;
+    Float originLatitude;   // For CW and CCW message sorting
+    Float originLongitude;  // For CW and CCW message sorting
+    Integer originAngle;    // For CW and CCW message sorting
+
 
     /** Constructor */
     public Area() {
@@ -116,6 +122,11 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
         this.type = area.getType();
         this.id = area.getId();
         this.siblingSortOrder = area.getSiblingSortOrder();
+        this.messageSorting = area.getMessageSorting();
+        this.originLatitude = area.getOriginLatitude();
+        this.originLongitude = area.getOriginLongitude();
+        this.originAngle = area.getOriginAngle();
+
         if (compFilter.includeGeometry()) {
             this.geometry = JtsConverter.toJts(area.getGeometry());
         }
@@ -144,6 +155,12 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
         area.setMrn(mrn);
         area.setType(type);
         area.setSiblingSortOrder(siblingSortOrder);
+
+        // TODO: Only if the filter specifies inclusion of "details"?
+        area.setMessageSorting(messageSorting);
+        area.setOriginLatitude(originLatitude);
+        area.setOriginLongitude(originLongitude);
+        area.setOriginAngle(originAngle);
 
         if (compFilter.includeGeometry()) {
             area.setGeometry(JtsConverter.fromJts(geometry));
@@ -235,7 +252,6 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
     public void addChild(Area area) {
         // Add the area to the end of the children list
         Area lastChild = children.isEmpty() ? null : children.get(children.size() - 1);
-        area.setSiblingSortOrder(lastChild == null ? Math.random() : lastChild.getSiblingSortOrder() + 10.0d);
 
         // Give it initial tree sort order. Won't really be correct until the tree sort order has
         // been re-computed for the entire tree.
@@ -401,6 +417,38 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
 
     public void setTreeSortOrder(int treeSortOrder) {
         this.treeSortOrder = treeSortOrder;
+    }
+
+    public AreaMessageSorting getMessageSorting() {
+        return messageSorting;
+    }
+
+    public void setMessageSorting(AreaMessageSorting messageSorting) {
+        this.messageSorting = messageSorting;
+    }
+
+    public Float getOriginLatitude() {
+        return originLatitude;
+    }
+
+    public void setOriginLatitude(Float originLatitude) {
+        this.originLatitude = originLatitude;
+    }
+
+    public Float getOriginLongitude() {
+        return originLongitude;
+    }
+
+    public void setOriginLongitude(Float originLongitude) {
+        this.originLongitude = originLongitude;
+    }
+
+    public Integer getOriginAngle() {
+        return originAngle;
+    }
+
+    public void setOriginAngle(Integer originAngle) {
+        this.originAngle = originAngle;
     }
 }
 

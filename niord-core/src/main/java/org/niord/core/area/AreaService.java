@@ -19,9 +19,11 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.message.Message;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
+import org.niord.model.vo.AreaVo.AreaMessageSorting;
 import org.slf4j.Logger;
 
 import javax.ejb.Schedule;
@@ -38,8 +40,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.niord.model.vo.AreaVo.AreaMessageSorting.CW;
 
 /**
  * Business interface for accessing Niord areas
@@ -188,6 +193,11 @@ public class AreaService extends BaseService {
         original.setSiblingSortOrder(area.getSiblingSortOrder());
         original.copyDescsAndRemoveBlanks(area.getDescs());
         original.setGeometry(area.getGeometry());
+        original.setMessageSorting(area.getMessageSorting());
+        original.setOriginLatitude(area.getOriginLatitude());
+        original.setOriginLongitude(area.getOriginLongitude());
+        original.setOriginAngle(area.getOriginAngle());
+
         original.updateLineage();
 
         original = saveEntity(original);
@@ -479,7 +489,7 @@ public class AreaService extends BaseService {
 
         // Re-compute the tree sort order
         List<Area> updated = new ArrayList<>();
-        recomputeTreeSortOrder(roots, 0, updated, false);
+        recomputeTreeSortOrder(roots, 0, updated, false, false);
 
         // Persist changed areas
         updated.forEach(this::saveEntity);
@@ -496,17 +506,24 @@ public class AreaService extends BaseService {
 
 
     /**
-     * Recursively recomputes the treeSortOrder, by enumerating the sorted area list and their children
+     * Recursively recomputes the "treeSortOrder", by enumerating the sorted area list and their children.
+     * The "treeSortOrder" is used for sorting messages by their area. If an area specifies the "messageSorting"
+     * field, then all sub-areas of this are will have the same treeSortOrder.
+     *
      * @param areas the list of areas to update
      * @param index the current area index
      * @param updatedAreas the list of updated areas given by sub-tree roots.
      * @param ancestorUpdated if an ancestor area has been updated
+     * @param messageSorting whether this sub-tree is ordered via the "messageSorting" parameter or not
      * @return the index after processing the list of areas.
      */
-    private int recomputeTreeSortOrder(List<Area> areas, int index, List<Area> updatedAreas, boolean ancestorUpdated) {
+    private int recomputeTreeSortOrder(List<Area> areas, int index, List<Area> updatedAreas, boolean ancestorUpdated, boolean messageSorting) {
 
         for (Area area : areas) {
-            index++;
+            if (!messageSorting) {
+                index++;
+            }
+            boolean areaMessageSorting = messageSorting || area.getMessageSorting() != null;
             boolean updated = ancestorUpdated;
             if (index != area.getTreeSortOrder()) {
                 area.setTreeSortOrder(index);
@@ -516,11 +533,149 @@ public class AreaService extends BaseService {
                 }
             }
 
-            // NB: area.getChildren() is by definition sorted
-            index = recomputeTreeSortOrder(area.getChildren(), index, updatedAreas, updated);
+            // NB: area.getChildren() is by definition sorted (by "siblingSortOrder")
+            index = recomputeTreeSortOrder(area.getChildren(), index, updatedAreas, updated, areaMessageSorting);
         }
 
         return index;
+    }
+
+
+    /***************************************/
+    /** Message Area Sorting              **/
+    /***************************************/
+
+
+    /**
+     * Generate a tentative sorting order for the message within its associated area.
+     * The area-sort value is based on the message center latitude and longitude, and the sorting type for
+     * its first associated area.
+     * <p>
+     * The original algorithm was used in the DMA MSIadmin web application, and implemented by
+     * {@code dk.frv.msiedit.core.domain.Location.generateSortingOrder()}
+     *
+     * @return a sorting order
+     */
+    public double computeMessageAreaSortingOrder(Message message) {
+
+        double no = 0.0;
+
+        // Sanity check
+        if (message.getAreas().isEmpty() || message.getGeometry() == null) {
+            return no;
+        }
+
+        // Compute the message center
+        double[] center = message.getGeometry().toGeoJson().computeCenter();
+        double lat = center[1];
+        double lon = center[0];
+
+        // Find parent area with a "messageSorting" definition
+        Area area = message.getAreas().get(0);
+        while (area != null && area.getMessageSorting() == null) {
+            area = area.getParent();
+        }
+        if (area == null) {
+            return no;
+        }
+        AreaMessageSorting sortType = area.getMessageSorting();
+
+        switch (sortType) {
+            case NS:
+                no = -lat;
+                break;
+            case SN:
+                no = lat;
+                break;
+            case EW:
+                no = -lon;
+                break;
+            case WE:
+                no = lon;
+                break;
+            case CW:
+            case CCW:
+                no = computeCwOrCcwSortOrder(area, lat, lon);
+                break;
+        }
+        // Each sort number must be different
+        no += new Random().nextDouble() / 1000000.0;
+
+        return no;
+    }
+
+
+    /** Calculates the message area sort order for CW and CCW types **/
+    private double computeCwOrCcwSortOrder(Area area, double lat, double lon) {
+        double no = 0.0;
+        if (area.getOriginLatitude() == null || area.getOriginLongitude() == null) {
+            return no;
+        }
+
+        double x = lon2x(area.getOriginLongitude(), area.getOriginLatitude(), lon, lat);
+        double y = lat2y(area.getOriginLongitude(), area.getOriginLatitude(), lon, lat);
+        double ang = 0.0;
+
+        if (x == 0.0 && y > 0.0) {
+            ang = 90.0;
+        } else if (x == 0.0 && y < 0.0) {
+            ang = 270.0;
+        } else if (x != 0.0) {
+            ang = Math.atan(y / x) * 180 / Math.PI;
+            if (x < 0.0) {
+                ang += 180.0;
+            } else if (x > 0.0 && y < 0.0) {
+                ang += 360.0;
+            }
+        }
+        no = ang - (area.getOriginAngle() == null ? 0 : area.getOriginAngle());
+
+        if (no < 0.0) {
+            no += 360.0;
+        }
+        return (area.getMessageSorting() == CW) ? -no : no;
+    }
+
+
+    /** calculates the horizontal distance from lon0 to lon **/
+    private double lon2x(double lon0, double lat0, double lon, double lat) {
+        double radius=6356752.3; //Radius of the sphere.
+        double deg2Rad = 180.0 / Math.PI;
+        double lon_rad = lon / deg2Rad;
+        double lat_rad = lat / deg2Rad;
+        double lon0_rad = lon0 / deg2Rad;
+        double lat0_rad = lat0 / deg2Rad;
+
+        double x=0.0;
+        double denom = (1.0 + Math.sin(lat0_rad) * Math.sin(lat_rad)
+                + Math.cos(lat0_rad) * Math.cos(lat_rad) * Math.cos(lon_rad - lon0_rad));
+
+        if (denom != 0.0) {
+            x = ((2.0*radius) / denom) * Math.cos(lat_rad) * Math.sin(lon_rad - lon0_rad);
+        }
+        return x;
+    }
+
+
+    /** calculates the vertical distance from lon0 to lon **/
+    private double lat2y(double lon0, double lat0, double lon, double lat) {
+        double radius=6356752.3; //Radius of the sphere.
+        double deg2Rad = 180.0 / Math.PI;
+        double lon_rad = lon / deg2Rad;
+        double lat_rad = lat / deg2Rad;
+        double lon0_rad = lon0 / deg2Rad;
+        double lat0_rad = lat0 / deg2Rad;
+
+        double y=0.0;
+        double denom = (1.0 + Math.sin(lat0_rad) * Math.sin(lat_rad)
+                + Math.cos(lat0_rad) * Math.cos(lat_rad) * Math.cos(lon_rad - lon0_rad));
+
+        if (denom != 0.0) {
+            y = ((2.0*radius) / denom) * (Math.cos(lat0_rad) * Math.sin(lat_rad)
+                    - Math.sin(lat0_rad) * Math.cos(lat_rad) * Math.cos(lon_rad - lon0_rad));
+        }
+
+        return y;
     }
 
 }

@@ -122,6 +122,12 @@ input.ng-invalid-messageId {
     display: inline;
 }
 
+input.no-spinner[type=number]::-webkit-inner-spin-button,
+input.no-spinner[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 .framed-tabs .tab-content {
     border-left: 1px solid #ddd;
     border-right: 1px solid #ddd;

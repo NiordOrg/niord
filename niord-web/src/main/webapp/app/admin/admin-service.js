@@ -82,6 +82,10 @@ angular.module('niord.admin')
 
             recomputeTreeSortOrder: function() {
                 return $http.put('/rest/areas/recompute-tree-sort-order');
+            },
+
+            recomputePublishedMessagesSortOrder: function() {
+                return $http.put('/rest/messages/recompute-area-sort-order');
             }
 
         };

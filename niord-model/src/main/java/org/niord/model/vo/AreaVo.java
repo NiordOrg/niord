@@ -33,10 +33,15 @@ import java.util.List;
 @ApiModel(value = "Area", description = "Hierarchical area model")
 @XmlRootElement(name = "area")
 @XmlType(propOrder = {
-        "mrn", "type", "parent", "geometry", "children", "descs"
+        "mrn", "type", "parent", "geometry", "children", "descs",
+        "messageSorting", "originLatitude", "originLongitude", "originAngle"
 })
 @SuppressWarnings("unused")
 public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comparable<AreaVo> {
+
+    // Defines the sorting type of messages withing this area
+    public enum AreaMessageSorting { NS, SN, EW, WE, CW, CCW }
+
     Integer id;
     String mrn;
     AreaType type;
@@ -44,8 +49,11 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comp
     GeometryVo geometry;
     List<AreaVo> children;
     double siblingSortOrder;
+    AreaMessageSorting messageSorting;
+    Float originLatitude;   // For CW and CCW message sorting
+    Float originLongitude;  // For CW and CCW message sorting
+    Integer originAngle;    // For CW and CCW message sorting
     List<AreaDescVo> descs;
-
 
     /** {@inheritDoc} */
     @Override
@@ -143,6 +151,38 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comp
 
     public void setSiblingSortOrder(double siblingSortOrder) {
         this.siblingSortOrder = siblingSortOrder;
+    }
+
+    public AreaMessageSorting getMessageSorting() {
+        return messageSorting;
+    }
+
+    public void setMessageSorting(AreaMessageSorting messageSorting) {
+        this.messageSorting = messageSorting;
+    }
+
+    public Float getOriginLatitude() {
+        return originLatitude;
+    }
+
+    public void setOriginLatitude(Float originLatitude) {
+        this.originLatitude = originLatitude;
+    }
+
+    public Float getOriginLongitude() {
+        return originLongitude;
+    }
+
+    public void setOriginLongitude(Float originLongitude) {
+        this.originLongitude = originLongitude;
+    }
+
+    public Integer getOriginAngle() {
+        return originAngle;
+    }
+
+    public void setOriginAngle(Integer originAngle) {
+        this.originAngle = originAngle;
     }
 
     @Override
