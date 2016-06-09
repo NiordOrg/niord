@@ -1,0 +1,71 @@
+<div>
+
+    <div class="modal-header" style="text-align: center; padding: 5px 15px">
+        <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
+        <h4>Select Area</h4>
+    </div>
+
+    <div class="modal-body print" style="padding-bottom: 0">
+
+        <div class="row">
+            <div class="col-sm-6">
+                <ui-select id="area" ng-model="data.area" >
+                    <ui-select-match placeholder="Select area">
+                        {{data.area.descs[0].name}}
+                    </ui-select-match>
+                    <ui-select-choices repeat="area in areas"
+                                       refresh="refreshAreas($select.search)"
+                                       refresh-delay="100">
+                        <div>
+                            <span ng-bind-html="area.descs[0].name | highlight: $select.search"></span>
+                            <small ng-if="area.parent">({{formatParents(area.parent)}})</small>
+                        </div>
+
+                    </ui-select-choices>
+                </ui-select>
+            </div>
+
+            <div class="btn-group">
+                <label class="btn btn-default btn-sm" ng-model="data.status" uib-btn-radio="'PUBLISHED'">Published</label>
+                <label class="btn btn-default btn-sm" ng-model="data.status" uib-btn-radio="'VERIFIED'">Verified</label>
+                <label class="btn btn-default btn-sm" ng-model="data.status" uib-btn-radio="'DRAFT'">Draft</label>
+            </div>
+        </div>
+
+
+        <div class="message-list-table" style="margin-top: 20px;">
+            <div class="row">
+                <div ng-if="messageList.length == 0">
+                    <div ng-include="'/app/messages/messages-empty-search-result.html'"></div>
+                </div>
+            </div>
+
+            <table class='table table-condensed' ng-if="messageList.length > 0">
+                <tbody ng-sortable="messagesSortableCfg">
+                    <tr class="non-drop-row" style="background-color: lightgray">
+                        <th></th>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Area</th>
+                    </tr>
+                    <tr ng-repeat="message in messageList">
+                        <td width="30">
+                            <span class="glyphicon glyphicon-move move-btn"></span>
+                        </td>
+                        <td nowrap><span>{{message.shortId}}</span></td>
+                        <td>
+                            {{message.descs[0].title}}
+                        </td>
+                        <td><span render-areas="message.areas"></span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="row" style="margin-top: 24px;">
+            <div class="form-group col-xs-12" style="text-align: right">
+                <button class="btn btn-primary btn-sm" ng-click="$dismiss('ok')">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

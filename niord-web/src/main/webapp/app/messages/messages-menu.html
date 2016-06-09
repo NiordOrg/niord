@@ -91,6 +91,7 @@
                 <li><a href ng-click="selectAll()" translate>menu.action.select.all</a></li>
                 <li  ng-if="selection.size() > 0"><a href ng-click="clearSelection()" translate>menu.action.select.none</a></li>
                 <li role="separator" class="divider"></li>
+                <li><a href ng-click="sortAreaMessages()">Sort area...</a></li>
                 <li><a href ng-click="toggleSortOrder('AREA')">Area <small ng-bind-html="sortIndicator('AREA')"></small></a></li>
                 <li><a href ng-click="toggleSortOrder('ID')">ID <small ng-bind-html="sortIndicator('ID')"></small></a></li>
                 <li><a href ng-click="toggleSortOrder('DATE')">Date <small ng-bind-html="sortIndicator('DATE')"></small></a></li>

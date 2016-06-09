@@ -358,6 +358,10 @@ li.view-mode-menu-btn .active .badge {
     font-size: 12px;
 }
 
+.ui-select-match-text {
+    font-size: 12px!important;
+}
+
 body > .ui-select-container {
     z-index:9999;
 }

@@ -65,20 +65,16 @@ public class AreaService extends BaseService {
     DomainService domainService;
 
     /**
-     * Searches for areas matching the given term in the given language
+     * Searches for areas matching the given search params
      *
-     * @param lang the language
-     * @param name the search term
-     * @param domain  restrict the search to the current domain or not
-     * @param geometry  if true, only return areas with geometries
-     * @param limit the maximum number of results
+     * @param params the sesarch params
      * @return the search result
      */
     @SuppressWarnings("all")
-    public List<Area> searchAreas(Integer parentId, String lang, String name, boolean domain, boolean geometry, int limit) {
+    public List<Area> searchAreas(AreaSearchParams params) {
 
         // Sanity check
-        if (StringUtils.isBlank(name)) {
+        if (StringUtils.isBlank(params.getName())) {
             return Collections.emptyList();
         }
 
@@ -92,21 +88,21 @@ public class AreaService extends BaseService {
 
         // Match the name
         Join<Area, AreaDesc> descs = areaRoot.join("descs", JoinType.LEFT);
-        criteriaHelper.like(descs.get("name"), name);
+        criteriaHelper.like(descs.get("name"), params.getName());
         // Optionally, match the language
-        if (StringUtils.isNotBlank(lang)) {
-            criteriaHelper.equals(descs.get("lang"), lang);
+        if (StringUtils.isNotBlank(params.getLanguage())) {
+            criteriaHelper.equals(descs.get("lang"), params.getLanguage());
         }
 
         // Optionally, match the parent
-        if (parentId != null) {
+        if (params.getParentId() != null) {
             areaRoot.join("parent", JoinType.LEFT);
             Path<Area> parent = areaRoot.get("parent");
-            criteriaHelper.equals(parent.get("id"), parentId);
+            criteriaHelper.equals(parent.get("id"), params.getParentId());
         }
 
         // Optionally, filter by the domains associated with the current domain
-        if (domain) {
+        if (params.isDomain()) {
             Domain d = domainService.currentDomain();
             if (d != null && d.getAreas().size() > 0) {
                 Predicate[] areaMatch = d.getAreas().stream()
@@ -117,8 +113,13 @@ public class AreaService extends BaseService {
         }
 
         // Optionally, require that the area has an associated geometry
-        if (geometry) {
+        if (params.isGeometry()) {
             criteriaHelper.add(cb.isNotNull(areaRoot.get("geometry")));
+        }
+
+        // Optionally, require that the area has an messageSorting type
+        if (params.isMessageSorting()) {
+            criteriaHelper.add(cb.isNotNull(areaRoot.get("messageSorting")));
         }
 
         // Complete the query
@@ -129,7 +130,7 @@ public class AreaService extends BaseService {
 
         // Execute the query and update the search result
         return em.createQuery(areaQuery)
-                .setMaxResults(limit)
+                .setMaxResults(params.getMaxSize())
                 .getResultList();
     }
 
@@ -398,8 +399,13 @@ public class AreaService extends BaseService {
      * @return The matching area, or null if not found
      */
     public Area findByName(String name, String lang, Integer parentId) {
+        AreaSearchParams params = new AreaSearchParams();
+        params.parentId(parentId)
+                .language(lang)
+                .name(name)
+                .maxSize(1);
 
-        List<Area> areas = searchAreas(parentId, lang, name, false, false, 1);
+        List<Area> areas = searchAreas(params);
 
         return areas.isEmpty() ? null : areas.get(0);
     }

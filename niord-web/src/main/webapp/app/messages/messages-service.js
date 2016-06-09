@@ -178,7 +178,18 @@ angular.module('niord.messages')
                         }
                     }
                 });
+            },
+
+            /** Sorts the messages withing an area **/
+            sortAreaMessagesDialog: function () {
+                // Get the user to pick an area with a geometry
+                return $uibModal.open({
+                    controller: "SortAreaDialogCtrl",
+                    templateUrl: "/app/messages/sort-area-dialog.html",
+                    size: 'lg'
+                });
             }
+
         };
     }])
 

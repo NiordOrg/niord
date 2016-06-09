@@ -19,6 +19,7 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.area.Area;
+import org.niord.core.area.AreaSearchParams;
 import org.niord.core.area.AreaService;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.model.DataFilter;
@@ -75,16 +76,24 @@ public class AreaRestService extends AbstractBatchableRestService {
             @QueryParam("name") String name,
             @QueryParam("domain") @DefaultValue("false") boolean domain,
             @QueryParam("geometry") @DefaultValue("false") boolean geometry,
+            @QueryParam("messageSorting") @DefaultValue("false") boolean messageSorting,
             @QueryParam("limit") int limit) {
 
-        log.debug(String.format("Searching for areas lang=%s, name='%s', domain=%s, geometry=%s, limit=%d",
-                lang, name, domain, geometry, limit));
+        AreaSearchParams params = new AreaSearchParams();
+        params.language(lang)
+                .name(name)
+                .domain(domain)
+                .geometry(geometry)
+                .messageSorting(messageSorting)
+                .maxSize(limit);
+
+        log.debug(String.format("Searching for areas: %s", params));
 
         DataFilter filter = DataFilter.get()
                 .fields(DataFilter.PARENT, DataFilter.GEOMETRY)
                 .lang(lang);
 
-        return areaService.searchAreas(null, lang, name, domain, geometry, limit).stream()
+        return areaService.searchAreas(params).stream()
                 .map(a -> a.toVo(filter))
                 .collect(Collectors.toList());
     }
