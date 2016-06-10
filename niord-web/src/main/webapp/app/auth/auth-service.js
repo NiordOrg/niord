@@ -66,14 +66,29 @@ angular.module('niord.auth')
                 $location.path(path);
             };
 
+
             /** Returns if the user has the given role in Keycloak **/
             $rootScope.hasRole = function (role) {
                 return AuthService.keycloak.hasRealmRole(role) ||
                     ($rootScope.domain && AuthService.keycloak.hasResourceRole(role, $rootScope.domain.clientId));
             };
 
+
+            /** Returns if the user supports the given message mainType in the current domain **/
+            $rootScope.supportsMainType = function(mainType) {
+                if ($rootScope.domain && $rootScope.domain.messageSeries) {
+                    var mainTypeSeries = $.grep($rootScope.domain.messageSeries, function (series) {
+                        return series.mainType == mainType;
+                    });
+                    return mainTypeSeries.length > 0;
+                }
+                return false;
+            };
+            
+
             /** Returns if the user is logged in **/
             $rootScope.isLoggedIn = AuthService.loggedIn;
+
 
             /** Create a global selection cache for messages and AtoNs **/
             $rootScope.messageSelection = new Map();

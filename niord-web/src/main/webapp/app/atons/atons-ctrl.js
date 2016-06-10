@@ -329,13 +329,7 @@ angular.module('niord.atons')
 
             /** Returns if the current user in the current domain can create messages of the given mainType **/
             $scope.canCreateMessage = function (mainType) {
-                if ($rootScope.domain && $rootScope.domain.messageSeries) {
-                    var nwSeries = $.grep($rootScope.domain.messageSeries, function (series) {
-                        return series.mainType == mainType;
-                    });
-                    return nwSeries.length > 0;
-                }
-                return false;
+                return $rootScope.supportsMainType(mainType) && $rootScope.hasRole('editor');
             };
 
 
