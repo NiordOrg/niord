@@ -30,6 +30,7 @@ import org.niord.core.message.MessageService;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.user.TicketService;
 import org.niord.model.DataFilter;
+import org.niord.model.IJsonSerializable;
 import org.niord.model.PagedSearchParamsVo.SortOrder;
 import org.niord.model.PagedSearchResultVo;
 import org.niord.model.vo.MainType;
@@ -445,6 +446,19 @@ public class MessageRestService {
                 searchResult.getData().size(), System.currentTimeMillis() - t0));
     }
 
+
+    /** Swaps the area sort order of the two messages */
+    @PUT
+    @Path("/change-area-sort-order")
+    @RolesAllowed({"editor"})
+    public void changeAreaSortOrder(AreaSortOrderUpdateParam params) {
+        if (params.getId() == null || (params.getBeforeId() == null && params.getAfterId() == null)) {
+            throw new WebApplicationException(400);
+        }
+        messageService.changeAreaSortOrder(params.getId(), params.getAfterId(), params.getBeforeId());
+    }
+
+
     /***************************
      * Ticket functionality
      ***************************/
@@ -477,6 +491,42 @@ public class MessageRestService {
             domain = ticketService.resolveTicketDomain(ticket);
         }
         return domain;
+    }
+
+
+    /***************************
+     * Helper classes
+     ***************************/
+
+    /** Parameter that encapsulates a message being dragged to a new area sort order position */
+    public static class AreaSortOrderUpdateParam implements IJsonSerializable {
+        Integer id;
+        Integer beforeId;
+        Integer afterId;
+
+        public Integer getId() {
+            return id;
+        }
+
+        public void setId(Integer id) {
+            this.id = id;
+        }
+
+        public Integer getBeforeId() {
+            return beforeId;
+        }
+
+        public void setBeforeId(Integer beforeId) {
+            this.beforeId = beforeId;
+        }
+
+        public Integer getAfterId() {
+            return afterId;
+        }
+
+        public void setAfterId(Integer afterId) {
+            this.afterId = afterId;
+        }
     }
 
 }

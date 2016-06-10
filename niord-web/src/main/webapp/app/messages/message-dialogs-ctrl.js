@@ -304,7 +304,9 @@ angular.module('niord.messages')
             $scope.refreshMessageList = function () {
                 $scope.messageList.length = 0;
                 if ($scope.data.area && $scope.data.status) {
-                    var params = 'area=' + $scope.data.area.id + '&status=' + $scope.data.status;
+                    var params = 'area=' + $scope.data.area.id
+                        + '&status=' + $scope.data.status
+                        + '&sortBy=AREA&sortOrder=ASC';
                     MessageService.search(params, 0, 1000)
                         .success(function (result) {
                             for (var x = 0; x < result.data.length; x++) {
@@ -319,15 +321,23 @@ angular.module('niord.messages')
 
             /** Updates the sort order **/
             $scope.updateMessageSortOrder = function (evt) {
-                var oldIndex = evt.oldIndex;
-                var newIndex = evt.newIndex;
-                console.log("MOVE " + oldIndex + " -> " + newIndex);
+                if (evt.newIndex == evt.oldIndex) {
+                    return;
+                }
+
+                var index = evt.newIndex;
+                var id = $scope.messageList[index].id;
+                var afterId = index > 0 ? $scope.messageList[index - 1].id : null;
+                var beforeId = index < $scope.messageList.length - 1 ? $scope.messageList[index + 1].id : null;
+                MessageService.changeAreaSortOrder(id, afterId, beforeId)
+                    .success($scope.refreshMessageList);
             };
 
+            
+            /** DnD configuration **/
             $scope.messagesSortableCfg = {
                 group: 'message',
                 handle: '.move-btn',
-                filter: ".non-drop-row",
                 onEnd: $scope.updateMessageSortOrder
             };
 

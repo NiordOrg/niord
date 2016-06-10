@@ -53,6 +53,16 @@ angular.module('niord.messages')
             },
 
 
+            /** Changes the area sort-order of a message relative to two other messages */
+            changeAreaSortOrder: function (id, afterId, beforeId) {
+                return $http.put('/rest/messages/change-area-sort-order', {
+                    id: id,
+                    afterId: afterId,
+                    beforeId: beforeId
+                });
+            },
+
+
             /** Returns the ticket that can be used to generate PDFs (since this is via a non-ajax call */
             pdfTicket: function () {
                 return $http.get('/rest/messages/pdf-ticket');

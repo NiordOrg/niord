@@ -113,6 +113,15 @@
     margin: -6px 0 -6px 0;
 }
 
+.message-list-sort-table {
+    font-size: 12px;
+    margin: 0 auto;
+    background-color: white;
+    max-height: 500px;
+    overflow: hidden;
+    overflow-y: scroll;
+}
+
 /** View mode -> Map **/
 
 .message-list-map {

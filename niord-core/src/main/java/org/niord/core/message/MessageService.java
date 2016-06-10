@@ -439,6 +439,35 @@ public class MessageService extends BaseService {
     }
 
 
+    /**
+     * Changes the area sort order of a message to position it between two other messages
+     * @param id the id of the message to reorder
+     * @param afterId if defined, the message must come after this message
+     * @param beforeId if defined, the message must come before this message
+     */
+    public void changeAreaSortOrder(Integer id, Integer afterId, Integer beforeId) {
+        Message m = findById(id);
+        Message am = afterId == null ? null : findById(afterId);
+        Message bm = beforeId == null ? null : findById(beforeId);
+
+        if (m == null || (am == null && bm == null)) {
+            throw new IllegalArgumentException("Invalid arguments id=" + id
+                    + ", afterId=" + afterId + ", beforeId=" + beforeId);
+        }
+
+        if (am == null) {
+            m.setAreaSortOrder(bm.getAreaSortOrder() - 1);
+            log.info("Changed area sort order of " + id + ": moved before " + beforeId);
+        } else if (bm == null) {
+            m.setAreaSortOrder(am.getAreaSortOrder() + 1);
+            log.info("Changed area sort order of " + id + ": moved after " + afterId);
+        } else {
+            m.setAreaSortOrder((am.getAreaSortOrder() + bm.getAreaSortOrder()) / 2.0);
+            log.info("Changed area sort order of " + id + ": moved between " + afterId + " and " + beforeId);
+        }
+    }
+
+
     /***************************************/
     /** Message Searching                 **/
     /***************************************/
