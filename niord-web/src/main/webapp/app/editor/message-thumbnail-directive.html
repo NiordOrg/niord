@@ -1,0 +1,33 @@
+<div>
+    <div class="message-thumbnail-button">
+        <button class="btn btn-sm btn-default" ng-click="openEditor()">
+            <span class="glyphicon glyphicon-camera"></span>
+            Thumbnail
+        </button>
+    </div>
+
+    <div class="message-thumbnail-editor" ng-if="mode == 'editor'">
+
+        <div class="btn-panel">
+            <button class="btn btn-sm btn-primary" ng-click="exitEditor()">
+                Close
+            </button>
+
+            <a id="snapshot" class="btn btn-sm btn-default" ng-click="thumbnail()">
+                <span class="glyphicon glyphicon-camera"></span>
+                Snapshot
+            </a>
+        </div>
+
+        <ol-map class="osm-water-bg full-size">
+            <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
+            <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
+                            source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
+            <map-aton-layer name="AtoN" visible="false" layer-switcher="true"></map-aton-layer>
+            <map-gj-layer name="Locations" visible="true" layer-switcher="false" feature-collection="message.geometry" fit-extent="true" max-zoom="14"></map-gj-layer>
+            <message-thumbnail-layer take-thumbnail="takeThumbnail"></message-thumbnail-layer>
+            <map-layer-switcher></map-layer-switcher>
+        </ol-map>
+    </div>
+
+</div>

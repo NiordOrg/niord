@@ -4,18 +4,25 @@
     <div class="editor-contents container">
         <h1>Editor-To-Be</h1>
 
-        <table class='table table-condensed'>
-            <tr render-message-details msg="message" format="details" show-details-menu="false"></tr>
-        </table>
+        <div class="row">
+            <div class="col-sm-12 col-md-8">
+                <table class='table table-condensed'>
+                    <tr render-message-details msg="message" format="details" show-details-menu="false"></tr>
+                </table>
+            </div>
+            <div class="col-sm-12 col-md-4">
+                <div>
+                    <a href ng-click="editFeatureCollection()">Open</a>
+                    <a href ng-click="updateFeatureCollection(featureCollection)">Update</a>
+                    <a href ng-click="openThumbnail()">Image</a>
+                </div>
 
-        <div>
-            <a href ng-click="editFeatureCollection()">Open</a>
-            <a href ng-click="updateFeatureCollection(featureCollection)">Update</a>
-            <a href ng-click="openThumbnail()">Image</a>
+                <gj-editor id="message-geometry" class="editor-locations"
+                           edit-type="message" feature-collection="featureCollection"></gj-editor>
+
+                <message-thumbnail message="message"></message-thumbnail>
+            </div>
         </div>
-
-        <gj-editor id="message-geometry" class="editor-locations"
-                   edit-type="message" feature-collection="featureCollection"></gj-editor>
     </div>
 </div>
 
