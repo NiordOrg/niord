@@ -100,12 +100,12 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" ng-if="defineMessageSorting">
                         <label class="control-label">Message Sorting</label>
                         <div class="row">
                             <div class="col-sm-4">
                                 <select class="form-control input-sm" ng-model="editArea.messageSorting">
-                                    <option value="">none</option>
+                                    <option value="">&lt;&lt;Area order&gt;&gt;</option>
                                     <option value="NS">North-South</option>
                                     <option value="SN">South-North</option>
                                     <option value="EW">East-West</option>

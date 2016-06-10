@@ -167,13 +167,20 @@ public class AreaRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public AreaVo getArea(@PathParam("areaId") Integer areaId) throws Exception {
+    public AreaVo getArea(
+            @PathParam("areaId") Integer areaId,
+            @QueryParam("parent") @DefaultValue("false") boolean includeParents
+    ) throws Exception {
         log.debug("Getting area " + areaId);
         Area area = areaService.getAreaDetails(areaId);
 
         // Return the area without parent and child areas
         DataFilter filter = DataFilter.get()
                 .fields(DataFilter.GEOMETRY, DataFilter.DETAILS);
+
+        if (includeParents) {
+            filter = filter.fields(DataFilter.PARENT);
+        }
 
         return area == null ? null : area.toVo(filter);
     }

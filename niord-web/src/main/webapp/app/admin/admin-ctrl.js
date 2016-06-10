@@ -199,6 +199,7 @@ angular.module('niord.admin')
             $scope.areas = [];
             $scope.area = undefined;
             $scope.editArea = undefined;
+            $scope.defineMessageSorting = true;
             $scope.action = "edit";
             $scope.areaFilter = '';
             $scope.areaFeatureCollection = { type: 'FeatureCollection', features: [] };
@@ -252,9 +253,19 @@ angular.module('niord.admin')
             /** Called when an areas is selected */
             $scope.selectArea = function (area) {
                 AdminAreaService
-                    .getArea(area)
+                    .getArea(area, true)
                     .success(function (data) {
                         $scope.action = "edit";
+
+                        // If any of the parent areas define the messageSorting field, this are should not edit it
+                        $scope.defineMessageSorting = true;
+                        for (var parent = data.parent; parent && $scope.defineMessageSorting; parent = parent.parent) {
+                            if (parent.messageSorting) {
+                                $scope.defineMessageSorting = false;
+                            }
+                        }
+                        delete data.parent;
+
                         $scope.area = LangService.checkDescs(data, ensureNameField);
                         $scope.editArea = angular.copy($scope.area);
                         $scope.areaFeatureCollection.features.length = 0;

@@ -56,8 +56,9 @@ angular.module('niord.admin')
                 return $http.get('/rest/areas/area-roots?lang=' + $rootScope.language);
             },
 
-            getArea: function(area) {
-                return $http.get('/rest/areas/area/' + area.id);
+            getArea: function(area, includeParents) {
+                var params = includeParents ? '?parent=true' : '';
+                return $http.get('/rest/areas/area/' + area.id + params);
             },
 
             createArea: function(area) {
