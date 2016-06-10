@@ -1,21 +1,22 @@
 
 <div class="editor-page" ng-controller="EditorCtrl">
 
-    <h1>Editor-To-Be</h1>
+    <div class="editor-contents container">
+        <h1>Editor-To-Be</h1>
 
-    <table class='table table-condensed'>
-        <tr render-message-details msg="message" format="details" show-details-menu="false"></tr>
-    </table>
+        <table class='table table-condensed'>
+            <tr render-message-details msg="message" format="details" show-details-menu="false"></tr>
+        </table>
 
-    <div>
-        <a href ng-click="editFeatureCollection()">Open</a>
-        <a href ng-click="updateFeatureCollection(featureCollection)">Update</a>
-        <a href ng-click="openThumbnail()">Image</a>
+        <div>
+            <a href ng-click="editFeatureCollection()">Open</a>
+            <a href ng-click="updateFeatureCollection(featureCollection)">Update</a>
+            <a href ng-click="openThumbnail()">Image</a>
+        </div>
+
+        <gj-editor id="message-geometry" class="editor-locations"
+                   edit-type="message" feature-collection="featureCollection"></gj-editor>
     </div>
-
-    <gj-editor id="message-geometry" class="editor-locations"
-               edit-type="message" feature-collection="featureCollection"></gj-editor>
-
 </div>
 
 <div ng-include="'app/layout/footer.html'"></div>

@@ -2,7 +2,12 @@
 .editor-page {
     background-color: #eee;
     margin: 0;
-    padding: 10px;
+}
+
+.editor-contents {
+    margin: 0 auto;
+    padding: 20px 30px;
+    background-color: white;
 }
 
 .editor-locations {
