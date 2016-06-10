@@ -121,7 +121,7 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
         this.mrn = area.getMrn();
         this.type = area.getType();
         this.id = area.getId();
-        this.siblingSortOrder = area.getSiblingSortOrder();
+        this.siblingSortOrder = area.getSiblingSortOrder() == null ? 0 : area.getSiblingSortOrder();
         this.messageSorting = area.getMessageSorting();
         this.originLatitude = area.getOriginLatitude();
         this.originLongitude = area.getOriginLongitude();
@@ -153,25 +153,26 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
         AreaVo area = new AreaVo();
         area.setId(id);
         area.setMrn(mrn);
-        area.setType(type);
-        area.setSiblingSortOrder(siblingSortOrder);
 
-        // TODO: Only if the filter specifies inclusion of "details"?
-        area.setMessageSorting(messageSorting);
-        area.setOriginLatitude(originLatitude);
-        area.setOriginLongitude(originLongitude);
-        area.setOriginAngle(originAngle);
+        if (compFilter.includeField(DataFilter.DETAILS)) {
+            area.setType(type);
+            area.setSiblingSortOrder(siblingSortOrder);
+            area.setMessageSorting(messageSorting);
+            area.setOriginLatitude(originLatitude);
+            area.setOriginLongitude(originLongitude);
+            area.setOriginAngle(originAngle);
+        }
 
         if (compFilter.includeGeometry()) {
             area.setGeometry(JtsConverter.fromJts(geometry));
         }
 
         if (compFilter.includeChildren()) {
-            children.forEach(child -> area.checkCreateChildren().add(child.toVo(compFilter)));
+            children.forEach(child -> area.checkCreateChildren().add(child.toVo(filter)));
         }
 
         if (compFilter.includeParent() && parent != null) {
-            area.setParent(parent.toVo(compFilter));
+            area.setParent(parent.toVo(filter));
         } else if (compFilter.includeParentId() && parent != null) {
             AreaVo parent = new AreaVo();
             parent.setId(parent.getId());

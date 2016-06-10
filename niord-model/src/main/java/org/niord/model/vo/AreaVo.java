@@ -48,7 +48,7 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comp
     AreaVo parent;
     GeometryVo geometry;
     List<AreaVo> children;
-    double siblingSortOrder;
+    Double siblingSortOrder;
     AreaMessageSorting messageSorting;
     Float originLatitude;   // For CW and CCW message sorting
     Float originLongitude;  // For CW and CCW message sorting
@@ -145,11 +145,11 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comp
     }
 
     @XmlAttribute
-    public double getSiblingSortOrder() {
+    public Double getSiblingSortOrder() {
         return siblingSortOrder;
     }
 
-    public void setSiblingSortOrder(double siblingSortOrder) {
+    public void setSiblingSortOrder(Double siblingSortOrder) {
         this.siblingSortOrder = siblingSortOrder;
     }
 

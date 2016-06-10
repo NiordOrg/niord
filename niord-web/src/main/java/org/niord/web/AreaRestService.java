@@ -90,7 +90,7 @@ public class AreaRestService extends AbstractBatchableRestService {
         log.debug(String.format("Searching for areas: %s", params));
 
         DataFilter filter = DataFilter.get()
-                .fields(DataFilter.PARENT, DataFilter.GEOMETRY)
+                .fields(DataFilter.PARENT, DataFilter.GEOMETRY, DataFilter.DETAILS)
                 .lang(lang);
 
         return areaService.searchAreas(params).stream()
@@ -117,7 +117,7 @@ public class AreaRestService extends AbstractBatchableRestService {
 
         DataFilter filter = DataFilter.get()
                 .lang(lang)
-                .fields(DataFilter.PARENT, DataFilter.GEOMETRY);
+                .fields(DataFilter.PARENT, DataFilter.GEOMETRY, DataFilter.DETAILS);
 
         return areaService.getAreaDetails(ids).stream()
                 .map(a -> a.toVo(filter))
@@ -136,7 +136,7 @@ public class AreaRestService extends AbstractBatchableRestService {
 
         DataFilter filter = DataFilter.get()
                 .lang(lang)
-                .fields(DataFilter.CHILDREN);
+                .fields(DataFilter.CHILDREN, DataFilter.DETAILS);
 
         return areaService.getAreaTree().stream()
                 .map(a -> a.toVo(filter))
@@ -153,7 +153,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     public List<AreaVo> getAll() {
 
         DataFilter filter = DataFilter.get()
-                .fields(DataFilter.CHILDREN, DataFilter.GEOMETRY);
+                .fields(DataFilter.CHILDREN, DataFilter.GEOMETRY, DataFilter.DETAILS);
 
         return areaService.getAreaTree().stream()
                 .map(a -> a.toVo(filter))
@@ -170,8 +170,12 @@ public class AreaRestService extends AbstractBatchableRestService {
     public AreaVo getArea(@PathParam("areaId") Integer areaId) throws Exception {
         log.debug("Getting area " + areaId);
         Area area = areaService.getAreaDetails(areaId);
+
         // Return the area without parent and child areas
-        return area == null ? null : area.toVo(DataFilter.get().fields("geometry"));
+        DataFilter filter = DataFilter.get()
+                .fields(DataFilter.GEOMETRY, DataFilter.DETAILS);
+
+        return area == null ? null : area.toVo(filter);
     }
 
     /** Creates a new area */
