@@ -15,22 +15,32 @@
  */
 package org.niord.web.map;
 
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.IOUtils;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
+import org.niord.core.repo.RepositoryService;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
@@ -38,6 +48,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
+import java.util.List;
 
 /**
  * Returns and caches a thumbnail image for a message.
@@ -52,6 +63,9 @@ public class MessageMapImageRestService {
 
     static final String IMAGE_PLACEHOLDER = "../img/map_image_placeholder.png";
     static final String UPLOADED_IMAGE_PREFIX = "data:image/png;base64,";
+
+    @Context
+    ServletContext servletContext;
 
     @Inject
     Logger log;
@@ -151,13 +165,67 @@ public class MessageMapImageRestService {
         image = image.substring(UPLOADED_IMAGE_PREFIX.length());
         byte[] data = Base64.getDecoder().decode(image);
 
-        // Construct the image file name for the message
+        // Construct the file path for the message
         String imageName = String.format("custom_thumb_%d.png", messageMapImageGenerator.getMapImageSize());
-
-        // Create a hashed sub-folder for the image file
         Path imageRepoPath = messageService.getMessageFileRepoPath(message, imageName);
 
         messageMapImageGenerator.generateMessageMapImage(data, imageRepoPath);
+    }
+
+
+    /**
+     * Called to upload a custom message map image via a multipart form-data request
+     *
+     * @param request the servlet request
+     * @return a status
+     */
+    @POST
+    @javax.ws.rs.Path("/{id}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("text/plain")
+    @RolesAllowed("editor")
+    public String importCharts(@PathParam("id") String id, @Context HttpServletRequest request) throws Exception {
+        Message message = messageService.findById(Integer.valueOf(id));
+        if (message == null) {
+            return "Image " + id + " not defined";
+        }
+
+        FileItemFactory factory = RepositoryService.newDiskFileItemFactory(servletContext);
+        ServletFileUpload upload = new ServletFileUpload(factory);
+
+        StringBuilder txt = new StringBuilder();
+
+        List<FileItem> items = upload.parseRequest(request);
+
+        // Get hold of the first uploaded image
+        FileItem imageItem = items.stream()
+                .filter(item -> !item.isFormField())
+                .findFirst()
+                .orElse(null);
+
+        if (imageItem == null) {
+            txt.append("No image uploaded");
+        } else {
+            // Construct the file path for the message
+            String imageName = String.format("custom_thumb_%d.png", messageMapImageGenerator.getMapImageSize());
+            Path imageRepoPath = messageService.getMessageFileRepoPath(message, imageName);
+
+
+            try {
+                byte[] data = IOUtils.toByteArray(imageItem.getInputStream());
+                if (messageMapImageGenerator.generateMessageMapImage(data, imageRepoPath)) {
+                    txt.append("Generated image thumbnail from uploaded image");
+                } else {
+                    txt.append("Failed generating image thumbnail from uploaded image");
+                }
+            } catch (IOException e) {
+                txt.append("Error generating image thumbnail from uploaded image:\nError: ").append(e);
+            }
+        }
+
+        return txt.toString();
+
+
     }
 
 

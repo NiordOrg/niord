@@ -7,8 +7,10 @@ angular.module('niord.editor')
     /**
      * Main message editor controller
      */
-    .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$uibModal', 'growl', 'MessageService', 'MapService',
-        function ($scope, $rootScope, $stateParams, $state, $uibModal, growl, MessageService, MapService) {
+    .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$uibModal', 'growl',
+            'MessageService', 'MapService', 'UploadFileService',
+        function ($scope, $rootScope, $stateParams, $state, $uibModal, growl,
+                  MessageService, MapService, UploadFileService) {
             'use strict';
 
             $scope.message = {
@@ -77,6 +79,17 @@ angular.module('niord.editor')
                             });
                     }
                 });
+            };
+
+
+            /** Opens the upload-charts dialog **/
+            $scope.uploadMessageThumbnailDialog = function () {
+                if ($scope.message.id) {
+                    UploadFileService.showUploadFileDialog(
+                        'Upload thumbnail image',
+                        '/rest/message-map-image/' + $scope.message.id,
+                        'png,jpg,jpeg,gif');
+                }
             };
 
 
