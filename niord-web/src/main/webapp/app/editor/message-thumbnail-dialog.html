@@ -1,0 +1,33 @@
+<div>
+
+    <div class="modal-header" style="text-align: center; padding: 5px 15px">
+        <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
+        <h4>Select Thumbnail</h4>
+    </div>
+
+    <div class="modal-body print" style="padding-bottom: 0">
+
+        <div class="message-thumbnail-item">
+            <ol-map class="osm-water-bg message-thumbnail-map">
+                <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
+                <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
+                                source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
+                <map-aton-layer name="AtoN" visible="false" layer-switcher="true"></map-aton-layer>
+                <map-gj-layer name="Locations" visible="true" layer-switcher="false" feature-collection="message.geometry" fit-extent="true" max-zoom="14"></map-gj-layer>
+                <message-thumbnail-layer thumbnail-generated="thumbnailGenerated(image)"></message-thumbnail-layer>
+                <map-layer-switcher></map-layer-switcher>
+            </ol-map>
+        </div>
+
+        <div class="row" style="margin-top: 24px;">
+            <div class="form-group col-xs-12" style="text-align: right">
+                <button class="btn btn-default btn-sm" ng-click="$dismiss('aborted')">Cancel</button>
+                &nbsp;
+                <button class="btn btn-sm btn-primary" ng-click="thumbnail()">
+                    <span class="glyphicon glyphicon-camera"></span>
+                    Snapshot
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

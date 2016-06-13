@@ -3,112 +3,52 @@
  */
 angular.module('niord.editor')
 
-/****************************************************************
- * Replaces the content of the element with the area description
- ****************************************************************/
-    .directive('messageThumbnail', ['$rootScope', '$document',
-        function ($rootScope, $document) {
-        return {
-            restrict: 'E',
-            replace: true,
-            templateUrl: '/app/editor/message-thumbnail-directive.html',
-            scope: {
-                message: "="
-            },
-            link: function(scope, element, attrs) {
-
-                scope.wmsLayerEnabled = $rootScope.wmsLayerEnabled;
-                scope.mode = undefined;
-                scope.takeThumbnail = false;
-
-                /** ************************ **/
-                /** Editor actions           **/
-                /** ************************ **/
-
-
-                /** Opens the snapshot editor */
-                scope.openEditor = function () {
-                    scope.mode = 'editor';
-                };
-
-
-                /** Exits the snapshot editor */
-                scope.exitEditor = function () {
-                    scope.mode = undefined;
-                };
-
-
-                /** Takes a thumbnail */
-                scope.thumbnail = function () {
-                    scope.takeThumbnail = true;
-                };
-
-
-                /** ************************ **/
-                /** Event handling           **/
-                /** ************************ **/
-
-
-                // Hook up a key listener that closes the editor when Escape is pressed
-                function keydownListener(evt) {
-                    if (evt.isDefaultPrevented()) {
-                        return evt;
-                    }
-                    if (scope.mode == 'editor' && evt.which == 27) {
-                        scope.exitEditor();
-                        evt.preventDefault();
-                        evt.stopPropagation();
-                        scope.$$phase || scope.$apply();
-                    }
-                }
-
-                $document.on('keydown', keydownListener);
-
-                element.on('$destroy', function() {
-                    $document.off('keydown', keydownListener);
-                });
-
-            }
-        };
-    }])
-
 
     /**
      * The actual message thumbnail map layer
      */
-    .directive('messageThumbnailLayer', ['MapService', function (MapService) {
+    .directive('messageThumbnailLayer', [function () {
         return {
             restrict: 'E',
             replace: false,
             require: '^olMap',
             scope: {
-                takeThumbnail: '='
+                thumbnailGenerated: '&'
             },
             link: function(scope, element, attrs, ctrl) {
                 var olScope = ctrl.getOpenlayersScope();
-                var olLayer;
 
                 olScope.getMap().then(function(map) {
 
-                    /** Takes a thumbnail */
-                    scope.thumbnail = function () {
-                        if (scope.takeThumbnail) {
-                            scope.takeThumbnail = false;
-                            
-                            var exportPNGElement = document.getElementById('snapshot');
-                            map.once('postcompose', function(event) {
-                                var canvas = event.context.canvas;
-                                exportPNGElement.href = canvas.toDataURL('image/png');
-                            });
-                            map.renderSync();
-                        }
-                    };
+                    /** Takes a thumbnail. Event emitted by parent directive */
+                    scope.$on('take-thumbnail', function() {
+                        map.once('postcompose', function(event) {
+                            var canvas = event.context.canvas;
 
-                    scope.$watch("takeThumbnail", scope.thumbnail, true);
+                            // The canvas size depends on the pixel ratio. Scale down to 1:1.
+                            // See http://stackoverflow.com/questions/35694880/openlayers-3-export-map-to-png-image-size
+                            var image;
+                            if (ol.has.DEVICE_PIXEL_RATIO == 1) {
+                                image = canvas.toDataURL('image/png');
+                            } else {
+                                var targetCanvas = document.createElement('canvas');
+                                var size = map.getSize();
+                                targetCanvas.width = size[0];
+                                targetCanvas.height = size[1];
+                                targetCanvas.getContext('2d').drawImage(canvas,
+                                    0, 0, canvas.width, canvas.height,
+                                    0, 0, targetCanvas.width, targetCanvas.height);
+                                image = targetCanvas.toDataURL('image/png');
+                            }
 
-
+                            // Notify via call-back
+                            if (attrs.thumbnailGenerated) {
+                                scope.thumbnailGenerated({image: image});
+                            }
+                        });
+                        map.renderSync();
+                    })
                 });
-
             }
         };
     }]);

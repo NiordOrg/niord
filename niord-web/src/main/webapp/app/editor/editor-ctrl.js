@@ -7,8 +7,8 @@ angular.module('niord.editor')
     /**
      * Main message editor controller
      */
-    .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', 'MessageService', 'MapService',
-        function ($scope, $rootScope, $stateParams, $state, MessageService, MapService) {
+    .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$uibModal', 'MessageService', 'MapService',
+        function ($scope, $rootScope, $stateParams, $state, $uibModal, MessageService, MapService) {
             'use strict';
 
             $scope.message = {
@@ -57,8 +57,54 @@ angular.module('niord.editor')
             
             $scope.openThumbnail = function () {
                 window.open('/rest/message-map-image/' + $stateParams.id + '.png');
+            };
+
+
+            /** Opens the message thumbnail dialog */
+            $scope.messageThumbnailDialog = function () {
+                $uibModal.open({
+                    controller: "MessageThumbnailDialogCtrl",
+                    templateUrl: "/app/editor/message-thumbnail-dialog.html",
+                    size: 'sm',
+                    resolve: {
+                        message: function () { return $scope.message; }
+                    }
+                }).result.then(function (image) {
+                    if (image) {
+                        console.log("IMAGE RETURNED " + image);
+                        var exportPNGElement = document.getElementById('snapshotBtn');
+                        console.log("ELEMENT " + exportPNGElement);
+                        exportPNGElement.href = image;
+                    }
+                });
             }
+        }])
+
+
+
+    /*******************************************************************
+     * Controller that handles the message Thumbnail dialog
+     *******************************************************************/
+    .controller('MessageThumbnailDialogCtrl', ['$scope', 'message',
+        function ($scope, message) {
+            'use strict';
+
+            $scope.message = message;
+
+
+            /** Takes a thumbnail */
+            $scope.thumbnail = function () {
+                // Broadcast a take-thumbnail event to the message-thumbnail-layer.
+                $scope.$broadcast('take-thumbnail', {});
+            };
+
+
+            /** Called when the thumbnail has been generated **/
+            $scope.thumbnailGenerated = function (image) {
+                $scope.$close(image);
+            };
 
         }])
+
         ;
 

@@ -20,7 +20,13 @@
                 <gj-editor id="message-geometry" class="editor-locations"
                            edit-type="message" feature-collection="featureCollection"></gj-editor>
 
-                <message-thumbnail message="message"></message-thumbnail>
+                <div>
+                    <a id="snapshotBtn" class="btn btn-sm btn-default" ng-click="messageThumbnailDialog()">
+                        <span class="glyphicon glyphicon-camera"></span>
+                        Snapshot
+                    </a>
+                </div>
+
             </div>
         </div>
     </div>

@@ -209,40 +209,16 @@
 
 /** Editor -> Thumbnail editor **/
 
-.message-thumbnail-editor {
-    z-index: 1000;
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
+.message-thumbnail-map {
+    width: 256px;
+    height: 256px;
 }
 
-.message-thumbnail-editor .btn-panel {
-    background-color: white;
-    z-index: 210;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height:50px;
-    box-shadow: 0 2px 4px rgba(50, 50, 50, 0.5);
-    padding: 10px;
-    text-align: center;
-}
-
-
-@media (min-width: 600px) {
-    .message-thumbnail-editor {
-        top: 20px;
-        left: 20px;
-        bottom: 20px;
-        right: 20px;
-        box-shadow: 4px 4px 10px #000;
-    }
-
-    .message-thumbnail-editor .btn-panel {
-        width: 200px;
-    }
-
+.message-thumbnail-item {
+    border: 2px solid #fff;
+    position: relative;
+    width: 260px;
+    height: 260px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    margin: 0 auto;
 }
