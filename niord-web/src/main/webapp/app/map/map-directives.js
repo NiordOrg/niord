@@ -211,7 +211,7 @@ angular.module('niord.map')
             replace: false,
             require: '^olMap',
             template:
-                "<ul class='map-layer-switcher' ng-if='switcherLayers.length > 0'>"
+                "<div class='map-layer-switcher' ng-if='switcherLayers.length > 0 && showSwitcher'>"
                 + "  <ul>"
                 + "    <li ng-repeat='l in switcherLayers'>"
                 + "      <input type='checkbox' ng-model='l.visible' ng-change='updateVisibility(l)'>&nbsp;{{l.name}}"
@@ -219,11 +219,14 @@ angular.module('niord.map')
                 + "  </ul>"
                 + "</div>",
             scope: {
+                switcherLayers :    '=',
+                visible:            '@'
             },
             link: function(scope, element, attrs, ctrl) {
                 var olScope     = ctrl.getOpenlayersScope();
 
-                scope.switcherLayers = [];
+                scope.switcherLayers = scope.switcherLayers || [];
+                scope.showSwitcher = scope.visible !== 'false';
 
                 olScope.getMap().then(function(map) {
 
@@ -355,9 +358,10 @@ angular.module('niord.map')
 
                         case 'OSM':
                             olLayer = new ol.layer.Tile({
-                                source: new ol.source.OSM()
+                                source: new ol.source.OSM(scope.sourceProperties)
                             });
-                            if ($rootScope['osmSourceUrl'] && $rootScope['osmSourceUrl'].length > 0) {
+                            if ((!scope.sourceProperties || !scope.sourceProperties.url) &&
+                                $rootScope['osmSourceUrl'] && $rootScope['osmSourceUrl'].length > 0) {
                                 olLayer.getSource().setUrl($rootScope['osmSourceUrl']);
                             }
                             break;

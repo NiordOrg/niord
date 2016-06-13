@@ -84,12 +84,13 @@ angular.module('niord.editor')
     /*******************************************************************
      * Controller that handles the message Thumbnail dialog
      *******************************************************************/
-    .controller('MessageThumbnailDialogCtrl', ['$scope', 'message',
-        function ($scope, message) {
+    .controller('MessageThumbnailDialogCtrl', ['$scope', '$rootScope', 'message',
+        function ($scope, $rootScope, message) {
             'use strict';
 
             $scope.messageList = [ message ];
-
+            $scope.switcherLayers = [];
+            $scope.showStdOSMLayer = $rootScope.osmSourceUrl && $rootScope.osmSourceUrl.length > 0;
 
             /** Takes a thumbnail */
             $scope.thumbnail = function () {
@@ -101,6 +102,11 @@ angular.module('niord.editor')
             /** Called when the thumbnail has been generated **/
             $scope.thumbnailGenerated = function (image) {
                 $scope.$close(image);
+            };
+
+
+            $scope.updateVisibility = function (l) {
+                l.layer.setVisible(l.visible)
             };
 
         }])

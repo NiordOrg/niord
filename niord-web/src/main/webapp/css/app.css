@@ -423,6 +423,7 @@ body > .ui-select-container {
 .map-layer-switcher ul {
     border-radius: 4px;
     padding: 4px;
+    margin-bottom: 0!important;
     background-color: rgba(0, 60, 136, 0.5);
     list-style-type:none;
 }
