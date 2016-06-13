@@ -74,14 +74,20 @@ public class MessageMapImageRestService {
                 throw new WebApplicationException(404);
             }
 
+            // Check if a custom map image is defined
+            String customThumbName = String.format("custom_thumb_%d.png", messageMapImageGenerator.getMapImageSize());
+            Path imageRepoPath = messageService.getMessageFileRepoPath(message, customThumbName);
+            if (Files.exists(imageRepoPath)) {
+                return redirect(message, customThumbName);
+            }
+
+
+            // Check for a standard auto-generated message map image file
             if (message.getGeometry() != null && !message.getGeometry().getFeatures().isEmpty()) {
 
-
-                // Construct the image file name for the message
+                // Construct the image file for the message
                 String imageName = String.format("map_%d.png", messageMapImageGenerator.getMapImageSize());
-
-                // Create a hashed sub-folder for the image file
-                Path imageRepoPath = messageService.getMessageFileRepoPath(message, imageName);
+                imageRepoPath = messageService.getMessageFileRepoPath(message, imageName);
 
                 // If the image file does not exist, or if the message has been updated after the image file,
                 // generate a new image file
@@ -95,12 +101,7 @@ public class MessageMapImageRestService {
 
                 // Either return the image file, or a place holder image
                 if (imageFileExists) {
-
-                    // Redirect the the repository streaming service
-                    String uri = "../" + messageService.getMessageFileRepoUri(message, imageName);
-                    return Response
-                            .temporaryRedirect(new URI(uri))
-                            .build();
+                    return redirect(message, imageName);
                 }
             }
 
@@ -111,6 +112,16 @@ public class MessageMapImageRestService {
         // Show a placeholder image
         return Response
                 .temporaryRedirect(new URI(IMAGE_PLACEHOLDER))
+                .build();
+    }
+
+
+    /** Returns a redirect to the actual repository image file **/
+    private Response redirect(Message message, String imageName) throws IOException, URISyntaxException {
+        // Redirect the the repository streaming service
+        String uri = "../" + messageService.getMessageFileRepoUri(message, imageName);
+        return Response
+                .temporaryRedirect(new URI(uri))
                 .build();
     }
 
@@ -136,7 +147,7 @@ public class MessageMapImageRestService {
         byte[] data = Base64.getDecoder().decode(image);
 
         // Construct the image file name for the message
-        String imageName = String.format("map_%d.png", messageMapImageGenerator.getMapImageSize());
+        String imageName = String.format("custom_thumb_%d.png", messageMapImageGenerator.getMapImageSize());
 
         // Create a hashed sub-folder for the image file
         Path imageRepoPath = messageService.getMessageFileRepoPath(message, imageName);
