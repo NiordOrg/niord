@@ -20,11 +20,16 @@
                 <gj-editor id="message-geometry" class="editor-locations"
                            edit-type="message" feature-collection="featureCollection"></gj-editor>
 
-                <div>
-                    <a id="snapshotBtn" class="btn btn-sm btn-default" ng-click="messageThumbnailDialog()">
+                <div class="btn-group" uib-dropdown>
+                    <button type="button" class="btn btn-sm btn-default" uib-dropdown-toggle>
                         <span class="glyphicon glyphicon-camera"></span>
                         Snapshot
-                    </a>
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                        <li role="menuitem"><a href ng-click="messageThumbnailDialog()">Select thumbnail...</a></li>
+                        <li role="menuitem"><a href ng-click="clearMessageThumbnail()">Clear thumbnail</a></li>
+                    </ul>
                 </div>
 
             </div>

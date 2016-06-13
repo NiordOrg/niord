@@ -59,6 +59,12 @@ angular.module('niord.messages')
             },
 
 
+            /** Deletes the the message map image */
+            deleteMessageMapImage: function (id) {
+                return $http.delete('/rest/message-map-image/' + id);
+            },
+
+
             /** Changes the area sort-order of a message relative to two other messages */
             changeAreaSortOrder: function (id, afterId, beforeId) {
                 return $http.put('/rest/messages/change-area-sort-order', {

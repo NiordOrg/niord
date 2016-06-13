@@ -77,7 +77,19 @@ angular.module('niord.editor')
                             });
                     }
                 });
+            };
+
+
+            /** Clears the current message thumbnail **/
+            $scope.clearMessageThumbnail = function () {
+                if ($scope.message.id) {
+                    MessageService.deleteMessageMapImage($scope.message.id)
+                        .success(function () {
+                            growl.info("Deleted message thumbnail", { ttl: 3000 })
+                        });
+                }
             }
+
         }])
 
 

@@ -25,6 +25,7 @@ import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.PathParam;
@@ -116,7 +117,9 @@ public class MessageMapImageRestService {
     }
 
 
-    /** Returns a redirect to the actual repository image file **/
+    /**
+     * Returns a redirect to the actual repository image file
+     **/
     private Response redirect(Message message, String imageName) throws IOException, URISyntaxException {
         // Redirect the the repository streaming service
         String uri = "../" + messageService.getMessageFileRepoUri(message, imageName);
@@ -126,7 +129,9 @@ public class MessageMapImageRestService {
     }
 
 
-    /** Updates the map image with a custom image */
+    /**
+     * Updates the map image with a custom image
+     */
     @PUT
     @javax.ws.rs.Path("/{id}")
     @Consumes("application/json;charset=UTF-8")
@@ -155,4 +160,37 @@ public class MessageMapImageRestService {
         messageMapImageGenerator.generateMessageMapImage(data, imageRepoPath);
     }
 
+
+    /** Deletes the message map image associated with the given message */
+    @DELETE
+    @javax.ws.rs.Path("/{id}")
+    @RolesAllowed({"editor"})
+    public boolean deleteMessageMapImage(@PathParam("id") String id, String image) throws Exception {
+        Message message = messageService.findById(Integer.valueOf(id));
+        if (message == null) {
+            return false;
+        }
+
+        boolean success = false;
+
+        // Delete any custom map image thumbnail
+        String customThumbName = String.format("custom_thumb_%d.png", messageMapImageGenerator.getMapImageSize());
+        Path imageRepoPath = messageService.getMessageFileRepoPath(message, customThumbName);
+        if (Files.exists(imageRepoPath)) {
+            Files.delete(imageRepoPath);
+            success = true;
+        }
+
+        // Delete any standard auto-generated map image thumbnail
+        String imageName = String.format("map_%d.png", messageMapImageGenerator.getMapImageSize());
+        imageRepoPath = messageService.getMessageFileRepoPath(message, imageName);
+        if (Files.exists(imageRepoPath)) {
+            Files.delete(imageRepoPath);
+            success |= true;
+        }
+
+        log.info("Deleted message map image for message " + id + " with success: " + success);
+
+        return success;
+    }
 }
