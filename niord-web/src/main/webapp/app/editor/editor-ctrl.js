@@ -71,9 +71,8 @@ angular.module('niord.editor')
                     }
                 }).result.then(function (image) {
                     if (image) {
-                        console.log("IMAGE RETURNED " + image);
+                        // TODO: Save on backend.
                         var exportPNGElement = document.getElementById('snapshotBtn');
-                        console.log("ELEMENT " + exportPNGElement);
                         exportPNGElement.href = image;
                     }
                 });
