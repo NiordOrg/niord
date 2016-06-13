@@ -210,19 +210,15 @@
 /** Editor -> Thumbnail editor **/
 
 .message-thumbnail-map {
-    width: 256px;
-    height: 256px;
 }
 
 .message-thumbnail-item {
     border: 2px solid #fff;
     position: relative;
-    width: 260px;
-    height: 260px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
     margin: 0 auto;
 }
 
 .message-thumbnail-layer {
-    margin: 5px;
+    margin: 5px ;
 }

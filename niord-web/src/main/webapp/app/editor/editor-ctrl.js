@@ -7,8 +7,8 @@ angular.module('niord.editor')
     /**
      * Main message editor controller
      */
-    .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$uibModal', 'MessageService', 'MapService',
-        function ($scope, $rootScope, $stateParams, $state, $uibModal, MessageService, MapService) {
+    .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$uibModal', 'growl', 'MessageService', 'MapService',
+        function ($scope, $rootScope, $stateParams, $state, $uibModal, growl, MessageService, MapService) {
             'use strict';
 
             $scope.message = {
@@ -70,10 +70,11 @@ angular.module('niord.editor')
                         message: function () { return $scope.message; }
                     }
                 }).result.then(function (image) {
-                    if (image) {
-                        // TODO: Save on backend.
-                        var exportPNGElement = document.getElementById('snapshotBtn');
-                        exportPNGElement.href = image;
+                    if (image && $scope.message.id) {
+                        MessageService.changeMessageMapImage($scope.message.id, image)
+                            .success(function () {
+                                growl.info("Updated message thumbnail", { ttl: 3000 })
+                            });
                     }
                 });
             }
@@ -91,6 +92,7 @@ angular.module('niord.editor')
             $scope.messageList = [ message ];
             $scope.switcherLayers = [];
             $scope.showStdOSMLayer = $rootScope.osmSourceUrl && $rootScope.osmSourceUrl.length > 0;
+            $scope.mapImageSize = $rootScope.mapImageSize || 256;
 
             /** Takes a thumbnail */
             $scope.thumbnail = function () {

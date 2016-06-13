@@ -48,6 +48,7 @@ import javax.inject.Inject;
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -91,7 +92,7 @@ public class MessageMapImageGenerator {
     String mapImageServer;
 
     @Inject
-    @Setting(value = "mapImageSize", defaultValue = "256", type = Integer,
+    @Setting(value = "mapImageSize", defaultValue = "256", type = Integer, web = true,
             description = "Size of map thumbnails")
     Integer mapImageSize;
 
@@ -432,5 +433,69 @@ public class MessageMapImageGenerator {
             }
         }
         return nmImage;
+    }
+
+
+
+    /**
+     * Validates the the given image data buffer represents an image. If the image does not have the
+     * proper proportions, it will be scaled.
+     *
+     * @param imageData the image data
+     * @param imageRepoPath the path of the image
+     * @return if the image file was properly created
+     */
+    public boolean generateMessageMapImage(byte[] imageData, Path imageRepoPath) throws IOException {
+
+        // Check that we can read the image
+        BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageData));
+        if (image == null) {
+            return false;
+        }
+
+        if (image.getWidth() == mapImageSize && image.getHeight() == mapImageSize) {
+            // Write the image file directly.
+            // NB: We assume PNG
+            Files.write(imageRepoPath, imageData);
+            log.info("Update message map image " + imageRepoPath);
+
+        } else {
+            // Scale down
+            BufferedImage destImage = new BufferedImage(mapImageSize, mapImageSize, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2 = destImage.createGraphics();
+            GraphicsUtils.antialias(g2);
+            float scale = Math.min((float)mapImageSize / image.getWidth(), (float)mapImageSize / image.getHeight());
+
+            // We never scale up
+            if (scale > 1.0f) {
+                scale = 1.0f;
+            }
+
+            float dx = (mapImageSize - scale * image.getWidth()) / 2.0f;
+            float dy = (mapImageSize - scale * image.getHeight()) / 2.0f;
+            g2.drawImage(image,
+
+                    // Destination coordinates:
+                    Math.round(dx),
+                    Math.round(dy),
+                    Math.round(dx + scale * image.getWidth()),
+                    Math.round(dy + scale  * image.getHeight()),
+
+                    // Source coordinates:
+                    0,
+                    0,
+                    image.getWidth(),
+                    image.getHeight(),
+                    null);
+
+            g2.dispose();
+
+            // Save the image to the repository
+            ImageIO.write(destImage, "png", imageRepoPath.toFile());
+            image.flush();
+            log.info("Update scaled message map image " + imageRepoPath);
+        }
+
+        return true;
     }
 }

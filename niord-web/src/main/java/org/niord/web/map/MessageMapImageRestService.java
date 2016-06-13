@@ -15,13 +15,18 @@
  */
 package org.niord.web.map;
 
+import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
 import org.slf4j.Logger;
 
+import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
@@ -31,6 +36,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Base64;
 
 /**
  * Returns and caches a thumbnail image for a message.
@@ -39,9 +45,12 @@ import java.nio.file.Path;
  */
 @javax.ws.rs.Path("/message-map-image")
 @Stateless
+@SecurityDomain("keycloak")
+@PermitAll
 public class MessageMapImageRestService {
 
     static final String IMAGE_PLACEHOLDER = "../img/map_image_placeholder.png";
+    static final String UPLOADED_IMAGE_PREFIX = "data:image/png;base64,";
 
     @Inject
     Logger log;
@@ -104,4 +113,35 @@ public class MessageMapImageRestService {
                 .temporaryRedirect(new URI(IMAGE_PLACEHOLDER))
                 .build();
     }
+
+
+    /** Updates the map image with a custom image */
+    @PUT
+    @javax.ws.rs.Path("/{id}")
+    @Consumes("application/json;charset=UTF-8")
+    @RolesAllowed({"editor"})
+    public void updateMessageMapImage(@PathParam("id") String id, String image) throws Exception {
+
+        Message message = messageService.findById(Integer.valueOf(id));
+        if (message == null) {
+            throw new WebApplicationException(404);
+        }
+
+        if (!image.toLowerCase().startsWith(UPLOADED_IMAGE_PREFIX)) {
+            throw new WebApplicationException(400);
+        }
+
+        // Decode the base-64 encoded image data
+        image = image.substring(UPLOADED_IMAGE_PREFIX.length());
+        byte[] data = Base64.getDecoder().decode(image);
+
+        // Construct the image file name for the message
+        String imageName = String.format("map_%d.png", messageMapImageGenerator.getMapImageSize());
+
+        // Create a hashed sub-folder for the image file
+        Path imageRepoPath = messageService.getMessageFileRepoPath(message, imageName);
+
+        messageMapImageGenerator.generateMessageMapImage(data, imageRepoPath);
+    }
+
 }

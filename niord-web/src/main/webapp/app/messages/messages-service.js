@@ -53,6 +53,12 @@ angular.module('niord.messages')
             },
 
 
+            /** Changes the the message map image to be the base-64 encoded png */
+            changeMessageMapImage: function (id, image) {
+                return $http.put('/rest/message-map-image/' + id, image);
+            },
+
+
             /** Changes the area sort-order of a message relative to two other messages */
             changeAreaSortOrder: function (id, afterId, beforeId) {
                 return $http.put('/rest/messages/change-area-sort-order', {
