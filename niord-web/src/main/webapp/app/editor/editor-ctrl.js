@@ -88,7 +88,7 @@ angular.module('niord.editor')
         function ($scope, message) {
             'use strict';
 
-            $scope.message = message;
+            $scope.messageList = [ message ];
 
 
             /** Takes a thumbnail */

@@ -13,7 +13,7 @@
                 <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
                                 source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
                 <map-aton-layer name="AtoN" visible="false" layer-switcher="true"></map-aton-layer>
-                <map-gj-layer name="Locations" visible="true" layer-switcher="false" feature-collection="message.geometry" fit-extent="true" max-zoom="14"></map-gj-layer>
+                <map-message-list-layer name="Message" visible="true" layer-switcher="false" message-list="messageList" fit-extent="true"></map-message-list-layer>
                 <message-thumbnail-layer thumbnail-generated="thumbnailGenerated(image)"></message-thumbnail-layer>
                 <map-layer-switcher></map-layer-switcher>
             </ol-map>
