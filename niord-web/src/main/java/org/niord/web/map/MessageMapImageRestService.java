@@ -51,9 +51,11 @@ import java.util.Base64;
 import java.util.List;
 
 /**
- * Returns and caches a thumbnail image for a message.
- * <p>
+ * Returns the map thumbnail image associated with a message.
  * Can be used e.g. for a grid layout in search results.
+ * <p>
+ * Either a standard map image is generated and returned, or the user may
+ * upload a custom map image thumbnail.
  */
 @javax.ws.rs.Path("/message-map-image")
 @Stateless
