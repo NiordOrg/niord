@@ -108,6 +108,11 @@ input.ng-invalid-messageId {
     box-shadow: 0 0 4px 4px rgba(0, 0, 0, .2);
 }
 
+.page-header {
+    margin-top: 0;
+    text-align: left;
+}
+
 .dropdown-menu {
     font-size: 12px;
 }
