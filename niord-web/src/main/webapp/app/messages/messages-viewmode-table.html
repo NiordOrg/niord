@@ -28,7 +28,7 @@
             <td colspan="6"><h4 class="message-list-area-heading" render-areas="[message.areaHeading]"></h4></td>
         </tr>
         <tr ng-repeat-end class="message-details-menu-parent" ng-class="{ 'message-row-selected' : isSelected(message) }">
-            <td nowrap><span>{{message.shortId}}</span></td>
+            <td nowrap><span class="label label-message-id">{{message.shortId}}</span></td>
             <td nowrap>
                 <render-message-dates msg="message"/>
             </td>

@@ -20,6 +20,13 @@
     overflow-y: scroll;
 }
 
+.label-message-id {
+    font-size: 10px;
+    background-color: #999;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
 /** View mode -> Grid **/
 
 .messages-list-grid {

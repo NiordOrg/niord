@@ -14,7 +14,7 @@
                     <img class="grid-map-image" ng-src="/rest/message-map-image/{{message.id}}.png" width="256" height="256"/>
 
                     <div class="grid-map-image-header">
-                        <div ng-if="message.shortId">{{message.shortId}}</div>
+                        <div ng-if="message.shortId"><span class="label label-message-id">{{message.shortId}}</span></div>
                         <span ng-if="message.descs[0].title">{{message.descs[0].title}}</span>
                     <span ng-if="message.descs[0].lang != language" style="color: darkgray;">
                         <flag lang="message.descs[0].lang" style="height: 10px;"></flag>
