@@ -45,8 +45,10 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -87,7 +89,7 @@ public class MessageRestService {
 
 
     /***************************
-     * Search functionality
+     * Message access functions
      ***************************/
 
     /**
@@ -135,6 +137,71 @@ public class MessageRestService {
 
         return message.toVo(filter);
     }
+
+
+    /**
+     * Creates a new draft message
+     *
+     * @param message the message to create
+     * @return the persisted message
+     */
+    @POST
+    @Path("/message")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public MessageVo createMessage(MessageVo message) throws Exception {
+        log.info("Creating message " + message);
+        Message msg = messageService.createMessage(new Message(message));
+        return getMessage(msg.getId().toString(), null);
+    }
+
+
+    /**
+     * Updates a message
+     *
+     * @param message the message to update
+     * @return the updated message
+     */
+    @PUT
+    @Path("/message")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public MessageVo updateMessage(MessageVo message) throws Exception {
+        log.info("Updating message " + message);
+        Message msg = messageService.updateMessage(new Message(message));
+        return getMessage(msg.getId().toString(), null);
+    }
+
+
+    /**
+     * Updates the status of a message
+     *
+     * @param status the status update
+     * @return the updated message
+     */
+    @PUT
+    @Path("/message/{messageId}/status")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public MessageVo updateMessageStatus(@PathParam("messageId") Integer messageId, String status) throws Exception {
+        log.info("Updating status of message " + messageId + " to " + status);
+        Message msg = messageService.updateStatus(messageId, Status.valueOf(status));
+        return getMessage(msg.getId().toString(), null);
+    }
+
+
+    /***************************
+     * Search functionality
+     ***************************/
 
 
     /**

@@ -19,34 +19,40 @@ angular.module('niord.editor')
             $scope.featureCollection = {
                 features: []
             };
+            $scope.initId = $stateParams.id || '';
 
             /*****************************/
             /** Initialize the editor   **/
             /*****************************/
 
-            /** Initialize the message editor */
-            $scope.init = function () {
+            /** Called during initialization when the message has been loaded or instantiated */
+            $scope.initMessage = function () {
                 // Instantiate the feature collection from the message geometry
                 if ($scope.message.geometry) {
                     $scope.featureCollection = $scope.message.geometry;
                 }
             };
 
-            // 1) The message ID may be specified
-            if ($stateParams.id) {
-                MessageService.details($stateParams.id)
-                    .success(function (message) {
-                        $scope.message = message;
-                        $scope.init();
-                    })
-            } else {
 
-                // 2) The editor may be based on a template message, say, from the AtoN selection page
-                if ($state.includes('editor.template')) {
-                    angular.copy($rootScope.templateMessage, $scope.message);
+            /** Initialize the message editor */
+            $scope.init = function () {
+                // 1) The message ID may be specified
+                if ($scope.initId) {
+                    MessageService.details($scope.initId)
+                        .success(function (message) {
+                            $scope.message = message;
+                            $scope.initMessage();
+                        });
+
+                } else {
+                    // 2) The editor may be based on a template message, say, from the AtoN selection page
+                    if ($state.includes('editor.template')) {
+                        angular.copy($rootScope.templateMessage, $scope.message);
+                    }
+                    $scope.initMessage();
                 }
-                $scope.init();
-            }
+            };
+            $scope.init();
 
 
             $scope.editFeatureCollection = function () {
@@ -108,29 +114,136 @@ angular.module('niord.editor')
 
 
     /*******************************************************************
+     * EditorCtrl sub-controller that handles message status changes.
+     *******************************************************************/
+    .controller('EditorStatusCtrl', ['$scope', '$rootScope', 'growl', 'MessageService', 'DialogService',
+        function ($scope, $rootScope, growl, MessageService, DialogService) {
+            'use strict';
+
+            $scope.reloadMessage = function (msg) {
+                // Call parent controller init() method
+                $scope.init();
+                growl.info(msg, {ttl: 3000});
+            };
+
+
+            /** Publish the message **/
+            $scope.publish = function () {
+
+                // First check that the message is valid
+                if ($scope.message.status != 'VERIFIED') {
+                    growl.error("Only verified draft messages can be published", {ttl: 5000});
+                    return;
+                }
+
+                // TODO: MANY more checks
+
+                DialogService.showConfirmDialog(
+                    "Publish Message?", "Publish Message?")
+                    .then(function() {
+                        MessageService.updateMessageStatus($scope.message, 'PUBLISHED')
+                            .success(function() { $scope.reloadMessage("Message published"); })
+                            .error(function(err) {
+                                growl.error("Publishing failed\n" + err, {ttl: 5000});
+                            });
+                    });
+            };
+
+
+            /** Delete the draft message **/
+            $scope.delete = function () {
+                if ($scope.message.status != 'DRAFT' && $scope.message.status != 'VERIFIED') {
+                    growl.error("Only draft and verified messages can be deleted", {ttl: 5000});
+                    return;
+                }
+
+                DialogService.showConfirmDialog(
+                    "Delete draft?", "Delete draft?")
+                    .then(function() {
+                        MessageService.updateMessageStatus($scope.message, 'DELETED')
+                            .success(function() { $scope.reloadMessage("Message deleted"); })
+                            .error(function(err) {
+                                growl.error("Deletion failed\n" + err, {ttl: 5000});
+                            });
+                    });
+            };
+
+
+            /** Copy the message **/
+            $scope.copy = function () {
+                DialogService.showConfirmDialog(
+                    "Copy Message?", "Copy Message?")
+                    .then(function() {
+                        $rootScope.go('/editor/edit/copy/' + $scope.message.id + "/REFERENCE");
+                    });
+            };
+
+
+            /** Cancel the message **/
+            $scope.cancel = function () {
+                if ($scope.message.status != 'PUBLISHED') {
+                    growl.error("Only published messages can be cancelled", {ttl: 5000});
+                    return;
+                }
+
+                var modalOptions = {
+                    closeButtonText: 'Cancel',
+                    actionButtonText: 'Confirm Cancellation',
+                    headerText: 'Cancel Message',
+                    cancelOptions: { createCancelMessage: true },
+                    templateUrl: "cancelMessage.html"
+                };
+
+                DialogService.showDialog({}, modalOptions)
+                    .then(function () {
+                        MessageService.updateMessageStatus($scope.message, 'CANCELLED')
+                            .success(function() {
+                                if (modalOptions.cancelOptions.createCancelMessage) {
+                                    $rootScope.go('/editor/edit/copy/' + $scope.message.id + "/CANCELLATION");
+                                } else {
+                                    $scope.reloadMessage("Message cancelled");
+                                }
+                            })
+                            .error(function(err) {
+                                growl.error("Cancellation failed\n" + err, {ttl: 5000});
+                            });
+                    });
+            };
+
+
+        }])
+
+
+
+    /*******************************************************************
      * EditorCtrl sub-controller that handles message history.
      *******************************************************************/
-    .controller('EditorHistoryCtrl', ['$scope', '$rootScope', 'MessageService',
-        function ($scope, $rootScope, MessageService) {
+    .controller('EditorHistoryCtrl', ['$scope', '$rootScope', '$timeout', 'MessageService',
+        function ($scope, $rootScope, $timeout, MessageService) {
             'use strict';
 
             $scope.messageHistory = [];
             $scope.selectedHistory = [];
 
-            // Load the message history
-            if ($scope.message.id) {
-                MessageService.messageHistory($scope.message.id)
-                    .success(function (history) {
-                        $scope.messageHistory.length = 0;
-                        angular.forEach(history, function(hist) {
-                            hist.selected = false;
-                            $scope.messageHistory.push(hist);
-                        })
-                    });
-            }
+            /** Loads the message history **/
+            $scope.loadHistory = function () {
+                if ($scope.message.id) {
+                    MessageService.messageHistory($scope.message.id)
+                        .success(function (history) {
+                            $scope.messageHistory.length = 0;
+                            angular.forEach(history, function (hist) {
+                                hist.selected = false;
+                                $scope.messageHistory.push(hist);
+                            })
+                        });
+                }
+            };
+
+            // Load the message history (after the message has been loaded)
+            $timeout($scope.loadHistory, 200);
 
 
-            // updates the history selection
+            /** updates the history selection **/
             $scope.updateSelection = function () {
                 $scope.selectedHistory.length = 0;
                 angular.forEach($scope.messageHistory, function (hist) {

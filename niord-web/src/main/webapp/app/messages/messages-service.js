@@ -53,6 +53,24 @@ angular.module('niord.messages')
             },
 
 
+            /** Creates a new message */
+            createMessage: function(msg) {
+                return $http.post('/rest/messages/message', msg);
+            },
+
+
+            /** Updates an existing message */
+            updateMessage: function(msg) {
+                return $http.put('/rest/messages/message/' + msg.id, msg);
+            },
+
+
+            /** Changes the status of an existing message */
+            updateMessageStatus: function(msg, status) {
+                return $http.put('/rest/messages/message/' + msg.id + '/status', status);
+            },
+
+
             /** Returns the history of the given message */
             messageHistory: function(id) {
                 return $http.get('/rest/messages/message/' + id + '/history');

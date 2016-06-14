@@ -18,6 +18,20 @@
 }
 
 
+/** Editor -> Status **/
+
+.message-status-panel {
+    padding: 10px 20px;
+    margin-top: 10px;
+    width: 200px;
+}
+
+.message-status-action {
+    width: 160px;
+    margin-bottom: 5px;
+}
+
+
 /** Editor -> History **/
 
 .message-history-table {

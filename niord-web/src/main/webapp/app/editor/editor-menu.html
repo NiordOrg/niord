@@ -3,21 +3,21 @@
     <ul style="padding-left: 0">
 
         <li class="view-mode-menu-btn">
-            <span ui-sref="editor.edit" ui-sref-active="active">
+            <span ui-sref="editor.edit({ id: initId })" ui-sref-active="active">
                 <span class="glyphicon glyphicon-pencil"></span>
                 <span class="view-mode-menu-text" translate>view_mode.edit</span>
             </span>
         </li>
 
         <li class="view-mode-menu-btn">
-            <span ui-sref="editor.status" ui-sref-active="active">
+            <span ui-sref="editor.status({ id: initId })" ui-sref-active="active">
                 <span class="glyphicon glyphicon-wrench"></span>
                 <span class="view-mode-menu-text" translate>view_mode.status</span>
             </span>
         </li>
 
         <li class="view-mode-menu-btn">
-            <span ui-sref="editor.history" ui-sref-active="active">
+            <span ui-sref="editor.history({ id: initId })" ui-sref-active="active">
                 <span class="glyphicon glyphicon-calendar"></span>
                 <span class="view-mode-menu-text" translate>view_mode.history</span>
             </span>

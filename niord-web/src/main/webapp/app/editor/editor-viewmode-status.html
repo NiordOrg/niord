@@ -1,5 +1,55 @@
 
-<div class="editor-contents container">
+<div class="editor-contents container" ng-controller="EditorStatusCtrl">
     <h3 class="page-header">Message Status</h3>
 
+    <div class="row" ng-if="message.id">
+
+        <div class="col-sm-12 col-md-8 col-lg-9">
+            <table ng-if="message.id" class='table table-condensed'>
+                <tr render-message-details msg="message" format="details" show-details-menu="false"></tr>
+            </table>
+        </div>
+
+        <div class="col-sm-12 col-md-4 col-lg-3">
+            <div class="panel panel-default message-status-panel">
+                <p>
+                    Status:
+                    <strong>{{message.status}}</strong>
+                </p>
+
+                <div style="margin-top: 20px;">
+                    <button href class="btn btn-primary btn-sm message-status-action" ng-click="publish()" ng-if="message.status == 'DRAFT'">
+                        <span class="glyphicon glyphicon-send"></span> Publish Message...
+                    </button>
+                </div>
+                <div>
+                    <button href class="btn btn-default btn-sm message-status-action" ng-click="delete()" ng-if="message.status == 'DRAFT'">
+                        <span class="glyphicon glyphicon-trash"></span> Delete Draft...
+                    </button>
+                </div>
+                <div>
+                    <button href class="btn btn-default btn-sm message-status-action" ng-click="cancel()" ng-if="message.status == 'PUBLISHED'">
+                        <span class="glyphicon glyphicon-trash"></span> Cancel Message...
+                    </button>
+                </div>
+                <div>
+                    <button href class="btn btn-default btn-sm message-status-action" ng-click="copy()">
+                        <span class="glyphicon glyphicon-duplicate"></span> Copy Message...
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
 </div>
+
+
+<!-- Cancel Message dialog -->
+<script type="text/ng-template" id="cancelMessage.html">
+    <form name="copy_form">
+        <p>Please confirm cancellation</p>
+        <div>
+            <input type="checkbox" ng-model="modalOptions.cancelOptions.createCancelMessage"> Create cancellation message
+        </div>
+    </form>
+</script>

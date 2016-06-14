@@ -75,8 +75,8 @@ public class MessageHistory extends BaseEntity<Integer> {
     /** Converts this entity to a value object */
     public MessageHistoryVo toVo() {
         MessageHistoryVo history = new MessageHistoryVo();
-        history.setMessageId(message.getId());
-        history.setStatus(message.getStatus());
+        history.setMessageId(id);
+        history.setStatus(status);
         if (user != null) {
             history.setUser(user.getUsername());
         }
