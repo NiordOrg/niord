@@ -28,6 +28,7 @@ var app = angular.module('niord.admin', [
         $urlRouterProvider
             .when('/messages', '/messages/grid')
             .when('/atons', '/atons/grid')
+            .when('/editor', '/editor/edit/')
             .when('/admin', '/admin/overview')
             .otherwise("/");
 
@@ -46,12 +47,25 @@ var app = angular.module('niord.admin', [
 
             /** Editor **/
             .state('editor', {
-                url: "/editor/:id",
+                url: "/editor",
                 templateUrl: "/app/editor/editor.html",
                 data: { rolesRequired: ["editor", "admin", "sysadmin"] }
             })
+            .state('editor.edit', {
+                url: "/edit/:id",
+                templateUrl: "/app/editor/editor-viewmode-edit.html"
+            })
             .state('editor.template', {
-                url: "/template",
+                url: "/edit/",
+                templateUrl: "/app/editor/editor-viewmode-edit.html"
+            })
+            .state('editor.status', {
+                url: "/status/:id",
+                templateUrl: "/app/editor/editor-viewmode-status.html"
+            })
+            .state('editor.history', {
+                url: "/history/:id",
+                templateUrl: "/app/editor/editor-viewmode-history.html"
             })
 
 

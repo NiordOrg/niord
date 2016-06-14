@@ -108,6 +108,43 @@ angular.module('niord.editor')
 
 
     /*******************************************************************
+     * EditorCtrl sub-controller that handles message history.
+     *******************************************************************/
+    .controller('EditorHistoryCtrl', ['$scope', '$rootScope', 'MessageService',
+        function ($scope, $rootScope, MessageService) {
+            'use strict';
+
+            $scope.messageHistory = [];
+            $scope.selectedHistory = [];
+
+            // Load the message history
+            if ($scope.message.id) {
+                MessageService.messageHistory($scope.message.id)
+                    .success(function (history) {
+                        $scope.messageHistory.length = 0;
+                        angular.forEach(history, function(hist) {
+                            hist.selected = false;
+                            $scope.messageHistory.push(hist);
+                        })
+                    });
+            }
+
+
+            // updates the history selection
+            $scope.updateSelection = function () {
+                $scope.selectedHistory.length = 0;
+                angular.forEach($scope.messageHistory, function (hist) {
+                    if (hist.selected) {
+                        $scope.selectedHistory.unshift(hist);
+                    }
+                });
+            }
+
+        }])
+
+
+
+    /*******************************************************************
      * Controller that handles the message Thumbnail dialog
      *******************************************************************/
     .controller('MessageThumbnailDialogCtrl', ['$scope', '$rootScope', 'message',

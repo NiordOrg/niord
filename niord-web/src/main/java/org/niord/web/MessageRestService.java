@@ -24,6 +24,7 @@ import org.niord.core.domain.DomainService;
 import org.niord.core.fm.FmService;
 import org.niord.core.fm.FmService.ProcessFormat;
 import org.niord.core.message.Message;
+import org.niord.core.message.MessageHistory;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
@@ -34,6 +35,7 @@ import org.niord.model.IJsonSerializable;
 import org.niord.model.PagedSearchParamsVo.SortOrder;
 import org.niord.model.PagedSearchResultVo;
 import org.niord.model.vo.MainType;
+import org.niord.model.vo.MessageHistoryVo;
 import org.niord.model.vo.MessageVo;
 import org.niord.model.vo.Status;
 import org.niord.model.vo.Type;
@@ -54,6 +56,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -131,61 +134,6 @@ public class MessageRestService {
                 .fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
 
         return message.toVo(filter);
-    }
-
-
-    /**
-     * Generates a PDF for the message with the given message id, which may be either a database id,
-     * or a short ID or an MRN of a message.
-     *
-     * If the debug flag is set to true, the HTML that is used for the PDF is returned directly.
-     *
-     * @param messageId the message ID
-     * @param language the language of the returned data
-     * @return the message as a PDF
-     */
-    @GET
-    @Path("/message/{messageId}.pdf")
-    @GZIP
-    @NoCache
-    public Response generatePdfForMessage(
-            @PathParam("messageId") String messageId,
-            @QueryParam("lang") String language,
-            @QueryParam("pageSize") @DefaultValue("A4") String pageSize,
-            @QueryParam("pageOrientation") @DefaultValue("portrait") String pageOrientation,
-            @QueryParam("debug") @DefaultValue("false") boolean debug) throws Exception {
-
-        MessageVo message = getMessage(messageId, language);
-
-        try {
-            ProcessFormat format = debug ? ProcessFormat.TEXT : ProcessFormat.PDF;
-
-            StreamingOutput stream = os -> {
-                try {
-                    fmService.newTemplateBuilder()
-                            .setTemplatePath("/templates/messages/message-details.ftl")
-                            .setData("msg", message)
-                            .setData("pageSize", pageSize)
-                            .setData("pageOrientation", pageOrientation)
-                            .setDictionaryNames("web", "message", "pdf")
-                            .setLanguage(language)
-                            .process(format, os);
-                } catch (Exception e) {
-                    throw new WebApplicationException("Error generating PDF for message " + messageId, e);
-                }
-            };
-
-            Response.ResponseBuilder response = Response.ok(stream);
-            return debug
-                    ? response.type("text/html;charset=UTF-8").build()
-                    : response.type("application/pdf")
-                        .header("Content-Disposition", "attachment; filename=\"message-" + messageId + ".pdf\"")
-                        .build();
-
-        } catch (Exception e) {
-            log.error("Error generating PDF for message " + messageId, e);
-            throw e;
-        }
     }
 
 
@@ -315,6 +263,66 @@ public class MessageRestService {
     }
 
 
+    /***************************
+     * PDF functionality
+     ***************************/
+
+
+    /**
+     * Generates a PDF for the message with the given message id, which may be either a database id,
+     * or a short ID or an MRN of a message.
+     *
+     * If the debug flag is set to true, the HTML that is used for the PDF is returned directly.
+     *
+     * @param messageId the message ID
+     * @param language the language of the returned data
+     * @return the message as a PDF
+     */
+    @GET
+    @Path("/message/{messageId}.pdf")
+    @GZIP
+    @NoCache
+    public Response generatePdfForMessage(
+            @PathParam("messageId") String messageId,
+            @QueryParam("lang") String language,
+            @QueryParam("pageSize") @DefaultValue("A4") String pageSize,
+            @QueryParam("pageOrientation") @DefaultValue("portrait") String pageOrientation,
+            @QueryParam("debug") @DefaultValue("false") boolean debug) throws Exception {
+
+        MessageVo message = getMessage(messageId, language);
+
+        try {
+            ProcessFormat format = debug ? ProcessFormat.TEXT : ProcessFormat.PDF;
+
+            StreamingOutput stream = os -> {
+                try {
+                    fmService.newTemplateBuilder()
+                            .setTemplatePath("/templates/messages/message-details.ftl")
+                            .setData("msg", message)
+                            .setData("pageSize", pageSize)
+                            .setData("pageOrientation", pageOrientation)
+                            .setDictionaryNames("web", "message", "pdf")
+                            .setLanguage(language)
+                            .process(format, os);
+                } catch (Exception e) {
+                    throw new WebApplicationException("Error generating PDF for message " + messageId, e);
+                }
+            };
+
+            Response.ResponseBuilder response = Response.ok(stream);
+            return debug
+                    ? response.type("text/html;charset=UTF-8").build()
+                    : response.type("application/pdf")
+                    .header("Content-Disposition", "attachment; filename=\"message-" + messageId + ".pdf\"")
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Error generating PDF for message " + messageId, e);
+            throw e;
+        }
+    }
+
+
     /**
      * Generates a PDF for the message search result.
      *
@@ -412,6 +420,32 @@ public class MessageRestService {
             log.error("Error generating PDF for messages", e);
             throw e;
         }
+    }
+
+
+    /***************************************/
+    /** Message History methods           **/
+    /***************************************/
+
+    /**
+     * Returns the message history for the given message ID
+     * @param messageId the message ID or message series ID
+     * @return the message history
+     */
+    @GET
+    @Path("/message/{messageId}/history")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public List<MessageHistoryVo> getMessageHistory(@PathParam("messageId") String messageId) {
+
+        // Get the message id
+        Integer id = resolveMessageId(messageId);
+
+        return messageService.getMessageHistory(id).stream()
+                .map(MessageHistory::toVo)
+                .collect(Collectors.toList());
     }
 
 

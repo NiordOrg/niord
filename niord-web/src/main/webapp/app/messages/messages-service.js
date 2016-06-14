@@ -53,6 +53,12 @@ angular.module('niord.messages')
             },
 
 
+            /** Returns the history of the given message */
+            messageHistory: function(id) {
+                return $http.get('/rest/messages/message/' + id + '/history');
+            },
+
+
             /** Changes the the message map image to be the base-64 encoded png */
             changeMessageMapImage: function (id, image) {
                 return $http.put('/rest/message-map-image/' + id, image);

@@ -17,6 +17,30 @@
     margin-bottom: 10px;
 }
 
+
+/** Editor -> History **/
+
+.message-history-table {
+    font-size: 12px;
+}
+
+.message-history-json {
+    font-size: 10px;
+    width: 100%;
+    max-height: 400px;
+    height: 400px;
+    overflow: scroll;
+    border: 1px solid lightgray;
+}
+
+.message-history-header {
+    background-color: #eee;
+    border-top: 1px solid lightgray;
+    border-left: 1px solid lightgray;
+    border-right: 1px solid lightgray;
+    padding: 5px 10px;
+}
+
 /** Editor -> GeoJson Editor directive **/
 
 .gj-editor .viewer {

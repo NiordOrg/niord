@@ -1,0 +1,36 @@
+
+<div class="editor-contents container">
+    <h1>Editor-To-Be</h1>
+
+    <div class="row">
+        <div class="col-sm-12 col-md-8">
+            <table class='table table-condensed'>
+                <tr render-message-details msg="message" format="details" show-details-menu="false"></tr>
+            </table>
+        </div>
+        <div class="col-sm-12 col-md-4">
+            <div>
+                <a href ng-click="editFeatureCollection()">Open</a>
+                <a href ng-click="updateFeatureCollection(featureCollection)">Update</a>
+                <a href ng-click="openThumbnail()">Image</a>
+            </div>
+
+            <gj-editor id="message-geometry" class="editor-locations"
+                       edit-type="message" feature-collection="featureCollection"></gj-editor>
+
+            <div class="btn-group" uib-dropdown>
+                <button type="button" class="btn btn-sm btn-default" uib-dropdown-toggle>
+                    <span class="glyphicon glyphicon-camera"></span>
+                    Snapshot
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                    <li role="menuitem"><a href ng-click="messageThumbnailDialog()">Select thumbnail...</a></li>
+                    <li role="menuitem"><a href ng-click="uploadMessageThumbnailDialog()">Upload thumbnail...</a></li>
+                    <li role="menuitem"><a href ng-click="clearMessageThumbnail()">Clear thumbnail</a></li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</div>
