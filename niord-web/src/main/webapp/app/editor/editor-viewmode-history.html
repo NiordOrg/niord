@@ -2,63 +2,71 @@
 <div class="editor-contents container" ng-controller="EditorHistoryCtrl">
     <h3 class="page-header">Message History</h3>
 
-    <div style="margin: 20px 0 30px 0;">
-        <ul>
-            <li>
-                Select single revision to see the associated data.
-            </li>
-            <li>Select two revisions see
-                <span style="background-color: #fcff7f">changes</span>,
-                <span style="background-color: #8bff7f">additions</span>
-                and <span style="background-color: #fd7f7f">deletions</span>.
-            </li>
-        </ul>
+    <div class="empty-search-result" ng-if="!message.id">
+        <p>No persisted message selected</p>
     </div>
 
-    <div class="row">
-
-        <!-- History List -->
-        <div class="col-sm-12 col-md-6">
-            <table class='table table-condensed message-history-table'>
-                <tr>
-                    <th>&nbsp;</th>
-                    <th>Revision</th>
-                    <th>Date</th>
-                    <th>User</th>
-                    <th>Status</th>
-                </tr>
-                <tr ng-repeat="hist in messageHistory" >
-                    <td>
-                        <input type="checkbox" ng-model="hist.selected"
-                               ng-if="hist.selected || selectedHistory.length < 2"
-                               ng-change="updateSelection()">
-                    </td>
-                    <td>{{hist.version}}</td>
-                    <td>{{hist.created | formatDate}}</td>
-                    <td>{{hist.user == null ? 'System' : hist.user}}</td>
-                    <td>{{hist.status}}</td>
-                </tr>
-            </table>
+    <div ng-if="message.id">
+        <div style="margin: 20px 0 30px 0;">
+            <ul>
+                <li>
+                    Select single revision to see the associated data.
+                </li>
+                <li>Select two revisions see
+                    <span style="background-color: #fcff7f">changes</span>,
+                    <span style="background-color: #8bff7f">additions</span>
+                    and <span style="background-color: #fd7f7f">deletions</span>.
+                </li>
+            </ul>
         </div>
 
+        <div class="row">
 
-        <!-- History Details -->
-        <div class="col-sm-12 col-md-6">
-
-            <div ng-if="selectedHistory.length == 0" class="message-history-header">
-                No revision selected
+            <!-- History List -->
+            <div class="col-sm-12 col-md-6">
+                <table class='table table-condensed message-history-table'>
+                    <tr>
+                        <th>&nbsp;</th>
+                        <th>Revision</th>
+                        <th>Date</th>
+                        <th>User</th>
+                        <th>Status</th>
+                    </tr>
+                    <tr ng-repeat="hist in messageHistory" >
+                        <td>
+                            <input type="checkbox" ng-model="hist.selected"
+                                   ng-if="hist.selected || selectedHistory.length < 2"
+                                   ng-change="updateSelection()">
+                        </td>
+                        <td>{{hist.version}}</td>
+                        <td>{{hist.created | formatDate}}</td>
+                        <td>{{hist.user == null ? 'System' : hist.user}}</td>
+                        <td>{{hist.status}}</td>
+                    </tr>
+                </table>
             </div>
 
-            <div ng-if="selectedHistory.length == 1" class="message-history-header">
-                Revision #{{selectedHistory[0].version}}
+
+            <!-- History Details -->
+            <div class="col-sm-12 col-md-6">
+
+                <div ng-if="selectedHistory.length == 0" class="message-history-header">
+                    No revision selected
+                </div>
+
+                <div ng-if="selectedHistory.length == 1" class="message-history-header">
+                    Revision #{{selectedHistory[0].version}}
+                </div>
+
+                <div ng-if="selectedHistory.length == 2" class="message-history-header">
+                    Comparing revision #{{selectedHistory[0].version}} and #{{selectedHistory[1].version}}
+                </div>
+
+                <div class="message-history-json json-diff" history-json-diff="selectedHistory"></div>
             </div>
 
-            <div ng-if="selectedHistory.length == 2" class="message-history-header">
-                Comparing revision #{{selectedHistory[0].version}} and #{{selectedHistory[1].version}}
-            </div>
-
-            <div class="message-history-json json-diff" history-json-diff="selectedHistory"></div>
         </div>
 
     </div>
+
 </div>
