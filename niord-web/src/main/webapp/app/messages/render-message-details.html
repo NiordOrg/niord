@@ -26,7 +26,8 @@
 
     <!-- Reference lines -->
     <div class="row" ng-repeat="ref in msg.references">
-        <div class="col-sm-1 message-details-item-field" translate>msg.field.reference</div>
+        <div ng-if="$index == 0" class="col-sm-1 message-details-item-field" translate>msg.field.references</div>
+        <div ng-if="$index > 0" class="col-sm-1 message-details-item-field"></div>
         <div class="col-sm-11 message-details-item-value">
             <a href ng-click="referenceClicked(ref.messageId)">{{ref.messageId}}</a>
             <span ng-switch="ref.type">

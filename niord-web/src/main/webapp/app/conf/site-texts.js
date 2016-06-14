@@ -61,7 +61,7 @@ angular.module('niord.conf')
             'menu.action.select.none' : 'Clear selection',
             'menu.action.tags' : 'Tags...',
 
-            'msg.field.reference' : 'Reference',
+            'msg.field.references' : 'References',
             'msg.field.time' : 'Time',
             'msg.field.positions' : 'Location',
             'msg.field.details' : 'Details',

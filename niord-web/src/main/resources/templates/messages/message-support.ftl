@@ -255,7 +255,7 @@
         <#if msg.references?has_content>
             <tr>
                 <td class="field-name">
-                    ${text("msg.field.reference")}
+                    ${text("msg.field.references")}
                 </td>
                 <td class="field-value">
                     <#list msg.references as ref>
