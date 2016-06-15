@@ -2,8 +2,7 @@
 <div class="row">
     <div class="col-xs-12 col-sm-4 col-md-2">
         <div class="editor-field-label" ng-click="toggleEditField()"
-             ng-class="{ 'editor-field-label-editing' : editMode[fieldId] }">
-            <span class="glyphicon glyphicon-pencil" ng-if="editMode[fieldId]"></span>&nbsp;
+             ng-class="{ 'editor-field-label-editing' : editMode[fieldId], 'editor-field-invalid' : fieldInvalid() }">
             <span translate>{{fieldTitle}}</span>
         </div>
     </div>

@@ -14,6 +14,7 @@ angular.module('niord.editor')
             'use strict';
 
             $scope.message = {
+                status: 'DRAFT',
                 descs: []
             };
             $scope.featureCollection = {
@@ -22,12 +23,15 @@ angular.module('niord.editor')
             $scope.initId = $stateParams.id || '';
 
             $scope.editMode = {
+                type: false,
                 orig_info: false,
                 id: false,
                 title: false,
                 references: false,
                 time: false
             };
+
+            $scope.messageSeries = [];
 
             /*****************************/
             /** Initialize the editor   **/
@@ -40,6 +44,16 @@ angular.module('niord.editor')
                     $scope.featureCollection = $scope.message.geometry;
                 }
                 $scope.serializeCoordinates();
+
+                // Determine the message series for the current domain and message mainType
+                $scope.messageSeries.length = 0;
+                if ($rootScope.domain && $rootScope.domain.messageSeries) {
+                    angular.forEach($rootScope.domain.messageSeries, function (series) {
+                        if (series.mainType == $scope.message.mainType) {
+                            $scope.messageSeries.push(series);
+                        }
+                    });
+                }
             };
 
 
@@ -66,6 +80,43 @@ angular.module('niord.editor')
             /*****************************/
             /** Editor functionality    **/
             /*****************************/
+
+            /** Returns if the current user in the current domain can create messages of the given mainType **/
+            $scope.canCreateMessage = function (mainType) {
+                return $rootScope.supportsMainType(mainType) && $rootScope.hasRole('editor');
+            };
+
+
+            /** Create a message of the given mainType and AtoN selection **/
+            $scope.createMessage = function (mainType) {
+                if (!$scope.canCreateMessage(mainType)) {
+                    return;
+                }
+
+                $scope.message = {
+                    mainType: mainType,
+                    status: 'DRAFT',
+                    descs: []
+                };
+                $scope.featureCollection = {
+                    features: []
+                };
+                $scope.initMessage();
+            };
+
+
+            /** Returns if the given message field (group) is valid **/
+            $scope.fieldValid = function(fieldId) {
+                var msg = $scope.message;
+                switch (fieldId) {
+                    case 'type':
+                        return msg.mainType && msg.type;
+                    case 'time':
+                        return msg.dateIntervals && msg.dateIntervals.length > 0;
+                }
+                return true;
+            };
+
 
             /** Called when a message reference is clicked **/
             $scope.referenceClicked = function(messageId) {

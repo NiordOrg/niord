@@ -2,13 +2,49 @@
 <div class="editor-contents container">
     <h3 class="page-header">Message Editor</h3>
 
+    <div ng-if="!message.mainType" style="margin-top: 10px">
+        <button class="btn btn-sm btn-primary" ng-if="canCreateMessage('NW')" ng-click="createMessage('NW')"
+                ng-disabled="selection.isEmpty()">New NW</button>
+        <button class="btn btn-sm btn-primary" ng-if="canCreateMessage('NM')" ng-click="createMessage('NM')"
+                ng-disabled="selection.isEmpty()">New NM</button>
+    </div>
+
+
     <form ng-if="message.mainType" method="post" name="editForm">
         <div class="editor-fields" style="margin-bottom: 40px;">
 
             <!-- ********************* -->
+            <!-- ** Type            ** -->
+            <!-- ********************* -->
+            <editor-field edit-mode="editMode" field-id="type" field-title="msg.field.type" field-valid="fieldValid(fieldId)">
+
+                <editor-field-value-viewer>
+                    {{message.mainType}}
+                    <span ng-if="message.type">({{'msg.type.' + message.type | translate}})</span>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12 col-md-6 col-lg-4">
+                    <div class="btn-group" ng-if="message.mainType == 'NW' || supportsNw(true)">
+                        <label class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'LOCAL_WARNING'" translate>msg.type.LOCAL_WARNING</label>
+                        <label class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'COASTAL_WARNING'" translate>msg.type.COASTAL_WARNING</label>
+                        <label class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'SUBAREA_WARNING'" translate>msg.type.SUBAREA_WARNING</label>
+                        <label class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'NAVAREA_WARNING'" translate>msg.type.NAVAREA_WARNING</label>
+                    </div>
+                    <div class="btn-group" ng-if="message.mainType == 'NM' || supportsNm(true)">
+                        <label class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'TEMPORARY_NOTICE'" translate>msg.type.TEMPORARY_NOTICE</label>
+                        <label class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'PRELIMINARY_NOTICE'" translate>msg.type.PRELIMINARY_NOTICE</label>
+                        <label class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'PERMANENT_NOTICE'" translate>msg.type.PERMANENT_NOTICE</label>
+                        <label class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'MISCELLANEOUS_NOTICE'" translate>msg.type.MISCELLANEOUS_NOTICE</label>
+                    </div>
+                </editor-field-value-editor>
+
+            </editor-field>
+
+
+            <!-- ********************* -->
             <!-- ** Original Info   ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="orig_info" field-title="msg.field.orig_info">
+            <editor-field ng-if="message.mainType == 'NM'" edit-mode="editMode" field-id="orig_info" field-title="msg.field.orig_info">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.originalInformation">&#9733;</div>
@@ -34,6 +70,12 @@
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">
+                    <div style="margin-bottom: 10px">
+                        <select class="form-control input-sm" style="width: 200px"
+                                ng-model="message.messageSeries"
+                                ng-options="series.seriesId for series in messageSeries" >
+                        </select>
+                    </div>
                     <div><span class="label label-message-id" style="font-size: 11px">{{message.shortId}}</span></div>
                     <div>MRN: {{message.mrn}}</div>
                 </editor-field-value-editor>
@@ -115,7 +157,7 @@
             <!-- ********************* -->
             <!-- ** Time            ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="time" field-title="msg.field.time">
+            <editor-field edit-mode="editMode" field-id="time" field-title="msg.field.time" field-valid="fieldValid(fieldId)">
 
                 <editor-field-value-viewer>
                     <render-message-dates msg="message"></render-message-dates>

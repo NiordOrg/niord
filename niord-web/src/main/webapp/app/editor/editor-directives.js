@@ -16,7 +16,8 @@ angular.module('niord.editor')
             scope: {
                 editMode:   "=",
                 fieldId:    "@",
-                fieldTitle: "@"
+                fieldTitle: "@",
+                fieldValid: '&'
             },
 
             controller: function($scope) {
@@ -27,13 +28,22 @@ angular.module('niord.editor')
                 }
             },
 
-            link: function(scope) {
+            link: function(scope, element, attrs) {
 
                 /** Toggles the edit mode of the field **/
                 scope.toggleEditField = function () {
                     scope.editMode[scope.fieldId] = !scope.editMode[scope.fieldId];
                 };
 
+
+                /** Returns if the field value is invalid */
+                scope.fieldInvalid = function () {
+                    if (attrs.fieldValid) {
+                        return !scope.fieldValid({ fieldId: scope.fieldId });
+                    } else {
+                        return false;
+                    }
+                };
             }
         };
     }])

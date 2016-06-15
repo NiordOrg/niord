@@ -51,7 +51,11 @@
 
 .editor-field-label-editing {
     background-color: darkgray;
-    color: white;
+    color: white!important;
+}
+
+.editor-field-invalid {
+    color: #b88;
 }
 
 .editor-field-value {
