@@ -7,9 +7,9 @@ angular.module('niord.editor')
     /**
      * Main message editor controller
      */
-    .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$uibModal', 'growl',
+    .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$http', '$uibModal', 'growl',
             'MessageService', 'MapService', 'UploadFileService',
-        function ($scope, $rootScope, $stateParams, $state, $uibModal, growl,
+        function ($scope, $rootScope, $stateParams, $state, $http, $uibModal, growl,
                   MessageService, MapService, UploadFileService) {
             'use strict';
 
@@ -28,7 +28,10 @@ angular.module('niord.editor')
                 id: false,
                 title: false,
                 references: false,
-                time: false
+                time: false,
+                areas: false,
+                categories: false,
+                positions: false
             };
 
             $scope.messageSeries = [];
@@ -39,9 +42,11 @@ angular.module('niord.editor')
 
             /** Called during initialization when the message has been loaded or instantiated */
             $scope.initMessage = function () {
+                var msg = $scope.message;
+
                 // Instantiate the feature collection from the message geometry
-                if ($scope.message.geometry) {
-                    $scope.featureCollection = $scope.message.geometry;
+                if (msg.geometry) {
+                    $scope.featureCollection = msg.geometry;
                 }
                 $scope.serializeCoordinates();
 
@@ -49,8 +54,12 @@ angular.module('niord.editor')
                 $scope.messageSeries.length = 0;
                 if ($rootScope.domain && $rootScope.domain.messageSeries) {
                     angular.forEach($rootScope.domain.messageSeries, function (series) {
-                        if (series.mainType == $scope.message.mainType) {
-                            $scope.messageSeries.push(series);
+                        if (series.mainType == msg.mainType) {
+                            if (msg.messageSeries && msg.messageSeries.seriesId == series.seriesId) {
+                                $scope.messageSeries.push(msg.messageSeries);
+                            } else {
+                                $scope.messageSeries.push(series);
+                            }
                         }
                     });
                 }
@@ -111,8 +120,12 @@ angular.module('niord.editor')
                 switch (fieldId) {
                     case 'type':
                         return msg.mainType && msg.type;
+                    case 'id':
+                        return msg.messageSeries !== undefined;
                     case 'time':
                         return msg.dateIntervals && msg.dateIntervals.length > 0;
+                    case 'areas':
+                        return msg.areas && msg.areas.length > 0;
                 }
                 return true;
             };
@@ -121,6 +134,67 @@ angular.module('niord.editor')
             /** Called when a message reference is clicked **/
             $scope.referenceClicked = function(messageId) {
                 MessageService.detailsDialog(messageId);
+            };
+
+
+            // Use for charts selection
+            $scope.charts = [];
+            $scope.refreshCharts = function(name) {
+                if (!name || name.length == 0) {
+                    return [];
+                }
+                return $http.get(
+                    '/rest/charts/search?name=' + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10'
+                ).then(function(response) {
+                    $scope.charts = response.data;
+                });
+            };
+
+            
+            // Use for area selection
+            $scope.areas = [];
+            $scope.refreshAreas = function(name) {
+                if (!name || name.length == 0) {
+                    return [];
+                }
+                return $http.get(
+                    '/rest/areas/search?name=' + encodeURIComponent(name) +
+                    '&domain=true'+
+                    '&lang=' + $rootScope.language +
+                    '&limit=10'
+                ).then(function(response) {
+                    $scope.areas = response.data;
+                });
+            };
+
+
+            // Use for category selection
+            $scope.categories = [];
+            $scope.refreshCategories = function(name) {
+                if (!name || name.length == 0) {
+                    return [];
+                }
+                return $http.get(
+                    '/rest/categories/search?name=' + encodeURIComponent(name) +
+                    '&domain=true' +
+                    '&lang=' + $rootScope.language +
+                    '&limit=10'
+                ).then(function(response) {
+                    $scope.categories = response.data;
+                });
+            };
+
+
+            // Recursively formats the names of the parent lineage for areas and categories
+            $scope.formatParents = function(child) {
+                var txt = undefined;
+                if (child) {
+                    txt = (child.descs && child.descs.length > 0) ? child.descs[0].name : 'N/A';
+                    if (child.parent) {
+                        txt = $scope.formatParents(child.parent) + " - " + txt;
+                    }
+                }
+                return txt;
             };
 
 

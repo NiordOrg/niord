@@ -63,7 +63,7 @@
             <!-- ********************* -->
             <!-- ** Message ID      ** -->
             <!-- ********************* -->
-            <editor-field ng-if="message.shortId" edit-mode="editMode" field-id="id" field-title="msg.field.id">
+            <editor-field edit-mode="editMode" field-id="id" field-title="msg.field.id" field-valid="fieldValid(fieldId)">
 
                 <editor-field-value-viewer>
                     <span class="label label-message-id" style="font-size: 11px">{{message.shortId}}</span>
@@ -98,6 +98,7 @@
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">
+                    TBD
                 </editor-field-value-editor>
 
             </editor-field>
@@ -164,6 +165,36 @@
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">
+                    TBD
+                </editor-field-value-editor>
+
+            </editor-field>
+
+
+            <!-- ********************* -->
+            <!-- ** Areas           ** -->
+            <!-- ********************* -->
+            <editor-field edit-mode="editMode" field-id="areas" field-title="msg.field.areas" field-valid="fieldValid(fieldId)">
+
+                <editor-field-value-viewer>
+                    <span ng-repeat="area in message.areas"><span ng-if="$index > 0">,</span> {{area.descs[0].name}}</span>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12 col-md-6">
+                    <ui-select multiple id="areas" ng-model="message.areas" >
+                        <ui-select-match placeholder="Select areas">
+                            {{$item.descs[0].name}}
+                        </ui-select-match>
+                        <ui-select-choices repeat="area in areas"
+                                           refresh="refreshAreas($select.search)"
+                                           refresh-delay="100">
+                            <div>
+                                <span ng-bind-html="area.descs[0].name | highlight: $select.search"></span>
+                                <small ng-if="area.parent">({{formatParents(area.parent)}})</small>
+                            </div>
+
+                        </ui-select-choices>
+                    </ui-select>
                 </editor-field-value-editor>
 
             </editor-field>
@@ -215,6 +246,65 @@
 
             </editor-field>
 
+
+            <!-- ********************* -->
+            <!-- ** Charts          ** -->
+            <!-- ********************* -->
+            <editor-field edit-mode="editMode" field-id="charts" field-title="msg.field.charts">
+
+                <editor-field-value-viewer>
+                    <span ng-repeat="chart in message.charts"><span ng-if="$index > 0">,</span>
+                        {{chart.chartNumber}}<span ng-if="chart.internationalNumber"> (INT {{chart.internationalNumber}})</span></span>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12 col-md-8">
+                    <ui-select multiple id="charts" ng-model="message.charts" >
+                        <ui-select-match placeholder="Select charts">
+                            {{$item.chartNumber}}
+                            <span ng-if="$item.internationalNumber">(INT {{$item.internationalNumber}})</span>
+                        </ui-select-match>
+                        <ui-select-choices repeat="chart in charts"
+                                           refresh="refreshCharts($select.search)"
+                                           refresh-delay="100">
+                            <span ng-bind-html="chart.chartNumber | highlight: $select.search"></span>
+                            <span ng-if="chart.internationalNumber">(INT {{chart.internationalNumber}})</span>
+                            <small ng-bind-html="chart.name | highlight: $select.search"></small>
+                        </ui-select-choices>
+                    </ui-select>
+                </editor-field-value-editor>
+
+            </editor-field>
+
+
+            <!-- ********************* -->
+            <!-- ** Categories      ** -->
+            <!-- ********************* -->
+            <editor-field edit-mode="editMode" field-id="categories" field-title="msg.field.categories">
+
+                <editor-field-value-viewer>
+                    <span ng-repeat="category in message.categories"><span ng-if="$index > 0">,</span> {{category.descs[0].name}}</span>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12 col-md-6">
+                    <ui-select multiple id="categories" ng-model="message.categories" >
+                        <ui-select-match placeholder="Select category">
+                            {{$item.descs[0].name}}
+                        </ui-select-match>
+                        <ui-select-choices repeat="category in categories"
+                                           refresh="refreshCategories($select.search)"
+                                           refresh-delay="100">
+                            <div>
+                                <span ng-bind-html="category.descs[0].name | highlight: $select.search"></span>
+                                <small ng-if="category.parent">({{formatParents(category.parent)}})</small>
+                            </div>
+
+                        </ui-select-choices>
+                    </ui-select>
+                </editor-field-value-editor>
+
+            </editor-field>
+
+
         </div>
 
         <!-- Save and revert buttons -->
@@ -229,4 +319,9 @@
 
 
     </form>
+
+
+    <div style="font-size: 10px;margin-top: 50px;">DEBUG:<br>{{message | json}}</div>
+
+
 </div>
