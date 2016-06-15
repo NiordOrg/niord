@@ -21,6 +21,14 @@ angular.module('niord.editor')
             };
             $scope.initId = $stateParams.id || '';
 
+            $scope.editMode = {
+                orig_info: false,
+                id: false,
+                title: false,
+                references: false,
+                time: false
+            };
+
             /*****************************/
             /** Initialize the editor   **/
             /*****************************/
@@ -31,6 +39,7 @@ angular.module('niord.editor')
                 if ($scope.message.geometry) {
                     $scope.featureCollection = $scope.message.geometry;
                 }
+                $scope.serializeCoordinates();
             };
 
 
@@ -52,17 +61,59 @@ angular.module('niord.editor')
                     $scope.initMessage();
                 }
             };
-            $scope.init();
 
 
-            $scope.editFeatureCollection = function () {
-                $scope.$broadcast('gj-editor-edit', "message-geometry");
+            /*****************************/
+            /** Editor functionality    **/
+            /*****************************/
+
+            /** Called when a message reference is clicked **/
+            $scope.referenceClicked = function(messageId) {
+                MessageService.detailsDialog(messageId);
             };
 
-            $scope.updateFeatureCollection = function (fc) {
-                MapService.updateFeatureCollection(fc);
+
+            $scope.showCoordinates = false;
+            $scope.toggleShowCoordinates = function () {
+                $scope.showCoordinates = !$scope.showCoordinates;
             };
-            
+
+
+            /** Serializes the message coordinates **/
+            $scope.featureCoordinates = [];
+            $scope.serializeCoordinates = function () {
+                // Compute on-demand
+                $scope.featureCoordinates.length = 0;
+                if ($scope.featureCollection && $scope.featureCollection.features) {
+                    var index = 1;
+                    angular.forEach($scope.featureCollection.features, function (feature) {
+                        var coords = [];
+                        MapService.serializeCoordinates(feature, coords);
+                        if (coords.length > 0) {
+                            var name = feature.properties ? feature.properties['name:' + $rootScope.language] : undefined;
+                            $scope.featureCoordinates.push({
+                                coords: coords,
+                                startIndex: index,
+                                name: name
+                            });
+                            index += coords.length;
+                        }
+                    });
+                }
+                return $scope.featureCoordinates;
+            };
+
+            /** called when the message geometry has been changed **/
+            $scope.geometrySaved = function (featureCollection) {
+                $scope.serializeCoordinates();
+            };
+
+
+            /*****************************/
+            /** Thumbnails handling     **/
+            /*****************************/
+
+
             $scope.openThumbnail = function () {
                 window.open('/rest/message-map-image/' + $stateParams.id + '.png');
             };
@@ -107,7 +158,14 @@ angular.module('niord.editor')
                             growl.info("Deleted message thumbnail", { ttl: 3000 })
                         });
                 }
-            }
+            };
+
+
+            /*****************************/
+            /** Bootstrap editor        **/
+            /*****************************/
+
+            $scope.init();
 
         }])
 

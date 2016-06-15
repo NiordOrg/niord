@@ -3,6 +3,88 @@
  */
 angular.module('niord.editor')
 
+    /**********************************************
+     * Directives that wraps an editable message
+     * field with a title.
+     **********************************************/
+    .directive('editorField', [function () {
+        return {
+            restrict: 'E',
+            templateUrl: '/app/editor/editor-field.html',
+            replace: true,
+            transclude: true,
+            scope: {
+                editMode:   "=",
+                fieldId:    "@",
+                fieldTitle: "@"
+            },
+
+            controller: function($scope) {
+
+                /** Returns if the field is currently editable **/
+                this.fieldEditable = function () {
+                    return $scope.editMode[$scope.fieldId];
+                }
+            },
+
+            link: function(scope) {
+
+                /** Toggles the edit mode of the field **/
+                scope.toggleEditField = function () {
+                    scope.editMode[scope.fieldId] = !scope.editMode[scope.fieldId];
+                };
+
+            }
+        };
+    }])
+
+
+    /** editorField sub-directive that displays the field value when the field is NOT being edited **/
+    .directive('editorFieldValueViewer', [function () {
+        return {
+            restrict: 'E',
+            template: '<div ng-if="showViewer()" ng-transclude></div>',
+            replace: false,
+            transclude: true,
+            scope: {
+            },
+            require: '^editorField',
+            link: function(scope, element, attrs, ctrl) {
+
+                /** Returns whether to show the viewer or not **/
+                scope.showViewer = function () {
+                    return !ctrl.fieldEditable();
+                }
+            }
+        };
+    }])
+
+
+    /** editorField sub-directive that displays the field value when the field is being edited **/
+    .directive('editorFieldValueEditor', [function () {
+        return {
+            restrict: 'E',
+            template:
+                    '<div ng-if="showEditor()" class="container-fluid">' +
+                    '  <div class="row"><div class="{{valueClass}}" ng-transclude></div></div>' +
+                    '</div>',
+            replace: false,
+            transclude: true,
+            scope: {
+                valueClass: "@"
+            },
+            require: '^editorField',
+            link: function(scope, element, attrs, ctrl) {
+
+                /** Returns whether to show the editor or not **/
+                scope.showEditor = function () {
+                    return ctrl.fieldEditable();
+                }
+            }
+        };
+    }])
+
+
     /********************************
      * Renders the JSON diff structure
      ********************************/

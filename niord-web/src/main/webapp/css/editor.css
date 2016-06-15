@@ -18,6 +18,57 @@
 }
 
 
+/** Editor -> Editor **/
+
+.editor-fields {
+    padding: 10px!important;
+    font-size: 12px;
+}
+
+.editor-field-label {
+    color: #aaa;
+    font-weight: bold;
+    padding: 2px 10px 2px 0;
+    cursor: pointer;
+    margin-top: 15px;
+    background-color: lightgray;
+}
+
+@media (min-width: 768px) {
+    .editor-field-label {
+        text-align: right;
+        border-top-left-radius: 15px;
+        border-bottom-left-radius: 15px;
+        margin-top: 0;
+        background-color: white;
+    }
+}
+
+.editor-field-label:hover {
+    color: gray;
+    background-color: lightgray;
+}
+
+.editor-field-label-editing {
+    background-color: darkgray;
+    color: white;
+}
+
+.editor-field-value {
+    padding: 2px;
+}
+
+.editor-field-value ol {
+    padding-left: 0;
+}
+
+.editor-field-value-editing {
+    border: 1px solid lightgray;
+    box-shadow: 2px 2px 4px rgba(50, 50, 50, 0.5);
+    padding: 10px 0px;
+    margin-bottom: 5px;
+}
+
 /** Editor -> Status **/
 
 .message-status-panel {

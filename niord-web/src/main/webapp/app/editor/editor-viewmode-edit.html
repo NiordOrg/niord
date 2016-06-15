@@ -2,35 +2,189 @@
 <div class="editor-contents container">
     <h3 class="page-header">Message Editor</h3>
 
-    <div class="row">
-        <div class="col-sm-12 col-md-8">
-            <table class='table table-condensed'>
-                <tr render-message-details msg="message" format="details" show-details-menu="false"></tr>
-            </table>
+    <form ng-if="message.mainType" method="post" name="editForm">
+        <div class="editor-fields" style="margin-bottom: 40px;">
+
+            <!-- ********************* -->
+            <!-- ** Original Info   ** -->
+            <!-- ********************* -->
+            <editor-field edit-mode="editMode" field-id="orig_info" field-title="msg.field.orig_info">
+
+                <editor-field-value-viewer>
+                    <div ng-if="message.originalInformation">&#9733;</div>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12">
+                    <button type="button" class="btn btn-sm btn-default" ng-model="message.originalInformation"
+                            uib-btn-checkbox uib-btn-checkbox-true="true" uib-btn-checkbox-false="false">
+                        <span class="glyphicon glyphicon-star"></span>
+                    </button>
+                </editor-field-value-editor>
+
+            </editor-field>
+
+
+            <!-- ********************* -->
+            <!-- ** Message ID      ** -->
+            <!-- ********************* -->
+            <editor-field ng-if="message.shortId" edit-mode="editMode" field-id="id" field-title="msg.field.id">
+
+                <editor-field-value-viewer>
+                    <span class="label label-message-id" style="font-size: 11px">{{message.shortId}}</span>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12">
+                    <div><span class="label label-message-id" style="font-size: 11px">{{message.shortId}}</span></div>
+                    <div>MRN: {{message.mrn}}</div>
+                </editor-field-value-editor>
+
+            </editor-field>
+
+
+            <!-- ********************* -->
+            <!-- ** Title line      ** -->
+            <!-- ********************* -->
+            <editor-field edit-mode="editMode" field-id="title" field-title="msg.field.title">
+
+                <editor-field-value-viewer>
+                    <div ng-if="message.descs.length > 0">
+                        <strong>{{message.descs[0].title}}</strong>
+                        <span ng-if="message.descs[0].lang != language" style="color: darkgray;">
+                            <img ng-src="/img/flags/{{message.descs[0].lang}}.png" style="height: 12px; opacity: 0.5;"/>
+                        </span>
+                    </div>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12">
+                </editor-field-value-editor>
+
+            </editor-field>
+
+
+            <!-- ********************* -->
+            <!-- ** References      ** -->
+            <!-- ********************* -->
+            <editor-field edit-mode="editMode" field-id="references" field-title="msg.field.references">
+
+                <editor-field-value-viewer>
+                    <div ng-repeat="ref in message.references">
+                        <a href ng-click="referenceClicked(ref.messageId)">{{ref.messageId}}</a>
+                        <span ng-switch="ref.type">
+                            <span ng-switch-when="REPETITION" translate>msg.reference.repetition</span>
+                            <span ng-switch-when="CANCELLATION" translate>msg.reference.cancelled</span>
+                            <span ng-switch-when="UPDATE" translate>msg.reference.updated</span>
+                        </span>
+                        <span ng-if="ref.description">{{ref.description}}</span>
+                    </div>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12 col-md-6">
+                    <table class="table table-condensed table-hover">
+                        <tr ng-repeat="ref in message.references">
+                            <td><a href ng-click="referenceClicked(ref.messageId)">{{ref.messageId}}</a></td>
+                            <td>
+                                <span ng-switch="ref.type">
+                                    <span ng-switch-when="REPETITION" translate>msg.reference.repetition</span>
+                                    <span ng-switch-when="CANCELLATION" translate>msg.reference.cancelled</span>
+                                    <span ng-switch-when="UPDATE" translate>msg.reference.updated</span>
+                                </span>
+                            </td>
+                            <td><a href ng-click="deleteReference(ref);" title="Delete Reference"><i class="glyphicon glyphicon-trash"></i></a></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <input type="text" class="form-control input-sm" placeholder="Message ID" ng-model="newRef.id" />
+                            </td>
+                            <td>
+                                <select class="form-control input-sm" ng-model="newRef.type">
+                                    <option value="REFERENCE">Reference</option>
+                                    <option value="REPETITION">Repitition</option>
+                                    <option value="CANCELLATION">Cancellation</option>
+                                    <option value="UPDATE">Update</option>
+                                </select>
+                            </td>
+                            <td><a href ng-click="addReference();" title="Add Reference" >
+                                <i class="glyphicon glyphicon-plus" style="margin-top: 5px;"></i></a></td>
+                        </tr>
+                    </table>
+                </editor-field-value-editor>
+
+            </editor-field>
+
+
+            <!-- ********************* -->
+            <!-- ** Time            ** -->
+            <!-- ********************* -->
+            <editor-field edit-mode="editMode" field-id="time" field-title="msg.field.time">
+
+                <editor-field-value-viewer>
+                    <render-message-dates msg="message"></render-message-dates>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12">
+                </editor-field-value-editor>
+
+            </editor-field>
+
+
+            <!-- ********************* -->
+            <!-- ** Positions       ** -->
+            <!-- ********************* -->
+            <editor-field edit-mode="editMode" field-id="positions" field-title="msg.field.positions">
+
+                <editor-field-value-viewer>
+                    <div>
+                        <span class="glyphicon glyphicon-map-marker" style="color: darkgray"></span>
+                        <a href ng-if="showCoordinates" ng-click="toggleShowCoordinates()" class="clickable" translate>msg.hide_positions</a>
+                        <a href ng-if="!showCoordinates" ng-click="toggleShowCoordinates()" class="clickable" translate>msg.show_positions</a>
+                    </div>
+                    <div ng-if="showCoordinates">
+                        <div ng-repeat="featureCoords in featureCoordinates">
+                            <div ng-if="featureCoords.name" class="message-details-position-names">{{featureCoords.name}}</div>
+                            <ol class="message-details-positions" start="{{featureCoords.startIndex}}">
+                                <li ng-repeat="c in featureCoords.coords">
+                                    <span>{{c | lonlat:{ decimals : 3, pp: true } }}<span ng-if="c.name">, {{c.name}}</span></span>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12">
+                    <gj-editor id="position-editor"
+                               class="editor-locations"
+                               edit-type="message"
+                               feature-collection="featureCollection"
+                               on-save="geometrySaved(featureCollection)"></gj-editor>
+
+                    <div class="btn-group" uib-dropdown>
+                        <button type="button" class="btn btn-sm btn-default" uib-dropdown-toggle>
+                            <span class="glyphicon glyphicon-camera"></span>
+                            Snapshot
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                            <li role="menuitem"><a href ng-click="messageThumbnailDialog()">Select thumbnail...</a></li>
+                            <li role="menuitem"><a href ng-click="uploadMessageThumbnailDialog()">Upload thumbnail...</a></li>
+                            <li role="menuitem"><a href ng-click="clearMessageThumbnail()">Clear thumbnail</a></li>
+                        </ul>
+                    </div>
+                </editor-field-value-editor>
+
+            </editor-field>
+
         </div>
-        <div class="col-sm-12 col-md-4">
-            <div>
-                <a href ng-click="editFeatureCollection()">Open</a>
-                <a href ng-click="updateFeatureCollection(featureCollection)">Update</a>
-                <a href ng-click="openThumbnail()">Image</a>
-            </div>
 
-            <gj-editor id="message-geometry" class="editor-locations"
-                       edit-type="message" feature-collection="featureCollection"></gj-editor>
-
-            <div class="btn-group" uib-dropdown>
-                <button type="button" class="btn btn-sm btn-default" uib-dropdown-toggle>
-                    <span class="glyphicon glyphicon-camera"></span>
-                    Snapshot
-                    <span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
-                    <li role="menuitem"><a href ng-click="messageThumbnailDialog()">Select thumbnail...</a></li>
-                    <li role="menuitem"><a href ng-click="uploadMessageThumbnailDialog()">Upload thumbnail...</a></li>
-                    <li role="menuitem"><a href ng-click="clearMessageThumbnail()">Clear thumbnail</a></li>
-                </ul>
-            </div>
-
+        <!-- Save and revert buttons -->
+        <div id="save" class="row editor-section">
+            <button href class="btn btn-primary btn-sm" ng-click="saveMessage()" ng-disabled="editForm.$pristine || editForm.$invalid || messageSaved">
+                <span class="glyphicon glyphicon-floppy-disk"></span> Save Message
+            </button>
+            <button href class="btn btn-default btn-sm" ng-click="reloadMessage()">
+                <span class="glyphicon glyphicon-refresh"></span> Reload Message
+            </button>
         </div>
-    </div>
+
+
+    </form>
 </div>
