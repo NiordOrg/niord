@@ -220,7 +220,7 @@
             <editor-field edit-mode="editMode" field-id="positions" field-title="msg.field.positions">
 
                 <editor-field-value-viewer>
-                    <div ng-if="featureCollection.features.length > 0">
+                    <div ng-if="featureCoordinates.length > 0">
                         <span class="glyphicon glyphicon-map-marker" style="color: darkgray"></span>
                         <a href ng-if="showCoordinates" ng-click="toggleShowCoordinates()" class="clickable" translate>msg.hide_positions</a>
                         <a href ng-if="!showCoordinates" ng-click="toggleShowCoordinates()" class="clickable" translate>msg.show_positions</a>
@@ -241,7 +241,7 @@
                     <gj-editor id="position-editor"
                                class="editor-locations"
                                edit-type="message"
-                               feature-collection="featureCollection"
+                               feature-collection="message.geometry"
                                on-save="geometrySaved(featureCollection)"></gj-editor>
 
                     <div class="btn-group" uib-dropdown>

@@ -15,10 +15,10 @@ angular.module('niord.editor')
 
             $scope.message = {
                 status: 'DRAFT',
-                descs: []
-            };
-            $scope.featureCollection = {
-                features: []
+                descs: [],
+                geometry: {
+                    features: []
+                }
             };
             $scope.initId = $stateParams.id || '';
 
@@ -55,8 +55,10 @@ angular.module('niord.editor')
                 LangService.checkDescs(msg, initDescField, undefined, $rootScope.modelLanguages);
 
                 // Instantiate the feature collection from the message geometry
-                if (msg.geometry) {
-                    $scope.featureCollection = msg.geometry;
+                if (!msg.geometry) {
+                    msg.geometry = {
+                        features: []
+                    }
                 }
                 $scope.serializeCoordinates();
 
@@ -115,10 +117,10 @@ angular.module('niord.editor')
                 $scope.message = {
                     mainType: mainType,
                     status: 'DRAFT',
-                    descs: []
-                };
-                $scope.featureCollection = {
-                    features: []
+                    descs: [],
+                    geometry: {
+                        features: []
+                    }
                 };
                 $scope.initMessage();
             };
@@ -180,8 +182,9 @@ angular.module('niord.editor')
 
             /** Copies the locations from the selected area to the message **/
             $scope.copyAreaLocations = function() {
-                if ($scope.message.areas) {
-                    var areaIds = $scope.message.areas.map(function (a) { return a.id;  }).join(",");
+                var msg = $scope.message;
+                if (msg.areas) {
+                    var areaIds = msg.areas.map(function (a) { return a.id;  }).join(",");
                     $http.get('/rest/areas/search/' + areaIds)
                         .success(function (areas) {
                             angular.forEach(areas, function (area) {
@@ -194,8 +197,8 @@ angular.module('niord.editor')
                                     angular.forEach(area.descs, function (desc) {
                                         feature.properties['name:' + desc.lang] = desc.name;
                                     });
-                                    $scope.featureCollection.features.push(feature);
-                                    $scope.geometrySaved($scope.featureCollection);
+                                    msg.geometry.features.push(feature);
+                                    $scope.geometrySaved(msg.geometry);
                                 }
                             });
                         });
@@ -242,10 +245,11 @@ angular.module('niord.editor')
             $scope.featureCoordinates = [];
             $scope.serializeCoordinates = function () {
                 // Compute on-demand
+                var msg = $scope.message;
                 $scope.featureCoordinates.length = 0;
-                if ($scope.featureCollection && $scope.featureCollection.features) {
+                if (msg.geometry.features.length > 0) {
                     var index = 1;
-                    angular.forEach($scope.featureCollection.features, function (feature) {
+                    angular.forEach(msg.geometry.features, function (feature) {
                         var coords = [];
                         MapService.serializeCoordinates(feature, coords);
                         if (coords.length > 0) {
