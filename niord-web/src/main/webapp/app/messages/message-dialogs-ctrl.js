@@ -266,7 +266,7 @@ angular.module('niord.messages')
             };
             $scope.messageList = [];
 
-            /** Searches areas associated with the current domain, which have a geometry */
+            /** Searches areas associated with the current domain, which have defined a message sorting */
             $scope.searchAreas = function (name) {
                 return $http.get('/rest/areas/search?name=' + encodeURIComponent(name)
                     + '&domain=' + ($rootScope.domain !== undefined)

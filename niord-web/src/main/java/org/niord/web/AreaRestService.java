@@ -89,9 +89,10 @@ public class AreaRestService extends AbstractBatchableRestService {
 
         log.debug(String.format("Searching for areas: %s", params));
 
-        DataFilter filter = DataFilter.get()
-                .fields(DataFilter.PARENT, DataFilter.GEOMETRY, DataFilter.DETAILS)
+        DataFilter f = DataFilter.get()
+                .fields(DataFilter.PARENT, DataFilter.DETAILS)
                 .lang(lang);
+        DataFilter filter = (geometry) ? f.fields(DataFilter.GEOMETRY) : f;
 
         return areaService.searchAreas(params).stream()
                 .map(a -> a.toVo(filter))
