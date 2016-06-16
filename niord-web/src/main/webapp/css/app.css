@@ -367,6 +367,10 @@ li.view-mode-menu-btn .active .badge {
     font-size: 12px!important;
 }
 
+.ui-select-placeholder {
+    font-size: 12px!important;
+}
+
 body > .ui-select-container {
     z-index:9999;
 }

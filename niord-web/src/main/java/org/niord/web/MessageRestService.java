@@ -25,6 +25,7 @@ import org.niord.core.fm.FmService;
 import org.niord.core.fm.FmService.ProcessFormat;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageHistory;
+import org.niord.core.message.MessageIdMatch;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
@@ -327,6 +328,31 @@ public class MessageRestService {
                 : DataFilter.get().lang(language).fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
 
         return searchResult.map(m -> m.toVo(filter));
+    }
+
+
+    /**
+     * Returns a list of message IDs (database ID, MRN or shortId) that - possibly partially - matches
+     * real text.
+     *
+     * @param lang the language to return the title in
+     * @param txt the text to match
+     * @param maxGroupCount the max number of matching message IDs to return.
+     * @param includeText whether to include the search text as a match
+     * @return the search result
+     */
+    @GET
+    @Path("/search-message-ids")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public List<MessageIdMatch> searchMessageIds(
+            @QueryParam("lang") String lang,
+            @QueryParam("txt") String txt,
+            @QueryParam("maxGroupCount") @DefaultValue("10") int maxGroupCount,
+            @QueryParam("includeText") @DefaultValue("true") boolean includeText) {
+
+        return messageService.searchMessageIds(lang, txt, maxGroupCount, includeText);
     }
 
 

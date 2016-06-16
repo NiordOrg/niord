@@ -74,7 +74,13 @@ import java.util.Set;
         @NamedQuery(name="Message.findByMrn",
                 query="SELECT msg FROM Message msg where msg.mrn = :mrn"),
         @NamedQuery(name="Message.findByShortId",
-                query="SELECT msg FROM Message msg where msg.shortId = :shortId")
+                query="SELECT msg FROM Message msg where msg.shortId = :shortId"),
+        @NamedQuery(name  = "Message.searchShortIds",
+                query="select distinct m from Message m where lower(m.shortId) like lower(:term) "
+                        + "order by locate(lower(:sort), lower(m.shortId)) asc "),
+        @NamedQuery(name  = "Message.searchMrn",
+                query="select distinct m from Message m where lower(m.mrn) like lower(:term) "
+                        + "order by locate(lower(:sort), lower(m.mrn)) asc ")
 })
 @SuppressWarnings("unused")
 public class Message extends VersionedEntity<Integer> implements ILocalizable<MessageDesc> {

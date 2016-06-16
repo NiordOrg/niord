@@ -299,6 +299,7 @@ angular.module('niord.editor')
                 return $state.includes(page);
             };
 
+
             /*****************************/
             /** Action menu functions   **/
             /*****************************/
@@ -339,6 +340,19 @@ angular.module('niord.editor')
 
                         $window.location = '/rest/messages/message/' + $scope.message.id + '.pdf?' + params;
                     });
+            };
+
+
+            /** Opens a dialog that allows the editor to compare this message with another message **/
+            $scope.compareMessages = function () {
+                $uibModal.open({
+                    controller: "MessageComparisonDialogCtrl",
+                    templateUrl: "/app/editor/message-comparison-dialog.html",
+                    size: 'lg',
+                    resolve: {
+                        message: function () { return $scope.message; }
+                    }
+                });
             };
 
 
@@ -579,5 +593,63 @@ angular.module('niord.editor')
 
         }])
 
-        ;
+
+    /*******************************************************************
+     * Controller that handles the message Thumbnail dialog
+     *******************************************************************/
+    .controller('MessageComparisonDialogCtrl', ['$scope', '$rootScope', '$http', 'MessageService', 'message',
+        function ($scope, $rootScope, $http, MessageService, message) {
+            'use strict';
+
+            $scope.message = message;
+            $scope.compareMessage = undefined;
+            $scope.selectedHistory = [ ];
+
+            /** Initialize the list of messages to compare **/
+            $scope.init = function () {
+                $scope.compareMessage = undefined;
+                $scope.selectedHistory.length = 0;
+                $scope.selectedHistory.push({ snapshot: angular.toJson(message) });
+            };
+            $scope.init();
+
+            $scope.data = {
+                messageId : undefined
+            };
+            $scope.$watch("data.messageId", function (messageId) {
+                // Reset the message history
+                $scope.init();
+
+                // Fetch the message to compare with
+                if (messageId && messageId.length > 0) {
+                    MessageService.details(messageId)
+                        .success(function (compareMessage) {
+                            $scope.compareMessage = compareMessage;
+                            if (compareMessage) {
+                                // Add on position 0
+                                $scope.selectedHistory.unshift({ snapshot: angular.toJson(compareMessage) });
+                            }
+                        })
+                }
+            }, true);
+
+
+            // Use for message id selection
+            $scope.messageIds = [];
+            $scope.refreshMessageIds = function (text) {
+                if (!text || text.length < 3) {
+                    return [];
+                }
+                return $http.get(
+                    '/rest/messages/search-message-ids?txt=' + encodeURIComponent(text) +
+                    '&lang=' + $rootScope.language
+                ).then(function(response) {
+                    $scope.messageIds = response.data;
+                });
+            };
+
+
+        }])
+
+;
 

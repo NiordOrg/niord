@@ -57,6 +57,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.niord.core.geojson.Feature.WGS84_SRID;
+import static org.niord.core.message.MessageIdMatch.MatchType.*;
 import static org.niord.core.message.MessageSearchParams.SortOrder;
 
 /**
@@ -210,6 +211,57 @@ public class MessageService extends BaseService {
 
         // No current domain - just return the first message
         return messages.get(0);
+    }
+
+
+    /**
+     * Returns a list of message IDs (database ID, MRN or shortId) that - possibly partially - matches
+     * real text.
+     *
+     * @param lang the language to return the title in
+     * @param txt the text to match
+     * @param maxGroupCount the max number of matching message IDs to return.
+     * @param includeText whether to include the search text as a match
+     * @return the search result
+     */
+    public List<MessageIdMatch> searchMessageIds(String lang, String txt, int maxGroupCount, boolean includeText) {
+        List<MessageIdMatch> result = new ArrayList<>();
+        if (StringUtils.isBlank(txt)) {
+            return result;
+        }
+
+        // First priority is the text itself - if requested
+        if (includeText) {
+            result.add(new MessageIdMatch(txt, TEXT, null));
+        }
+
+        // Check for a matching DB ID
+        if (StringUtils.isNumeric(txt)) {
+            Message message = findById(Integer.valueOf(txt));
+            if (message != null) {
+                result.add(new MessageIdMatch(txt, ID, message, lang));
+            }
+        }
+
+        // Search shortIds
+        em.createNamedQuery("Message.searchShortIds", Message.class)
+                .setParameter("term", "%" + txt + "%")
+                .setParameter("sort", txt)
+                .setMaxResults(maxGroupCount)
+                .getResultList()
+                .stream()
+                .forEach(m -> result.add(new MessageIdMatch(m.getShortId(), SHORT_ID, m, lang)));
+
+        // Search MRNs
+        em.createNamedQuery("Message.searchMrn", Message.class)
+                .setParameter("term", "%" + txt + "%")
+                .setParameter("sort", txt)
+                .setMaxResults(maxGroupCount)
+                .getResultList()
+                .stream()
+                .forEach(m -> result.add(new MessageIdMatch(m.getMrn(), MRN, m, lang)));
+
+        return  result;
     }
 
 
