@@ -15,13 +15,17 @@
  */
 package org.niord.web;
 
+import com.vividsolutions.jts.geom.Geometry;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
+import org.niord.core.geojson.JtsConverter;
 import org.niord.model.vo.ChartVo;
+import org.niord.model.vo.geojson.FeatureCollectionVo;
+import org.niord.model.vo.geojson.GeometryVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
@@ -32,6 +36,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -150,5 +155,27 @@ public class ChartRestService extends AbstractBatchableRestService {
     @RolesAllowed("admin")
     public String importCharts(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "chart-import");
+    }
+
+
+    /** Computes the charts intersecting with the current message geometry **/
+    @POST
+    @Path("/intersecting-charts")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed({ "editor" })
+    @GZIP
+    @NoCache
+    public List<ChartVo> computeIntersectingCharts(FeatureCollectionVo featureCollection) {
+        GeometryVo geometryVo = featureCollection.toGeometry();
+        if (geometryVo == null) {
+            return Collections.emptyList();
+        }
+
+        Geometry geometry = JtsConverter.toJts(geometryVo);
+        return chartService.getIntersectingCharts(geometry).stream()
+                .map(Chart::toVo)
+                .collect(Collectors.toList());
+
     }
 }

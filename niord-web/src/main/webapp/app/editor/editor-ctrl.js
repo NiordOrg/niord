@@ -17,6 +17,7 @@ angular.module('niord.editor')
                 status: 'DRAFT',
                 descs: [],
                 geometry: {
+                    type: 'FeatureCollection',
                     features: []
                 }
             };
@@ -57,6 +58,7 @@ angular.module('niord.editor')
                 // Instantiate the feature collection from the message geometry
                 if (!msg.geometry) {
                     msg.geometry = {
+                        type: 'FeatureCollection',
                         features: []
                     }
                 }
@@ -119,6 +121,7 @@ angular.module('niord.editor')
                     status: 'DRAFT',
                     descs: [],
                     geometry: {
+                        type: 'FeatureCollection',
                         features: []
                     }
                 };
@@ -162,7 +165,24 @@ angular.module('niord.editor')
                 });
             };
 
-            
+
+            /** Computes the charts intersecting with the current message geometry **/
+            $scope.computeCharts = function () {
+                if ($scope.message.geometry.features.length > 0) {
+                    MessageService.intersectingCharts($scope.message.geometry)
+                        .success(function (charts) {
+                            // Prune the returned chart data
+                            $scope.message.charts = charts.map(function (chart) {
+                                return {
+                                    chartNumber: chart.chartNumber,
+                                    internationalNumber: chart.internationalNumber
+                                }
+                            });
+                        });
+                }
+            };
+
+
             // Use for area selection
             $scope.areas = [];
             $scope.refreshAreas = function(name) {
@@ -267,7 +287,7 @@ angular.module('niord.editor')
             };
 
             /** called when the message geometry has been changed **/
-            $scope.geometrySaved = function (featureCollection) {
+            $scope.geometrySaved = function () {
                 $scope.serializeCoordinates();
             };
 

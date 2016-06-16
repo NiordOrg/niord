@@ -15,12 +15,19 @@
  */
 package org.niord.core.chart;
 
+import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.db.CriteriaHelper;
+import org.niord.core.db.SpatialIntersectsPredicate;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -181,4 +188,36 @@ public class ChartService extends BaseService {
                 .collect(Collectors.toList());
     }
 
+
+    /**
+     * Returns the list of charts intersecting with the given geometry.
+     * The resulting charts will be ordered by scale
+     * @param geometry the geometry
+     * @return the list of charts intersecting with the given geometry
+     */
+    public List<Chart> getIntersectingCharts(Geometry geometry) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Chart> chartQuery = cb.createQuery(Chart.class);
+
+        Root<Chart> chartRoot = chartQuery.from(Chart.class);
+
+        // Build the predicate
+        CriteriaHelper<Chart> criteriaHelper = new CriteriaHelper<>(cb, chartQuery);
+
+        Predicate geomPredicate = new SpatialIntersectsPredicate(
+                cb,
+                chartRoot.get("geometry"),
+                geometry);
+        criteriaHelper.add(geomPredicate);
+
+        // Complete the query
+        chartQuery.select(chartRoot)
+                .distinct(true)
+                .where(criteriaHelper.where())
+                .orderBy(cb.asc(chartRoot.get("scale")));
+
+        // Execute the query and update the search result
+        return em.createQuery(chartQuery)
+                .getResultList();
+    }
 }

@@ -71,6 +71,11 @@ angular.module('niord.messages')
             },
 
 
+            /** Computes the charts intersecting with the current message geometry **/
+            intersectingCharts: function (featureCollection) {
+                return $http.post('/rest/charts/intersecting-charts', featureCollection);
+            },
+
             /** Returns the history of the given message */
             messageHistory: function(id) {
                 return $http.get('/rest/messages/message/' + id + '/history');

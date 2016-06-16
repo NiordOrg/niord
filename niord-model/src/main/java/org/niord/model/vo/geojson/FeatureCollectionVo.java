@@ -20,6 +20,7 @@ import io.swagger.annotations.ApiModel;
 
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Arrays;
 import java.util.function.Consumer;
 
 /**
@@ -43,6 +44,29 @@ public class FeatureCollectionVo extends GeoJsonVo {
             }
         }
     }
+
+    /**
+     * Returns a combined geometry for the whole feature collection. If no feature is defined, null is returned.
+     * If a single feature is defined, the geometry feature is returned.
+     * Otherwise, a combined geometry collection of all feature geometries is returned.
+     * @return the combined geometry for the feature
+     */
+    public GeometryVo toGeometry() {
+        if (features == null || features.length == 0) {
+            return null;
+        } else if (features.length == 1) {
+            return features[0].getGeometry();
+        }
+
+        GeometryCollectionVo geometry = new GeometryCollectionVo();
+        geometry.setType("GeometryCollection");
+        geometry.setGeometries(Arrays.stream(features)
+            .map(FeatureVo::getGeometry)
+            .filter(g -> g != null)
+            .toArray(GeometryVo[]::new));
+        return geometry;
+    }
+
 
     public Object getId() {
         return id;
