@@ -7,9 +7,9 @@ angular.module('niord.editor')
     /**
      * Main message editor controller
      */
-    .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$http', '$uibModal', 'growl',
+    .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$http', '$window', '$uibModal', 'growl',
             'MessageService', 'LangService', 'MapService', 'UploadFileService',
-        function ($scope, $rootScope, $stateParams, $state, $http, $uibModal, growl,
+        function ($scope, $rootScope, $stateParams, $state, $http, $window, $uibModal, growl,
                   MessageService, LangService, MapService, UploadFileService) {
             'use strict';
 
@@ -32,7 +32,8 @@ angular.module('niord.editor')
                 time: false,
                 areas: false,
                 categories: false,
-                positions: false
+                positions: false,
+                charts: false
             };
 
             $scope.messageSeries = [];
@@ -103,6 +104,7 @@ angular.module('niord.editor')
             /*****************************/
             /** Editor functionality    **/
             /*****************************/
+
 
             /** Returns if the current user in the current domain can create messages of the given mainType **/
             $scope.canCreateMessage = function (mainType) {
@@ -289,6 +291,54 @@ angular.module('niord.editor')
             /** called when the message geometry has been changed **/
             $scope.geometrySaved = function () {
                 $scope.serializeCoordinates();
+            };
+
+            
+            /** Returns if the current page matches the given page url **/
+            $scope.onPage = function (page) {
+                return $state.includes(page);
+            };
+
+            /*****************************/
+            /** Action menu functions   **/
+            /*****************************/
+
+
+            /** Expands or collapses all field editors **/
+            $scope.expandCollapseFields = function (expand) {
+                angular.forEach($scope.editMode, function (value, key) {
+                    if (value !== expand) {
+                        $scope.editMode[key] = expand;
+                    }
+                });
+            };
+
+
+            /** Opens the message print dialog */
+            $scope.pdf = function () {
+                if ($scope.message.id) {
+                    MessageService.messagePrintDialog(1).result
+                        .then($scope.generatePdf);
+                }
+            };
+
+
+            /** Download the PDF for the current message */
+            $scope.generatePdf = function (printSettings) {
+                MessageService.pdfTicket()
+                    .success(function (ticket) {
+
+                        var params = 'lang=' + $rootScope.language + '&ticket=' + ticket;
+
+                        if (printSettings && printSettings.pageOrientation) {
+                            params += '&pageOrientation=' + printSettings.pageOrientation;
+                        }
+                        if (printSettings && printSettings.pageSize) {
+                            params += '&pageSize=' + printSettings.pageSize;
+                        }
+
+                        $window.location = '/rest/messages/message/' + $scope.message.id + '.pdf?' + params;
+                    });
             };
 
 

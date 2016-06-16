@@ -23,5 +23,41 @@
             </span>
         </li>
 
+        <li class="dropdown view-mode-menu-btn" style="padding: 0 10px">
+            <span class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                <span class="glyphicon glyphicon-cog"></span>
+                <span class="view-mode-menu-text" translate>menu.action</span>
+                <span class="caret"></span>
+            </span>
+            <ul class="dropdown-menu">
+                <li ng-if="message.id">
+                    <a href ng-click="pdf()">
+                        <span class="glyphicon glyphicon-print"></span>&nbsp;
+                        <span translate>menu.action.print</span>
+                    </a>
+                </li>
+                <li ng-if="message.id" role="separator" class="divider"></li>
+                <li ng-if="onPage('editor.edit')">
+                    <a href ng-click="expandCollapseFields(true)">
+                        <span class="glyphicon glyphicon-expand"></span>&nbsp;
+                        <span translate>menu.action.fields.expand</span>
+                    </a>
+                </li>
+                <li ng-if="onPage('editor.edit')">
+                    <a href ng-click="expandCollapseFields(false)">
+                        <span class="glyphicon glyphicon-collapse-up"></span>&nbsp;
+                        <span translate>menu.action.fields.collapse</span>
+                    </a>
+                </li>
+                <li ng-if="onPage('editor.edit')" role="separator" class="divider"></li>
+                <li>
+                    <a href ng-click="compareWithMessage()">
+                        <span class="glyphicon glyphicon-transfer"></span>&nbsp;
+                        <span translate>menu.action.message.compare</span>
+                    </a>
+                </li>
+            </ul>
+        </li>
+
     </ul>
 </div>
