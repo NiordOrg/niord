@@ -11,31 +11,7 @@
             <div class="form-group">
                 <label class="col-sm-6 col-md-4 col-lg-2" style="padding-top: 6px">Compare with</label>
                 <div class="col-sm-6 col-md-4 col-lg-4">
-                    <ui-select id="messageId" ng-model="data.messageId" >
-                        <ui-select-match placeholder="Select message ID">
-                            {{data.messageId}}
-                        </ui-select-match>
-                        <ui-select-choices repeat="id.messageId as id in messageIds"
-                                           refresh="refreshMessageIds($select.search)"
-                                           refresh-delay="100">
-                            <div style="padding: 5px 0; border-bottom: 1px solid #eee">
-                                <div>
-                                    <span ng-bind-html="id.messageId | highlight: $select.search"></span>
-                                    <small>
-                                        &bull;
-                                        <span ng-switch="id.type">
-                                            <span ng-switch-when="ID">DB ID</span>
-                                            <span ng-switch-when="SHORT_ID">Short ID</span>
-                                            <span ng-switch-when="MRN">MRN</span>
-                                            <span ng-switch-when="TEXT">Text</span>
-                                        </span>
-                                    </small>
-                                </div>
-                                <div ng-if="id.title"><small>{{id.title}}</small></div>
-                            </div>
-
-                        </ui-select-choices>
-                    </ui-select>
+                    <message-id-field reference="reference"></message-id-field>
                 </div>
             </div>
         </div>

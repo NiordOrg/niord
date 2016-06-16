@@ -359,8 +359,14 @@ li.view-mode-menu-btn .active .badge {
     cursor: pointer;
 }
 
+/** ui-select modifications **/
+
 .ui-select-search {
     font-size: 12px;
+}
+
+.ui-select-container .form-control {
+    height: 30px!important;
 }
 
 .ui-select-match-text {

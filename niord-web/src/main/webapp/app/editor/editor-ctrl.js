@@ -597,8 +597,8 @@ angular.module('niord.editor')
     /*******************************************************************
      * Controller that handles the message Thumbnail dialog
      *******************************************************************/
-    .controller('MessageComparisonDialogCtrl', ['$scope', '$rootScope', '$http', 'MessageService', 'message',
-        function ($scope, $rootScope, $http, MessageService, message) {
+    .controller('MessageComparisonDialogCtrl', ['$scope', 'MessageService', 'message',
+        function ($scope, MessageService, message) {
             'use strict';
 
             $scope.message = message;
@@ -613,10 +613,10 @@ angular.module('niord.editor')
             };
             $scope.init();
 
-            $scope.data = {
+            $scope.reference = {
                 messageId : undefined
             };
-            $scope.$watch("data.messageId", function (messageId) {
+            $scope.$watch("reference.messageId", function (messageId) {
                 // Reset the message history
                 $scope.init();
 
@@ -632,22 +632,6 @@ angular.module('niord.editor')
                         })
                 }
             }, true);
-
-
-            // Use for message id selection
-            $scope.messageIds = [];
-            $scope.refreshMessageIds = function (text) {
-                if (!text || text.length < 3) {
-                    return [];
-                }
-                return $http.get(
-                    '/rest/messages/search-message-ids?txt=' + encodeURIComponent(text) +
-                    '&lang=' + $rootScope.language
-                ).then(function(response) {
-                    $scope.messageIds = response.data;
-                });
-            };
-
 
         }])
 
