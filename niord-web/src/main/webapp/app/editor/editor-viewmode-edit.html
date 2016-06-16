@@ -180,21 +180,35 @@
                     <span ng-repeat="area in message.areas"><span ng-if="$index > 0">,</span> {{area.descs[0].name}}</span>
                 </editor-field-value-viewer>
 
-                <editor-field-value-editor value-class="col-sm-12 col-md-6">
-                    <ui-select multiple id="areas" ng-model="message.areas" >
-                        <ui-select-match placeholder="Select areas">
-                            {{$item.descs[0].name}}
-                        </ui-select-match>
-                        <ui-select-choices repeat="area in areas"
-                                           refresh="refreshAreas($select.search)"
-                                           refresh-delay="100">
-                            <div>
-                                <span ng-bind-html="area.descs[0].name | highlight: $select.search"></span>
-                                <small ng-if="area.parent">({{formatParents(area.parent)}})</small>
-                            </div>
+                <editor-field-value-editor value-class="col-sm-12 col-md-8">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <ui-select multiple id="areas" ng-model="message.areas" >
+                                <ui-select-match placeholder="Select areas">
+                                    {{$item.descs[0].name}}
+                                </ui-select-match>
+                                <ui-select-choices repeat="area in areas"
+                                                   refresh="refreshAreas($select.search)"
+                                                   refresh-delay="100">
+                                    <div>
+                                        <span ng-bind-html="area.descs[0].name | highlight: $select.search"></span>
+                                        <small ng-if="area.parent">({{formatParents(area.parent)}})</small>
+                                    </div>
 
-                        </ui-select-choices>
-                    </ui-select>
+                                </ui-select-choices>
+                            </ui-select>
+                        </div>
+                        <div class="col-sm-4">
+                            <button href class="btn btn-default btn-sm" ng-disabled="!message.areas || message.areas.length == 0"
+                                    ng-click="copyAreaLocations()">Copy Locations</button>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 10px">
+                        <div class="col-sm-6" ng-repeat="desc in message.descs">
+                            <input class="form-control input-sm" placeholder="Vicinity" type="text"
+                                   ng-model="desc.vicinity" bg-flag="desc.lang">
+                        </div>
+                    </div>
                 </editor-field-value-editor>
 
             </editor-field>

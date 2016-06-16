@@ -8,9 +8,9 @@ angular.module('niord.editor')
      * Main message editor controller
      */
     .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$http', '$uibModal', 'growl',
-            'MessageService', 'MapService', 'UploadFileService',
+            'MessageService', 'LangService', 'MapService', 'UploadFileService',
         function ($scope, $rootScope, $stateParams, $state, $http, $uibModal, growl,
-                  MessageService, MapService, UploadFileService) {
+                  MessageService, LangService, MapService, UploadFileService) {
             'use strict';
 
             $scope.message = {
@@ -40,9 +40,19 @@ angular.module('niord.editor')
             /** Initialize the editor   **/
             /*****************************/
 
+            // Used to ensure that description entities have various field
+            function initDescField(desc) {
+                desc.title = '';
+                desc.description = '';
+            }
+
+
             /** Called during initialization when the message has been loaded or instantiated */
             $scope.initMessage = function () {
                 var msg = $scope.message;
+
+                // Ensure that localized desc fields are defined for all languages
+                LangService.checkDescs(msg, initDescField, undefined, $rootScope.modelLanguages);
 
                 // Instantiate the feature collection from the message geometry
                 if (msg.geometry) {
@@ -167,6 +177,30 @@ angular.module('niord.editor')
                 });
             };
 
+
+            /** Copies the locations from the selected area to the message **/
+            $scope.copyAreaLocations = function() {
+                if ($scope.message.areas) {
+                    var areaIds = $scope.message.areas.map(function (a) { return a.id;  }).join(",");
+                    $http.get('/rest/areas/search/' + areaIds)
+                        .success(function (areas) {
+                            angular.forEach(areas, function (area) {
+                                if (area.geometry) {
+                                    var feature = {
+                                        type: 'Feature',
+                                        geometry: area.geometry,
+                                        properties: { areaId: area.id }
+                                    };
+                                    angular.forEach(area.descs, function (desc) {
+                                        feature.properties['name:' + desc.lang] = desc.name;
+                                    });
+                                    $scope.featureCollection.features.push(feature);
+                                    $scope.geometrySaved($scope.featureCollection);
+                                }
+                            });
+                        });
+                }
+            };
 
             // Use for category selection
             $scope.categories = [];

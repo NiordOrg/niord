@@ -107,7 +107,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     @GZIP
     @NoCache
     public List<AreaVo> searchAreaIds(@PathParam("areaIds") String areaIds,
-                                      @QueryParam("lang") @DefaultValue("en") String lang,
+                                      @QueryParam("lang") String lang,
                                       @QueryParam("limit") @DefaultValue("1000") int limit) {
 
         log.debug(String.format("Searching for areas ids=%s, lang=%s, limit=%d", areaIds, lang, limit));
