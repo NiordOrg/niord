@@ -53,6 +53,8 @@ angular.module('niord.editor')
             $scope.initMessage = function () {
                 var msg = $scope.message;
 
+                $scope.newRef = { messageId: undefined, type: 'REFERENCE', description: '' };
+
                 // Ensure that localized desc fields are defined for all languages
                 LangService.checkDescs(msg, initDescField, undefined, $rootScope.modelLanguages);
 
@@ -151,6 +153,28 @@ angular.module('niord.editor')
             /** Called when a message reference is clicked **/
             $scope.referenceClicked = function(messageId) {
                 MessageService.detailsDialog(messageId);
+            };
+
+
+            /** Deletes the given reference from the list of message references **/
+            $scope.deleteReference = function (ref) {
+                if ($.inArray(ref, $scope.message.references) > -1) {
+                    $scope.message.references.splice( $.inArray(ref, $scope.message.references), 1 );
+                    // TODO: $scope.editForm.$setDirty();
+                }
+            };
+
+
+            // Adds the new reference to the list of message references
+            $scope.addReference = function () {
+                if ($scope.newRef && $scope.newRef.messageId) {
+                    if (!$scope.message.references) {
+                        $scope.message.references = [];
+                    }
+                    $scope.message.references.push($scope.newRef);
+                    $scope.newRef = { messageId: undefined, type: 'REFERENCE', description: '' };
+                    // TODO: $scope.editForm.$setDirty();
+                }
             };
 
 
