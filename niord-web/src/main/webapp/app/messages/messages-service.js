@@ -69,6 +69,12 @@ angular.module('niord.messages')
             },
 
 
+            /** Computes the title line for the given message */
+            computeTitleLine: function (msg) {
+                return $http.post('/rest/messages/compute-title-line', msg);
+            },
+
+
             /** Computes the charts intersecting with the current message geometry **/
             intersectingCharts: function (featureCollection) {
                 return $http.post('/rest/charts/intersecting-charts', featureCollection);

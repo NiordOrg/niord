@@ -457,26 +457,37 @@ public class MessageService extends BaseService {
      */
     public void updateMessageTitle(Message message) {
         message.getDescs().forEach(desc -> {
-            if (StringUtils.isBlank(desc.getTitle())) {
-                StringBuilder title = new StringBuilder();
-                if (!message.getAreas().isEmpty()) {
-                    title.append(Area.computeAreaTitlePrefix(message.getAreas(), desc.getLang()));
-                }
-                if (StringUtils.isNotBlank(desc.getVicinity())) {
-                    title.append(" ").append(desc.getVicinity());
-                    if (!desc.getVicinity().endsWith(".")) {
-                        title.append(".");
-                    }
-                }
-                if (StringUtils.isNotBlank(desc.getSubject())) {
-                    title.append(" ").append(desc.getSubject());
-                    if (!desc.getSubject().endsWith(".")) {
-                        title.append(".");
-                    }
-                }
-                desc.setTitle(title.toString().trim());
+            StringBuilder title = new StringBuilder();
+            if (!message.getAreas().isEmpty()) {
+                title.append(Area.computeAreaTitlePrefix(message.getAreas(), desc.getLang()));
             }
+            if (StringUtils.isNotBlank(desc.getVicinity())) {
+                title.append(" ").append(desc.getVicinity());
+                if (!desc.getVicinity().endsWith(".")) {
+                    title.append(".");
+                }
+            }
+            if (StringUtils.isNotBlank(desc.getSubject())) {
+                title.append(" ").append(desc.getSubject());
+                if (!desc.getSubject().endsWith(".")) {
+                    title.append(".");
+                }
+            }
+            desc.setTitle(title.toString().trim());
         });
+    }
+
+
+    /**
+     * Computes the title lines for the given message template
+     *
+     * @param message the message template to compute the title line for
+     * @return the updated message template
+     */
+    public Message computeTitleLine(Message message) {
+        message.setAreas(persistedList(Area.class, message.getAreas()));
+        updateMessageTitle(message);
+        return message;
     }
 
 

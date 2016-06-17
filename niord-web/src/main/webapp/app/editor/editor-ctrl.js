@@ -399,6 +399,28 @@ angular.module('niord.editor')
             };
 
 
+            /** Called when relevant attributes have been changed that may affect the auto-generated title lines */
+            $scope.updateTitleLine = function () {
+                if ($scope.message.autoTitle) {
+                    // Construct a  message template that contains attributes affecting title line
+                    var msg = {
+                        areas: $scope.message.areas,
+                        descs: $scope.message.descs.map(function (desc) {
+                           return { lang: desc.lang, subject: desc.subject, vicinity: desc.vicinity }
+                        })
+                    };
+                    MessageService.computeTitleLine(msg)
+                        .success(function (message) {
+                            angular.forEach(message.descs, function (desc) {
+                                var d = LangService.descForLanguage($scope.message, desc.lang);
+                                if (d) {
+                                    d.title = desc.title;
+                                }
+                            })
+                        })
+                }
+            };
+
             /*****************************/
             /** Action menu functions   **/
             /*****************************/

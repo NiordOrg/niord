@@ -204,6 +204,24 @@ public class MessageRestService {
     }
 
 
+    /**
+     * Computes the title lines for the given message template
+     *
+     * @param message the message template to compute the title line for
+     * @return the updated message template
+     */
+    @POST
+    @Path("/compute-title-line")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public MessageVo computeTitleLine(MessageVo message) throws Exception {
+        return messageService.computeTitleLine(new Message(message)).toVo(DataFilter.get());
+    }
+
+
     /***************************
      * Search functionality
      ***************************/
