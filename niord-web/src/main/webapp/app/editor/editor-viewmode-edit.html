@@ -10,7 +10,7 @@
     </div>
 
 
-    <form ng-if="message.mainType" method="post" name="editForm">
+    <form ng-if="message.mainType" method="post" name="editForm" id="editForm">
         <div class="editor-fields" style="margin-bottom: 40px;">
 
             <!-- ********************* -->
@@ -357,7 +357,7 @@
             <button href class="btn btn-primary btn-sm" ng-click="saveMessage()" ng-disabled="editForm.$pristine || editForm.$invalid || messageSaved">
                 <span class="glyphicon glyphicon-floppy-disk"></span> Save Message
             </button>
-            <button href class="btn btn-default btn-sm" ng-click="reloadMessage()">
+            <button href class="btn btn-default btn-sm" ng-click="init()" ng-if="initId">
                 <span class="glyphicon glyphicon-refresh"></span> Reload Message
             </button>
         </div>

@@ -7,9 +7,9 @@ angular.module('niord.editor')
     /**
      * Main message editor controller
      */
-    .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$http', '$window', '$uibModal', 'growl',
+    .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$http', '$window', '$timeout', '$uibModal', 'growl',
             'MessageService', 'LangService', 'MapService', 'UploadFileService',
-        function ($scope, $rootScope, $stateParams, $state, $http, $window, $uibModal, growl,
+        function ($scope, $rootScope, $stateParams, $state, $http, $window, $timeout, $uibModal, growl,
                   MessageService, LangService, MapService, UploadFileService) {
             'use strict';
 
@@ -85,6 +85,9 @@ angular.module('niord.editor')
                 if (!msg.id && !msg.messageSeries && $scope.messageSeries.length == 1) {
                     msg.messageSeries = $scope.messageSeries[0];
                 }
+
+                // Mark the form as pristine
+                $scope.setPristine();
             };
 
 
@@ -111,6 +114,26 @@ angular.module('niord.editor')
             /*****************************/
             /** Editor functionality    **/
             /*****************************/
+
+
+            /** Set the form as pristine **/
+            $scope.setPristine = function () {
+                // $scope.editForm does not work (form tied to sub-scope of this controller?)
+                try {
+                    angular.element($("#editForm")).scope().editForm.$setPristine();
+                } catch (err) {
+                }
+            };
+
+
+            /** Set the form as dirty **/
+            $scope.setDirty = function () {
+                // $scope.editForm does not work (form tied to sub-scope of this controller?)
+                try {
+                    angular.element($("#editForm")).scope().editForm.$setDirty();
+                } catch (err) {
+                }
+            };
 
 
             /** Returns if the current user in the current domain can create messages of the given mainType **/
@@ -165,7 +188,7 @@ angular.module('niord.editor')
             $scope.deleteReference = function (ref) {
                 if ($.inArray(ref, $scope.message.references) > -1) {
                     $scope.message.references.splice( $.inArray(ref, $scope.message.references), 1 );
-                    $scope.editForm.$setDirty();
+                    $scope.setDirty();
                 }
             };
 
@@ -178,7 +201,7 @@ angular.module('niord.editor')
                     }
                     $scope.message.references.push($scope.newRef);
                     $scope.newRef = { messageId: undefined, type: 'REFERENCE', description: '' };
-                    $scope.editForm.$setDirty();
+                    $scope.setDirty();
                 }
             };
 
@@ -320,7 +343,7 @@ angular.module('niord.editor')
             /** called when the message geometry has been changed **/
             $scope.geometrySaved = function () {
                 $scope.serializeCoordinates();
-                $scope.editForm.$setDirty();
+                $scope.setDirty();
             };
 
             
