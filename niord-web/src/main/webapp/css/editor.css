@@ -73,6 +73,16 @@
     margin-bottom: 5px;
 }
 
+.editor-field-value-table th {
+    padding: 5px 10px;
+    text-align: right;
+    color: darkgray;
+}
+
+.editor-field-value-table td {
+    padding: 5px;
+}
+
 /** Editor -> Status **/
 
 .message-status-panel {

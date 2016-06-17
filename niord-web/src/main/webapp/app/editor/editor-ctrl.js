@@ -80,6 +80,11 @@ angular.module('niord.editor')
                         }
                     });
                 }
+
+                // For new messages, if there is only one message series available, set it on the message
+                if (!msg.id && !msg.messageSeries && $scope.messageSeries.length == 1) {
+                    msg.messageSeries = $scope.messageSeries[0];
+                }
             };
 
 
@@ -160,7 +165,7 @@ angular.module('niord.editor')
             $scope.deleteReference = function (ref) {
                 if ($.inArray(ref, $scope.message.references) > -1) {
                     $scope.message.references.splice( $.inArray(ref, $scope.message.references), 1 );
-                    // TODO: $scope.editForm.$setDirty();
+                    $scope.editForm.$setDirty();
                 }
             };
 
@@ -173,7 +178,7 @@ angular.module('niord.editor')
                     }
                     $scope.message.references.push($scope.newRef);
                     $scope.newRef = { messageId: undefined, type: 'REFERENCE', description: '' };
-                    // TODO: $scope.editForm.$setDirty();
+                    $scope.editForm.$setDirty();
                 }
             };
 
@@ -315,6 +320,7 @@ angular.module('niord.editor')
             /** called when the message geometry has been changed **/
             $scope.geometrySaved = function () {
                 $scope.serializeCoordinates();
+                $scope.editForm.$setDirty();
             };
 
             

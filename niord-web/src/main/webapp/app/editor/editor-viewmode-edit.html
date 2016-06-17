@@ -70,14 +70,25 @@
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">
-                    <div style="margin-bottom: 10px">
-                        <select class="form-control input-sm" style="width: 200px"
-                                ng-model="message.messageSeries"
-                                ng-options="series.seriesId for series in messageSeries" >
-                        </select>
-                    </div>
-                    <div><span class="label label-message-id" style="font-size: 11px">{{message.shortId}}</span></div>
-                    <div>MRN: {{message.mrn}}</div>
+                    <table class="editor-field-value-table">
+                        <tr>
+                            <th>Message series</th>
+                            <td>
+                                <select class="form-control input-sm" style="width: 200px"
+                                        ng-model="message.messageSeries"
+                                        ng-options="series.seriesId for series in messageSeries">
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Short ID</th>
+                            <td><span class="label label-message-id" style="font-size: 11px">{{message.shortId}}</span></td>
+                        </tr>
+                        <tr>
+                            <th>MRN</th>
+                            <td>{{message.mrn}}</td>
+                        </tr>
+                    </table>
                 </editor-field-value-editor>
 
             </editor-field>

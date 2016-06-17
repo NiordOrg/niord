@@ -105,6 +105,27 @@ angular.module('niord.common')
     }])
 
 
+    /**
+     * Tag an input field with this directive to avoid changes making the form dirty. See:
+     * http://stackoverflow.com/questions/28721959/angular-1-2-is-it-possible-to-exclude-an-input-on-form-dirty-checking/28722106
+     */
+    .directive('ignoreDirty', [function() {
+        return {
+            restrict: 'A',
+            require: 'ngModel',
+            scope: {
+                ignoreDirty: "="
+            },
+            link: function(scope, elm, attrs, ctrl) {
+                if (scope.ignoreDirty === true) {
+                    ctrl.$setPristine = function() {};
+                    ctrl.$pristine = false;
+                }
+            }
+        }
+    }])
+
+
     .directive('jsonData', [function () {
         return {
             restrict: 'E',
