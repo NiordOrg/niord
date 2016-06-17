@@ -179,6 +179,7 @@ angular.module('niord.editor')
                         growl.info("Message saved", { ttl: 3000 });
                         $scope.initId = message.id;
                         $rootScope.go('/editor/edit/' + message.id);
+                        $scope.init();
                     })
                     .error(function() {
                         $scope.messageSaving = false;
