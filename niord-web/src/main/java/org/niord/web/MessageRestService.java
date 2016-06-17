@@ -60,6 +60,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -167,13 +168,16 @@ public class MessageRestService {
      * @return the updated message
      */
     @PUT
-    @Path("/message")
+    @Path("/message/{messageId}")
     @Consumes("application/json")
     @Produces("application/json")
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public MessageVo updateMessage(MessageVo message) throws Exception {
+    public MessageVo updateMessage(@PathParam("messageId") Integer messageId, MessageVo message) throws Exception {
+        if (!Objects.equals(messageId, message.getId())) {
+            throw new WebApplicationException(400);
+        }
         log.info("Updating message " + message);
         Message msg = messageService.updateMessage(new Message(message));
         return getMessage(msg.getId().toString(), null);

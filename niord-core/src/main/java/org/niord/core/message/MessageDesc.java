@@ -45,8 +45,7 @@ public class MessageDesc extends DescEntity<Message> {
 
     /** Constructor */
     public MessageDesc(MessageDescVo desc) {
-        super(desc);
-        copyDesc(desc);
+        this(desc, DataFilter.get());
     }
 
     /** Constructor */
@@ -59,7 +58,16 @@ public class MessageDesc extends DescEntity<Message> {
             this.title = desc.getTitle();
         } else {
             // Copy all fields
-            copyDesc(desc);
+            this.lang = desc.getLang();
+            this.title = desc.getTitle();
+            this.subject = desc.getSubject();
+            this.description = desc.getDescription();
+            this.otherCategories = desc.getOtherCategories();
+            this.time = desc.getTime();
+            this.vicinity = desc.getVicinity();
+            this.note = desc.getNote();
+            this.publication = desc.getPublication();
+            this.source = desc.getSource();
         }
     }
 
@@ -97,7 +105,7 @@ public class MessageDesc extends DescEntity<Message> {
     /** {@inheritDoc} */
     @Override
     public void copyDesc(ILocalizedDesc localizedDesc) {
-        MessageDescVo desc = (MessageDescVo)localizedDesc;
+        MessageDesc desc = (MessageDesc)localizedDesc;
         this.lang = desc.getLang();
         this.title = desc.getTitle();
         this.subject = desc.getSubject();

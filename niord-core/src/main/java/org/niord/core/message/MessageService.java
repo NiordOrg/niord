@@ -29,6 +29,7 @@ import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.geojson.Feature;
 import org.niord.core.geojson.FeatureCollection;
+import org.niord.core.geojson.FeatureService;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.UserService;
@@ -98,6 +99,9 @@ public class MessageService extends BaseService {
 
     @Inject
     DomainService domainService;
+
+    @Inject
+    FeatureService featureService;
 
 
     /***************************************/
@@ -374,33 +378,35 @@ public class MessageService extends BaseService {
         original.setCharts(chartService.persistedCharts(message.getCharts()));
 
         original.setHorizontalDatum(message.getHorizontalDatum());
-        original.setGeometry(message.getGeometry());
+        original.setGeometry(featureService.updateFeatureCollection(message.getGeometry()));
 
         original.setPublishDate(message.getPublishDate());
         original.setCancellationDate(message.getCancellationDate());
 
-        original.setDateIntervals(message.getDateIntervals().stream()
+        original.getDateIntervals().clear();
+        message.getDateIntervals().stream()
             .map(di -> di.isNew() ? di : getByPrimaryKey(DateInterval.class, di.getId()))
-            .collect(Collectors.toList()));
+            .forEach(original::addDateInterval);
         original.onPersist();
 
-        original.setReferences(message.getReferences().stream()
+        original.getReferences().clear();
+        message.getReferences().stream()
             .map(r -> r.isNew() ? r : getByPrimaryKey(Reference.class, r.getId()))
-            .collect(Collectors.toSet()));
+            .forEach(original::addReference);
 
         original.getAtonUids().clear();
         original.getAtonUids().addAll(message.getAtonUids());
 
         original.setOriginalInformation(message.getOriginalInformation());
 
-        // Copy the area data
+        // Copy the localized description data
         original.copyDescsAndRemoveBlanks(message.getDescs());
 
         // Update title lines
         updateMessageTitle(original);
 
         // Persist the message
-        original = saveMessage(original);
+        saveMessage(original);
         log.info("Updated message " + original);
 
         em.flush();

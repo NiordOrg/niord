@@ -86,9 +86,16 @@ public class FeatureService extends BaseService {
         return fc;
     }
 
+
+    /**
+     * Updates the given feature collection
+     * @param fc the feature collection
+     * @return the updated feature collection
+     */
     public FeatureCollection updateFeatureCollection(FeatureCollection fc) throws Exception {
-        requireNonNull(fc);
-        requireNonNull(fc.getUid());
+        if (fc == null) {
+            return null;
+        }
         FeatureCollection orig = requireNonNull(findFeatureCollectionByUid(fc.getUid()));
 
         orig.getFeatures().clear();
@@ -96,7 +103,8 @@ public class FeatureService extends BaseService {
             Feature of = findFeatureByUid(f.getUid());
             if (of != null) {
                 of.setGeometry(f.getGeometry());
-                // TODO: Properties
+                of.getProperties().clear();
+                of.getProperties().putAll(f.getProperties());
                 orig.getFeatures().add(of);
             } else {
                 f.setFeatureCollection(orig);

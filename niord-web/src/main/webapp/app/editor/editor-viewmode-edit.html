@@ -354,7 +354,7 @@
 
         <!-- Save and revert buttons -->
         <div id="save" class="row editor-section">
-            <button href class="btn btn-primary btn-sm" ng-click="saveMessage()" ng-disabled="editForm.$pristine || editForm.$invalid || messageSaved">
+            <button href class="btn btn-primary btn-sm" ng-click="saveMessage()" ng-disabled="editForm.$pristine || editForm.$invalid || messageSaving">
                 <span class="glyphicon glyphicon-floppy-disk"></span> Save Message
             </button>
             <button href class="btn btn-default btn-sm" ng-click="init()" ng-if="initId">

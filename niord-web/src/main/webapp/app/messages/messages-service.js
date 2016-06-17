@@ -53,15 +53,13 @@ angular.module('niord.messages')
             },
 
 
-            /** Creates a new message */
-            createMessage: function(msg) {
-                return $http.post('/rest/messages/message', msg);
-            },
-
-
-            /** Updates an existing message */
-            updateMessage: function(msg) {
-                return $http.put('/rest/messages/message/' + msg.id, msg);
+            /** Creates a new or updates an existing message */
+            saveMessage: function(msg) {
+                if (msg.id) {
+                    return $http.put('/rest/messages/message/' + msg.id, msg);
+                } else {
+                    return $http.post('/rest/messages/message', msg);
+                }
             },
 
 

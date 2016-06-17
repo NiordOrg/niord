@@ -232,7 +232,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         }
         this.originalInformation = message.getOriginalInformation();
         if (message.getDescs() != null) {
-            message.getDescs().forEach(desc -> createDesc(desc.getLang()).copyDesc(desc));
+            message.getDescs().forEach(desc -> addDesc(new MessageDesc(desc)));
         }
 
         onPersist();
@@ -318,6 +318,12 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         return desc;
     }
 
+
+    /** Adds a description entity to this message */
+    public void addDesc(MessageDesc desc) {
+        desc.setEntity(this);
+        descs.add(desc);
+    }
 
     /** Adds a reference to this message */
     public void addReference(Reference reference) {

@@ -38,6 +38,10 @@ angular.module('niord.editor')
 
             $scope.messageSeries = [];
 
+            // This will be set when the "Save message" button is clicked and will
+            // disable the button, to avoid double-clicks
+            $scope.messageSaving = false;
+
             /*****************************/
             /** Initialize the editor   **/
             /*****************************/
@@ -88,6 +92,9 @@ angular.module('niord.editor')
 
                 // Mark the form as pristine
                 $scope.setPristine();
+
+                // Remove lock on save button
+                $scope.messageSaving = false;
             };
 
 
@@ -158,6 +165,25 @@ angular.module('niord.editor')
                     }
                 };
                 $scope.initMessage();
+            };
+
+
+            /** Save the current message **/
+            $scope.saveMessage = function () {
+
+                // Prevent double-submissions
+                $scope.messageSaving = true;
+
+                MessageService.saveMessage($scope.message)
+                    .success(function(message) {
+                        growl.info("Message saved", { ttl: 3000 });
+                        $scope.initId = message.id;
+                        $rootScope.go('/editor/edit/' + message.id);
+                    })
+                    .error(function() {
+                        $scope.messageSaving = false;
+                        growl.error("Error saving message", { ttl: 5000 })
+                    });
             };
 
 
