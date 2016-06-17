@@ -367,9 +367,11 @@ li.view-mode-menu-btn .active .badge {
 
 .ui-select-container .form-control {
     height: 30px!important;
+    padding: 3px 12px!important;
 }
 
 .ui-select-match-text {
+    margin-top: 3px;
     font-size: 12px!important;
 }
 
