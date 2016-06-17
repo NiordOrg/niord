@@ -69,7 +69,7 @@
 .editor-field-value-editing {
     border: 1px solid lightgray;
     box-shadow: 2px 2px 4px rgba(50, 50, 50, 0.5);
-    padding: 10px 0px;
+    padding: 10px 0;
     margin-bottom: 5px;
 }
 
@@ -81,6 +81,25 @@
 
 .editor-field-value-table td {
     padding: 5px;
+}
+
+.editor-description {
+    height: 200px;
+}
+
+.editor-description-flag {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    height: 14px
+}
+
+.mce-container * {
+    font-size: 12px!important;
+}
+
+.mce-btn button {
+    padding: 3px 4px!important;
 }
 
 /** Editor -> Status **/
@@ -184,7 +203,7 @@
     overflow: hidden;
     overflow-y: scroll;
     border-top: 1px solid lightgray;
-    box-shadow: 0px 2px 4px rgba(50, 50, 50, 0.5);
+    box-shadow: 0 2px 4px rgba(50, 50, 50, 0.5);
 }
 
 .gj-editor .feature-panel {

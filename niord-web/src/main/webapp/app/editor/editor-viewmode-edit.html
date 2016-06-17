@@ -109,7 +109,20 @@
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">
-                    TBD
+                    <div class="row" style="margin-top: 10px">
+                        <div class="col-sm-12">
+                            <button type="button" class="btn btn-sm btn-default" ng-model="message.autoTitle"
+                                    uib-btn-checkbox uib-btn-checkbox-true="true" uib-btn-checkbox-false="false">
+                                <span class="glyphicon glyphicon-lock"></span> Auto-generate
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 10px">
+                        <div class="col-sm-12 col-md-8" ng-repeat="desc in message.descs">
+                            <input class="form-control input-sm" placeholder="Title" type="text"
+                                   ng-model="desc.title" bg-flag="desc.lang" ng-disabled="message.autoTitle">
+                        </div>
+                    </div>
                 </editor-field-value-editor>
 
             </editor-field>
@@ -348,6 +361,51 @@
                 </editor-field-value-editor>
 
             </editor-field>
+
+
+            <!-- ********************* -->
+            <!-- ** Subject         ** -->
+            <!-- ********************* -->
+            <editor-field edit-mode="editMode" field-id="subject" field-title="msg.field.subject">
+
+                <editor-field-value-viewer>
+                    <div ng-if="message.descs.length > 0">
+                        {{message.descs[0].subject}}
+                    </div>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12">
+                    <div class="row">
+                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
+                            <input class="form-control input-sm" placeholder="Subject" type="text"
+                                   ng-model="desc.subject" bg-flag="desc.lang" />
+                        </div>
+                    </div>
+                </editor-field-value-editor>
+
+            </editor-field>
+
+            <!-- ********************* -->
+            <!-- ** Description     ** -->
+            <!-- ********************* -->
+            <editor-field edit-mode="editMode" field-id="description" field-title="msg.field.description">
+
+                <editor-field-value-viewer>
+                    <div ng-if="message.descs.length > 0" ng-bind-html="message.descs[0].description"></div>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12">
+                    <div class="row">
+                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs"  id="tinymce-{{desc.lang}}">
+                            <textarea class="editor-description" ui-tinymce="tinymceOptions"
+                                      ng-model="desc.description" bg-flag="desc.lang"></textarea>
+                            <flag lang="desc.lang" class="editor-description-flag"></flag>
+                        </div>
+                    </div>
+                </editor-field-value-editor>
+
+            </editor-field>
+
 
 
         </div>

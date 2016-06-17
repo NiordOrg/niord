@@ -33,7 +33,9 @@ angular.module('niord.editor')
                 areas: false,
                 categories: false,
                 positions: false,
-                charts: false
+                charts: false,
+                subject: false,
+                description: false
             };
 
             $scope.messageSeries = [];
@@ -41,6 +43,23 @@ angular.module('niord.editor')
             // This will be set when the "Save message" button is clicked and will
             // disable the button, to avoid double-clicks
             $scope.messageSaving = false;
+
+            // Configuration of the TinyMCE editors
+            $scope.tinymceOptions = {
+                resize: false,
+                plugins: [
+                    "autolink lists link image anchor",
+                    "code textcolor",
+                    "media table contextmenu paste"
+                ],
+                theme: "modern",
+                skin: 'light',
+                statusbar : false,
+                menubar: false,
+                contextmenu: "link image inserttable | cell row column deletetable",
+                toolbar: "styleselect | bold italic | forecolor backcolor | alignleft aligncenter alignright alignjustify | "
+                + "bullist numlist  | outdent indent | link image table | code"
+            };
 
             /*****************************/
             /** Initialize the editor   **/
