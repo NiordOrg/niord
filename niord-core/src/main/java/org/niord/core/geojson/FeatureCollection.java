@@ -19,7 +19,16 @@ import org.niord.core.model.BaseEntity;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
 import org.niord.model.vo.geojson.FeatureVo;
 
-import javax.persistence.*;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Index;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
+import javax.persistence.OrderColumn;
+import javax.persistence.PrePersist;
+import javax.persistence.Table;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -42,6 +51,7 @@ public class FeatureCollection extends BaseEntity<Integer> {
     String uid;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "featureCollection", orphanRemoval = true)
+    @OrderColumn(name = "indexNo")
     private List<Feature> features = new ArrayList<>();
 
     /** Converts this FeatureCollection entity to GeoJson */
@@ -85,6 +95,10 @@ public class FeatureCollection extends BaseEntity<Integer> {
         feature.setFeatureCollection(this);
         features.add(feature);
     }
+
+    /*************************/
+    /** Getters and Setters **/
+    /*************************/
 
     public String getUid() {
         return uid;

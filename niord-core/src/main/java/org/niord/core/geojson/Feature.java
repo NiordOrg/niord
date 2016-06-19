@@ -3,6 +3,7 @@ package org.niord.core.geojson;
 import com.vividsolutions.jts.geom.Geometry;
 import org.niord.core.db.JpaPropertiesAttributeConverter;
 import org.niord.core.model.BaseEntity;
+import org.niord.core.model.IndexedEntity;
 import org.niord.model.vo.geojson.FeatureVo;
 
 import javax.persistence.Column;
@@ -36,7 +37,7 @@ import java.util.UUID;
                 query = "select f from Feature f where within(:pt, f.geometry) = true")
 })
 @SuppressWarnings("unused")
-public class Feature extends BaseEntity<Integer> {
+public class Feature extends BaseEntity<Integer> implements IndexedEntity {
     public final static int WGS84_SRID = 4326;
 
     @Column(unique = true)
@@ -45,6 +46,8 @@ public class Feature extends BaseEntity<Integer> {
     @ManyToOne
     @NotNull
     FeatureCollection featureCollection;
+
+    int indexNo;
 
     @Column(columnDefinition = "GEOMETRY", nullable = false)
     private Geometry geometry;
@@ -87,6 +90,10 @@ public class Feature extends BaseEntity<Integer> {
         return feature;
     }
 
+    /*************************/
+    /** Getters and Setters **/
+    /*************************/
+
     public String getUid() {
         return uid;
     }
@@ -101,6 +108,16 @@ public class Feature extends BaseEntity<Integer> {
 
     public void setFeatureCollection(FeatureCollection featureCollection) {
         this.featureCollection = featureCollection;
+    }
+
+    @Override
+    public int getIndexNo() {
+        return indexNo;
+    }
+
+    @Override
+    public void setIndexNo(int indexNo) {
+        this.indexNo = indexNo;
     }
 
     public Geometry getGeometry() {

@@ -41,6 +41,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.OrderColumn;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
@@ -48,9 +49,7 @@ import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 
 /**
@@ -111,6 +110,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     Status status;
 
     @ManyToMany
+    @OrderColumn
     List<Area> areas = new ArrayList<>();
 
     // The areaSortOrder is used to sort the message within its associated area
@@ -121,6 +121,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     List<Category> categories = new ArrayList<>();
 
     @ManyToMany
+    @OrderColumn
     List<Chart> charts = new ArrayList<>();
 
     String horizontalDatum;
@@ -143,10 +144,12 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     Date cancellationDate;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "message", orphanRemoval = true)
+    @OrderColumn(name = "indexNo")
     List<DateInterval> dateIntervals = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "message", orphanRemoval = true)
-    Set<Reference> references = new HashSet<>();
+    @OrderColumn(name = "indexNo")
+    List<Reference> references = new ArrayList<>();
 
     // As Niord does not "own" the AtoN data, use weak references to AtoNs
     @ElementCollection
@@ -493,11 +496,11 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         this.dateIntervals = dateIntervals;
     }
 
-    public Set<Reference> getReferences() {
+    public List<Reference> getReferences() {
         return references;
     }
 
-    public void setReferences(Set<Reference> references) {
+    public void setReferences(List<Reference> references) {
         this.references = references;
     }
 

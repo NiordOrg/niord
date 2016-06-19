@@ -25,9 +25,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Value object for the {@code Message} model entity
@@ -64,7 +62,7 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     Date publishDate;
     Date cancellationDate;
     List<DateIntervalVo> dateIntervals;
-    Set<ReferenceVo> references;
+    List<ReferenceVo> references;
     List<String> atonUids;
     Boolean originalInformation;
     List<MessageDescVo> descs;
@@ -111,9 +109,9 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
         return dateIntervals;
     }
 
-    public Set<ReferenceVo> checkCreateReferences() {
+    public List<ReferenceVo> checkCreateReferences() {
         if (references == null) {
-            references = new HashSet<>();
+            references = new ArrayList<>();
         }
         return references;
     }
@@ -301,11 +299,11 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
         this.dateIntervals = dateIntervals;
     }
 
-    public Set<ReferenceVo> getReferences() {
+    public List<ReferenceVo> getReferences() {
         return references;
     }
 
-    public void setReferences(Set<ReferenceVo> references) {
+    public void setReferences(List<ReferenceVo> references) {
         this.references = references;
     }
 

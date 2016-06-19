@@ -16,6 +16,7 @@
 package org.niord.core.message;
 
 import org.niord.core.model.BaseEntity;
+import org.niord.core.model.IndexedEntity;
 import org.niord.model.vo.ReferenceType;
 import org.niord.model.vo.ReferenceVo;
 
@@ -33,10 +34,12 @@ import javax.validation.constraints.NotNull;
         @Index(name = "reference_message_id_k", columnList="messageId")
 })
 @SuppressWarnings("unused")
-public class Reference extends BaseEntity<Integer> {
+public class Reference extends BaseEntity<Integer> implements IndexedEntity {
 
     @ManyToOne
     Message message;
+
+    int indexNo;
 
     // May be either MRN (globally unique) or short ID (within same message series)
     @NotNull
@@ -80,6 +83,16 @@ public class Reference extends BaseEntity<Integer> {
 
     public void setMessage(Message message) {
         this.message = message;
+    }
+
+    @Override
+    public int getIndexNo() {
+        return indexNo;
+    }
+
+    @Override
+    public void setIndexNo(int indexNo) {
+        this.indexNo = indexNo;
     }
 
     public String getMessageId() {
