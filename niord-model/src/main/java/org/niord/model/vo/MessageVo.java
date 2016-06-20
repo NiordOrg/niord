@@ -36,7 +36,7 @@ import java.util.List;
         "messageSeries", "number", "mrn", "shortId", "mainType", "type", "status",
         "areas", "categories", "charts", "horizontalDatum", "geometry",
         "startDate", "endDate", "publishDate", "cancellationDate", "dateIntervals",
-        "references", "atonUids", "originalInformation", "descs"
+        "references", "atonUids", "originalInformation", "descs", "autoTitle"
 })
 @SuppressWarnings("unused")
 public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable {
@@ -66,6 +66,7 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     List<String> atonUids;
     Boolean originalInformation;
     List<MessageDescVo> descs;
+    Boolean autoTitle;
 
 
     /** {@inheritDoc} */
@@ -333,4 +334,11 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
         this.descs = descs;
     }
 
+    public Boolean isAutoTitle() {
+        return autoTitle;
+    }
+
+    public void setAutoTitle(Boolean autoTitle) {
+        this.autoTitle = autoTitle;
+    }
 }

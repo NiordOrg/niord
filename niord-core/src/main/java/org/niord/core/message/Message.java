@@ -15,6 +15,7 @@
  */
 package org.niord.core.message;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.category.Category;
 import org.niord.core.chart.Chart;
@@ -169,6 +170,8 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
     List<MessageDesc> descs = new ArrayList<>();
 
+    // Indicates if the title should automatically be updated from the message area, subject and vicinity fields.
+    boolean autoTitle;
 
     /**
      * Constructor
@@ -243,8 +246,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         if (message.getDescs() != null) {
             message.getDescs().forEach(desc -> addDesc(new MessageDesc(desc)));
         }
+        this.autoTitle = message.isAutoTitle() != null && message.isAutoTitle();
 
-        onPersist();
+        updateStartEndDates();
     }
 
 
@@ -281,6 +285,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             references.forEach(r -> message.checkCreateReferences().add(r.toVo()));
             message.checkCreateAtonUids().addAll(atonUids);
             message.setOriginalInformation(originalInformation);
+            message.setAutoTitle(autoTitle);
         }
         if (compFilter.anyOfFields(DataFilter.GEOMETRY) && geometry != null) {
             message.setGeometry(geometry.toGeoJson());
@@ -302,6 +307,21 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         // Set "area" to be the first area in the "areas" list
         area = areas.isEmpty() ? null : areas.get(0);
 
+        // Update the main type from the type
+        if (type != null) {
+            mainType = type.getMainType();
+        }
+
+        // Updates the start and end dates from the date intervals
+        updateStartEndDates();
+
+        // Update the message title
+        updateMessageTitle();
+    }
+
+
+    /** Updates the start and end dates from the date intervals **/
+    public void updateStartEndDates() {
         // Update start and endDate from the data intervals
         startDate = endDate = null;
         dateIntervals.forEach(di -> {
@@ -312,12 +332,39 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                 endDate = di.getToDate();
             }
         });
+    }
 
-        // Update the main type from the type
-        if (type != null) {
-            mainType = type.getMainType();
+
+    /** Updates the title line of the message based on area, vicinity and subject */
+    public void updateMessageTitle() {
+        if (autoTitle) {
+            getDescs().forEach(desc -> {
+                try {
+                    StringBuilder title = new StringBuilder();
+                    if (!getAreas().isEmpty()) {
+                        title.append(Area.computeAreaTitlePrefix(getAreas(), desc.getLang()));
+                    }
+                    if (StringUtils.isNotBlank(desc.getVicinity())) {
+                        title.append(" ").append(desc.getVicinity());
+                        if (!desc.getVicinity().endsWith(".")) {
+                            title.append(".");
+                        }
+                    }
+                    if (StringUtils.isNotBlank(desc.getSubject())) {
+                        title.append(" ").append(desc.getSubject());
+                        if (!desc.getSubject().endsWith(".")) {
+                            title.append(".");
+                        }
+                    }
+                    desc.setTitle(title.toString().trim());
+                } catch (Exception ignored) {
+                }
+            });
+
         }
     }
+
+
 
 
     /**
@@ -545,6 +592,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setOriginalInformation(Boolean originalInformation) {
         this.originalInformation = originalInformation;
+    }
+
+    public boolean isAutoTitle() {
+        return autoTitle;
+    }
+
+    public void setAutoTitle(boolean autoTitle) {
+        this.autoTitle = autoTitle;
     }
 
     @Override

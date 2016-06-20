@@ -310,7 +310,6 @@ public class MessageService extends BaseService {
         if (message.getMainType() == null) {
             message.setMainType(message.getType().getMainType());
         }
-        message.onPersist();
 
         // Set default status
         if (message.getStatus() == null) {
@@ -330,9 +329,6 @@ public class MessageService extends BaseService {
 
         // Substitute the Charts with the persisted ones
         message.setCharts(chartService.persistedCharts(message.getCharts()));
-
-        // Update title lines
-        updateMessageTitle(message);
 
         // Persist the message
         message = saveMessage(message);
@@ -388,7 +384,6 @@ public class MessageService extends BaseService {
         message.getDateIntervals().stream()
             .map(di -> di.isNew() ? di : getByPrimaryKey(DateInterval.class, di.getId()))
             .forEach(original::addDateInterval);
-        original.onPersist();
 
         original.getReferences().clear();
         message.getReferences().stream()
@@ -402,9 +397,7 @@ public class MessageService extends BaseService {
 
         // Copy the localized description data
         original.copyDescsAndRemoveBlanks(message.getDescs());
-
-        // Update title lines
-        updateMessageTitle(original);
+        original.setAutoTitle(message.isAutoTitle());
 
         // Persist the message
         saveMessage(original);
@@ -452,34 +445,6 @@ public class MessageService extends BaseService {
 
 
     /**
-     * Updates the title line of the message based on area and subject
-     * TODO: Introduce attribute to flag if title is manually or automatically filled out
-     * @param message the message to update the title line for
-     */
-    public void updateMessageTitle(Message message) {
-        message.getDescs().forEach(desc -> {
-            StringBuilder title = new StringBuilder();
-            if (!message.getAreas().isEmpty()) {
-                title.append(Area.computeAreaTitlePrefix(message.getAreas(), desc.getLang()));
-            }
-            if (StringUtils.isNotBlank(desc.getVicinity())) {
-                title.append(" ").append(desc.getVicinity());
-                if (!desc.getVicinity().endsWith(".")) {
-                    title.append(".");
-                }
-            }
-            if (StringUtils.isNotBlank(desc.getSubject())) {
-                title.append(" ").append(desc.getSubject());
-                if (!desc.getSubject().endsWith(".")) {
-                    title.append(".");
-                }
-            }
-            desc.setTitle(title.toString().trim());
-        });
-    }
-
-
-    /**
      * Computes the title lines for the given message template
      *
      * @param message the message template to compute the title line for
@@ -487,7 +452,8 @@ public class MessageService extends BaseService {
      */
     public Message computeTitleLine(Message message) {
         message.setAreas(persistedList(Area.class, message.getAreas()));
-        updateMessageTitle(message);
+        message.setAutoTitle(true);
+        message.updateMessageTitle();
         return message;
     }
 
