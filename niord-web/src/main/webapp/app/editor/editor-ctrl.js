@@ -121,7 +121,7 @@ angular.module('niord.editor')
             $scope.init = function () {
                 // 1) The message ID may be specified
                 if ($scope.initId) {
-                    MessageService.details($scope.initId)
+                    MessageService.editableDetails($scope.initId)
                         .success(function (message) {
                             $scope.message = message;
                             $scope.initMessage();
@@ -743,7 +743,7 @@ angular.module('niord.editor')
 
                 // Fetch the message to compare with
                 if (messageId && messageId.length > 0) {
-                    MessageService.details(messageId)
+                    MessageService.editableDetails(messageId)
                         .success(function (compareMessage) {
                             $scope.compareMessage = compareMessage;
                             if (compareMessage) {

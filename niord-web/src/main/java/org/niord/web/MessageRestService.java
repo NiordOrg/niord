@@ -23,6 +23,7 @@ import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.fm.FmService;
 import org.niord.core.fm.FmService.ProcessFormat;
+import org.niord.core.message.EditableMessageVo;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageHistory;
 import org.niord.core.message.MessageIdMatch;
@@ -142,6 +143,43 @@ public class MessageRestService {
 
 
     /**
+     * Returns the editable message with the given message id, which may be either a database id,
+     * or a short ID or an MRN of a message.
+     *
+     * If no message exists with the given ID, null is returned.
+     *
+     * @param messageId the message ID
+     * @param language the language to sort the returned data by
+     * @return the message or null
+     */
+    @GET
+    @Path("/editable-message/{messageId}")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public EditableMessageVo getEditableMessage(
+            @PathParam("messageId") String messageId,
+            @QueryParam("lang") String language) throws Exception {
+
+        // TODO: Validate message series etc according to the current domain
+
+        Message message = messageService.resolveMessage(messageId);
+        if (message == null) {
+            return null;
+        }
+
+        DataFilter filter = DataFilter.get()
+                .fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
+
+        EditableMessageVo messageVo =  message.toEditableVo(filter);
+        messageVo.sortDescs(language);
+
+        return messageVo;
+    }
+
+
+    /**
      * Creates a new draft message
      *
      * @param message the message to create
@@ -154,7 +192,7 @@ public class MessageRestService {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public MessageVo createMessage(MessageVo message) throws Exception {
+    public MessageVo createMessage(EditableMessageVo message) throws Exception {
         log.info("Creating message " + message);
         Message msg = messageService.createMessage(new Message(message));
         return getMessage(msg.getId().toString(), null);
@@ -174,7 +212,7 @@ public class MessageRestService {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public MessageVo updateMessage(@PathParam("messageId") Integer messageId, MessageVo message) throws Exception {
+    public MessageVo updateMessage(@PathParam("messageId") Integer messageId, EditableMessageVo message) throws Exception {
         if (!Objects.equals(messageId, message.getId())) {
             throw new WebApplicationException(400);
         }

@@ -53,6 +53,12 @@ angular.module('niord.messages')
             },
 
 
+            /** Returns the editable message with the given ID */
+            editableDetails: function (id) {
+                return $http.get('/rest/messages/editable-message/' + id + '?lang=' + $rootScope.language);
+            },
+
+
             /** Creates a new or updates an existing message */
             saveMessage: function(msg) {
                 if (msg.id) {

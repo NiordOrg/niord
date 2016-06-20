@@ -121,7 +121,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     Area area;
 
     // The areaSortOrder is used to sort the message within its associated area
-    @Column(columnDefinition="DOUBLE default 0.0")
+    @Column(columnDefinition = "DOUBLE default 0.0")
     double areaSortOrder;
 
     @ManyToMany
@@ -246,17 +246,20 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         if (message.getDescs() != null) {
             message.getDescs().forEach(desc -> addDesc(new MessageDesc(desc)));
         }
-        this.autoTitle = message.isAutoTitle() != null && message.isAutoTitle();
+
+        if (message instanceof EditableMessageVo) {
+            EditableMessageVo editableMessage = (EditableMessageVo) message;
+            this.autoTitle = editableMessage.isAutoTitle() != null && editableMessage.isAutoTitle();
+        }
 
         updateStartEndDates();
     }
 
 
     /** Converts this entity to a value object */
-    public MessageVo toVo(DataFilter filter) {
+    private <M extends MessageVo> M toVo(M message, DataFilter filter) {
 
         DataFilter compFilter = filter.forComponent(Message.class);
-        MessageVo message = new MessageVo();
 
         message.setId(id);
         message.setNumber(number);
@@ -285,7 +288,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             references.forEach(r -> message.checkCreateReferences().add(r.toVo()));
             message.checkCreateAtonUids().addAll(atonUids);
             message.setOriginalInformation(originalInformation);
-            message.setAutoTitle(autoTitle);
         }
         if (compFilter.anyOfFields(DataFilter.GEOMETRY) && geometry != null) {
             message.setGeometry(geometry.toGeoJson());
@@ -294,6 +296,26 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         if (compFilter.anyOfFields(DataFilter.DETAILS, "MessageDesc.title")) {
             getDescs(compFilter).stream()
                     .forEach(desc -> message.checkCreateDescs().add(desc.toVo(compFilter)));
+        }
+
+        return message;
+    }
+
+
+    /** Converts this entity to a value object */
+    public MessageVo toVo(DataFilter filter) {
+        return toVo(new MessageVo(), filter);
+    }
+
+
+    /** Converts this entity to a value object */
+    public EditableMessageVo toEditableVo(DataFilter filter) {
+
+        EditableMessageVo message = toVo(new EditableMessageVo(), filter);
+
+        DataFilter compFilter = filter.forComponent(Message.class);
+        if (compFilter.includeField(DataFilter.DETAILS)) {
+            message.setAutoTitle(autoTitle);
         }
 
         return message;
