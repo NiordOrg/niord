@@ -44,22 +44,6 @@ angular.module('niord.editor')
             // disable the button, to avoid double-clicks
             $scope.messageSaving = false;
 
-            // Configuration of the TinyMCE editors
-            $scope.tinymceOptions = {
-                resize: false,
-                plugins: [
-                    "autolink lists link image anchor",
-                    "code textcolor",
-                    "media table contextmenu paste"
-                ],
-                theme: "modern",
-                skin: 'light',
-                statusbar : false,
-                menubar: false,
-                contextmenu: "link image inserttable | cell row column deletetable",
-                toolbar: "styleselect | bold italic | forecolor backcolor | alignleft aligncenter alignright alignjustify | "
-                + "bullist numlist  | outdent indent | link image table | code"
-            };
 
             /*****************************/
             /** Initialize the editor   **/
@@ -425,6 +409,102 @@ angular.module('niord.editor')
                 }
             };
 
+
+            /*****************************/
+            /** TinyMCE functions       **/
+            /*****************************/
+
+            $scope.attachments = [ '/rest/repo/file/messages/1/19/2138/map_256.png' ];
+
+            /** File callback function - called from the TinyMCE image and link dialogs **/
+            $scope.fileBrowserCallback = function(field_name, url, type, win) {
+                $(".mce-window").hide();
+                $("#mce-modal-block").hide();
+                $scope.$apply(function() {
+                    $scope.attachmentDialog('md').result
+                        .then(function (file) {
+                            $("#mce-modal-block").show();
+                            $(".mce-window").show();
+                            win.document.getElementById(field_name).value = file;
+                        });
+                });
+            };
+
+            // TinyMCE file_browser_callback implementation
+            $scope.attachmentDialog = function (size) {
+                return $uibModal.open({
+                    templateUrl: '/app/editor/message-file-dialog.html',
+                    controller: function ($scope, $modalInstance, files) {
+                        $scope.files = files;
+                        $scope.ok = function (file) { $modalInstance.close(file); };
+                        $scope.cancel = function () { $modalInstance.dismiss('cancel'); };
+                    },
+                    size: size,
+                    windowClass: 'on-top',
+                    resolve: {
+                        files: function () { return $scope.attachments; }
+                    }
+                });
+            };
+
+
+            /** Dialog that facilitates formatting selected message features as text **/
+            $scope.locationsDialog = function (lang) {
+                return $uibModal.open({
+                    templateUrl: '/app/editor/format-locations-dialog.html',
+                    controller: 'FormatMessageLocationsDialogCtrl',
+                    size: 'lg',
+                    resolve: {
+                        featureCollection: function () { return $scope.message.geometry; },
+                        lang: function () { return lang; }
+                    }
+                });
+            };
+
+
+            /** Allows the user to select which location should be inserted and how it should be formatted **/
+            $scope.formatLocations = function (editor) {
+                // The editor ID has the format "ui-tinymce-<<Index>>" where index is 0, 1, ...
+                console.log("EDITOR ID " + editor.id);
+                
+                var index = parseInt(editor.id.split("-")[2]);
+                var lang = $scope.message.descs[index].lang;
+
+                $scope.$apply(function() {
+                    $scope.locationsDialog(lang).result
+                        .then(function (result) {
+                            editor.insertContent(result);
+                        });
+                });
+            };
+
+
+            // Configuration of the TinyMCE editors
+            $scope.tinymceOptions = {
+                resize: false,
+                plugins: [
+                    "autolink lists link image anchor",
+                    "code textcolor",
+                    "media table contextmenu paste"
+                ],
+                theme: "modern",
+                skin: 'light',
+                statusbar : false,
+                menubar: false,
+                contextmenu: "link image inserttable | cell row column deletetable",
+                toolbar: "styleselect | bold italic | forecolor backcolor | alignleft aligncenter alignright alignjustify | "
+                         + "bullist numlist  | outdent indent | link image table | code | niordlocations",
+                file_browser_callback: $scope.fileBrowserCallback,
+                setup : function ( editor ) {
+                    editor.addButton( 'niordlocations', {
+                        title: 'Insert Locations',
+                        icon: 'map-marker',
+                        onclick : function () { $scope.formatLocations(editor); }
+                    });
+                }
+            };
+
+
             /*****************************/
             /** Action menu functions   **/
             /*****************************/
@@ -737,6 +817,51 @@ angular.module('niord.editor')
                         })
                 }
             }, true);
+
+        }])
+
+
+
+    /*******************************************************************
+     * Controller that allows the user to format selected features as text
+     *******************************************************************/
+    .controller('FormatMessageLocationsDialogCtrl', ['$scope', 'MapService', 'featureCollection', 'lang',
+        function ($scope, MapService, featureCollection, lang) {
+            'use strict';
+
+            $scope.featureCollection = angular.copy(featureCollection);
+            $scope.lang = lang;
+            $scope.selectedFeatures = [ ];
+            $scope.data = {
+                result: ''
+            };
+
+            $scope.featureSelectionChanged = function () {
+                var result = '';
+                var selectedFeatures = $.grep($scope.featureCollection.features, function (feature) {
+                    return feature.selected;
+                });
+                if (selectedFeatures.length > 0) {
+                    angular.forEach(selectedFeatures, function (feature) {
+                        var coords = [];
+                        MapService.serializeCoordinates(feature, coords);
+
+                        if (coords.length > 0) {
+                            var name = feature.properties ? feature.properties['name:' + lang] : undefined;
+                            if (name) {
+                                result += "<div>" + name + "</div>";
+                            }
+                            result += "<ul>";
+                            angular.forEach(coords, function (coord) {
+                                result += "<li>" + formatLatLon(coord, 3, true) + "</li>";
+                            });
+                            result += "</ul>";
+                        }
+                    });
+                }
+
+                $scope.data.result = result;
+            };
 
         }])
 

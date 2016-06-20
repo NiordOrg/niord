@@ -1,0 +1,18 @@
+<div class="modal-header">
+    <h3 class="modal-title">Format Message Locations</h3>
+</div>
+<div class="modal-body">
+
+    <div ng-repeat="feature in featureCollection.features">
+        <input type="checkbox" ng-model="feature.selected" uib-btn-checkbox ng-change="featureSelectionChanged()">
+        {{feature.geometry.type}}
+    </div>
+
+    <div ng-bind-html="data.result" style="width: 100%; height: 100px;">
+    </div>
+
+</div>
+<div class="modal-footer">
+    <button class="btn btn-default" ng-click="$dismiss('aborted')">Cancel</button>
+    <button class="btn btn-primary" ng-click="$close(data.result)">Insert</button>
+</div>

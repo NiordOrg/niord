@@ -102,6 +102,11 @@
     padding: 3px 4px!important;
 }
 
+i.mce-i-map-marker:before {
+    content: "\e062";
+    font-family: "Glyphicons Halflings";
+}
+
 /** Editor -> Status **/
 
 .message-status-panel {
