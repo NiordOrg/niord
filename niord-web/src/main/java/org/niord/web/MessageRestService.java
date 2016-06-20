@@ -218,7 +218,8 @@ public class MessageRestService {
     @NoCache
     @RolesAllowed({"editor"})
     public MessageVo computeTitleLine(MessageVo message) throws Exception {
-        return messageService.computeTitleLine(new Message(message)).toVo(DataFilter.get());
+        DataFilter filter = DataFilter.get().fields("MessageDesc.title");
+        return messageService.computeTitleLine(new Message(message)).toVo(filter);
     }
 
 
