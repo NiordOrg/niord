@@ -241,6 +241,29 @@ angular.module('niord.messages')
                 });
             },
 
+            /** Opens the message print dialog */
+            printMessage: function (messageId) {
+                var that = this;
+                that.messagePrintDialog(1).result
+                    .then(function (printSettings) {
+                        that.pdfTicket()
+                            .success(function (ticket) {
+
+                                var params = 'lang=' + $rootScope.language + '&ticket=' + ticket;
+
+                                if (printSettings && printSettings.pageOrientation) {
+                                    params += '&pageOrientation=' + printSettings.pageOrientation;
+                                }
+                                if (printSettings && printSettings.pageSize) {
+                                    params += '&pageSize=' + printSettings.pageSize;
+                                }
+
+                                $window.location = '/rest/messages/message/' + messageId + '.pdf?' + params;
+                            });
+                    });
+            },
+
+
             /** Sorts the messages withing an area **/
             sortAreaMessagesDialog: function () {
                 // Get the user to pick an area with a geometry

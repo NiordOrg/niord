@@ -341,6 +341,7 @@ public class MessageTagService extends BaseService {
         for (Message message : persistedListForIds(Message.class, messageIds)) {
             if (tag.getMessages().contains(message)) {
                 tag.getMessages().remove(message);
+                message.getTags().remove(tag);
             }
         }
 

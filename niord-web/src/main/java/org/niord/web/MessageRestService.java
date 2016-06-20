@@ -65,6 +65,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.niord.model.vo.MessageTagVo.MessageTagType.PUBLIC;
+
 /**
  * REST interface for managing messages.
  */
@@ -109,6 +111,63 @@ public class MessageRestService {
 
 
     /**
+     * Checks that the user has editing access to the given message by matching the current domain
+     * with the message series of the message.<br>
+     * Throws a 403 response code error if no access.
+     * @param message the message
+     */
+    private void checkMessageEditingAccess(Message message) {
+        Domain domain = domainService.currentDomain();
+        if (domain == null ||
+                message == null ||
+                message.getMessageSeries() == null ||
+                domain.getMessageSeries().stream()
+                        .noneMatch(ms -> ms.getSeriesId().equals(message.getMessageSeries().getSeriesId()))) {
+            throw new WebApplicationException(403);
+        }
+    }
+
+
+    /**
+     * Checks that the user has viewing access to the given message. The message must adhere to one of the following
+     * criteria:
+     * <ul>
+     *     <li>The message is published.</li>
+     *     <li>The current domain of the user matches the message series of the message.</li>
+     *     <li>The message is associated with a public tag.</li>
+     * </ul>
+     *
+     * Throws a 403 response code error if no access.
+     * @param message the message
+     * @param ticket optionally a ticket parameter
+     */
+    private void checkMessageViewingAccess(Message message, String ticket) {
+        // 1) Always grant access if the message is published
+        if (message.getStatus() == Status.PUBLISHED) {
+            return;
+        }
+
+        // 2) Grant access if the current domain of the user matches the message series of the message
+        Domain domain = currentDomain(ticket);
+        if (domain != null &&
+                message.getMessageSeries() != null &&
+                domain.getMessageSeries().stream()
+                        .anyMatch(ms -> ms.getSeriesId().equals(message.getMessageSeries().getSeriesId()))) {
+            return;
+        }
+
+        // 3) Grant access if the message is associated with a public tag.
+        if (message.getTags().stream()
+                .anyMatch(t -> t.getType() == PUBLIC)) {
+            return;
+        }
+
+        // No access
+        throw new WebApplicationException(403);
+    }
+
+
+    /**
      * Returns the message with the given message id, which may be either a database id,
      * or a short ID or an MRN of a message.
      *
@@ -125,14 +184,17 @@ public class MessageRestService {
     @NoCache
     public MessageVo getMessage(
             @PathParam("messageId") String messageId,
-            @QueryParam("lang") String language) throws Exception {
-
-        // TODO: Validate message series etc according to the current domain
+            @QueryParam("lang") String language,
+            @QueryParam("ticket") String ticket
+            ) throws Exception {
 
         Message message = messageService.resolveMessage(messageId);
         if (message == null) {
             return null;
         }
+
+        // Validate access to the message
+        checkMessageViewingAccess(message, ticket);
 
         DataFilter filter = DataFilter.get()
                 .lang(language)
@@ -141,23 +203,6 @@ public class MessageRestService {
         return message.toVo(filter);
     }
 
-
-    /**
-     * Checks that the user has access to the given message by matching the current domain
-     * with the message series of the message.<br>
-     * Throws a 403 response code error if no access.
-     * @param message the message
-     */
-    private void checkMessageAccess(Message message) {
-        Domain domain = domainService.currentDomain();
-        if (domain == null ||
-                message == null ||
-                message.getMessageSeries() == null ||
-                domain.getMessageSeries().stream()
-                        .noneMatch(ms -> ms.getSeriesId().equals(message.getMessageSeries().getSeriesId()))) {
-            throw new WebApplicationException(403);
-        }
-    }
 
     /**
      * Returns the editable message with the given message id, which may be either a database id,
@@ -185,7 +230,7 @@ public class MessageRestService {
         }
 
         // Validate access to the message
-        checkMessageAccess(message);
+        checkMessageEditingAccess(message);
 
         DataFilter filter = DataFilter.get()
                 .fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
@@ -215,10 +260,10 @@ public class MessageRestService {
         Message msg = new Message(message);
 
         // Validate access to the message
-        checkMessageAccess(msg);
+        checkMessageEditingAccess(msg);
 
         msg = messageService.createMessage(msg);
-        return getMessage(msg.getId().toString(), null);
+        return getMessage(msg.getId().toString(), null, null);
     }
 
 
@@ -243,11 +288,11 @@ public class MessageRestService {
         Message msg = new Message(message);
 
         // Validate access to the message
-        checkMessageAccess(msg);
-        checkMessageAccess(messageService.findById(messageId));
+        checkMessageEditingAccess(msg);
+        checkMessageEditingAccess(messageService.findById(messageId));
 
         msg = messageService.updateMessage(msg);
-        return getMessage(msg.getId().toString(), null);
+        return getMessage(msg.getId().toString(), null, null);
     }
 
 
@@ -268,10 +313,10 @@ public class MessageRestService {
         log.info("Updating status of message " + messageId + " to " + status);
 
         // Validate access to the message
-        checkMessageAccess(messageService.findById(messageId));
+        checkMessageEditingAccess(messageService.findById(messageId));
 
         Message msg = messageService.updateStatus(messageId, Status.valueOf(status));
-        return getMessage(msg.getId().toString(), null);
+        return getMessage(msg.getId().toString(), null, null);
     }
 
 
@@ -472,11 +517,12 @@ public class MessageRestService {
     public Response generatePdfForMessage(
             @PathParam("messageId") String messageId,
             @QueryParam("lang") String language,
+            @QueryParam("ticket") String ticket,
             @QueryParam("pageSize") @DefaultValue("A4") String pageSize,
             @QueryParam("pageOrientation") @DefaultValue("portrait") String pageOrientation,
             @QueryParam("debug") @DefaultValue("false") boolean debug) throws Exception {
 
-        MessageVo message = getMessage(messageId, language);
+        MessageVo message = getMessage(messageId, language, ticket);
 
         try {
             ProcessFormat format = debug ? ProcessFormat.TEXT : ProcessFormat.PDF;

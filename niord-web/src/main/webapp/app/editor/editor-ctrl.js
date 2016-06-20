@@ -7,9 +7,9 @@ angular.module('niord.editor')
     /**
      * Main message editor controller
      */
-    .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$http', '$window', '$timeout', '$uibModal', 'growl',
+    .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$http', '$timeout', '$uibModal', 'growl',
             'MessageService', 'LangService', 'MapService', 'UploadFileService',
-        function ($scope, $rootScope, $stateParams, $state, $http, $window, $timeout, $uibModal, growl,
+        function ($scope, $rootScope, $stateParams, $state, $http, $timeout, $uibModal, growl,
                   MessageService, LangService, MapService, UploadFileService) {
             'use strict';
 
@@ -443,28 +443,8 @@ angular.module('niord.editor')
             /** Opens the message print dialog */
             $scope.pdf = function () {
                 if ($scope.message.id) {
-                    MessageService.messagePrintDialog(1).result
-                        .then($scope.generatePdf);
+                    MessageService.printMessage($scope.message.id);
                 }
-            };
-
-
-            /** Download the PDF for the current message */
-            $scope.generatePdf = function (printSettings) {
-                MessageService.pdfTicket()
-                    .success(function (ticket) {
-
-                        var params = 'lang=' + $rootScope.language + '&ticket=' + ticket;
-
-                        if (printSettings && printSettings.pageOrientation) {
-                            params += '&pageOrientation=' + printSettings.pageOrientation;
-                        }
-                        if (printSettings && printSettings.pageSize) {
-                            params += '&pageSize=' + printSettings.pageSize;
-                        }
-
-                        $window.location = '/rest/messages/message/' + $scope.message.id + '.pdf?' + params;
-                    });
             };
 
 

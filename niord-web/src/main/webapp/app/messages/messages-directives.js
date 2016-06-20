@@ -767,29 +767,10 @@ angular.module('niord.messages')
                     
                     /** Opens the message print dialog */
                     scope.pdf = function () {
-                        MessageService.messagePrintDialog(1).result
-                            .then(scope.generatePdf);
+                        MessageService.printMessage(scope.messageId);
                     };
 
-
-                    /** Download the PDF for the current message */
-                    scope.generatePdf = function (printSettings) {
-                        MessageService.pdfTicket()
-                            .success(function (ticket) {
-
-                                var params = 'lang=' + $rootScope.language + '&ticket=' + ticket;
-
-                                if (printSettings && printSettings.pageOrientation) {
-                                    params += '&pageOrientation=' + printSettings.pageOrientation;
-                                }
-                                if (printSettings && printSettings.pageSize) {
-                                    params += '&pageSize=' + printSettings.pageSize;
-                                }
-
-                                $window.location = '/rest/messages/message/' + scope.messageId + '.pdf?' + params;
-                            });
-                    };
-
+                    
                     // Navigate to the message editor page
                     scope.edit = function() {
                         if (scope.dismissAction) {
