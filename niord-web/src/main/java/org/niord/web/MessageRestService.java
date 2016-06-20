@@ -143,6 +143,23 @@ public class MessageRestService {
 
 
     /**
+     * Checks that the user has access to the given message by matching the current domain
+     * with the message series of the message.<br>
+     * Throws a 403 response code error if no access.
+     * @param message the message
+     */
+    private void checkMessageAccess(Message message) {
+        Domain domain = domainService.currentDomain();
+        if (domain == null ||
+                message == null ||
+                message.getMessageSeries() == null ||
+                domain.getMessageSeries().stream()
+                        .noneMatch(ms -> ms.getSeriesId().equals(message.getMessageSeries().getSeriesId()))) {
+            throw new WebApplicationException(403);
+        }
+    }
+
+    /**
      * Returns the editable message with the given message id, which may be either a database id,
      * or a short ID or an MRN of a message.
      *
@@ -162,12 +179,13 @@ public class MessageRestService {
             @PathParam("messageId") String messageId,
             @QueryParam("lang") String language) throws Exception {
 
-        // TODO: Validate message series etc according to the current domain
-
         Message message = messageService.resolveMessage(messageId);
         if (message == null) {
             return null;
         }
+
+        // Validate access to the message
+        checkMessageAccess(message);
 
         DataFilter filter = DataFilter.get()
                 .fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
@@ -194,7 +212,12 @@ public class MessageRestService {
     @RolesAllowed({"editor"})
     public MessageVo createMessage(EditableMessageVo message) throws Exception {
         log.info("Creating message " + message);
-        Message msg = messageService.createMessage(new Message(message));
+        Message msg = new Message(message);
+
+        // Validate access to the message
+        checkMessageAccess(msg);
+
+        msg = messageService.createMessage(msg);
         return getMessage(msg.getId().toString(), null);
     }
 
@@ -217,7 +240,13 @@ public class MessageRestService {
             throw new WebApplicationException(400);
         }
         log.info("Updating message " + message);
-        Message msg = messageService.updateMessage(new Message(message));
+        Message msg = new Message(message);
+
+        // Validate access to the message
+        checkMessageAccess(msg);
+        checkMessageAccess(messageService.findById(messageId));
+
+        msg = messageService.updateMessage(msg);
         return getMessage(msg.getId().toString(), null);
     }
 
@@ -237,6 +266,10 @@ public class MessageRestService {
     @RolesAllowed({"editor"})
     public MessageVo updateMessageStatus(@PathParam("messageId") Integer messageId, String status) throws Exception {
         log.info("Updating status of message " + messageId + " to " + status);
+
+        // Validate access to the message
+        checkMessageAccess(messageService.findById(messageId));
+
         Message msg = messageService.updateStatus(messageId, Status.valueOf(status));
         return getMessage(msg.getId().toString(), null);
     }

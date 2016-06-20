@@ -125,6 +125,9 @@ angular.module('niord.editor')
                         .success(function (message) {
                             $scope.message = message;
                             $scope.initMessage();
+                        })
+                        .error(function (data, status) {
+                            growl.error("Error loading message (code: " + status + ")", { ttl: 5000 })
                         });
 
                 } else {
@@ -278,6 +281,7 @@ angular.module('niord.editor')
                                     internationalNumber: chart.internationalNumber
                                 }
                             });
+                            $scope.setDirty();
                         });
                 }
             };
