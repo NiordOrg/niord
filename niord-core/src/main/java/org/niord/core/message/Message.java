@@ -113,6 +113,12 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     @OrderColumn
     List<Area> areas = new ArrayList<>();
 
+    // This area should be the first area of the "areas" list.
+    // Not very normalized, but it makes it easier and more efficient to perform searches.
+    // The reference is updated in the @PrePersist method.
+    @ManyToOne
+    Area area;
+
     // The areaSortOrder is used to sort the message within its associated area
     @Column(columnDefinition="DOUBLE default 0.0")
     double areaSortOrder;
@@ -292,6 +298,11 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     /** Whenever the message is persisted, re-compute the start and end dates */
     @PrePersist
     protected void onPersist() {
+
+        // Set "area" to be the first area in the "areas" list
+        area = areas.isEmpty() ? null : areas.get(0);
+
+        // Update start and endDate from the data intervals
         startDate = endDate = null;
         dateIntervals.forEach(di -> {
             if (startDate == null || startDate.after(di.getFromDate())) {
@@ -414,6 +425,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setAreas(List<Area> areas) {
         this.areas = areas;
+    }
+
+    public Area getArea() {
+        return area;
+    }
+
+    public void setArea(Area area) {
+        this.area = area;
     }
 
     public double getAreaSortOrder() {

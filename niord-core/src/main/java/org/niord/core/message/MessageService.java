@@ -46,6 +46,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
@@ -645,10 +646,8 @@ public class MessageService extends BaseService {
 
 
         // Filter by area, join over...
-        Join<Message, Area> areaRoot = null;
-        if (!param.getAreaIds().isEmpty() || param.sortByArea()) {
-            areaRoot = msgRoot.join("areas", JoinType.LEFT);
-            Join<Message, Area> areas = areaRoot;
+        if (!param.getAreaIds().isEmpty()) {
+            Join<Message, Area> areas = msgRoot.join("areas", JoinType.LEFT);
             if (!param.getAreaIds().isEmpty()) {
                 Predicate[] areaMatch = areaService.getAreaDetails(param.getAreaIds()).stream()
                         .map(a -> builder.like(areas.get("lineage"), a.getLineage() + "%"))
@@ -717,6 +716,7 @@ public class MessageService extends BaseService {
 
 
         // Determine the fields to fetch
+        Path<Area> areaRoot = null;
         List<Selection<?>> fields = new ArrayList<>();
         fields.add(msgRoot.get("id"));
         if (param.sortByDate()) {
@@ -724,6 +724,7 @@ public class MessageService extends BaseService {
         } else if (param.sortById()) {
             fields.add(msgRoot.get("mrn"));
         } else if (param.sortByArea()) {
+            areaRoot = msgRoot.get("area");
             fields.add(areaRoot.get("treeSortOrder"));
             fields.add(msgRoot.get("areaSortOrder"));
         }

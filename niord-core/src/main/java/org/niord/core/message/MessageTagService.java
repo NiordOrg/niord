@@ -151,6 +151,9 @@ public class MessageTagService extends BaseService {
         Set<String> idSet = findUserTags().stream()
                 .map(MessageTag::getTagId)
                 .collect(Collectors.toSet());
+        if (idSet.isEmpty()) {
+            return Collections.emptyList();
+        }
 
         return em.createNamedQuery("MessageTag.findTagsByMessageId", MessageTag.class)
                 .setParameter("tagIds", idSet)
