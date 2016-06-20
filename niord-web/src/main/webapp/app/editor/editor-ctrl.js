@@ -465,8 +465,6 @@ angular.module('niord.editor')
             /** Allows the user to select which location should be inserted and how it should be formatted **/
             $scope.formatLocations = function (editor) {
                 // The editor ID has the format "ui-tinymce-<<Index>>" where index is 0, 1, ...
-                console.log("EDITOR ID " + editor.id);
-                
                 var index = parseInt(editor.id.split("-")[2]);
                 var lang = $scope.message.descs[index].lang;
 
@@ -853,7 +851,11 @@ angular.module('niord.editor')
                             }
                             result += "<ul>";
                             angular.forEach(coords, function (coord) {
-                                result += "<li>" + formatLatLon(coord, 3, true) + "</li>";
+                                result += "<li>" + formatLatLon(coord, 3, true);
+                                if (coord.name) {
+                                    result += ", " + coord.name;
+                                }
+                                result += "</li>";
                             });
                             result += "</ul>";
                         }
