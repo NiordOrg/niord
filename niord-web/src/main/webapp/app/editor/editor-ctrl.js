@@ -480,15 +480,12 @@ angular.module('niord.editor')
             // Configuration of the TinyMCE editors
             $scope.tinymceOptions = {
                 resize: false,
-                plugins: [
-                    "autolink lists link image anchor",
-                    "code textcolor",
-                    "media table contextmenu paste"
-                ],
+                valid_elements : '*[*]', // NB: This allows insertion of all html elements, including javascript
                 theme: "modern",
                 skin: 'light',
                 statusbar : false,
                 menubar: false,
+                plugins: [ "autolink lists link image anchor", "code textcolor", "media table contextmenu paste" ],
                 contextmenu: "link image inserttable | cell row column deletetable",
                 toolbar: "styleselect | bold italic | forecolor backcolor | alignleft aligncenter alignright alignjustify | "
                          + "bullist numlist  | outdent indent | link image table | code | niordlocations",
