@@ -93,7 +93,7 @@ public class MessageMapImageRestService {
 
             // Check if a custom map image is defined
             String customThumbName = String.format("custom_thumb_%d.png", messageMapImageGenerator.getMapImageSize());
-            Path imageRepoPath = messageService.getMessageFileRepoPath(message, customThumbName);
+            Path imageRepoPath = messageService.getMessageFileRepoPath(message.getId(), customThumbName);
             if (Files.exists(imageRepoPath)) {
                 return redirect(message, customThumbName);
             }
@@ -104,7 +104,7 @@ public class MessageMapImageRestService {
 
                 // Construct the image file for the message
                 String imageName = String.format("map_%d.png", messageMapImageGenerator.getMapImageSize());
-                imageRepoPath = messageService.getMessageFileRepoPath(message, imageName);
+                imageRepoPath = messageService.getMessageFileRepoPath(message.getId(), imageName);
 
                 // If the image file does not exist, or if the message has been updated after the image file,
                 // generate a new image file
@@ -138,7 +138,7 @@ public class MessageMapImageRestService {
      **/
     private Response redirect(Message message, String imageName) throws IOException, URISyntaxException {
         // Redirect the the repository streaming service
-        String uri = "../" + messageService.getMessageFileRepoUri(message, imageName);
+        String uri = "../" + messageService.getMessageFileRepoUri(message.getId(), imageName);
         return Response
                 .temporaryRedirect(new URI(uri))
                 .build();
@@ -169,7 +169,7 @@ public class MessageMapImageRestService {
 
         // Construct the file path for the message
         String imageName = String.format("custom_thumb_%d.png", messageMapImageGenerator.getMapImageSize());
-        Path imageRepoPath = messageService.getMessageFileRepoPath(message, imageName);
+        Path imageRepoPath = messageService.getMessageFileRepoPath(message.getId(), imageName);
 
         messageMapImageGenerator.generateMessageMapImage(data, imageRepoPath);
     }
@@ -210,7 +210,7 @@ public class MessageMapImageRestService {
         } else {
             // Construct the file path for the message
             String imageName = String.format("custom_thumb_%d.png", messageMapImageGenerator.getMapImageSize());
-            Path imageRepoPath = messageService.getMessageFileRepoPath(message, imageName);
+            Path imageRepoPath = messageService.getMessageFileRepoPath(message.getId(), imageName);
 
 
             try {
@@ -245,7 +245,7 @@ public class MessageMapImageRestService {
 
         // Delete any custom map image thumbnail
         String customThumbName = String.format("custom_thumb_%d.png", messageMapImageGenerator.getMapImageSize());
-        Path imageRepoPath = messageService.getMessageFileRepoPath(message, customThumbName);
+        Path imageRepoPath = messageService.getMessageFileRepoPath(message.getId(), customThumbName);
         if (Files.exists(imageRepoPath)) {
             Files.delete(imageRepoPath);
             success = true;
@@ -253,7 +253,7 @@ public class MessageMapImageRestService {
 
         // Delete any standard auto-generated map image thumbnail
         String imageName = String.format("map_%d.png", messageMapImageGenerator.getMapImageSize());
-        imageRepoPath = messageService.getMessageFileRepoPath(message, imageName);
+        imageRepoPath = messageService.getMessageFileRepoPath(message.getId(), imageName);
         if (Files.exists(imageRepoPath)) {
             Files.delete(imageRepoPath);
             success |= true;

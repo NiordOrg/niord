@@ -24,6 +24,7 @@ import org.niord.model.vo.MessageVo;
 public class EditableMessageVo extends MessageVo {
 
     Boolean autoTitle;
+    String repoPath;
 
     /*************************/
     /** Getters and Setters **/
@@ -35,5 +36,13 @@ public class EditableMessageVo extends MessageVo {
 
     public void setAutoTitle(Boolean autoTitle) {
         this.autoTitle = autoTitle;
+    }
+
+    public String getRepoPath() {
+        return repoPath;
+    }
+
+    public void setRepoPath(String repoPath) {
+        this.repoPath = repoPath;
     }
 }

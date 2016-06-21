@@ -36,7 +36,7 @@ import java.util.List;
         "messageSeries", "number", "mrn", "shortId", "mainType", "type", "status",
         "areas", "categories", "charts", "horizontalDatum", "geometry",
         "startDate", "endDate", "publishDate", "cancellationDate", "dateIntervals",
-        "references", "atonUids", "originalInformation", "descs"
+        "references", "atonUids", "originalInformation", "descs", "attachments"
 })
 @SuppressWarnings("unused")
 public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable {
@@ -66,6 +66,7 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     List<String> atonUids;
     Boolean originalInformation;
     List<MessageDescVo> descs;
+    List<AttachmentVo> attachments;
 
 
     /** {@inheritDoc} */
@@ -121,6 +122,13 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
             atonUids = new ArrayList<>();
         }
         return atonUids;
+    }
+
+    public List<AttachmentVo> checkCreateAttachments() {
+        if (attachments == null) {
+            attachments = new ArrayList<>();
+        }
+        return attachments;
     }
 
     /*************************/
@@ -331,5 +339,13 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     @Override
     public void setDescs(List<MessageDescVo> descs) {
         this.descs = descs;
+    }
+
+    public List<AttachmentVo> getAttachments() {
+        return attachments;
+    }
+
+    public void setAttachments(List<AttachmentVo> attachments) {
+        this.attachments = attachments;
     }
 }

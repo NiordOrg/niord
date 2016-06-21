@@ -244,6 +244,9 @@ public class MessageRestService {
         EditableMessageVo messageVo =  message.toEditableVo(filter);
         messageVo.sortDescs(language);
 
+        // Create a temporary repository folder for the message
+        messageService.createTempMessageRepoFolder(messageVo);
+
         return messageVo;
     }
 

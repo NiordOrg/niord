@@ -399,6 +399,11 @@ public class MessageService extends BaseService {
         original.copyDescsAndRemoveBlanks(message.getDescs());
         original.setAutoTitle(message.isAutoTitle());
 
+        original.getAttachments().clear();
+        message.getAttachments().stream()
+                .map(att -> att.isNew() ? att : getByPrimaryKey(Attachment.class, att.getId()))
+                .forEach(original::addAttachment);
+
         // Persist the message
         saveMessage(original);
         log.info("Updated message " + original);
@@ -801,42 +806,47 @@ public class MessageService extends BaseService {
     }
 
     /**
-     * Returns the repository folder for the given message
-     * @param message the message
-     * @return the associated repository folder
-     */
-    public java.nio.file.Path getMessageRepoFolder(Message message) throws IOException {
-        return  getMessageRepoFolder(message.getId());
-    }
-
-    /**
      * Returns the repository file for the given message file
-     * @param message the message
+     * @param id the id of the message
      * @param name the file name
      * @return the associated repository file
      */
-    public java.nio.file.Path getMessageFileRepoPath(Message message, String name) throws IOException {
-        return  getMessageRepoFolder(message).resolve(name);
+    public java.nio.file.Path getMessageFileRepoPath(Integer id, String name) throws IOException {
+        return  getMessageRepoFolder(id).resolve(name);
     }
 
     /**
      * Returns the repository URI for the message folder
-     * @param message the message
+     * @param id the id of the message
      * @return the associated repository URI
      */
-    public String getMessageFolderRepoPath(Message message) throws IOException {
-        return repositoryService.getRepoPath(getMessageRepoFolder(message));
+    public String getMessageFolderRepoPath(Integer id) throws IOException {
+        return repositoryService.getRepoPath(getMessageRepoFolder(id));
     }
 
     /**
      * Returns the repository URI for the given message file
-     * @param message the message
+     * @param id the id of the message
      * @param name the file name
      * @return the associated repository URI
      */
-    public String getMessageFileRepoUri(Message message, String name) throws IOException {
-        java.nio.file.Path file = getMessageRepoFolder(message).resolve(name);
+    public String getMessageFileRepoUri(Integer id, String name) throws IOException {
+        java.nio.file.Path file = getMessageRepoFolder(id).resolve(name);
         return repositoryService.getRepoUri(file);
     }
 
+    /**
+     * Creates a temporary repository folder for the given message
+     * @param message the message
+     */
+    public void createTempMessageRepoFolder(EditableMessageVo message) {
+
+        String tempRepoPath = repositoryService.getNewTempDir().getPath();
+        message.setRepoPath(tempRepoPath);
+
+        // For existing messages, copy the existing message repo to the new repository
+        if (message.getId() != null) {
+            // TODO
+        }
+    }
 }

@@ -173,6 +173,10 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     // Indicates if the title should automatically be updated from the message area, subject and vicinity fields.
     boolean autoTitle;
 
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "message", orphanRemoval = true)
+    @OrderColumn(name = "indexNo")
+    List<Attachment> attachments = new ArrayList<>();
+
     /**
      * Constructor
      */
@@ -246,6 +250,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         if (message.getDescs() != null) {
             message.getDescs().forEach(desc -> addDesc(new MessageDesc(desc)));
         }
+        if (message.getAttachments() != null) {
+            message.getAttachments().forEach(att -> addAttachment(new Attachment(att)));
+        }
 
         if (message instanceof EditableMessageVo) {
             EditableMessageVo editableMessage = (EditableMessageVo) message;
@@ -288,14 +295,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             references.forEach(r -> message.checkCreateReferences().add(r.toVo()));
             message.checkCreateAtonUids().addAll(atonUids);
             message.setOriginalInformation(originalInformation);
+            attachments.forEach(att -> message.checkCreateAttachments().add(att.toVo()));
         }
         if (compFilter.anyOfFields(DataFilter.GEOMETRY) && geometry != null) {
             message.setGeometry(geometry.toGeoJson());
             GeoJsonUtils.setLanguage(message.getGeometry(), compFilter.getLang(), false);
         }
         if (compFilter.anyOfFields(DataFilter.DETAILS, "MessageDesc.title")) {
-            getDescs(compFilter).stream()
-                    .forEach(desc -> message.checkCreateDescs().add(desc.toVo(compFilter)));
+            getDescs(compFilter).forEach(desc -> message.checkCreateDescs().add(desc.toVo(compFilter)));
         }
 
         return message;
@@ -418,6 +425,12 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     public void addDateInterval(DateInterval dateInterval) {
         dateInterval.setMessage(this);
         dateIntervals.add(dateInterval);
+    }
+
+    /** Adds an attachment to this message */
+    public void addAttachment(Attachment attachment) {
+        attachment.setMessage(this);
+        attachments.add(attachment);
     }
 
     /*************************/
@@ -634,4 +647,11 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         this.descs = descs;
     }
 
+    public List<Attachment> getAttachments() {
+        return attachments;
+    }
+
+    public void setAttachments(List<Attachment> attachments) {
+        this.attachments = attachments;
+    }
 }
