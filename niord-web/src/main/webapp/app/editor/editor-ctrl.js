@@ -35,7 +35,7 @@ angular.module('niord.editor')
                 positions: false,
                 charts: false,
                 subject: false,
-                description: true
+                description: false
             };
 
             $scope.messageSeries = [];
@@ -464,9 +464,10 @@ angular.module('niord.editor')
 
             /** Allows the user to select which location should be inserted and how it should be formatted **/
             $scope.formatLocations = function (editor) {
-                // The editor ID has the format "ui-tinymce-<<Index>>" where index is 0, 1, ...
-                var index = parseInt(editor.id.split("-")[2]);
-                var lang = $scope.message.descs[index].lang;
+
+                // The ID of the parent div has the format "tinymce-<<lang>>"
+                var parentDivId = editor.getElement().parentElement.id;
+                var lang = parentDivId.split("-")[1];
 
                 $scope.$apply(function() {
                     $scope.locationsDialog(lang).result
