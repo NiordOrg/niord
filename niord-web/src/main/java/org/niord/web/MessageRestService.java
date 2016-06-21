@@ -19,6 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.NiordApp;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.fm.FmService;
@@ -41,6 +42,7 @@ import org.niord.model.vo.MessageHistoryVo;
 import org.niord.model.vo.MessageVo;
 import org.niord.model.vo.Status;
 import org.niord.model.vo.Type;
+import org.niord.model.vo.geojson.FeatureCollectionVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
@@ -59,6 +61,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -79,6 +82,9 @@ public class MessageRestService {
 
     @Inject
     Logger log;
+
+    @Inject
+    NiordApp app;
 
     @Inject
     MessageService messageService;
@@ -317,25 +323,6 @@ public class MessageRestService {
 
         Message msg = messageService.updateStatus(messageId, Status.valueOf(status));
         return getMessage(msg.getId().toString(), null, null);
-    }
-
-
-    /**
-     * Computes the title lines for the given message template
-     *
-     * @param message the message template to compute the title line for
-     * @return the updated message template
-     */
-    @POST
-    @Path("/compute-title-line")
-    @Consumes("application/json")
-    @Produces("application/json")
-    @GZIP
-    @NoCache
-    @RolesAllowed({"editor"})
-    public MessageVo computeTitleLine(MessageVo message) throws Exception {
-        DataFilter filter = DataFilter.get().fields("MessageDesc.title");
-        return messageService.computeTitleLine(new Message(message)).toVo(filter);
     }
 
 
@@ -758,6 +745,85 @@ public class MessageRestService {
             domain = ticketService.resolveTicketDomain(ticket);
         }
         return domain;
+    }
+
+
+    /***************************
+     * Utility functions
+     ***************************/
+
+
+    /**
+     * Computes the title lines for the given message template
+     *
+     * @param message the message template to compute the title line for
+     * @return the updated message template
+     */
+    @POST
+    @Path("/compute-title-line")
+    @Consumes("application/json")
+    @Produces("application/json")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public MessageVo computeTitleLine(MessageVo message) throws Exception {
+        DataFilter filter = DataFilter.get().fields("MessageDesc.title");
+        return messageService.computeTitleLine(new Message(message)).toVo(filter);
+    }
+
+
+    /**
+     * Formats the feature collection according to the given template
+     *
+     * @param geometry the feature collection to format
+     * @param language the language of the returned data
+     * @param template the template to use for formatting the geometry
+     * @param format the position format, either "dec", "sec" or "navtex"
+     * @return the formatted geometry
+     */
+    @POST
+    @Path("/format-message-geometry")
+    @Consumes("application/json")
+    @Produces("text/plain;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public Response formatGeometry(
+            @QueryParam("lang") @DefaultValue("en") String language,
+            @QueryParam("template") @DefaultValue("list") String template,
+            @QueryParam("format") @DefaultValue("dec") String format,
+            FeatureCollectionVo geometry) throws Exception {
+
+        try {
+            String lang = app.getLanguage(language);
+            Arrays.stream(geometry.getFeatures())
+                    .forEach(f -> f.getProperties().put("language", lang));
+
+            String templatePath = String.format("/templates/geometry/%s.ftl", template);
+            StreamingOutput stream = os -> {
+                try {
+                    fmService.newTemplateBuilder()
+                            .setTemplatePath(templatePath)
+                            .setData("geometry", geometry)
+                            .setData("format", format)
+                            .setDictionaryNames("web", "message")
+                            .setLanguage(lang)
+                            .process(ProcessFormat.TEXT, os);
+
+                } catch (Exception e) {
+                    throw new WebApplicationException("Error formatting geometry", e);
+                }
+            };
+
+           return Response
+                   .ok(stream)
+                   .type("text/html;charset=UTF-8")
+                   .build();
+
+        } catch (Exception e) {
+            log.error("Error formatting geometry: " + e.getMessage(), e);
+            throw new WebApplicationException("Error formatting geometry", e);
+        }
     }
 
 

@@ -81,6 +81,13 @@ angular.module('niord.messages')
             },
 
 
+            /** Formats the message geometry according to given template */
+            formatMessageGeometry: function (geometry, lang, template, format) {
+                var params = 'lang=' + lang + '&template=' + template + '&format=' + format;
+                return $http.post('/rest/messages/format-message-geometry?' + params, geometry);
+            },
+
+
             /** Computes the charts intersecting with the current message geometry **/
             intersectingCharts: function (featureCollection) {
                 return $http.post('/rest/charts/intersecting-charts', featureCollection);

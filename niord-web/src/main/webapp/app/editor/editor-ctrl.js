@@ -35,7 +35,7 @@ angular.module('niord.editor')
                 positions: false,
                 charts: false,
                 subject: false,
-                description: false
+                description: true
             };
 
             $scope.messageSeries = [];
@@ -820,48 +820,81 @@ angular.module('niord.editor')
     /*******************************************************************
      * Controller that allows the user to format selected features as text
      *******************************************************************/
-    .controller('FormatMessageLocationsDialogCtrl', ['$scope', 'MapService', 'featureCollection', 'lang',
-        function ($scope, MapService, featureCollection, lang) {
+    .controller('FormatMessageLocationsDialogCtrl', ['$scope', '$rootScope', '$window', 'growl',
+            'MessageService', 'featureCollection', 'lang',
+        function ($scope, $rootScope, $window, growl,
+              MessageService, featureCollection, lang) {
             'use strict';
 
+            $scope.wmsLayerEnabled = $rootScope.wmsLayerEnabled;
             $scope.featureCollection = angular.copy(featureCollection);
             $scope.lang = lang;
-            $scope.selectedFeatures = [ ];
+            $scope.selectedFeatures = {
+                type: 'FeatureCollection',
+                features: [ ]
+            };
             $scope.data = {
                 result: ''
             };
+            $scope.params = {
+                template: 'list',
+                format: 'dec'
+            };
+            $scope.formats = [
+                { name : 'Decimal', value: 'dec' },
+                { name : 'Seconds', value: 'sec' },
+                { name : 'Navtex', value: 'navtex' }
+            ];
 
+
+            // Restore previous parameter settings
+            if ($window.localStorage['formatLocationSettings']) {
+                try {
+                    angular.copy(angular.fromJson($window.localStorage['formatLocationSettings']), $scope.params);
+                } catch (error) {
+                }
+            }
+
+            /** Called when the feature selection changes */
             $scope.featureSelectionChanged = function () {
-                var result = '';
-                var selectedFeatures = $.grep($scope.featureCollection.features, function (feature) {
+                $scope.selectedFeatures.features = $.grep($scope.featureCollection.features, function (feature) {
                     return feature.selected;
                 });
-                if (selectedFeatures.length > 0) {
-                    angular.forEach(selectedFeatures, function (feature) {
-                        var coords = [];
-                        MapService.serializeCoordinates(feature, coords);
 
-                        if (coords.length > 0) {
-                            var name = feature.properties ? feature.properties['name:' + lang] : undefined;
-                            if (name) {
-                                result += "<div>" + name + "</div>";
-                            }
-                            result += "<ul>";
-                            angular.forEach(coords, function (coord) {
-                                result += "<li>" + formatLatLon(coord, 3, true);
-                                if (coord.name) {
-                                    result += ", " + coord.name;
-                                }
-                                result += "</li>";
-                            });
-                            result += "</ul>";
-                        }
-                    });
+
+                // Compute the result
+                $scope.data.result = '';
+                if ($scope.selectedFeatures.features.length > 0) {
+                    MessageService.formatMessageGeometry($scope.selectedFeatures, $scope.lang, $scope.params.template, $scope.params.format)
+                        .success(function (result) {
+                            $scope.data.result = result;
+                        })
+                        .error (function (data, status) {
+                            growl.error("Error formatting locations (code: " + status + ")", { ttl: 5000 })
+                        });
                 }
-
-                $scope.data.result = result;
             };
 
+
+            /** Called to select all or none of the features */
+            $scope.selectFeatures = function (select) {
+                angular.forEach($scope.featureCollection.features, function (feature) {
+                    feature.selected = select;
+                });
+                $scope.featureSelectionChanged();
+            };
+            $scope.$watch("params", $scope.featureSelectionChanged, true);
+
+
+            /** Called when Insert is clicked **/
+            $scope.insert = function () {
+                $window.localStorage['formatLocationSettings'] = angular.toJson($scope.params);
+                $scope.$close($scope.data.result);
+            };
+
+
+            // Initial selection
+            $scope.selectFeatures($scope.featureCollection.features.length == 1);
         }])
 
 ;
