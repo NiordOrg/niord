@@ -438,7 +438,25 @@
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">
-                    TBD
+
+                    <div class="editor-attachments">
+                        <span class="editor-file-upload">
+                            <file-upload url="'/rest/messages/message/attachments/' + message.repoPath + '/attachments'"
+                                         drop-text="or drop file here"
+                                         multiple="true"
+                                         auto-upload="true"
+                                         remove-after-upload="true"
+                                         success="attachmentsUploaded(result)"
+                                         error="attachmentsUploadError(status, statusText)"></file-upload>
+                        </span>
+
+
+                        <div ng-if="message.attachments.length > 0">
+                            <span ng-repeat="att in message.attachments"><span ng-if="$index > 0">,</span>
+                                {{att.fileName}}
+                            </span>
+                        </div>
+                    </div>
                 </editor-field-value-editor>
 
             </editor-field>

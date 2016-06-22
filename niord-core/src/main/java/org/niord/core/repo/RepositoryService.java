@@ -15,6 +15,7 @@
  */
 package org.niord.core.repo;
 
+import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.settings.annotation.Setting;
 import org.niord.core.util.WebUtils;
 import org.apache.commons.fileupload.FileItem;
@@ -71,6 +72,7 @@ import static org.niord.core.settings.Setting.*;
 @javax.ws.rs.Path("/repo")
 @Singleton
 @Lock(LockType.READ)
+@SecurityDomain("keycloak")
 @PermitAll
 @SuppressWarnings("unused")
 public class RepositoryService {
@@ -258,12 +260,8 @@ public class RepositoryService {
      */
     @DELETE
     @javax.ws.rs.Path("/file/{file:.+}")
-    //@RolesAllowed({ "editor" })
+    @RolesAllowed({ "editor" })
     public String deleteFile(@PathParam("file") String path) throws IOException {
-
-        // TODO: The @RolesAllowed annotation has been commented out for now, because deleting
-        //       a file with a space in the file name would yield an unauthorized-exception. WTF!!!
-        //       Consider checking the role programmatically via the UserService...
 
         Path f = repoRoot.resolve(path);
 
@@ -469,7 +467,7 @@ public class RepositoryService {
     @javax.ws.rs.Path("/upload-temp/{folder:.+}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "user" })
+    @RolesAllowed({ "editor" })
     public List<String> uploadTempFile(@PathParam("folder") String path, @Context HttpServletRequest request) throws FileUploadException, IOException {
 
         // Check that the specified folder is indeed under the "temp" root

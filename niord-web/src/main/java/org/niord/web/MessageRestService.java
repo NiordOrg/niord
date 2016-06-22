@@ -32,11 +32,14 @@ import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
 import org.niord.core.model.BaseEntity;
+import org.niord.core.repo.FileTypes;
+import org.niord.core.repo.RepositoryService;
 import org.niord.core.user.TicketService;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.PagedSearchParamsVo.SortOrder;
 import org.niord.model.PagedSearchResultVo;
+import org.niord.model.vo.AttachmentVo;
 import org.niord.model.vo.MainType;
 import org.niord.model.vo.MessageHistoryVo;
 import org.niord.model.vo.MessageVo;
@@ -49,6 +52,7 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -59,11 +63,15 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -85,7 +93,13 @@ public class MessageRestService {
     Logger log;
 
     @Inject
+    FileTypes fileTypes;
+
+    @Inject
     NiordApp app;
+
+    @Inject
+    RepositoryService repositoryService;
 
     @Inject
     MessageService messageService;
@@ -300,8 +314,8 @@ public class MessageRestService {
      */
     @POST
     @Path("/message")
-    @Consumes("application/json")
-    @Produces("application/json")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
@@ -330,8 +344,8 @@ public class MessageRestService {
      */
     @PUT
     @Path("/message/{messageId}")
-    @Consumes("application/json")
-    @Produces("application/json")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
@@ -363,8 +377,8 @@ public class MessageRestService {
      */
     @PUT
     @Path("/message/{messageId}/status")
-    @Consumes("application/json")
-    @Produces("application/json")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
@@ -376,6 +390,49 @@ public class MessageRestService {
 
         Message msg = messageService.updateStatus(messageId, Status.valueOf(status));
         return getMessage(msg.getId().toString(), null, null);
+    }
+
+
+    /***************************
+     * Attachment handling
+     ***************************/
+
+
+    /**
+     * Called to upload message attachments to a temporary message folder
+     *
+     * @param request the servlet request
+     * @return a the updated list of attachments
+     */
+    @POST
+    @Path("/message/attachments/{folder:.+}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed("editor")
+    public List<AttachmentVo> uploadMessageAttachments(
+            @PathParam("folder") String path,
+            @Context HttpServletRequest request) throws Exception {
+
+        List<String> uploadedFiles = repositoryService.uploadTempFile(path, request);
+
+        return uploadedFiles.stream()
+                .map(f -> {
+                    try {
+                        File file = repositoryService.getRepoRoot().resolve(f).toFile();
+                        AttachmentVo att = new AttachmentVo();
+                        att.setFileName(file.getName());
+                        att.setFileSize(file.length());
+                        att.setFileUpdated(new Date(file.lastModified()));
+                        att.setType(fileTypes.getContentType(file));
+                        return att;
+                    } catch (Exception ex) {
+                        return null;
+                    }
+                })
+                .filter(att -> att != null)
+                .collect(Collectors.toList());
     }
 
 

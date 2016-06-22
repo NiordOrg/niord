@@ -597,6 +597,32 @@ angular.module('niord.editor')
 
 
             /*****************************/
+            /** Attachments             **/
+            /*****************************/
+
+
+            /** Called when new attachments have successfully been uploaded **/
+            $scope.attachmentsUploaded = function (result) {
+                if (!$scope.message.attachments) {
+                    $scope.message.attachments = [];
+                }
+                angular.forEach(result, function (attachment) {
+                    $scope.message.attachments.push(attachment);
+                });
+                growl.info("Attachments uploaded", { ttl: 3000 });
+                $scope.setDirty();
+                $scope.$$phase || $scope.$apply();
+            };
+
+
+            /** Called when new attachments have failed to be uploaded **/
+            $scope.attachmentsUploadError = function(status, statusText) {
+                growl.info("Error uploading attachments: " + statusText, { ttl: 5000 });
+                $scope.$$phase || $scope.$apply();
+            };
+
+
+            /*****************************/
             /** Bootstrap editor        **/
             /*****************************/
 
