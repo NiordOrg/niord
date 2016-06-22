@@ -82,8 +82,8 @@
     <div class="row" ng-if="msg.attachments">
         <div class="col-xs-2 col-sm-1 message-details-item-field">Attachments</div>
         <div class="col-xs-10 col-sm-11 message-details-item-value">
-            <span class="attachment-list" ng-repeat="file in msg.attachments">
-                <msi-attachment file="file" size="64" clickable="true"></msi-attachment>
+            <span class="attachment-list" ng-repeat="att in msg.attachments">
+                <message-attachment message="msg" attachment="att" size="32" clickable="true"></message-attachment>
             </span>
         </div>
     </div>

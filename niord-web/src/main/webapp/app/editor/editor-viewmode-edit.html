@@ -441,7 +441,7 @@
 
                     <div class="editor-attachments">
                         <span class="editor-file-upload">
-                            <file-upload url="'/rest/messages/message/attachments/' + message.repoPath + '/attachments'"
+                            <file-upload url="'/rest/messages/attachments/' + message.repoPath + '/attachments'"
                                          drop-text="or drop file here"
                                          multiple="true"
                                          auto-upload="true"
@@ -452,8 +452,8 @@
 
 
                         <div ng-if="message.attachments.length > 0">
-                            <span ng-repeat="att in message.attachments"><span ng-if="$index > 0">,</span>
-                                {{att.fileName}}
+                            <span class="attachment-list" ng-repeat="att in message.attachments">
+                                <message-attachment message="message" attachment="att" size="64" clickable="true"></message-attachment>
                             </span>
                         </div>
                     </div>

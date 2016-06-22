@@ -65,10 +65,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -405,7 +407,7 @@ public class MessageRestService {
      * @return a the updated list of attachments
      */
     @POST
-    @Path("/message/attachments/{folder:.+}")
+    @Path("/attachments/{folder:.+}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("application/json;charset=UTF-8")
     @GZIP
@@ -433,6 +435,49 @@ public class MessageRestService {
                 })
                 .filter(att -> att != null)
                 .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Returns the file to use for the file specified by the path
+     * @param path the path
+     * @return the file to use for the file specified by the path
+     */
+    @GET
+    @javax.ws.rs.Path("/attachments/file/{file:.+}")
+    public Response attachmentFile(
+            @PathParam("file") String path,
+            @QueryParam("repoPath") String repoPath,
+            @QueryParam("messageId") Integer messageId,
+            @Context Request request) throws IOException, URISyntaxException {
+
+        String attachmentPath
+                = (StringUtils.isNotBlank(repoPath))
+                ? repoPath + "/attachments/" + path
+                : messageService.getMessageFolderRepoPath(messageId) + "/attachments/" + path;
+        return repositoryService.streamFile(attachmentPath, request);
+    }
+
+
+    /**
+     * Returns the thumbnail to use for the file specified by the path
+     * @param path the path
+     * @param size the icon size, either 32, 64 or 128
+     * @return the thumbnail to use for the file specified by the path
+     */
+    @GET
+    @javax.ws.rs.Path("/attachments/thumb/{file:.+}")
+    public Response attachmentThumbnail(
+            @PathParam("file") String path,
+            @QueryParam("repoPath") String repoPath,
+            @QueryParam("messageId") Integer messageId,
+            @QueryParam("size") @DefaultValue("64") int size) throws IOException, URISyntaxException {
+
+        String attachmentPath
+                = (StringUtils.isNotBlank(repoPath))
+                ? repoPath + "/attachments/" + path
+                : messageService.getMessageFolderRepoPath(messageId) + "/attachments/" + path;
+        return repositoryService.getThumbnail(attachmentPath, size);
     }
 
 

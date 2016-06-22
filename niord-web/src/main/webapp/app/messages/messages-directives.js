@@ -77,6 +77,48 @@ angular.module('niord.messages')
 
 
     /****************************************************************
+     * The message-attachment directive renders an attachment
+     ****************************************************************/
+    .directive('messageAttachment', [function () {
+        return {
+            restrict: 'E',
+            templateUrl: '/app/messages/message-attachment.html',
+            replace: true,
+            scope: {
+                message : "=",
+                attachment: "=",
+                size: "@",
+                clickable: "@",
+                deleteAttachment: '&deleteAttachment'
+            },
+            link: function(scope, element, attrs) {
+
+                var params;
+                if (scope.message.repoPath) {
+                    // The message is being edited, and the attachment will be in a temporary repo folder
+                    params = '?repoPath=' + encodeURIComponent(scope.message.repoPath);
+                } else {
+                    // usual repo location
+                    params = '?messageId=' + scope.message.id;
+                }
+
+                var fileName = encodeURIComponent(scope.attachment.fileName);
+                scope.thumbnailUrl = "/rest/messages/attachments/thumb/" + fileName + params + "&size=" + scope.size;
+                scope.fileUrl = "/rest/messages/attachments/file/" + fileName + params;
+                scope.imageClass = "attachment-image size-" + scope.size;
+                scope.deletable = attrs.deleteAttachment !== undefined;
+
+                scope.deleteAttachment = function() {
+                    if (scope.deletable) {
+                        scope.deleteAttachment({ attachment: scope.attachment })
+                    }
+                }
+            }
+        };
+    }])
+
+        
+    /****************************************************************
      * The map-message-list-layer directive supports drawing a list of messages on a map layer
      ****************************************************************/
     .directive('mapMessageListLayer', ['$rootScope', 'MapService', 'LangService', 'MessageService',
