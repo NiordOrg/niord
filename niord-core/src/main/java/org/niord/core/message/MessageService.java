@@ -16,6 +16,7 @@
 package org.niord.core.message;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
@@ -51,6 +52,7 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -839,14 +841,37 @@ public class MessageService extends BaseService {
      * Creates a temporary repository folder for the given message
      * @param message the message
      */
-    public void createTempMessageRepoFolder(EditableMessageVo message) {
+    public void createTempMessageRepoFolder(EditableMessageVo message) throws IOException {
 
         String tempRepoPath = repositoryService.getNewTempDir().getPath();
         message.setRepoPath(tempRepoPath);
 
         // For existing messages, copy the existing message repo to the new repository
         if (message.getId() != null) {
-            // TODO
+            java.nio.file.Path srcPath = getMessageRepoFolder(message.getId());
+            java.nio.file.Path dstPath = repositoryService.getRepoRoot().resolve(tempRepoPath);
+            log.debug("Copy message folder " + srcPath + " to temporary message folder " + dstPath);
+            FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
         }
     }
+
+    /**
+     * Update the message repository folder from a temporary repository folder used whilst editing the message
+     * @param message the message
+     */
+    public void updateMessageFromTempRepoFolder(EditableMessageVo message) throws IOException {
+
+        if (message.getId() != null && StringUtils.isNotBlank(message.getRepoPath())) {
+
+            java.nio.file.Path srcPath = repositoryService.getRepoRoot().resolve(message.getRepoPath());
+            java.nio.file.Path dstPath = getMessageRepoFolder(message.getId());
+            if (Files.exists(srcPath)) {
+                log.debug("Syncing temporary message folder " + srcPath + " with message folder " + dstPath);
+                FileUtils.deleteDirectory(dstPath.toFile());
+                FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
+            }
+        }
+    }
+
+
 }

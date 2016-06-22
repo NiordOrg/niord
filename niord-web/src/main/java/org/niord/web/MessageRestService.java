@@ -272,6 +272,10 @@ public class MessageRestService {
         checkMessageEditingAccess(msg);
 
         msg = messageService.createMessage(msg);
+
+        // Copy resources from the temporary editing message folder to the message repository folder
+        messageService.updateMessageFromTempRepoFolder(message);
+
         return getMessage(msg.getId().toString(), null, null);
     }
 
@@ -301,6 +305,10 @@ public class MessageRestService {
         checkMessageEditingAccess(messageService.findById(messageId));
 
         msg = messageService.updateMessage(msg);
+
+        // Copy resources from the temporary editing message folder to the message repository folder
+        messageService.updateMessageFromTempRepoFolder(message);
+
         return getMessage(msg.getId().toString(), null, null);
     }
 

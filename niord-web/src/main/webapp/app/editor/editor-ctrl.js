@@ -35,7 +35,8 @@ angular.module('niord.editor')
                 positions: false,
                 charts: false,
                 subject: false,
-                description: false
+                description: false,
+                attachments: false
             };
 
             $scope.messageSeries = [];
@@ -541,9 +542,13 @@ angular.module('niord.editor')
             /** Thumbnails handling     **/
             /*****************************/
 
+            $scope.imgCacheBreaker = new Date().getTime();
 
-            $scope.openThumbnail = function () {
-                window.open('/rest/message-map-image/' + $stateParams.id + '.png');
+
+            /** Called when the thumbnail has changed **/
+            $scope.thumbnailUpdated = function () {
+                $scope.imgCacheBreaker = new Date().getTime();
+                $scope.setDirty();
             };
 
 
@@ -558,9 +563,10 @@ angular.module('niord.editor')
                     }
                 }).result.then(function (image) {
                     if (image && $scope.message.id) {
-                        MessageService.changeMessageMapImage($scope.message.id, image)
+                        MessageService.changeMessageMapImage($scope.message.repoPath, image)
                             .success(function () {
-                                growl.info("Updated message thumbnail", { ttl: 3000 })
+                                $scope.thumbnailUpdated();
+                                growl.info("Updated message thumbnail", { ttl: 3000 });
                             });
                     }
                 });
@@ -572,8 +578,9 @@ angular.module('niord.editor')
                 if ($scope.message.id) {
                     UploadFileService.showUploadFileDialog(
                         'Upload thumbnail image',
-                        '/rest/message-map-image/' + $scope.message.id,
-                        'png,jpg,jpeg,gif');
+                        '/rest/message-map-image/' + $scope.message.repoPath,
+                        'png,jpg,jpeg,gif').result
+                        .then($scope.thumbnailUpdated);
                 }
             };
 
@@ -581,8 +588,9 @@ angular.module('niord.editor')
             /** Clears the current message thumbnail **/
             $scope.clearMessageThumbnail = function () {
                 if ($scope.message.id) {
-                    MessageService.deleteMessageMapImage($scope.message.id)
+                    MessageService.deleteMessageMapImage($scope.message.repoPath)
                         .success(function () {
+                            $scope.thumbnailUpdated();
                             growl.info("Deleted message thumbnail", { ttl: 3000 })
                         });
                 }

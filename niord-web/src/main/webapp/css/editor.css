@@ -12,11 +12,26 @@
 
 .editor-locations {
     width: 100%;
-    height: 200px;
+    height: 256px;
     box-shadow: 2px 2px 4px rgba(50, 50, 50, 0.5);
     margin-bottom: 10px;
 }
 
+.editor-map-image-thumbnail {
+    position: relative;
+    width: 256px;
+    height: 256px;
+    box-shadow: 2px 2px 4px rgba(50, 50, 50, 0.5);
+    margin-bottom: 10px;
+}
+
+.editor-map-image-menu {
+    position: absolute;
+    bottom: 0;
+    margin: 5px;
+    z-index: 100;
+    width: 100%;
+}
 
 /** Editor -> Editor **/
 

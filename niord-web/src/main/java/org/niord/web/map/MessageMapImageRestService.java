@@ -56,6 +56,9 @@ import java.util.List;
  * <p>
  * Either a standard map image is generated and returned, or the user may
  * upload a custom map image thumbnail.
+ * <p>
+ * The URL to fetch an image can either be specified via a message ID or a temporary repository path.
+ * The latter is used when messages is being edited.
  */
 @javax.ws.rs.Path("/message-map-image")
 @Stateless
@@ -73,13 +76,18 @@ public class MessageMapImageRestService {
     Logger log;
 
     @Inject
+    RepositoryService repositoryService;
+
+    @Inject
     MessageService messageService;
 
     @Inject
     MessageMapImageGenerator messageMapImageGenerator;
 
     /**
-     * Main GET method
+     * Returns the map thumbnail image associated with the message with the given ID
+     * @param id the ID of the message
+     * @return the map thumbnail image
      */
     @GET
     @javax.ws.rs.Path("/{id}.png")
@@ -95,7 +103,7 @@ public class MessageMapImageRestService {
             String customThumbName = String.format("custom_thumb_%d.png", messageMapImageGenerator.getMapImageSize());
             Path imageRepoPath = messageService.getMessageFileRepoPath(message.getId(), customThumbName);
             if (Files.exists(imageRepoPath)) {
-                return redirect(message, customThumbName);
+                return redirect(imageRepoPath);
             }
 
 
@@ -118,7 +126,7 @@ public class MessageMapImageRestService {
 
                 // Either return the image file, or a place holder image
                 if (imageFileExists) {
-                    return redirect(message, imageName);
+                    return redirect(imageRepoPath);
                 }
             }
 
@@ -134,30 +142,83 @@ public class MessageMapImageRestService {
 
 
     /**
-     * Returns a redirect to the actual repository image file
-     **/
-    private Response redirect(Message message, String imageName) throws IOException, URISyntaxException {
-        // Redirect the the repository streaming service
-        String uri = "../" + messageService.getMessageFileRepoUri(message.getId(), imageName);
+     * Returns the map thumbnail image associated with the message that has the given repository path.
+     * This method is used while editing a message, where the message repo folder is copied to a temporary folder.
+     * @param path the repository path
+     * @return the map thumbnail image
+     */
+    @GET
+    @javax.ws.rs.Path("/{folder:.+}/image.png")
+    @Produces("application/json;charset=UTF-8")
+    public Response getTempMessageMapImage(@PathParam("folder") String path) throws IOException, URISyntaxException {
+        try {
+            // Validate that the path is a temporary repository folder path
+            Path folder = validateTempMessageRepoPath(path);
+
+            // Check if a custom map image is defined
+            String customThumbName = String.format("custom_thumb_%d.png", messageMapImageGenerator.getMapImageSize());
+            Path imageRepoPath = folder.resolve(customThumbName);
+            if (Files.exists(imageRepoPath)) {
+                return redirect(imageRepoPath);
+            }
+
+            // Check if a standard map image is defined
+            String imageName = String.format("map_%d.png", messageMapImageGenerator.getMapImageSize());
+            imageRepoPath = folder.resolve(imageName);
+            if (Files.exists(imageRepoPath)) {
+                return redirect(imageRepoPath);
+            }
+
+        } catch (Exception ex) {
+            log.warn("Error fetching map image for message: " + ex);
+        }
+
+        // Show a placeholder image
         return Response
-                .temporaryRedirect(new URI(uri))
+                .temporaryRedirect(new URI(IMAGE_PLACEHOLDER))
                 .build();
     }
 
 
     /**
+     * Resolves the relative repository path as a temporary repository path (used whilst editing messages)
+     * and returns the full path to it.
+     * @param path the path to resolve and validate as a temporary repository path
+     * @return the full path
+     */
+    private Path validateTempMessageRepoPath(String path) {
+        // Validate that the path is a temporary repository folder path
+        Path folder = repositoryService.getRepoRoot().resolve(path);
+        if (!folder.toAbsolutePath().startsWith(repositoryService.getTempRepoRoot().toAbsolutePath())) {
+            log.warn("Failed streaming file to temp root folder: " + folder);
+            throw new WebApplicationException("Invalid upload folder: " + path, 403);
+        }
+        return folder;
+    }
+
+
+    /**
+     * Returns a redirect to the actual repository image file
+     **/
+    private Response redirect(Path imagePath) throws IOException, URISyntaxException {
+        // Redirect the the repository streaming service
+        String uri = repositoryService.getRepoUri(imagePath);
+        return Response
+                .temporaryRedirect(new URI("../" + uri))
+                .build();
+    }
+
+    /**
      * Updates the map image with a custom image
      */
     @PUT
-    @javax.ws.rs.Path("/{id}")
+    @javax.ws.rs.Path("/{folder:.+}")
     @Consumes("application/json;charset=UTF-8")
     @RolesAllowed({"editor"})
-    public void updateMessageMapImage(@PathParam("id") String id, String image) throws Exception {
+    public void updateMessageMapImage(@PathParam("folder") String path, String image) throws Exception {
 
-        Message message = messageService.findById(Integer.valueOf(id));
-        if (message == null) {
-            throw new WebApplicationException(404);
-        }
+        // Validate that the path is a temporary repository folder path
+        Path folder = validateTempMessageRepoPath(path);
 
         if (!image.toLowerCase().startsWith(UPLOADED_IMAGE_PREFIX)) {
             throw new WebApplicationException(400);
@@ -169,7 +230,7 @@ public class MessageMapImageRestService {
 
         // Construct the file path for the message
         String imageName = String.format("custom_thumb_%d.png", messageMapImageGenerator.getMapImageSize());
-        Path imageRepoPath = messageService.getMessageFileRepoPath(message.getId(), imageName);
+        Path imageRepoPath = folder.resolve(imageName);
 
         messageMapImageGenerator.generateMessageMapImage(data, imageRepoPath);
     }
@@ -182,15 +243,14 @@ public class MessageMapImageRestService {
      * @return a status
      */
     @POST
-    @javax.ws.rs.Path("/{id}")
+    @javax.ws.rs.Path("/{folder:.+}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
     @RolesAllowed("editor")
-    public String importCharts(@PathParam("id") String id, @Context HttpServletRequest request) throws Exception {
-        Message message = messageService.findById(Integer.valueOf(id));
-        if (message == null) {
-            return "Image " + id + " not defined";
-        }
+    public String uploadMessageMapImage(@PathParam("folder") String path, @Context HttpServletRequest request) throws Exception {
+
+        // Validate that the path is a temporary repository folder path
+        Path folder = validateTempMessageRepoPath(path);
 
         FileItemFactory factory = RepositoryService.newDiskFileItemFactory(servletContext);
         ServletFileUpload upload = new ServletFileUpload(factory);
@@ -210,8 +270,7 @@ public class MessageMapImageRestService {
         } else {
             // Construct the file path for the message
             String imageName = String.format("custom_thumb_%d.png", messageMapImageGenerator.getMapImageSize());
-            Path imageRepoPath = messageService.getMessageFileRepoPath(message.getId(), imageName);
-
+            Path imageRepoPath = folder.resolve(imageName);
 
             try {
                 byte[] data = IOUtils.toByteArray(imageItem.getInputStream());
@@ -233,19 +292,18 @@ public class MessageMapImageRestService {
 
     /** Deletes the message map image associated with the given message */
     @DELETE
-    @javax.ws.rs.Path("/{id}")
+    @javax.ws.rs.Path("/{folder:.+}")
     @RolesAllowed({"editor"})
-    public boolean deleteMessageMapImage(@PathParam("id") String id, String image) throws Exception {
-        Message message = messageService.findById(Integer.valueOf(id));
-        if (message == null) {
-            return false;
-        }
+    public boolean deleteMessageMapImage(@PathParam("folder") String path, String image) throws Exception {
+
+        // Validate that the path is a temporary repository folder path
+        Path folder = validateTempMessageRepoPath(path);
 
         boolean success = false;
 
         // Delete any custom map image thumbnail
         String customThumbName = String.format("custom_thumb_%d.png", messageMapImageGenerator.getMapImageSize());
-        Path imageRepoPath = messageService.getMessageFileRepoPath(message.getId(), customThumbName);
+        Path imageRepoPath = folder.resolve(customThumbName);
         if (Files.exists(imageRepoPath)) {
             Files.delete(imageRepoPath);
             success = true;
@@ -253,13 +311,13 @@ public class MessageMapImageRestService {
 
         // Delete any standard auto-generated map image thumbnail
         String imageName = String.format("map_%d.png", messageMapImageGenerator.getMapImageSize());
-        imageRepoPath = messageService.getMessageFileRepoPath(message.getId(), imageName);
+        imageRepoPath = folder.resolve(imageName);
         if (Files.exists(imageRepoPath)) {
             Files.delete(imageRepoPath);
             success |= true;
         }
 
-        log.info("Deleted message map image for message " + id + " with success: " + success);
+        log.info("Deleted message map image from folder " + path + " with success: " + success);
 
         return success;
     }

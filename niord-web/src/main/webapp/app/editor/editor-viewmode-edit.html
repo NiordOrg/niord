@@ -270,23 +270,36 @@
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">
-                    <gj-editor id="position-editor"
-                               class="editor-locations"
-                               edit-type="message"
-                               feature-collection="message.geometry"
-                               on-save="geometrySaved(featureCollection)"></gj-editor>
+                    <div class="row">
+                        <div class="col-sm-12 col-md-6 col-lg-8 ">
+                            <gj-editor id="position-editor"
+                                       class="editor-locations"
+                                       edit-type="message"
+                                       feature-collection="message.geometry"
+                                       on-save="geometrySaved(featureCollection)"></gj-editor>
+                        </div>
 
-                    <div class="btn-group" uib-dropdown>
-                        <button type="button" class="btn btn-sm btn-default" uib-dropdown-toggle>
-                            <span class="glyphicon glyphicon-camera"></span>
-                            Snapshot
-                            <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
-                            <li role="menuitem"><a href ng-click="messageThumbnailDialog()">Select thumbnail...</a></li>
-                            <li role="menuitem"><a href ng-click="uploadMessageThumbnailDialog()">Upload thumbnail...</a></li>
-                            <li role="menuitem"><a href ng-click="clearMessageThumbnail()">Clear thumbnail</a></li>
-                        </ul>
+                        <div class="col-sm-12 col-md-6 col-lg-4">
+
+                            <div class="editor-map-image-thumbnail">
+                                <img ng-src="/rest/message-map-image/{{message.repoPath}}/image.png?{{imgCacheBreaker}}" width="256" height="256"/>
+
+                                <div class="editor-map-image-menu text-center">
+                                    <div class="btn-group" uib-dropdown>
+                                        <button type="button" class="btn btn-sm btn-default" uib-dropdown-toggle>
+                                            <span class="glyphicon glyphicon-camera"></span>
+                                            Snapshot
+                                            <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                                            <li role="menuitem"><a href ng-click="messageThumbnailDialog()">Select thumbnail...</a></li>
+                                            <li role="menuitem"><a href ng-click="uploadMessageThumbnailDialog()">Upload thumbnail...</a></li>
+                                            <li role="menuitem"><a href ng-click="clearMessageThumbnail()">Clear thumbnail</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </editor-field-value-editor>
 
@@ -411,6 +424,24 @@
             </editor-field>
 
 
+            <!-- ********************* -->
+            <!-- ** Attachments     ** -->
+            <!-- ********************* -->
+            <editor-field edit-mode="editMode" field-id="attachments" field-title="msg.field.attachments">
+
+                <editor-field-value-viewer>
+                    <div ng-if="message.attachments.length > 0">
+                        <span ng-repeat="att in message.attachments"><span ng-if="$index > 0">,</span>
+                            {{att.fileName}}
+                        </span>
+                    </div>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12">
+                    TBD
+                </editor-field-value-editor>
+
+            </editor-field>
 
         </div>
 
