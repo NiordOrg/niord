@@ -61,6 +61,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -252,6 +253,46 @@ public class MessageRestService {
 
 
     /**
+     * Creates a new message template with a temporary repository path
+     *
+     * @return the new message template
+     */
+    @GET
+    @Path("/new-message-template")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public EditableMessageVo newTemplateMessage(@QueryParam("mainType") MainType mainType) throws IOException {
+
+        // Validate the mainType is valid in the current domain
+        Domain domain = domainService.currentDomain();
+        List<MessageSeries> messageSeries = domain.getMessageSeries().stream()
+                .filter(ms -> ms.getMainType().equals(mainType))
+                .collect(Collectors.toList());
+
+        if (messageSeries.isEmpty()) {
+            throw new WebApplicationException(403);
+        }
+
+        // Create a new template message
+        Message message = messageService.newTemplateMessage(mainType);
+
+        // If only one matching message series is defined, set it for the message.
+        if (messageSeries.size() == 1) {
+            message.setMessageSeries(messageSeries.get(0));
+        }
+
+        EditableMessageVo messageVo =  message.toEditableVo(DataFilter.get().fields("Message.details"));
+
+        // Create a temporary repository folder for the message
+        messageService.createTempMessageRepoFolder(messageVo);
+
+        return messageVo;
+    }
+
+
+    /**
      * Creates a new draft message
      *
      * @param message the message to create
@@ -274,6 +315,7 @@ public class MessageRestService {
         msg = messageService.createMessage(msg);
 
         // Copy resources from the temporary editing message folder to the message repository folder
+        message.setId(msg.getId());
         messageService.updateMessageFromTempRepoFolder(message);
 
         return getMessage(msg.getId().toString(), null, null);

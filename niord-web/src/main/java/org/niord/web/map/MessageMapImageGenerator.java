@@ -453,6 +453,10 @@ public class MessageMapImageGenerator {
             return false;
         }
 
+        if (!Files.exists(imageRepoPath.getParent())) {
+            Files.createDirectories(imageRepoPath.getParent());
+        }
+
         if (image.getWidth() == mapImageSize && image.getHeight() == mapImageSize) {
             // Write the image file directly.
             // NB: We assume PNG

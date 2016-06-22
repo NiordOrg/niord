@@ -36,6 +36,7 @@ import org.niord.core.service.BaseService;
 import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
 import org.niord.model.PagedSearchResultVo;
+import org.niord.model.vo.MainType;
 import org.niord.model.vo.MessageVo;
 import org.niord.model.vo.Status;
 import org.slf4j.Logger;
@@ -432,6 +433,21 @@ public class MessageService extends BaseService {
         message.setStatus(status);
         message = saveMessage(message);
         return message;
+    }
+
+
+    /**
+     * Creates a new un-persisted draft message template
+     * @return a new message template
+     */
+    public Message newTemplateMessage(MainType mainType) {
+
+        Message message = new Message();
+        message.setMainType(mainType);
+        message.setStatus(Status.DRAFT);
+        message.setGeometry(new FeatureCollection());
+        message.setAutoTitle(true);
+        return  message;
     }
 
 

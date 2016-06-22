@@ -59,6 +59,12 @@ angular.module('niord.messages')
             },
 
 
+            /** Returns a new draft message template */
+            newMessageTemplate: function (mainType) {
+                return $http.get('/rest/messages/new-message-template?mainType=' + mainType);
+            },
+
+
             /** Creates a new or updates an existing message */
             saveMessage: function(msg) {
                 if (msg.id) {

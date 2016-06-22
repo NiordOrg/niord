@@ -13,14 +13,7 @@ angular.module('niord.editor')
                   MessageService, LangService, MapService, UploadFileService) {
             'use strict';
 
-            $scope.message = {
-                status: 'DRAFT',
-                descs: [],
-                geometry: {
-                    type: 'FeatureCollection',
-                    features: []
-                }
-            };
+            $scope.message = undefined;
             $scope.initId = $stateParams.id || '';
 
             $scope.editMode = {
@@ -61,6 +54,11 @@ angular.module('niord.editor')
             $scope.initMessage = function () {
                 var msg = $scope.message;
 
+                // Sanity check
+                if (!msg) {
+                    return;
+                }
+
                 $scope.newRef = { messageId: undefined, type: 'REFERENCE', description: '' };
 
                 // Ensure that localized desc fields are defined for all languages
@@ -72,6 +70,8 @@ angular.module('niord.editor')
                         type: 'FeatureCollection',
                         features: []
                     }
+                } else if (!msg.geometry.features) {
+                    msg.geometry.features = [];
                 }
                 $scope.serializeCoordinates();
 
@@ -87,11 +87,6 @@ angular.module('niord.editor')
                             }
                         }
                     });
-                }
-
-                // For new messages, if there is only one message series available, set it on the message
-                if (!msg.id && !msg.messageSeries && $scope.messageSeries.length == 1) {
-                    msg.messageSeries = $scope.messageSeries[0];
                 }
 
                 // Mark the form as pristine
@@ -118,9 +113,10 @@ angular.module('niord.editor')
                 } else {
                     // 2) The editor may be based on a template message, say, from the AtoN selection page
                     if ($state.includes('editor.template')) {
-                        angular.copy($rootScope.templateMessage, $scope.message);
+                        $scope.createMessage($rootScope.templateMessage.mainType, $rootScope.templateMessage);
+                    } else {
+                        $scope.initMessage();
                     }
-                    $scope.initMessage();
                 }
             };
 
@@ -157,21 +153,24 @@ angular.module('niord.editor')
 
 
             /** Create a message of the given mainType and AtoN selection **/
-            $scope.createMessage = function (mainType) {
+            $scope.createMessage = function (mainType, templateMessage) {
                 if (!$scope.canCreateMessage(mainType)) {
                     return;
                 }
 
-                $scope.message = {
-                    mainType: mainType,
-                    status: 'DRAFT',
-                    descs: [],
-                    geometry: {
-                        type: 'FeatureCollection',
-                        features: []
-                    }
-                };
-                $scope.initMessage();
+                MessageService.newMessageTemplate(mainType)
+                    .success(function (message) {
+                        $scope.message = message;
+                        if (templateMessage) {
+                            angular.forEach(templateMessage, function (value, key) {
+                                $scope.message[key] = value;
+                            });
+                        }
+                        $scope.initMessage();
+                    })
+                    .error(function() {
+                        growl.error("Error creating new message template", { ttl: 5000 })
+                    });
             };
 
 
@@ -562,7 +561,7 @@ angular.module('niord.editor')
                         message: function () { return $scope.message; }
                     }
                 }).result.then(function (image) {
-                    if (image && $scope.message.id) {
+                    if (image && $scope.message.repoPath) {
                         MessageService.changeMessageMapImage($scope.message.repoPath, image)
                             .success(function () {
                                 $scope.thumbnailUpdated();
@@ -575,7 +574,7 @@ angular.module('niord.editor')
 
             /** Opens the upload-charts dialog **/
             $scope.uploadMessageThumbnailDialog = function () {
-                if ($scope.message.id) {
+                if ($scope.message.repoPath) {
                     UploadFileService.showUploadFileDialog(
                         'Upload thumbnail image',
                         '/rest/message-map-image/' + $scope.message.repoPath,
@@ -587,7 +586,7 @@ angular.module('niord.editor')
 
             /** Clears the current message thumbnail **/
             $scope.clearMessageThumbnail = function () {
-                if ($scope.message.id) {
+                if ($scope.message.repoPath) {
                     MessageService.deleteMessageMapImage($scope.message.repoPath)
                         .success(function () {
                             $scope.thumbnailUpdated();

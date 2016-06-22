@@ -2,7 +2,7 @@
 <div class="editor-contents container">
     <h3 class="page-header">Message Editor</h3>
 
-    <div ng-if="!message.mainType" style="margin-top: 10px">
+    <div ng-if="!message || !message.mainType" style="margin-top: 10px">
         <button class="btn btn-sm btn-primary" ng-if="canCreateMessage('NW')" ng-click="createMessage('NW')"
                 ng-disabled="selection.isEmpty()">New NW</button>
         <button class="btn btn-sm btn-primary" ng-if="canCreateMessage('NM')" ng-click="createMessage('NM')"
@@ -10,7 +10,7 @@
     </div>
 
 
-    <form ng-if="message.mainType" method="post" name="editForm" id="editForm">
+    <form ng-if="message && message.mainType" method="post" name="editForm" id="editForm">
         <div class="editor-fields" style="margin-bottom: 40px;">
 
             <!-- ********************* -->
@@ -288,7 +288,7 @@
                                     <div class="btn-group" uib-dropdown>
                                         <button type="button" class="btn btn-sm btn-default" uib-dropdown-toggle>
                                             <span class="glyphicon glyphicon-camera"></span>
-                                            Snapshot
+                                            Thumbnail
                                             <span class="caret"></span>
                                         </button>
                                         <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
