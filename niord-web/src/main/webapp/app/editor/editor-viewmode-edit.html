@@ -431,6 +431,7 @@
 
                 <editor-field-value-viewer>
                     <div ng-if="message.attachments.length > 0">
+                        <span class="glyphicon glyphicon-paperclip">{{message.attachments.length}}:&nbsp;</span>
                         <span ng-repeat="att in message.attachments"><span ng-if="$index > 0">,</span>
                             {{att.fileName}}
                         </span>
