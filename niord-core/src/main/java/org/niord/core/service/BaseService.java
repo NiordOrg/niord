@@ -24,6 +24,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -157,6 +158,52 @@ public abstract class BaseService {
                 .map(id -> getByPrimaryKey(entityType, id))
                 .filter(e -> e != null)
                 .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Checks if two entities have the same ID, catering with null parameters
+     * @param e1 the first entity
+     * @param e2 the second entity
+     * @return if two entities have the same ID, catering with null parameters
+     */
+    public static <E extends BaseEntity> boolean sameEntities(E e1, E e2) {
+        if (e1 == null && e2 == null) {
+            return true;
+        } else if (e1 == null || e2 == null) {
+            return false;
+        }
+        return e1.getId().equals(e2.getId());
+    }
+
+
+    /**
+     * Checks if two lists of entities are identical by matching IDs
+     * @param l1 the first list of entities
+     * @param l2 the second list of entities
+     * @param sameOrder if the order is significant
+     * @return if two lists of entities are identical by matching IDs
+     */
+    public static <E extends BaseEntity> boolean sameEntities(List<E> l1, List<E> l2, boolean sameOrder) {
+        if (l1 == null && l2 == null) {
+            return true;
+        } else if (l1 == null || l2 == null || l1.size() != l2.size()) {
+            return false;
+        }
+        if (sameOrder) {
+            for (int x = 0; x < l1.size(); x++) {
+                if (!sameEntities(l1.get(x), l2.get(x))) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            Set<Object> ids = l1.stream()
+                    .map(BaseEntity::getId)
+                    .collect(Collectors.toSet());
+            return l2.stream()
+                    .allMatch(e -> ids.contains(e.getId()));
+        }
     }
 
 }
