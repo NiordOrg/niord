@@ -81,6 +81,18 @@ angular.module('niord.messages')
             },
 
 
+            /** Returns the repository path to the attachment file */
+            attachmentRepoPath: function (message, attachment) {
+                var repoPath = message.editRepoPath || message.repoPath;
+                return repoPath + '/attachments/' + encodeURIComponent(attachment.fileName);
+            },
+
+            /** Deletes the attahcment file at the given repository path */
+            deleteAttachmentFile: function (repoPath) {
+                return $http.delete('/rest/repo/file/' + repoPath);
+            },
+
+
             /** Computes the title line for the given message */
             computeTitleLine: function (msg) {
                 return $http.post('/rest/messages/compute-title-line', msg);

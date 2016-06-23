@@ -401,3 +401,10 @@ i.mce-i-map-marker:before {
 .message-thumbnail-layer {
     margin: 5px ;
 }
+
+
+/** Editor -> Attachments **/
+
+.editor-file-upload {
+    margin-bottom: 10px;
+}

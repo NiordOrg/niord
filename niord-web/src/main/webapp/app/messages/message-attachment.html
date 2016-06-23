@@ -8,7 +8,10 @@
             <img ng-src="{{thumbnailUrl}}">
         </a>
     </div>
-    <div class="attachment-label">
+    <div ng-if="labelType == 'file-name'" class="attachment-label">
         {{attachment.fileName}}
+    </div>
+    <div ng-if="labelType == 'caption'" class="attachment-label">
+        {{attachment.descs[0].caption}}
     </div>
 </div>

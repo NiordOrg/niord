@@ -629,6 +629,19 @@ angular.module('niord.editor')
             };
 
 
+            /** Deletes the given attachment **/
+            $scope.deleteAttachment = function (attachment) {
+                if ($.inArray(attachment, $scope.message.attachments) > -1) {
+                    var filePath = MessageService.attachmentRepoPath($scope.message, attachment);
+                    MessageService.deleteAttachmentFile(filePath)
+                        .success(function () {
+                            $scope.message.attachments.splice( $.inArray(attachment, $scope.message.attachments), 1 );
+                            $scope.setDirty();
+                        });
+                }
+            };
+            
+
             /*****************************/
             /** Bootstrap editor        **/
             /*****************************/

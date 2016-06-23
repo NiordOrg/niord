@@ -435,17 +435,17 @@
 
                 <editor-field-value-viewer>
                     <div ng-if="message.attachments.length > 0">
-                        <span class="glyphicon glyphicon-paperclip">{{message.attachments.length}}:&nbsp;</span>
+                        <span class="glyphicon glyphicon-paperclip" style="color: darkgray">{{message.attachments.length}}:</span>
                         <span ng-repeat="att in message.attachments"><span ng-if="$index > 0">,</span>
                             {{att.fileName}}
                         </span>
                     </div>
                 </editor-field-value-viewer>
 
-                <editor-field-value-editor value-class="col-sm-12">
+                <editor-field-value-editor value-class="col-sm-12 col-md-10 col-lg-8">
 
                     <div class="editor-attachments">
-                        <span class="editor-file-upload">
+                        <div class="editor-file-upload">
                             <file-upload url="attachmentUploadUrl"
                                          drop-text="or drop file here"
                                          multiple="true"
@@ -453,13 +453,21 @@
                                          remove-after-upload="true"
                                          success="attachmentsUploaded(result)"
                                          error="attachmentsUploadError(status, statusText)"></file-upload>
-                        </span>
+                        </div>
 
 
                         <div ng-if="message.attachments.length > 0">
-                            <span class="attachment-list" ng-repeat="att in message.attachments">
-                                <message-attachment message="message" attachment="att" size="64"></message-attachment>
-                            </span>
+                            <table class="table table-condensed">
+                                <tr ng-repeat="att in message.attachments">
+                                    <td width="70">
+                                        <message-attachment message="message" attachment="att" size="64" label-type="none"></message-attachment>
+                                    </td>
+                                    <td>{{att.fileName}}</td>
+                                    <td width="30">
+                                        <a href ng-click="deleteAttachment(att);" title="Delete Attachment"><span class="glyphicon glyphicon-trash"></span></a>
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
                     </div>
                 </editor-field-value-editor>

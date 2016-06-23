@@ -260,6 +260,7 @@ public class RepositoryService {
      */
     @DELETE
     @javax.ws.rs.Path("/file/{file:.+}")
+    @Produces("text/plain")
     @RolesAllowed({ "editor" })
     public String deleteFile(@PathParam("file") String path) throws IOException {
 
