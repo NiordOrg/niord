@@ -82,9 +82,16 @@
     <div class="row" ng-if="msg.attachments">
         <div class="col-xs-2 col-sm-1 message-details-item-field">Attachments</div>
         <div class="col-xs-10 col-sm-11 message-details-item-value">
-            <span class="attachment-list" ng-repeat="att in msg.attachments">
-                <message-attachment message="msg" attachment="att" size="32"></message-attachment>
-            </span>
+            <div>
+                <span class="glyphicon glyphicon-paperclip" style="color: darkgray"></span>
+                <a href ng-if="msg.showAttachments" ng-click="msg.showAttachments = false" class="clickable" translate>msg.hide_attachments</a>
+                <a href ng-if="!msg.showAttachments" ng-click="msg.showAttachments = true" class="clickable" translate>msg.show_attachments</a>
+            </div>
+            <div ng-if="msg.showAttachments">
+                <span class="attachment-list" ng-repeat="att in msg.attachments">
+                    <message-attachment message="msg" attachment="att" size="32"></message-attachment>
+                </span>
+            </div>
         </div>
     </div>
 
