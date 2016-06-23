@@ -46,9 +46,14 @@ angular.module('niord.editor')
             /*****************************/
 
             // Used to ensure that description entities have various field
-            function initDescField(desc) {
+            function initMessageDescField(desc) {
                 desc.title = '';
                 desc.description = '';
+            }
+
+            // Used to ensure that attachment description entities have various field
+            function initAttachmentDescField(desc) {
+                desc.caption = '';
             }
 
 
@@ -64,7 +69,7 @@ angular.module('niord.editor')
                 $scope.newRef = { messageId: undefined, type: 'REFERENCE', description: '' };
 
                 // Ensure that localized desc fields are defined for all languages
-                LangService.checkDescs(msg, initDescField, undefined, $rootScope.modelLanguages);
+                LangService.checkDescs(msg, initMessageDescField, undefined, $rootScope.modelLanguages);
 
                 // Instantiate the feature collection from the message geometry
                 if (!msg.geometry) {
@@ -93,6 +98,10 @@ angular.module('niord.editor')
 
                 // Update the attachment upload url
                 $scope.attachmentUploadUrl = '/rest/messages/attachments/' + msg.editRepoPath + '/attachments';
+                // Ensure that localized attachment desc fields are defined for all languages
+                angular.forEach(msg.attachments, function (att) {
+                    LangService.checkDescs(att, initAttachmentDescField, undefined, $rootScope.modelLanguages);
+                });
 
                 // Mark the form as pristine
                 $scope.setPristine();
@@ -614,6 +623,7 @@ angular.module('niord.editor')
                     $scope.message.attachments = [];
                 }
                 angular.forEach(result, function (attachment) {
+                    LangService.checkDescs(attachment, initAttachmentDescField, undefined, $rootScope.modelLanguages);
                     $scope.message.attachments.push(attachment);
                 });
                 growl.info("Attachments uploaded", { ttl: 3000 });

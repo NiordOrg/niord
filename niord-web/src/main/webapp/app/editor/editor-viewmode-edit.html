@@ -460,9 +460,14 @@
                             <table class="table table-condensed">
                                 <tr ng-repeat="att in message.attachments">
                                     <td width="70">
-                                        <message-attachment message="message" attachment="att" size="64" label-type="none"></message-attachment>
+                                        <message-attachment message="message" attachment="att" size="32"></message-attachment>
                                     </td>
-                                    <td>{{att.fileName}}</td>
+                                    <td>
+                                        <div ng-repeat="desc in att.descs">
+                                            <input class="form-control input-sm" placeholder="Caption" type="text"
+                                                   ng-model="desc.caption" bg-flag="desc.lang"/>
+                                        </div>
+                                    </td>
                                     <td width="30">
                                         <a href ng-click="deleteAttachment(att);" title="Delete Attachment"><span class="glyphicon glyphicon-trash"></span></a>
                                     </td>

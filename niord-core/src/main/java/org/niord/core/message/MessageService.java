@@ -409,7 +409,7 @@ public class MessageService extends BaseService {
 
         original.getAttachments().clear();
         message.getAttachments().stream()
-                .map(att -> att.isNew() ? att : getByPrimaryKey(Attachment.class, att.getId()))
+                .map(this::updateAttachment)
                 .forEach(original::addAttachment);
 
         // Persist the message
@@ -417,6 +417,17 @@ public class MessageService extends BaseService {
         log.info("Updated message " + original);
 
         em.flush();
+        return original;
+    }
+
+
+    /** Upon saving a message, the attachment captions may have been updated **/
+    private Attachment updateAttachment(Attachment attachment) {
+        if (attachment.isNew()) {
+            return attachment;
+        }
+        Attachment original = getByPrimaryKey(Attachment.class, attachment.getId());
+        original.copyDescsAndRemoveBlanks(attachment.getDescs());
         return original;
     }
 
