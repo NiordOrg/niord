@@ -404,7 +404,7 @@ public class RepositoryService {
                 }
 
                 // Return the repo-relative path as a result
-                result.add(Paths.get(path, fileName).toString());
+                result.add(Paths.get(path, destFile.getName()).toString());
             }
         }
 
