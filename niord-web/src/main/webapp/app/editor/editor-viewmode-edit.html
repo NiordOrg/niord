@@ -81,6 +81,10 @@
                             </td>
                         </tr>
                         <tr>
+                            <th>UID</th>
+                            <td>{{message.id}}</td>
+                        </tr>
+                        <tr>
                             <th>Short ID</th>
                             <td><span class="label label-message-id" style="font-size: 11px">{{message.shortId}}</span></td>
                         </tr>
@@ -442,7 +446,7 @@
 
                     <div class="editor-attachments">
                         <span class="editor-file-upload">
-                            <file-upload url="'/rest/messages/attachments/' + message.editRepoPath + '/attachments'"
+                            <file-upload url="attachmentUploadUrl"
                                          drop-text="or drop file here"
                                          multiple="true"
                                          auto-upload="true"

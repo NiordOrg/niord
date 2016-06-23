@@ -17,7 +17,7 @@
 <table class="message-table">
     <tr>
         <td class="table-image">
-            <img src="/rest/message-map-image/${msg.id?c}.png" width="120" height="120"/>
+            <img src="/rest/message-map-image/${msg.id}.png" width="120" height="120"/>
         </td>
         <td class="table-item">
 

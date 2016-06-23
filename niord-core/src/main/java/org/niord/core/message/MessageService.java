@@ -72,8 +72,6 @@ import static org.niord.core.message.MessageSearchParams.SortOrder;
 @SuppressWarnings("unused")
 public class MessageService extends BaseService {
 
-    public static String MESSAGE_REPO_FOLDER = "messages";
-
     @Inject
     private Logger log;
 
@@ -114,13 +112,19 @@ public class MessageService extends BaseService {
 
 
     /**
-     * Returns the message with the given id
+     * Returns the message with the given uid
      *
-     * @param id the id of the message
+     * @param uid the id of the message
      * @return the message with the given id or null if not found
      */
-    public Message findById(Integer id) {
-        return getByPrimaryKey(Message.class, id);
+    public Message findByUid(String uid) {
+        try {
+            return em.createNamedQuery("Message.findByUid", Message.class)
+                    .setParameter("uid", uid)
+                    .getSingleResult();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
 
@@ -169,7 +173,7 @@ public class MessageService extends BaseService {
 
 
     /**
-     * Resolves the message with the given message id, which may be either a database id,
+     * Resolves the message with the given message id, which may be either a UID,
      * or a short ID or an MRN of a message.
      * If the are multiple matching messages, priority is given to a messages of the current domain.
      *
@@ -181,8 +185,11 @@ public class MessageService extends BaseService {
         if (StringUtils.isBlank(messageId)) {
             return null;
 
-        } else if (StringUtils.isNumeric(messageId)) {
-            return findById(Integer.valueOf(messageId));
+        }
+
+        Message message = findByUid(messageId);
+        if (message != null) {
+            return message;
         }
 
         // Check if the message ID is an MRN
@@ -223,7 +230,7 @@ public class MessageService extends BaseService {
 
 
     /**
-     * Returns a list of message IDs (database ID, MRN or shortId) that - possibly partially - matches
+     * Returns a list of message IDs (UID, MRN or shortId) that - possibly partially - matches
      * real text.
      *
      * @param lang the language to return the title in
@@ -243,12 +250,10 @@ public class MessageService extends BaseService {
             result.add(new MessageIdMatch(txt, TEXT, null));
         }
 
-        // Check for a matching DB ID
-        if (StringUtils.isNumeric(txt)) {
-            Message message = findById(Integer.valueOf(txt));
-            if (message != null) {
-                result.add(new MessageIdMatch(txt, ID, message, lang));
-            }
+        // Check for a matching UID
+        Message message = findByUid(txt);
+        if (message != null) {
+            result.add(new MessageIdMatch(txt, UID, message, lang));
         }
 
         // Search shortIds
@@ -350,7 +355,7 @@ public class MessageService extends BaseService {
      */
     public Message updateMessage(Message message) throws Exception {
 
-        Message original = findById(message.getId());
+        Message original = findByUid(message.getUid());
 
         // Validate the message
         if (original == null) {
@@ -419,11 +424,11 @@ public class MessageService extends BaseService {
     /**
      * Updates the status of the given message
      *
-     * @param messageId the id of the message
+     * @param uid the UID of the message
      * @param status    the status
      */
-    public Message updateStatus(Integer messageId, Status status) {
-        Message message = findById(messageId);
+    public Message updateStatus(String uid, Status status) {
+        Message message = findByUid(uid);
         Status prevStatus = message.getStatus();
 
         if ((prevStatus == Status.DRAFT || prevStatus == Status.VERIFIED) && status == Status.PUBLISHED) {
@@ -443,6 +448,7 @@ public class MessageService extends BaseService {
     public Message newTemplateMessage(MainType mainType) {
 
         Message message = new Message();
+        message.assignNewUid();
         message.setMainType(mainType);
         message.setStatus(Status.DRAFT);
         message.setGeometry(new FeatureCollection());
@@ -500,29 +506,29 @@ public class MessageService extends BaseService {
 
     /**
      * Changes the area sort order of a message to position it between two other messages
-     * @param id the id of the message to reorder
-     * @param afterId if defined, the message must come after this message
-     * @param beforeId if defined, the message must come before this message
+     * @param uid the UID of the message to reorder
+     * @param afterUid if defined, the message must come after this message
+     * @param beforeUid if defined, the message must come before this message
      */
-    public void changeAreaSortOrder(Integer id, Integer afterId, Integer beforeId) {
-        Message m = findById(id);
-        Message am = afterId == null ? null : findById(afterId);
-        Message bm = beforeId == null ? null : findById(beforeId);
+    public void changeAreaSortOrder(String uid, String afterUid, String beforeUid) {
+        Message m = findByUid(uid);
+        Message am = afterUid == null ? null : findByUid(afterUid);
+        Message bm = beforeUid == null ? null : findByUid(beforeUid);
 
         if (m == null || (am == null && bm == null)) {
-            throw new IllegalArgumentException("Invalid arguments id=" + id
-                    + ", afterId=" + afterId + ", beforeId=" + beforeId);
+            throw new IllegalArgumentException("Invalid arguments uid=" + uid
+                    + ", afterUid=" + afterUid + ", beforeUid=" + beforeUid);
         }
 
         if (am == null) {
             m.setAreaSortOrder(bm.getAreaSortOrder() - 1);
-            log.info("Changed area sort order of " + id + ": moved before " + beforeId);
+            log.info("Changed area sort order of " + uid + ": moved before " + beforeUid);
         } else if (bm == null) {
             m.setAreaSortOrder(am.getAreaSortOrder() + 1);
-            log.info("Changed area sort order of " + id + ": moved after " + afterId);
+            log.info("Changed area sort order of " + uid + ": moved after " + afterUid);
         } else {
             m.setAreaSortOrder((am.getAreaSortOrder() + bm.getAreaSortOrder()) / 2.0);
-            log.info("Changed area sort order of " + id + ": moved between " + afterId + " and " + beforeId);
+            log.info("Changed area sort order of " + uid + ": moved between " + afterUid + " and " + beforeUid);
         }
     }
 
@@ -815,45 +821,6 @@ public class MessageService extends BaseService {
     /***************************************/
 
     /**
-     * Returns the repository folder for the given message
-     * @param id the id of the message
-     * @return the associated repository folder
-     */
-    public java.nio.file.Path getMessageRepoFolder(Integer id) throws IOException {
-        return  repositoryService.getHashedSubfolder(MESSAGE_REPO_FOLDER, String.valueOf(id), true);
-    }
-
-    /**
-     * Returns the repository file for the given message file
-     * @param id the id of the message
-     * @param name the file name
-     * @return the associated repository file
-     */
-    public java.nio.file.Path getMessageFileRepoPath(Integer id, String name) throws IOException {
-        return  getMessageRepoFolder(id).resolve(name);
-    }
-
-    /**
-     * Returns the repository URI for the message folder
-     * @param id the id of the message
-     * @return the associated repository URI
-     */
-    public String getMessageFolderRepoPath(Integer id) throws IOException {
-        return repositoryService.getRepoPath(getMessageRepoFolder(id));
-    }
-
-    /**
-     * Returns the repository URI for the given message file
-     * @param id the id of the message
-     * @param name the file name
-     * @return the associated repository URI
-     */
-    public String getMessageFileRepoUri(Integer id, String name) throws IOException {
-        java.nio.file.Path file = getMessageRepoFolder(id).resolve(name);
-        return repositoryService.getRepoUri(file);
-    }
-
-    /**
      * Creates a temporary repository folder for the given message
      * @param message the message
      */
@@ -864,7 +831,7 @@ public class MessageService extends BaseService {
 
         // For existing messages, copy the existing message repo to the new repository
         if (message.getId() != null) {
-            java.nio.file.Path srcPath = getMessageRepoFolder(message.getId());
+            java.nio.file.Path srcPath = repositoryService.getRepoRoot().resolve(message.getRepoPath());
             java.nio.file.Path dstPath = repositoryService.getRepoRoot().resolve(editRepoPath);
             log.debug("Copy message folder " + srcPath + " to temporary message folder " + dstPath);
             FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
@@ -880,7 +847,7 @@ public class MessageService extends BaseService {
         if (message.getId() != null && StringUtils.isNotBlank(message.getEditRepoPath())) {
 
             java.nio.file.Path srcPath = repositoryService.getRepoRoot().resolve(message.getEditRepoPath());
-            java.nio.file.Path dstPath = getMessageRepoFolder(message.getId());
+            java.nio.file.Path dstPath = repositoryService.getRepoRoot().resolve(message.getRepoPath());
             if (Files.exists(srcPath)) {
                 log.debug("Syncing temporary message folder " + srcPath + " with message folder " + dstPath);
                 FileUtils.deleteDirectory(dstPath.toFile());

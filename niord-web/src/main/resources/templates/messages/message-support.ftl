@@ -241,7 +241,7 @@
     <#if msg.descs?has_content && msg.descs[0].title?has_content>
         <div>
             <strong>
-                <a href="${baseUri}/#/message/${msg.id?c}" target="_blank">
+                <a href="${baseUri}/#/message/${msg.id}" target="_blank">
                     ${msg.descs[0].title}
                 </a>
             </strong>

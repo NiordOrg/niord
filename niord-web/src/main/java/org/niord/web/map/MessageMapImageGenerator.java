@@ -212,6 +212,10 @@ public class MessageMapImageGenerator {
 
             g2.dispose();
 
+            if (!Files.exists(imageRepoPath.getParent())) {
+                Files.createDirectories(imageRepoPath.getParent());
+            }
+
             // Save the image to the repository
             ImageIO.write(image, "png", imageRepoPath.toFile());
             image.flush();

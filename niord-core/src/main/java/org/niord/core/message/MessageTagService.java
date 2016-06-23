@@ -139,11 +139,11 @@ public class MessageTagService extends BaseService {
 
     /**
      * Returns the message tags which contain the message with the given ID
-     * @param messageId the tag IDs
+     * @param messageUid the tag IDs
      * @return the message tags which contain the message with the given ID
      */
-    public List<MessageTag> findTagsByMessageId(Integer messageId) {
-        if (messageId == null) {
+    public List<MessageTag> findTagsByMessageId(String messageUid) {
+        if (StringUtils.isBlank(messageUid)) {
             return Collections.emptyList();
         }
 
@@ -155,9 +155,9 @@ public class MessageTagService extends BaseService {
             return Collections.emptyList();
         }
 
-        return em.createNamedQuery("MessageTag.findTagsByMessageId", MessageTag.class)
+        return em.createNamedQuery("MessageTag.findTagsByMessageUid", MessageTag.class)
                 .setParameter("tagIds", idSet)
-                .setParameter("messageId", messageId)
+                .setParameter("messageUid", messageUid)
                 .getResultList()
                 .stream()
                 .sorted()
@@ -207,10 +207,10 @@ public class MessageTagService extends BaseService {
 
     /**
      * Creates a new temporary, short-lived message tag from the given messages
-     * @param messageIds the new message ids
+     * @param messageUids the new message UIDs
      * @return the persisted message tag
      */
-    public MessageTag createTempMessageTag(List<Integer> messageIds) {
+    public MessageTag createTempMessageTag(List<String> messageUids) {
         // Compute expiry time
         Calendar expiryTime = Calendar.getInstance();
         expiryTime.add(Calendar.MINUTE, TEMP_TAG_EXPIRY_MINUTES);
@@ -223,7 +223,7 @@ public class MessageTagService extends BaseService {
         tag.setDomain(domainService.currentDomain());
 
         // Add the messages to the tag
-        tag.setMessages(persistedListForIds(Message.class, messageIds));
+        tag.setMessages(messagesForUids(messageUids));
         tag.updateMessageCount();
 
         tag = saveEntity(tag);
@@ -299,17 +299,17 @@ public class MessageTagService extends BaseService {
     /**
      * Adds messages to the given tag
      * @param tagId the ID of the message tag to add the message to
-     * @param messageIds the id of the messages to add
+     * @param messageUids the UIDs of the messages to add
      * @return the updated message tag
      */
-    public MessageTag addMessageToTag(String tagId, List<Integer> messageIds) {
+    public MessageTag addMessageToTag(String tagId, List<String> messageUids) {
         MessageTag tag = findTag(tagId);
         if (tag == null) {
             throw new IllegalArgumentException("No message tag with ID " + tagId);
         }
 
         int prevMsgCnt = tag.getMessages().size();
-        for (Message message : persistedListForIds(Message.class, messageIds)) {
+        for (Message message : messagesForUids(messageUids)) {
             if (!tag.getMessages().contains(message)) {
                 tag.getMessages().add(message);
             }
@@ -328,17 +328,17 @@ public class MessageTagService extends BaseService {
     /**
      * Removes messages from the given tag
      * @param tagId the ID of the message tag to remove the message from
-     * @param messageIds the id of the messages to remove
+     * @param messageUids the UIDs the messages to remove
      * @return the updated message tag
      */
-    public MessageTag removeMessageFromTag(String tagId, List<Integer> messageIds) {
+    public MessageTag removeMessageFromTag(String tagId, List<String> messageUids) {
         MessageTag tag = findTag(tagId);
         if (tag == null) {
             throw new IllegalArgumentException("No message tag with ID " + tagId);
         }
 
         int prevMsgCnt = tag.getMessages().size();
-        for (Message message : persistedListForIds(Message.class, messageIds)) {
+        for (Message message : messagesForUids(messageUids)) {
             if (tag.getMessages().contains(message)) {
                 tag.getMessages().remove(message);
                 message.getTags().remove(tag);
@@ -354,6 +354,21 @@ public class MessageTagService extends BaseService {
         return tag;
     }
 
+
+    /**
+     * Returns the messages with the given UIDs
+     *
+     * @param uids the list of message UIDs
+     * @return the messages with the given UIDs
+     */
+    public List<Message> messagesForUids(List<String> uids) {
+        if (uids == null || uids.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return em.createNamedQuery("Message.findByUids", Message.class)
+                .setParameter("uids", uids)
+                .getResultList();
+    }
 
     /**
      * Every hour, expired message tags will be removed

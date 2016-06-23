@@ -33,7 +33,7 @@ import java.util.List;
 @ApiModel(value = "Message", description = "Main NW and NM message class")
 @XmlRootElement(name = "message")
 @XmlType(propOrder = {
-        "messageSeries", "number", "mrn", "shortId", "mainType", "type", "status",
+        "repoPath", "messageSeries", "number", "mrn", "shortId", "mainType", "type", "status",
         "areas", "categories", "charts", "horizontalDatum", "geometry",
         "startDate", "endDate", "publishDate", "cancellationDate", "dateIntervals",
         "references", "atonUids", "originalInformation", "descs", "attachments"
@@ -41,7 +41,8 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable {
 
-    Integer id;
+    String id;
+    String repoPath;
     Date created;
     Date updated;
     Integer version;
@@ -136,12 +137,20 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     /*************************/
 
     @XmlAttribute
-    public Integer getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(String id) {
         this.id = id;
+    }
+
+    public String getRepoPath() {
+        return repoPath;
+    }
+
+    public void setRepoPath(String repoPath) {
+        this.repoPath = repoPath;
     }
 
     @XmlAttribute

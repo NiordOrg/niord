@@ -71,12 +71,12 @@ public class MessageTagRestService {
 
     /** Returns the tags which contain the message with the given ID */
     @GET
-    @Path("/message/{messageId}")
+    @Path("/message/{messageUid}")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<MessageTagVo> findTagsByMessageId(@PathParam("messageId") Integer messageId) {
-        return messageTagService.findTagsByMessageId(messageId).stream()
+    public List<MessageTagVo> findTagsByMessageId(@PathParam("messageUid") String messageUid) {
+        return messageTagService.findTagsByMessageId(messageUid).stream()
                 .map(MessageTag::toVo)
                 .collect(Collectors.toList());
     }
@@ -144,9 +144,9 @@ public class MessageTagRestService {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public MessageTagVo createTempTag(List<Integer> messageIds) {
+    public MessageTagVo createTempTag(List<String> messageUids) {
         // TODO: Validate access to the messages for the current user
-        return messageTagService.createTempMessageTag(messageIds).toVo();
+        return messageTagService.createTempMessageTag(messageUids).toVo();
     }
 
 
@@ -170,11 +170,11 @@ public class MessageTagRestService {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public MessageTagVo addMessageToTag(@PathParam("tagId") String tagId, List<Integer> messageIds) {
-        log.info("Adding messages " + messageIds + " to tag " + tagId);
+    public MessageTagVo addMessageToTag(@PathParam("tagId") String tagId, List<String> messageUids) {
+        log.info("Adding messages " + messageUids + " to tag " + tagId);
 
         // TODO: Validate access to the messages for the current user
-        return messageTagService.addMessageToTag(tagId, messageIds).toVo();
+        return messageTagService.addMessageToTag(tagId, messageUids).toVo();
     }
 
 
@@ -186,11 +186,11 @@ public class MessageTagRestService {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public MessageTagVo removeMessageFromTag(@PathParam("tagId") String tagId, List<Integer> messageIds) {
-        log.info("Removing messages " + messageIds + " from tag " + tagId);
+    public MessageTagVo removeMessageFromTag(@PathParam("tagId") String tagId, List<String> messageUids) {
+        log.info("Removing messages " + messageUids + " from tag " + tagId);
 
         // TODO: Validate access to the messages for the current user
-        return messageTagService.removeMessageFromTag(tagId, messageIds).toVo();
+        return messageTagService.removeMessageFromTag(tagId, messageUids).toVo();
     }
 
 }

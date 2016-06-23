@@ -85,23 +85,23 @@ public class MessageMapImageRestService {
     MessageMapImageGenerator messageMapImageGenerator;
 
     /**
-     * Returns the map thumbnail image associated with the message with the given ID
-     * @param id the ID of the message
+     * Returns the map thumbnail image associated with the message with the given UID
+     * @param uid the UID of the message
      * @return the map thumbnail image
      */
     @GET
-    @javax.ws.rs.Path("/{id}.png")
+    @javax.ws.rs.Path("/{uid}.png")
     @Produces("image/png")
-    public Response getMessageMapImage(@PathParam("id") String id) throws IOException, URISyntaxException {
+    public Response getMessageMapImage(@PathParam("uid") String uid) throws IOException, URISyntaxException {
         try {
-            Message message = messageService.findById(Integer.valueOf(id));
+            Message message = messageService.findByUid(uid);
             if (message == null) {
                 throw new WebApplicationException(404);
             }
 
             // Check if a custom map image is defined
             String customThumbName = String.format("custom_thumb_%d.png", messageMapImageGenerator.getMapImageSize());
-            Path imageRepoPath = messageService.getMessageFileRepoPath(message.getId(), customThumbName);
+            Path imageRepoPath = repositoryService.getRepoRoot().resolve(message.getRepoPath()).resolve(customThumbName);
             if (Files.exists(imageRepoPath)) {
                 return redirect(imageRepoPath);
             }
@@ -112,7 +112,7 @@ public class MessageMapImageRestService {
 
                 // Construct the image file for the message
                 String imageName = String.format("map_%d.png", messageMapImageGenerator.getMapImageSize());
-                imageRepoPath = messageService.getMessageFileRepoPath(message.getId(), imageName);
+                imageRepoPath = repositoryService.getRepoRoot().resolve(message.getRepoPath()).resolve(imageName);
 
                 // If the image file does not exist, or if the message has been updated after the image file,
                 // generate a new image file

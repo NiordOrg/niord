@@ -51,6 +51,7 @@ import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 
 /**
@@ -58,6 +59,7 @@ import java.util.List;
  */
 @Entity
 @Table(indexes = {
+        @Index(name = "message_uid_k", columnList="uid"),
         @Index(name = "message_mrn_k", columnList="mrn"),
         @Index(name = "message_type_k", columnList="type"),
         @Index(name = "message_main_type_k", columnList="mainType"),
@@ -67,6 +69,10 @@ import java.util.List;
 @NamedQueries({
         @NamedQuery(name="Message.findUpdateMessages",
                 query="SELECT msg FROM Message msg where msg.updated > :date order by msg.updated asc"),
+        @NamedQuery(name="Message.findByUid",
+                query="SELECT msg FROM Message msg where msg.uid = :uid"),
+        @NamedQuery(name="Message.findByUids",
+                query="SELECT msg FROM Message msg where msg.uid in (:uids)"),
         @NamedQuery(name="Message.findByIds",
                 query="SELECT msg FROM Message msg where msg.id in (:ids)"),
         @NamedQuery(name="Message.findByLegacyId",
@@ -84,6 +90,14 @@ import java.util.List;
 })
 @SuppressWarnings("unused")
 public class Message extends VersionedEntity<Integer> implements ILocalizable<MessageDesc> {
+
+    public static String MESSAGE_REPO_FOLDER = "messages";
+
+    @Column(nullable = false, unique = true, length = 36)
+    String uid;
+
+    @Column(nullable = false, unique = true, length = 128)
+    String repoPath;
 
     @ManyToOne
     MessageSeries messageSeries;
@@ -212,7 +226,8 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         }
         setCreated(message.getCreated());
         setUpdated(message.getUpdated());
-        this.id = message.getId();
+        this.uid = message.getId();
+        this.repoPath = uidToMessageRepoPath(uid);
         this.number = message.getNumber();
         this.mrn = message.getMrn();
         this.shortId = message.getShortId();
@@ -268,7 +283,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
         DataFilter compFilter = filter.forComponent(Message.class);
 
-        message.setId(id);
+        message.setId(uid);
         message.setNumber(number);
         message.setMrn(mrn);
         message.setShortId(shortId);
@@ -276,6 +291,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         message.setType(type);
 
         if (compFilter.includeField(DataFilter.DETAILS)) {
+            message.setRepoPath(repoPath);
             message.setCreated(getCreated());
             message.setUpdated(getUpdated());
             message.setVersion(getVersion());
@@ -320,10 +336,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
         EditableMessageVo message = toVo(new EditableMessageVo(), filter);
 
-        DataFilter compFilter = filter.forComponent(Message.class);
-        if (compFilter.includeField(DataFilter.DETAILS)) {
-            message.setAutoTitle(autoTitle);
-        }
+        message.setAutoTitle(autoTitle);
 
         return message;
     }
@@ -332,6 +345,11 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     /** Whenever the message is persisted, re-compute the start and end dates */
     @PrePersist
     protected void onPersist() {
+
+        if (uid == null) {
+            assignNewUid();
+        }
+        repoPath = uidToMessageRepoPath(uid);
 
         // Set "area" to be the first area in the "areas" list
         area = areas.isEmpty() ? null : areas.get(0);
@@ -394,6 +412,47 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     }
 
 
+    /** Assigns a new UID to the Feature **/
+    public String assignNewUid() {
+        uid = UUID.randomUUID().toString();
+        repoPath = uidToMessageRepoPath(uid);
+        return uid;
+    }
+
+
+    /**
+     * Validates that the uid has the proper UUID format
+     * @param uid the UID to validate
+     * @return if the UID has a valid UUID format
+     */
+    public static boolean validUidFormat(String uid) {
+        try{
+            UUID uuid = UUID.fromString(uid);
+            return true;
+        } catch (IllegalArgumentException exception){
+            return false;
+        }
+    }
+
+
+    /**
+     * Converts the uid to a message repository path
+     * @param uid the UID
+     * @return the associated message repository path
+     */
+    public static String uidToMessageRepoPath(String uid) {
+        if (StringUtils.isBlank(uid)) {
+            return null;
+        }
+        if (!validUidFormat(uid)) {
+            throw new IllegalArgumentException("Invalid UID format " + uid);
+        }
+        String[] parts = uid.split("-");
+        return String.format(
+                "%s/%s/%s/%s-%s-%s",
+                MESSAGE_REPO_FOLDER,
+                parts[0], parts[1], parts[2], parts[3], parts[4]);
+    }
 
 
     /**
@@ -436,6 +495,22 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
+
+    public String getRepoPath() {
+        return repoPath;
+    }
+
+    public void setRepoPath(String repoPath) {
+        this.repoPath = repoPath;
+    }
 
     public MessageSeries getMessageSeries() {
         return messageSeries;

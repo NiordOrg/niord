@@ -34,6 +34,8 @@ angular.module('niord.editor')
 
             $scope.messageSeries = [];
 
+            $scope.attachmentUploadUrl = undefined;
+
             // This will be set when the "Save message" button is clicked and will
             // disable the button, to avoid double-clicks
             $scope.messageSaving = false;
@@ -88,6 +90,9 @@ angular.module('niord.editor')
                         }
                     });
                 }
+
+                // Update the attachment upload url
+                $scope.attachmentUploadUrl = '/rest/messages/attachments/' + msg.editRepoPath + '/attachments';
 
                 // Mark the form as pristine
                 $scope.setPristine();

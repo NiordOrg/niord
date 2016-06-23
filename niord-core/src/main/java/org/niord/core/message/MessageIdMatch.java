@@ -28,7 +28,7 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class MessageIdMatch implements IJsonSerializable {
 
-    public enum MatchType { ID, SHORT_ID, MRN, TEXT }
+    public enum MatchType { UID, SHORT_ID, MRN, TEXT }
 
     String messageId;
     MatchType type;

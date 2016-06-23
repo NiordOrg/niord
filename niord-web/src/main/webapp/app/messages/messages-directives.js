@@ -93,18 +93,10 @@ angular.module('niord.messages')
             },
             link: function(scope, element, attrs) {
 
-                var params;
-                if (scope.message.editRepoPath) {
-                    // The message is being edited, and the attachment will be in a temporary repo folder
-                    params = '?repoPath=' + encodeURIComponent(scope.message.editRepoPath);
-                } else {
-                    // usual repo location
-                    params = '?messageId=' + scope.message.id;
-                }
-
-                var fileName = encodeURIComponent(scope.attachment.fileName);
-                scope.thumbnailUrl = "/rest/messages/attachments/thumb/" + fileName + params + "&size=" + scope.size;
-                scope.fileUrl = "/rest/messages/attachments/file/" + fileName + params;
+                var repoPath = scope.message.editRepoPath || scope.message.repoPath;
+                var filePath = repoPath + '/attachments/' + encodeURIComponent(scope.attachment.fileName);
+                scope.thumbnailUrl = "/rest/repo/thumb/" + filePath + "?size=" + scope.size;
+                scope.fileUrl = "/rest/repo/file/" + filePath;
                 scope.imageClass = "attachment-image size-" + scope.size;
                 scope.deletable = attrs.deleteAttachment !== undefined;
 

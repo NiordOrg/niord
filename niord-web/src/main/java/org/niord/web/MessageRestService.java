@@ -65,12 +65,10 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -119,19 +117,6 @@ public class MessageRestService {
     /***************************
      * Message access functions
      ***************************/
-
-    /**
-     * Resolves the database id of the given message id, which may be either a database id,
-     * or a short ID or an MRN of a message.
-     *
-     * @param messageId the mesage id to resolve
-     * @return the message id
-     */
-    private Integer resolveMessageId(String messageId) {
-        Message message = messageService.resolveMessage(messageId);
-        return message == null ? null : message.getId();
-    }
-
 
     /**
      * Checks that the user has editing access to the given message by matching the current domain
@@ -191,7 +176,7 @@ public class MessageRestService {
 
 
     /**
-     * Returns the message with the given message id, which may be either a database id,
+     * Returns the message with the given message id, which may be either a UID,
      * or a short ID or an MRN of a message.
      *
      * If no message exists with the given ID, null is returned.
@@ -228,7 +213,7 @@ public class MessageRestService {
 
 
     /**
-     * Returns the editable message with the given message id, which may be either a database id,
+     * Returns the editable message with the given message id, which may be either a UID,
      * or a short ID or an MRN of a message.
      *
      * If no message exists with the given ID, null is returned.
@@ -331,10 +316,10 @@ public class MessageRestService {
         msg = messageService.createMessage(msg);
 
         // Copy resources from the temporary editing message folder to the message repository folder
-        message.setId(msg.getId());
+        message.setId(msg.getUid());
         messageService.updateMessageFromTempRepoFolder(message);
 
-        return getMessage(msg.getId().toString(), null, null);
+        return getMessage(msg.getUid(), null, null);
     }
 
 
@@ -351,7 +336,7 @@ public class MessageRestService {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public MessageVo updateMessage(@PathParam("messageId") Integer messageId, EditableMessageVo message) throws Exception {
+    public MessageVo updateMessage(@PathParam("messageId") String messageId, EditableMessageVo message) throws Exception {
         if (!Objects.equals(messageId, message.getId())) {
             throw new WebApplicationException(400);
         }
@@ -360,14 +345,14 @@ public class MessageRestService {
 
         // Validate access to the message
         checkMessageEditingAccess(msg);
-        checkMessageEditingAccess(messageService.findById(messageId));
+        checkMessageEditingAccess(messageService.findByUid(messageId));
 
         msg = messageService.updateMessage(msg);
 
         // Copy resources from the temporary editing message folder to the message repository folder
         messageService.updateMessageFromTempRepoFolder(message);
 
-        return getMessage(msg.getId().toString(), null, null);
+        return getMessage(msg.getUid(), null, null);
     }
 
 
@@ -384,14 +369,14 @@ public class MessageRestService {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public MessageVo updateMessageStatus(@PathParam("messageId") Integer messageId, String status) throws Exception {
+    public MessageVo updateMessageStatus(@PathParam("messageId") String messageId, String status) throws Exception {
         log.info("Updating status of message " + messageId + " to " + status);
 
         // Validate access to the message
-        checkMessageEditingAccess(messageService.findById(messageId));
+        checkMessageEditingAccess(messageService.findByUid(messageId));
 
         Message msg = messageService.updateStatus(messageId, Status.valueOf(status));
-        return getMessage(msg.getId().toString(), null, null);
+        return getMessage(msg.getUid(), null, null);
     }
 
 
@@ -435,49 +420,6 @@ public class MessageRestService {
                 })
                 .filter(att -> att != null)
                 .collect(Collectors.toList());
-    }
-
-
-    /**
-     * Returns the file to use for the file specified by the path
-     * @param path the path
-     * @return the file to use for the file specified by the path
-     */
-    @GET
-    @javax.ws.rs.Path("/attachments/file/{file:.+}")
-    public Response attachmentFile(
-            @PathParam("file") String path,
-            @QueryParam("repoPath") String repoPath,
-            @QueryParam("messageId") Integer messageId,
-            @Context Request request) throws IOException, URISyntaxException {
-
-        String attachmentPath
-                = (StringUtils.isNotBlank(repoPath))
-                ? repoPath + "/attachments/" + path
-                : messageService.getMessageFolderRepoPath(messageId) + "/attachments/" + path;
-        return repositoryService.streamFile(attachmentPath, request);
-    }
-
-
-    /**
-     * Returns the thumbnail to use for the file specified by the path
-     * @param path the path
-     * @param size the icon size, either 32, 64 or 128
-     * @return the thumbnail to use for the file specified by the path
-     */
-    @GET
-    @javax.ws.rs.Path("/attachments/thumb/{file:.+}")
-    public Response attachmentThumbnail(
-            @PathParam("file") String path,
-            @QueryParam("repoPath") String repoPath,
-            @QueryParam("messageId") Integer messageId,
-            @QueryParam("size") @DefaultValue("64") int size) throws IOException, URISyntaxException {
-
-        String attachmentPath
-                = (StringUtils.isNotBlank(repoPath))
-                ? repoPath + "/attachments/" + path
-                : messageService.getMessageFolderRepoPath(messageId) + "/attachments/" + path;
-        return repositoryService.getThumbnail(attachmentPath, size);
     }
 
 
@@ -643,7 +585,7 @@ public class MessageRestService {
 
 
     /**
-     * Generates a PDF for the message with the given message id, which may be either a database id,
+     * Generates a PDF for the message with the given message id, which may be either a UID,
      * or a short ID or an MRN of a message.
      *
      * If the debug flag is set to true, the HTML that is used for the PDF is returned directly.
@@ -816,9 +758,12 @@ public class MessageRestService {
     public List<MessageHistoryVo> getMessageHistory(@PathParam("messageId") String messageId) {
 
         // Get the message id
-        Integer id = resolveMessageId(messageId);
+        Message message = messageService.resolveMessage(messageId);
+        if (message == null) {
+            return Collections.emptyList();
+        }
 
-        return messageService.getMessageHistory(id).stream()
+        return messageService.getMessageHistory(message.getId()).stream()
                 .map(MessageHistory::toVo)
                 .collect(Collectors.toList());
     }
@@ -988,31 +933,31 @@ public class MessageRestService {
 
     /** Parameter that encapsulates a message being dragged to a new area sort order position */
     public static class AreaSortOrderUpdateParam implements IJsonSerializable {
-        Integer id;
-        Integer beforeId;
-        Integer afterId;
+        String id;
+        String beforeId;
+        String afterId;
 
-        public Integer getId() {
+        public String getId() {
             return id;
         }
 
-        public void setId(Integer id) {
+        public void setId(String id) {
             this.id = id;
         }
 
-        public Integer getBeforeId() {
+        public String getBeforeId() {
             return beforeId;
         }
 
-        public void setBeforeId(Integer beforeId) {
+        public void setBeforeId(String beforeId) {
             this.beforeId = beforeId;
         }
 
-        public Integer getAfterId() {
+        public String getAfterId() {
             return afterId;
         }
 
-        public void setAfterId(Integer afterId) {
+        public void setAfterId(String afterId) {
             this.afterId = afterId;
         }
     }
