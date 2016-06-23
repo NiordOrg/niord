@@ -833,8 +833,10 @@ public class MessageService extends BaseService {
         if (message.getId() != null) {
             java.nio.file.Path srcPath = repositoryService.getRepoRoot().resolve(message.getRepoPath());
             java.nio.file.Path dstPath = repositoryService.getRepoRoot().resolve(editRepoPath);
-            log.debug("Copy message folder " + srcPath + " to temporary message folder " + dstPath);
-            FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
+            if (Files.exists(srcPath)) {
+                log.debug("Copy message folder " + srcPath + " to temporary message folder " + dstPath);
+                FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
+            }
         }
     }
 

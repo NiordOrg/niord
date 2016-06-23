@@ -67,7 +67,7 @@ angular.module('niord.messages')
 
             /** Creates a new or updates an existing message */
             saveMessage: function(msg) {
-                if (msg.id) {
+                if (msg.created) {
                     return $http.put('/rest/messages/message/' + msg.id, msg);
                 } else {
                     return $http.post('/rest/messages/message', msg);
