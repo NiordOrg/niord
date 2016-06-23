@@ -2,11 +2,9 @@
     <h3 class="modal-title">Select an image</h3>
 </div>
 <div class="modal-body">
-    <div class="report-attachments">
-                <span class="report-attachment" ng-repeat="file in files" ng-click="ok(file)">
-                    <img ng-src="{{file}}">
-                </span>
-    </div>
+    <span class="attachment-list" ng-repeat="att in message.attachments">
+        <message-attachment message="message" attachment="att" size="64" attachment-clicked="attachmentClicked({attachment: att})"></message-attachment>
+    </span>
 </div>
 <div class="modal-footer">
     <button class="btn btn-warning" ng-click="cancel()">Cancel</button>

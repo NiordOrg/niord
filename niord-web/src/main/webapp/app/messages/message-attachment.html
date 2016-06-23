@@ -1,13 +1,14 @@
 
 <div class="attachment">
-    <div ng-class="imageClass" ng-switch="clickable">
-        <a ng-switch-when="true" href="{{fileUrl}}" target="_blank">
+    <div ng-class="imageClass" ng-switch="handleClick">
+        <a ng-switch-when="true" href ng-click="click()">
             <img ng-src="{{thumbnailUrl}}">
         </a>
-        <img ng-switch-default ng-src="{{thumbnailUrl}}">
+        <a ng-switch-default href="{{fileUrl}}" target="_blank">
+            <img ng-src="{{thumbnailUrl}}">
+        </a>
     </div>
     <div class="attachment-label">
         {{attachment.fileName}}
     </div>
-    <a ng-if="deletable" ng-click="deleteAttachment()" class="attachment-delete-btn" title="Delete {{attachment.fileName}}"><i class="glyphicon glyphicon-minus-sign red"></i></a>
 </div>

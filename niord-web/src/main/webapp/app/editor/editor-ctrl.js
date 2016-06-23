@@ -419,17 +419,17 @@ angular.module('niord.editor')
             /** TinyMCE functions       **/
             /*****************************/
 
-            $scope.attachments = [ '/rest/repo/file/messages/1/19/2138/map_256.png' ];
-
             /** File callback function - called from the TinyMCE image and link dialogs **/
             $scope.fileBrowserCallback = function(field_name, url, type, win) {
                 $(".mce-window").hide();
                 $("#mce-modal-block").hide();
                 $scope.$apply(function() {
                     $scope.attachmentDialog('md').result
-                        .then(function (file) {
+                        .then(function (result) {
                             $("#mce-modal-block").show();
                             $(".mce-window").show();
+                            var file = "/rest/repo/file/" + $scope.message.editRepoPath + "/attachments/"
+                                + encodeURIComponent(result.attachment.fileName);
                             win.document.getElementById(field_name).value = file;
                         });
                 });
@@ -439,15 +439,17 @@ angular.module('niord.editor')
             $scope.attachmentDialog = function (size) {
                 return $uibModal.open({
                     templateUrl: '/app/editor/message-file-dialog.html',
-                    controller: function ($scope, $modalInstance, files) {
-                        $scope.files = files;
-                        $scope.ok = function (file) { $modalInstance.close(file); };
+                    controller: function ($scope, $modalInstance, message) {
+                        $scope.message = message;
                         $scope.cancel = function () { $modalInstance.dismiss('cancel'); };
+                        $scope.attachmentClicked = function (att) {
+                            $modalInstance.close(att);
+                        }
                     },
                     size: size,
                     windowClass: 'on-top',
                     resolve: {
-                        files: function () { return $scope.attachments; }
+                        message: function () { return $scope.message; }
                     }
                 });
             };

@@ -248,6 +248,8 @@ public class MessageRestService {
 
         // Create a temporary repository folder for the message
         messageService.createTempMessageRepoFolder(messageVo);
+        // Point embedded links and images to the temporary repository folder
+        messageVo.descsToEditRepo();
 
         return messageVo;
     }
@@ -288,6 +290,8 @@ public class MessageRestService {
 
         // Create a temporary repository folder for the message
         messageService.createTempMessageRepoFolder(messageVo);
+        // Point embedded links and images to the temporary repository folder
+        messageVo.descsToEditRepo();
 
         return messageVo;
     }
@@ -308,6 +312,10 @@ public class MessageRestService {
     @RolesAllowed({"editor"})
     public MessageVo createMessage(EditableMessageVo message) throws Exception {
         log.info("Creating message " + message);
+
+        // Point embedded links and images to the message repository folder
+        message.descsToMessageRepo();
+
         Message msg = new Message(message);
 
         // Validate access to the message
@@ -341,6 +349,10 @@ public class MessageRestService {
             throw new WebApplicationException(400);
         }
         log.info("Updating message " + message);
+
+        // Point embedded links and images to the message repository folder
+        message.descsToMessageRepo();
+
         Message msg = new Message(message);
 
         // Validate access to the message

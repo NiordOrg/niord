@@ -88,8 +88,7 @@ angular.module('niord.messages')
                 message : "=",
                 attachment: "=",
                 size: "@",
-                clickable: "@",
-                deleteAttachment: '&deleteAttachment'
+                attachmentClicked: '&'
             },
             link: function(scope, element, attrs) {
 
@@ -98,11 +97,11 @@ angular.module('niord.messages')
                 scope.thumbnailUrl = "/rest/repo/thumb/" + filePath + "?size=" + scope.size;
                 scope.fileUrl = "/rest/repo/file/" + filePath;
                 scope.imageClass = "attachment-image size-" + scope.size;
-                scope.deletable = attrs.deleteAttachment !== undefined;
+                scope.handleClick = attrs.attachmentClicked !== undefined;
 
-                scope.deleteAttachment = function() {
-                    if (scope.deletable) {
-                        scope.deleteAttachment({ attachment: scope.attachment })
+                scope.click = function() {
+                    if (scope.handleClick) {
+                        scope.attachmentClicked({ attachment: scope.attachment })
                     }
                 }
             }
