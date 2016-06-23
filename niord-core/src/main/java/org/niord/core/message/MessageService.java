@@ -859,13 +859,13 @@ public class MessageService extends BaseService {
      */
     public void createTempMessageRepoFolder(EditableMessageVo message) throws IOException {
 
-        String tempRepoPath = repositoryService.getNewTempDir().getPath();
-        message.setRepoPath(tempRepoPath);
+        String editRepoPath = repositoryService.getNewTempDir().getPath();
+        message.setEditRepoPath(editRepoPath);
 
         // For existing messages, copy the existing message repo to the new repository
         if (message.getId() != null) {
             java.nio.file.Path srcPath = getMessageRepoFolder(message.getId());
-            java.nio.file.Path dstPath = repositoryService.getRepoRoot().resolve(tempRepoPath);
+            java.nio.file.Path dstPath = repositoryService.getRepoRoot().resolve(editRepoPath);
             log.debug("Copy message folder " + srcPath + " to temporary message folder " + dstPath);
             FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
         }
@@ -877,9 +877,9 @@ public class MessageService extends BaseService {
      */
     public void updateMessageFromTempRepoFolder(EditableMessageVo message) throws IOException {
 
-        if (message.getId() != null && StringUtils.isNotBlank(message.getRepoPath())) {
+        if (message.getId() != null && StringUtils.isNotBlank(message.getEditRepoPath())) {
 
-            java.nio.file.Path srcPath = repositoryService.getRepoRoot().resolve(message.getRepoPath());
+            java.nio.file.Path srcPath = repositoryService.getRepoRoot().resolve(message.getEditRepoPath());
             java.nio.file.Path dstPath = getMessageRepoFolder(message.getId());
             if (Files.exists(srcPath)) {
                 log.debug("Syncing temporary message folder " + srcPath + " with message folder " + dstPath);

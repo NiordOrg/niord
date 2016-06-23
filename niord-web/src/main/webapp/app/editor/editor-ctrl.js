@@ -561,8 +561,8 @@ angular.module('niord.editor')
                         message: function () { return $scope.message; }
                     }
                 }).result.then(function (image) {
-                    if (image && $scope.message.repoPath) {
-                        MessageService.changeMessageMapImage($scope.message.repoPath, image)
+                    if (image && $scope.message.editRepoPath) {
+                        MessageService.changeMessageMapImage($scope.message.editRepoPath, image)
                             .success(function () {
                                 $scope.thumbnailUpdated();
                                 growl.info("Updated message thumbnail", { ttl: 3000 });
@@ -574,10 +574,10 @@ angular.module('niord.editor')
 
             /** Opens the upload-charts dialog **/
             $scope.uploadMessageThumbnailDialog = function () {
-                if ($scope.message.repoPath) {
+                if ($scope.message.editRepoPath) {
                     UploadFileService.showUploadFileDialog(
                         'Upload thumbnail image',
-                        '/rest/message-map-image/' + $scope.message.repoPath,
+                        '/rest/message-map-image/' + $scope.message.editRepoPath,
                         'png,jpg,jpeg,gif').result
                         .then($scope.thumbnailUpdated);
                 }
@@ -586,8 +586,8 @@ angular.module('niord.editor')
 
             /** Clears the current message thumbnail **/
             $scope.clearMessageThumbnail = function () {
-                if ($scope.message.repoPath) {
-                    MessageService.deleteMessageMapImage($scope.message.repoPath)
+                if ($scope.message.editRepoPath) {
+                    MessageService.deleteMessageMapImage($scope.message.editRepoPath)
                         .success(function () {
                             $scope.thumbnailUpdated();
                             growl.info("Deleted message thumbnail", { ttl: 3000 })

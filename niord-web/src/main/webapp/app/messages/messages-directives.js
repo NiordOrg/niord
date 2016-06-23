@@ -94,9 +94,9 @@ angular.module('niord.messages')
             link: function(scope, element, attrs) {
 
                 var params;
-                if (scope.message.repoPath) {
+                if (scope.message.editRepoPath) {
                     // The message is being edited, and the attachment will be in a temporary repo folder
-                    params = '?repoPath=' + encodeURIComponent(scope.message.repoPath);
+                    params = '?repoPath=' + encodeURIComponent(scope.message.editRepoPath);
                 } else {
                     // usual repo location
                     params = '?messageId=' + scope.message.id;
