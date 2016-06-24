@@ -382,6 +382,11 @@ public class MessageService extends BaseService {
         original.setType(message.getType());
         original.setMainType(message.getMainType());
 
+        // If a verified message is updated, it will become draft again
+        if (original.getStatus() == Status.VERIFIED) {
+            original.setStatus(Status.DRAFT);
+        }
+
         // Substitute the Area with a persisted one
         original.setAreas(persistedList(Area.class, message.getAreas()));
 

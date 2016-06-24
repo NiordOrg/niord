@@ -29,22 +29,32 @@
                 </p>
 
                 <div style="margin-top: 20px;">
-                    <button href class="btn btn-primary btn-sm message-status-action" ng-click="publish()" ng-if="message.status == 'DRAFT'">
+                    <button href class="btn btn-primary btn-sm message-status-action"
+                            ng-click="publish()" ng-if="message.status == 'VERIFIED'">
                         <span class="glyphicon glyphicon-send"></span> Publish Message...
                     </button>
                 </div>
                 <div>
-                    <button href class="btn btn-default btn-sm message-status-action" ng-click="delete()" ng-if="message.status == 'DRAFT'">
+                    <button href class="btn btn-primary btn-sm message-status-action"
+                            ng-click="verify()" ng-if="message.status == 'DRAFT'">
+                        <span class="glyphicon glyphicon-ok"></span> Verify Draft...
+                    </button>
+                </div>
+                <div>
+                    <button href class="btn btn-default btn-sm message-status-action"
+                            ng-click="delete()" ng-if="message.status == 'DRAFT' || message.status == 'VERIFIED'">
                         <span class="glyphicon glyphicon-trash"></span> Delete Draft...
                     </button>
                 </div>
                 <div>
-                    <button href class="btn btn-default btn-sm message-status-action" ng-click="cancel()" ng-if="message.status == 'PUBLISHED'">
+                    <button href class="btn btn-default btn-sm message-status-action"
+                            ng-click="cancel()" ng-if="message.status == 'PUBLISHED'">
                         <span class="glyphicon glyphicon-trash"></span> Cancel Message...
                     </button>
                 </div>
                 <div>
-                    <button href class="btn btn-default btn-sm message-status-action" ng-click="copy()">
+                    <button href class="btn btn-default btn-sm message-status-action"
+                            ng-click="copy()">
                         <span class="glyphicon glyphicon-duplicate"></span> Copy Message...
                     </button>
                 </div>

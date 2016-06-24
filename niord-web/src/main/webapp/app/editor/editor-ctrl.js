@@ -680,6 +680,25 @@ angular.module('niord.editor')
             };
 
 
+            /** Verify the draft message **/
+            $scope.verify = function () {
+                if ($scope.message.status != 'DRAFT') {
+                    growl.error("Only draft messages can be verified", {ttl: 5000});
+                    return;
+                }
+
+                DialogService.showConfirmDialog(
+                    "Verify draft?", "Verify draft?")
+                    .then(function() {
+                        MessageService.updateMessageStatus($scope.message, 'VERIFIED')
+                            .success(function() { $scope.reloadMessage("Message verified"); })
+                            .error(function(err) {
+                                growl.error("Verification failed\n" + err, {ttl: 5000});
+                            });
+                    });
+            };
+
+
             /** Publish the message **/
             $scope.publish = function () {
 
