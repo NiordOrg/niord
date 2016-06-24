@@ -57,10 +57,12 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static org.niord.core.geojson.Feature.WGS84_SRID;
 import static org.niord.core.message.MessageIdMatch.MatchType.*;
 import static org.niord.core.message.MessageSearchParams.SortOrder;
@@ -348,7 +350,10 @@ public class MessageService extends BaseService {
 
 
     /**
-     * Updates the given message
+     * Updates the given message.
+     * <p>
+     * Important: this function can not be used to change the status of the message.
+     * For that, call {@code MessageService.updateStatus()}
      *
      * @param message the template for the message to update
      * @return the updated message
@@ -362,6 +367,11 @@ public class MessageService extends BaseService {
             throw new Exception("Message not an existing message");
         }
 
+        // Check that there is no attempt to update the status
+        if (message.getStatus() != original.getStatus()) {
+            throw new Exception("updateMessage() cannot change status");
+        }
+
         original.setMessageSeries(null);
         if (message.getMessageSeries() != null) {
             original.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
@@ -371,7 +381,6 @@ public class MessageService extends BaseService {
         original.setShortId(message.getShortId());
         original.setType(message.getType());
         original.setMainType(message.getMainType());
-        original.setStatus(message.getStatus());
 
         // Substitute the Area with a persisted one
         original.setAreas(persistedList(Area.class, message.getAreas()));
@@ -438,17 +447,44 @@ public class MessageService extends BaseService {
      * @param uid the UID of the message
      * @param status    the status
      */
-    public Message updateStatus(String uid, Status status) {
+    public Message updateStatus(String uid, Status status) throws Exception {
         Message message = findByUid(uid);
-        Status prevStatus = message.getStatus();
+        Status currentStatus = message.getStatus();
 
-        if ((prevStatus == Status.DRAFT || prevStatus == Status.VERIFIED) && status == Status.PUBLISHED) {
+        // Check that a valid status transition is requested
+        if (!getValidStatusTransitions(currentStatus).contains(status)) {
+            throw new Exception("Invalid status transition " + currentStatus + " -> " + status);
+        }
+
+        // When published, update the message series
+        if ((currentStatus == Status.DRAFT || currentStatus == Status.VERIFIED) && status == Status.PUBLISHED) {
             messageSeriesService.updateMessageSeriesIdentifiers(message, true);
         }
 
         message.setStatus(status);
         message = saveMessage(message);
         return message;
+    }
+
+
+    /**
+     * Defines the set of valid status transitions from the given status
+     * @param status the status to transition from
+     * @return the set of valid status transitions
+     */
+    private Set<Status> getValidStatusTransitions(Status status) {
+        switch (status) {
+            case DRAFT:
+                return new HashSet<>(asList(Status.VERIFIED, Status.DELETED));
+            case VERIFIED:
+                return new HashSet<>(asList(Status.PUBLISHED, Status.DRAFT, Status.DELETED));
+            case IMPORTED:
+                return new HashSet<>(asList(Status.values()));
+            case PUBLISHED:
+                return new HashSet<>(asList(Status.EXPIRED, Status.CANCELLED));
+            default:
+                return Collections.emptySet();
+        }
     }
 
 
