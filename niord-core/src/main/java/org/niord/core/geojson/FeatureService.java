@@ -1,6 +1,7 @@
 package org.niord.core.geojson;
 
 import org.niord.core.service.BaseService;
+import org.niord.model.vo.geojson.FeatureCollectionVo;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
@@ -78,6 +79,28 @@ public class FeatureService extends BaseService {
                 });
     }
 
+
+    /**
+     * Copies a feature collection and assign new UID's to all features and the feature collection
+     * @param fc the feature collection to copy
+     * @return the copy
+     */
+    public FeatureCollectionVo copyFeatureCollection(FeatureCollectionVo fc) {
+        if (fc == null) {
+            return null;
+        }
+        FeatureCollection featureCollection = FeatureCollection.fromGeoJson(fc);
+        featureCollection.assignNewUid();
+        assignNewFeatureUids(featureCollection);
+        return featureCollection.toGeoJson();
+    }
+
+
+    /**
+     * Create and persist a new feature collection from the given template
+     * @param fc the feature collection template
+     * @return the persisted feature collection
+     */
     public FeatureCollection createFeatureCollection(FeatureCollection fc) throws Exception {
         requireNonNull(fc);
         fc.setUid(null);

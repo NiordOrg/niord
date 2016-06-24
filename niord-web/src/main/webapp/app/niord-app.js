@@ -55,6 +55,10 @@ var app = angular.module('niord.admin', [
                 url: "/edit/:id",
                 templateUrl: "/app/editor/editor-viewmode-edit.html"
             })
+            .state('editor.copy', {
+                url: "/edit/:id/:referenceType",
+                templateUrl: "/app/editor/editor-viewmode-edit.html"
+            })
             .state('editor.template', {
                 url: "/edit/",
                 templateUrl: "/app/editor/editor-viewmode-edit.html"

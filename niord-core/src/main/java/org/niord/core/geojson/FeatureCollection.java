@@ -81,6 +81,13 @@ public class FeatureCollection extends BaseEntity<Integer> {
     }
 
 
+    /** Assigns a new UID to the Feature **/
+    public String assignNewUid() {
+        uid = UUID.randomUUID().toString();
+        return uid;
+    }
+
+
     /** Ensure that the UID is defined */
     @PrePersist
     protected void onCreate() {

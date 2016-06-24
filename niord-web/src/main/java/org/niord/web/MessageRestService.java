@@ -24,6 +24,7 @@ import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.fm.FmService;
 import org.niord.core.fm.FmService.ProcessFormat;
+import org.niord.core.geojson.FeatureService;
 import org.niord.core.message.EditableMessageVo;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageHistory;
@@ -43,6 +44,8 @@ import org.niord.model.vo.AttachmentVo;
 import org.niord.model.vo.MainType;
 import org.niord.model.vo.MessageHistoryVo;
 import org.niord.model.vo.MessageVo;
+import org.niord.model.vo.ReferenceType;
+import org.niord.model.vo.ReferenceVo;
 import org.niord.model.vo.Status;
 import org.niord.model.vo.Type;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
@@ -69,6 +72,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -106,6 +110,9 @@ public class MessageRestService {
 
     @Inject
     DomainService domainService;
+
+    @Inject
+    FeatureService featureService;
 
     @Inject
     FmService fmService;
@@ -268,6 +275,8 @@ public class MessageRestService {
     @RolesAllowed({"editor"})
     public EditableMessageVo newTemplateMessage(@QueryParam("mainType") MainType mainType) throws IOException {
 
+        log.info("Creating new message template");
+
         // Validate the mainType is valid in the current domain
         Domain domain = domainService.currentDomain();
         List<MessageSeries> messageSeries = domain.getMessageSeries().stream()
@@ -294,6 +303,65 @@ public class MessageRestService {
         messageVo.descsToEditRepo();
 
         return messageVo;
+    }
+
+
+    /**
+     * Creates a new message copy template with a temporary repository path
+     *
+     * @return the new message copy template
+     */
+    @GET
+    @Path("/copy-message-template/{messageId}")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public EditableMessageVo copyMessageTemplate(
+            @PathParam("messageId") String messageId,
+            @QueryParam("referenceType") ReferenceType referenceType,
+            @QueryParam("lang") String language) throws Exception {
+
+        log.info("Creating copy of message " + messageId);
+
+        // Get an editable version of the message to copy - incl. editRepoPath containing original repo files
+        EditableMessageVo message =  getEditableMessage(messageId, language);
+        if (message == null) {
+            return null;
+        }
+
+        // Optionally, add a reference to the original message (before resetting IDs, etc)
+        if (referenceType != null) {
+            if (message.getReferences() == null) {
+                message.setReferences(new ArrayList<>());
+            }
+            ReferenceVo ref = new ReferenceVo();
+            ref.setMessageId(StringUtils.isNotBlank(message.getShortId()) ? message.getShortId() : message.getId());
+            ref.setType(referenceType);
+            message.getReferences().add(ref);
+        }
+
+        // Create a new template message to get hold of a UID and repoPath
+        Message tmp = messageService.newTemplateMessage(message.getMainType());
+        message.setId(tmp.getUid());
+        message.setRepoPath(tmp.getRepoPath());
+
+        // Reset various fields
+        message.setShortId(null);
+        message.setMrn(null);
+        message.setStatus(Status.DRAFT);
+        message.setCreated(null);
+        message.setUpdated(null);
+        message.setVersion(null);
+        message.setNumber(null);
+        message.setPublishDate(null);
+        message.setCancellationDate(null);
+        if (message.getAttachments() != null) {
+            message.getAttachments().forEach(att -> att.setId(null));
+        }
+        message.setGeometry(featureService.copyFeatureCollection(message.getGeometry()));
+
+        return message;
     }
 
 

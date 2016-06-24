@@ -15,6 +15,7 @@ angular.module('niord.editor')
 
             $scope.message = undefined;
             $scope.initId = $stateParams.id || '';
+            $scope.referenceType = $stateParams.referenceType || '';
 
             $scope.editMode = {
                 type: false,
@@ -62,7 +63,7 @@ angular.module('niord.editor')
 
 
             /** Called during initialization when the message has been loaded or instantiated */
-            $scope.initMessage = function () {
+            $scope.initMessage = function (pristine) {
                 var msg = $scope.message;
 
                 // Sanity check
@@ -108,7 +109,11 @@ angular.module('niord.editor')
                 });
 
                 // Mark the form as pristine
-                $scope.setPristine();
+                if (pristine) {
+                    $scope.setPristine();
+                } else {
+                    $scope.setDirty();
+                }
 
                 // Remove lock on save button
                 $scope.messageSaving = false;
@@ -117,24 +122,41 @@ angular.module('niord.editor')
 
             /** Initialize the message editor */
             $scope.init = function () {
-                // 1) The message ID may be specified
-                if ($scope.initId) {
+
+                $scope.initId = $stateParams.id || '';
+                $scope.referenceType = $stateParams.referenceType || '';
+                $scope.editType = 'edit';
+                if ($state.includes('editor.template')) {
+                    $scope.editType = 'template';
+                } else if ($state.includes('editor.copy')) {
+                    $scope.editType = 'copy';
+                }
+
+                if ($scope.editType == 'edit' && $scope.initId) {
+                    // Case 1) The message ID may be specified
                     MessageService.editableDetails($scope.initId)
+                        .success(function (message) {
+                            $scope.message = message;
+                            $scope.initMessage(true);
+                        })
+                        .error(function (data, status) {
+                            growl.error("Error loading message (code: " + status + ")", {ttl: 5000})
+                        });
+
+                } else if ($scope.editType == 'copy' && $scope.initId) {
+                    // Case 2) Create a copy of a message
+                    MessageService.copyMessageTemplate($scope.initId, $scope.referenceType)
                         .success(function (message) {
                             $scope.message = message;
                             $scope.initMessage();
                         })
                         .error(function (data, status) {
-                            growl.error("Error loading message (code: " + status + ")", { ttl: 5000 })
+                            growl.error("Error copying message (code: " + status + ")", {ttl: 5000})
                         });
 
-                } else {
-                    // 2) The editor may be based on a template message, say, from the AtoN selection page
-                    if ($state.includes('editor.template')) {
-                        $scope.createMessage($rootScope.templateMessage.mainType, $rootScope.templateMessage);
-                    } else {
-                        $scope.initMessage();
-                    }
+                } else if ($scope.editType == 'template') {
+                    // Case 3) The editor may be based on a template message, say, from the AtoN selection page
+                    $scope.createMessage($rootScope.templateMessage.mainType, $rootScope.templateMessage);
                 }
             };
 
@@ -201,9 +223,11 @@ angular.module('niord.editor')
                 MessageService.saveMessage($scope.message)
                     .success(function(message) {
                         growl.info("Message saved", { ttl: 3000 });
-                        $scope.initId = message.id;
-                        $rootScope.go('/editor/edit/' + message.id);
-                        $scope.init();
+                        $state.go(
+                            'editor.edit',
+                            { id: message.id },
+                            { reload: true }
+                        );
                     })
                     .error(function() {
                         $scope.messageSaving = false;
@@ -669,14 +693,16 @@ angular.module('niord.editor')
     /*******************************************************************
      * EditorCtrl sub-controller that handles message status changes.
      *******************************************************************/
-    .controller('EditorStatusCtrl', ['$scope', '$rootScope', 'growl', 'MessageService', 'DialogService',
-        function ($scope, $rootScope, growl, MessageService, DialogService) {
+    .controller('EditorStatusCtrl', ['$scope', '$rootScope', '$state', 'growl', 'MessageService', 'DialogService',
+        function ($scope, $rootScope, $state, growl, MessageService, DialogService) {
             'use strict';
 
             $scope.reloadMessage = function (msg) {
                 // Call parent controller init() method
                 $scope.init();
-                growl.info(msg, {ttl: 3000});
+                if (msg) {
+                    growl.info(msg, {ttl: 3000});
+                }
             };
 
 
@@ -800,7 +826,12 @@ angular.module('niord.editor')
                 DialogService.showConfirmDialog(
                     "Copy Message?", "Copy Message?")
                     .then(function() {
-                        $rootScope.go('/editor/edit/copy/' + $scope.message.id + "/REFERENCE");
+                        // Navigate to the message editor page
+                        $state.go(
+                            'editor.copy',
+                            { id: $scope.message.id,  referenceType : 'REFERENCE' },
+                            { reload: true }
+                        );
                     });
             };
 
@@ -825,7 +856,12 @@ angular.module('niord.editor')
                         MessageService.updateMessageStatus($scope.message, 'CANCELLED')
                             .success(function() {
                                 if (modalOptions.cancelOptions.createCancelMessage) {
-                                    $rootScope.go('/editor/edit/copy/' + $scope.message.id + "/CANCELLATION");
+                                    // Navigate to the message editor page
+                                    $state.go(
+                                        'editor.copy',
+                                        { id: $scope.message.id,  referenceType : 'CANCELLATION' },
+                                        { reload: true }
+                                    );
                                 } else {
                                     $scope.reloadMessage("Message cancelled");
                                 }
@@ -853,7 +889,7 @@ angular.module('niord.editor')
 
             /** Loads the message history **/
             $scope.loadHistory = function () {
-                if ($scope.message.id) {
+                if ($scope.message && $scope.message.id) {
                     MessageService.messageHistory($scope.message.id)
                         .success(function (history) {
                             $scope.messageHistory.length = 0;

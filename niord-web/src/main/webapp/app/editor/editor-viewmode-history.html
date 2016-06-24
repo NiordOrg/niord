@@ -9,11 +9,11 @@
         </a>
     </h3>
 
-    <div class="empty-search-result" ng-if="!message.id">
+    <div class="empty-search-result" ng-if="!message.created">
         <p>No persisted message selected</p>
     </div>
 
-    <div ng-if="message.id">
+    <div ng-if="message.created">
         <div style="margin: 20px 0 30px 0;">
             <ul>
                 <li>

@@ -65,6 +65,15 @@ angular.module('niord.messages')
             },
 
 
+            /** Returns a draft copy of the given message with the given reference type added to the original */
+            copyMessageTemplate: function (id, referenceType) {
+
+                var refParam = (referenceType) ? '&referenceType=' + referenceType : '';
+                return $http.get('/rest/messages/copy-message-template/' + id
+                            + '?lang=' + $rootScope.language + refParam);
+            },
+
+
             /** Creates a new or updates an existing message */
             saveMessage: function(msg) {
                 if (msg.created) {
