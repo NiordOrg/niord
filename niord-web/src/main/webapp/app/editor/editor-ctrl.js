@@ -680,10 +680,61 @@ angular.module('niord.editor')
             };
 
 
+            /** Return if the field (e.g. "title") is defined in any of the message descriptors */
+            function descFieldDefined(field) {
+                for (var x = 0; x < $scope.message.descs.length; x++) {
+                    var desc = $scope.message.descs[x];
+                    if (desc[field] && desc[field].length > 0) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+
+            /**
+             * Returns if the message is in a state where it could be published.
+             * The "status" field is not validated, since this is left to the callee to verify this.
+             */
+            function canPublish() {
+                var msg = $scope.message;
+                var error = '';
+                if (!msg.type) {
+                    error += '<li>Type</li>';
+                }
+                if (!msg.messageSeries) {
+                    error += '<li>Message Series</li>';
+                }
+                if (!msg.areas || msg.areas.length == 0) {
+                    error += '<li>Areas</li>';
+                }
+                // TODO: ENABLE
+                //if (!msg.dateIntervals || msg.dateIntervals.length == 0) {
+                //    error += '<li>Date intervals</li>';
+                //}
+                if (!descFieldDefined('subject')) {
+                    error += '<li>Subject</li>';
+                }
+                if (!descFieldDefined('title')) {
+                    error += '<li>Title</li>';
+                }
+                if (error.length > 0) {
+                    growl.error("Missing fields:\n<ul>" + error + "</ul>", {ttl: 5000});
+                    return false;
+                }
+                return true;
+            }
+
+
             /** Verify the draft message **/
             $scope.verify = function () {
                 if ($scope.message.status != 'DRAFT') {
                     growl.error("Only draft messages can be verified", {ttl: 5000});
+                    return;
+                }
+
+                // Validate that relevant message fields are defined
+                if (!canPublish()) {
                     return;
                 }
 
@@ -708,7 +759,10 @@ angular.module('niord.editor')
                     return;
                 }
 
-                // TODO: MANY more checks
+                // Validate that relevant message fields are defined
+                if (!canPublish()) {
+                    return;
+                }
 
                 DialogService.showConfirmDialog(
                     "Publish Message?", "Publish Message?")
