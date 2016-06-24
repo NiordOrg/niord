@@ -453,6 +453,7 @@ public class MessageService extends BaseService {
      * @param status    the status
      */
     public Message updateStatus(String uid, Status status) throws Exception {
+        Date now = new Date();
         Message message = findByUid(uid);
         Status currentStatus = message.getStatus();
 
@@ -463,7 +464,10 @@ public class MessageService extends BaseService {
 
         // When published, update the message series
         if ((currentStatus == Status.DRAFT || currentStatus == Status.VERIFIED) && status == Status.PUBLISHED) {
+            message.setPublishDate(now);
             messageSeriesService.updateMessageSeriesIdentifiers(message, true);
+        } else if (status == Status.CANCELLED) {
+            message.setCancellationDate(now);
         }
 
         message.setStatus(status);
