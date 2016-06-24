@@ -17,7 +17,17 @@
     </div>
 
 
-    <form ng-if="message && message.mainType" method="post" name="editForm" id="editForm">
+    <div ng-if="message && message.mainType && !editable()" class="col-sm-12 col-md-8 col-lg-9">
+        <div class="empty-search-result">
+            <p>Message not editable</p>
+        </div>
+        <table ng-if="message.id" class='table table-condensed'>
+            <tr render-message-details msg="message" format="details" show-details-menu="false"></tr>
+        </table>
+    </div>
+
+
+    <form ng-if="message && message.mainType && editable()" method="post" name="editForm" id="editForm">
         <div class="editor-fields" style="margin-bottom: 40px;">
 
             <!-- ********************* -->

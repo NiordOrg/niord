@@ -186,6 +186,15 @@ angular.module('niord.editor')
             };
 
 
+            /** Returns if the message is editable **/
+            $scope.editable = function () {
+                var msg = $scope.message;
+                return msg && msg.status &&
+                    (msg.status == 'DRAFT' || msg.status == 'VERIFIED' || msg.status == 'IMPORTED'
+                     || $rootScope.hasRole('sysadmin'));
+            };
+
+
             /** Returns if the current user in the current domain can create messages of the given mainType **/
             $scope.canCreateMessage = function (mainType) {
                 return $rootScope.supportsMainType(mainType) && $rootScope.hasRole('editor');

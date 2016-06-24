@@ -51,8 +51,10 @@ import org.niord.model.vo.Type;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
 import org.slf4j.Logger;
 
+import javax.annotation.Resource;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
+import javax.ejb.SessionContext;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -82,6 +84,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.niord.model.vo.MessageTagVo.MessageTagType.PUBLIC;
+import static org.niord.model.vo.Status.DRAFT;
+import static org.niord.model.vo.Status.IMPORTED;
+import static org.niord.model.vo.Status.VERIFIED;
 
 /**
  * REST interface for managing messages.
@@ -92,6 +97,9 @@ import static org.niord.model.vo.MessageTagVo.MessageTagType.PUBLIC;
 @PermitAll
 @SuppressWarnings("unused")
 public class MessageRestService {
+
+    @Resource
+    SessionContext ctx;
 
     @Inject
     Logger log;
@@ -129,9 +137,10 @@ public class MessageRestService {
      * Checks that the user has editing access to the given message by matching the current domain
      * with the message series of the message.<br>
      * Throws a 403 response code error if no access.
+     * @param update in addition to accessing the message in the Editor, require that the user has access to update the message
      * @param message the message
      */
-    private void checkMessageEditingAccess(Message message) {
+    private void checkMessageEditingAccess(Message message, boolean update) {
         Domain domain = domainService.currentDomain();
         if (domain == null ||
                 message == null ||
@@ -139,6 +148,16 @@ public class MessageRestService {
                 domain.getMessageSeries().stream()
                         .noneMatch(ms -> ms.getSeriesId().equals(message.getMessageSeries().getSeriesId()))) {
             throw new WebApplicationException(403);
+        }
+
+        if (update) {
+            // We know that the use is already an "editor".
+            boolean draft = message.getStatus() == DRAFT
+                    || message.getStatus() == VERIFIED
+                    || message.getStatus() == IMPORTED;
+            if (!draft && !ctx.isCallerInRole("sysadmin")) {
+                throw new WebApplicationException(403);
+            }
         }
     }
 
@@ -245,7 +264,7 @@ public class MessageRestService {
         }
 
         // Validate access to the message
-        checkMessageEditingAccess(message);
+        checkMessageEditingAccess(message, false);
 
         DataFilter filter = DataFilter.get()
                 .fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
@@ -349,7 +368,7 @@ public class MessageRestService {
         // Reset various fields
         message.setShortId(null);
         message.setMrn(null);
-        message.setStatus(Status.DRAFT);
+        message.setStatus(DRAFT);
         message.setCreated(null);
         message.setUpdated(null);
         message.setVersion(null);
@@ -387,7 +406,7 @@ public class MessageRestService {
         Message msg = new Message(message);
 
         // Validate access to the message
-        checkMessageEditingAccess(msg);
+        checkMessageEditingAccess(msg, true);
 
         msg = messageService.createMessage(msg);
 
@@ -424,8 +443,8 @@ public class MessageRestService {
         Message msg = new Message(message);
 
         // Validate access to the message
-        checkMessageEditingAccess(msg);
-        checkMessageEditingAccess(messageService.findByUid(messageId));
+        checkMessageEditingAccess(msg, true);
+        checkMessageEditingAccess(messageService.findByUid(messageId), true);
 
         msg = messageService.updateMessage(msg);
 
@@ -453,7 +472,7 @@ public class MessageRestService {
         log.info("Updating status of message " + messageId + " to " + status);
 
         // Validate access to the message
-        checkMessageEditingAccess(messageService.findByUid(messageId));
+        checkMessageEditingAccess(messageService.findByUid(messageId), false);
 
         Message msg = messageService.updateStatus(messageId, Status.valueOf(status));
         return getMessage(msg.getUid(), null, null);
