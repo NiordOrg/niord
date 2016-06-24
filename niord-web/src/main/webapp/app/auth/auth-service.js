@@ -61,6 +61,16 @@ angular.module('niord.auth')
     .run(['$rootScope', '$location', 'AuthService',
         function ($rootScope, $location, AuthService) {
 
+            // Record URL changes
+            $rootScope.$watch(
+                function () { return $location.absUrl(); },
+                function (newValue, oldValue) {
+                    $rootScope.lastUrl = oldValue;
+                    $rootScope.currentUrl = newValue;
+                },
+                true);
+
+
             // Navigate to the given path
             $rootScope.go = function (path) {
                 $location.path(path);

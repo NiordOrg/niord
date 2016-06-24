@@ -1,6 +1,13 @@
 
 <div class="editor-contents container" ng-controller="EditorHistoryCtrl">
-    <h3 class="page-header">Message History</h3>
+    <h3 class="page-header">
+        Message History
+
+        <a ng-href="{{backToListUrl}}" ng-if="backToListUrl"
+           class="btn btn-default btn-xs pull-right">
+            <span class="glyphicon glyphicon-arrow-left"></span> Back to list
+        </a>
+    </h3>
 
     <div class="empty-search-result" ng-if="!message.id">
         <p>No persisted message selected</p>

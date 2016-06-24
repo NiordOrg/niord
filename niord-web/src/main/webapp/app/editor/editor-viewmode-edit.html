@@ -1,6 +1,13 @@
 
 <div class="editor-contents container">
-    <h3 class="page-header">Message Editor</h3>
+    <h3 class="page-header">
+        Message Editor
+
+        <a ng-href="{{backToListUrl}}" ng-if="backToListUrl"
+           class="btn btn-default btn-xs pull-right">
+            <span class="glyphicon glyphicon-arrow-left"></span> Back to list
+        </a>
+    </h3>
 
     <div ng-if="!message || !message.mainType" style="margin-top: 10px">
         <button class="btn btn-sm btn-primary" ng-if="canCreateMessage('NW')" ng-click="createMessage('NW')"
