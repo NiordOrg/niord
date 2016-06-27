@@ -198,6 +198,7 @@ angular.module('niord.common')
             scope: {
                 id: '@',
                 format: '=',
+                readonly: '=',
                 placeholder: '@'
             },
             template : '<div class="input-group date" data-date-format="l">'
@@ -211,6 +212,8 @@ angular.module('niord.common')
 
                 var locale = $rootScope.language;
 
+                var input = element.find("input");
+
                 scope.format = scope.format || "DD/MM/YYYY HH:mm";
                 scope.$watch("format", function () {
                     element.attr('data-date-format', scope.format);
@@ -219,7 +222,9 @@ angular.module('niord.common')
                     }
                 }, true);
 
-                var input = element.find("input");
+                if (scope.readonly) {
+                    input.attr('readonly', "readonly");
+                }
 
                 if (scope.id) {
                     $(element).attr('id', scope.id);

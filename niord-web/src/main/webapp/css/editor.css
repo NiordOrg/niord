@@ -178,8 +178,14 @@ i.mce-i-map-marker:before {
 
 .editor-date-interval-table {
     margin-bottom: 0;
+    border: 1px solid lightgray;
 }
 
+.editor-date-label {
+    font-weight: bold;
+    margin: 5px 5px;
+    color: darkgray;
+}
 
 /** Editor -> History **/
 

@@ -216,6 +216,17 @@
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">
+                    <div class="row">
+                        <div class="col-sm-4 col-md-4 col-lg-2 editor-date-label">Publish Date</div>
+                        <div class="col-sm-8 col-md-4">
+                            <date-time-picker ng-model="message.publishDate" placeholder="Publish date" format="'lll'"
+                                readonly="message.status != 'DRAFT' && message.status != 'VERIFIED'"></date-time-picker>
+                        </div>
+                    </div>
+
+                    <div class="row" style="margin-top: 25px;">
+                        <div class="col-sm-12 editor-date-label">Hazard Date Intervals</div>
+                    </div>
                     <table class="table table-condensed editor-date-interval-table">
                         <tr>
                             <th>All-day</th>
@@ -230,7 +241,7 @@
                             </th>
                         </tr>
                         <tr ng-repeat="di in message.dateIntervals">
-                            <td width="50" style="padding-top: 10px">
+                            <td width="60" style="padding-top: 10px" align="center">
                                 <input type="checkbox" ng-model="di.allDay">
                             </td>
                             <td width="200">
@@ -250,14 +261,33 @@
                         </tr>
                     </table>
 
-                    <div class="row" style="margin-top: 15px;">
+                    <div class="row" style="margin-top: 25px;">
+                        <div class="col-sm-12 editor-date-label">Alternative Textual Description</div>
+                    </div>
+                    <div class="row">
                         <div class="col-sm-6 col-md-4" ng-repeat="desc in message.descs">
                             <textarea class="form-control input-sm editor-time" placeholder="Time Description" rows="3"
                                       ng-model="desc.time" bg-flag="desc.lang" ></textarea>
                         </div>
                         <div class="col-sm-2 col-md-1">
-                            <button href class="btn btn-default btn-xs" ng-disabled="message.dateIntervals.length == 0"
-                                    ng-click="generateTimeDesc()">Generate</button>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown"
+                                        ng-click="timeMenuClicked()">
+                                    Generate
+                                    <span class="caret"></span>
+                                </button>
+                                <ul class="dropdown-menu" style="right:0; left: auto" role="menu">
+                                    <li ng-if="message.dateIntervals.length > 0">
+                                        <a href ng-click="generateTimeDesc()">
+                                            <span class="glyphicon glyphicon-cog"></span>&nbsp;
+                                            Generate from dates
+                                        </a>
+                                    </li>
+                                    <li ng-if="message.dateIntervals.length > 0" role="separator" class="divider"></li>
+                                    <li><a href ng-click="insertTimeText('xxx')">xxx</a></li>
+                                    <li><a href ng-click="insertTimeText('yyy')">yyy</a></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </editor-field-value-editor>
