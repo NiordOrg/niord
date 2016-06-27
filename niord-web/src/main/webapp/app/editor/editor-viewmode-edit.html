@@ -228,7 +228,12 @@
             <editor-field edit-mode="editMode" field-id="areas" field-title="msg.field.areas" field-valid="fieldValid(fieldId)">
 
                 <editor-field-value-viewer>
-                    <span ng-repeat="area in message.areas"><span ng-if="$index > 0">,</span> {{area.descs[0].name}}</span>
+                    <span ng-repeat="area in message.areas"><span ng-if="$index > 0">,</span>
+                        {{area.descs[0].name}}</span>
+                    <span ng-if="message.descs.length > 0 && message.descs[0].vicinity">
+                        <span ng-if="message.areas.length > 0">, </span>
+                        {{message.descs[0].vicinity}}
+                    </span>
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12 col-md-8">
