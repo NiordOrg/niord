@@ -240,7 +240,12 @@
                                 <date-time-picker ng-model="di.toDate" placeholder="To date" format="di.allDay ? 'll' : 'lll'"></date-time-picker>
                             </td>
                             <td width="*" style="padding-top: 12px">
-                                <a href ng-click="deleteDateInterval(di);" title="Delete Interval"><i class="glyphicon glyphicon-trash"></i></a>
+                                <a href ng-click="deleteDateInterval(di);" title="Delete Interval"><span class="glyphicon glyphicon-trash"></span></a>
+                                &nbsp;
+                                <a href ng-click="copyDateInterval(di, 0);" title="Duplicate Interval"><span class="glyphicon glyphicon-duplicate"></span></a>
+                                &nbsp;
+                                <a href ng-click="copyDateInterval(di, 1);" title="Duplicate Interval + 1 day">
+                                    <span class="glyphicon glyphicon-duplicate">+</span></a>
                             </td>
                         </tr>
                     </table>
@@ -553,7 +558,5 @@
 
 
     </form>
-
-    <p style="font-size: 10px; margin-top: 50px">Debug: {{message | json}}</p>
 
 </div>

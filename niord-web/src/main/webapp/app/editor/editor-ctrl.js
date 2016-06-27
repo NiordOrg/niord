@@ -310,6 +310,21 @@ angular.module('niord.editor')
             };
 
 
+            /** Adds a copy of the given date interval to the list with the given date offset */
+            $scope.copyDateInterval = function (dateInterval, offset) {
+                var di = angular.copy(dateInterval);
+                if (offset && offset > 0) {
+                    if (di.fromDate) {
+                        di.fromDate = moment(di.fromDate).add(1, "days").valueOf();
+                    }
+                    if (di.toDate) {
+                        di.toDate = moment(di.toDate).add(1, "days").valueOf();
+                    }
+                }
+                $scope.message.dateIntervals.push(di);
+            };
+
+
             // Use for charts selection
             $scope.charts = [];
             $scope.refreshCharts = function(name) {
