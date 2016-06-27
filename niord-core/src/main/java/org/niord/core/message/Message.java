@@ -49,6 +49,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -274,7 +275,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             this.autoTitle = editableMessage.isAutoTitle() != null && editableMessage.isAutoTitle();
         }
 
-        updateStartEndDates();
+        updateDateIntervals();
     }
 
 
@@ -360,15 +361,24 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         }
 
         // Updates the start and end dates from the date intervals
-        updateStartEndDates();
+        updateDateIntervals();
 
         // Update the message title
         updateMessageTitle();
     }
 
 
-    /** Updates the start and end dates from the date intervals **/
-    public void updateStartEndDates() {
+    /** Updates the date intervals **/
+    public void updateDateIntervals() {
+        // First, remove all date intervals without a fromDate
+        dateIntervals.removeIf(di -> di.fromDate == null);
+
+        // If the validity of the date intervals, and that the all-day flag is adhered to
+        dateIntervals.forEach(DateInterval::checkDateInterval);
+
+        // Sort the date interval
+        Collections.sort(dateIntervals);
+
         // Update start and endDate from the data intervals
         startDate = endDate = null;
         dateIntervals.forEach(di -> {

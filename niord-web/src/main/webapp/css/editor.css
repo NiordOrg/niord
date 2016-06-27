@@ -173,6 +173,14 @@ i.mce-i-map-marker:before {
 }
 
 
+/** Editor -> Time **/
+
+
+.editor-date-interval-table {
+    margin-bottom: 0;
+}
+
+
 /** Editor -> History **/
 
 .message-history-table {

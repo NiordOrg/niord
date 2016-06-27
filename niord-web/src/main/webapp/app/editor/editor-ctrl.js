@@ -23,7 +23,7 @@ angular.module('niord.editor')
                 id: false,
                 title: false,
                 references: false,
-                time: false,
+                time: true,
                 areas: false,
                 categories: false,
                 positions: false,
@@ -72,6 +72,11 @@ angular.module('niord.editor')
                 }
 
                 $scope.newRef = { messageId: undefined, type: 'REFERENCE', description: '' };
+
+                // Ensure that the list of date intervals is defined
+                if (!msg.dateIntervals) {
+                    msg.dateIntervals = [];
+                }
 
                 // Ensure that localized desc fields are defined for all languages
                 LangService.checkDescs(msg, initMessageDescField, undefined, $rootScope.modelLanguages);
@@ -277,7 +282,7 @@ angular.module('niord.editor')
             };
 
 
-            // Adds the new reference to the list of message references
+            /** Adds the new reference to the list of message references **/
             $scope.addReference = function () {
                 if ($scope.newRef && $scope.newRef.messageId) {
                     if (!$scope.message.references) {
@@ -287,6 +292,21 @@ angular.module('niord.editor')
                     $scope.newRef = { messageId: undefined, type: 'REFERENCE', description: '' };
                     $scope.setDirty();
                 }
+            };
+
+
+            /** Deletes the given date interval from the list of message date intervals **/
+            $scope.deleteDateInterval = function (dateInterval) {
+                if ($.inArray(dateInterval, $scope.message.dateIntervals) > -1) {
+                    $scope.message.dateIntervals.splice( $.inArray(dateInterval, $scope.message.dateIntervals), 1 );
+                    $scope.setDirty();
+                }
+            };
+
+
+            /** Adds a new date interval to the list of message date intervals */
+            $scope.addDateInterval = function () {
+                $scope.message.dateIntervals.push({ allDay: false, fromDate: undefined, toDate: undefined });
             };
 
 

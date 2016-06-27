@@ -26,16 +26,25 @@ import java.util.Date;
  */
 @ApiModel(value = "DateInterval", description = "Date interval")
 @XmlType(propOrder = {
-        "fromDate", "toDate"
+        "allDay", "fromDate", "toDate"
 })
 public class DateIntervalVo implements IJsonSerializable {
 
+    Boolean allDay;
     Date fromDate;
     Date toDate;
 
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public Boolean getAllDay() {
+        return allDay;
+    }
+
+    public void setAllDay(Boolean allDay) {
+        this.allDay = allDay;
+    }
 
     public Date getFromDate() {
         return fromDate;

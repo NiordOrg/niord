@@ -216,7 +216,45 @@
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">
-                    TBD
+                    <table class="table table-condensed editor-date-interval-table">
+                        <tr>
+                            <th>All-day</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>
+                                <div class="pull-right">
+                                    <button ng-click="addDateInterval()" class="btn btn-default btn-xs">
+                                        <span class="glyphicon glyphicon-plus"></span> Add
+                                    </button>
+                                </div>
+                            </th>
+                        </tr>
+                        <tr ng-repeat="di in message.dateIntervals">
+                            <td width="50" style="padding-top: 10px">
+                                <input type="checkbox" ng-model="di.allDay">
+                            </td>
+                            <td width="200">
+                                <date-time-picker ng-model="di.fromDate" placeholder="From date" format="di.allDay ? 'll' : 'lll'"></date-time-picker>
+                            </td>
+                            <td width="200">
+                                <date-time-picker ng-model="di.toDate" placeholder="To date" format="di.allDay ? 'll' : 'lll'"></date-time-picker>
+                            </td>
+                            <td width="*" style="padding-top: 12px">
+                                <a href ng-click="deleteDateInterval(di);" title="Delete Interval"><i class="glyphicon glyphicon-trash"></i></a>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div class="row" style="margin-top: 15px;">
+                        <div class="col-sm-6 col-md-4" ng-repeat="desc in message.descs">
+                            <textarea class="form-control input-sm editor-time" placeholder="Time Description" rows="3"
+                                      ng-model="desc.time" bg-flag="desc.lang" ></textarea>
+                        </div>
+                        <div class="col-sm-2 col-md-1">
+                            <button href class="btn btn-default btn-xs" ng-disabled="message.dateIntervals.length == 0"
+                                    ng-click="generateTimeDesc()">Generate</button>
+                        </div>
+                    </div>
                 </editor-field-value-editor>
 
             </editor-field>
@@ -515,5 +553,7 @@
 
 
     </form>
+
+    <p style="font-size: 10px; margin-top: 50px">Debug: {{message | json}}</p>
 
 </div>

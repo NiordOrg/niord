@@ -67,6 +67,23 @@ public class TimeUtils {
     }
 
     /**
+     * Resets the time part of the date to 23:59:59
+     * @param date the date to set as the end of the day
+     * @return the end of the day
+     */
+    public static Date endOfDay(Date date) {
+        if (date != null) {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(date);
+            cal = resetTime(cal);
+            cal.add(Calendar.DATE, 1);
+            cal.add(Calendar.SECOND, -1);
+            date = cal.getTime();
+        }
+        return date;
+    }
+
+    /**
      * Returns a Date for the given year, month and day.
      * Parameters left as null are ignored, so e.g. getDate(null, 0, 1) will return January 1st of the current year.
      *

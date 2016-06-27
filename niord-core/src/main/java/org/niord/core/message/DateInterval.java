@@ -17,10 +17,12 @@ package org.niord.core.message;
 
 import org.niord.core.model.BaseEntity;
 import org.niord.core.model.IndexedEntity;
+import org.niord.core.util.TimeUtils;
 import org.niord.model.vo.DateIntervalVo;
 
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
+import javax.persistence.PrePersist;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
@@ -30,13 +32,16 @@ import java.util.Date;
  * Represents a single date interval for a message
  */
 @Entity
-public class DateInterval extends BaseEntity<Integer> implements IndexedEntity {
+@SuppressWarnings("unused")
+public class DateInterval extends BaseEntity<Integer> implements IndexedEntity, Comparable<DateInterval> {
 
     @NotNull
     @ManyToOne
     Message message;
 
     int indexNo;
+
+    Boolean allDay;
 
     @NotNull
     @Temporal(TemporalType.TIMESTAMP)
@@ -52,6 +57,7 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity {
 
     /** Constructor */
     public DateInterval(DateIntervalVo dateInterval) {
+        this.allDay = dateInterval.getAllDay();
         this.fromDate = dateInterval.getFromDate();
         this.toDate = dateInterval.getToDate();
     }
@@ -60,9 +66,52 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity {
     /** Converts this entity to a value object */
     public DateIntervalVo toVo() {
         DateIntervalVo dateInterval = new DateIntervalVo();
+        dateInterval.setAllDay(allDay);
         dateInterval.setFromDate(fromDate);
         dateInterval.setToDate(toDate);
         return dateInterval;
+    }
+
+
+    /** Check that the date interval is valid and that the all-day flag is adhered to */
+    @PrePersist
+    public void checkDateInterval() {
+        // To-date must not be before from-date
+        if (fromDate != null && toDate != null && toDate.before(fromDate)) {
+            toDate = fromDate;
+        }
+
+        // If the all-day flag is set, ensure that the time is set to "00:00:00" and "23:59:59"
+        // for from- and to-date respectively.
+        if (allDay != null && allDay) {
+            if (fromDate != null) {
+                fromDate = TimeUtils.resetTime(fromDate);
+                if (toDate == null) {
+                    toDate = fromDate;
+                }
+                toDate = TimeUtils.endOfDay(toDate);
+            }
+        }
+    }
+
+
+    /** {@inheritDoc} **/
+    @Override
+    @SuppressWarnings("all")
+    public int compareTo(DateInterval di) {
+        if (fromDate == null && di.fromDate == null) {
+            return 0;
+        } else if (fromDate == null) {
+            return -1;
+        } else if (di.fromDate == null) {
+            return 1;
+        } else {
+            int result = fromDate.compareTo(di.fromDate);
+            if (result == 0 && toDate != null && di.toDate != null) {
+                result = toDate.compareTo(di.toDate);
+            }
+            return result;
+        }
     }
 
 
@@ -86,6 +135,14 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity {
     @Override
     public void setIndexNo(int indexNo) {
         this.indexNo = indexNo;
+    }
+
+    public Boolean getAllDay() {
+        return allDay;
+    }
+
+    public void setAllDay(Boolean allDay) {
+        this.allDay = allDay;
     }
 
     public Date getFromDate() {

@@ -197,10 +197,10 @@ angular.module('niord.common')
             replace : true,
             scope: {
                 id: '@',
-                format: '@',
+                format: '=',
                 placeholder: '@'
             },
-            template : '<div class="input-group date">'
+            template : '<div class="input-group date" data-date-format="l">'
                      + '  <input type="text" class="input-sm form-control" />'
                      + '  <span class="input-group-addon">'
                      + '    <span class="glyphicon glyphicon-calendar"></span>'
@@ -211,13 +211,15 @@ angular.module('niord.common')
 
                 var locale = $rootScope.language;
 
-                var format = "DD/MM/YYYY HH:mm";
-                if (scope.format) {
-                    format = scope.format;
-                }
+                scope.format = scope.format || "DD/MM/YYYY HH:mm";
+                scope.$watch("format", function () {
+                    element.attr('data-date-format', scope.format);
+                    if (picker) {
+                        picker.format(scope.format);
+                    }
+                }, true);
 
                 var input = element.find("input");
-                input.attr('data-date-format', format);
 
                 if (scope.id) {
                     $(element).attr('id', scope.id);
@@ -228,14 +230,14 @@ angular.module('niord.common')
                 }
 
                 var picker = $(element).datetimepicker({
-                        locale : locale,
-                        allowInputToggle : true,
-                        useCurrent : true,
-                        showTodayButton : true,
-                        showClear : true
-                    }).data('DateTimePicker');
+                    locale: locale,
+                    useCurrent: true,
+                    showTodayButton: true,
+                    showClear: true
+                }).data('DateTimePicker');
 
-                ctrl.$formatters.push(function(modelValue) {
+
+                ctrl.$formatters.push(function (modelValue) {
                     var date;
                     if (!modelValue) {
                         date = null;
@@ -247,14 +249,16 @@ angular.module('niord.common')
                     return date
                 });
 
-                ctrl.$parsers.push(function(valueFromInput) {
+
+                ctrl.$parsers.push(function (viewValue) {
                     if (!picker.date()) {
                         return null;
                     }
                     return picker.date().valueOf();
                 });
 
-                element.bind('blur change dp.change dp.hide', function() {
+
+                element.bind('dp.change dp.hide', function(ev) {
                     var millis = null;
                     var date = picker.date();
                     if (date) {
