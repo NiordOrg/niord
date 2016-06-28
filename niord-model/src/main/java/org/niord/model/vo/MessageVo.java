@@ -35,7 +35,7 @@ import java.util.List;
 @XmlType(propOrder = {
         "repoPath", "messageSeries", "number", "mrn", "shortId", "mainType", "type", "status",
         "areas", "categories", "charts", "horizontalDatum", "geometry",
-        "startDate", "endDate", "publishDate", "cancellationDate", "dateIntervals",
+        "publishDate", "cancellationDate", "dateIntervals",
         "references", "atonUids", "originalInformation", "descs", "attachments"
 })
 @SuppressWarnings("unused")
@@ -58,8 +58,6 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     List<ChartVo> charts;
     String horizontalDatum;
     FeatureCollectionVo geometry;
-    Date startDate;
-    Date endDate;
     Date publishDate;
     Date cancellationDate;
     List<DateIntervalVo> dateIntervals;
@@ -274,22 +272,6 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
 
     public void setGeometry(FeatureCollectionVo geometry) {
         this.geometry = geometry;
-    }
-
-    public Date getStartDate() {
-        return startDate;
-    }
-
-    public void setStartDate(Date startDate) {
-        this.startDate = startDate;
-    }
-
-    public Date getEndDate() {
-        return endDate;
-    }
-
-    public void setEndDate(Date endDate) {
-        this.endDate = endDate;
     }
 
     public Date getPublishDate() {

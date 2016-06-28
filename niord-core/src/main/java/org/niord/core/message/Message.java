@@ -310,8 +310,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             dateIntervals.forEach(d -> message.checkCreateDateIntervals().add(d.toVo()));
             message.setPublishDate(publishDate);
             message.setCancellationDate(cancellationDate);
-            message.setStartDate(startDate);
-            message.setEndDate(endDate);
             references.forEach(r -> message.checkCreateReferences().add(r.toVo()));
             message.checkCreateAtonUids().addAll(atonUids);
             message.setOriginalInformation(originalInformation);
