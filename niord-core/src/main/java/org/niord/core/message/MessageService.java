@@ -42,6 +42,8 @@ import org.niord.model.vo.Status;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.inject.Inject;
 import javax.persistence.Tuple;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -299,19 +301,6 @@ public class MessageService extends BaseService {
     }
 
 
-    /** Check for the fields that must be defined before persisting a message */
-    private void validateRequiredFields(Message message) throws Exception {
-        if (message.getMessageSeries() == null) {
-            throw new Exception("Message series not specified");
-        }
-        if (message.getType() != null) {
-            message.setMainType(message.getType().getMainType());
-        }
-        if (message.getMainType() != null && message.getMainType() != message.getMessageSeries().getMainType()) {
-            throw new Exception("Invalid main-type for message " + message.getMainType());
-        }
-    }
-
     /**
      * Creates a new message as a draft message
      *
@@ -326,15 +315,24 @@ public class MessageService extends BaseService {
         }
 
         // Validate various required fields
-        validateRequiredFields(message);
+        if (message.getMessageSeries() == null) {
+            throw new Exception("Message series not specified");
+        }
+
+        // Substitute the message series with the persisted on
+        message.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
+
+        if (message.getType() != null) {
+            message.setMainType(message.getType().getMainType());
+        }
+        if (message.getMainType() != null && message.getMainType() != message.getMessageSeries().getMainType()) {
+            throw new Exception("Invalid main-type for message " + message.getMainType());
+        }
 
         // Set default status
         if (message.getStatus() == null) {
             message.setStatus(Status.DRAFT);
         }
-
-        // Substitute the message series with the persisted on
-        message.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
 
         // Substitute the Area with a persisted one
         message.setAreas(persistedList(Area.class, message.getAreas()));
@@ -372,13 +370,19 @@ public class MessageService extends BaseService {
             throw new Exception("Message not an existing message");
         }
 
+        // Validate various required fields
+        if (message.getMessageSeries() == null) {
+            throw new Exception("Message series not specified");
+        }
+
         // Check that there is no attempt to update the status
         if (message.getStatus() != original.getStatus()) {
             throw new Exception("updateMessage() cannot change status");
         }
 
-        // Validate various required fields
-        validateRequiredFields(message);
+        if (message.getType() != null) {
+            message.setMainType(message.getType().getMainType());
+        }
 
         original.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
         original.setNumber(message.getNumber());
@@ -386,6 +390,10 @@ public class MessageService extends BaseService {
         original.setShortId(message.getShortId());
         original.setType(message.getType());
         original.setMainType(message.getMainType());
+
+        if (original.getMainType() != null && original.getMainType() != original.getMessageSeries().getMainType()) {
+            throw new Exception("Invalid main-type for message " + original.getMainType());
+        }
 
         // If a verified message is updated, it will become draft again
         if (original.getStatus() == Status.VERIFIED) {
@@ -457,6 +465,7 @@ public class MessageService extends BaseService {
      * @param uid the UID of the message
      * @param status    the status
      */
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public Message updateStatus(String uid, Status status) throws Exception {
         Date now = new Date();
         Message message = findByUid(uid);

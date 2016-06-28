@@ -87,7 +87,9 @@ import java.util.UUID;
                         + "order by locate(lower(:sort), lower(m.shortId)) asc "),
         @NamedQuery(name  = "Message.searchMrn",
                 query="select distinct m from Message m where lower(m.mrn) like lower(:term) "
-                        + "order by locate(lower(:sort), lower(m.mrn)) asc ")
+                        + "order by locate(lower(:sort), lower(m.mrn)) asc "),
+        @NamedQuery(name="Message.findPublishableMessages",
+                query="SELECT msg FROM Message msg where msg.status = 'VERIFIED' and msg.publishDate < :now"),
 })
 @SuppressWarnings("unused")
 public class Message extends VersionedEntity<Integer> implements ILocalizable<MessageDesc> {
