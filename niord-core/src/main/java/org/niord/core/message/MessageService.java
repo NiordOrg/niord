@@ -415,7 +415,7 @@ public class MessageService extends BaseService {
         original.setGeometry(featureService.updateFeatureCollection(message.getGeometry()));
 
         original.setPublishDate(message.getPublishDate());
-        original.setCancellationDate(message.getCancellationDate());
+        original.setUnpublishDate(message.getUnpublishDate());
 
         original.getDateIntervals().clear();
         message.getDateIntervals().stream()
@@ -482,8 +482,8 @@ public class MessageService extends BaseService {
         if ((currentStatus == Status.DRAFT || currentStatus == Status.VERIFIED) && status == Status.PUBLISHED) {
             message.setPublishDate(now);
             messageSeriesService.updateMessageSeriesIdentifiers(message, true);
-        } else if (status == Status.CANCELLED) {
-            message.setCancellationDate(now);
+        } else if (status == Status.CANCELLED || status == Status.EXPIRED) {
+            message.setUnpublishDate(now);
         }
 
         message.setStatus(status);
@@ -692,7 +692,7 @@ public class MessageService extends BaseService {
             Date to = TimeUtils.endOfDay(param.getTo());
             switch (dateType) {
                 case PUBLISH_DATE:
-                    criteriaHelper.between(msgRoot.get("publishDate"), from, to);
+                    criteriaHelper.overlaps(msgRoot.get("publishDate"), msgRoot.get("unpublishDate"), from, to);
                     break;
                 case CREATED_DATE:
                     criteriaHelper.between(msgRoot.get("created"), from, to);

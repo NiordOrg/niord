@@ -375,7 +375,6 @@ public class MessageRestService {
         message.setVersion(null);
         message.setNumber(null);
         message.setPublishDate(null);
-        message.setCancellationDate(null);
         if (message.getAttachments() != null) {
             message.getAttachments().forEach(att -> att.setId(null));
         }

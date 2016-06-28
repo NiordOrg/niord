@@ -34,8 +34,7 @@ import java.util.List;
 @XmlRootElement(name = "message")
 @XmlType(propOrder = {
         "repoPath", "messageSeries", "number", "mrn", "shortId", "mainType", "type", "status",
-        "areas", "categories", "charts", "horizontalDatum", "geometry",
-        "publishDate", "cancellationDate", "dateIntervals",
+        "areas", "categories", "charts", "horizontalDatum", "geometry", "publishDate", "dateIntervals",
         "references", "atonUids", "originalInformation", "descs", "attachments"
 })
 @SuppressWarnings("unused")
@@ -59,7 +58,6 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     String horizontalDatum;
     FeatureCollectionVo geometry;
     Date publishDate;
-    Date cancellationDate;
     List<DateIntervalVo> dateIntervals;
     List<ReferenceVo> references;
     List<String> atonUids;
@@ -280,14 +278,6 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
 
     public void setPublishDate(Date publishDate) {
         this.publishDate = publishDate;
-    }
-
-    public Date getCancellationDate() {
-        return cancellationDate;
-    }
-
-    public void setCancellationDate(Date cancellationDate) {
-        this.cancellationDate = cancellationDate;
     }
 
     public List<DateIntervalVo> getDateIntervals() {

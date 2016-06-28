@@ -166,7 +166,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     Date publishDate;
 
     @Temporal(TemporalType.TIMESTAMP)
-    Date cancellationDate;
+    Date unpublishDate;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "message", orphanRemoval = true)
     @OrderColumn(name = "indexNo")
@@ -309,7 +309,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             message.setHorizontalDatum(horizontalDatum);
             dateIntervals.forEach(d -> message.checkCreateDateIntervals().add(d.toVo()));
             message.setPublishDate(publishDate);
-            message.setCancellationDate(cancellationDate);
             references.forEach(r -> message.checkCreateReferences().add(r.toVo()));
             message.checkCreateAtonUids().addAll(atonUids);
             message.setOriginalInformation(originalInformation);
@@ -668,12 +667,12 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         this.publishDate = publishDate;
     }
 
-    public Date getCancellationDate() {
-        return cancellationDate;
+    public Date getUnpublishDate() {
+        return unpublishDate;
     }
 
-    public void setCancellationDate(Date cancellationDate) {
-        this.cancellationDate = cancellationDate;
+    public void setUnpublishDate(Date unpublishDate) {
+        this.unpublishDate = unpublishDate;
     }
 
     public List<DateInterval> getDateIntervals() {
