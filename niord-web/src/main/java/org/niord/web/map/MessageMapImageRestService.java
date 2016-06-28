@@ -31,6 +31,7 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -96,7 +97,10 @@ public class MessageMapImageRestService {
         try {
             Message message = messageService.findByUid(uid);
             if (message == null) {
-                throw new WebApplicationException(404);
+                return Response
+                        .status(HttpServletResponse.SC_NOT_FOUND)
+                        .entity("Message map image not found for message: " + uid)
+                        .build();
             }
 
             // Check if a custom map image is defined

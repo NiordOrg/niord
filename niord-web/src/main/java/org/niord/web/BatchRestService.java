@@ -31,6 +31,7 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -193,7 +194,10 @@ public class BatchRestService {
         java.nio.file.Path f = batchService.getBatchJobDataFile(instanceId);
         if (f == null) {
             log.warn("Failed streaming batch file: " + fileName);
-            throw new WebApplicationException(404);
+            return Response
+                    .status(HttpServletResponse.SC_NOT_FOUND)
+                    .entity("Failed streaming batch file: " + fileName)
+                    .build();
         }
 
         // Set expiry to 12 hours

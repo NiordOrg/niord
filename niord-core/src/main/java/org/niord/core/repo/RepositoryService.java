@@ -41,6 +41,7 @@ import javax.ejb.Singleton;
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.io.*;
@@ -226,7 +227,10 @@ public class RepositoryService {
 
         if (Files.notExists(f) || Files.isDirectory(f)) {
             log.warn("Failed streaming file: " + f);
-            throw new WebApplicationException(404);
+            return Response
+                    .status(HttpServletResponse.SC_NOT_FOUND)
+                    .entity("File not found: " + path)
+                    .build();
         }
 
         // Set expiry to cacheTimeout minutes
@@ -293,7 +297,10 @@ public class RepositoryService {
 
         if (Files.notExists(f) || Files.isDirectory(f)) {
             log.warn("Failed streaming file: " + f);
-            throw new WebApplicationException(404);
+            return Response
+                    .status(HttpServletResponse.SC_NOT_FOUND)
+                    .entity("File not found: " + path)
+                    .build();
         }
 
         // Check if we can generate a thumbnail for image files

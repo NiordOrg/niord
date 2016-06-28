@@ -25,9 +25,9 @@ import org.slf4j.Logger;
 
 import javax.imageio.ImageIO;
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.PathParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.Request;
@@ -148,7 +148,11 @@ public class AtonTileRestService {
 
         } catch (Exception e) {
             log.error(String.format("Error generating tile z=%d, x=%d, y=%d. Error=%s", z, x, y, e));
-            throw new WebApplicationException(500);
+            return Response
+                    .status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+                    .entity(String.format("Error generating tile z=%d, x=%d, y=%d. Error=%s", z, x, y, e))
+                    .build();
+
         }
     }
 
