@@ -299,6 +299,19 @@ public class MessageService extends BaseService {
     }
 
 
+    /** Check for the fields that must be defined before persisting a message */
+    private void validateRequiredFields(Message message) throws Exception {
+        if (message.getMessageSeries() == null) {
+            throw new Exception("Message series not specified");
+        }
+        if (message.getType() != null) {
+            message.setMainType(message.getType().getMainType());
+        }
+        if (message.getMainType() != null && message.getMainType() != message.getMessageSeries().getMainType()) {
+            throw new Exception("Invalid main-type for message " + message.getMainType());
+        }
+    }
+
     /**
      * Creates a new message as a draft message
      *
@@ -311,15 +324,9 @@ public class MessageService extends BaseService {
         if (message.isPersisted()) {
             throw new Exception("Message already persisted");
         }
-        if (message.getMessageSeries() == null) {
-            throw new Exception("Message series not specified");
-        }
-        if (message.getType() == null) {
-            throw new Exception("Missing Message type");
-        }
-        if (message.getMainType() == null) {
-            message.setMainType(message.getType().getMainType());
-        }
+
+        // Validate various required fields
+        validateRequiredFields(message);
 
         // Set default status
         if (message.getStatus() == null) {
@@ -327,9 +334,7 @@ public class MessageService extends BaseService {
         }
 
         // Substitute the message series with the persisted on
-        if (message.getMessageSeries() != null) {
-            message.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
-        }
+        message.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
 
         // Substitute the Area with a persisted one
         message.setAreas(persistedList(Area.class, message.getAreas()));
@@ -372,10 +377,10 @@ public class MessageService extends BaseService {
             throw new Exception("updateMessage() cannot change status");
         }
 
-        original.setMessageSeries(null);
-        if (message.getMessageSeries() != null) {
-            original.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
-        }
+        // Validate various required fields
+        validateRequiredFields(message);
+
+        original.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
         original.setNumber(message.getNumber());
         original.setMrn(message.getMrn());
         original.setShortId(message.getShortId());
