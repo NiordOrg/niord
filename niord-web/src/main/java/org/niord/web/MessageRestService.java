@@ -30,6 +30,7 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessageHistory;
 import org.niord.core.message.MessageIdMatch;
 import org.niord.core.message.MessageSearchParams;
+import org.niord.core.message.MessageSearchParams.DateType;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
 import org.niord.core.model.BaseEntity;
@@ -550,6 +551,7 @@ public class MessageRestService {
             @QueryParam("aton") Set<String> atonUids,
             @QueryParam("fromDate") Long fromDate,
             @QueryParam("toDate") Long toDate,
+            @QueryParam("dateType") DateType dateType,
             @QueryParam("minLat") Double minLat,
             @QueryParam("minLon") Double minLon,
             @QueryParam("maxLat") Double maxLat,
@@ -577,6 +579,7 @@ public class MessageRestService {
                 .atonUids(atonUids)
                 .from(fromDate)
                 .to(toDate)
+                .dateType(dateType)
                 .extent(minLat, minLon, maxLat, maxLon)
                 .includeGeneral(includeGeneral)
                 .maxSize(maxSize)
@@ -763,6 +766,7 @@ public class MessageRestService {
             @QueryParam("aton") Set<String> atonUids,
             @QueryParam("fromDate") Long fromDate,
             @QueryParam("toDate") Long toDate,
+            @QueryParam("dateType") DateType dateType,
             @QueryParam("minLat") Double minLat,
             @QueryParam("minLon") Double minLon,
             @QueryParam("maxLat") Double maxLat,
@@ -792,6 +796,7 @@ public class MessageRestService {
                 atonUids,
                 fromDate,
                 toDate,
+                dateType,
                 minLat,
                 minLon,
                 maxLat,

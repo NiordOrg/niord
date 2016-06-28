@@ -194,10 +194,17 @@
         <!-- Date Filter -->
         <view-mode-filter-panel state="state" filter-name="date" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
             <div class="row">
-                <div class="col-lg-6">
+                <div class="col-lg-4">
+                    <select class="form-control input-sm" ng-model="state.date.dateType">
+                        <option value="PUBLISH_DATE">Published</option>
+                        <option value="ACTIVE_DATE">Active</option>
+                        <option value="CREATED_DATE">Created</option>
+                    </select>
+                </div>
+                <div class="col-lg-4">
                     <date-time-picker id="fromDate" ng-model="state.date.fromDate" placeholder="From date" format="'l'"></date-time-picker>
                 </div>
-                <div class="col-lg-6">
+                <div class="col-lg-4">
                     <date-time-picker id="toDate" ng-model="state.date.toDate" placeholder="To date" format="'l'"></date-time-picker>
                 </div>
             </div>

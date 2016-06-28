@@ -175,6 +175,26 @@ public class CriteriaHelper<T> {
     }
 
     /**
+     * Performs a range check that cater with possibly open-ended attribute intervals and possibly open-ended
+     * filter interval.
+     *
+     * @param attr1 the first attribute
+     * @param attr2 the second attribute
+     * @param value1 the first value
+     * @param value2 the second value
+     */
+    public <V extends Comparable<? super V>> CriteriaHelper<T> overlaps(Expression<V> attr1, Expression<V> attr2, V value1, V value2) {
+
+        if (value1 != null) {
+            where.add(cb.or(cb.greaterThanOrEqualTo(attr2, value1), cb.isNull(attr2)));
+        }
+        if (value2 != null) {
+            where.add(cb.or(cb.lessThanOrEqualTo(attr1, value2), cb.isNull(attr1)));
+        }
+        return this;
+    }
+
+    /**
      * If value is defined, attempts a pseudo google-style free text search of the value.
      * Supported format:
      * <ul>

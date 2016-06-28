@@ -44,6 +44,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderColumn;
 import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -347,7 +348,8 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     /** Whenever the message is persisted, re-compute the start and end dates */
     @PrePersist
-    protected void onPersist() {
+    @PreUpdate
+    public void onPersist() {
 
         if (uid == null) {
             assignNewUid();

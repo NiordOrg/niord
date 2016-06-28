@@ -98,6 +98,7 @@ angular.module('niord.messages')
                 },
                 date: {
                     enabled: false,
+                    dateType: 'PUBLISH_DATE',
                     fromDate: undefined,
                     toDate: undefined
                 }
@@ -175,6 +176,7 @@ angular.module('niord.messages')
                         filter.categories = [];
                         break;
                     case 'date':
+                        filter.dateType = 'PUBLISH_DATE';
                         filter.fromDate = undefined;
                         filter.toDate = undefined;
                         break;
@@ -304,6 +306,9 @@ angular.module('niord.messages')
                     if (s.date.toDate) {
                         params += '&toDate=' + s.date.toDate;
                     }
+                    if (s.date.fromDate || s.date.toDate) {
+                        params += '&dateType=' + s.date.dateType;
+                    }
                 }
 
                 // Skip first '&'
@@ -405,6 +410,9 @@ angular.module('niord.messages')
                     s.date.enabled = true;
                     s.date.fromDate = params.fromDate ? parseInt(params.fromDate) : undefined;
                     s.date.toDate = params.toDate ? parseInt(params.toDate) : undefined;
+                    if (params.dateType) {
+                        s.date.dateType = params.dateType;
+                    }
                 }
                 if (params.sortBy) {
                     s.sortBy = params.sortBy;

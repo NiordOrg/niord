@@ -31,6 +31,7 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import javax.persistence.Transient;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -128,6 +129,7 @@ public class AtonNode extends BaseEntity<Integer> {
 
     /** Ensure that the timestamp is defined */
     @PrePersist
+    @PreUpdate
     protected void onCreate() {
         if (timestamp == null) {
             timestamp = new Date();

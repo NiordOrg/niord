@@ -23,6 +23,7 @@ import org.niord.model.vo.DateIntervalVo;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
@@ -74,6 +75,7 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity, 
 
     /** Check that the date interval is valid and that the all-day flag is adhered to */
     @PrePersist
+    @PreUpdate
     public void checkDateInterval() {
         // To-date must not be before from-date
         if (fromDate != null && toDate != null && toDate.before(fromDate)) {

@@ -31,9 +31,11 @@ import org.niord.core.domain.DomainService;
 import org.niord.core.geojson.Feature;
 import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.geojson.FeatureService;
+import org.niord.core.message.MessageSearchParams.DateType;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.UserService;
+import org.niord.core.util.TimeUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.PagedSearchResultVo;
 import org.niord.model.vo.MainType;
@@ -678,9 +680,28 @@ public class MessageService extends BaseService {
 
         // Build the predicates based on the search parameters
         CriteriaHelper<Tuple> criteriaHelper = CriteriaHelper.initWithTupleQuery(em)
-                .between(msgRoot.get("startDate"), param.getFrom(), param.getTo())
                 .between(msgRoot.get("updated"), param.getUpdatedFrom(), param.getUpdatedTo());
 
+
+        // Filter by dates
+        if (param.getFrom() != null || param.getTo() != null) {
+            DateType dateType = param.getDateType() != null
+                    ? param.getDateType()
+                    : DateType.PUBLISH_DATE;
+            Date from = TimeUtils.resetTime(param.getFrom());
+            Date to = TimeUtils.endOfDay(param.getTo());
+            switch (dateType) {
+                case PUBLISH_DATE:
+                    criteriaHelper.between(msgRoot.get("publishDate"), from, to);
+                    break;
+                case CREATED_DATE:
+                    criteriaHelper.between(msgRoot.get("created"), from, to);
+                    break;
+                case ACTIVE_DATE:
+                    criteriaHelper.overlaps(msgRoot.get("startDate"), msgRoot.get("endDate"), from, to);
+                    break;
+            }
+        }
 
         // Main types and sub-types
         if (!param.getMainTypes().isEmpty()) {

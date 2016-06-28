@@ -23,7 +23,7 @@ angular.module('niord.editor')
                 id: false,
                 title: false,
                 references: false,
-                time: true,
+                time: false,
                 areas: false,
                 categories: false,
                 positions: false,

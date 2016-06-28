@@ -41,10 +41,13 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public static final String DATE_FORMAT = "dd-MM-yyyy";
 
+    public enum DateType { PUBLISH_DATE, ACTIVE_DATE, CREATED_DATE }
+
     String language;
     String query;
     Date from;
     Date to;
+    DateType dateType;
     Date updatedFrom;
     Date updatedTo;
     Set<Status> statuses = new HashSet<>();
@@ -106,6 +109,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         if (isNotBlank(query)) { desc.add(String.format("Query: '%s'", query)); }
         if (from != null) { desc.add(String.format("From: %s", new SimpleDateFormat(DATE_FORMAT).format(from))); }
         if (to != null) { desc.add(String.format("To: %s", new SimpleDateFormat(DATE_FORMAT).format(to))); }
+        if (dateType != null) { desc.add(String.format("Date Type: %s", dateType)); }
         if (updatedFrom != null) { desc.add(String.format("Updated from: %s", new SimpleDateFormat(DATE_FORMAT).format(updatedFrom))); }
         if (updatedTo != null) { desc.add(String.format("Updated to: %s", new SimpleDateFormat(DATE_FORMAT).format(updatedTo))); }
         if (statuses.size() > 0) { desc.add(String.format("Statuses: %s", statuses)); }
@@ -164,6 +168,15 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public MessageSearchParams to(Date to) {
         this.to = to;
+        return this;
+    }
+
+    public DateType getDateType() {
+        return dateType;
+    }
+
+    public MessageSearchParams dateType(DateType dateType) {
+        this.dateType = dateType;
         return this;
     }
 
