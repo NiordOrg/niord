@@ -219,7 +219,7 @@
                     <div class="row">
                         <div class="col-sm-4 col-md-4 col-lg-2 editor-date-label">Publish Date</div>
                         <div class="col-sm-8 col-md-4">
-                            <date-time-picker ng-model="message.publishDate" placeholder="Publish date" format="'lll'"
+                            <date-time-picker ng-model="message.publishDate" placeholder="Publish date" format="'lll z'"
                                 readonly="message.status != 'DRAFT' && message.status != 'VERIFIED'"></date-time-picker>
                         </div>
                     </div>
@@ -244,11 +244,11 @@
                             <td width="60" style="padding-top: 10px" align="center">
                                 <input type="checkbox" ng-model="di.allDay">
                             </td>
-                            <td width="200">
-                                <date-time-picker ng-model="di.fromDate" placeholder="From date" format="di.allDay ? 'll' : 'lll'"></date-time-picker>
+                            <td width="220">
+                                <date-time-picker ng-model="di.fromDate" placeholder="From date" format="di.allDay ? 'll' : 'lll z'"></date-time-picker>
                             </td>
-                            <td width="200">
-                                <date-time-picker ng-model="di.toDate" placeholder="To date" format="di.allDay ? 'll' : 'lll'"></date-time-picker>
+                            <td width="220">
+                                <date-time-picker ng-model="di.toDate" placeholder="To date" format="di.allDay ? 'll' : 'lll z'"></date-time-picker>
                             </td>
                             <td width="*" style="padding-top: 12px" nowrap>
                                 <a href ng-click="deleteDateInterval(di);" title="Delete Interval"><span class="glyphicon glyphicon-trash"></span></a>
