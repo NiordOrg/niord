@@ -258,8 +258,6 @@ angular.module('niord.editor')
                         return msg.mainType && msg.type;
                     case 'id':
                         return msg.messageSeries !== undefined;
-                    case 'time':
-                        return msg.dateIntervals && msg.dateIntervals.length > 0;
                     case 'areas':
                         return msg.areas && msg.areas.length > 0;
                 }
@@ -778,10 +776,6 @@ angular.module('niord.editor')
                 if (!msg.areas || msg.areas.length == 0) {
                     error += '<li>Areas</li>';
                 }
-                // TODO: ENABLE
-                //if (!msg.dateIntervals || msg.dateIntervals.length == 0) {
-                //    error += '<li>Date intervals</li>';
-                //}
                 if (!descFieldDefined('subject')) {
                     error += '<li>Subject</li>';
                 }

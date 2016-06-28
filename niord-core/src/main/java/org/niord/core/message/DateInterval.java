@@ -43,7 +43,6 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity, 
 
     Boolean allDay;
 
-    @NotNull
     @Temporal(TemporalType.TIMESTAMP)
     Date fromDate;
 
@@ -86,9 +85,8 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity, 
         if (allDay != null && allDay) {
             if (fromDate != null) {
                 fromDate = TimeUtils.resetTime(fromDate);
-                if (toDate == null) {
-                    toDate = fromDate;
-                }
+            }
+            if (toDate != null) {
                 toDate = TimeUtils.endOfDay(toDate);
             }
         }
@@ -102,12 +100,19 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity, 
         if (fromDate == null && di.fromDate == null) {
             return 0;
         } else if (fromDate == null) {
-            return -1;
+            return -1;  // NB: null from-date before any other dates
         } else if (di.fromDate == null) {
             return 1;
         } else {
             int result = fromDate.compareTo(di.fromDate);
-            if (result == 0 && toDate != null && di.toDate != null) {
+            if (result == 0) {
+                if (toDate == null && di.toDate == null) {
+                    return 0;
+                } else if (toDate == null) {
+                    return 1; // NB: null to-date after all other dates
+                } else if (di.toDate == null) {
+                    return -1;
+                }
                 result = toDate.compareTo(di.toDate);
             }
             return result;
