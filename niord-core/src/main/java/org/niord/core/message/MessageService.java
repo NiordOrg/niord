@@ -808,7 +808,7 @@ public class MessageService extends BaseService {
         if (param.sortByDate()) {
             fields.add(msgRoot.get("startDate"));
         } else if (param.sortById()) {
-            fields.add(msgRoot.get("mrn"));
+            fields.add(msgRoot.get("publishDate"));
         } else if (param.sortByArea()) {
             areaRoot = msgRoot.get("area");
             fields.add(areaRoot.get("treeSortOrder"));
@@ -830,9 +830,9 @@ public class MessageService extends BaseService {
             }
         } else if (param.sortById()) {
             if (param.getSortOrder() == SortOrder.ASC) {
-                tupleQuery.orderBy(builder.asc(msgRoot.get("mrn")), builder.asc(msgRoot.get("id")));
+                tupleQuery.orderBy(builder.asc(msgRoot.get("publishDate")), builder.asc(msgRoot.get("id")));
             } else {
-                tupleQuery.orderBy(builder.desc(msgRoot.get("mrn")), builder.desc(msgRoot.get("id")));
+                tupleQuery.orderBy(builder.desc(msgRoot.get("publishDate")), builder.desc(msgRoot.get("id")));
             }
         } else if (param.sortByArea()) {
             if (param.getSortOrder() == SortOrder.ASC) {
