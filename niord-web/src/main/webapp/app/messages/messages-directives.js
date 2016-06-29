@@ -37,7 +37,7 @@ angular.module('niord.messages')
     /****************************************************************
      * Prints the message date interval
      ****************************************************************/
-    .directive('renderMessageDates', ['DateIntervalService', function (DateIntervalService) {
+    .directive('renderMessageDates', ['$rootScope', 'DateIntervalService', function ($rootScope, DateIntervalService) {
         return {
             restrict: 'E',
             scope: {
@@ -46,16 +46,17 @@ angular.module('niord.messages')
             link: function(scope, element) {
 
                 // First check for a textual time description
+                var lang = $rootScope.language;
                 var time = '';
                 var desc = scope.msg.descs[0];
                 if (desc && desc.time) {
-                    time = desc.time;
+                    time = desc.time.replace("\n", "<br/>");
                 } else if (scope.msg.dateIntervals && scope.msg.dateIntervals.length > 0) {
                     for (var x = 0; x < scope.msg.dateIntervals.length; x++) {
-                        time += DateIntervalService.translateDateInterval(scope.msg.dateIntervals[x]) + "<br/>";
+                        time += DateIntervalService.translateDateInterval(lang, scope.msg.dateIntervals[x]) + "<br/>";
                     }
                 } else {
-                    time = DateIntervalService.translateDateInterval(null);
+                    time = DateIntervalService.translateDateInterval(lang, null);
                 }
                 element.html(time);
             }

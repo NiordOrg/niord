@@ -8,9 +8,9 @@ angular.module('niord.editor')
      * Main message editor controller
      */
     .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$http', '$timeout', '$uibModal', 'growl',
-            'MessageService', 'LangService', 'MapService', 'UploadFileService',
+            'MessageService', 'LangService', 'MapService', 'UploadFileService', 'DateIntervalService',
         function ($scope, $rootScope, $stateParams, $state, $http, $timeout, $uibModal, growl,
-                  MessageService, LangService, MapService, UploadFileService) {
+                  MessageService, LangService, MapService, UploadFileService, DateIntervalService) {
             'use strict';
 
             $scope.message = undefined;
@@ -320,6 +320,17 @@ angular.module('niord.editor')
                     }
                 }
                 $scope.message.dateIntervals.push(di);
+            };
+
+
+            /** Generates textual versions of the current date intervals **/
+            $scope.generateTimeDesc = function () {
+                angular.forEach($scope.message.descs, function (desc) {
+                   desc.time = '';
+                    angular.forEach($scope.message.dateIntervals, function (di) {
+                        desc.time += DateIntervalService.translateDateInterval(desc.lang, di) + '\n';
+                    });
+                });
             };
 
 

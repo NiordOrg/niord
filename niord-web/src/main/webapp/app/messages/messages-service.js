@@ -315,15 +315,14 @@ angular.module('niord.messages')
     /**
      * Interface for calling the application server
      */
-    .factory('DateIntervalService', [ '$rootScope', '$translate',
-        function($rootScope, $translate) {
+    .factory('DateIntervalService', [ '$translate',
+        function($translate) {
         'use strict';
 
         return {
 
             /** Translates a date interval */
-            translateDateInterval: function(di) {
-                var lang = $rootScope.language;
+            translateDateInterval: function(lang, di) {
                 var from = di && di.fromDate ? moment(di.fromDate).locale(lang) : undefined;
                 var to = di && di.toDate ? moment(di.toDate).locale(lang) : undefined;
 
@@ -373,15 +372,15 @@ angular.module('niord.messages')
                 } else if (di && from !== undefined) {
                     var format = di.allDay ? 'll z' : 'lll z';
                     var fromTxt = from.format(format);
-                    return $translate.instant('msg.time.from_date', { fromDate : fromTxt });
+                    return $translate.instant('msg.time.from_date', { fromDate : fromTxt }, null, lang);
 
                 } else if (di && to !== undefined) {
                     var format = di.allDay ? 'll z' : 'lll z';
                     var toTxt = to.format(format);
-                    return $translate.instant('msg.time.to_date', { toDate : toTxt });
+                    return $translate.instant('msg.time.to_date', { toDate : toTxt }, null, lang);
 
                 } else {
-                    return $translate.instant('msg.time.until_further_notice');
+                    return $translate.instant('msg.time.until_further_notice', {}, null, lang);
                 }
             }
         };

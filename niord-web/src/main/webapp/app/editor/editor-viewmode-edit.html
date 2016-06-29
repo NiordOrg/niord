@@ -275,24 +275,11 @@
                                       ng-model="desc.time" bg-flag="desc.lang" ></textarea>
                         </div>
                         <div class="col-sm-2 col-md-1">
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown"
-                                        ng-click="timeMenuClicked()">
-                                    Generate
-                                    <span class="caret"></span>
-                                </button>
-                                <ul class="dropdown-menu" style="right:0; left: auto" role="menu">
-                                    <li ng-if="message.dateIntervals.length > 0">
-                                        <a href ng-click="generateTimeDesc()">
-                                            <span class="glyphicon glyphicon-cog"></span>&nbsp;
-                                            Generate from dates
-                                        </a>
-                                    </li>
-                                    <li ng-if="message.dateIntervals.length > 0" role="separator" class="divider"></li>
-                                    <li><a href ng-click="insertTimeText('xxx')">xxx</a></li>
-                                    <li><a href ng-click="insertTimeText('yyy')">yyy</a></li>
-                                </ul>
-                            </div>
+                            <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown"
+                                    ng-click="generateTimeDesc()">
+                                <span class="glyphicon glyphicon-cog"></span>
+                                Generate
+                            </button>
                         </div>
                     </div>
                 </editor-field-value-editor>
