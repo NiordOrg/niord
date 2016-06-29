@@ -327,9 +327,13 @@ angular.module('niord.editor')
             $scope.generateTimeDesc = function () {
                 angular.forEach($scope.message.descs, function (desc) {
                    desc.time = '';
-                    angular.forEach($scope.message.dateIntervals, function (di) {
-                        desc.time += DateIntervalService.translateDateInterval(desc.lang, di) + '\n';
-                    });
+                    if ($scope.message.dateIntervals.length == 0) {
+                        desc.time = DateIntervalService.translateDateInterval(desc.lang, null);
+                    } else {
+                        angular.forEach($scope.message.dateIntervals, function (di) {
+                            desc.time += DateIntervalService.translateDateInterval(desc.lang, di) + '\n';
+                        });
+                    }
                 });
             };
 
