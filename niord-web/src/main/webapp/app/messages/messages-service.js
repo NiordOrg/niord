@@ -315,6 +315,83 @@ angular.module('niord.messages')
     /**
      * Interface for calling the application server
      */
+    .factory('DateIntervalService', [ '$rootScope', '$translate',
+        function($rootScope, $translate) {
+        'use strict';
+
+        return {
+
+            /** Translates a date interval */
+            translateDateInterval: function(di) {
+                var lang = $rootScope.language;
+                var from = di && di.fromDate ? moment(di.fromDate).locale(lang) : undefined;
+                var to = di && di.toDate ? moment(di.toDate).locale(lang) : undefined;
+
+                // TODO: Optimize based on same month and year. E.g.:
+                // "3 May 2016 - 4 Jun 2016" -> "3 May - 4 Jun 2016"
+                // "3 May 2016 - 4 May 2016" -> "3 - 4 May 2016"
+
+                if (di && from !== undefined && to !== undefined) {
+                    var fromDateTxt = from.format("ll");
+                    var toDateTxt = to.format("ll");
+                    var time = '';
+
+                    if (fromDateTxt == toDateTxt) {
+                        if (di.allDay) {
+                            // Same dates
+                            time = fromDateTxt;
+                        } else {
+                            var fromTimeTxt = from.format("lll");
+                            var toTimeTxt = to.format("lll");
+                            if (fromTimeTxt == toTimeTxt) {
+                                // Same date-time
+                                time = fromTimeTxt;
+                            } else {
+                                // same date, different time
+                                time = fromDateTxt + ", "
+                                    + from.format("LT")
+                                    + " - "
+                                    + to.format("LT");
+                            }
+                        }
+
+                    } else {
+                        if (di.allDay) {
+                            // Different dates
+                            time = fromDateTxt + " - " + toDateTxt;
+                        } else {
+                            // Different dates
+                            var fromTimeTxt = from.format("lll");
+                            var toTimeTxt = to.format("lll");
+                            time = fromTimeTxt + " - " + toTimeTxt;
+                        }
+                    }
+
+                    // Add time zone
+                    return time + from.format(' z');
+
+                } else if (di && from !== undefined) {
+                    var format = di.allDay ? 'll z' : 'lll z';
+                    var fromTxt = from.format(format);
+                    return $translate.instant('msg.time.from_date', { fromDate : fromTxt });
+
+                } else if (di && to !== undefined) {
+                    var format = di.allDay ? 'll z' : 'lll z';
+                    var toTxt = to.format(format);
+                    return $translate.instant('msg.time.to_date', { toDate : toTxt });
+
+                } else {
+                    return $translate.instant('msg.time.until_further_notice');
+                }
+            }
+        };
+    }])
+
+
+
+    /**
+     * Interface for calling the application server
+     */
     .factory('FilterService', [ '$http', function($http) {
         'use strict';
 
@@ -339,4 +416,3 @@ angular.module('niord.messages')
 
         };
     }]);
-
