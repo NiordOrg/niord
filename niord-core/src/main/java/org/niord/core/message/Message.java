@@ -374,7 +374,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         // First, remove all date intervals without a fromDate or a toDate
         dateIntervals.removeIf(di -> di.fromDate == null && di.toDate == null);
 
-        // If the validity of the date intervals, and that the all-day flag is adhered to
+        // Check the validity of the date intervals
         dateIntervals.forEach(DateInterval::checkDateInterval);
 
         // Sort the date interval

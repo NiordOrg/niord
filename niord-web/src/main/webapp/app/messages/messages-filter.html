@@ -202,10 +202,12 @@
                     </select>
                 </div>
                 <div class="col-lg-4">
-                    <date-time-picker id="fromDate" ng-model="state.date.fromDate" placeholder="From date" format="'l'"></date-time-picker>
+                    <date-time-picker id="fromDate" ng-model="state.date.fromDate" placeholder="From date"
+                                      time="'00:00:00'" format="'l'"></date-time-picker>
                 </div>
                 <div class="col-lg-4">
-                    <date-time-picker id="toDate" ng-model="state.date.toDate" placeholder="To date" format="'l'"></date-time-picker>
+                    <date-time-picker id="toDate" ng-model="state.date.toDate" placeholder="To date"
+                                      time="'23:59:59'" format="'l'"></date-time-picker>
                 </div>
             </div>
         </view-mode-filter-panel>

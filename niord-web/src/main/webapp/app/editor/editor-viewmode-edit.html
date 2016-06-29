@@ -248,10 +248,12 @@
                                 <input type="checkbox" ng-model="di.allDay">
                             </td>
                             <td width="220">
-                                <date-time-picker ng-model="di.fromDate" placeholder="From date" format="di.allDay ? 'll' : 'lll z'"></date-time-picker>
+                                <date-time-picker ng-model="di.fromDate" placeholder="From date"
+                                                  time="di.allDay ? '00:00:00' : undefined" format="di.allDay ? 'll' : 'lll z'"></date-time-picker>
                             </td>
                             <td width="220">
-                                <date-time-picker ng-model="di.toDate" placeholder="To date" format="di.allDay ? 'll' : 'lll z'"></date-time-picker>
+                                <date-time-picker ng-model="di.toDate" placeholder="To date"
+                                                  time="di.allDay ? '23:59:59' : undefined" format="di.allDay ? 'll' : 'lll z'"></date-time-picker>
                             </td>
                             <td width="*" style="padding-top: 12px" nowrap>
                                 <a href ng-click="deleteDateInterval(di);" title="Delete Interval"><span class="glyphicon glyphicon-trash"></span></a>

@@ -17,7 +17,6 @@ package org.niord.core.message;
 
 import org.niord.core.model.BaseEntity;
 import org.niord.core.model.IndexedEntity;
-import org.niord.core.util.TimeUtils;
 import org.niord.model.vo.DateIntervalVo;
 
 import javax.persistence.Entity;
@@ -42,6 +41,12 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity, 
 
     int indexNo;
 
+    /**
+     * The all-day flag can be used to signal to the UI that the date interval must be treated as an al-day
+     * interval. So, the editor will force the time part of fromDate to "00:00:00" and the time part
+     * of toDate to "23:59:59" in the current time zone.<br>
+     * Similarly, when presenting the message details, only print out the date part and not the time part.<br>
+     */
     Boolean allDay;
 
     @Temporal(TemporalType.TIMESTAMP)
@@ -73,24 +78,13 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity, 
     }
 
 
-    /** Check that the date interval is valid and that the all-day flag is adhered to */
+    /** Check that the date interval is valid */
     @PrePersist
     @PreUpdate
     public void checkDateInterval() {
         // To-date must not be before from-date
         if (fromDate != null && toDate != null && toDate.before(fromDate)) {
             toDate = fromDate;
-        }
-
-        // If the all-day flag is set, ensure that the time is set to "00:00:00" and "23:59:59"
-        // for from- and to-date respectively.
-        if (allDay != null && allDay) {
-            if (fromDate != null) {
-                fromDate = TimeUtils.resetTime(fromDate);
-            }
-            if (toDate != null) {
-                toDate = TimeUtils.endOfDay(toDate);
-            }
         }
     }
 

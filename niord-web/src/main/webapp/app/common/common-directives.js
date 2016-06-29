@@ -198,6 +198,7 @@ angular.module('niord.common')
             scope: {
                 id: '@',
                 format: '=',
+                time: '=',
                 readonly: '=',
                 placeholder: '@'
             },
@@ -263,12 +264,35 @@ angular.module('niord.common')
                 });
 
 
-                element.bind('dp.change dp.hide', function(ev) {
-                    var millis = null;
+                /** If a time parameter has been specified, adjust the date accordingly **/
+                function adjustTime() {
                     var date = picker.date();
+                    var millis = null;
                     if (date) {
                         millis = date.valueOf();
+                        if (scope.time && scope.time.length > 0) {
+                            var hms = scope.time.split(":");
+                            if (hms.length == 3) {
+                                date.set({
+                                    'hour': parseInt(hms[0]),
+                                    'minute': parseInt(hms[1]),
+                                    'second': parseInt(hms[2]),
+                                    'millisecond': 0
+                                });
+                                if (millis != date.valueOf()) {
+                                    picker.date(date);
+                                    millis = date.valueOf();
+                                }
+                            }
+                        }
                     }
+                    return millis;
+                }
+
+                scope.$watch("time", adjustTime, true);
+
+                element.bind('dp.change dp.hide', function(ev) {
+                    var millis = adjustTime();
 
                     ctrl.$setViewValue(millis);
                     ctrl.$modelValue = millis;
