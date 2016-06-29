@@ -212,19 +212,22 @@
             <editor-field edit-mode="editMode" field-id="time" field-title="msg.field.time" field-valid="fieldValid(fieldId)">
 
                 <editor-field-value-viewer>
+                    <div ng-if="message.publishDate && (message.status == 'DRAFT' || message.status == 'VERIFIED')">
+                        Publish: {{message.publishDate | formatDate : 'lll z'}}
+                    </div>
                     <render-message-dates msg="message"></render-message-dates>
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">
-                    <div class="row">
+                    <div class="row" style="margin-bottom: 25px;"
+                         ng-if="message.status == 'DRAFT' || message.status == 'VERIFIED'">
                         <div class="col-sm-4 col-md-4 col-lg-2 editor-date-label">Publish Date</div>
                         <div class="col-sm-8 col-md-4">
-                            <date-time-picker ng-model="message.publishDate" placeholder="Publish date" format="'lll z'"
-                                readonly="message.status != 'DRAFT' && message.status != 'VERIFIED'"></date-time-picker>
+                            <date-time-picker ng-model="message.publishDate" placeholder="Publish date" format="'lll z'"></date-time-picker>
                         </div>
                     </div>
 
-                    <div class="row" style="margin-top: 25px;">
+                    <div class="row">
                         <div class="col-sm-12 editor-date-label">Active Date Intervals</div>
                     </div>
                     <table class="table table-condensed editor-date-interval-table">
