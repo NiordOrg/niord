@@ -23,11 +23,13 @@ import org.niord.core.sequence.DefaultSequence;
 import org.niord.core.sequence.Sequence;
 import org.niord.core.sequence.SequenceService;
 import org.niord.core.service.BaseService;
+import org.niord.model.vo.Type;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.criteria.Predicate;
+import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -251,6 +253,7 @@ public class MessageSeriesService extends BaseService {
         params.put("${country}", app.getCountry());
         params.put("${id}", message.getId() == null ? "" : String.valueOf(message.getId()));
         params.put("${legacy-id}", message.getLegacyId() == null ? "" : String.valueOf(message.getLegacyId()));
+        params.put("${t-or-p}", getNmTOrPToken(message));
 
         message.setMrn(messageSeries.getMrnFormat());
         message.setShortId(messageSeries.getShortFormat());
@@ -261,6 +264,16 @@ public class MessageSeriesService extends BaseService {
             }
         });
 
+    }
+
+    /** Returns the NM T or P token to be used in the short ID for the message */
+    private String getNmTOrPToken(Message message) {
+        if (message.getType() == Type.TEMPORARY_NOTICE) {
+            return "(T)";
+        } else if (message.getType() == Type.PRELIMINARY_NOTICE) {
+            return "(P)";
+        }
+        return "";
     }
 
 }

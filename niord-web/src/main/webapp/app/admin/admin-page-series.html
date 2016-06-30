@@ -56,6 +56,7 @@
                                             <li><a href ng-click="insertToken('mrnSuffix', '${number-3-digits}')">Number (3 digits)</a></li>
                                             <li><a href ng-click="insertToken('mrnSuffix', '${id}')">ID</a></li>
                                             <li><a href ng-click="insertToken('mrnSuffix', '${legacy-id}')">Legacy ID</a></li>
+                                            <li ng-if="series.mainType == 'NM'"><a href ng-click="insertToken('mrnSuffix', '${t-or-p}')">T or P</a></li>
                                         </ul>
                                     </div>
                                 </div>
@@ -83,6 +84,7 @@
                                             <li><a href ng-click="insertToken('shortFormat', '${number-3-digits}')">Number (3 digits)</a></li>
                                             <li><a href ng-click="insertToken('shortFormat', '${id}')">ID</a></li>
                                             <li><a href ng-click="insertToken('shortFormat', '${legacy-id}')">Legacy ID</a></li>
+                                            <li ng-if="series.mainType == 'NM'"><a href ng-click="insertToken('shortFormat', '${t-or-p}')">T or P</a></li>
                                         </ul>
                                     </div>
                                 </div>
