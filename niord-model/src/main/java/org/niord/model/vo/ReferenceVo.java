@@ -17,21 +17,32 @@ package org.niord.model.vo;
 
 import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
+import org.niord.model.ILocalizable;
 
 import javax.xml.bind.annotation.XmlType;
+import java.util.List;
 
 /**
  * Defines a reference from one Message to another
  */
 @ApiModel(value = "Reference", description = "A message reference")
 @XmlType(propOrder = {
-        "messageId", "type", "description"
+        "messageId", "type", "descs"
 })
-public class ReferenceVo implements IJsonSerializable {
+public class ReferenceVo implements ILocalizable<ReferenceDescVo>, IJsonSerializable {
 
     String messageId;
     ReferenceType type;
-    String description;
+    List<ReferenceDescVo> descs;
+
+    /** {@inheritDoc} */
+    @Override
+    public ReferenceDescVo createDesc(String lang) {
+        ReferenceDescVo desc = new ReferenceDescVo();
+        desc.setLang(lang);
+        checkCreateDescs().add(desc);
+        return desc;
+    }
 
     /*************************/
     /** Getters and Setters **/
@@ -53,11 +64,13 @@ public class ReferenceVo implements IJsonSerializable {
         this.type = type;
     }
 
-    public String getDescription() {
-        return description;
+    @Override
+    public List<ReferenceDescVo> getDescs() {
+        return descs;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    @Override
+    public void setDescs(List<ReferenceDescVo> descs) {
+        this.descs = descs;
     }
 }

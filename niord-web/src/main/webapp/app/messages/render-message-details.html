@@ -35,7 +35,7 @@
                 <span ng-switch-when="CANCELLATION" translate>msg.reference.cancelled</span>
                 <span ng-switch-when="UPDATE" translate>msg.reference.updated</span>
             </span>
-            <span ng-if="ref.description">{{ref.description}}</span>
+            <span ng-if="ref.descs && ref.descs.length > 0">- {{ref.descs[0].description}}</span>
         </div>
     </div>
 

@@ -162,7 +162,7 @@
                             <span ng-switch-when="CANCELLATION" translate>msg.reference.cancelled</span>
                             <span ng-switch-when="UPDATE" translate>msg.reference.updated</span>
                         </span>
-                        <span ng-if="ref.description">{{ref.description}}</span>
+                        <span ng-if="ref.descs.length > 0">{{ref.descs[0].description}}</span>
                     </div>
                 </editor-field-value-viewer>
 
@@ -194,8 +194,10 @@
                                     </select>
                                 </td>
                                 <td width="*">
-                                    <input type="text" class="form-control input-sm" placeholder="Description"
-                                           ng-model="ref.description" />
+                                    <div ng-repeat="desc in ref.descs">
+                                        <input class="form-control input-sm" placeholder="Description" type="text"
+                                               ng-model="desc.description" bg-flag="desc.lang"/>
+                                    </div>
                                 </td>
                                 <td style="width: 50px; padding-top: 12px" nowrap>
                                     <a href ng-click="deleteReference(ref);" title="Delete Reference"><i class="glyphicon glyphicon-trash"></i></a>

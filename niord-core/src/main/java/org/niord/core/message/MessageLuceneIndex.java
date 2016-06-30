@@ -233,7 +233,7 @@ public class MessageLuceneIndex extends BaseService {
             // References
             message.getReferences().forEach(ref -> {
                 addPhraseSearchField(doc, searchField, ref.getMessageId());
-                addPhraseSearchField(doc, searchField, ref.getDescription());
+                ref.getDescs().forEach(desc -> addPhraseSearchField(doc, searchField, desc.getDescription()));
             });
 
             // Areas
@@ -279,6 +279,12 @@ public class MessageLuceneIndex extends BaseService {
 
             message.getAtonUids()
                     .forEach(a -> addPhraseSearchField(doc, searchField, a));
+
+            // Attachments
+            message.getAttachments().forEach(att -> {
+                att.getDescs().forEach(desc -> addPhraseSearchField(doc, searchField, desc.getCaption()));
+            });
+
 
             // TODO
             // Add geometry

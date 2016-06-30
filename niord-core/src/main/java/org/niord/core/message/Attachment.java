@@ -17,6 +17,7 @@ package org.niord.core.message;
 
 import org.niord.core.model.BaseEntity;
 import org.niord.core.model.IndexedEntity;
+import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.vo.AttachmentVo;
 
@@ -75,7 +76,7 @@ public class Attachment extends BaseEntity<Integer> implements ILocalizable<Atta
 
 
     /** Converts this entity to a value object */
-    public AttachmentVo toVo() {
+    public AttachmentVo toVo(DataFilter filter) {
 
         AttachmentVo attachment = new AttachmentVo();
         attachment.setId(id);
@@ -85,7 +86,7 @@ public class Attachment extends BaseEntity<Integer> implements ILocalizable<Atta
         attachment.setFileSize(fileSize);
 
         if (!descs.isEmpty()) {
-            attachment.setDescs(getDescs().stream()
+            attachment.setDescs(getDescs(filter).stream()
                     .map(AttachmentDesc::toVo)
                     .collect(Collectors.toList()));
         }

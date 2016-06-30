@@ -62,6 +62,22 @@ public class EditableMessageVo extends MessageVo {
         rewriteDescs(getRepoPath(), getEditRepoPath());
     }
 
+    /**
+     * Sort all entity-owned descriptor records by the given language
+     * @param language the language to sort by
+     */
+    public void sort(String language) {
+        if (StringUtils.isNotBlank(language)) {
+            sortDescs(language);
+            if (getAttachments() != null) {
+                getAttachments().forEach(att -> att.sortDescs(language));
+            }
+            if (getReferences() != null) {
+                getReferences().forEach(ref -> ref.sortDescs(language));
+            }
+        }
+    }
+
     /*************************/
     /** Getters and Setters **/
     /*************************/

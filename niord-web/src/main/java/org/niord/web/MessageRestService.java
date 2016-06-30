@@ -271,7 +271,6 @@ public class MessageRestService {
                 .fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
 
         EditableMessageVo messageVo =  message.toEditableVo(filter);
-        messageVo.sortDescs(language);
 
         // Create a temporary repository folder for the message
         messageService.createTempMessageRepoFolder(messageVo);

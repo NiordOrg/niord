@@ -17,14 +17,22 @@ package org.niord.core.message;
 
 import org.niord.core.model.BaseEntity;
 import org.niord.core.model.IndexedEntity;
+import org.niord.model.DataFilter;
+import org.niord.model.ILocalizable;
+import org.niord.model.vo.ReferenceDescVo;
 import org.niord.model.vo.ReferenceType;
 import org.niord.model.vo.ReferenceVo;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.Index;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Defines a reference from one Message to another
@@ -34,7 +42,7 @@ import javax.validation.constraints.NotNull;
         @Index(name = "reference_message_id_k", columnList="messageId")
 })
 @SuppressWarnings("unused")
-public class Reference extends BaseEntity<Integer> implements IndexedEntity {
+public class Reference extends BaseEntity<Integer> implements ILocalizable<ReferenceDesc>, IndexedEntity {
 
     @ManyToOne
     Message message;
@@ -48,7 +56,9 @@ public class Reference extends BaseEntity<Integer> implements IndexedEntity {
     @NotNull
     ReferenceType type;
 
-    String description;
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
+    List<ReferenceDesc> descs = new ArrayList<>();
+
 
     /** Constructor */
     public Reference() {
@@ -59,7 +69,12 @@ public class Reference extends BaseEntity<Integer> implements IndexedEntity {
     public Reference(ReferenceVo reference) {
         this.messageId = reference.getMessageId();
         this.type = reference.getType();
-        this.description = reference.getDescription();
+
+        if (reference.getDescs() != null) {
+            reference.getDescs().stream()
+                    .filter(ReferenceDescVo::descDefined)
+                    .forEach(desc -> createDesc(desc.getLang()).setDescription(desc.getDescription()));
+        }
     }
 
 
@@ -68,17 +83,34 @@ public class Reference extends BaseEntity<Integer> implements IndexedEntity {
         this.indexNo = reference.getIndexNo();
         this.messageId = reference.getMessageId();
         this.type = reference.getType();
-        this.description = reference.getDescription();
+        copyDescsAndRemoveBlanks(reference.getDescs());
     }
 
 
     /** Converts this entity to a value object */
-    public ReferenceVo toVo() {
+    public ReferenceVo toVo(DataFilter filter) {
         ReferenceVo reference = new ReferenceVo();
         reference.setMessageId(messageId);
         reference.setType(type);
-        reference.setDescription(description);
+        if (!descs.isEmpty()) {
+            reference.setDescs(getDescs(filter).stream()
+                    .map(ReferenceDesc::toVo)
+                    .collect(Collectors.toList()));
+        }
         return reference;
+    }
+
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ReferenceDesc createDesc(String lang) {
+        ReferenceDesc desc = new ReferenceDesc();
+        desc.setLang(lang);
+        desc.setEntity(this);
+        getDescs().add(desc);
+        return desc;
     }
 
 
@@ -120,11 +152,14 @@ public class Reference extends BaseEntity<Integer> implements IndexedEntity {
         this.type = type;
     }
 
-    public String getDescription() {
-        return description;
+    @Override
+    public List<ReferenceDesc> getDescs() {
+        return descs;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    @Override
+    public void setDescs(List<ReferenceDesc> descs) {
+        this.descs = descs;
     }
+
 }

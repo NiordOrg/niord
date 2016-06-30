@@ -18,37 +18,38 @@ package org.niord.core.message;
 import org.niord.core.model.DescEntity;
 import org.niord.model.ILocalizedDesc;
 import org.niord.model.vo.AttachmentDescVo;
+import org.niord.model.vo.ReferenceDescVo;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 
 /**
- * Localized contents for the Attachment entity
+ * Localized contents for the Reference entity
  */
 @Entity
 @SuppressWarnings("unused")
-public class AttachmentDesc extends DescEntity<Attachment> {
+public class ReferenceDesc extends DescEntity<Reference> {
 
-    @Column(length = 1000)
-    String caption;
+    @Column(length = 512)
+    String description;
 
     /** Constructor */
-    public AttachmentDesc() {
+    public ReferenceDesc() {
     }
 
 
     /** Constructor */
-    public AttachmentDesc(AttachmentDescVo desc) {
+    public ReferenceDesc(AttachmentDescVo desc) {
         super(desc);
-        this.caption = desc.getCaption();
+        this.description = desc.getCaption();
     }
 
 
     /** Converts this entity to a value object */
-    public AttachmentDescVo toVo() {
-        AttachmentDescVo desc = new AttachmentDescVo();
+    public ReferenceDescVo toVo() {
+        ReferenceDescVo desc = new ReferenceDescVo();
         desc.setLang(lang);
-        desc.setCaption(caption);
+        desc.setDescription(description);
         return desc;
     }
 
@@ -56,28 +57,28 @@ public class AttachmentDesc extends DescEntity<Attachment> {
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(caption);
+        return ILocalizedDesc.fieldsDefined(description);
     }
 
 
     /** {@inheritDoc} */
     @Override
     public void copyDesc(ILocalizedDesc localizedDesc) {
-        AttachmentDesc desc = (AttachmentDesc)localizedDesc;
+        ReferenceDesc desc = (ReferenceDesc)localizedDesc;
         this.lang = desc.getLang();
-        this.caption = desc.getCaption();
+        this.description = desc.getDescription();
     }
 
     /*************************/
     /** Getters and Setters **/
     /*************************/
 
-    public String getCaption() {
-        return caption;
+    public String getDescription() {
+        return description;
     }
 
-    public void setCaption(String caption) {
-        this.caption = caption;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
 }

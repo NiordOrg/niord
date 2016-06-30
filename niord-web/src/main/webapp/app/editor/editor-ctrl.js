@@ -61,6 +61,10 @@ angular.module('niord.editor')
                 desc.caption = '';
             }
 
+            // Used to ensure that reference description entities have various field
+            function initReferenceDescField(desc) {
+                desc.description = '';
+            }
 
             /** Called during initialization when the message has been loaded or instantiated */
             $scope.initMessage = function (pristine) {
@@ -70,8 +74,6 @@ angular.module('niord.editor')
                 if (!msg) {
                     return;
                 }
-
-                $scope.newRef = { messageId: undefined, type: 'REFERENCE', description: '' };
 
                 // Ensure that the list of date intervals is defined
                 if (!msg.dateIntervals) {
@@ -105,6 +107,14 @@ angular.module('niord.editor')
                         }
                     });
                 }
+
+                // Ensure that localized reference desc fields are defined for all languages
+                if (!msg.references) {
+                    msg.references = [];
+                }
+                angular.forEach(msg.references, function (ref) {
+                    LangService.checkDescs(ref, initReferenceDescField, undefined, $rootScope.modelLanguages);
+                });
 
                 // Update the attachment upload url
                 $scope.attachmentUploadUrl = '/rest/messages/attachments/' + msg.editRepoPath + '/attachments';
@@ -289,11 +299,13 @@ angular.module('niord.editor')
 
             /** Adds the new reference to the list of message references **/
             $scope.addReference = function () {
-                $scope.message.references.push({
+                var ref = {
                     messageId: undefined,
                     type: 'REFERENCE',
-                    description: ''
-                });
+                    descs: []
+                };
+                LangService.checkDescs(ref, initReferenceDescField, undefined, $rootScope.modelLanguages);
+                $scope.message.references.push(ref);
             };
 
 

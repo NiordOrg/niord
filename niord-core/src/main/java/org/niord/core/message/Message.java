@@ -313,10 +313,10 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             message.setHorizontalDatum(horizontalDatum);
             dateIntervals.forEach(d -> message.checkCreateDateIntervals().add(d.toVo()));
             message.setPublishDate(publishDate);
-            references.forEach(r -> message.checkCreateReferences().add(r.toVo()));
+            references.forEach(r -> message.checkCreateReferences().add(r.toVo(filter)));
             message.checkCreateAtonUids().addAll(atonUids);
             message.setOriginalInformation(originalInformation);
-            attachments.forEach(att -> message.checkCreateAttachments().add(att.toVo()));
+            attachments.forEach(att -> message.checkCreateAttachments().add(att.toVo(filter)));
         }
         if (compFilter.anyOfFields(DataFilter.GEOMETRY) && geometry != null) {
             message.setGeometry(geometry.toGeoJson());
@@ -342,6 +342,8 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         EditableMessageVo message = toVo(new EditableMessageVo(), filter);
 
         message.setAutoTitle(autoTitle);
+
+        message.sort(filter.getLang());
 
         return message;
     }
