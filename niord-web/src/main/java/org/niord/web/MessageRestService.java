@@ -719,6 +719,7 @@ public class MessageRestService {
                             .setData("pageSize", pageSize)
                             .setData("pageOrientation", pageOrientation)
                             .setDictionaryNames("web", "message", "pdf")
+                            .setDomain(currentDomain(ticket))
                             .setLanguage(language)
                             .process(format, os);
                 } catch (Exception e) {
@@ -821,6 +822,7 @@ public class MessageRestService {
                             .setData("pageSize", pageSize)
                             .setData("pageOrientation", pageOrientation)
                             .setDictionaryNames("web", "message", "pdf")
+                            .setDomain(currentDomain(ticket))
                             .setLanguage(language)
                             .process(format, os);
                 } catch (Exception e) {

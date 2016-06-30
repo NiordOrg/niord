@@ -147,15 +147,15 @@ public class TicketService extends BaseCache<String, TicketService.TicketData> {
 
     /**
      * Checks if the ticket is valid and returns the domain associated with the ticket.
-     * The check invalidates the ticket, so, the resolution can be done only once.
+     * The check does NOT invalidate the ticket, so, the resolution can be done multiple times before it times out.
      *
      * @param ticket the ticket
      * @return the domain associated with the ticket, or null if the ticket is invalid or no domain resolved.
      */
     public Domain resolveTicketDomain(String ticket) {
 
-        // Since the ticket is a one-time ticket, remove it from the cache
-        TicketData ticketData = super.getCache().remove(ticket);
+        // Since the ticket is not a one-time ticket, just look it up
+        TicketData ticketData = super.getCache().get(ticket);
 
         String domainClientId = ticketData != null ? ticketData.getDomain() : null;
 

@@ -313,7 +313,9 @@ angular.module('niord.messages')
 
 
     /**
-     * Interface for calling the application server
+     * Interface for calling the application server.
+     * <p>
+     * Keep function in sync with DateIntervalDirective.java
      */
     .factory('DateIntervalService', [ '$translate',
         function($translate) {

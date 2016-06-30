@@ -50,7 +50,7 @@ angular.module('niord.messages')
                 var time = '';
                 var desc = scope.msg.descs[0];
                 if (desc && desc.time) {
-                    time = desc.time.replace("\n", "<br/>");
+                    time = desc.time.replace(/\n/g, "<br/>");
                 } else if (scope.msg.dateIntervals && scope.msg.dateIntervals.length > 0) {
                     for (var x = 0; x < scope.msg.dateIntervals.length; x++) {
                         time += DateIntervalService.translateDateInterval(lang, scope.msg.dateIntervals[x]) + "<br/>";

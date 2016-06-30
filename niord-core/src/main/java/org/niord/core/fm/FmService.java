@@ -24,6 +24,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.dictionary.DictionaryService;
+import org.niord.core.domain.Domain;
 import org.niord.core.util.TextUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +41,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
+import java.util.TimeZone;
 
 /**
  * Main interface for accessing and processing Freemarker templates
@@ -48,7 +50,8 @@ import java.util.ResourceBundle;
 @SuppressWarnings("unused")
 public class FmService {
 
-    private static final String BUNDLE_PROPERTY = "text";
+    public static final String BUNDLE_PROPERTY = "text";
+    public static final String TIME_ZONE_PROPERTY = "timeZone";
 
     public enum ProcessFormat { TEXT, PDF }
 
@@ -103,6 +106,12 @@ public class FmService {
             }
         }
 
+        Domain domain = templateBuilder.getDomain();
+        String timeZone = (domain != null && StringUtils.isNotBlank(domain.getTimeZone()))
+                ? domain.getTimeZone()
+                : TimeZone.getDefault().getID();
+        templateBuilder.getData().put(TIME_ZONE_PROPERTY, timeZone);
+
         Locale locale = app.getLocale(templateBuilder.getLanguage());
         Configuration conf = templateConfiguration.getConfiguration();
         return conf.getTemplate(templateBuilder.getTemplatePath(), locale, "UTF-8");
@@ -129,6 +138,7 @@ public class FmService {
         Map<String, Object> data;
         String language;
         String[] dictionaryNames;
+        Domain domain;
         FmService fmService;
 
 
@@ -249,6 +259,15 @@ public class FmService {
 
         public FmTemplateBuilder setLanguage(String language) {
             this.language = language;
+            return this;
+        }
+
+        public Domain getDomain() {
+            return domain;
+        }
+
+        public FmTemplateBuilder setDomain(Domain domain) {
+            this.domain = domain;
             return this;
         }
 

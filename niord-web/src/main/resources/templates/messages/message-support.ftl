@@ -1,5 +1,7 @@
 
 <#assign formatPos = "org.niord.core.fm.LatLonDirective"?new()>
+<#assign formatDateInterval = "org.niord.core.fm.DateIntervalDirective"?new()>
+<#assign txtToHtml = "org.niord.core.fm.TextToHtmlDirective"?new()>
 
 <!-- ***************************************  -->
 <!-- Commonly used message styles             -->
@@ -285,16 +287,15 @@
             <td class="field-name">${text("msg.field.time")}</td>
             <td class="field-value">
                 <#if msg.descs?has_content && msg.descs[0].time?has_content>
-                    <div>${msg.descs[0].time}</div>
+                    <div><@txtToHtml text=msg.descs[0].time /></div>
                 <#elseif msg.dateIntervals?has_content>
                     <#list msg.dateIntervals as dateInterval>
                         <div>
-                            ${dateInterval.fromDate?datetime}
-                            <#if dateInterval.toDate?has_content>
-                                - ${dateInterval.toDate?datetime}
-                            </#if>
+                            <@formatDateInterval dateInterval=dateInterval />
                         </div>
                     </#list>
+                <#else>
+                    <@formatDateInterval />
                 </#if>
             </td>
         </tr>
