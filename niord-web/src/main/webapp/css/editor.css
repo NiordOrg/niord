@@ -173,8 +173,14 @@ i.mce-i-map-marker:before {
 }
 
 
-/** Editor -> Time **/
+/** Editor -> References **/
 
+.editor-reference-table {
+    margin-bottom: 0;
+}
+
+
+/** Editor -> Time **/
 
 .editor-date-interval-table {
     margin-bottom: 0;

@@ -256,11 +256,15 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         }
         this.dateIntervals.clear();
         if (message.getDateIntervals() != null) {
-            message.getDateIntervals().forEach(di -> addDateInterval(new DateInterval(di)));
+            message.getDateIntervals().stream()
+                .filter(di -> di.getFromDate() != null || di.getToDate() != null)
+                .forEach(di -> addDateInterval(new DateInterval(di)));
         }
         this.publishDate = message.getPublishDate();
         if (message.getReferences() != null) {
-            message.getReferences().forEach(r -> addReference(new Reference(r)));
+            message.getReferences().stream()
+                .filter(r -> StringUtils.isNotBlank(r.getMessageId()))
+                .forEach(r -> addReference(new Reference(r)));
         }
         if (message.getAtonUids() != null) {
             atonUids.addAll(message.getAtonUids());
@@ -360,6 +364,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         if (type != null) {
             mainType = type.getMainType();
         }
+
+        // Remove blank references
+        references.removeIf(r -> StringUtils.isBlank(r.getMessageId()));
 
         // Updates the start and end dates from the date intervals
         updateDateIntervals();

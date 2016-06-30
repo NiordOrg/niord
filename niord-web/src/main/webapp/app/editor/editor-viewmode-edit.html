@@ -166,40 +166,44 @@
                     </div>
                 </editor-field-value-viewer>
 
-                <editor-field-value-editor value-class="col-sm-12 col-md-8">
-                    <table class="table table-condensed" style="margin-bottom: 0;">
-                        <tr ng-repeat="ref in message.references">
-                            <td><a href ng-click="referenceClicked(ref.messageId)">{{ref.messageId}}</a></td>
-                            <td>
-                                <span ng-switch="ref.type">
-                                    <span ng-switch-when="REFERENCE" translate>msg.reference.reference</span>
-                                    <span ng-switch-when="REPETITION" translate>msg.reference.repetition</span>
-                                    <span ng-switch-when="CANCELLATION" translate>msg.reference.cancelled</span>
-                                    <span ng-switch-when="UPDATE" translate>msg.reference.updated</span>
-                                </span>
-                            </td>
-                            <td>{{ref.description}}</td>
-                            <td><a href ng-click="deleteReference(ref);" title="Delete Reference"><i class="glyphicon glyphicon-trash"></i></a></td>
-                        </tr>
+                <editor-field-value-editor value-class="col-sm-12">
+                    <table class="table table-condensed editor-reference-table">
                         <tr>
-                            <td>
-                                <message-id-field reference="newRef"></message-id-field>
-                            </td>
-                            <td>
-                                <select class="form-control input-sm" ng-model="newRef.type">
-                                    <option value="REFERENCE" translate>msg.reference.reference</option>
-                                    <option value="REPETITION" translate>msg.reference.repetition</option>
-                                    <option value="CANCELLATION" translate>msg.reference.cancelled</option>
-                                    <option value="UPDATE" translate>msg.reference.updated</option>
-                                </select>
-                            </td>
-                            <td>
-                                <input type="text" class="form-control input-sm" placeholder="Description"
-                                       ng-model="newRef.description" />
-                            </td>
-                            <td><a href ng-click="addReference();" title="Add Reference" ng-show="newRef.messageId">
-                                <i class="glyphicon glyphicon-plus" style="margin-top: 5px;"></i></a></td>
+                            <th>Message</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>
+                                <div class="pull-right">
+                                    <button ng-click="addReference()" class="btn btn-default btn-xs">
+                                        <span class="glyphicon glyphicon-plus"></span> Add
+                                    </button>
+                                </div>
+                            </th>
                         </tr>
+                        <tbody ng-sortable="referencesSortableCfg">
+                            <tr ng-repeat="ref in message.references">
+                                <td width="30%">
+                                    <message-id-field reference="ref"></message-id-field>
+                                </td>
+                                <td width="120">
+                                    <select class="form-control input-sm" ng-model="ref.type">
+                                        <option value="REFERENCE" translate>msg.reference.reference</option>
+                                        <option value="REPETITION" translate>msg.reference.repetition</option>
+                                        <option value="CANCELLATION" translate>msg.reference.cancelled</option>
+                                        <option value="UPDATE" translate>msg.reference.updated</option>
+                                    </select>
+                                </td>
+                                <td width="*">
+                                    <input type="text" class="form-control input-sm" placeholder="Description"
+                                           ng-model="ref.description" />
+                                </td>
+                                <td style="width: 50px; padding-top: 12px" nowrap>
+                                    <a href ng-click="deleteReference(ref);" title="Delete Reference"><i class="glyphicon glyphicon-trash"></i></a>
+                                    &nbsp;
+                                    <a href><span class="glyphicon glyphicon-move move-btn"></span></a>
+                                </td>
+                            </tr>
+                        </tbody>
                     </table>
                 </editor-field-value-editor>
 

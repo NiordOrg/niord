@@ -265,6 +265,13 @@ angular.module('niord.editor')
             };
 
 
+            /** Reference DnD configuration **/
+            $scope.referencesSortableCfg = {
+                group: 'reference',
+                handle: '.move-btn',
+                onEnd: $scope.setDirty
+            };
+
             /** Called when a message reference is clicked **/
             $scope.referenceClicked = function(messageId) {
                 MessageService.detailsDialog(messageId);
@@ -282,14 +289,11 @@ angular.module('niord.editor')
 
             /** Adds the new reference to the list of message references **/
             $scope.addReference = function () {
-                if ($scope.newRef && $scope.newRef.messageId) {
-                    if (!$scope.message.references) {
-                        $scope.message.references = [];
-                    }
-                    $scope.message.references.push($scope.newRef);
-                    $scope.newRef = { messageId: undefined, type: 'REFERENCE', description: '' };
-                    $scope.setDirty();
-                }
+                $scope.message.references.push({
+                    messageId: undefined,
+                    type: 'REFERENCE',
+                    description: ''
+                });
             };
 
 
