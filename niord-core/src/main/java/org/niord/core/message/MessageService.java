@@ -419,13 +419,15 @@ public class MessageService extends BaseService {
 
         original.getDateIntervals().clear();
         message.getDateIntervals().stream()
-            .map(di -> di.isNew() ? di : getByPrimaryKey(DateInterval.class, di.getId()))
-            .forEach(original::addDateInterval);
+                .map(this::updateDateInterval)
+                .filter(r -> r != null)
+                .forEach(original::addDateInterval);
 
         original.getReferences().clear();
         message.getReferences().stream()
-            .map(r -> r.isNew() ? r : getByPrimaryKey(Reference.class, r.getId()))
-            .forEach(original::addReference);
+                .map(this::updateReference)
+                .filter(r -> r != null)
+                .forEach(original::addReference);
 
         original.getAtonUids().clear();
         original.getAtonUids().addAll(message.getAtonUids());
@@ -439,6 +441,7 @@ public class MessageService extends BaseService {
         original.getAttachments().clear();
         message.getAttachments().stream()
                 .map(this::updateAttachment)
+                .filter(a -> a != null)
                 .forEach(original::addAttachment);
 
         // Persist the message
@@ -456,10 +459,36 @@ public class MessageService extends BaseService {
             return attachment;
         }
         Attachment original = getByPrimaryKey(Attachment.class, attachment.getId());
-        original.copyDescsAndRemoveBlanks(attachment.getDescs());
+        if (original != null) {
+            original.copyDescsAndRemoveBlanks(attachment.getDescs());
+        }
         return original;
     }
 
+
+    /** Called upon saving a message. Updates the reference **/
+    private Reference updateReference(Reference reference) {
+        if (reference.isNew()) {
+            return reference;
+        }
+        Reference original = getByPrimaryKey(Reference.class, reference.getId());
+        if (original != null) {
+            original.updateReference(reference);
+        }
+        return original;
+    }
+
+    /** Called upon saving a message. Updates the date interval **/
+    private DateInterval updateDateInterval(DateInterval dateInterval) {
+        if (dateInterval.isNew()) {
+            return dateInterval;
+        }
+        DateInterval original = getByPrimaryKey(DateInterval.class, dateInterval.getId());
+        if (original != null) {
+            original.updateDateInterval(dateInterval);
+        }
+        return original;
+    }
 
     /**
      * Updates the status of the given message

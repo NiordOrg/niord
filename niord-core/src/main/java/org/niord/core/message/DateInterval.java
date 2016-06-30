@@ -68,6 +68,15 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity, 
     }
 
 
+    /** Updates this date interval from another **/
+    public void updateDateInterval(DateInterval dateInterval) {
+        this.indexNo = dateInterval.getIndexNo();
+        this.allDay = dateInterval.getAllDay();
+        this.fromDate = dateInterval.getFromDate();
+        this.toDate = dateInterval.getToDate();
+    }
+
+
     /** Converts this entity to a value object */
     public DateIntervalVo toVo() {
         DateIntervalVo dateInterval = new DateIntervalVo();

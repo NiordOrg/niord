@@ -63,6 +63,15 @@ public class Reference extends BaseEntity<Integer> implements IndexedEntity {
     }
 
 
+    /** Updates this reference from another reference */
+    public void updateReference(Reference reference) {
+        this.indexNo = reference.getIndexNo();
+        this.messageId = reference.getMessageId();
+        this.type = reference.getType();
+        this.description = reference.getDescription();
+    }
+
+
     /** Converts this entity to a value object */
     public ReferenceVo toVo() {
         ReferenceVo reference = new ReferenceVo();
