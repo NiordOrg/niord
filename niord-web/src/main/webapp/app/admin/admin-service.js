@@ -272,7 +272,7 @@ angular.module('niord.admin')
             },
 
             getBatchDownloadTicket: function () {
-                return $http.get('/rest/batch/download-ticket');
+                return $http.get('/rest/tickets/ticket?role=admin');
             },
 
             getBatchLogFiles: function (instanceId) {
@@ -329,7 +329,7 @@ angular.module('niord.admin')
      * ********************************************************************************
      * Interface for calling system settings-related functions at the application server
      */
-    .factory('AdminSettingsService', [ '$http', '$rootScope', function($http, $rootScope) {
+    .factory('AdminSettingsService', [ '$http', function($http) {
         'use strict';
 
         return {
@@ -342,7 +342,7 @@ angular.module('niord.admin')
             },
 
             getSettingsExportTicket: function () {
-                return $http.get('/rest/settings/export-ticket');
+                return $http.get('/rest/tickets/ticket?role=sysadmin');
             }
 
         };

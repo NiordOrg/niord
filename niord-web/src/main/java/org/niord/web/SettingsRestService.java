@@ -22,18 +22,23 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
-import org.niord.core.user.TicketService;
+import org.niord.core.user.UserService;
 import org.niord.model.IJsonSerializable;
 import org.slf4j.Logger;
 
-import javax.annotation.Resource;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
-import javax.ejb.SessionContext;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
@@ -56,14 +61,14 @@ public class SettingsRestService extends AbstractBatchableRestService {
     SettingsService settingsService;
 
     @Inject
-    TicketService ticketService;
+    UserService userService;
 
-    @Resource
-    SessionContext ctx;
 
     /**
      * Returns all editable settings. Security is checked programmatically.
      * Either the user must pass a ticket along, or else, usual security checks applies.
+     *
+     * The ticket can be requested via Ajax call to /rest/tickets/ticket?role=sysadmin
      *
      * @return returns all editable settings
      */
@@ -73,12 +78,9 @@ public class SettingsRestService extends AbstractBatchableRestService {
     @PermitAll // Checked programmatically
     @GZIP
     @NoCache
-    public List<SettingVo> getSettings(@QueryParam("ticket") String ticket) {
+    public List<SettingVo> getSettings() {
         // If a ticket is defined, check if programmatically
-        if (StringUtils.isNotBlank(ticket) && !ticketService.validateTicketForRoles(ticket, "sysadmin")) {
-            throw new WebApplicationException(403);
-
-        } else if (StringUtils.isBlank(ticket) && !ctx.isCallerInRole("sysadmin")) {
+        if (!userService.isCallerInRole("sysadmin")) {
             throw new WebApplicationException(403);
         }
 
@@ -87,23 +89,6 @@ public class SettingsRestService extends AbstractBatchableRestService {
                 .stream()
                 .map(SettingVo::new)
                 .collect(Collectors.toList());
-    }
-
-
-    /**
-     * Returns a ticket to be used in a subsequent call to export settings data
-     *
-     * @return a ticket
-     */
-    @GET
-    @Path("/export-ticket")
-    @Produces("text/plain")
-    @RolesAllowed("admin")
-    @NoCache
-    public String getDownloadBatchDataFileTicket() {
-        // Because of the @RolesAllowed annotation, we know that the
-        // the callee has the "sysadmin" role
-        return ticketService.createTicketForRoles("sysadmin");
     }
 
 

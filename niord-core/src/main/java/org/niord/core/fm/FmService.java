@@ -25,6 +25,7 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.dictionary.DictionaryService;
 import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.niord.core.util.TextUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +68,8 @@ public class FmService {
     @Inject
     DictionaryService dictionaryService;
 
+    @Inject
+    DomainService domainService;
 
     /**
      * Create a new Freemarker template builder.
@@ -106,7 +109,7 @@ public class FmService {
             }
         }
 
-        Domain domain = templateBuilder.getDomain();
+        Domain domain = domainService.currentDomain();
         String timeZone = (domain != null && StringUtils.isNotBlank(domain.getTimeZone()))
                 ? domain.getTimeZone()
                 : TimeZone.getDefault().getID();
@@ -138,7 +141,6 @@ public class FmService {
         Map<String, Object> data;
         String language;
         String[] dictionaryNames;
-        Domain domain;
         FmService fmService;
 
 
@@ -259,15 +261,6 @@ public class FmService {
 
         public FmTemplateBuilder setLanguage(String language) {
             this.language = language;
-            return this;
-        }
-
-        public Domain getDomain() {
-            return domain;
-        }
-
-        public FmTemplateBuilder setDomain(Domain domain) {
-            this.domain = domain;
             return this;
         }
 

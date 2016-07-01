@@ -36,7 +36,6 @@ import org.niord.core.message.MessageService;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.repo.FileTypes;
 import org.niord.core.repo.RepositoryService;
-import org.niord.core.user.TicketService;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.PagedSearchParamsVo.SortOrder;
@@ -85,9 +84,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.niord.model.vo.MessageTagVo.MessageTagType.PUBLIC;
-import static org.niord.model.vo.Status.DRAFT;
-import static org.niord.model.vo.Status.IMPORTED;
-import static org.niord.model.vo.Status.VERIFIED;
+import static org.niord.model.vo.Status.*;
 
 /**
  * REST interface for managing messages.
@@ -125,9 +122,6 @@ public class MessageRestService {
 
     @Inject
     FmService fmService;
-
-    @Inject
-    TicketService ticketService;
 
 
     /***************************
@@ -174,16 +168,15 @@ public class MessageRestService {
      *
      * Throws a 403 response code error if no access.
      * @param message the message
-     * @param ticket optionally a ticket parameter
      */
-    private void checkMessageViewingAccess(Message message, String ticket) {
+    private void checkMessageViewingAccess(Message message) {
         // 1) Always grant access if the message is published
         if (message.getStatus() == Status.PUBLISHED) {
             return;
         }
 
         // 2) Grant access if the current domain of the user matches the message series of the message
-        Domain domain = currentDomain(ticket);
+        Domain domain = domainService.currentDomain();
         if (domain != null &&
                 message.getMessageSeries() != null &&
                 domain.getMessageSeries().stream()
@@ -219,8 +212,7 @@ public class MessageRestService {
     @NoCache
     public MessageVo getMessage(
             @PathParam("messageId") String messageId,
-            @QueryParam("lang") String language,
-            @QueryParam("ticket") String ticket
+            @QueryParam("lang") String language
             ) throws Exception {
 
         Message message = messageService.resolveMessage(messageId);
@@ -229,7 +221,7 @@ public class MessageRestService {
         }
 
         // Validate access to the message
-        checkMessageViewingAccess(message, ticket);
+        checkMessageViewingAccess(message);
 
         DataFilter filter = DataFilter.get()
                 .lang(language)
@@ -413,7 +405,7 @@ public class MessageRestService {
         message.setId(msg.getUid());
         messageService.updateMessageFromTempRepoFolder(message);
 
-        return getMessage(msg.getUid(), null, null);
+        return getMessage(msg.getUid(), null);
     }
 
 
@@ -450,7 +442,7 @@ public class MessageRestService {
         // Copy resources from the temporary editing message folder to the message repository folder
         messageService.updateMessageFromTempRepoFolder(message);
 
-        return getMessage(msg.getUid(), null, null);
+        return getMessage(msg.getUid(), null);
     }
 
 
@@ -474,7 +466,7 @@ public class MessageRestService {
         checkMessageEditingAccess(messageService.findByUid(messageId), false);
 
         Message msg = messageService.updateStatus(messageId, Status.valueOf(status));
-        return getMessage(msg.getUid(), null, null);
+        return getMessage(msg.getUid(), null);
     }
 
 
@@ -559,8 +551,7 @@ public class MessageRestService {
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("sortBy") String sortBy,
             @QueryParam("sortOrder") SortOrder sortOrder,
-            @QueryParam("viewMode") String viewMode,
-            @QueryParam("ticket") String ticket
+            @QueryParam("viewMode") String viewMode
     ) throws Exception {
 
         MessageSearchParams params = new MessageSearchParams();
@@ -585,7 +576,7 @@ public class MessageRestService {
                 .sortBy(sortBy)
                 .sortOrder(sortOrder);
 
-        Domain currentDomain = currentDomain(ticket);
+        Domain currentDomain = domainService.currentDomain();
 
         // Enforce security rules - depends on whether the current user is in the context of a domain or not.
         if (domain && currentDomain != null) {
@@ -701,12 +692,11 @@ public class MessageRestService {
     public Response generatePdfForMessage(
             @PathParam("messageId") String messageId,
             @QueryParam("lang") String language,
-            @QueryParam("ticket") String ticket,
             @QueryParam("pageSize") @DefaultValue("A4") String pageSize,
             @QueryParam("pageOrientation") @DefaultValue("portrait") String pageOrientation,
             @QueryParam("debug") @DefaultValue("false") boolean debug) throws Exception {
 
-        MessageVo message = getMessage(messageId, language, ticket);
+        MessageVo message = getMessage(messageId, language);
 
         try {
             ProcessFormat format = debug ? ProcessFormat.TEXT : ProcessFormat.PDF;
@@ -719,7 +709,6 @@ public class MessageRestService {
                             .setData("pageSize", pageSize)
                             .setData("pageOrientation", pageOrientation)
                             .setDictionaryNames("web", "message", "pdf")
-                            .setDomain(currentDomain(ticket))
                             .setLanguage(language)
                             .process(format, os);
                 } catch (Exception e) {
@@ -773,7 +762,6 @@ public class MessageRestService {
             @QueryParam("includeGeneral") Boolean includeGeneral,
             @QueryParam("sortBy") String sortBy,
             @QueryParam("sortOrder") SortOrder sortOrder,
-            @QueryParam("ticket") String ticket,
             @QueryParam("pageSize") @DefaultValue("A4") String pageSize,
             @QueryParam("pageOrientation") @DefaultValue("portrait") String pageOrientation,
             @QueryParam("debug") @DefaultValue("false") boolean debug
@@ -805,8 +793,7 @@ public class MessageRestService {
                 0,      // page
                 sortBy,
                 sortOrder,
-                null,    // viewMode
-                ticket
+                null    // viewMode
         );
 
         try {
@@ -822,7 +809,6 @@ public class MessageRestService {
                             .setData("pageSize", pageSize)
                             .setData("pageOrientation", pageOrientation)
                             .setDictionaryNames("web", "message", "pdf")
-                            .setDomain(currentDomain(ticket))
                             .setLanguage(language)
                             .process(format, os);
                 } catch (Exception e) {
@@ -914,41 +900,6 @@ public class MessageRestService {
             throw new WebApplicationException(400);
         }
         messageService.changeAreaSortOrder(params.getId(), params.getAfterId(), params.getBeforeId());
-    }
-
-
-    /***************************
-     * Ticket functionality
-     ***************************/
-
-
-    /**
-     * Returns a ticket to be used in a subsequent call to generated a PDF.
-     * This is needed because the URLs issued by the javascript client when generating a PDF
-     * are not ajax-based, and thus, do not get authorization and domain headers injected.
-     * @return a PDF ticket
-     */
-    @GET
-    @Path("/pdf-ticket")
-    @Produces("text/plain")
-    @NoCache
-    public String getPdfTicket() {
-        return ticketService.createTicketForDomain(domainService.currentDomain());
-    }
-
-
-    /**
-     * Resolves the current domain, either via the usual container managed approach or from
-     * a ticket request parameter issued via a previous call to "/pdf-ticket"
-     * @param ticket the request ticket
-     * @return the current domain
-     */
-    private Domain currentDomain(String ticket) {
-        Domain domain = domainService.currentDomain();
-        if (domain == null && StringUtils.isNotBlank(ticket)) {
-            domain = ticketService.resolveTicketDomain(ticket);
-        }
-        return domain;
     }
 
 

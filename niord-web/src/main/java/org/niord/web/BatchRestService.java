@@ -23,7 +23,7 @@ import org.niord.core.batch.vo.BatchInstanceVo;
 import org.niord.core.batch.vo.BatchStatusVo;
 import org.niord.core.repo.FileTypes;
 import org.niord.core.repo.IconSize;
-import org.niord.core.user.TicketService;
+import org.niord.core.user.UserService;
 import org.niord.model.PagedSearchResultVo;
 import org.slf4j.Logger;
 
@@ -32,7 +32,14 @@ import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
@@ -58,7 +65,7 @@ public class BatchRestService {
     FileTypes fileTypes;
 
     @Inject
-    TicketService ticketService;
+    UserService userService;
 
     /**
      * Returns the job names
@@ -155,25 +162,8 @@ public class BatchRestService {
 
 
     /**
-     * Returns a ticket to be used in a subsequent call to download batch data
-     *
-     * @return a ticket
-     */
-    @GET
-    @Path("/download-ticket")
-    @Produces("text/plain")
-    @RolesAllowed("admin")
-    @NoCache
-    public String getDownloadBatchDataFileTicket() {
-        // Because of the @RolesAllowed annotation, we know that the
-        // the callee has the "admin" role
-        return ticketService.createTicketForRoles("admin");
-    }
-
-
-    /**
      * Downloads the batch data associated with the given instance.
-     * First, the callee must call the "/batch/download-ticket" endpoint using Ajax
+     * First, the callee must call the "/rest/tickets/ticket?role=admin" endpoint using Ajax
      * to retrieve a valid ticket, and then pass the ticket along in this function
      *
      * @param instanceId the instance ID
@@ -183,11 +173,10 @@ public class BatchRestService {
     @PermitAll
     public Response downloadBatchDataFile(
             @PathParam("instanceId") long instanceId,
-            @PathParam("fileName") String fileName,
-            @QueryParam("ticket") String ticket) {
+            @PathParam("fileName") String fileName) {
 
         // Check the ticket programmatically
-        if (!ticketService.validateTicketForRoles(ticket, "admin")) {
+        if (!userService.isCallerInRole("admin")) {
             throw new WebApplicationException(403);
         }
 

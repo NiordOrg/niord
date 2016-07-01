@@ -113,7 +113,7 @@ public class MessageService extends BaseService {
 
 
     /***************************************/
-    /** Message methods                   **/
+    /** Message Look-up                   **/
     /***************************************/
 
 
@@ -282,6 +282,11 @@ public class MessageService extends BaseService {
 
         return  result;
     }
+
+
+    /***************************************/
+    /** Message Persistence               **/
+    /***************************************/
 
 
     /**

@@ -1,5 +1,6 @@
 package org.niord.core.user;
 
+import org.apache.commons.lang.StringUtils;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
@@ -26,6 +27,9 @@ public class UserService extends BaseService {
     @Resource
     SessionContext ctx;
 
+    @Inject
+    TicketService ticketService;
+
 
     /** Returns the current Keycloak principal */
     public KeycloakPrincipal getCalledPrincipal() {
@@ -45,19 +49,25 @@ public class UserService extends BaseService {
 
         // Get the current Keycloak principal
         KeycloakPrincipal keycloakPrincipal = getCalledPrincipal();
-        if (keycloakPrincipal == null) {
-            return null;
+        if (keycloakPrincipal != null) {
+
+            // Hmmm, is this really the best way to get the current resource name
+            KeycloakSecurityContext ctx = keycloakPrincipal.getKeycloakSecurityContext();
+            if (ctx instanceof RefreshableKeycloakSecurityContext) {
+                RefreshableKeycloakSecurityContext rctx = (RefreshableKeycloakSecurityContext)ctx;
+                return rctx.getDeployment().getResourceName();
+            }
         }
 
-        // Hmmm, is this really the best way to get the current resource name
-        KeycloakSecurityContext ctx = keycloakPrincipal.getKeycloakSecurityContext();
-        if (ctx instanceof RefreshableKeycloakSecurityContext) {
-            RefreshableKeycloakSecurityContext rctx = (RefreshableKeycloakSecurityContext)ctx;
-            return rctx.getDeployment().getResourceName();
+        // Check if the ticket service has resolved a ticket for the current thread
+        TicketService.TicketData ticketData = ticketService.getTicketDataForCurrentThread();
+        if (ticketData != null) {
+            return ticketData.getDomain();
         }
 
         return null;
     }
+
 
     /**
      * Returns the currently authenticated user.
@@ -69,9 +79,17 @@ public class UserService extends BaseService {
         // Get the current Keycloak principal
         KeycloakPrincipal keycloakPrincipal = getCalledPrincipal();
         if (keycloakPrincipal == null) {
-            return null;
+
+            // Check if the ticket service has resolved a ticket for the current thread
+            TicketService.TicketData ticketData = ticketService.getTicketDataForCurrentThread();
+            if (ticketData != null && StringUtils.isNotBlank(ticketData.getUser())) {
+                return findByUsername(ticketData.getUser());
+            } else {
+                return null;
+            }
         }
 
+        @SuppressWarnings("all")
         AccessToken token = keycloakPrincipal.getKeycloakSecurityContext().getToken();
 
         User user = findByUsername(token.getPreferredUsername());
@@ -90,6 +108,20 @@ public class UserService extends BaseService {
         }
         return user;
     }
+
+
+    /**
+     * Test if the caller has a given security role.
+     *
+     * @param role The name of the security role.
+     *
+     * @return True if the caller has the specified role.
+     */
+    public boolean isCallerInRole(String role) {
+        return  ctx.isCallerInRole(role) ||
+                ticketService.validateRolesForCurrentThread(role);
+    }
+
 
     /**
      * Looks up the {@code User} with the given username
