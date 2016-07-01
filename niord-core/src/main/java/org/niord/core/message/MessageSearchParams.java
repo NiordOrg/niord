@@ -45,6 +45,8 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     String language;
     String query;
+    String messageId;
+    Integer referenceLevels;
     Date from;
     Date to;
     DateType dateType;
@@ -107,6 +109,8 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         List<String> desc = new ArrayList<>();
         if (isNotBlank(language)) { desc.add(String.format("Language: %s", language)); }
         if (isNotBlank(query)) { desc.add(String.format("Query: '%s'", query)); }
+        if (isNotBlank(messageId)) { desc.add(String.format("Ref. message: %s", messageId)); }
+        if (referenceLevels != null) { desc.add(String.format("Ref. levels: %d", referenceLevels)); }
         if (from != null) { desc.add(String.format("From: %s", new SimpleDateFormat(DATE_FORMAT).format(from))); }
         if (to != null) { desc.add(String.format("To: %s", new SimpleDateFormat(DATE_FORMAT).format(to))); }
         if (dateType != null) { desc.add(String.format("Date Type: %s", dateType)); }
@@ -145,6 +149,24 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public MessageSearchParams query(String query) {
         this.query = query;
+        return this;
+    }
+
+    public String getMessageId() {
+        return messageId;
+    }
+
+    public MessageSearchParams messageId(String messageId) {
+        this.messageId = messageId;
+        return this;
+    }
+
+    public Integer getReferenceLevels() {
+        return referenceLevels;
+    }
+
+    public MessageSearchParams referenceLevels(Integer referenceLevels) {
+        this.referenceLevels = referenceLevels;
         return this;
     }
 

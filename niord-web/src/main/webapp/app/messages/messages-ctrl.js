@@ -21,7 +21,8 @@ angular.module('niord.messages')
             $scope.selection = $rootScope.messageSelection;
             $scope.selectionList = []; // Flattened list of selected messages
             $scope.totalMessageNo = 0;
-            $scope.filterNames = [ 'messageSeries', 'text', 'type', 'status', 'tag', 'aton', 'chart', 'area', 'category', 'date' ];
+            $scope.filterNames = [ 'messageSeries', 'text', 'type', 'status', 'tag',
+                'reference', 'aton', 'chart', 'area', 'category', 'date' ];
             if ($rootScope.domain) {
                 $scope.filterNames.unshift('domain');
             }
@@ -70,6 +71,11 @@ angular.module('niord.messages')
                     enabled: false,
                     focusField: '#tags > div > input.ui-select-search',
                     tags: []
+                },
+                reference: {
+                    enabled: false,
+                    messageId: undefined,
+                    referenceLevels: 1
                 },
                 aton: {
                     enabled: false,
@@ -159,6 +165,10 @@ angular.module('niord.messages')
                         break;
                     case 'tag':
                         filter.tags = [];
+                        break;
+                    case 'reference':
+                        filter.messageId = undefined;
+                        filter.referenceLevels = 1;
                         break;
                     case 'aton':
                         filter.atons = [];
@@ -274,6 +284,10 @@ angular.module('niord.messages')
                         params += '&tag=' + tag.tagId;
                     })
                 }
+                if (s.reference.enabled && s.reference.messageId) {
+                    params += '&messageId=' + encodeURIComponent(s.reference.messageId)
+                            + '&referenceLevels=' + s.reference.referenceLevels;
+                }
                 if (s.aton.enabled) {
                     angular.forEach(s.aton.atons, function (aton) {
                         params += '&aton=' + AtonService.getAtonUid(aton);
@@ -365,6 +379,11 @@ angular.module('niord.messages')
                     $http.get('/rest/tags/tag/' + tags).then(function(response) {
                         s.tag.tags = response.data;
                     });
+                }
+                if (params.messageId) {
+                    s.reference.enabled = true;
+                    s.reference.messageId = params.messageId;
+                    s.reference.referenceLevels = (params.referenceLevels) ? parseInt(params.referenceLevels) : 1;
                 }
                 if (params.aton && params.aton.length > 0) {
                     s.aton.enabled = true;

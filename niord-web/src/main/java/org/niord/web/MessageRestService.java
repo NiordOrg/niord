@@ -538,6 +538,8 @@ public class MessageRestService {
             @QueryParam("category") Set<Integer> categoryIds,
             @QueryParam("chart") Set<String> chartNumbers,
             @QueryParam("tag") Set<String> tags,
+            @QueryParam("messageId") String messageId,
+            @QueryParam("referenceLevels") Integer referenceLevels,
             @QueryParam("aton") Set<String> atonUids,
             @QueryParam("fromDate") Long fromDate,
             @QueryParam("toDate") Long toDate,
@@ -565,6 +567,8 @@ public class MessageRestService {
                 .categoryIds(categoryIds)
                 .chartNumbers(chartNumbers)
                 .tags(tags)
+                .messageId(messageId)
+                .referenceLevels(referenceLevels)
                 .atonUids(atonUids)
                 .from(fromDate)
                 .to(toDate)
@@ -751,6 +755,8 @@ public class MessageRestService {
             @QueryParam("category") Set<Integer> categoryIds,
             @QueryParam("chart") Set<String> chartNumbers,
             @QueryParam("tag") Set<String> tags,
+            @QueryParam("messageId") String messageId,
+            @QueryParam("referenceLevels") Integer referenceLevels,
             @QueryParam("aton") Set<String> atonUids,
             @QueryParam("fromDate") Long fromDate,
             @QueryParam("toDate") Long toDate,
@@ -780,6 +786,8 @@ public class MessageRestService {
                 categoryIds,
                 chartNumbers,
                 tags,
+                messageId,
+                referenceLevels,
                 atonUids,
                 fromDate,
                 toDate,
