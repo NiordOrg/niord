@@ -38,10 +38,16 @@
 
             storage = new PersistentStorage();
 
-            if (window.Cordova) {
-                adapter = loadAdapter('cordova');
-            } else {
+            if (initOptions && initOptions.adapter === 'cordova') {
+               adapter = loadAdapter('cordova');
+            } else if (initOptions && initOptions.adapter === 'default') {
                 adapter = loadAdapter();
+            } else {
+                if (window.Cordova) {
+                    adapter = loadAdapter('cordova');
+                } else {
+                    adapter = loadAdapter();
+                }
             }
 
             if (initOptions) {
