@@ -854,8 +854,12 @@ public class MessageService extends BaseService {
         // Refenced messages
         if (StringUtils.isNotBlank(param.getMessageId())) {
             int levels = param.getReferenceLevels() == null ? 1 : param.getReferenceLevels();
-            // NB: This is an expensive query
+            // NB: This is expensive queries - limit the levels
+            levels = Math.max(0, Math.min(5, levels));
+            // First, find messages referenced by the message ID
             Set<Integer> referencedIds = findReferencedMessageIds(new HashSet<>(), param.getMessageId(), levels);
+            // Next, add messages referencing the message ID
+            findReferencingMessageIds(referencedIds, param.getMessageId(), levels);
             criteriaHelper.in(msgRoot.get("id"), referencedIds);
         }
 
@@ -935,6 +939,48 @@ public class MessageService extends BaseService {
                     findReferencedMessageIds(result, reference.getMessageId(), levels - 1);
                 }
             }
+        }
+        return result;
+    }
+
+
+    /**
+     * Resolves the IDs of all messages referencing the given message ID within the given number of levels
+     * @param result the result
+     * @param messageId the message to find referencing messages for
+     * @param levels the levels
+     * @return the result
+     */
+    private Set<Integer> findReferencingMessageIds(Set<Integer> result, String messageId, int levels) {
+        for (Message message : findByMessageId(messageId)) {
+            findReferencingMessageIds(result, message, levels);
+        }
+        return result;
+    }
+
+
+    /**
+     * Resolves the IDs of all messages referencing the given message ID within the given number of levels
+     * @param result the result
+     * @param message the message to find referencing messages for
+     * @param levels the levels
+     * @return the result
+     */
+    private Set<Integer> findReferencingMessageIds(Set<Integer> result, Message message, int levels) {
+        result.add(message.getId());
+        if (levels > 0) {
+            Set<String> messageIds = new HashSet<>();
+            messageIds.add(message.getUid());
+            if (message.getShortId() != null) {
+                messageIds.add(message.getShortId().toLowerCase());
+            }
+            if (message.getMrn() != null) {
+                messageIds.add(message.getMrn().toLowerCase());
+            }
+            em.createNamedQuery("Message.findByReference", Message.class)
+                    .setParameter("messageIds", messageIds)
+                    .getResultList()
+                    .forEach(msg -> findReferencingMessageIds(result, msg, levels - 1));
         }
         return result;
     }

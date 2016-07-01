@@ -86,6 +86,9 @@ import java.util.UUID;
         @NamedQuery(name="Message.findByMessageId",
                 query="select distinct msg from Message msg where lower(msg.uid) = :msgId "
                         + " or lower(msg.shortId) = :msgId or lower(msg.mrn) = :msgId"),
+        @NamedQuery(name="Message.findByReference",
+                query="select distinct msg from Message msg join msg.references ref where "
+                        + " lower(ref.messageId) in (:messageIds)"),
         @NamedQuery(name  = "Message.searchShortIds",
                 query="select distinct m from Message m where lower(m.shortId) like lower(:term) "
                         + "order by locate(lower(:sort), lower(m.shortId)) asc "),
