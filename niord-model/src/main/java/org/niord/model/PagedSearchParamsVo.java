@@ -1,5 +1,6 @@
 package org.niord.model;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
@@ -20,15 +21,35 @@ public abstract class PagedSearchParamsVo implements IJsonSerializable {
 
 
     /** Helper method */
-    public final <T> Set<T> toSet(Set<T> arg) {
+    public static  <T> Set<T> toSet(Set<T> arg) {
         return arg == null ? new HashSet<>() : arg;
     }
 
     /** Helper method */
-    protected final <T, S> Set<T> toSet(Set<S> args, Function<S, T> mapper) {
+    public static  <T, S> Set<T> toSet(Set<S> args, Function<S, T> mapper) {
         return toSet(args).stream()
                 .map(mapper)
                 .collect(Collectors.toSet());
+    }
+
+    /** Helper method */
+    public static <T, S> Set<T> toSet(S[] args, Function<S, T> mapper) {
+        if (args == null || args.length == 0) {
+            return new HashSet<>();
+        }
+        return Arrays.stream(args)
+                .map(mapper)
+                .collect(Collectors.toSet());
+    }
+
+    /** Helper method */
+    public static <T, S> T checkNull(S arg, Function<S, T> mapper) {
+        return arg == null ? null : mapper.apply(arg);
+    }
+
+    /** Helper method */
+    public static <T, S> T checkNull(S arg, T defaultValue, Function<S, T> mapper) {
+        return arg == null ? defaultValue : mapper.apply(arg);
     }
 
     /*******************************************/

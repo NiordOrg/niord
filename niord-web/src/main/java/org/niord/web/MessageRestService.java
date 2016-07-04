@@ -27,10 +27,10 @@ import org.niord.core.fm.FmService.ProcessFormat;
 import org.niord.core.geojson.FeatureService;
 import org.niord.core.message.EditableMessageVo;
 import org.niord.core.message.Message;
+import org.niord.core.message.MessageExportService;
 import org.niord.core.message.MessageHistory;
 import org.niord.core.message.MessageIdMatch;
 import org.niord.core.message.MessageSearchParams;
-import org.niord.core.message.MessageSearchParams.DateType;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
 import org.niord.core.model.BaseEntity;
@@ -38,7 +38,6 @@ import org.niord.core.repo.FileTypes;
 import org.niord.core.repo.RepositoryService;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
-import org.niord.model.PagedSearchParamsVo.SortOrder;
 import org.niord.model.PagedSearchResultVo;
 import org.niord.model.vo.AttachmentVo;
 import org.niord.model.vo.MainType;
@@ -47,7 +46,6 @@ import org.niord.model.vo.MessageVo;
 import org.niord.model.vo.ReferenceType;
 import org.niord.model.vo.ReferenceVo;
 import org.niord.model.vo.Status;
-import org.niord.model.vo.Type;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
 import org.slf4j.Logger;
 
@@ -84,7 +82,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.niord.model.vo.MessageTagVo.MessageTagType.PUBLIC;
-import static org.niord.model.vo.Status.*;
+import static org.niord.model.vo.Status.DRAFT;
+import static org.niord.model.vo.Status.IMPORTED;
+import static org.niord.model.vo.Status.VERIFIED;
 
 /**
  * REST interface for managing messages.
@@ -113,6 +113,9 @@ public class MessageRestService {
 
     @Inject
     MessageService messageService;
+
+    @Inject
+    MessageExportService messageExportService;
 
     @Inject
     DomainService domainService;
@@ -526,64 +529,22 @@ public class MessageRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public PagedSearchResultVo<MessageVo> search(
-            @QueryParam("lang") String language,
-            @QueryParam("query") String query,
-            @QueryParam("domain") @DefaultValue("true") boolean domain, // By default, filter by current domain
-            @QueryParam("status") Set<Status> statuses,
-            @QueryParam("mainType") Set<MainType> mainTypes,
-            @QueryParam("type") Set<Type> types,
-            @QueryParam("messageSeries") Set<String> seriesIds,
-            @QueryParam("area") Set<Integer> areaIds,
-            @QueryParam("category") Set<Integer> categoryIds,
-            @QueryParam("chart") Set<String> chartNumbers,
-            @QueryParam("tag") Set<String> tags,
-            @QueryParam("messageId") String messageId,
-            @QueryParam("referenceLevels") Integer referenceLevels,
-            @QueryParam("aton") Set<String> atonUids,
-            @QueryParam("fromDate") Long fromDate,
-            @QueryParam("toDate") Long toDate,
-            @QueryParam("dateType") DateType dateType,
-            @QueryParam("minLat") Double minLat,
-            @QueryParam("minLon") Double minLon,
-            @QueryParam("maxLat") Double maxLat,
-            @QueryParam("maxLon") Double maxLon,
-            @QueryParam("includeGeneral") Boolean includeGeneral,
-            @QueryParam("maxSize") @DefaultValue("100") int maxSize,
-            @QueryParam("page") @DefaultValue("0") int page,
-            @QueryParam("sortBy") String sortBy,
-            @QueryParam("sortOrder") SortOrder sortOrder,
-            @QueryParam("viewMode") String viewMode
-    ) throws Exception {
+    public PagedSearchResultVo<MessageVo> search(@Context  HttpServletRequest request) throws Exception {
+        MessageSearchParams params = MessageSearchParams.instantiate(request);
+        return search(params);
+    }
 
-        MessageSearchParams params = new MessageSearchParams();
-        params.language(language)
-                .query(query)
-                .statuses(statuses)
-                .mainTypes(mainTypes)
-                .types(types)
-                .seriesIds(seriesIds)
-                .areaIds(areaIds)
-                .categoryIds(categoryIds)
-                .chartNumbers(chartNumbers)
-                .tags(tags)
-                .messageId(messageId)
-                .referenceLevels(referenceLevels)
-                .atonUids(atonUids)
-                .from(fromDate)
-                .to(toDate)
-                .dateType(dateType)
-                .extent(minLat, minLon, maxLat, maxLon)
-                .includeGeneral(includeGeneral)
-                .maxSize(maxSize)
-                .page(page)
-                .sortBy(sortBy)
-                .sortOrder(sortOrder);
+
+    /**
+     * Main search method
+     */
+    PagedSearchResultVo<MessageVo> search(MessageSearchParams params) throws Exception {
+
 
         Domain currentDomain = domainService.currentDomain();
 
         // Enforce security rules - depends on whether the current user is in the context of a domain or not.
-        if (domain && currentDomain != null) {
+        if (params.getDomain() && currentDomain != null) {
 
             Set<String> domainSeries = currentDomain.getMessageSeries().stream()
                     .map(MessageSeries::getSeriesId)
@@ -641,9 +602,9 @@ public class MessageRestService {
         log.info(String.format("Search [%s] returns %d of %d messages in %d ms",
                 description, searchResult.getData().size(), searchResult.getTotal(), System.currentTimeMillis() - t0));
 
-        DataFilter filter = ("map".equalsIgnoreCase(viewMode))
-                ? DataFilter.get().lang(language).fields("Message.geometry", "MessageDesc.title")
-                : DataFilter.get().lang(language).fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
+        DataFilter filter = ("map".equalsIgnoreCase(params.getViewMode()))
+                ? DataFilter.get().lang(params.getLanguage()).fields("Message.geometry", "MessageDesc.title")
+                : DataFilter.get().lang(params.getLanguage()).fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
 
         return searchResult.map(m -> m.toVo(filter));
     }
@@ -743,81 +704,28 @@ public class MessageRestService {
     @Path("/search.pdf")
     @GZIP
     @NoCache
-    public Response generatePdfForSearch(
-            @QueryParam("lang") String language,
-            @QueryParam("query") String query,
-            @QueryParam("domain") @DefaultValue("true") boolean domain, // By default, filter by current domain
-            @QueryParam("status") Set<Status> statuses,
-            @QueryParam("mainType") Set<MainType> mainTypes,
-            @QueryParam("type") Set<Type> types,
-            @QueryParam("messageSeries") Set<String> seriesIds,
-            @QueryParam("area") Set<Integer> areaIds,
-            @QueryParam("category") Set<Integer> categoryIds,
-            @QueryParam("chart") Set<String> chartNumbers,
-            @QueryParam("tag") Set<String> tags,
-            @QueryParam("messageId") String messageId,
-            @QueryParam("referenceLevels") Integer referenceLevels,
-            @QueryParam("aton") Set<String> atonUids,
-            @QueryParam("fromDate") Long fromDate,
-            @QueryParam("toDate") Long toDate,
-            @QueryParam("dateType") DateType dateType,
-            @QueryParam("minLat") Double minLat,
-            @QueryParam("minLon") Double minLon,
-            @QueryParam("maxLat") Double maxLat,
-            @QueryParam("maxLon") Double maxLon,
-            @QueryParam("includeGeneral") Boolean includeGeneral,
-            @QueryParam("sortBy") String sortBy,
-            @QueryParam("sortOrder") SortOrder sortOrder,
-            @QueryParam("pageSize") @DefaultValue("A4") String pageSize,
-            @QueryParam("pageOrientation") @DefaultValue("portrait") String pageOrientation,
-            @QueryParam("debug") @DefaultValue("false") boolean debug
-    ) throws Exception {
+    public Response generatePdfForSearch(@Context HttpServletRequest request) throws Exception {
 
         // Perform a search for at most 1000 messages
-        PagedSearchResultVo<MessageVo> result = search(
-                language,
-                query,
-                domain,
-                statuses,
-                mainTypes,
-                types,
-                seriesIds,
-                areaIds,
-                categoryIds,
-                chartNumbers,
-                tags,
-                messageId,
-                referenceLevels,
-                atonUids,
-                fromDate,
-                toDate,
-                dateType,
-                minLat,
-                minLon,
-                maxLat,
-                maxLon,
-                includeGeneral,
-                1000,   // max-size
-                0,      // page
-                sortBy,
-                sortOrder,
-                null    // viewMode
-        );
+        MessageSearchParams params = MessageSearchParams.instantiate(request);
+        params.maxSize(1000).page(0);
+
+        PagedSearchResultVo<MessageVo> result = search(params);
 
         try {
-            ProcessFormat format = debug ? ProcessFormat.TEXT : ProcessFormat.PDF;
+            ProcessFormat format = params.getDebug() ? ProcessFormat.TEXT : ProcessFormat.PDF;
 
             StreamingOutput stream = os -> {
                 try {
                     fmService.newTemplateBuilder()
                             .setTemplatePath("/templates/messages/message-list.ftl")
                             .setData("messages", result.getData())
-                            .setData("areaHeadings", "AREA".equalsIgnoreCase(sortBy))
+                            .setData("areaHeadings", params.sortByArea())
                             .setData("searchCriteria", result.getDescription())
-                            .setData("pageSize", pageSize)
-                            .setData("pageOrientation", pageOrientation)
+                            .setData("pageSize", params.getPageSize())
+                            .setData("pageOrientation", params.getPageOrientation())
                             .setDictionaryNames("web", "message", "pdf")
-                            .setLanguage(language)
+                            .setLanguage(params.getLanguage())
                             .process(format, os);
                 } catch (Exception e) {
                     throw new WebApplicationException("Error generating PDF for messages", e);
@@ -825,7 +733,7 @@ public class MessageRestService {
             };
 
             Response.ResponseBuilder response = Response.ok(stream);
-            return debug
+            return params.getDebug()
                     ? response.type("text/html;charset=UTF-8").build()
                     : response.type("application/pdf")
                     .header("Content-Disposition", "attachment; filename=\"messages.pdf\"")
@@ -833,6 +741,42 @@ public class MessageRestService {
 
         } catch (Exception e) {
             log.error("Error generating PDF for messages", e);
+            throw e;
+        }
+    }
+
+
+    /***************************************/
+    /** Exporting                         **/
+    /***************************************/
+
+
+    /**
+     * Generates a ZIP archive for the message search result including attachments.
+     */
+    @GET
+    @Path("/search.zip")
+    @GZIP
+    @NoCache
+    public Response generateZipArchiveForSearch(@Context HttpServletRequest request) throws Exception {
+
+        // Perform a search for at most 1000 messages
+        MessageSearchParams params = MessageSearchParams.instantiate(request);
+        params.language(null).maxSize(1000).page(0);
+
+        PagedSearchResultVo<MessageVo> result = search(params);
+        result.getData().forEach(m -> m.sort(params.getLanguage()));
+
+        try {
+            StreamingOutput stream = os -> messageExportService.export(result, os);
+
+            return Response.ok(stream)
+                    .type("application/zip")
+                    .header("Content-Disposition", "attachment; filename=\"messages.zip\"")
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Error generating ZIP archive for messages", e);
             throw e;
         }
     }

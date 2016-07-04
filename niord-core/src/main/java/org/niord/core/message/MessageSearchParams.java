@@ -23,12 +23,14 @@ import org.niord.model.vo.MainType;
 import org.niord.model.vo.Status;
 import org.niord.model.vo.Type;
 
+import javax.servlet.http.HttpServletRequest;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang.StringUtils.isNotBlank;
@@ -45,6 +47,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     String language;
     String query;
+    Boolean domain;
     String messageId;
     Integer referenceLevels;
     Date from;
@@ -61,8 +64,63 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     Set<String> chartNumbers = new HashSet<>();
     Set<String> atonUids = new HashSet<>();
     Set<String> tags = new HashSet<>();
+    String viewMode;
+
     Geometry extent;
-    Boolean includeGeneral; // If an extent is specified, use this to fetch messages with no geometry
+    // If an extent is specified, use this to fetch messages with no geometry
+    Boolean includeGeneral;
+
+    // Print parameters
+    String pageSize;
+    String pageOrientation;
+    Boolean debug;
+
+
+    /**
+     * Returns a MessageSearchParams initialized with parameter values from a request using "default" parameter names
+     * @param req the servlet request
+     * @return the MessageSearchParams initialized with parameter values
+     */
+    public static MessageSearchParams instantiate(HttpServletRequest req) {
+        MessageSearchParams params = new MessageSearchParams();
+        params.language(req.getParameter("lang"))
+                .query(req.getParameter("query"))
+                .domain(checkNull(req.getParameter("domain"), true, Boolean::valueOf))
+                .statuses(toSet(req.getParameterValues("status"), Status::valueOf))
+                .mainTypes(toSet(req.getParameterValues("mainType"), MainType::valueOf))
+                .types(toSet(req.getParameterValues("type"), Type::valueOf))
+                .seriesIds(toSet(req.getParameterValues("messageSeries"), Function.identity()))
+                .areaIds(toSet(req.getParameterValues("area"), Integer::valueOf))
+                .categoryIds(toSet(req.getParameterValues("category"), Integer::valueOf))
+                .chartNumbers(toSet(req.getParameterValues("chart"), Function.identity()))
+                .tags(toSet(req.getParameterValues("tag"), Function.identity()))
+                .messageId(req.getParameter("messageId"))
+                .referenceLevels(checkNull(req.getParameter("referenceLevels"), Integer::valueOf))
+                .atonUids(toSet(req.getParameterValues("aton"), Function.identity()))
+                .from((Long)checkNull(req.getParameter("fromDate"), Long::valueOf))
+                .to((Long)checkNull(req.getParameter("toDate"), Long::valueOf))
+                .dateType(checkNull(req.getParameter("dateType"), DateType::valueOf))
+                .viewMode(req.getParameter("viewMode"))
+
+                // Extent parameters
+                .extent(checkNull(req.getParameter("minLat"), Double::valueOf),
+                        checkNull(req.getParameter("minLon"), Double::valueOf),
+                        checkNull(req.getParameter("maxLat"), Double::valueOf),
+                        checkNull(req.getParameter("maxLon"), Double::valueOf))
+                .includeGeneral(checkNull(req.getParameter("includeGeneral"), Boolean::valueOf))
+
+                // Print parameters
+                .pageSize(checkNull(req.getParameter("pageSize"), "A4", Function.identity()))
+                .pageOrientation(checkNull(req.getParameter("pageOrientation"), "portrait", Function.identity()))
+                .debug(checkNull(req.getParameter("debug"), false, Boolean::valueOf))
+
+                // Standard paged search parameters
+                .maxSize(checkNull(req.getParameter("maxSize"), 100, Integer::valueOf))
+                .page(checkNull(req.getParameter("page"), 0, Integer::valueOf))
+                .sortBy(req.getParameter("sortBy"))
+                .sortOrder(checkNull(req.getParameter("sortOrder"), SortOrder::valueOf));
+        return params;
+    }
 
 
     /** Returns whether or not the search requires a Lucene search */
@@ -109,6 +167,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         List<String> desc = new ArrayList<>();
         if (isNotBlank(language)) { desc.add(String.format("Language: %s", language)); }
         if (isNotBlank(query)) { desc.add(String.format("Query: '%s'", query)); }
+        if (domain != null) { desc.add(String.format("Domain: %b", domain)); }
         if (isNotBlank(messageId)) { desc.add(String.format("Ref. message: %s", messageId)); }
         if (referenceLevels != null) { desc.add(String.format("Ref. levels: %d", referenceLevels)); }
         if (from != null) { desc.add(String.format("From: %s", new SimpleDateFormat(DATE_FORMAT).format(from))); }
@@ -149,6 +208,16 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public MessageSearchParams query(String query) {
         this.query = query;
+        return this;
+    }
+
+
+    public Boolean getDomain() {
+        return domain;
+    }
+
+    public MessageSearchParams domain(Boolean domain) {
+        this.domain = domain;
         return this;
     }
 
@@ -324,4 +393,39 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         return this;
     }
 
+    public String getPageSize() {
+        return pageSize;
+    }
+
+    public MessageSearchParams pageSize(String pageSize) {
+        this.pageSize = pageSize;
+        return this;
+    }
+
+    public String getPageOrientation() {
+        return pageOrientation;
+    }
+
+    public MessageSearchParams pageOrientation(String pageOrientation) {
+        this.pageOrientation = pageOrientation;
+        return this;
+    }
+
+    public Boolean getDebug() {
+        return debug;
+    }
+
+    public MessageSearchParams debug(Boolean debug) {
+        this.debug = debug;
+        return this;
+    }
+
+    public String getViewMode() {
+        return viewMode;
+    }
+
+    public MessageSearchParams viewMode(String viewMode) {
+        this.viewMode = viewMode;
+        return this;
+    }
 }

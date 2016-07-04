@@ -773,6 +773,29 @@ angular.module('niord.messages')
 
 
             /*****************************/
+            /** Print PDF functions     **/
+            /*****************************/
+
+
+            /** Exports the current search result as a Zip archive **/
+            $scope.exportMessages = function () {
+                MessageService.pdfTicket()
+                    .success(function (ticket) {
+                        var params = $scope.toRequestFilterParameters();
+                        if (params.length > 0) {
+                            params += '&';
+                        }
+                        params += 'sortBy=' + $scope.state.sortBy
+                            + '&sortOrder=' + $scope.state.sortOrder
+                            + '&lang=' + $rootScope.language
+                            + '&ticket=' + encodeURIComponent(ticket);
+
+                        $window.location = '/rest/messages/search.zip?' + params;
+                    });
+            };
+
+
+            /*****************************/
             /** Utility functions       **/
             /*****************************/
 

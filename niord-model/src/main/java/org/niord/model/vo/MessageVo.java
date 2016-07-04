@@ -16,6 +16,7 @@
 package org.niord.model.vo;
 
 import io.swagger.annotations.ApiModel;
+import org.apache.commons.lang.StringUtils;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 import org.niord.model.vo.geojson.FeatureCollectionVo;
@@ -74,6 +75,23 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
         checkCreateDescs().add(desc);
         return desc;
     }
+
+    /**
+     * Sort all entity-owned descriptor records by the given language
+     * @param language the language to sort by
+     */
+    public void sort(String language) {
+        if (StringUtils.isNotBlank(language)) {
+            sortDescs(language);
+            if (getAttachments() != null) {
+                getAttachments().forEach(att -> att.sortDescs(language));
+            }
+            if (getReferences() != null) {
+                getReferences().forEach(ref -> ref.sortDescs(language));
+            }
+        }
+    }
+
 
     /*************************/
     /** Collection Handling **/

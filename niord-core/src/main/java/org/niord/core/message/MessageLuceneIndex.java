@@ -15,6 +15,7 @@
  */
 package org.niord.core.message;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -137,6 +138,11 @@ public class MessageLuceneIndex extends BaseService {
             } catch (IOException e) {
                 log.error("Error creating index dir " + indexFolder, e);
             }
+        }
+
+        // Remove any stale write locks
+        if (FileUtils.deleteQuietly(indexFolder.resolve("write.lock").toFile())) {
+            log.info("Deleted Lucene write lock file");
         }
 
         // Check if we need to delete the old index on start-up
@@ -281,9 +287,7 @@ public class MessageLuceneIndex extends BaseService {
                     .forEach(a -> addPhraseSearchField(doc, searchField, a));
 
             // Attachments
-            message.getAttachments().forEach(att -> {
-                att.getDescs().forEach(desc -> addPhraseSearchField(doc, searchField, desc.getCaption()));
-            });
+            message.getAttachments().forEach(att -> att.getDescs().forEach(desc -> addPhraseSearchField(doc, searchField, desc.getCaption())));
 
 
             // TODO
