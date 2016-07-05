@@ -19,10 +19,14 @@ import org.niord.core.model.BaseEntity;
 import org.niord.core.model.IndexedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
+import org.niord.model.vo.AttachmentDescVo;
 import org.niord.model.vo.AttachmentVo;
+import org.niord.model.vo.AttachmentVo.AttachmentDisplayType;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import java.util.ArrayList;
@@ -50,6 +54,13 @@ public class Attachment extends BaseEntity<Integer> implements ILocalizable<Atta
 
     long fileSize;
 
+    @Enumerated(EnumType.STRING)
+    AttachmentDisplayType display;
+
+    String width;
+
+    String height;
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
     List<AttachmentDesc> descs = new ArrayList<>();
 
@@ -67,9 +78,13 @@ public class Attachment extends BaseEntity<Integer> implements ILocalizable<Atta
         this.fileName = attachment.getFileName();
         this.fileUpdated = attachment.getFileUpdated();
         this.fileSize = attachment.getFileSize() == null ? 0 : attachment.getFileSize();
+        this.display = attachment.getDisplay();
+        this.width = attachment.getWidth();
+        this.height = attachment.getHeight();
 
         if (attachment.getDescs() != null) {
             attachment.getDescs().stream()
+                    .filter(AttachmentDescVo::descDefined)
                     .forEach(desc -> createDesc(desc.getLang()).setCaption(desc.getCaption()));
         }
     }
@@ -84,6 +99,9 @@ public class Attachment extends BaseEntity<Integer> implements ILocalizable<Atta
         attachment.setFileName(fileName);
         attachment.setFileUpdated(fileUpdated);
         attachment.setFileSize(fileSize);
+        attachment.setDisplay(display);
+        attachment.setWidth(width);
+        attachment.setHeight(height);
 
         if (!descs.isEmpty()) {
             attachment.setDescs(getDescs(filter).stream()
@@ -91,6 +109,20 @@ public class Attachment extends BaseEntity<Integer> implements ILocalizable<Atta
                     .collect(Collectors.toList()));
         }
         return attachment;
+    }
+
+
+    /** Updates this attachment from another attachment */
+    public void updateAttachment(Attachment attachment) {
+        this.indexNo = attachment.getIndexNo();
+        this.type = attachment.getType();
+        this.fileName = attachment.getFileName();
+        this.fileUpdated = attachment.getFileUpdated();
+        this.fileSize = attachment.getFileSize();
+        this.display = attachment.getDisplay();
+        this.width = attachment.getWidth();
+        this.height = attachment.getHeight();
+        copyDescsAndRemoveBlanks(attachment.getDescs());
     }
 
 
@@ -158,6 +190,30 @@ public class Attachment extends BaseEntity<Integer> implements ILocalizable<Atta
 
     public void setFileSize(long fileSize) {
         this.fileSize = fileSize;
+    }
+
+    public AttachmentDisplayType getDisplay() {
+        return display;
+    }
+
+    public void setDisplay(AttachmentDisplayType display) {
+        this.display = display;
+    }
+
+    public String getWidth() {
+        return width;
+    }
+
+    public void setWidth(String width) {
+        this.width = width;
+    }
+
+    public String getHeight() {
+        return height;
+    }
+
+    public void setHeight(String height) {
+        this.height = height;
     }
 
     @Override

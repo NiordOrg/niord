@@ -51,6 +51,8 @@ public class FileTypes {
         addConentType("video/mpeg", 			    		"mpeg", 	"mpg", "mpeg");
         addConentType("video/quicktime", 	    			"mpeg", 	"mov");
         addConentType("video/x-msvideo",     				"mpeg", 	"avi");
+        addConentType("video/mp4", 			    		    "mpeg", 	"mp4");
+        addConentType("video/m4v", 			    		    "mpeg", 	"m4v");
         addConentType(OOD + ".wordprocessingml.document",   "docx",		"docx");
         addConentType(OOD + ".wordprocessingml.template", 	"docx",		"dotx");
         addConentType(OOD + ".spreadsheetml.sheet", 		"xslx",		"xslx");

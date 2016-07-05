@@ -428,3 +428,9 @@ i.mce-i-map-marker:before {
 .editor-file-upload {
     margin-bottom: 10px;
 }
+
+.editor-attachment-table {
+    margin-top: 20px;
+    margin-bottom: 0;
+}
+

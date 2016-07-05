@@ -76,20 +76,44 @@ angular.module('niord.messages')
                 message : "=",
                 attachment: "=",
                 size: "@",
+                imageType: "@",
                 labelType: "@",
                 attachmentClicked: '&'
             },
             link: function(scope, element, attrs) {
 
+                scope.imageType = scope.imageType || 'thumbnail';
+                scope.labelType = scope.labelType || 'file-name';
+
                 var filePath = MessageService.attachmentRepoPath(scope.message, scope.attachment);
                 scope.thumbnailUrl = "/rest/repo/thumb/" + filePath + "?size=" + scope.size;
                 scope.fileUrl = "/rest/repo/file/" + filePath;
-                scope.imageClass = "attachment-image size-" + scope.size;
+
+
+                scope.imageClass = "attachment-image";
+                if (scope.imageType == "thumbnail") {
+                    scope.imageClass += " size-" + scope.size;
+                }
                 if (scope.attachment.type && scope.attachment.type.toLowerCase().indexOf("image") == 0) {
                     scope.imageClass += " attachment-image-shadow";
                 }
+                
+                scope.sourceStyle = {};
+                if (scope.imageType == "source") {
+                    scope.sourceType = (scope.attachment.type && scope.attachment.type.startsWith('video'))
+                        ? "video"
+                        : 'image';
+                    if (scope.attachment.width && scope.attachment.height) {
+                        scope.sourceStyle = { width: scope.attachment.width, height: scope.attachment.height };
+                    } else if (scope.attachment.width) {
+                        scope.sourceStyle = { width: scope.attachment.width };
+                    } else if (scope.attachment.height) {
+                        scope.sourceStyle = { height: scope.attachment.height };
+                    }
+                }
+                
+
                 scope.handleClick = attrs.attachmentClicked !== undefined;
-                scope.labelType = scope.labelType || 'file-name';
                 scope.tooltip = scope.labelType != 'caption' && scope.attachment.descs && scope.attachment.descs.length > 0
                         ? scope.attachment.descs[0].caption
                         : '';
@@ -699,6 +723,18 @@ angular.module('niord.messages')
                     } else {
                         MessageService.detailsDialog(messageId, scope.messageList);
                     }
+                };
+
+                // Extract the attachments that will displayed above and below the message data
+                scope.attachmentsAbove = [];
+                scope.attachmentsBelow = [];
+                if (scope.msg.attachments) {
+                    scope.attachmentsAbove = $.grep(scope.msg.attachments, function (att) {
+                        return att.display == 'ABOVE';
+                    });
+                    scope.attachmentsBelow = $.grep(scope.msg.attachments, function (att) {
+                        return att.display == 'BELOW';
+                    });
                 }
             }
         };

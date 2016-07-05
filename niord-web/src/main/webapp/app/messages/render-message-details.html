@@ -11,8 +11,18 @@
 </td>
 <td class="message-details-item" style="border: none">
 
-    <message-details-menu ng-if="showDetailsMenu != 'false'" style="float: right;"
+    <div style="position: relative; width: 100%;">
+
+    <message-details-menu ng-if="showDetailsMenu != 'false'" style="position: absolute; top: 2px; right: 5px; z-index: 100"
                           message-id="msg.id" msg="msg" messages="messageList" size="xs"></message-details-menu>
+
+    <!-- Attachments to be displayed above message -->
+    <div class="row" ng-repeat="att in attachmentsAbove">
+        <div class="col-sm-12">
+            <message-attachment message="msg" attachment="att" image-type="source" label-type="caption"></message-attachment>
+        </div>
+    </div>
+
 
     <!-- Title line -->
     <div ng-if="msg.originalInformation">&#9733;</div>
@@ -121,4 +131,12 @@
         <div class="col-sm-12 message-details-item-value text-right">({{msg.descs[0].source}})</div>
     </div>
 
+    <!-- Attachments to be displayed below message -->
+    <div class="row" ng-repeat="att in attachmentsBelow">
+        <div class="col-sm-12">
+            <message-attachment message="msg" attachment="att" image-type="source" label-type="caption"></message-attachment>
+        </div>
+    </div>
+
+    </div>
 </td>

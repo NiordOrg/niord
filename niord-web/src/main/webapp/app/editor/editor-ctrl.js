@@ -753,6 +753,21 @@ angular.module('niord.editor')
             };
             
 
+            /** Returns if the attachment can be displayed inline **/
+            $scope.canDisplayAttachment = function (att) {
+                return att.type && (att.type.startsWith('image/') || att.type.startsWith('video/'));
+            };
+
+
+            /** Called when the display property is updated **/
+            $scope.attachmentDisplayUpdated = function (att) {
+                if (att.display == '') {
+                    delete att.display;
+                    delete att.width;
+                    delete att.height;
+                }
+            };
+
             /*****************************/
             /** Bootstrap editor        **/
             /*****************************/

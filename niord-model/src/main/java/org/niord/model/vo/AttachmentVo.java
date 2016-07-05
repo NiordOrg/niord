@@ -31,16 +31,21 @@ import java.util.List;
 @ApiModel(value = "Attachment", description = "Message attachment model")
 @XmlRootElement(name = "attachment")
 @XmlType(propOrder = {
-        "type", "fileName", "fileUpdated", "fileSize", "descs"
+        "type", "fileName", "fileUpdated", "fileSize", "display", "width", "height", "descs"
 })
 @SuppressWarnings("unused")
 public class AttachmentVo implements ILocalizable<AttachmentDescVo>, IJsonSerializable {
+
+    public enum AttachmentDisplayType { ABOVE, BELOW, SEPARATE_PAGE }
 
     Integer id;
     String type;
     String fileName;
     Date fileUpdated;
     Long fileSize;
+    AttachmentDisplayType display;
+    String width;
+    String height;
     List<AttachmentDescVo> descs;
 
 
@@ -96,6 +101,30 @@ public class AttachmentVo implements ILocalizable<AttachmentDescVo>, IJsonSerial
 
     public void setFileSize(Long fileSize) {
         this.fileSize = fileSize;
+    }
+
+    public AttachmentDisplayType getDisplay() {
+        return display;
+    }
+
+    public void setDisplay(AttachmentDisplayType display) {
+        this.display = display;
+    }
+
+    public String getWidth() {
+        return width;
+    }
+
+    public void setWidth(String width) {
+        this.width = width;
+    }
+
+    public String getHeight() {
+        return height;
+    }
+
+    public void setHeight(String height) {
+        this.height = height;
     }
 
     @Override

@@ -481,7 +481,7 @@ public class MessageService extends BaseService {
         }
         Attachment original = getByPrimaryKey(Attachment.class, attachment.getId());
         if (original != null) {
-            original.copyDescsAndRemoveBlanks(attachment.getDescs());
+            original.updateAttachment(attachment);
         }
         return original;
     }

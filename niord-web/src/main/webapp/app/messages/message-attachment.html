@@ -1,6 +1,18 @@
 
 <div class="attachment">
-    <div ng-class="imageClass" ng-switch="handleClick" uib-tooltip="{{tooltip}}">
+
+    <div ng-if="imageType == 'source'">
+
+        <img ng-if="sourceType == 'image'"
+             ng-style="sourceStyle" ng-src="{{fileUrl}}" />
+
+        <video ng-if="sourceType == 'video'" controls=""
+               ng-style="sourceStyle">
+            <source ng-src="{{fileUrl}}" type="{{attachment.type}}" />
+        </video>
+    </div>
+
+    <div ng-if="imageType == 'thumbnail'" ng-class="imageClass" ng-switch="handleClick" uib-tooltip="{{tooltip}}">
         <a ng-switch-when="true" href ng-click="click()">
             <img ng-src="{{thumbnailUrl}}">
         </a>
@@ -8,6 +20,7 @@
             <img ng-src="{{thumbnailUrl}}">
         </a>
     </div>
+
     <div ng-if="labelType == 'file-name'" class="attachment-label">
         {{attachment.fileName}}
     </div>

@@ -535,7 +535,7 @@
                     </div>
                 </editor-field-value-viewer>
 
-                <editor-field-value-editor value-class="col-sm-12 col-md-10 col-lg-8">
+                <editor-field-value-editor value-class="col-sm-12">
 
                     <div class="editor-attachments">
                         <div class="editor-file-upload">
@@ -550,7 +550,14 @@
 
 
                         <div ng-if="message.attachments.length > 0">
-                            <table class="table table-condensed">
+                            <table class="table table-condensed editor-attachment-table">
+                                <tr>
+                                    <th>Icon</th>
+                                    <th>Caption</th>
+                                    <th>Display</th>
+                                    <th>Size</th>
+                                    <th></th>
+                                </tr>
                                 <tr ng-repeat="att in message.attachments">
                                     <td width="70">
                                         <message-attachment message="message" attachment="att" size="32"></message-attachment>
@@ -560,6 +567,21 @@
                                             <input class="form-control input-sm" placeholder="Caption" type="text"
                                                    ng-model="desc.caption" bg-flag="desc.lang"/>
                                         </div>
+                                    </td>
+                                    <td width="180">
+                                        <select class="form-control input-sm" ng-model="att.display" ng-if="canDisplayAttachment(att)"
+                                                ng-change="attachmentDisplayUpdated(att)">
+                                            <option value="">&lt;none&gt;</option>
+                                            <option value="ABOVE">Above message</option>
+                                            <option value="BELOW">Below message</option>
+                                            <option value="SEPARATE_PAGE">Separate page (PDF)</option>
+                                        </select>
+                                    </td>
+                                    <td width="100">
+                                        <input type="text" class="form-control input-sm" placeholder="Width"
+                                               ng-if="canDisplayAttachment(att) && att.display" ng-model="att.width">
+                                        <input type="text" class="form-control input-sm" placeholder="Height"
+                                               ng-if="canDisplayAttachment(att) && att.display" ng-model="att.height">
                                     </td>
                                     <td width="30">
                                         <a href ng-click="deleteAttachment(att);" title="Delete Attachment"><span class="glyphicon glyphicon-trash"></span></a>
