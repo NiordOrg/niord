@@ -747,7 +747,7 @@ angular.module('niord.messages')
             /** Download the PDF for the current search result */
             $scope.generatePdf = function (printSettings, params) {
 
-                MessageService.pdfTicket()
+                MessageService.authTicket()
                     .success(function (ticket) {
                         if (!params) {
                             params = $scope.toRequestFilterParameters();
@@ -773,15 +773,28 @@ angular.module('niord.messages')
 
 
             /*****************************/
-            /** Print PDF functions     **/
+            /** Export/Import functions **/
             /*****************************/
 
 
+            /** Exports the current selection as a Zip archive **/
+            $scope.exportSelection = function () {
+                // Generate a temporary, short-lived message tag for the selection
+                MessageService.createTempMessageTag($scope.selection.keys)
+                    .success(function (tag) {
+                        var params = 'tag=' + encodeURIComponent(tag.tagId);
+                        $scope.exportMessages(params);
+                    })
+            };
+
+
             /** Exports the current search result as a Zip archive **/
-            $scope.exportMessages = function () {
-                MessageService.pdfTicket()
+            $scope.exportMessages = function (params) {
+                MessageService.authTicket()
                     .success(function (ticket) {
-                        var params = $scope.toRequestFilterParameters();
+                        if (!params) {
+                            params = $scope.toRequestFilterParameters();
+                        }
                         if (params.length > 0) {
                             params += '&';
                         }
@@ -794,6 +807,12 @@ angular.module('niord.messages')
                     });
             };
 
+
+            /** Import a zip archive with messages **/
+            $scope.importMessages = function () {
+                alert("Not implemented yet");
+            };
+            
 
             /*****************************/
             /** Utility functions       **/

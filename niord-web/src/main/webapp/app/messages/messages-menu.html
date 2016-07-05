@@ -64,40 +64,89 @@
             <ul class="dropdown-menu">
                 <li>
                     <a href ng-click="pdf()">
-                        <span class="glyphicon glyphicon-print"></span>&nbsp;
+                        <span class="glyphicon glyphicon-print menu-icon"></span>&nbsp;
                         <span translate>menu.action.print</span>
                     </a>
                 </li>
                 <li ng-if="isLoggedIn && selection.size() > 0">
                     <a href ng-click="pdfForSelection()">
-                        <span class="glyphicon glyphicon-print"></span>&nbsp;
+                        <span class="glyphicon glyphicon-print menu-icon"></span>&nbsp;
                         <span translate>menu.action.print.selection</span>
                     </a>
                 </li>
                 <li ng-if="selection.size() > 0" role="separator" class="divider"></li>
                 <li ng-if="selection.size() > 0">
                     <a href ng-click="addToTagDialog()">
-                        <span class="glyphicon glyphicon-tags"></span>&nbsp;
+                        <span class="glyphicon glyphicon-tags menu-icon"></span>&nbsp;
                         <span translate>menu.action.tag.add_selection</span>
                     </a>
                 </li>
                 <li ng-if="selection.size() > 0">
                     <a href ng-click="removeFromTagDialog()">
-                        <span class="glyphicon glyphicon-tags"></span>&nbsp;
+                        <span class="glyphicon glyphicon-tags menu-icon"></span>&nbsp;
                         <span translate>menu.action.tag.remove_selection</span>
                     </a>
                 </li>
                 <li role="separator" class="divider"></li>
-                <li><a href ng-click="selectAll()" translate>menu.action.select.all</a></li>
-                <li  ng-if="selection.size() > 0"><a href ng-click="clearSelection()" translate>menu.action.select.none</a></li>
+                <li>
+                    <a href ng-click="selectAll()">
+                        <span class="glyphicon glyphicon-star menu-icon"></span>&nbsp;
+                        <span translate>menu.action.select.all</span>
+                    </a>
+                </li>
+                <li  ng-if="selection.size() > 0">
+                    <a href ng-click="clearSelection()">
+                        <span class="glyphicon glyphicon-star-empty menu-icon"></span>&nbsp;
+                        <span translate>menu.action.select.none</span>
+                    </a>
+                </li>
                 <li role="separator" class="divider"></li>
-                <li><a href ng-click="exportMessages()">Export...</a></li>
-                <li><a href ng-click="importMessages()">Import...</a></li>
+                <li>
+                    <a href ng-click="exportMessages()">
+                        <span class="glyphicon glyphicon-export menu-icon"></span>&nbsp;
+                        <span translate>menu.action.export</span>
+                    </a>
+                </li>
+                <li ng-if="isLoggedIn && selection.size() > 0">
+                    <a href ng-click="exportSelection()">
+                        <span class="glyphicon glyphicon-export menu-icon"></span>&nbsp;
+                        <span translate>menu.action.export_selection</span>
+                    </a>
+                </li>
+                <li>
+                    <a href ng-click="importMessages()">
+                        <span class="glyphicon glyphicon-import menu-icon"></span>&nbsp;
+                        <span translate>menu.action.import</span>
+                    </a>
+                </li>
                 <li role="separator" class="divider"></li>
-                <li><a href ng-click="sortAreaMessages()">Sort area...</a></li>
-                <li><a href ng-click="toggleSortOrder('AREA')">Area <small ng-bind-html="sortIndicator('AREA')"></small></a></li>
-                <li><a href ng-click="toggleSortOrder('ID')">ID <small ng-bind-html="sortIndicator('ID')"></small></a></li>
-                <li><a href ng-click="toggleSortOrder('DATE')">Date <small ng-bind-html="sortIndicator('DATE')"></small></a></li>
+                <li>
+                    <a href ng-click="sortAreaMessages()">
+                        <span class="glyphicon glyphicon-sort menu-icon"></span>&nbsp;
+                        <span translate>menu.action.sort_area</span>
+                    </a>
+                </li>
+                <li>
+                    <a href ng-click="toggleSortOrder('AREA')">
+                        <span class="glyphicon glyphicon-sort-by-attributes menu-icon"></span>&nbsp;
+                        <span translate>msg.field.areas</span>
+                        <small ng-bind-html="sortIndicator('AREA')"></small>
+                    </a>
+                </li>
+                <li>
+                    <a href ng-click="toggleSortOrder('ID')">
+                        <span class="glyphicon glyphicon-sort-by-attributes menu-icon"></span>&nbsp;
+                        <span translate>msg.field.id</span>
+                        <small ng-bind-html="sortIndicator('ID')"></small>
+                    </a>
+                </li>
+                <li>
+                    <a href ng-click="toggleSortOrder('DATE')">
+                        <span class="glyphicon glyphicon-sort-by-attributes menu-icon"></span>&nbsp;
+                        <span translate>msg.field.time</span>
+                        <small ng-bind-html="sortIndicator('DATE')"></small>
+                    </a>
+                </li>
             </ul>
         </li>
 

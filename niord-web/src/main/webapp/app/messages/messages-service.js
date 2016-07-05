@@ -148,8 +148,8 @@ angular.module('niord.messages')
             },
 
 
-            /** Returns the ticket that can be used to generate PDFs (since this is via a non-ajax call */
-            pdfTicket: function () {
+            /** Returns the ticket that can be used to generate PDFs or export archives (via a non-ajax call */
+            authTicket: function () {
                 return $http.get('/rest/tickets/ticket');
             },
 
@@ -280,7 +280,7 @@ angular.module('niord.messages')
                 var that = this;
                 that.messagePrintDialog(1).result
                     .then(function (printSettings) {
-                        that.pdfTicket()
+                        that.authTicket()
                             .success(function (ticket) {
 
                                 var params = 'lang=' + $rootScope.language + '&ticket=' + ticket;

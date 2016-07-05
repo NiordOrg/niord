@@ -333,6 +333,10 @@ li.view-mode-menu-btn .active .badge {
     display: none;
 }
 
+.menu-icon {
+    color: darkgray;
+}
+
 /** View mode filter **/
 
 .view-mode-filter {
