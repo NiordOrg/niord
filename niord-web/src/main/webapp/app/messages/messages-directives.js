@@ -45,20 +45,24 @@ angular.module('niord.messages')
             },
             link: function(scope, element) {
 
-                // First check for a textual time description
-                var lang = $rootScope.language;
-                var time = '';
-                var desc = scope.msg.descs[0];
-                if (desc && desc.time) {
-                    time = desc.time.replace(/\n/g, "<br/>");
-                } else if (scope.msg.dateIntervals && scope.msg.dateIntervals.length > 0) {
-                    for (var x = 0; x < scope.msg.dateIntervals.length; x++) {
-                        time += DateIntervalService.translateDateInterval(lang, scope.msg.dateIntervals[x]) + "<br/>";
+                scope.updateTime = function () {
+                    var lang = $rootScope.language;
+                    var time = '';
+                    var desc = scope.msg.descs[0];
+                    // First check for a textual time description
+                    if (desc && desc.time) {
+                        time = desc.time.replace(/\n/g, "<br/>");
+                    } else if (scope.msg.dateIntervals && scope.msg.dateIntervals.length > 0) {
+                        for (var x = 0; x < scope.msg.dateIntervals.length; x++) {
+                            time += DateIntervalService.translateDateInterval(lang, scope.msg.dateIntervals[x]) + "<br/>";
+                        }
+                    } else {
+                        time = DateIntervalService.translateDateInterval(lang, null);
                     }
-                } else {
-                    time = DateIntervalService.translateDateInterval(lang, null);
-                }
-                element.html(time);
+                    element.html(time);
+                };
+
+                scope.$watch("msg", scope.updateTime);
             }
         };
     }])
@@ -675,8 +679,9 @@ angular.module('niord.messages')
             link: function(scope, element, attrs) {
                 scope.language = $rootScope.language;
                 scope.format = scope.format || 'list';
-
                 scope.featureCoordinates = [];
+                scope.attachmentsAbove = [];
+                scope.attachmentsBelow = [];
 
                 scope.serializeCoordinates = function () {
                     // Compute on-demand
@@ -725,17 +730,25 @@ angular.module('niord.messages')
                     }
                 };
 
-                // Extract the attachments that will displayed above and below the message data
-                scope.attachmentsAbove = [];
-                scope.attachmentsBelow = [];
-                if (scope.msg.attachments) {
-                    scope.attachmentsAbove = $.grep(scope.msg.attachments, function (att) {
-                        return att.display == 'ABOVE';
-                    });
-                    scope.attachmentsBelow = $.grep(scope.msg.attachments, function (att) {
-                        return att.display == 'BELOW';
-                    });
-                }
+
+                /** Called whenever the message changes **/
+                scope.initMessage = function () {
+                    scope.featureCoordinates.length = 0;
+                    scope.attachmentsAbove.length = 0;
+                    scope.attachmentsBelow.length = 0;
+
+                    // Extract the attachments that will displayed above and below the message data
+                    if (scope.msg.attachments) {
+                        scope.attachmentsAbove = $.grep(scope.msg.attachments, function (att) {
+                            return att.display == 'ABOVE';
+                        });
+                        scope.attachmentsBelow = $.grep(scope.msg.attachments, function (att) {
+                            return att.display == 'BELOW';
+                        });
+                    }
+                };
+
+                scope.$watch("msg", scope.initMessage);
             }
         };
     }])

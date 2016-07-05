@@ -20,6 +20,7 @@ angular.module('niord.messages')
             $scope.msg = undefined;
             $scope.index = $.inArray(messageId, messages);
             $scope.showNavigation = $scope.index >= 0;
+            $scope.showMap = true;
 
             // Attempt to improve printing
             $("body").addClass("no-print");
@@ -71,6 +72,16 @@ angular.module('niord.messages')
                     .success(function (data) {
                         $scope.warning = (data) ? undefined : "Message " + $scope.currentMessageId() + " not found";
                         $scope.msg = data;
+                        $scope.showMap = true;
+                        if ($scope.msg.attachments) {
+                            var attachmentsAbove = $.grep($scope.msg.attachments, function (att) {
+                                return att.display == 'ABOVE';
+                            });
+                            if (attachmentsAbove.length > 0) {
+                                $scope.showMap = false;
+                            }
+                        }
+
                     })
                     .error(function () {
                         $scope.msg = undefined;

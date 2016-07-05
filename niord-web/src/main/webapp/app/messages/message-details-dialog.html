@@ -10,7 +10,7 @@
 
         <div ng-if="msg">
 
-            <ol-map ng-if="msg.geometry" class="message-details-map">
+            <ol-map ng-if="msg.geometry && showMap" class="message-details-map">
                 <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
                 <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
                                 source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
