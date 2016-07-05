@@ -90,6 +90,9 @@ angular.module('niord.messages')
                 }
                 scope.handleClick = attrs.attachmentClicked !== undefined;
                 scope.labelType = scope.labelType || 'file-name';
+                scope.tooltip = scope.labelType != 'caption' && scope.attachment.descs && scope.attachment.descs.length > 0
+                        ? scope.attachment.descs[0].caption
+                        : '';
 
                 scope.click = function() {
                     if (scope.handleClick) {

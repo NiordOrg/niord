@@ -1,6 +1,6 @@
 
 <div class="attachment">
-    <div ng-class="imageClass" ng-switch="handleClick">
+    <div ng-class="imageClass" ng-switch="handleClick" uib-tooltip="{{tooltip}}">
         <a ng-switch-when="true" href ng-click="click()">
             <img ng-src="{{thumbnailUrl}}">
         </a>
