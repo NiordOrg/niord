@@ -147,6 +147,15 @@
         ol.feature-coordinates li span {
             color: black;
         }
+
+        .separate-attachment-page {
+            clear: left;
+            display:block;
+            page-break-before:always;
+            margin: 0;
+            padding: 0;
+            height: 0;
+        }
     </style>
 </#macro>
 
