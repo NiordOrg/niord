@@ -579,9 +579,11 @@
                                     </td>
                                     <td width="100">
                                         <input type="text" class="form-control input-sm" placeholder="Width"
-                                               ng-if="canDisplayAttachment(att) && att.display" ng-model="att.width">
+                                               ng-if="canDisplayAttachment(att) && att.display" ng-model="att.width"
+                                               pattern="\d+(\.\d*)?(em|px|%|cm|mm|in|pt|pc)">
                                         <input type="text" class="form-control input-sm" placeholder="Height"
-                                               ng-if="canDisplayAttachment(att) && att.display" ng-model="att.height">
+                                               ng-if="canDisplayAttachment(att) && att.display" ng-model="att.height"
+                                               pattern="\d+(\.\d*)?(em|px|%|cm|mm|in|pt|pc)">
                                     </td>
                                     <td width="30">
                                         <a href ng-click="deleteAttachment(att);" title="Delete Attachment"><span class="glyphicon glyphicon-trash"></span></a>
