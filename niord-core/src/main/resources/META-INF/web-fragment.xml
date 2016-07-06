@@ -6,4 +6,13 @@
         <listener-class>org.apache.commons.fileupload.servlet.FileCleanerCleanup</listener-class>
     </listener>
 
+    <filter>
+        <filter-name>repo-servlet-filter</filter-name>
+        <filter-class>org.niord.core.repo.RepositoryServletFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>repo-servlet-filter</filter-name>
+        <url-pattern>/rest/repo/file/*</url-pattern>
+    </filter-mapping>
+
 </web-fragment>
