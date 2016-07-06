@@ -114,6 +114,7 @@ angular.module('niord.messages')
                     } else if (scope.attachment.height) {
                         scope.sourceStyle = { height: scope.attachment.height };
                     }
+                    scope.sourceStyle['max-width'] = '100%';
                 }
                 
 

@@ -37,6 +37,9 @@
 <@renderTOC areaHeadings=areaHeadings />
 
 <table class="message-table">
+    <!-- Layout row for fixed-layout table -->
+    <tr><td width="140"></td><td width="*"></td></tr>
+
     <#list messages as msg>
 
         <#if msg.areas?has_content>
@@ -53,46 +56,14 @@
                 <img src="/rest/message-map-image/${msg.id}.png" width="120" height="120"/>
             </td>
             <td class="table-item">
-
                 <@renderMessage msg=msg />
-
             </td>
         </tr>
     </#list>
 </table>
 
 <#list messages as msg>
-    <#if msg.attachments?has_content>
-        <#list msg.attachments as att>
-            <#if att.display?has_content && att.display == 'SEPARATE_PAGE' && att.type?has_content && att.type?starts_with('image')>
-                <div class="separate-attachment-page">
-                    <#assign imageStyle='' />
-                    <#if att.width?has_content && att.height?has_content>
-                        <#assign imageStyle="width: " + att.width + "; height: " + att.height />
-                    <#elseif att.width?has_content>
-                        <#assign imageStyle="width: " + att.width + "; " />
-                    <#elseif att.height?has_content>
-                        <#assign imageStyle="height: " + att.height + "; " />
-                    </#if>
-                    <div style="text-align: center; margin-top: 5mm">
-                        <#if msg.shortId?has_content>
-                            <div style="margin: 1mm">
-                                Attachment for message ${msg.shortId}.
-                            </div>
-                        </#if>
-                        <div>
-                            <img src="/rest/repo/file/${msg.repoPath}/attachments/${att.fileName}" style="${imageStyle}">
-                        </div>
-                        <#if att.descs?has_content && att.descs[0].caption?has_content>
-                            <div style="margin: 1mm">
-                                ${att.descs[0].caption}
-                            </div>
-                        </#if>
-                    </div>
-                </div>
-            </#if>
-        </#list>
-    </#if>
+    <@renderSeparatePageAttachments msg=msg />
 </#list>
 
 </body>

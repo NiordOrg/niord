@@ -15,6 +15,9 @@
 
 <h1>${text("pdf.details.title")}</h1>
 <table class="message-table">
+    <!-- Layout row for fixed-layout table -->
+    <tr><td width="140"></td><td width="*"></td></tr>
+
     <tr>
         <td class="table-image">
             <img src="/rest/message-map-image/${msg.id}.png" width="120" height="120"/>
@@ -26,6 +29,8 @@
         </td>
     </tr>
 </table>
+
+<@renderSeparatePageAttachments msg=msg />
 
 </body>
 </html>

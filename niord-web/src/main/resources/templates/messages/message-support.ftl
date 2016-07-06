@@ -95,21 +95,27 @@
             content: leader('.') target-counter(attr(href), page);
         }
 
-        table.message-table tr, table.message-table tr {
+        table.message-table {
+            table-layout: fixed;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        table.message-table tr, table.message-table tr td {
             page-break-inside: avoid;
         }
 
-        .table-image {
+        td.table-image {
             vertical-align: top;
             padding: 10px;
-            border-top: 1px solid lightgray;
+            border-top: 0.05em dotted gray;
         }
 
-        .table-item {
+        td.table-item {
             vertical-align: top;
             width: 100%;
-            padding: 10px 10px 10px 40px;
-            border-top: 1px solid lightgray;
+            padding: 10px;
+            border-top: 0.05em dotted gray;
         }
 
         .field-name {
@@ -148,13 +154,17 @@
             color: black;
         }
 
+        .attachment {
+            text-align: center;
+        }
+
         .separate-attachment-page {
+            text-align: center;
             clear: left;
             display:block;
             page-break-before:always;
-            margin: 0;
+            margin: 5mm;
             padding: 0;
-            height: 0;
         }
     </style>
 </#macro>
@@ -208,6 +218,75 @@
 
 
 <!-- ***************************************  -->
+<!-- Returns if the attachment has the given type  -->
+<!-- ***************************************  -->
+<#function includeAttachment att type >
+    <#return att.display?has_content && att.display == type && att.type?has_content && att.type?starts_with('image')/>
+</#function>
+
+
+<!-- ***************************************  -->
+<!-- Renders an attachment  -->
+<!-- ***************************************  -->
+<#macro renderAttachment msg att >
+    <#assign imageStyle='max-width: 100%;' />
+    <#if att.width?has_content && att.height?has_content>
+        <#assign imageStyle="max-width: 100%; width: " + att.width + "; height: " + att.height />
+    <#elseif att.width?has_content>
+        <#assign imageStyle="max-width: 100%; width: " + att.width + "; " />
+    <#elseif att.height?has_content>
+        <#assign imageStyle="max-width: 100%; height: " + att.height + "; " />
+    </#if>
+
+    <div class="attachment">
+        <div>
+            <img src="/rest/repo/file/${msg.repoPath}/attachments/${att.fileName}" style="${imageStyle}">
+        </div>
+        <#if att.descs?has_content && att.descs[0].caption?has_content>
+            <div style="margin: 1mm; font-style: italic">${att.descs[0].caption}</div>
+        </#if>
+    </div>
+</#macro>
+
+
+<!-- ***************************************  -->
+<!-- Renders all nessage attachments of the given type    -->
+<!-- ***************************************  -->
+<#macro renderMessageAttachments msg type>
+    <#if msg.attachments?has_content>
+        <#list msg.attachments as att>
+            <#if includeAttachment(att, type)>
+                <@renderAttachment msg=msg att=att />
+            </#if>
+        </#list>
+    </#if>
+</#macro>
+
+
+<!-- ***************************************  -->
+<!-- Renders all separate-page attachments    -->
+<!-- ***************************************  -->
+<#macro renderSeparatePageAttachments msg>
+    <#if msg.attachments?has_content>
+        <#list msg.attachments as att>
+            <#if includeAttachment(att, 'SEPARATE_PAGE')>
+            <div class="separate-attachment-page">
+                <#assign messageId=msg.id />
+                <#if msg.shortId?has_content>
+                    <#assign messageId=msg.shortId />
+                </#if>
+                <div style="margin: 1mm">
+                    <h4 style="color: #8f2f7b; font-size: 16px;" id="${messageId}">${text("pdf.attchment.title", messageId)}</h4>
+                </div>
+                <@renderAttachment msg=msg att=att />
+            </div>
+            </#if>
+        </#list>
+    </#if>
+</#macro>
+
+
+<!-- ***************************************  -->
 <!-- Renders the TOC for area-headings        -->
 <!-- ***************************************  -->
 <#macro renderTOC areaHeadings>
@@ -238,6 +317,13 @@
 <!-- Renders a message                        -->
 <!-- ***************************************  -->
 <#macro renderMessage msg>
+
+    <div style="width: 100%;">
+
+    <!-- Attachments to display above message -->
+    <@renderMessageAttachments msg=msg type="ABOVE" />
+
+
     <!-- Title line -->
     <#if msg.originalInformation?has_content && msg.originalInformation>
         <div>*</div>
@@ -390,4 +476,10 @@
         </#if>
 
     </table>
+
+    <!-- Attachments to display below message -->
+    <@renderMessageAttachments msg=msg type="BELOW" />
+
+    </div>
+
 </#macro>
