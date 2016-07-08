@@ -810,7 +810,7 @@ angular.module('niord.messages')
 
             /** Import a zip archive with messages **/
             $scope.importMessages = function () {
-                alert("Not implemented yet");
+                MessageService.importMessagesDialog();
             };
             
 

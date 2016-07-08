@@ -100,8 +100,8 @@
                         <span translate>menu.action.select.none</span>
                     </a>
                 </li>
-                <li role="separator" class="divider"></li>
-                <li>
+                <li ng-if="isLoggedIn" role="separator" class="divider"></li>
+                <li ng-if="isLoggedIn">
                     <a href ng-click="exportMessages()">
                         <span class="glyphicon glyphicon-export menu-icon"></span>&nbsp;
                         <span translate>menu.action.export</span>
@@ -113,7 +113,7 @@
                         <span translate>menu.action.export_selection</span>
                     </a>
                 </li>
-                <li>
+                <li ng-if="hasRole('admin')" >
                     <a href ng-click="importMessages()">
                         <span class="glyphicon glyphicon-import menu-icon"></span>&nbsp;
                         <span translate>menu.action.import</span>

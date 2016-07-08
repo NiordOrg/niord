@@ -260,9 +260,7 @@ angular.module('niord.messages')
 
         }])
 
-
-
-
+        
 
     /*******************************************************************
      * Controller that handles sorting of messages withing an area
@@ -357,6 +355,89 @@ angular.module('niord.messages')
             $timeout(function () {
                 $('#area').controller('uiSelect').activate(false, true);
             }, 100);
+
+        }])
+
+
+    /*******************************************************************
+     * Controller that handles importing of messages
+     *******************************************************************/
+    .controller('ImportMessagesDialogCtrl', ['$scope', '$rootScope', '$http', 'MessageService',
+        function ($scope, $rootScope, $http, MessageService) {
+            'use strict';
+
+            $scope.importUrl = '/rest/messages/import';
+            $scope.result = '';
+
+            /** Displays the error message */
+            $scope.displayError = function (err) {
+                growl.error("Error");
+                $scope.result = 'Error:\n' + err;
+            };
+
+
+            // Determine the message series for the current domain
+            $scope.messageSeriesIds = [];
+            if ($rootScope.domain && $rootScope.domain.messageSeries) {
+                angular.forEach($rootScope.domain.messageSeries, function (series) {
+                    $scope.messageSeriesIds.push(series.seriesId);
+                });
+            }
+
+            $scope.data = {
+                seriesId: $scope.messageSeriesIds.length == 1 ? $scope.messageSeriesIds[0] : undefined,
+                tagId: ''
+            };
+
+
+            /** Refreshes the tags search result */
+            $scope.tags = [];
+            $scope.tagData = { tag: undefined };
+            $scope.refreshTags = function(name) {
+                if (!name || name.length == 0) {
+                    return [];
+                }
+                return $http.get(
+                    '/rest/tags/search?name=' + encodeURIComponent(name) + '&limit=10'
+                ).then(function(response) {
+                    $scope.tags = response.data;
+                });
+            };
+
+            /** Opens the tags dialog */
+            $scope.openTagsDialog = function () {
+                MessageService.messageTagsDialog().result
+                    .then(function (tag) {
+                        if (tag) {
+                            $scope.tagData.tag = tag;
+                        }
+                    });
+            };
+
+            /** Removes the current tag selection */
+            $scope.removeTag = function () {
+                $scope.tagData.tag = undefined;
+            };
+
+
+            // Sync the tagData.tag with the data.tagName
+            $scope.$watch("tagData", function () {
+                $scope.data.tagId = $scope.tagData.tag ? $scope.tagData.tag.tagId : undefined;
+            }, true);
+
+
+            /** Called when the messages zip archive has been imported */
+            $scope.fileUploaded = function(result) {
+                $scope.result = result;
+                $scope.$$phase || $scope.$apply();
+            };
+
+            /** Called when the messages zip archive import has failed */
+            $scope.fileUploadError = function(status) {
+                $scope.result = "Error importing messages (error " + status + ")";
+                $scope.$$phase || $scope.$apply();
+            };
+    
 
         }]);
 

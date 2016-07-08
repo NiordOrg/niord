@@ -13,6 +13,10 @@ import javax.ejb.SessionContext;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import java.security.Principal;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Wraps access to the current user
@@ -32,7 +36,7 @@ public class UserService extends BaseService {
 
 
     /** Returns the current Keycloak principal */
-    public KeycloakPrincipal getCalledPrincipal() {
+    public KeycloakPrincipal getCallerPrincipal() {
         Principal principal = ctx.getCallerPrincipal();
 
         // Handle un-authenticated case
@@ -44,11 +48,31 @@ public class UserService extends BaseService {
     }
 
 
+    /**
+     * Returns all the resource names (domain client ID) where the current user has the given role
+     * @param role the role to check for
+     * @return all the resource names (domain client ID) where the current user has the given role
+     */
+    public Set<String> getResourcesNamesWithRoles(String role) {
+        KeycloakPrincipal keycloakPrincipal = getCallerPrincipal();
+        if (keycloakPrincipal != null) {
+            KeycloakSecurityContext ctx = keycloakPrincipal.getKeycloakSecurityContext();
+            AccessToken accessToken = ctx.getToken();
+            Map<String, AccessToken.Access> accessMap = accessToken.getResourceAccess();
+            return accessMap.entrySet().stream()
+                    .filter(kv -> kv.getValue().isUserInRole(role))
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toSet());
+        }
+        return new HashSet<>();
+    }
+
+
     /** Returns the Keycloak resource (client) associated with the current user */
     public String getCurrentResourceName() {
 
         // Get the current Keycloak principal
-        KeycloakPrincipal keycloakPrincipal = getCalledPrincipal();
+        KeycloakPrincipal keycloakPrincipal = getCallerPrincipal();
         if (keycloakPrincipal != null) {
 
             // Hmmm, is this really the best way to get the current resource name
@@ -77,7 +101,7 @@ public class UserService extends BaseService {
     public User currentUser() {
 
         // Get the current Keycloak principal
-        KeycloakPrincipal keycloakPrincipal = getCalledPrincipal();
+        KeycloakPrincipal keycloakPrincipal = getCallerPrincipal();
         if (keycloakPrincipal == null) {
 
             // Check if the ticket service has resolved a ticket for the current thread

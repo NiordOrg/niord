@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Provides an interface for managing application domains
@@ -101,6 +102,19 @@ public class DomainService extends BaseService {
 
         }
         return domains;
+    }
+
+
+    /**
+     * Returns all domains for which the current user has the given role
+     * @param role the role that the current user must have
+     * @return all domains for which the current user has the given role
+     */
+    public List<Domain> domainsWithUserRole(String role) {
+        Set<String> resourceNames = userService.getResourcesNamesWithRoles(role);
+        return getDomains().stream()
+                .filter(d -> resourceNames.contains(d.getClientId()))
+                .collect(Collectors.toList());
     }
 
 

@@ -1,0 +1,70 @@
+<div>
+
+    <div class="modal-header" style="text-align: center; padding: 5px 15px">
+        <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
+        <h4>Import Messages</h4>
+    </div>
+
+    <div class="modal-body print" style="padding-bottom: 0">
+
+        <div class="row">
+            <div class="col-sm-12">
+
+                <file-upload url="importUrl"
+                             drop-text="or drop messages Zip archive here" multiple="false"
+                             file-types="'zip'" auto-upload="false" remove-after-upload="true"
+                             data="data"
+                             success="fileUploaded(result)"
+                             error="fileUploadError(status, statusText)">
+
+                    <div class="form-group row" style="margin-top: 20px">
+                        <label for="importMessageSeries" class="col-sm-6 col-md-4 control-label" style="text-align: right">Msg. Series</label>
+                        <div class="col-sm-6 col-md-8">
+                            <select id="importMessageSeries" class="form-control input-sm" required
+                                    ng-model="data.seriesId" ng-options="seriesId for seriesId in messageSeriesIds" >
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="importTag" class="col-sm-6 col-md-4 control-label" style="text-align: right">Tag</label>
+                        <div class="col-sm-6 col-md-8">
+                            <div class="input-group">
+                                <ui-select ng-model="tagData.tag" id="importTag">
+                                    <ui-select-match placeholder="Select tag">
+                                        {{tagData.tag.name}}
+                                    </ui-select-match>
+                                    <ui-select-choices repeat="tag in tags"
+                                                       refresh="refreshTags($select.search)"
+                                                       refresh-delay="100">
+                                        <div>
+                                            <span ng-bind-html="tag.name | highlight: $select.search"></span>
+                                        </div>
+                                    </ui-select-choices>
+                                </ui-select>
+                                <span class="input-group-addon clickable" ng-click="openTagsDialog()"><span class="glyphicon glyphicon-tags"></span></span>
+                                <span class="input-group-addon clickable" ng-click="removeTag()"><span class="glyphicon glyphicon-trash"></span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                </file-upload>
+
+                <div class="row">
+                    <div class="col-sm-12" style="margin-top: 20px">
+                        <label class="control-label" for="result">Result</label>
+                        <textarea ng-model="result" id="result" class="form-control input-sm" style="font-size: 10px;" rows="3" readonly></textarea>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="row" style="margin-top: 10px;">
+            <div class="form-group col-xs-12" style="text-align: right">
+                <button class="btn btn-primary btn-sm" ng-click="$dismiss('aborted')">Close</button>
+            </div>
+        </div>
+    </div>
+</div>

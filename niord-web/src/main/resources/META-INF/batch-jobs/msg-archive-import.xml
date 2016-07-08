@@ -1,0 +1,12 @@
+<job id="msg-archive-import" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
+    <step id="setupStep" allow-start-if-complete="true" next="importMessageArchiveStep">
+        <batchlet ref="jobStartBatchlet"/>
+    </step>
+    <step id="importMessageArchiveStep">
+        <chunk item-count="1">
+            <reader ref="batchMsgArchiveImportReader" />
+            <processor ref="batchMsgArchiveImportProcessor"/>
+            <writer ref="batchMsgArchiveImportWriter" />
+        </chunk>
+    </step>
+</job>

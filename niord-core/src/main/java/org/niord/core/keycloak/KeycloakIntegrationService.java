@@ -325,7 +325,7 @@ public class KeycloakIntegrationService {
     private <R> R executeAdminRequest(HttpRequestBase request, boolean auth, KeycloakResponseHandler<R> responseHandler) throws Exception {
 
         if (auth) {
-            KeycloakPrincipal keycloakPrincipal = userService.getCalledPrincipal();
+            KeycloakPrincipal keycloakPrincipal = userService.getCallerPrincipal();
             if (keycloakPrincipal == null) {
                 throw new Exception("Unable to execute request " + request.getURI() + ". User not authenticated");
             }

@@ -306,8 +306,18 @@ angular.module('niord.messages')
                     templateUrl: "/app/messages/sort-area-dialog.html",
                     size: 'lg'
                 });
-            }
+            },
 
+
+
+            /** Imports messages from a zip archive **/
+            importMessagesDialog: function () {
+                return $uibModal.open({
+                    controller: "ImportMessagesDialogCtrl",
+                    templateUrl: "/app/messages/message-import-dialog.html",
+                    size: 'md'
+                });
+            }
         };
     }])
 

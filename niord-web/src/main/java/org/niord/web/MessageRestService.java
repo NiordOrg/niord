@@ -15,11 +15,15 @@
  */
 package org.niord.web;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.NiordApp;
+import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.fm.FmService;
@@ -72,14 +76,18 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static org.niord.model.vo.MessageTagVo.MessageTagType.PUBLIC;
 import static org.niord.model.vo.Status.DRAFT;
@@ -94,7 +102,7 @@ import static org.niord.model.vo.Status.VERIFIED;
 @SecurityDomain("keycloak")
 @PermitAll
 @SuppressWarnings("unused")
-public class MessageRestService {
+public class MessageRestService extends AbstractBatchableRestService {
 
     @Resource
     SessionContext ctx;
@@ -747,7 +755,7 @@ public class MessageRestService {
 
 
     /***************************************/
-    /** Exporting                         **/
+    /** Exporting and Importing           **/
     /***************************************/
 
 
@@ -779,6 +787,80 @@ public class MessageRestService {
             log.error("Error generating ZIP archive for messages", e);
             throw e;
         }
+    }
+
+
+    /**
+     * Imports an uploaded messages zip archive
+     *
+     * @param request the servlet request
+     * @return a status
+     */
+    @POST
+    @Path("/import")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("text/plain")
+    @RolesAllowed("admin")
+    public String importMessages(@Context HttpServletRequest request) throws Exception {
+        return executeBatchJobFromUploadedFile(request, "msg-archive-import");
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    protected void checkBatchJob(String batchJobName, FileItem fileItem, Map<String, Object> params) throws Exception {
+
+        // Check that the zip file contains a messages.json file
+        if (!checkForMessagesFileInImportArchive(fileItem.getInputStream())) {
+            throw new Exception("Zip archive is missing a valid messages.json entry");
+        }
+
+        // Read and validate the parameters associated with the batch job
+        ImportMessagesArchiveParams batchData;
+        try {
+            batchData = new ObjectMapper().readValue((String)params.get("data"), ImportMessagesArchiveParams.class);
+        } catch (IOException e) {
+            throw new Exception("Missing batch data with tag and message series", e);
+        }
+
+        if (StringUtils.isBlank(batchData.getSeriesId())) {
+            throw new Exception("Missing message series for imported NMs");
+        }
+
+        // Determine all valid message series for the current user
+        Set<String> validMessageSeries = domainService.domainsWithUserRole("admin").stream()
+                .flatMap(d -> d.getMessageSeries().stream())
+                .map(MessageSeries::getSeriesId)
+                .collect(Collectors.toSet());
+
+        // Update parameters
+        params.remove("data");
+        params.put("seriesId", batchData.getSeriesId());
+        params.put("tagId", batchData.getTagId());
+        params.put("validMessageSeries", validMessageSeries);
+    }
+
+
+    /** Checks for a valid "messages.xml" zip file entry **/
+    private boolean checkForMessagesFileInImportArchive(InputStream in) throws Exception {
+        try (ZipInputStream zipFile = new ZipInputStream(in)) {
+            ZipEntry entry;
+            while ((entry = zipFile.getNextEntry()) != null) {
+                if ("messages.json".equals(entry.getName())) {
+                    try {
+                        ObjectMapper mapper = new ObjectMapper();
+                        PagedSearchResultVo<MessageVo> messages = mapper.readValue(
+                                zipFile,
+                                new TypeReference<PagedSearchResultVo<MessageVo>>() {});
+                        return  messages != null;
+                    } catch (Exception e) {
+                        return false;
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return false;
     }
 
 
@@ -966,6 +1048,30 @@ public class MessageRestService {
 
         public void setAfterId(String afterId) {
             this.afterId = afterId;
+        }
+    }
+
+
+    /** Defines the parameters used when starting an import a messages zip archive */
+    public static class ImportMessagesArchiveParams implements IJsonSerializable {
+
+        String seriesId;
+        String tagId;
+
+        public String getSeriesId() {
+            return seriesId;
+        }
+
+        public void setSeriesId(String seriesId) {
+            this.seriesId = seriesId;
+        }
+
+        public String getTagId() {
+            return tagId;
+        }
+
+        public void setTagId(String tagId) {
+            this.tagId = tagId;
         }
     }
 
