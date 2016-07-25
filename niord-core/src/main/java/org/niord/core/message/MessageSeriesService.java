@@ -28,8 +28,6 @@ import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import javax.persistence.criteria.Predicate;
-import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;

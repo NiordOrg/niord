@@ -284,7 +284,6 @@ public class MessageService extends BaseService {
                 .setParameter("sort", txt)
                 .setMaxResults(maxGroupCount)
                 .getResultList()
-                .stream()
                 .forEach(m -> result.add(new MessageIdMatch(m.getShortId(), SHORT_ID, m, lang)));
 
         // Search MRNs
@@ -293,7 +292,6 @@ public class MessageService extends BaseService {
                 .setParameter("sort", txt)
                 .setMaxResults(maxGroupCount)
                 .getResultList()
-                .stream()
                 .forEach(m -> result.add(new MessageIdMatch(m.getMrn(), MRN, m, lang)));
 
         return  result;
