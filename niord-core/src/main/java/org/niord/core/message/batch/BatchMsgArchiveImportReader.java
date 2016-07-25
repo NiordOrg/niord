@@ -124,12 +124,18 @@ public class BatchMsgArchiveImportReader extends AbstractItemHandler {
         }
 
         // Read the messages.json file
-        ObjectMapper mapper = new ObjectMapper();
-        PagedSearchResultVo<MessageVo> messages = mapper.readValue(
-                messageFilePath.toFile(),
-                new TypeReference<PagedSearchResultVo<MessageVo>>() {});
+        PagedSearchResultVo<MessageVo> messages;
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            messages = mapper.readValue(
+                    messageFilePath.toFile(),
+                    new TypeReference<PagedSearchResultVo<MessageVo>>() {});
+        } catch (IOException e) {
+            getLog().log(Level.SEVERE, "Invalid messages.json file");
+            throw new Exception("Invalid messages.json file");
+        }
 
-        // Wrap the messages as EditableMessageVo with the "editRepoPath" pointing to the extracted archive
+        // Wrap the messages as ExtractedArchiveMessageVo with the "editRepoPath" pointing to the extracted archive
         return messages.getData().stream()
                 .map(m -> new ExtractedArchiveMessageVo(m, tempArchiveRepoPath + "/" + m.getRepoPath()))
                 .collect(Collectors.toList());

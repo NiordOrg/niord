@@ -17,4 +17,9 @@ public enum MainType {
                 .filter(t -> t.getMainType() == this)
                 .collect(Collectors.toSet());
     }
+
+    /** Returns a sub-type implied by this main type */
+    public Type anyType() {
+        return getTypes().iterator().next();
+    }
 }

@@ -53,7 +53,7 @@ public class FeatureService extends BaseService {
      * Make sure that features with a "parentFeatureIds" property gets updated to reference the new UID.
      * @param fc the feature collection to update.
      */
-    private void assignNewFeatureUids(FeatureCollection fc) {
+    public void assignNewFeatureUids(FeatureCollection fc) {
 
         // Assign new UIDs to the features, and record the old UIDs
         Map<Object, String> oldUids = new HashMap<>();

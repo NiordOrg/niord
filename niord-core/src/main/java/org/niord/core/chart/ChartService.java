@@ -150,11 +150,12 @@ public class ChartService extends BaseService {
     /**
      * Returns the chart matching the given chart template, or creates if it does not exists
      * @param chartTemplate the chart template to find or create
+     * @param create whether to create a missing chart or just find it
      * @return the chart
      */
-    public Chart findOrCreateChart(Chart chartTemplate) {
+    public Chart findOrCreateChart(Chart chartTemplate, boolean create) {
         Chart chart = findByChartNumber(chartTemplate.getChartNumber());
-        if (chart == null) {
+        if (create && chart == null) {
             chart = createChart(chartTemplate);
         }
         return chart;

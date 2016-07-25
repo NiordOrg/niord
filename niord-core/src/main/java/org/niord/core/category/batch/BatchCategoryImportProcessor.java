@@ -43,6 +43,6 @@ public class BatchCategoryImportProcessor extends AbstractItemHandler {
         Category category = new Category(categoryVo, filter);
 
         getLog().info("Creating or updating category " + category);
-        return categoryService.findOrCreateCategory(category);
+        return categoryService.findOrCreateCategory(category, true);
     }
 }

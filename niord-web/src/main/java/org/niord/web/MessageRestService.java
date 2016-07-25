@@ -836,7 +836,12 @@ public class MessageRestService extends AbstractBatchableRestService {
         // Update parameters
         params.remove("data");
         params.put("seriesId", batchData.getSeriesId());
-        params.put("tagId", batchData.getTagId());
+        if (StringUtils.isNotBlank(batchData.getTagId())) {
+            params.put("tagId", batchData.getTagId());
+        }
+        params.put("assignNewUids", batchData.getAssignNewUids() == null ? false : batchData.getAssignNewUids());
+        params.put("assignDefaultSeries", batchData.getAssignDefaultSeries() == null ? false : batchData.getAssignDefaultSeries());
+        params.put("createBaseData", batchData.getCreateBaseData() == null ? false : batchData.getCreateBaseData());
         params.put("validMessageSeries", validMessageSeries);
     }
 
@@ -917,8 +922,7 @@ public class MessageRestService extends AbstractBatchableRestService {
         // Perform the search and update the area sort order of the messages
         long t0 = System.currentTimeMillis();
         PagedSearchResultVo<Message> searchResult = messageService.search(params);
-        searchResult.getData().stream()
-                .forEach(m -> messageService.computeMessageAreaSortingOrder(m));
+        searchResult.getData().forEach(m -> messageService.computeMessageAreaSortingOrder(m));
 
         log.info(String.format("Updates area sort order for  %d messages in %d ms",
                 searchResult.getData().size(), System.currentTimeMillis() - t0));
@@ -1055,8 +1059,35 @@ public class MessageRestService extends AbstractBatchableRestService {
     /** Defines the parameters used when starting an import a messages zip archive */
     public static class ImportMessagesArchiveParams implements IJsonSerializable {
 
+        Boolean assignNewUids;
+        Boolean assignDefaultSeries;
+        Boolean createBaseData;
         String seriesId;
         String tagId;
+
+        public Boolean getAssignNewUids() {
+            return assignNewUids;
+        }
+
+        public void setAssignNewUids(Boolean assignNewUids) {
+            this.assignNewUids = assignNewUids;
+        }
+
+        public Boolean getAssignDefaultSeries() {
+            return assignDefaultSeries;
+        }
+
+        public void setAssignDefaultSeries(Boolean assignDefaultSeries) {
+            this.assignDefaultSeries = assignDefaultSeries;
+        }
+
+        public Boolean getCreateBaseData() {
+            return createBaseData;
+        }
+
+        public void setCreateBaseData(Boolean createBaseData) {
+            this.createBaseData = createBaseData;
+        }
 
         public String getSeriesId() {
             return seriesId;

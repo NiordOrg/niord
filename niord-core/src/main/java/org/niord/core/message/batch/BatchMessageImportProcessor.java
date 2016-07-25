@@ -106,7 +106,7 @@ public class BatchMessageImportProcessor extends AbstractItemHandler {
             // Make sure areas are created
             List<Area> areas = new ArrayList<>();
             for (Area area : message.getAreas()) {
-                area = areaService.findOrCreateArea(area);
+                area = areaService.findOrCreateArea(area, true);
                 if (area != null) {
                     areas.add(area);
                 }
@@ -116,7 +116,7 @@ public class BatchMessageImportProcessor extends AbstractItemHandler {
             // Make sure categories are created
             List<Category> categories = new ArrayList<>();
             for (Category category : message.getCategories()) {
-                category = categoryService.findOrCreateCategory(category);
+                category = categoryService.findOrCreateCategory(category, true);
                 if (category != null) {
                     categories.add(category);
                 }
@@ -126,7 +126,7 @@ public class BatchMessageImportProcessor extends AbstractItemHandler {
             // Make sure charts are created
             List<Chart> charts = new ArrayList<>();
             for (Chart chart : message.getCharts()) {
-                chart = chartService.findOrCreateChart(chart);
+                chart = chartService.findOrCreateChart(chart, true);
                 if (chart != null) {
                     charts.add(chart);
                 }

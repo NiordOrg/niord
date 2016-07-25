@@ -55,6 +55,8 @@ import java.util.stream.Collectors;
                 query = "select distinct a from Area a left join fetch a.descs order by a.parent, a.siblingSortOrder"),
         @NamedQuery(name  = "Area.findAreasWithIds",
                 query = "select distinct a from Area a left join fetch a.descs where a.id in (:ids)"),
+        @NamedQuery(name  = "Area.findByMrn",
+                query = "select a from Area a left join fetch a.descs where a.mrn = :mrn"),
         @NamedQuery(name  = "Area.findLastUpdated",
                 query = "select max(a.updated) from Area a")
 })
@@ -139,7 +141,7 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
                     .forEach(this::addChild);
         }
         if (area.getDescs() != null) {
-            area.getDescs().stream()
+            area.getDescs()
                     .forEach(desc -> createDesc(desc.getLang()).setName(desc.getName()));
         }
     }

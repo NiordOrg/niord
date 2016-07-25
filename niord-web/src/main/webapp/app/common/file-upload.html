@@ -52,10 +52,10 @@
     <div ng-show="uploader.queue.length > 0">
         <div>
             <button type="button" class="btn btn-success btn-xs" ng-click="uploader.uploadAll()" ng-disabled="!uploader.getNotUploadedItems().length">
-                <span class="glyphicon glyphicon-upload"></span> Upload all
+                <span class="glyphicon glyphicon-upload"></span> {{uploadText}}
             </button>
             <button type="button" class="btn btn-danger btn-xs" ng-click="uploader.clearQueue()" ng-disabled="!uploader.queue.length">
-                <span class="glyphicon glyphicon-trash"></span> Remove all
+                <span class="glyphicon glyphicon-trash"></span> {{removeText}}
             </button>
         </div>
     </div>

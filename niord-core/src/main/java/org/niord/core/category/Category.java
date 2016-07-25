@@ -37,7 +37,9 @@ import java.util.stream.Collectors;
         @NamedQuery(name  = "Category.findCategoriesWithDescs",
                 query = "select distinct c from Category c left join fetch c.descs"),
         @NamedQuery(name  = "Category.findCategoriesWithIds",
-                query = "select distinct c from Category c left join fetch c.descs where c.id in (:ids)")
+                query = "select distinct c from Category c left join fetch c.descs where c.id in (:ids)"),
+        @NamedQuery(name  = "Category.findByMrn",
+                query = "select c from Category c left join fetch c.descs where c.mrn = :mrn"),
 })
 @SuppressWarnings("unused")
 public class Category extends VersionedEntity<Integer> implements ILocalizable<CategoryDesc> {
@@ -90,7 +92,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
                     .forEach(this::addChild);
         }
         if (category.getDescs() != null) {
-            category.getDescs().stream()
+            category.getDescs()
                     .forEach(desc -> createDesc(desc.getLang()).setName(desc.getName()));
         }
     }

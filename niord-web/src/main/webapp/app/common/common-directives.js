@@ -333,6 +333,8 @@ angular.module('niord.common')
                 url:                '=',
                 multiple:           '=',
                 dropText:           '@',
+                uploadText:         '@',
+                removeText:         '@',
                 fileTypes:          '=',
                 autoUpload:         '=',
                 removeAfterUpload:  '=',
@@ -364,6 +366,9 @@ angular.module('niord.common')
                         scope.extension = function (txt) {
                             return txt.substr((~-txt.lastIndexOf(".") >>> 0) + 2);
                         };
+
+                        scope.uploadText = scope.uploadText || "Upload all";
+                        scope.removeText = scope.removeText || "Remove all";
 
                         if (scope.data) {
                             scope.uploader.onBeforeUploadItem = function (item) {

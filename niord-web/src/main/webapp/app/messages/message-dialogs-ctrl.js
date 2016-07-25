@@ -385,7 +385,10 @@ angular.module('niord.messages')
             }
 
             $scope.data = {
-                seriesId: $scope.messageSeriesIds.length == 1 ? $scope.messageSeriesIds[0] : undefined,
+                assignNewUids: false,
+                createBaseData: false,
+                assignDefaultSeries: false,
+                seriesId: $scope.messageSeriesIds.length > 0 ? $scope.messageSeriesIds[0] : undefined,
                 tagId: ''
             };
 

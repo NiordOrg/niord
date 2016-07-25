@@ -11,14 +11,58 @@
             <div class="col-sm-12">
 
                 <file-upload url="importUrl"
-                             drop-text="or drop messages Zip archive here" multiple="false"
-                             file-types="'zip'" auto-upload="false" remove-after-upload="true"
+                             drop-text="or drop messages Zip archive here"
+                             upload-text="Import messages"
+                             remove-text="Remove Zip file"
+                             multiple="false"
+                             file-types="'zip'"
+                             auto-upload="false"
+                             remove-after-upload="true"
                              data="data"
                              success="fileUploaded(result)"
                              error="fileUploadError(status, statusText)">
 
                     <div class="form-group row" style="margin-top: 20px">
-                        <label for="importMessageSeries" class="col-sm-6 col-md-4 control-label" style="text-align: right">Msg. Series</label>
+                        <label for="newUids" class="col-sm-6 col-md-4 control-label" style="text-align: right"
+                               uib-tooltip="Only messages with unique UIDs will be imported.
+                                         Check this option to assign a new UID to all messages.">
+                            UID Handling
+                        </label>
+                        <div class="col-sm-6 col-md-8">
+                            <input id="newUids" type="checkbox" ng-model="data.assignNewUids">
+                            &nbsp;Assign new UID's
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="createBaseData" class="col-sm-6 col-md-4 control-label" style="text-align: right"
+                               uib-tooltip="Check this option to automatically create non-existing base data,
+                                            such as areas, categories and charts.">
+                            Base data handling
+                        </label>
+                        <div class="col-sm-6 col-md-8">
+                            <input id="createBaseData" type="checkbox" ng-model="data.createBaseData">
+                            &nbsp;Create non-existing areas, categories and charts
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="assignMessageSeries" class="col-sm-6 col-md-4 control-label" style="text-align: right"
+                            uib-tooltip="Default behaviour is to preserve valid message series.
+                                         Check this option to always assign the default message series specified below.">
+                            Msg. series handling
+                        </label>
+                        <div class="col-sm-6 col-md-8">
+                            <input id="assignMessageSeries" type="checkbox" ng-model="data.assignDefaultSeries">
+                            &nbsp;Always assign default message series
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="importMessageSeries" class="col-sm-6 col-md-4 control-label" style="text-align: right"
+                               uib-tooltip="The default messages series is assigned to imported messages with no valid message series.">
+                            Default msg. Series
+                        </label>
                         <div class="col-sm-6 col-md-8">
                             <select id="importMessageSeries" class="form-control input-sm" required
                                     ng-model="data.seriesId" ng-options="seriesId for seriesId in messageSeriesIds" >
@@ -27,7 +71,10 @@
                     </div>
 
                     <div class="form-group row">
-                        <label for="importTag" class="col-sm-6 col-md-4 control-label" style="text-align: right">Tag</label>
+                        <label for="importTag" class="col-sm-6 col-md-4 control-label" style="text-align: right"
+                               uib-tooltip="All imported messages will be assigned to the specified tag.">
+                            Tag
+                        </label>
                         <div class="col-sm-6 col-md-8">
                             <div class="input-group">
                                 <ui-select ng-model="tagData.tag" id="importTag">

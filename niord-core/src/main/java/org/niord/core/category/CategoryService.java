@@ -24,7 +24,13 @@ import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import javax.persistence.criteria.*;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Path;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -312,23 +318,50 @@ public class CategoryService extends BaseService {
 
 
     /**
+     * Returns the category with the given MRN. Returns null if the category is not found.
+     *
+     * @param mrn the MRN of the category
+     * @return the category with the given MRN or null if not found
+     */
+    public Category findByMrn(String mrn) {
+        try {
+            return em.createNamedQuery("Category.findByMrn", Category.class)
+                    .setParameter("mrn", mrn)
+                    .getSingleResult();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
+    /**
      * Ensures that the template category and it's parents exists
      *
-     * TODO: User Category.mrn as primary search criteria
-     *
      * @param templateCategory the template category
+     * @param create whether to create a missing category or just find it
      * @return the category
      */
-    public Category findOrCreateCategory(Category templateCategory) {
+    public Category findOrCreateCategory(Category templateCategory, boolean create) {
         // Sanity checks
-        if (templateCategory == null || templateCategory.getDescs().size() == 0) {
+        if (templateCategory == null) {
             return null;
+        }
+
+        // Check if we can find the area by MRN
+        if (StringUtils.isNotBlank(templateCategory.getMrn())) {
+            Category category = findByMrn(templateCategory.getMrn());
+            if (category != null) {
+                return category;
+            }
         }
 
         // Recursively, resolve the parent categories
         Category parent = null;
         if (templateCategory.getParent() != null) {
-            parent = findOrCreateCategory(templateCategory.getParent());
+            parent = findOrCreateCategory(templateCategory.getParent(), create);
+            if (!create && parent == null) {
+                return null;
+            }
         }
         Integer parentId = (parent == null) ? null : parent.getId();
 
@@ -340,7 +373,7 @@ public class CategoryService extends BaseService {
         }
 
         // Create the category if no matching category was found
-        if (category == null) {
+        if (create && category == null) {
             category = createCategory(templateCategory, parentId);
         }
         return category;

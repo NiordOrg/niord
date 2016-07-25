@@ -410,25 +410,50 @@ public class AreaService extends BaseService {
         return areas.isEmpty() ? null : areas.get(0);
     }
 
+    /**
+     * Returns the area with the given MRN. Returns null if the area is not found.
+     *
+     * @param mrn the MRN of the area
+     * @return the area with the given MRN or null if not found
+     */
+    public Area findByMrn(String mrn) {
+        try {
+            return em.createNamedQuery("Area.findByMrn", Area.class)
+                    .setParameter("mrn", mrn)
+                    .getSingleResult();
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     /**
      * Ensures that the template area and it's parents exists.
      *
-     * TODO: User Area.mrn as primary search criteria
-     *
      * @param templateArea the template area
+     * @param create whether to create a missing area or just find it
      * @return the area
      */
-    public Area findOrCreateArea(Area templateArea) {
+    public Area findOrCreateArea(Area templateArea, boolean create) {
         // Sanity checks
-        if (templateArea == null || templateArea.getDescs().size() == 0) {
+        if (templateArea == null) {
             return null;
+        }
+
+        // Check if we can find the area by MRN
+        if (StringUtils.isNotBlank(templateArea.getMrn())) {
+            Area area = findByMrn(templateArea.getMrn());
+            if (area != null) {
+                return area;
+            }
         }
 
         // Recursively, resolve the parent areas
         Area parent = null;
         if (templateArea.getParent() != null) {
-            parent = findOrCreateArea(templateArea.getParent());
+            parent = findOrCreateArea(templateArea.getParent(), create);
+            if (!create && parent == null) {
+                return null;
+            }
         }
         Integer parentId = (parent == null) ? null : parent.getId();
 
@@ -440,7 +465,7 @@ public class AreaService extends BaseService {
         }
 
         // Create the area if no matching area was found
-        if (area == null) {
+        if (create && area == null) {
             area = createArea(templateArea, parentId);
         }
         return area;

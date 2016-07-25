@@ -53,18 +53,14 @@ public class BatchMsgArchiveImportWriter extends AbstractItemHandler {
     public void writeItems(List<Object> items) throws Exception {
         long t0 = System.currentTimeMillis();
 
-        MessageTag tag = checkCreateMessageTag();
+        MessageTag tag = getMessageTag();
 
         for (Object i : items) {
             ExtractedArchiveMessage extractedMsg = (ExtractedArchiveMessage)i;
             Message message = extractedMsg.getMessage();
 
-            if (message.isNew()) {
-                messageService.createMessage(message);
-            } else {
-                messageService.updateMessage(message);
-            }
-
+            // Persist the message
+            messageService.createMessage(message);
 
             // Add the message to the tag
             if (tag != null && !tag.getMessages().stream().anyMatch(m -> m.getId().equals(message.getId()))) {
@@ -77,7 +73,7 @@ public class BatchMsgArchiveImportWriter extends AbstractItemHandler {
             // NB: There may still be an exception when the transaction is committed,
             // so, to minimize the risk of inconsistency, the batch job only processes
             // one message at a time before committing.
-            EditableMessageVo editableMessageVo = message.toEditableVo(DataFilter.get());
+            EditableMessageVo editableMessageVo = message.toEditableVo(DataFilter.get().fields(DataFilter.DETAILS));
             editableMessageVo.setEditRepoPath(extractedMsg.getEditRepoPath());
             messageService.updateMessageFromTempRepoFolder(editableMessageVo);
         }
@@ -92,8 +88,8 @@ public class BatchMsgArchiveImportWriter extends AbstractItemHandler {
     }
 
 
-    /** Looks up the message tag associated with the batch job */
-    protected MessageTag checkCreateMessageTag() throws IOException {
+    /** Looks up and caches the message tag associated with the batch job */
+    protected MessageTag getMessageTag() throws IOException {
         // Has it been resolved already
         if (tag != null) {
             return tag;
