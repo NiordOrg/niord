@@ -143,7 +143,7 @@ angular.module('niord.admin')
 
             /** Returns all message series **/
             getMessageSeries: function () {
-                return $http.get('/rest/message-series/all');
+                return $http.get('/rest/message-series/all?messageNumbers=true');
             },
 
 
@@ -162,6 +162,24 @@ angular.module('niord.admin')
             /** Deletes the given message series **/
             deleteMessageSeries: function(series) {
                 return $http.delete('/rest/message-series/series/' + encodeURIComponent(series.seriesId));
+            },
+
+
+            /** Returns the next message series number for the given year **/
+            getNextMessageSeriesNumber: function (seriesId, year) {
+                return $http.get('/rest/message-series/series/' + encodeURIComponent(seriesId) + '/number/' + year);
+            },
+
+
+            /** Sets the next message series number for the given year **/
+            updateNextMessageSeriesNumber: function (seriesId, year, num) {
+                return $http.put('/rest/message-series/series/' + encodeURIComponent(seriesId) + '/number/' + year, num);
+            },
+
+
+            /** Computes the next message series number for the given year **/
+            computeNextMessageSeriesNumber: function (seriesId, year) {
+                return $http.get('/rest/message-series/series/' + encodeURIComponent(seriesId) + '/compute-number/' + year);
             }
         };
     }])

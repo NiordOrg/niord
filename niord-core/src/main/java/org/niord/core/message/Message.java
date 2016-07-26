@@ -97,6 +97,9 @@ import java.util.UUID;
                         + "order by locate(lower(:sort), lower(m.mrn)) asc "),
         @NamedQuery(name="Message.findPublishableMessages",
                 query="SELECT msg FROM Message msg where msg.status = 'VERIFIED' and msg.publishDate < :now"),
+        @NamedQuery(name="Message.maxNumberInPeriod",
+                query="SELECT coalesce(max(msg.number), 0) FROM Message msg where msg.messageSeries = :series and "
+                        + " msg.publishDate between :fromDate and :toDate and msg.number is not null")
 })
 @SuppressWarnings("unused")
 public class Message extends VersionedEntity<Integer> implements ILocalizable<MessageDesc> {

@@ -75,8 +75,8 @@ import java.util.zip.GZIPOutputStream;
  * from an included jar.
  * Hence, move the xml files to META-INF/batch-jobs of the web application you are working on.
  *
- * @see <a hreg="https://issues.jboss.org/browse/WFLY-4988">Error report</a>
- * @see <a hreg="https://github.com/NiordOrg/niord-dk/tree/master/niord-dk-web">Example solution</a>
+ * @see <a href="https://issues.jboss.org/browse/WFLY-4988">Error report</a>
+ * @see <a href="https://github.com/NiordOrg/niord-dk/tree/master/niord-dk-web">Example solution</a>
  */
 @Stateless
 @SuppressWarnings("unused")
@@ -247,7 +247,7 @@ public class BatchService extends BaseService {
      */
     private Long getNextJobNo(String jobName) {
         Sequence jobSequence = new DefaultSequence("BATCH_JOB_" + jobName, 1);
-        return sequenceService.getNextValue(jobSequence);
+        return sequenceService.nextValue(jobSequence);
     }
 
 

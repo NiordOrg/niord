@@ -38,6 +38,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -64,10 +65,22 @@ public class MessageSeriesRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<MessageSeriesVo> getAllMessageSeries() {
-        return messageSeriesService.getAllMessageSeries().stream()
+    public List<MessageSeriesVo> getAllMessageSeries(
+            @QueryParam("messageNumbers") @DefaultValue("false") boolean messageNumbers) {
+        List<MessageSeriesVo> messageSeries = messageSeriesService.getAllMessageSeries().stream()
                 .map(MessageSeries::toVo)
                 .collect(Collectors.toList());
+
+        if (messageNumbers) {
+            // Load the next message number in the current year
+            int year = Calendar.getInstance().get(Calendar.YEAR);
+            messageSeries.forEach(ms -> {
+                int nextMessageNumber = messageSeriesService.getNextMessageNumber(ms.getSeriesId(), year);
+                ms.setNextMessageNumber(nextMessageNumber);
+            });
+        }
+
+        return messageSeries;
     }
 
 
@@ -148,4 +161,47 @@ public class MessageSeriesRestService {
         messageSeriesService.deleteMessageSeries(seriesId);
     }
 
+
+    /** Returns the next message series number for the given year */
+    @GET
+    @Path("/series/{seriesIds}/number/{year}")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public Integer getNextMessageSeriesNumber(
+            @PathParam("seriesIds") String seriesIds,
+            @PathParam("year") int year) {
+        return messageSeriesService.getNextMessageNumber(seriesIds, year);
+    }
+
+
+    /** Sets the next message series number for the given year */
+    @PUT
+    @Path("/series/{seriesIds}/number/{year}")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({ "sysadmin" })
+    public Integer setNextMessageSeriesNumber(
+            @PathParam("seriesIds") String seriesIds,
+            @PathParam("year") int year,
+            Integer nextNumber) {
+        log.info("Updating next number for message series " + seriesIds + " to " + nextNumber);
+        messageSeriesService.setNextMessageNumber(seriesIds, year, nextNumber);
+        return nextNumber;
+    }
+
+
+    /** Computes the next message series number for the given year */
+    @GET
+    @Path("/series/{seriesIds}/compute-number/{year}")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public Integer computeNextMessageSeriesNumber(
+            @PathParam("seriesIds") String seriesIds,
+            @PathParam("year") int year) {
+        return messageSeriesService.computeNextMessageNumber(seriesIds, year);
+    }
 }

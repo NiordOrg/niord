@@ -27,14 +27,16 @@ import javax.xml.bind.annotation.XmlType;
 @ApiModel(value = "MessageSeries", description = "A message series")
 @XmlRootElement(name = "messageSeries")
 @XmlType(propOrder = {
-        "seriesId", "mainType", "mrnFormat", "shortFormat"
+        "seriesId", "mainType", "mrnFormat", "shortFormat", "nextMessageNumber"
 })
+@SuppressWarnings("unused")
 public class MessageSeriesVo implements IJsonSerializable {
 
     String seriesId;
     MainType mainType;
     String mrnFormat;
     String shortFormat;
+    Integer nextMessageNumber;
 
     /*************************/
     /** Getters and Setters **/
@@ -70,5 +72,13 @@ public class MessageSeriesVo implements IJsonSerializable {
 
     public void setShortFormat(String shortFormat) {
         this.shortFormat = shortFormat;
+    }
+
+    public Integer getNextMessageNumber() {
+        return nextMessageNumber;
+    }
+
+    public void setNextMessageNumber(Integer nextMessageNumber) {
+        this.nextMessageNumber = nextMessageNumber;
     }
 }

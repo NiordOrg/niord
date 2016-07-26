@@ -22,12 +22,12 @@ import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
-import java.util.Objects;
 
 /**
  * Provides an interface for managing sequences
  */
 @Stateless
+@SuppressWarnings("unused")
 public class SequenceService {
 
     @Inject
@@ -36,30 +36,59 @@ public class SequenceService {
     @Inject
     protected EntityManager em;
 
+
     /**
-     * Returns the next value of the given sequence
+     * Peeks the next value of the given sequence
+     * @param sequence the sequence
+     * @return the next value
+     */
+    public long peekNextValue(Sequence sequence) {
+        SequenceEntity seq = em.find(SequenceEntity.class, sequence.getName());
+        return seq != null ? seq.getNextValue() : sequence.initialValue();
+    }
+
+
+    /**
+     * Resets the next value of the given sequence to the initial value
+     * @param sequence the sequence
+     */
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    public void resetNextValue(Sequence sequence) {
+        SequenceEntity seq = em.find(SequenceEntity.class, sequence.getName());
+
+        if (seq != null) {
+            seq.setNextValue(sequence.initialValue());
+            em.merge(seq);
+        } else {
+            seq = new SequenceEntity();
+            seq.setName(sequence.getName());
+            seq.setNextValue(sequence.initialValue());
+            em.persist(seq);
+        }
+    }
+
+
+    /**
+     * Returns and bumps the next value of the given sequence
      * @param sequence the sequence
      * @return the next value
      */
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
-    public long getNextValue(Sequence sequence) {
-        Objects.requireNonNull(sequence, "No sequence specified");
-        Objects.requireNonNull(sequence.getName(), "Invalid sequence specified");
-
+    public long nextValue(Sequence sequence) {
+        long nextValue;
         SequenceEntity seq = em.find(SequenceEntity.class, sequence.getName());
         if (seq != null) {
-            // Increase the last value
-            seq.setLastValue(seq.getLastValue() + 1);
+            // Fetch and bump the next value
+            nextValue = seq.nextValue();
             em.merge(seq);
-            return seq.getLastValue();
-
         } else {
+            nextValue = sequence.initialValue();
             seq = new SequenceEntity();
             seq.setName(sequence.getName());
-            seq.setLastValue(sequence.initialValue());
+            seq.setNextValue(nextValue + 1);
             em.persist(seq);
-            // NB: Return start value - not the next value.
-            return seq.getLastValue();
         }
+
+        return nextValue;
     }
 }

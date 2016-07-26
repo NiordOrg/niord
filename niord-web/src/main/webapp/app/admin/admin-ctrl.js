@@ -531,14 +531,15 @@ angular.module('niord.admin')
      * Message Series Admin Controller
      * Controller for the Admin message series page
      */
-    .controller('MessageSeriesAdminCtrl', ['$scope', '$rootScope', 'growl', 'AdminMessageSeriesService', 'DialogService',
-        function ($scope, $rootScope, growl, AdminMessageSeriesService, DialogService) {
+    .controller('MessageSeriesAdminCtrl', ['$scope', '$rootScope', '$uibModal', 'growl', 'AdminMessageSeriesService', 'DialogService',
+        function ($scope, $rootScope, $uibModal, growl, AdminMessageSeriesService, DialogService) {
             'use strict';
 
             $scope.messageSeries = [];
             $scope.series = undefined;  // The message series being edited
             $scope.editMode = 'add';
             $scope.search = '';
+            $scope.currentYear = new Date().getFullYear();
 
 
             /** Loads the message series from the back-end */
@@ -654,6 +655,70 @@ angular.module('niord.admin')
                             .deleteMessageSeries(series)
                             .success($scope.loadMessageSeries)
                             .error($scope.displayError);
+                    });
+            };
+
+
+            /** Edits the next number of the given message series **/
+            $scope.editNextNumber = function (series) {
+                $uibModal.open({
+                    controller: "MessageSeriesNextNumberDialogCtrl",
+                    templateUrl: "nextMessageNumberDialog.html",
+                    size: 'md',
+                    resolve: {
+                        series: function () { return series; }
+                    }
+                }).result.then($scope.loadMessageSeries);
+            };
+        }])
+
+
+    /*******************************************************************
+     * Controller that handles the next-number of a message series
+     *******************************************************************/
+    .controller('MessageSeriesNextNumberDialogCtrl', ['$scope', 'growl', 'AdminMessageSeriesService', 'series',
+        function ($scope, growl, AdminMessageSeriesService, series) {
+            'use strict';
+
+            $scope.series = series;
+            $scope.data = {
+                year: new Date().getFullYear(),
+                years: [],
+                nextNumber: undefined
+            };
+            for (var year = 1900; year < 2100; year++) {
+                $scope.data.years.push(year);
+            }
+
+            // Loads the next-number for the selected year
+            $scope.$watch("data.year", function (year) {
+                AdminMessageSeriesService.getNextMessageSeriesNumber($scope.series.seriesId, year)
+                    .success(function (nextNumber) {
+                        $scope.data.nextNumber = nextNumber;
+                    })
+            });
+
+
+            /** Computes the next number based on existing numbers for the given year **/
+            $scope.suggestNextNumber = function () {
+                AdminMessageSeriesService
+                    .computeNextMessageSeriesNumber($scope.series.seriesId, $scope.data.year)
+                    .success(function (nextNumber) {
+                        $scope.data.nextNumber = nextNumber;
+                    })
+            };
+
+
+            /** Close the dialog and return the updated message number and year **/
+            $scope.updateNextNumber = function () {
+                AdminMessageSeriesService
+                    .updateNextMessageSeriesNumber($scope.series.seriesId, $scope.data.year, $scope.data.nextNumber)
+                    .success(function () {
+                        growl.info('Next message number updated', { ttl: 3000 });
+                        $scope.$close('OK');
+                    })
+                    .error(function () {
+                        growl.error("Error updating next number", { ttl: 5000 });
                     });
             };
         }])

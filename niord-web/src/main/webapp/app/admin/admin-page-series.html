@@ -91,6 +91,17 @@
                             </div>
                         </div>
 
+
+                        <div class="form-group" ng-if="editMode == 'edit'">
+                            <label class="col-sm-4">Next number ({{currentYear}})</label>
+                            <div class="col-sm-8">
+                                {{series.nextMessageNumber}}&nbsp;
+                                <button class="btn btn-xs btn-default" ng-click="editNextNumber(series);" title="Edit Next Message Series Number">
+                                    <i class="glyphicon glyphicon-pencil"></i>
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -134,6 +145,7 @@
                             <th>Type</th>
                             <th>MRN Format</th>
                             <th>Short Format</th>
+                            <th>Next Number ({{currentYear}})</th>
                             <th></th>
                         </tr>
                         <tr ng-repeat="series in messageSeries | filter: { seriesId: search }">
@@ -141,6 +153,7 @@
                             <td>{{series.mainType}}</td>
                             <td>{{series.mrnFormat}}</td>
                             <td>{{series.shortFormat}}</td>
+                            <td>{{series.nextMessageNumber}}</td>
                             <td nowrap align="right">
                                 <a href ng-click="editMessageSeries(series);" title="Edit Message Series"><i class="glyphicon glyphicon-pencil"></i></a>
                                 &nbsp;
@@ -158,3 +171,48 @@
 
 </admin-page>
 
+
+<!-- ************************************************** -->
+<!-- Dialog for updating the next message series number -->
+<!-- ************************************************** -->
+<script type="text/ng-template" id="nextMessageNumberDialog.html">
+    <div class="modal-header">
+        <h4 class="modal-title">Next Message Number</h4>
+    </div>
+    <div class="modal-body">
+
+        <div class="container-fluid">
+
+            <div class="form-group row">
+                <label class="col-sm-4">Year</label>
+                <div class="col-sm-8">
+                    <select id="year" name="year" class="form-control input-sm" style="width: 120px"
+                            ng-model="data.year" ng-options="year for year in data.years">
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group row">
+                <label class="col-sm-4">Next number</label>
+                <div class="col-sm-8">
+                    <div class="input-group" style="width: 120px">
+                        <input type="number" class="form-control input-sm"
+                               min="0" step="1" required
+                               focus="focusMe" ng-model="data.nextNumber"/>
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-sm btn-default" ng-click="suggestNextNumber()"
+                                    uib-tooltip="Suggest next number">
+                                <span class="glyphicon glyphicon-cog"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-default" ng-click="$dismiss('aborted')">Cancel</button>
+        <button class="btn btn-primary" ng-click="updateNextNumber()">Update</button>
+    </div>
+</script>

@@ -23,6 +23,7 @@ import org.niord.core.sequence.DefaultSequence;
 import org.niord.core.sequence.Sequence;
 import org.niord.core.sequence.SequenceService;
 import org.niord.core.service.BaseService;
+import org.niord.core.util.TimeUtils;
 import org.niord.model.vo.Type;
 import org.slf4j.Logger;
 
@@ -200,17 +201,86 @@ public class MessageSeriesService extends BaseService {
     /****************************/
 
     /**
+     * Returns the sequence associated with the given message series and year
+     * @param seriesId the message series ID
+     * @param year the year
+     * @return the sequence associated with the given message series and year
+     */
+    private Sequence sequenceForSeries(String seriesId, int year, int initialValue) {
+
+        // Validate that seriesId designates a valid messaage series
+        if (findBySeriesId(seriesId) == null) {
+            throw new IllegalArgumentException("Invalid message series " + seriesId);
+        }
+
+        // Check that the year is "sensible"
+        if (year < 1700 || year > 2100) {
+            throw new IllegalArgumentException("Invalid year " + year);
+        }
+
+        String sequenceKey = String.format("MESSAGE_SERIES_NUMBER_%s_%d", seriesId, year);
+        return new DefaultSequence(sequenceKey, initialValue);
+    }
+
+
+    /**
+     * Returns (but does not bump) the next message number for the given message series and year
+     *
+     * @param seriesId the message series ID
+     * @param year      the year
+     * @return the next series identifier number
+     */
+    public Integer getNextMessageNumber(String seriesId, int year) {
+        Sequence sequence = sequenceForSeries(seriesId, year, 1);
+        return (int) sequenceService.peekNextValue(sequence);
+    }
+
+
+    /**
+     * Resets the next message number for the given message series and year
+     *
+     * @param seriesId the message series ID
+     * @param year      the year
+     * @param nextNumber the next number for the message series
+     */
+    public void setNextMessageNumber(String seriesId, int year, int nextNumber) {
+        Sequence sequence = sequenceForSeries(seriesId, year, nextNumber);
+        sequenceService.resetNextValue(sequence);
+    }
+
+
+    /**
+     * Computes (but does not update) the next message number for the given message series and year
+     * by looking at the numbers already assigned.
+     *
+     * @param seriesId the message series ID
+     * @param year      the year
+     * @return the computed next series identifier number
+     */
+    public Integer computeNextMessageNumber(String seriesId, int year) {
+        MessageSeries series = findBySeriesId(seriesId);
+        Date fromDate = TimeUtils.getDate(year, 0, 1);
+        Date toDate = TimeUtils.endOfDay(TimeUtils.getDate(year, 11, 31));
+        return em.createNamedQuery("Message.maxNumberInPeriod", Integer.class)
+                .setParameter("series", series)
+                .setParameter("fromDate", fromDate)
+                .setParameter("toDate", toDate)
+                .getSingleResult() + 1;
+    }
+
+
+    /**
      * Creates a new message number specific for the given message series and year
      *
-     * @param messageSeries the message series
+     * @param seriesId the message series ID
      * @param year      the year
      * @return the new series identifier number
      */
-    public Integer newMessageNumber(MessageSeries messageSeries, int year) {
-        String sequenceKey = String.format("MESSAGE_SERIES_NUMBER_%s_%d", messageSeries.getSeriesId(), year);
-        Sequence sequence = new DefaultSequence(sequenceKey, 1);
-        return (int) sequenceService.getNextValue(sequence);
+    public Integer newMessageNumber(String seriesId, int year) {
+        Sequence sequence = sequenceForSeries(seriesId, year, 1);
+        return (int) sequenceService.nextValue(sequence);
     }
+
 
     /**
      * Updates the message with (optionally) a new message number, an MRN and a short ID
@@ -236,7 +306,7 @@ public class MessageSeriesService extends BaseService {
 
         // If requested assign a new message number
         if (assignMessageNumber) {
-            message.setNumber(newMessageNumber(messageSeries, year));
+            message.setNumber(newMessageNumber(messageSeries.getSeriesId(), year));
         }
 
         Map<String, String> params = new HashMap<>();
@@ -263,6 +333,7 @@ public class MessageSeriesService extends BaseService {
         });
 
     }
+
 
     /** Returns the NM T or P token to be used in the short ID for the message */
     private String getNmTOrPToken(Message message) {

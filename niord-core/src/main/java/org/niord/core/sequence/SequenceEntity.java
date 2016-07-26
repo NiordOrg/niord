@@ -20,6 +20,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
@@ -35,15 +36,35 @@ public class SequenceEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @NotNull
     String name;
 
-    long lastValue;
+    long nextValue;
+
+
+    /**
+     * Returns and bumps the next value of this sequence
+     * @return the next value
+     */
+    public long nextValue() {
+        return nextValue++;
+    }
+
+
+    /*************************/
+    /** Getters and Setters **/
+    /*************************/
 
     @Id
     @Column(unique = true, nullable = false)
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
-    public long getLastValue() { return lastValue; }
-    public void setLastValue(long lastValue) { this.lastValue = lastValue; }
+    public long getNextValue() {
+        return nextValue;
+    }
+
+    public void setNextValue(long nextValue) {
+        this.nextValue = nextValue;
+    }
 }
