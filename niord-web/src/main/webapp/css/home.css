@@ -43,6 +43,7 @@
 /** Home -> Map **/
 
 .home-map {
+    background-color: #d0cfd4;
     position: fixed;
     top: 50px;
     left: 0;
