@@ -37,13 +37,20 @@
                 <div>
                     <button href class="btn btn-primary btn-sm message-status-action"
                             ng-click="verify()" ng-if="message.status == 'DRAFT'">
-                        <span class="glyphicon glyphicon-ok"></span> Verify Draft...
+                        <span class="glyphicon glyphicon-ok"></span> Verify Message...
                     </button>
                 </div>
                 <div>
                     <button href class="btn btn-default btn-sm message-status-action"
-                            ng-click="delete()" ng-if="message.status == 'DRAFT' || message.status == 'VERIFIED'">
-                        <span class="glyphicon glyphicon-trash"></span> Delete Draft...
+                            ng-click="draft()" ng-if="message.status == 'IMPORTED'">
+                        <span class="glyphicon glyphicon-ok"></span> Save as Draft...
+                    </button>
+                </div>
+                <div>
+                    <button href class="btn btn-default btn-sm message-status-action"
+                            ng-click="delete()"
+                            ng-if="message.status == 'DRAFT' || message.status == 'VERIFIED' || message.status == 'IMPORTED'">
+                        <span class="glyphicon glyphicon-trash"></span> Delete Message...
                     </button>
                 </div>
                 <div>

@@ -888,18 +888,38 @@ angular.module('niord.editor')
 
             /** Delete the draft message **/
             $scope.delete = function () {
-                if ($scope.message.status != 'DRAFT' && $scope.message.status != 'VERIFIED') {
-                    growl.error("Only draft and verified messages can be deleted", {ttl: 5000});
+                if ($scope.message.status != 'DRAFT' && $scope.message.status != 'VERIFIED'
+                    && $scope.message.status != 'IMPORTED') {
+                    growl.error("Only draft, verified and imported messages can be deleted", {ttl: 5000});
                     return;
                 }
 
                 DialogService.showConfirmDialog(
-                    "Delete draft?", "Delete draft?")
+                    "Delete message?", "Delete message?")
                     .then(function() {
                         MessageService.updateMessageStatus($scope.message, 'DELETED')
                             .success(function() { $scope.reloadMessage("Message deleted"); })
                             .error(function(err) {
                                 growl.error("Deletion failed\n" + err, {ttl: 5000});
+                            });
+                    });
+            };
+
+
+            /** Save the imported message as draft **/
+            $scope.draft = function () {
+                if ($scope.message.status != 'IMPORTED') {
+                    growl.error("Only imported messages can be saved as drafts", {ttl: 5000});
+                    return;
+                }
+
+                DialogService.showConfirmDialog(
+                    "Save as Draft?", "Delete as Draft?")
+                    .then(function() {
+                        MessageService.updateMessageStatus($scope.message, 'DRAFT')
+                            .success(function() { $scope.reloadMessage("Message saved as draft"); })
+                            .error(function(err) {
+                                growl.error("Saving as draft failed\n" + err, {ttl: 5000});
                             });
                     });
             };
