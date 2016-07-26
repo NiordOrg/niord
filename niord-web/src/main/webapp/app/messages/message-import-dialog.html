@@ -23,38 +23,66 @@
                              error="fileUploadError(status, statusText)">
 
                     <div class="form-group row" style="margin-top: 20px">
-                        <label for="newUids" class="col-sm-6 col-md-4 control-label" style="text-align: right"
-                               uib-tooltip="Only messages with unique UIDs will be imported.
-                                         Check this option to assign a new UID to all messages.">
+                        <label for="newUids" class="col-sm-6 col-md-4 control-label" style="text-align: right">
                             UID Handling
                         </label>
-                        <div class="col-sm-6 col-md-8">
-                            <input id="newUids" type="checkbox" ng-model="data.assignNewUids">
-                            &nbsp;Assign new UID's
+                        <div class="col-sm-6 col-md-8" >
+                            <div>
+                                <input id="newUids" type="radio" ng-model="data.assignNewUids" ng-value="false">
+                                &nbsp;Ignore messages with existing UIDs
+                            </div>
+                            <div>
+                                <input type="radio" ng-model="data.assignNewUids" ng-value="true">
+                                &nbsp;Assign new UIDs to all messages
+                            </div>
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label for="createBaseData" class="col-sm-6 col-md-4 control-label" style="text-align: right"
-                               uib-tooltip="Check this option to automatically create non-existing base data,
-                                            such as areas, categories and charts.">
+                        <label for="preserveStatus" class="col-sm-6 col-md-4 control-label" style="text-align: right">
+                            Status handling
+                        </label>
+                        <div class="col-sm-6 col-md-8">
+                            <div>
+                                <input id="preserveStatus" type="radio" ng-model="data.preserveStatus" ng-value="false">
+                                &nbsp;Assign IMPORTED status to all messages
+                            </div>
+                            <div>
+                                <input type="radio" ng-model="data.preserveStatus" ng-value="true">
+                                &nbsp;Preserve status for unpublished messages
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <label for="createBaseData" class="col-sm-6 col-md-4 control-label" style="text-align: right">
                             Base data handling
                         </label>
                         <div class="col-sm-6 col-md-8">
-                            <input id="createBaseData" type="checkbox" ng-model="data.createBaseData">
-                            &nbsp;Create non-existing areas, categories and charts
+                            <div>
+                                <input id="createBaseData" type="radio" ng-model="data.createBaseData" ng-value="false">
+                                &nbsp;Ignore non-existing areas, categories and charts
+                            </div>
+                            <div>
+                                <input type="radio" ng-model="data.createBaseData" ng-value="true">
+                                &nbsp;Create non-existing areas, categories and charts
+                            </div>
                         </div>
                     </div>
 
                     <div class="form-group row">
-                        <label for="assignMessageSeries" class="col-sm-6 col-md-4 control-label" style="text-align: right"
-                            uib-tooltip="Default behaviour is to preserve valid message series.
-                                         Check this option to always assign the default message series specified below.">
+                        <label for="assignMessageSeries" class="col-sm-6 col-md-4 control-label" style="text-align: right">
                             Msg. series handling
                         </label>
                         <div class="col-sm-6 col-md-8">
-                            <input id="assignMessageSeries" type="checkbox" ng-model="data.assignDefaultSeries">
-                            &nbsp;Always assign default message series
+                            <div>
+                                <input id="assignMessageSeries" type="radio" ng-model="data.assignDefaultSeries" ng-value="false">
+                                &nbsp;If valid, preserve associated message series
+                            </div>
+                            <div>
+                                <input type="radio" ng-model="data.assignDefaultSeries" ng-value="true">
+                                &nbsp;Always assign the default message series below
+                            </div>
                         </div>
                     </div>
 

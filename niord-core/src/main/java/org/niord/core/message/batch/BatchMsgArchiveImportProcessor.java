@@ -93,11 +93,16 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
         String origUid = message.getUid();
         try {
 
+            message.setId(null);
+            message.setVersion(0);
+            message.setCreated(null);
+            message.setUpdated(null);
+
             // Check if we should assign a new UID
             Boolean assignNewUids = (Boolean)job.getProperties().get("assignNewUids");
             if (assignNewUids) {
+                message.setLegacyId(message.getUid());
                 message.assignNewUid();
-                // TODO: Should we reset MRN + Short ID?
             }
 
             // Check that an existing message with the message UID does not exist
@@ -105,19 +110,6 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
             if (original != null) {
                 return null;
             }
-
-            // Force "IMPORTED" status
-            message.setStatus(Status.IMPORTED);
-
-            // Reset various fields and flags
-            message.setId(null);
-            message.setVersion(0);
-            message.setMrn(null);
-            message.setShortId(null);
-            message.setPublishDate(null);
-            message.setUnpublishDate(null);
-            message.setCreated(null);
-            message.setUpdated(null);
 
             // Update the message series according to the properties
             MessageSeries messageSeries = null;
@@ -143,6 +135,19 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
                 throw new Exception("No valid message series resolved for message " + message.getUid());
             }
 
+
+            // Status handling
+            Boolean preserveStatus = (Boolean)job.getProperties().get("preserveStatus");
+            if (!preserveStatus || message.getStatus() == Status.PUBLISHED) {
+                // Force "IMPORTED" status
+                message.setStatus(Status.IMPORTED);
+
+                // Reset various fields and flags
+                message.setMrn(null);
+                message.setShortId(null);
+                message.setPublishDate(null);
+                message.setUnpublishDate(null);
+            }
 
             // Check if we should create base data such as areas, categories and charts
             Boolean createBaseData = (Boolean)job.getProperties().get("createBaseData");

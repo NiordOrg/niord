@@ -840,6 +840,7 @@ public class MessageRestService extends AbstractBatchableRestService {
             params.put("tagId", batchData.getTagId());
         }
         params.put("assignNewUids", batchData.getAssignNewUids() == null ? false : batchData.getAssignNewUids());
+        params.put("preserveStatus", batchData.getPreserveStatus() == null ? false : batchData.getPreserveStatus());
         params.put("assignDefaultSeries", batchData.getAssignDefaultSeries() == null ? false : batchData.getAssignDefaultSeries());
         params.put("createBaseData", batchData.getCreateBaseData() == null ? false : batchData.getCreateBaseData());
         params.put("validMessageSeries", validMessageSeries);
@@ -1060,6 +1061,7 @@ public class MessageRestService extends AbstractBatchableRestService {
     public static class ImportMessagesArchiveParams implements IJsonSerializable {
 
         Boolean assignNewUids;
+        Boolean preserveStatus;
         Boolean assignDefaultSeries;
         Boolean createBaseData;
         String seriesId;
@@ -1071,6 +1073,14 @@ public class MessageRestService extends AbstractBatchableRestService {
 
         public void setAssignNewUids(Boolean assignNewUids) {
             this.assignNewUids = assignNewUids;
+        }
+
+        public Boolean getPreserveStatus() {
+            return preserveStatus;
+        }
+
+        public void setPreserveStatus(Boolean preserveStatus) {
+            this.preserveStatus = preserveStatus;
         }
 
         public Boolean getAssignDefaultSeries() {

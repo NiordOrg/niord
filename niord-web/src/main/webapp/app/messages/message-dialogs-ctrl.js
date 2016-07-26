@@ -386,6 +386,7 @@ angular.module('niord.messages')
 
             $scope.data = {
                 assignNewUids: false,
+                preserveStatus: false,
                 createBaseData: false,
                 assignDefaultSeries: false,
                 seriesId: $scope.messageSeriesIds.length > 0 ? $scope.messageSeriesIds[0] : undefined,
