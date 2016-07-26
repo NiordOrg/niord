@@ -462,7 +462,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
 
     /**
-     * Converts the uid to a message repository path
+     * Converts the uid to a message repository path.
+     * <p>
+     * To allow for a more efficient file directory structure,
+     * the message repository folders are nested into two layers
+     * of sub-directories. The hashing used for the directories
+     * is based on the first 3 (1+2) characters of the UUID associated
+     * with the messages, yielding approx 4K folders.
+     *
      * @param uid the UID
      * @return the associated message repository path
      */
@@ -473,11 +480,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         if (!validUidFormat(uid)) {
             throw new IllegalArgumentException("Invalid UID format " + uid);
         }
-        String[] parts = uid.split("-");
+
+        // Compose the repo path as "messages/uid[0;0]/uid[1;2]/uid"
         return String.format(
-                "%s/%s/%s/%s-%s-%s",
+                "%s/%s/%s/%s",
                 MESSAGE_REPO_FOLDER,
-                parts[0], parts[1], parts[2], parts[3], parts[4]);
+                uid.substring(0,1),
+                uid.substring(1,3),
+                uid);
     }
 
 
