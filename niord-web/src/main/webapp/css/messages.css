@@ -101,7 +101,7 @@
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-.message-list-details-border td {
+tr.message-list-details-border > td {
     border-bottom: 1px dotted lightgray!important;
     padding: 20px 0;
 }
@@ -317,17 +317,26 @@ img.map-general-message-icon {
     font-size: 11px;
 }
 
-.message-details-item-field {
-    font-weight: bold;
+table.message-details-item-fields {
+    width: 100%;
+}
+
+table.message-details-item-fields th {
+    width: 85px;
+    max-width: 85px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: top;
     color: gray;
     padding-top: 5px;
 }
 
-.message-details-item-value {
+table.message-details-item-fields td {
     padding-top: 5px;
 }
 
-.message-details-item-value ol {
+table.message-details-item-fields td ol {
     padding-left: 0;
 }
 

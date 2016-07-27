@@ -13,130 +13,139 @@
 
     <div style="position: relative; width: 100%;">
 
-    <message-details-menu ng-if="showDetailsMenu != 'false'" style="position: absolute; top: 2px; right: 5px; z-index: 100"
-                          message-id="msg.id" msg="msg" messages="messageList" size="xs"></message-details-menu>
+        <message-details-menu ng-if="showDetailsMenu != 'false'" style="position: absolute; top: 2px; right: 5px; z-index: 100"
+                              message-id="msg.id" msg="msg" messages="messageList" size="xs"></message-details-menu>
 
-    <!-- Attachments to be displayed above message -->
-    <div class="row" ng-repeat="att in attachmentsAbove">
-        <div class="col-sm-12">
-            <message-attachment message="msg" attachment="att" image-type="source" label-type="caption"></message-attachment>
+        <!-- Attachments to be displayed above message -->
+        <div class="row" ng-repeat="att in attachmentsAbove">
+            <div class="col-sm-12">
+                <message-attachment message="msg" attachment="att" image-type="source" label-type="caption"></message-attachment>
+            </div>
         </div>
-    </div>
 
 
-    <!-- Title line -->
-    <div ng-if="msg.originalInformation">&#9733;</div>
-    <div ng-if="msg.shortId"><span class="label label-message-id">{{msg.shortId}}</span></div>
-    <div message-details-link="msg.id" message-list="messageList"  selection="selection" disabled="format == 'details'">
-        <strong>{{msg.descs[0].title}}</strong>
-        <span ng-if="msg.descs[0].lang != language" style="color: darkgray;">
-            <img ng-src="/img/flags/{{msg.descs[0].lang}}.png" style="height: 12px; opacity: 0.5;"/>
-        </span>
-    </div>
-
-    <!-- Reference lines -->
-    <div class="row" ng-repeat="ref in msg.references">
-        <div ng-if="$index == 0" class="col-xs-2 col-sm-1 message-details-item-field" translate>msg.field.references</div>
-        <div ng-if="$index > 0" class="col-xs-2 col-sm-1 message-details-item-field"></div>
-        <div class="col-xs-10 col-sm-11 message-details-item-value">
-            <a href ng-click="referenceClicked(ref.messageId)">{{ref.messageId}}</a>
-            <span ng-switch="ref.type">
-                <span ng-switch-when="REPETITION" translate>msg.reference.repetition</span>
-                <span ng-switch-when="CANCELLATION" translate>msg.reference.cancelled</span>
-                <span ng-switch-when="UPDATE" translate>msg.reference.updated</span>
+        <!-- Title line -->
+        <div ng-if="msg.originalInformation">&#9733;</div>
+        <div ng-if="msg.shortId"><span class="label label-message-id">{{msg.shortId}}</span></div>
+        <div message-details-link="msg.id" message-list="messageList"  selection="selection" disabled="format == 'details'">
+            <strong>{{msg.descs[0].title}}</strong>
+            <span ng-if="msg.descs[0].lang != language" style="color: darkgray;">
+                <img ng-src="/img/flags/{{msg.descs[0].lang}}.png" style="height: 12px; opacity: 0.5;"/>
             </span>
-            <span ng-if="ref.descs && ref.descs.length > 0 && ref.descs[0].description">- {{ref.descs[0].description}}</span>
         </div>
-    </div>
 
 
-    <!-- Time line -->
-    <!-- Do NOT remove the ng-if="true" gibberish. Grotesquely, it fixes an iPad/iOS error -->
-    <!-- See: https://github.com/angular/angular.js/issues/9128 -->
-    <div class="row" ng-if="true">
-        <div class="col-xs-2 col-sm-1 message-details-item-field" translate>msg.field.time</div>
-        <div class="col-xs-10 col-sm-11 message-details-item-value">
-            <render-message-dates msg="msg"></render-message-dates>
-        </div>
-    </div>
+        <table class="message-details-item-fields">
 
-    <!-- Geometry line -->
-    <div class="row" ng-if="msg.geometry">
-        <div class="col-xs-2 col-sm-1 message-details-item-field" translate>msg.field.positions</div>
-        <div class="col-xs-10 col-sm-11 message-details-item-value">
-            <div>
-                <span class="glyphicon glyphicon-map-marker" style="color: darkgray"></span>
-                <a href ng-if="msg.showLocations" ng-click="msg.showLocations = false" class="clickable" translate>msg.hide_positions</a>
-                <a href ng-if="!msg.showLocations" ng-click="msg.showLocations = true" class="clickable" translate>msg.show_positions</a>
+            <!-- Reference lines -->
+            <tr ng-if="msg.references && msg.references.length > 0">
+                <th translate>msg.field.references</th>
+                <td>
+                    <div ng-repeat="ref in msg.references">
+                        <a href ng-click="referenceClicked(ref.messageId)">{{ref.messageId}}</a>
+                        <span ng-switch="ref.type">
+                            <span ng-switch-when="REPETITION" translate>msg.reference.repetition</span>
+                            <span ng-switch-when="CANCELLATION" translate>msg.reference.cancelled</span>
+                            <span ng-switch-when="UPDATE" translate>msg.reference.updated</span>
+                        </span>
+                        <span ng-if="ref.descs && ref.descs.length > 0 && ref.descs[0].description">- {{ref.descs[0].description}}</span>
+                    </div>
+                </td>
+            </tr>
+
+
+            <!-- Time line -->
+            <tr>
+                <th translate>msg.field.time</th>
+                <td><render-message-dates msg="msg"></render-message-dates></td>
+            </tr>
+
+
+            <!-- Geometry line -->
+            <tr ng-if="msg.geometry">
+                <th translate>msg.field.positions</th>
+                <td>
+                    <div>
+                        <span class="glyphicon glyphicon-map-marker" style="color: darkgray"></span>
+                        <a href ng-if="msg.showLocations" ng-click="msg.showLocations = false" class="clickable" translate>msg.hide_positions</a>
+                        <a href ng-if="!msg.showLocations" ng-click="msg.showLocations = true" class="clickable" translate>msg.show_positions</a>
+                    </div>
+                    <div ng-if="msg.showLocations">
+                        <div ng-repeat="featureCoords in serializeCoordinates()">
+                            <div ng-if="featureCoords.name" class="message-details-position-names">{{featureCoords.name}}</div>
+                            <ol class="message-details-positions" start="{{featureCoords.startIndex}}">
+                                <li ng-repeat="c in featureCoords.coords">
+                                    <span>{{c | lonlat:{ decimals : 3, pp: true } }}<span ng-if="c.name">, {{c.name}}</span></span>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+
+
+            <!-- Details line -->
+            <tr ng-if="msg.descs[0].description">
+                <th translate>msg.field.details</th>
+                <td ng-bind-html="msg.descs[0].description"></td>
+            </tr>
+
+
+            <!-- Attachments -->
+            <tr ng-if="msg.attachments">
+                <th translate>msg.field.attachments</th>
+                <td>
+                    <div>
+                        <span class="glyphicon glyphicon-paperclip" style="color: darkgray"></span>
+                        <a href ng-if="msg.showAttachments" ng-click="msg.showAttachments = false" class="clickable" translate>msg.hide_attachments</a>
+                        <a href ng-if="!msg.showAttachments" ng-click="msg.showAttachments = true" class="clickable" translate>msg.show_attachments</a>
+                    </div>
+                    <div ng-if="msg.showAttachments">
+                        <span class="attachment-list" ng-repeat="att in msg.attachments">
+                            <message-attachment message="msg" attachment="att" size="32"></message-attachment>
+                        </span>
+                    </div>
+                </td>
+            </tr>
+
+
+            <!-- Note line -->
+            <tr ng-if="msg.descs[0].note">
+                <th translate>msg.field.note</th>
+                <td>{{msg.descs[0].note}}</td>
+            </tr>
+
+
+            <!-- Charts line -->
+            <tr ng-if="msg.charts.length > 0">
+                <th translate>msg.field.charts</th>
+                <td>
+                    <span ng-repeat="chart in msg.charts"><span ng-if="!$first">, </span>{{chart.chartNumber}}
+                        <span ng-if="chart.internationalNumber">(INT {{chart.internationalNumber}})</span></span>
+                </td>
+            </tr>
+
+
+            <!-- Publication line -->
+            <tr ng-if="msg.descs[0].publication">
+                <th translate>msg.field.publication</th>
+                <td>{{msg.descs[0].publication}}</td>
+            </tr>
+
+
+            <!-- Source line -->
+            <tr ng-if="msg.descs[0].source">
+                <td colspan="2" class="text-right">({{msg.descs[0].source}})</td>
+            </tr>
+
+        </table>
+
+        <!-- Attachments to be displayed below message -->
+        <div class="row" ng-repeat="att in attachmentsBelow">
+            <div class="col-sm-12">
+                <message-attachment message="msg" attachment="att" image-type="source" label-type="caption"></message-attachment>
             </div>
-            <div ng-if="msg.showLocations">
-                <div ng-repeat="featureCoords in serializeCoordinates()">
-                    <div ng-if="featureCoords.name" class="message-details-position-names">{{featureCoords.name}}</div>
-                    <ol class="message-details-positions" start="{{featureCoords.startIndex}}">
-                        <li ng-repeat="c in featureCoords.coords">
-                            <span>{{c | lonlat:{ decimals : 3, pp: true } }}<span ng-if="c.name">, {{c.name}}</span></span>
-                        </li>
-                    </ol>
-                </div>
-            </div>
         </div>
-    </div>
-
-    <!-- Details line -->
-    <div class="row" ng-if="msg.descs[0].description">
-        <div class="col-xs-2 col-sm-1 message-details-item-field" translate>msg.field.details</div>
-        <div class="col-xs-10 col-sm-11 message-details-item-value" ng-bind-html="msg.descs[0].description"></div>
-    </div>
-
-    <!-- Attachments -->
-    <div class="row" ng-if="msg.attachments">
-        <div class="col-xs-2 col-sm-1 message-details-item-field">Attachments</div>
-        <div class="col-xs-10 col-sm-11 message-details-item-value">
-            <div>
-                <span class="glyphicon glyphicon-paperclip" style="color: darkgray"></span>
-                <a href ng-if="msg.showAttachments" ng-click="msg.showAttachments = false" class="clickable" translate>msg.hide_attachments</a>
-                <a href ng-if="!msg.showAttachments" ng-click="msg.showAttachments = true" class="clickable" translate>msg.show_attachments</a>
-            </div>
-            <div ng-if="msg.showAttachments">
-                <span class="attachment-list" ng-repeat="att in msg.attachments">
-                    <message-attachment message="msg" attachment="att" size="32"></message-attachment>
-                </span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Note line -->
-    <div class="row" ng-if="msg.descs[0].note">
-        <div class="col-xs-2 col-sm-1 message-details-item-field" translate>msg.field.note</div>
-        <div class="col-xs-10 col-sm-11 message-details-item-value">{{msg.descs[0].note}}</div>
-    </div>
-
-    <!-- Charts line -->
-    <div class="row" ng-if="msg.charts.length > 0">
-        <div class="col-xs-2 col-sm-1 message-details-item-field" translate>msg.field.charts</div>
-        <div class="col-xs-10 col-sm-11 message-details-item-value">
-            <span ng-repeat="chart in msg.charts"><span ng-if="!$first">, </span>{{chart.chartNumber}}
-                <span ng-if="chart.internationalNumber">(INT {{chart.internationalNumber}})</span></span>
-        </div>
-    </div>
-
-    <!-- Publication line -->
-    <div class="row" ng-if="msg.descs[0].publication">
-        <div class="col-xs-2 col-sm-1 message-details-item-field" translate>msg.field.publication</div>
-        <div class="col-xs-10 col-sm-11 message-details-item-value">{{msg.descs[0].publication}}</div>
-    </div>
-
-    <!-- Source line -->
-    <div class="row" ng-if="msg.descs[0].source">
-        <div class="col-sm-12 message-details-item-value text-right">({{msg.descs[0].source}})</div>
-    </div>
-
-    <!-- Attachments to be displayed below message -->
-    <div class="row" ng-repeat="att in attachmentsBelow">
-        <div class="col-sm-12">
-            <message-attachment message="msg" attachment="att" image-type="source" label-type="caption"></message-attachment>
-        </div>
-    </div>
 
     </div>
 </td>
