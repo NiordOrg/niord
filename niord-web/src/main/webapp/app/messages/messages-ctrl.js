@@ -933,7 +933,13 @@ angular.module('niord.messages')
                             $scope.messageList.length = 0;
                         }
                         for (var x = 0; x < result.data.length; x++) {
-                            $scope.messageList.push(result.data[x]);
+                            var message = result.data[x];
+                            $scope.messageList.push(message);
+
+                            // Replace any selected message with the new version
+                            if ($scope.selection.get(message.id) !== undefined) {
+                                $scope.selection.put(message.id, angular.copy(message));
+                            }
                         }
                         $scope.totalMessageNo = result.total;
                         $scope.checkGroupByArea(2);
