@@ -678,10 +678,19 @@ angular.module('niord.messages')
                 },
                 link: function(scope) {
 
-                    // Make Math.min() available
-                    scope.Math = window.Math;
-
                     scope.messageList = scope.loadMoreMessages;
+
+                    scope.fromMessageNo = function () {
+                        return numeral(scope.messageList.length).format("0,0");
+                    };
+
+                    scope.toMessageNo = function () {
+                        return numeral(Math.min(scope.messageList.length + scope.maxSize, scope.totalMessageNo)).format("0,0");
+                    };
+
+                    scope.total = function () {
+                        return numeral(scope.totalMessageNo).format("0,0");
+                    };
 
                     /** Called to load next batch of messages **/
                     scope.loadMoreMessages = function () {
