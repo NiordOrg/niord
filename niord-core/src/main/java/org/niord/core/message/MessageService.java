@@ -18,6 +18,7 @@ package org.niord.core.message;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
 import org.niord.core.category.Category;
@@ -774,7 +775,13 @@ public class MessageService extends BaseService {
 
         // Search the Lucene index for free text search
         if (param.requiresLuceneSearch()) {
-            List<Long> ids = messageLuceneIndex.searchIndex(param.getQuery(), param.getLanguage(), Integer.MAX_VALUE);
+            List<Long> ids = null;
+            try {
+                ids = messageLuceneIndex.searchIndex(param.getQuery(), param.getLanguage(), Integer.MAX_VALUE);
+            } catch (Exception e) {
+                log.warn("Error searching lucene index for query " + param.getQuery() + ": " + e);
+                ids = Collections.emptyList();
+            }
             criteriaHelper.in(msgRoot.get("id"), ids);
         }
 
