@@ -89,12 +89,6 @@ import java.util.UUID;
         @NamedQuery(name="Message.findByReference",
                 query="select distinct msg from Message msg join msg.references ref where "
                         + " lower(ref.messageId) in (:messageIds)"),
-        @NamedQuery(name  = "Message.searchShortIds",
-                query="select distinct m from Message m where lower(m.shortId) like lower(:term) "
-                        + "order by locate(lower(:sort), lower(m.shortId)) asc "),
-        @NamedQuery(name  = "Message.searchMrn",
-                query="select distinct m from Message m where lower(m.mrn) like lower(:term) "
-                        + "order by locate(lower(:sort), lower(m.mrn)) asc "),
         @NamedQuery(name="Message.findPublishableMessages",
                 query="SELECT msg FROM Message msg where msg.status = 'VERIFIED' and msg.publishDate < :now"),
         @NamedQuery(name="Message.maxNumberInPeriod",

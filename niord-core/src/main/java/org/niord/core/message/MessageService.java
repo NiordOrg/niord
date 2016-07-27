@@ -279,7 +279,10 @@ public class MessageService extends BaseService {
         }
 
         // Search shortIds
-        em.createNamedQuery("Message.searchShortIds", Message.class)
+        // NB: This idiotic way of forming the query is to avoid Intellij wrongly flagging errors :-(
+        String searchShortIdSql = "select distinct m from Message m where lower(m.shortId) like lower(:term) ";
+        String searchShortIdOrderSql = "order by locate(lower(:sort), lower(m.shortId)) asc ";
+        em.createQuery(searchShortIdSql + searchShortIdOrderSql, Message.class)
                 .setParameter("term", "%" + txt + "%")
                 .setParameter("sort", txt)
                 .setMaxResults(maxGroupCount)
@@ -287,7 +290,10 @@ public class MessageService extends BaseService {
                 .forEach(m -> result.add(new MessageIdMatch(m.getShortId(), SHORT_ID, m, lang)));
 
         // Search MRNs
-        em.createNamedQuery("Message.searchMrn", Message.class)
+        // NB: This idiotic way of forming the query is to avoid Intellij wrongly flagging errors :-(
+        String searchMrnSql = "select distinct m from Message m where lower(m.mrn) like lower(:term) ";
+        String searchMrnOrderSql =  "order by locate(lower(:sort), lower(m.mrn)) asc ";
+        em.createQuery(searchMrnSql + searchMrnOrderSql, Message.class)
                 .setParameter("term", "%" + txt + "%")
                 .setParameter("sort", txt)
                 .setMaxResults(maxGroupCount)
