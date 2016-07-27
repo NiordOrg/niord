@@ -30,12 +30,8 @@
             </tr>
         </table>
     </div>
-    <div class="load-more-messages" ng-if="showMapSelection && messageList.length < totalMessageNo">
-        <div class="center">
-            <button class="btn btn-primary load-more-btn" ng-click="loadMore()">
-                Load {{messageList.length | numeral}} - {{messageList.length + maxSize | numeral}} of {{totalMessageNo | numeral}} messages
-            </button>
-        </div>
+    <div class="load-more-messages" ng-if="messageList.length < totalMessageNo"
+         load-more-messages="messageList" total-message-no="totalMessageNo" max-size="maxSize" load-more="loadMore()" >
     </div>
 </div>
 

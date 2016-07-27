@@ -6,6 +6,10 @@
         </div>
     </div>
 
+    <div class="row" style="margin-bottom: 10px" ng-if="messageList.length < totalMessageNo"
+         load-more-messages="messageList" total-message-no="totalMessageNo" max-size="maxSize" load-more="loadMore()" >
+    </div>
+
     <table class='table table-condensed' ng-if="messageList.length > 0">
         <tr style="background-color: lightgray">
             <th ng-click="toggleSortOrder('ID')" class="clickable">
@@ -51,12 +55,8 @@
         </tr>
     </table>
 
-    <div class="row" ng-if="messageList.length < totalMessageNo">
-        <div class="center" style="text-align: center">
-            <button class="btn btn-primary load-more-btn" ng-click="loadMore()">
-                Load {{messageList.length | numeral}} - {{messageList.length + maxSize | numeral}} of {{totalMessageNo | numeral}} messages
-            </button>
-        </div>
+    <div class="row" ng-if="messageList.length < totalMessageNo"
+         load-more-messages="messageList" total-message-no="totalMessageNo" max-size="maxSize" load-more="loadMore()" >
     </div>
 </div>
 

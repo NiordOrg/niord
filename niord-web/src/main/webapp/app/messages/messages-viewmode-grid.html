@@ -1,5 +1,10 @@
 
 <div class="messages-list-grid container">
+
+    <div class="row" ng-if="messageList.length < totalMessageNo"
+         load-more-messages="messageList" total-message-no="totalMessageNo" max-size="maxSize" load-more="loadMore()" >
+    </div>
+
     <div class="row">
         <div ng-if="messageList.length == 0">
             <div ng-include="'/app/messages/messages-empty-search-result.html'"></div>
@@ -37,12 +42,8 @@
         </div>
     </div>
 
-    <div class="row" ng-if="messageList.length < totalMessageNo">
-        <div class="center" style="text-align: center">
-            <button class="btn btn-primary load-more-btn" ng-click="loadMore()">
-                Load {{messageList.length | numeral}} - {{messageList.length + maxSize | numeral}} of {{totalMessageNo | numeral}} messages
-            </button>
-        </div>
+    <div class="row" ng-if="messageList.length < totalMessageNo"
+         load-more-messages="messageList" total-message-no="totalMessageNo" max-size="maxSize" load-more="loadMore()" >
     </div>
 </div>
 

@@ -658,6 +658,40 @@ angular.module('niord.messages')
         }])
 
 
+    /****************************************************************
+     * Binds a click event that will open the message details dialog
+     ****************************************************************/
+    .directive('loadMoreMessages', [
+        function () {
+            'use strict';
+
+            return {
+                restrict: 'A',
+                templateUrl: '/app/messages/load-more-messages.html',
+                replace: false,
+                scope: {
+                    loadMoreMessages:    "=",
+                    totalMessageNo: "=",
+                    maxSize:        "=",
+                    loadMore:       "&",
+                    class:          "@"
+                },
+                link: function(scope) {
+
+                    // Make Math.min() available
+                    scope.Math = window.Math;
+
+                    scope.messageList = scope.loadMoreMessages;
+
+                    /** Called to load next batch of messages **/
+                    scope.loadMoreMessages = function () {
+                        scope.loadMore();
+                    }
+                }
+            };
+        }])
+
+
     /********************************
      * Renders the message details
      ********************************/
