@@ -700,7 +700,7 @@ angular.module('niord.admin')
 
 
             /** Computes the next number based on existing numbers for the given year **/
-            $scope.suggestNextNumber = function () {
+            $scope.computeNextNumber = function () {
                 AdminMessageSeriesService
                     .computeNextMessageSeriesNumber($scope.series.seriesId, $scope.data.year)
                     .success(function (nextNumber) {
