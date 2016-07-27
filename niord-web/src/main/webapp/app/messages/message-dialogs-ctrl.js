@@ -443,5 +443,68 @@ angular.module('niord.messages')
             };
     
 
-        }]);
+        }])
 
+
+    /*******************************************************************
+     * Controller that handles bulk-updating the status of a message list
+     *******************************************************************/
+    .controller('UpdateStatusDialogCtrl', ['$scope', 'growl', 'MessageService', 'DialogService', 'selection',
+        function ($scope, growl, MessageService, DialogService, selection) {
+            'use strict';
+
+            $scope.messageList = selection.values();
+
+            // Valid status transitions.
+            // Keep in sync with MessageService.getValidStatusTransitions()
+            $scope.statuses = {
+                'DRAFT':     [ 'VERIFIED', 'DELETED' ],
+                'VERIFIED':  [ 'PUBLISHED', 'DRAFT', 'DELETED' ],
+                'IMPORTED':  [ 'DRAFT', 'DELETED' ],
+                'PUBLISHED': [ 'CANCELLED' ]
+            };
+
+            $scope.updatesStatuses = {};
+
+            /** Updates all statuses with the fromStatus to the toStatus **/
+            $scope.updateStatus = function (fromStatus, toStatus) {
+                angular.forEach($scope.messageList, function (message) {
+                   if (message.status == fromStatus) {
+                       $scope.updatesStatuses[message.id] = toStatus;
+                   }
+                });
+            };
+
+
+            /** Saves all the status changes and closes the dialog **/
+            $scope.saveChanges = function () {
+                var updates = [];
+                angular.forEach($scope.updatesStatuses, function (value, key) {
+                    if (value !== null) {
+                        updates.push({
+                            messageId: key,
+                            status: value
+                        });
+                    }
+                });
+                if (updates.length == 0) {
+                    $scope.$dismiss("cancel");
+                    return;
+                }
+
+                DialogService.showConfirmDialog(
+                    "Update Statuses?", "Update the status of " + updates.length + " messages?")
+                    .then(function() {
+
+                        MessageService.updateMessageStatuses(updates)
+                            .success(function () {
+                                growl.info("Updated statuses", { ttl: 3000 });
+                                $scope.$close("ok");
+                            })
+                            .error(function () {
+                                growl.error("Error updating statuses", { ttl: 5000 });
+                            });
+                    });
+            }
+
+        }]);

@@ -90,6 +90,12 @@ angular.module('niord.messages')
             },
 
 
+            /** Changes the statuses of a list of messages message */
+            updateMessageStatuses: function(updates) {
+                return $http.put('/rest/messages/message/statuses', updates);
+            },
+
+
             /** Returns the repository path to the attachment file */
             attachmentRepoPath: function (message, attachment) {
                 var repoPath = message.editRepoPath || message.repoPath;
@@ -268,9 +274,7 @@ angular.module('niord.messages')
                     templateUrl: "/app/messages/message-print-dialog.html",
                     size: 'sm',
                     resolve: {
-                        total: function () {
-                            return total;
-                        }
+                        total: function () { return total; }
                     }
                 });
             },
@@ -309,7 +313,6 @@ angular.module('niord.messages')
             },
 
 
-
             /** Imports messages from a zip archive **/
             importMessagesDialog: function () {
                 return $uibModal.open({
@@ -317,7 +320,21 @@ angular.module('niord.messages')
                     templateUrl: "/app/messages/message-import-dialog.html",
                     size: 'md'
                 });
+            },
+
+
+            /** Bulk-updates the status of the message selection **/
+            updateStatusDialog: function (selection) {
+                return $uibModal.open({
+                    controller: "UpdateStatusDialogCtrl",
+                    templateUrl: "/app/messages/update-status-dialog.html",
+                    size: 'lg',
+                    resolve: {
+                        selection: function () { return selection; }
+                    }
+                });
             }
+
         };
     }])
 

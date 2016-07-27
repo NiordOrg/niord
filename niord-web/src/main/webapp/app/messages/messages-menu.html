@@ -34,6 +34,8 @@
             </span>
         </li>
 
+
+        <!-- Filter Menu -->
         <li class="dropdown view-mode-menu-btn" style="padding: 0 10px">
             <span class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                 <span class="glyphicon glyphicon-filter"></span>
@@ -55,6 +57,8 @@
             </ul>
         </li>
 
+
+        <!-- Action Menu -->
         <li class="dropdown view-mode-menu-btn" style="padding: 0 10px">
             <span class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
                 <span class="glyphicon glyphicon-cog"></span>
@@ -62,6 +66,8 @@
                 <span class="caret"></span>
             </span>
             <ul class="dropdown-menu">
+
+                <!-- Printing -->
                 <li>
                     <a href ng-click="pdf()">
                         <span class="glyphicon glyphicon-print menu-icon"></span>&nbsp;
@@ -74,6 +80,9 @@
                         <span translate>menu.action.print.selection</span>
                     </a>
                 </li>
+
+
+                <!-- Tags -->
                 <li ng-if="selection.size() > 0" role="separator" class="divider"></li>
                 <li ng-if="selection.size() > 0">
                     <a href ng-click="addToTagDialog()">
@@ -87,6 +96,9 @@
                         <span translate>menu.action.tag.remove_selection</span>
                     </a>
                 </li>
+
+
+                <!-- Selection -->
                 <li role="separator" class="divider"></li>
                 <li>
                     <a href ng-click="selectAll()">
@@ -100,6 +112,9 @@
                         <span translate>menu.action.select.none</span>
                     </a>
                 </li>
+
+
+                <!-- Exporting and Importing -->
                 <li ng-if="isLoggedIn" role="separator" class="divider"></li>
                 <li ng-if="isLoggedIn">
                     <a href ng-click="exportMessages()">
@@ -119,6 +134,19 @@
                         <span translate>menu.action.import</span>
                     </a>
                 </li>
+
+
+                <!-- Status updates -->
+                <li ng-if="selection.size() > 0" role="separator" class="divider"></li>
+                <li ng-if="selection.size() > 0">
+                    <a href ng-click="updateStatusDialog()">
+                        <span class="glyphicon glyphicon-pencil menu-icon"></span>&nbsp;
+                        <span translate>menu.action.update_status</span>
+                    </a>
+                </li>
+
+
+                <!-- Sorting -->
                 <li role="separator" class="divider"></li>
                 <li>
                     <a href ng-click="sortAreaMessages()">

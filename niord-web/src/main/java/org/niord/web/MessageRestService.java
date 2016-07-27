@@ -460,6 +460,7 @@ public class MessageRestService extends AbstractBatchableRestService {
     /**
      * Updates the status of a message
      *
+     * @param messageId the ID of the message
      * @param status the status update
      * @return the updated message
      */
@@ -478,6 +479,37 @@ public class MessageRestService extends AbstractBatchableRestService {
 
         Message msg = messageService.updateStatus(messageId, Status.valueOf(status));
         return getMessage(msg.getUid(), null);
+    }
+
+
+    /**
+     * Updates the statuses of a list of messages
+     *
+     * @param updates the status updates
+     * @return the updated messages
+     */
+    @PUT
+    @Path("/message/statuses")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public List<MessageVo> updateMessageStatuses(List<UpdateStatusParam> updates) throws Exception {
+        log.info("Updating statuses " + updates);
+
+        // Validate access to the messages
+        for (UpdateStatusParam update : updates) {
+            checkMessageEditingAccess(messageService.findByUid(update.getMessageId()), false);
+        }
+
+        // Perform the updates
+        List<MessageVo> result = new ArrayList<>();
+        for (UpdateStatusParam update : updates) {
+            Message message = messageService.updateStatus(update.getMessageId(), update.getStatus());
+            result.add(getMessage(message.getUid(), null));
+        }
+        return result;
     }
 
 
@@ -1024,6 +1056,34 @@ public class MessageRestService extends AbstractBatchableRestService {
     /***************************
      * Helper classes
      ***************************/
+
+    /** Encapsulates a status change for a message */
+    public static class UpdateStatusParam implements IJsonSerializable {
+        String messageId;
+        Status status;
+
+        @Override
+        public String toString() {
+            return "{messageId='" + messageId + "', status=" + status + "}";
+        }
+
+        public String getMessageId() {
+            return messageId;
+        }
+
+        public void setMessageId(String messageId) {
+            this.messageId = messageId;
+        }
+
+        public Status getStatus() {
+            return status;
+        }
+
+        public void setStatus(Status status) {
+            this.status = status;
+        }
+    }
+
 
     /** Parameter that encapsulates a message being dragged to a new area sort order position */
     public static class AreaSortOrderUpdateParam implements IJsonSerializable {

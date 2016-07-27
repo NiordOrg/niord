@@ -812,7 +812,19 @@ angular.module('niord.messages')
             $scope.importMessages = function () {
                 MessageService.importMessagesDialog();
             };
-            
+
+
+            /*****************************/
+            /** Bulk status update      **/
+            /*****************************/
+
+
+            /** Bulk-updates the status of the selection **/
+            $scope.updateStatusDialog = function () {
+                MessageService.updateStatusDialog($scope.selection).result
+                    .then($scope.filterUpdated);
+            };
+
 
             /*****************************/
             /** Utility functions       **/

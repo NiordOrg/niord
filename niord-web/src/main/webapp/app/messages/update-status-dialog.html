@@ -1,0 +1,63 @@
+<div>
+
+    <div class="modal-header" style="text-align: center; padding: 5px 15px">
+        <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
+        <h4>Bulk-update status</h4>
+    </div>
+
+    <div class="modal-body print" style="padding-bottom: 0">
+
+        <div class="row">
+            <div class="col-sm-12">
+                <span class="btn-group" uib-dropdown>
+                    <button id="single-button" type="button" class="btn btn-sm btn-default" uib-dropdown-toggle>
+                        Change all statuses <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                        <li role="menuitem"><a href ng-click="updateStatus('DRAFT', 'VERIFIED')">DRAFT &rarr; VERIFIED</a></li>
+                        <li role="menuitem"><a href ng-click="updateStatus('DRAFT', 'DELETED')">DRAFT &rarr; DELETED</a></li>
+                        <li class="divider"></li>
+                        <li role="menuitem"><a href ng-click="updateStatus('VERIFIED', 'PUBLISHED')">VERIFIED &rarr; PUBLISHED</a></li>
+                        <li role="menuitem"><a href ng-click="updateStatus('VERIFIED', 'DRAFT')">VERIFIED &rarr; DRAFT</a></li>
+                        <li role="menuitem"><a href ng-click="updateStatus('VERIFIED', 'DELETED')">VERIFIED &rarr; DELETED</a></li>
+                        <li class="divider"></li>
+                        <li role="menuitem"><a href ng-click="updateStatus('IMPORTED', 'DRAFT')">IMPORTED &rarr; DRAFT</a></li>
+                        <li role="menuitem"><a href ng-click="updateStatus('IMPORTED', 'DELETED')">IMPORTED &rarr; DELETED</a></li>
+                        <li class="divider"></li>
+                        <li role="menuitem"><a href ng-click="updateStatus('PUBLISHED', 'CANCELLED')">PUBLISHED &rarr; CANCELLED</a></li>
+                    </ul>
+                </span>
+            </div>
+        </div>
+
+
+        <div class="update-status-message-list">
+            <table class='table table-condensed'>
+                <tr style="background-color: lightgray">
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>New Status</th>
+                </tr>
+                <tr ng-repeat="message in messageList" ng-if="statuses[message.status]">
+                    <td nowrap><span>{{message.shortId}}</span></td>
+                    <td>{{message.descs[0].title}}</td>
+                    <td>{{message.status}}</td>
+                    <td>
+                        <select class="form-control input-xs"
+                                ng-model="updatesStatuses[message.id]" ng-options="status for status in statuses[message.status]">
+                            <option style="display:none" value=""></option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="row" style="margin-top: 10px;">
+            <div class="form-group col-xs-12" style="text-align: right">
+                <button class="btn btn-default btn-sm" ng-click="$dismiss('aborted')">Cancel</button>
+                <button class="btn btn-primary btn-sm" ng-click="saveChanges()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>

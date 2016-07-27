@@ -914,7 +914,7 @@ angular.module('niord.editor')
                 }
 
                 DialogService.showConfirmDialog(
-                    "Save as Draft?", "Delete as Draft?")
+                    "Save as Draft?", "Save as Draft?")
                     .then(function() {
                         MessageService.updateMessageStatus($scope.message, 'DRAFT')
                             .success(function() { $scope.reloadMessage("Message saved as draft"); })
