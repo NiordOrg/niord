@@ -14,17 +14,9 @@
                         Change all statuses <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
-                        <li role="menuitem"><a href ng-click="updateStatus('DRAFT', 'VERIFIED')">DRAFT &rarr; VERIFIED</a></li>
-                        <li role="menuitem"><a href ng-click="updateStatus('DRAFT', 'DELETED')">DRAFT &rarr; DELETED</a></li>
-                        <li class="divider"></li>
-                        <li role="menuitem"><a href ng-click="updateStatus('VERIFIED', 'PUBLISHED')">VERIFIED &rarr; PUBLISHED</a></li>
-                        <li role="menuitem"><a href ng-click="updateStatus('VERIFIED', 'DRAFT')">VERIFIED &rarr; DRAFT</a></li>
-                        <li role="menuitem"><a href ng-click="updateStatus('VERIFIED', 'DELETED')">VERIFIED &rarr; DELETED</a></li>
-                        <li class="divider"></li>
-                        <li role="menuitem"><a href ng-click="updateStatus('IMPORTED', 'DRAFT')">IMPORTED &rarr; DRAFT</a></li>
-                        <li role="menuitem"><a href ng-click="updateStatus('IMPORTED', 'DELETED')">IMPORTED &rarr; DELETED</a></li>
-                        <li class="divider"></li>
-                        <li role="menuitem"><a href ng-click="updateStatus('PUBLISHED', 'CANCELLED')">PUBLISHED &rarr; CANCELLED</a></li>
+                        <li role="menuitem" ng-repeat="s in updateStatuses">
+                            <a href ng-click="updateStatus(s.fromStatus, s.toStatus)">{{s.fromStatus}} &rarr; {{s.toStatus}}</a>
+                        </li>
                     </ul>
                 </span>
             </div>
@@ -39,7 +31,7 @@
                     <th>Status</th>
                     <th>New Status</th>
                 </tr>
-                <tr ng-repeat="message in messageList" ng-if="statuses[message.status]">
+                <tr ng-repeat="message in messageList">
                     <td nowrap><span>{{message.shortId}}</span></td>
                     <td>{{message.descs[0].title}}</td>
                     <td>{{message.status}}</td>

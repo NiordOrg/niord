@@ -453,18 +453,39 @@ angular.module('niord.messages')
         function ($scope, growl, MessageService, DialogService, selection) {
             'use strict';
 
-            $scope.messageList = selection.values();
-
             // Valid status transitions.
             // Keep in sync with MessageService.getValidStatusTransitions()
-            $scope.statuses = {
+            $scope.validStatuses = {
                 'DRAFT':     [ 'VERIFIED', 'DELETED' ],
                 'VERIFIED':  [ 'PUBLISHED', 'DRAFT', 'DELETED' ],
                 'IMPORTED':  [ 'DRAFT', 'DELETED' ],
                 'PUBLISHED': [ 'CANCELLED' ]
             };
 
+
+            $scope.messageList = [];
+            $scope.statuses = {};
             $scope.updatesStatuses = {};
+
+            // Build up list of message that we can change the status of + list of valid status transitions
+            angular.forEach(selection.values(), function (message) {
+                if ($scope.validStatuses[message.status] !== undefined) {
+                    $scope.messageList.push(message);
+                    $scope.statuses[message.status] = $scope.validStatuses[message.status];
+                }
+            });
+
+
+            // Valid list of from-to status transitions
+            $scope.updateStatuses = [];
+            angular.forEach($scope.statuses, function (toStatuses, fromStatus) {
+               angular.forEach(toStatuses, function (toStatus) {
+                   $scope.updateStatuses.push({
+                       fromStatus: fromStatus,
+                       toStatus: toStatus
+                   })
+               })
+            });
 
             /** Updates all statuses with the fromStatus to the toStatus **/
             $scope.updateStatus = function (fromStatus, toStatus) {
