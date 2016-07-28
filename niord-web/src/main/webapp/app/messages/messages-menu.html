@@ -30,7 +30,7 @@
             <span ui-sref="messages.selected" ui-sref-active="active">
                 <span class="glyphicon glyphicon-star"></span>
                 <span class="view-mode-menu-text" translate>view_mode.selection</span>
-                <span class="badge" ng-if="selection.size() > 0">{{selection.size()}}</span>
+                <span class="badge" ng-if="selection.size() > 0">{{selection.size() | numeral}}</span>
             </span>
         </li>
 
