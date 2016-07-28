@@ -18,7 +18,6 @@ package org.niord.core.message;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.queryparser.classic.ParseException;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
 import org.niord.core.category.Category;
@@ -898,21 +897,35 @@ public class MessageService extends BaseService {
         // Sort the query
         if (param.sortByDate()) {
             if (param.getSortOrder() == SortOrder.ASC) {
-                tupleQuery.orderBy(builder.asc(msgRoot.get("startDate")), builder.asc(msgRoot.get("id")));
+                tupleQuery.orderBy(
+                        builder.asc(msgRoot.get("startDate")),
+                        builder.asc(msgRoot.get("id")));
             } else {
-                tupleQuery.orderBy(builder.desc(msgRoot.get("startDate")), builder.desc(msgRoot.get("id")));
+                tupleQuery.orderBy(builder.desc(
+                        msgRoot.get("startDate")),
+                        builder.desc(msgRoot.get("id")));
             }
         } else if (param.sortById()) {
             if (param.getSortOrder() == SortOrder.ASC) {
-                tupleQuery.orderBy(builder.asc(msgRoot.get("publishDate")), builder.asc(msgRoot.get("id")));
+                tupleQuery.orderBy(
+                        builder.asc(msgRoot.get("publishDate")),
+                        builder.asc(msgRoot.get("id")));
             } else {
-                tupleQuery.orderBy(builder.desc(msgRoot.get("publishDate")), builder.desc(msgRoot.get("id")));
+                tupleQuery.orderBy(
+                        builder.desc(msgRoot.get("publishDate")),
+                        builder.desc(msgRoot.get("id")));
             }
         } else if (param.sortByArea()) {
             if (param.getSortOrder() == SortOrder.ASC) {
-                tupleQuery.orderBy(builder.asc(areaRoot.get("treeSortOrder")), builder.asc(msgRoot.get("areaSortOrder")));
+                tupleQuery.orderBy(
+                        builder.asc(areaRoot.get("treeSortOrder")),
+                        builder.asc(msgRoot.get("areaSortOrder")),
+                        builder.desc(msgRoot.get("id")));
             } else {
-                tupleQuery.orderBy(builder.desc(areaRoot.get("treeSortOrder")), builder.desc(msgRoot.get("areaSortOrder")));
+                tupleQuery.orderBy(
+                        builder.desc(areaRoot.get("treeSortOrder")),
+                        builder.desc(msgRoot.get("areaSortOrder")),
+                        builder.desc(msgRoot.get("id")));
             }
         }
 
