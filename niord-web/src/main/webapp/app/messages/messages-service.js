@@ -302,6 +302,26 @@ angular.module('niord.messages')
             },
 
 
+            /** Opens the message send-mail dialog */
+            messageMailDialog: function (total, params) {
+                return $uibModal.open({
+                    controller: "MessageMailDialogCtrl",
+                    templateUrl: "/app/messages/message-mail-dialog.html",
+                    size: 'md',
+                    resolve: {
+                        total: function () { return total; },
+                        params: function () { return params; }
+                    }
+                });
+            },
+
+
+            /** Sends a message e-mail based on the given parameters */
+            sendMessageMail: function (params) {
+                return $http.get('/rest/messages/mail?' + params);
+            },
+
+
             /** Sorts the messages withing an area **/
             sortAreaMessagesDialog: function () {
                 // Get the user to pick an area with a geometry

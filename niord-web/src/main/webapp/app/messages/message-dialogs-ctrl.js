@@ -260,7 +260,50 @@ angular.module('niord.messages')
 
         }])
 
-        
+
+
+    /*******************************************************************
+     * Controller that handles the message send-mail dialog
+     *******************************************************************/
+    .controller('MessageMailDialogCtrl', ['$scope', 'growl', 'MessageService', 'total', 'params',
+        function ($scope, growl, MessageService, total, params) {
+            'use strict';
+
+            $scope.totalMessageNo = total;
+
+            $scope.data = {
+                mailTo : '',
+                mailSubject: '',
+                mailMessage: ''
+            };
+
+
+            /** Sends the e-mail and closes the dialog **/
+            $scope.sendMail = function () {
+
+                var p = params || '';
+                if (p.length > 0) {
+                    p += '&';
+                }
+                p = p
+                    + '&mailTo=' + encodeURIComponent($scope.data.mailTo)
+                    + '&mailSubject=' + encodeURIComponent($scope.data.mailSubject)
+                    + '&mailMessage=' + encodeURIComponent($scope.data.mailMessage);
+
+                MessageService
+                    .sendMessageMail(p)
+                    .success(function () {
+                        growl.info("E-mail sent", { ttl: 3000 });
+                        $scope.$close("ok");
+                    })
+                    .error(function () {
+                        growl.error("Error sending e-mail", { ttl: 5000 });
+                    });
+            };
+
+        }])
+
+
 
     /*******************************************************************
      * Controller that handles sorting of messages withing an area

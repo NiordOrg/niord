@@ -773,6 +773,25 @@ angular.module('niord.messages')
 
 
             /*****************************/
+            /** Send Mail functions     **/
+            /*****************************/
+
+
+            /** Opens the message send-mail dialog */
+            $scope.sendMailDialog = function () {
+                var params = $scope.toRequestFilterParameters();
+                if (params.length > 0) {
+                    params += '&';
+                }
+                params += 'sortBy=' + $scope.state.sortBy
+                    + '&sortOrder=' + $scope.state.sortOrder
+                    + '&lang=' + $rootScope.language;
+
+                MessageService.messageMailDialog($scope.totalMessageNo, params);
+            };
+
+
+            /*****************************/
             /** Export/Import functions **/
             /*****************************/
 

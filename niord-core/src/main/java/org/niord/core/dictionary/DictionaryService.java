@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class DictionaryService extends BaseService {
 
-    public static final String[] DEFAULT_BUNDLES = { "web", "message", "pdf" };
+    public static final String[] DEFAULT_BUNDLES = { "web", "message", "pdf", "mail" };
 
     @Inject
     private Logger log;

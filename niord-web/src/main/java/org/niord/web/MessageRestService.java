@@ -29,6 +29,9 @@ import org.niord.core.domain.DomainService;
 import org.niord.core.fm.FmService;
 import org.niord.core.fm.FmService.ProcessFormat;
 import org.niord.core.geojson.FeatureService;
+import org.niord.core.mail.HtmlMail;
+import org.niord.core.mail.Mail;
+import org.niord.core.mail.MailService;
 import org.niord.core.message.EditableMessageVo;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageExportService;
@@ -40,6 +43,8 @@ import org.niord.core.message.MessageService;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.repo.FileTypes;
 import org.niord.core.repo.RepositoryService;
+import org.niord.core.user.User;
+import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.PagedSearchResultVo;
@@ -59,6 +64,7 @@ import javax.annotation.security.RolesAllowed;
 import javax.ejb.SessionContext;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -129,11 +135,16 @@ public class MessageRestService extends AbstractBatchableRestService {
     DomainService domainService;
 
     @Inject
+    UserService userService;
+
+    @Inject
     FeatureService featureService;
 
     @Inject
     FmService fmService;
 
+    @Inject
+    MailService mailService;
 
     /***************************
      * Message access functions
@@ -784,6 +795,73 @@ public class MessageRestService extends AbstractBatchableRestService {
             throw e;
         }
     }
+
+
+    /***************************************/
+    /** Mails                             **/
+    /***************************************/
+
+    /**
+     * Generates and sends an e-mail for the message search result.
+     */
+    @GET
+    @Path("/mail")
+    @Produces("text/plain")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public String sendMessageMail(@Context HttpServletRequest request) throws Exception {
+
+        long t0 = System.currentTimeMillis();
+        String mailTo = request.getParameter("mailTo");
+        String mailSubject = request.getParameter("mailSubject");
+        String mailMessage = request.getParameter("mailMessage");
+
+        if (StringUtils.isBlank(mailTo)) {
+            throw new WebApplicationException(400);
+        }
+        mailSubject = StringUtils.defaultIfBlank(mailSubject, "No subject");
+        mailMessage = StringUtils.defaultIfBlank(mailMessage, "");
+
+        // Perform a search for at most 1000 messages
+        MessageSearchParams params = MessageSearchParams.instantiate(request);
+        params.maxSize(1000).page(0);
+        PagedSearchResultVo<MessageVo> result = search(params);
+
+        User user = userService.currentUser();
+
+        try {
+            String mailContents =
+                    fmService.newTemplateBuilder()
+                            .setTemplatePath("/templates/messages/message-mail.ftl")
+                            .setData("messages", result.getData())
+                            .setData("areaHeadings", params.sortByArea())
+                            .setData("searchCriteria", result.getDescription())
+                            .setData("mailTo", mailTo)
+                            .setData("mailMessage", mailMessage)
+                            .setData("mailSender", user.getName())
+                            .setDictionaryNames("web", "message", "mail")
+                            .setLanguage(params.getLanguage())
+                            .process();
+
+            Mail mail = HtmlMail.fromHtml(mailContents, app.getBaseUri(), true)
+                    .doSetSender(new InternetAddress("peder@carolus.dk"))
+                    .addFrom(new InternetAddress(user.getEmail()))
+                    .addReplyTo(new InternetAddress(user.getEmail()))
+                    .addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(mailTo))
+                    .doSetSubject(mailSubject);
+            mailService.sendMail(mail);
+
+            String msg = "Mail sent to " + mailTo + " in " + (System.currentTimeMillis() - t0) + " ms";
+            log.info(msg);
+            return msg;
+
+        } catch (Exception e) {
+            log.error("Error generating PDF for messages", e);
+            throw e;
+        }
+    }
+
 
 
     /***************************************/
