@@ -47,6 +47,7 @@ import org.niord.core.service.BaseService;
 import org.niord.core.settings.annotation.Setting;
 import org.niord.core.util.LuceneUtils;
 import org.niord.core.util.TextUtils;
+import org.niord.model.vo.Status;
 import org.slf4j.Logger;
 
 import javax.annotation.PostConstruct;
@@ -83,6 +84,11 @@ import static org.niord.core.settings.Setting.Type.Boolean;
  * <p>
  * Note to self: Using "Hibernate Search" for message (as for AtoNs), was ruled out because it would
  * be too complex to index all related entities by language.
+ * <p>
+ * TODO: Upon start-up, there may be a race condition because the periodic call to updateLuceneIndex() may
+ *       overlap the PostConstruct call to the same method (via a timer service call). Hence you may see
+ *       an error stating that Lucene failed obtaining a lock on write.lock.
+ *       Should be fixed...
  */
 @Singleton
 @Lock(LockType.READ)
@@ -108,6 +114,11 @@ public class MessageLuceneIndex extends BaseService {
     Boolean deleteOnStartup;
 
     @Inject
+    @Setting(value = "messageIndexIncludeDeletedMessages", defaultValue = "true", type = Boolean,
+            description = "Whether the message index should include deleted messages or not")
+    Boolean includeDeletedMessages;
+
+    @Inject
     Logger log;
 
     @Resource
@@ -130,7 +141,7 @@ public class MessageLuceneIndex extends BaseService {
      * Initialize the index
      */
     @PostConstruct
-    public void init() {
+    private void init() {
         // Create the lucene index directory
         if (!Files.exists(indexFolder)) {
             try {
@@ -162,7 +173,7 @@ public class MessageLuceneIndex extends BaseService {
      * Clean up Lucene index
      */
     @PreDestroy
-    public void closeIndex() {
+    private void closeIndex() {
         closeReader();
     }
 
@@ -172,7 +183,7 @@ public class MessageLuceneIndex extends BaseService {
      */
     @Timeout
     @Schedule(persistent=false, second="38", minute="*/1", hour="*")
-    public int updateLuceneIndex() {
+    private int updateLuceneIndex() {
         return updateLuceneIndex(LUCENE_MAX_INDEX_COUNT, false);
     }
 
@@ -202,7 +213,7 @@ public class MessageLuceneIndex extends BaseService {
      * @param maxCount the max number of messages to return
      * @return the updated messages
      */
-    protected List<Message> findUpdatedMessages(Date fromDate, int maxCount) {
+    private List<Message> findUpdatedMessages(Date fromDate, int maxCount) {
 
         List<Message> messages = messageService.findUpdatedMessages(fromDate, maxCount);
 
@@ -222,7 +233,7 @@ public class MessageLuceneIndex extends BaseService {
      * @param doc the document to add the message to
      * @param message the message to add
      */
-    protected void addMessageToDocument(Document doc, Message message) {
+    private void addMessageToDocument(Document doc, Message message) {
         // For each supported language, update a search field
         for (String language : app.getLanguages()) {
             String searchField = searchField(language);
@@ -301,7 +312,7 @@ public class MessageLuceneIndex extends BaseService {
     /**
      * Creates and returns a Lucene writer
      */
-    public IndexWriter getNewWriter() throws IOException {
+    private IndexWriter getNewWriter() throws IOException {
 
         StandardAnalyzer analyzer = new StandardAnalyzer();
         IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
@@ -322,7 +333,7 @@ public class MessageLuceneIndex extends BaseService {
      * Returns the cached index reader, or creates one if none is defined
      * @return the shared index reader
      */
-    public DirectoryReader getIndexReader() throws IOException {
+    private DirectoryReader getIndexReader() throws IOException {
         if (reader == null) {
            try {
                 reader = DirectoryReader.open(FSDirectory.open(indexFolder));
@@ -339,7 +350,7 @@ public class MessageLuceneIndex extends BaseService {
      * Closes the given writer
      * @param writer the writer to close
      */
-    public void closeWriter(IndexWriter writer) {
+    private void closeWriter(IndexWriter writer) {
         if (writer != null) {
             try {
                 writer.close();
@@ -353,7 +364,7 @@ public class MessageLuceneIndex extends BaseService {
     /**
      * Closes the current reader
      */
-    public void closeReader() {
+    private void closeReader() {
         if (reader != null) {
             try {
                 reader.close();
@@ -370,7 +381,7 @@ public class MessageLuceneIndex extends BaseService {
      *
      * @param writer the index writer
      */
-    protected void refreshReader(IndexWriter writer) throws IOException {
+    private void refreshReader(IndexWriter writer) throws IOException {
         closeReader();
         reader = DirectoryReader.open(writer, true);
     }
@@ -378,7 +389,6 @@ public class MessageLuceneIndex extends BaseService {
 
     /**
      * Call this to re-index the message index completely
-     * @throws IOException
      */
     @Asynchronous
     public Future<Integer> recreateIndexAsync() throws IOException {
@@ -389,7 +399,6 @@ public class MessageLuceneIndex extends BaseService {
 
     /**
      * Call this to re-index the message index completely
-     * @throws IOException
      */
     public int recreateIndex() throws IOException {
         // Check if we are already in the middle of re-indexing
@@ -414,9 +423,8 @@ public class MessageLuceneIndex extends BaseService {
 
     /**
      * Deletes the current index
-     * @throws IOException
      */
-    public void deleteIndex() throws IOException {
+    private void deleteIndex() throws IOException {
         // Delete the index
         IndexWriter writer = null;
         try {
@@ -530,7 +538,7 @@ public class MessageLuceneIndex extends BaseService {
      *
      * @param message the message to index
      */
-    protected void indexMessage(IndexWriter writer, Message message) {
+    private void indexMessage(IndexWriter writer, Message message) {
         // First delete the message
         deleteMessageFromIndex(writer, message);
         // Then add the message
@@ -544,8 +552,8 @@ public class MessageLuceneIndex extends BaseService {
      * @param message the message to check
      * @return whether to add the message to the index
      */
-    protected boolean shouldAddMessage(Message message) {
-        return true;
+    private boolean shouldAddMessage(Message message) {
+        return includeDeletedMessages || message.getStatus() != Status.DELETED;
     }
 
 
@@ -554,7 +562,7 @@ public class MessageLuceneIndex extends BaseService {
      *
      * @param message the message to delete
      */
-    protected void deleteMessageFromIndex(IndexWriter writer, Message message) {
+    private void deleteMessageFromIndex(IndexWriter writer, Message message) {
         try {
             Term idTerm = new Term(LUCENE_ID_FIELD, message.getId().toString());
             writer.deleteDocuments(idTerm);
@@ -569,7 +577,7 @@ public class MessageLuceneIndex extends BaseService {
      *
      * @param message the message to add
      */
-    protected void addMessageToIndex(IndexWriter writer, Message message) {
+    private void addMessageToIndex(IndexWriter writer, Message message) {
         Document doc = new Document();
 
         // ID field
@@ -592,7 +600,7 @@ public class MessageLuceneIndex extends BaseService {
      * @param doc the document to add the field value to
      * @param obj the value to add
      */
-    protected void addPhraseSearchField(Document doc, String field, Object obj) {
+    private void addPhraseSearchField(Document doc, String field, Object obj) {
         if (obj != null) {
             String str = (obj instanceof String) ? (String)obj : obj.toString();
             if (StringUtils.isNotBlank(str)) {
@@ -608,7 +616,7 @@ public class MessageLuceneIndex extends BaseService {
      * @param obj the value to add
      * @param store the store value of the field
      */
-    protected void addStringSearchField(Document doc, String field, Object obj, Field.Store store) {
+    private void addStringSearchField(Document doc, String field, Object obj, Field.Store store) {
         if (obj != null) {
             String str = (obj instanceof String) ? (String)obj : obj.toString();
             if (StringUtils.isNotBlank(str)) {
@@ -665,7 +673,7 @@ public class MessageLuceneIndex extends BaseService {
      * Also, the text value is normalized, i.e. accented chars are
      * replaced with non-accented versions.
      */
-    public static class PhraseSearchLuceneField extends Field {
+    private static class PhraseSearchLuceneField extends Field {
 
         /* Indexed, tokenized, not stored. */
         public static final FieldType TYPE_NOT_STORED = new FieldType();
