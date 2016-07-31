@@ -42,7 +42,7 @@ import java.util.Map;
 public class Mail implements Serializable {
 
     private static final String CONTENT_ENCODING 			= "UTF-8";
-    private static final String CONTENT_TYPE_HTML 			= "text/html";
+    private static final String CONTENT_TYPE_HTML 			= "text/html; charset=UTF-8";
     private static final String CONTENT_TYPE_PLAIN 			= "text/plain; charset=UTF-8; format=flowed";
     private static final String MIME_MULTIPART_MIXED		= "mixed";
     private static final String MIME_MULTIPART_RELATED		= "related";
