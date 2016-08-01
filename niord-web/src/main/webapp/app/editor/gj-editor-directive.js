@@ -298,6 +298,7 @@ angular.module('niord.editor')
                     angular.forEach(scope.features, function (feature) {
                         feature.set('selected', true);
                     });
+                    recomputeFeatureSelection();
                 };
 
 
