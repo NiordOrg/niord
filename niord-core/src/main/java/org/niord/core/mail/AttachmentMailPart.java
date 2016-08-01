@@ -33,25 +33,14 @@ import java.nio.file.Paths;
  * Encapsulates an attachment mail part
  */
 @SuppressWarnings("unused")
-public class AttachmentMailPart implements Serializable {
+public abstract class AttachmentMailPart implements Serializable {
 
     String name;
-
-    // Url attachment
-    URL url;
-
-    // File attachment
-    String file;
-
-    // Byte array attachment
-    byte[] content;
-    String contentType;
 
     /**
      * No-call constructor
      */
-    private AttachmentMailPart(String name) {
-        this.name = name;
+    private AttachmentMailPart() {
     }
 
     /**
@@ -68,21 +57,7 @@ public class AttachmentMailPart implements Serializable {
      * @param name the name of the attachment.
      */
     public static AttachmentMailPart fromFile(String file, String name)  throws MessagingException {
-        // Check that the file is valid
-        Path path = Paths.get(file);
-        if (!Files.isRegularFile(path)) {
-            throw new MessagingException("Invalid file attachment: " + file);
-        }
-
-        // If name is not specified, compute it from the file
-        if (StringUtils.isBlank(name)) {
-            name = path.getFileName().toString();
-        }
-
-        // Instantiate a mail attachment
-        AttachmentMailPart a = new AttachmentMailPart(name);
-        a.file = file;
-        return a;
+        return new FileAttachmentMailPart(file, name);
     }
 
     /**
@@ -99,29 +74,7 @@ public class AttachmentMailPart implements Serializable {
      * @param name the name of the attachment.
      */
     public static AttachmentMailPart fromUrl(String urlStr, String name)  throws MessagingException {
-        // Check that the file is valid
-        URL url;
-        try {
-            url = new URL(urlStr);
-        } catch (MalformedURLException ex) {
-            throw new MessagingException("Invalid url attachment: " + urlStr);
-        }
-
-        // If name is not specified, compute it from the file
-        if (StringUtils.isBlank(name)) {
-            name = url.getPath();
-            if (name.contains("/")) {
-                name = name.substring(name.lastIndexOf("/") + 1);
-            }
-            if (StringUtils.isBlank(name)) {
-                name = "unknown";
-            }
-        }
-
-        // Instantiate a mail attachment
-        AttachmentMailPart a = new AttachmentMailPart(name);
-        a.url = url;
-        return a;
+        return new UrlAttachmentMailPart(urlStr, name);
     }
 
     /**
@@ -140,37 +93,156 @@ public class AttachmentMailPart implements Serializable {
      * @param name the name of the attachment.
      */
     public static AttachmentMailPart fromContent(byte[] content, String contentType, String name)  throws MessagingException {
-        // Check that the content is a valid byte array
-        if (content == null || content.length == 0) {
-            throw new MessagingException("Invalid empty content byte array");
-        }
-        if (contentType == null || contentType.length() == 0) {
-            contentType = "application/octet-stream";
-        }
-        if (StringUtils.isBlank(name)) {
-            name = "unknown";
-        }
-
-        // Instantiate a mail attachment
-        AttachmentMailPart a = new AttachmentMailPart(name);
-        a.content = content;
-        a.contentType = contentType;
-        return a;
+        return new ContentAttachmentMailPart(content, contentType, name);
     }
 
     /**
      * Returns a data-handler for this part
      * @return a data-handler for this part
      */
-    public DataHandler getDataHandler(Cache<URL, CachedUrlData> cache) throws MessagingException {
-        if (file != null) {
+    public abstract DataHandler getDataHandler(Cache<URL, CachedUrlData> cache) throws MessagingException;
+
+    public String getName() { return name; }
+
+
+    /**
+     * An attachment mail part based on a file
+     */
+    public static class FileAttachmentMailPart extends AttachmentMailPart {
+
+        // File attachment
+        String file;
+
+        /**
+         * Constructor
+         * @param file the attachment file
+         * @param name the name of the attachment.
+         */
+        private FileAttachmentMailPart(String name, String file) throws MessagingException {
+
+            // Check that the file is valid
+            Path path = Paths.get(file);
+            if (!Files.isRegularFile(path)) {
+                throw new MessagingException("Invalid file attachment: " + file);
+            }
+            this.file = file;
+
+            // If name is not specified, compute it from the file
+            if (StringUtils.isBlank(name)) {
+                this.name = path.getFileName().toString();
+            }
+        }
+
+        /**
+         * Returns a data-handler for this part
+         * @return a data-handler for this part
+         */
+        @Override
+        public DataHandler getDataHandler(Cache<URL, CachedUrlData> cache) throws MessagingException {
             return new DataHandler(new FileDataSource(file));
-        } else if (url != null) {
+        }
+    }
+
+
+    /**
+     * An attachment mail part based on a URL to the attachment file
+     */
+    public static class UrlAttachmentMailPart extends AttachmentMailPart {
+
+        // File attachment
+        URL url;
+
+        /** Constructor */
+        private UrlAttachmentMailPart(String urlStr) throws MessagingException {
+            this(null, urlStr);
+        }
+
+        /**
+         * Constructor
+         * @param urlStr the attachment URL
+         * @param name the name of the attachment.
+         */
+        private UrlAttachmentMailPart(String name, String urlStr) throws MessagingException {
+            // Check that the file is valid
+            try {
+                this.url = new URL(urlStr);
+            } catch (MalformedURLException ex) {
+                throw new MessagingException("Invalid url attachment: " + urlStr);
+            }
+
+            // If name is not specified, compute it from the URL
+            if (StringUtils.isBlank(name)) {
+                name = url.getPath();
+                if (name.contains("/")) {
+                    name = name.substring(name.lastIndexOf("/") + 1);
+                }
+                if (StringUtils.isBlank(name)) {
+                    name = "unknown";
+                }
+            }
+            this.name = name;
+        }
+
+        /**
+         * Returns a data-handler for this part
+         * @return a data-handler for this part
+         */
+        @Override
+        public DataHandler getDataHandler(Cache<URL, CachedUrlData> cache) throws MessagingException {
             return new DataHandler(new CachedUrlDataSource(url, cache));
-        } else {
+        }
+    }
+
+
+    /**
+     * An attachment mail part based on byte array contents
+     */
+    public static class ContentAttachmentMailPart extends AttachmentMailPart {
+
+        byte[] content;
+        String contentType;
+
+        /**
+         * Constructor
+         * @param content the content byte array
+         * @param name the name of the attachment.
+         */
+        private ContentAttachmentMailPart(byte[] content, String name) throws MessagingException {
+            this(content, null, name);
+        }
+
+        /**
+         * Constructor
+         * @param content the content byte array
+         * @param contentType the content type
+         * @param name the name of the attachment.
+         */
+        private ContentAttachmentMailPart(byte[] content, String contentType, String name) throws MessagingException {
+            // Check that the content is a valid byte array
+            if (content == null || content.length == 0) {
+                throw new MessagingException("Invalid empty content byte array");
+            }
+            this.content = content;
+
+            if (StringUtils.isBlank(contentType)) {
+                contentType = "application/octet-stream";
+            }
+            this.contentType = contentType;
+
+            if (StringUtils.isBlank(name)) {
+                name = "unknown";
+            }
+            this.name = name;
+        }
+
+        /**
+         * Returns a data-handler for this part
+         * @return a data-handler for this part
+         */
+        @Override
+        public DataHandler getDataHandler(Cache<URL, CachedUrlData> cache) throws MessagingException {
             return new DataHandler(new ByteArrayDataSource(content, contentType));
         }
     }
 
-    public String getName() { return name; }
 }

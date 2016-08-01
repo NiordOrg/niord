@@ -249,57 +249,57 @@ public class Mail implements Serializable {
 
     /********* Method chaining *********/
 
-    public Mail doSetSender(Address sender) {
+    public Mail sender(Address sender) {
         this.sender = sender;
         return this;
     }
 
-    public Mail addFrom(Address addr) {
+    public Mail from(Address addr) {
         from.add(addr);
         return this;
     }
 
-    public Mail addRecipient(Message.RecipientType type, Address address) {
+    public Mail recipient(Message.RecipientType type, Address address) {
         recipients.add(new MailRecipient(type, address));
         return this;
     }
 
-    public Mail addReplyTo(Address addr) {
+    public Mail replyTo(Address addr) {
         replyTo.add(addr);
         return this;
     }
 
-    public Mail doSetSubject(String subject) {
+    public Mail subject(String subject) {
         this.subject = subject;
         return this;
     }
 
-    public Mail addCustomHeader(String name, String value) {
+    public Mail customHeader(String name, String value) {
         customHeaders.put(name, value);
         return this;
     }
 
-    public Mail doSetSentDate(Date sentDate) {
+    public Mail sentDate(Date sentDate) {
         this.sentDate = sentDate;
         return this;
     }
 
-    public Mail doSetPlainText(String plainText) {
+    public Mail plainText(String plainText) {
         this.plainText = plainText;
         return this;
     }
 
-    public Mail doSetHtmlText(String htmlText) {
+    public Mail htmlText(String htmlText) {
         this.htmlText = htmlText;
         return this;
     }
 
-    public Mail addAttachment(AttachmentMailPart attachment) {
+    public Mail attachment(AttachmentMailPart attachment) {
         attachments.add(attachment);
         return this;
     }
 
-    public Mail addInlineParts(InlineMailPart inlinePart) {
+    public Mail inlineParts(InlineMailPart inlinePart) {
         inlineParts.add(inlinePart);
         return this;
     }

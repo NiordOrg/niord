@@ -844,12 +844,12 @@ public class MessageRestService extends AbstractBatchableRestService {
                             .setLanguage(params.getLanguage())
                             .process();
 
-            Mail mail = HtmlMail.fromHtml(mailContents, app.getBaseUri(), true)
-                    .doSetSender(new InternetAddress("peder@carolus.dk"))
-                    .addFrom(new InternetAddress(user.getEmail()))
-                    .addReplyTo(new InternetAddress(user.getEmail()))
-                    .addRecipient(javax.mail.Message.RecipientType.TO, new InternetAddress(mailTo))
-                    .doSetSubject(mailSubject);
+            Mail mail = HtmlMail.fromHtml(mailContents, app.getBaseUri(), HtmlMail.StyleHandling.INLINE_STYLES, true)
+                    .sender(new InternetAddress("peder@carolus.dk"))
+                    .from(new InternetAddress(user.getEmail()))
+                    .replyTo(new InternetAddress(user.getEmail()))
+                    .recipient(javax.mail.Message.RecipientType.TO, new InternetAddress(mailTo))
+                    .subject(mailSubject);
             mailService.sendMail(mail);
 
             String msg = "Mail sent to " + mailTo + " in " + (System.currentTimeMillis() - t0) + " ms";

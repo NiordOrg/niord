@@ -35,7 +35,7 @@ import java.net.URLConnection;
  * then the url will actually be fetched 2-3 times during
  * the process of sending the mail by javamail!!
  * <p></p>
- * To alleviate this sickening behavior, this DataSource can 
+ * To alleviate this behavior, this DataSource can
  * be used to wrap the original data source.
  * The content is only loaded once and then cached. 
  */

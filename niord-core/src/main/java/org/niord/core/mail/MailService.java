@@ -68,14 +68,14 @@ public class MailService {
         try {
             String baseUri = app.getBaseUri();
 
-            Mail mail = HtmlMail.fromHtml(content, baseUri, true)
-                    .doSetSender(new InternetAddress(mailSender))
-                    .addFrom(new InternetAddress(mailSender))
-                    .doSetSubject(title);
+            Mail mail = HtmlMail.fromHtml(content, baseUri, HtmlMail.StyleHandling.INLINE_STYLES, true)
+                    .sender(new InternetAddress(mailSender))
+                    .from(new InternetAddress(mailSender))
+                    .subject(title);
 
             ValidMailRecipients mailRecipientFilter = new ValidMailRecipients(validRecipients);
             for (String recipient : recipients) {
-                mail.addRecipient(Message.RecipientType.TO,	mailRecipientFilter.filter(recipient));
+                mail.recipient(Message.RecipientType.TO,	mailRecipientFilter.filter(recipient));
             }
 
             sendMail(mail);

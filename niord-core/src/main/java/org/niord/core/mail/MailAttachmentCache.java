@@ -34,7 +34,7 @@ import java.net.URL;
  * then the url will actually be fetched 2-3 times during
  * the process of sending the mail by javamail!!
  * <p>
- * To alleviate this sickening behavior, this {@code CachedUrlDataSource} can
+ * To alleviate this behavior, this {@code CachedUrlDataSource} can
  * be used to wrap the original data source.
  * The content is only loaded once and then cached in this cache.
  */

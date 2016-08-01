@@ -27,7 +27,11 @@ public class CachedUrlData implements Serializable {
 	String name;
 	String contentType;
 	byte[] content;
-	
+
+    /*************************/
+    /** Getters and Setters **/
+    /*************************/
+
 	public URL getUrl() { return url; }
 	public void setUrl(URL url) { this.url = url; }
 	
