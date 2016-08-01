@@ -18,6 +18,7 @@ package org.niord.web;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -821,7 +822,7 @@ public class MessageRestService extends AbstractBatchableRestService {
             throw new WebApplicationException(400);
         }
         mailSubject = StringUtils.defaultIfBlank(mailSubject, "No subject");
-        mailMessage = StringUtils.defaultIfBlank(mailMessage, "");
+        mailMessage = StringEscapeUtils.escapeHtml(StringUtils.defaultIfBlank(mailMessage, "")).replace("\n", "<br>");
 
         // Perform a search for at most 1000 messages
         MessageSearchParams params = MessageSearchParams.instantiate(request);
