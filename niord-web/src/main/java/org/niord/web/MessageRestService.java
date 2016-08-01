@@ -846,8 +846,8 @@ public class MessageRestService extends AbstractBatchableRestService {
                             .process();
 
             Mail mail = HtmlMail.fromHtml(mailContents, app.getBaseUri(), HtmlMail.StyleHandling.INLINE_STYLES, true)
-                    .sender(new InternetAddress("peder@carolus.dk"))
-                    .from(new InternetAddress(user.getEmail()))
+                    .sender(new InternetAddress("noreply@e-navigation.net"))
+                    .from(new InternetAddress("noreply@e-navigation.net"))
                     .replyTo(new InternetAddress(user.getEmail()))
                     .recipient(javax.mail.Message.RecipientType.TO, new InternetAddress(mailTo))
                     .subject(mailSubject);
