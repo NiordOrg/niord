@@ -722,9 +722,10 @@ public class MessageRestService extends AbstractBatchableRestService {
                 try {
                     fmService.newTemplateBuilder()
                             .setTemplatePath("/templates/messages/message-details-pdf.ftl")
-                            .setData("msg", message)
+                            .setData("messages", Collections.singleton(message))
                             .setData("pageSize", pageSize)
                             .setData("pageOrientation", pageOrientation)
+                            .setData("mapThumbnails", true)
                             .setDictionaryNames("web", "message", "pdf")
                             .setLanguage(language)
                             .process(format, os);
@@ -776,6 +777,7 @@ public class MessageRestService extends AbstractBatchableRestService {
                             .setData("searchCriteria", result.getDescription())
                             .setData("pageSize", params.getPageSize())
                             .setData("pageOrientation", params.getPageOrientation())
+                            .setData("mapThumbnails", true)
                             .setDictionaryNames("web", "message", "pdf")
                             .setLanguage(params.getLanguage())
                             .process(format, os);

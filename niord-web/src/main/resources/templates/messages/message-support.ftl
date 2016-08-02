@@ -337,13 +337,20 @@
 
     <table class="message-table">
         <!-- Layout row for fixed-layout table -->
-        <tr><td width="140"></td><td width="*"></td></tr>
+        <tr>
+            <#if mapThumbnails>
+                <td width="140"></td>
+                <td width="*"></td>
+            <#else>
+                <td width="100%"></td>
+            </#if>
+        </tr>
 
         <#list messages as msg>
 
             <#if msg.areas?has_content>
                 <#assign area=areaHeading(msg.areas[0]) />
-                <#if areaHeadings && area?? && area.id != areaHeadingId>
+                <#if areaHeadings?? && areaHeadings && area?? && area.id != areaHeadingId>
                     <#assign areaHeadingId=area.id />
                     <tr>
                         <td colspan="2"><h4 style="color: #8f2f7b; font-size: 16px;" id="${areaHeadingId?c}"><@areaLineage area=areaHeading(area) /></h4></td>
@@ -351,14 +358,20 @@
                 </#if>
             </#if>
             <tr>
-                <td class="table-image">
-                    <img src="/rest/message-map-image/${msg.id}.png" width="120" height="120"/>
-                </td>
+                <#if mapThumbnails>
+                    <td class="table-image">
+                        <img src="/rest/message-map-image/${msg.id}.png" width="120" height="120"/>
+                    </td>
+                </#if>
                 <td class="table-item">
                     <@renderMessage msg=msg />
                 </td>
             </tr>
         </#list>
     </table>
+
+    <#list messages as msg>
+        <@renderSeparatePageAttachments msg=msg />
+    </#list>
 
 </#macro>

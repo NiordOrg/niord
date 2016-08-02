@@ -38,9 +38,5 @@
 
 <@renderMessageList messages=messages />
 
-<#list messages as msg>
-    <@renderSeparatePageAttachments msg=msg />
-</#list>
-
 </body>
 </html>

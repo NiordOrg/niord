@@ -15,24 +15,14 @@
 
 
 
-<h1>${text("pdf.details.title")}</h1>
-<table class="message-table">
-    <!-- Layout row for fixed-layout table -->
-    <tr><td width="140"></td><td width="*"></td></tr>
+<h1>
+  ${text("pdf.details.title")}
+  <#if messages[0].shortId?has_content>
+      <strong>${messages[0].shortId}</strong>
+  </#if>
+</h1>
 
-    <tr>
-        <td class="table-image">
-            <img src="/rest/message-map-image/${msg.id}.png" width="120" height="120"/>
-        </td>
-        <td class="table-item">
-
-            <@renderMessage msg=msg />
-
-        </td>
-    </tr>
-</table>
-
-<@renderSeparatePageAttachments msg=msg />
+<@renderMessageList messages=messages />
 
 </body>
 </html>
