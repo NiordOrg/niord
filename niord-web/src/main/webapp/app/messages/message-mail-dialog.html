@@ -6,51 +6,54 @@
     </div>
 
     <div class="modal-body" style="padding-bottom: 0">
-        <div class="container-fluid">
+        <form name="mailForm" id="mailForm" role="form">
+            <div class="container-fluid">
 
-            <div class="form-group row" style="margin-top: 20px">
-                <label for="mailTo" class="col-sm-6 col-md-3 control-label" style="text-align: right">
-                    To
-                </label>
-                <div class="col-sm-6 col-md-9" >
-                    <input type="email" id="mailTo" name="mailTo" class="form-control input-sm"
-                           ng-model="data.mailTo"
-                           autocapitalize="off" autocorrect="off" autocomplete="off" required />
+                <div class="form-group row" style="margin-top: 20px">
+                    <label for="mailTo" class="col-sm-3 col-md-2 control-label" style="text-align: right">
+                        To
+                    </label>
+                    <div class="col-sm-9 col-md-10" >
+                        <input type="email" id="mailTo" name="mailTo" class="form-control input-sm"
+                               ng-model="data.mailTo"
+                               autocapitalize="off" autocorrect="off" autocomplete="off" required />
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="mailTo" class="col-sm-3 col-md-2 control-label" style="text-align: right">
+                        Subject
+                    </label>
+                    <div class="col-sm-9 col-md-10" >
+                        <input type="text" id="mailSubject" name="mailSubject" class="form-control input-sm"
+                               ng-model="data.mailSubject"
+                               autocapitalize="off" autocorrect="off" autocomplete="off" required />
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="mailTo" class="col-sm-3 col-md-2 control-label" style="text-align: right">
+                        Message
+                    </label>
+                    <div class="col-sm-9 col-md-10" >
+                            <textarea type="text" id="mailMessage" name="mailMessage" class="form-control input-sm"
+                                      ng-model="data.mailMessage" rows="4"
+                                      autocapitalize="off" autocorrect="off" autocomplete="off" ></textarea>
+                    </div>
                 </div>
             </div>
 
-            <div class="form-group row">
-                <label for="mailTo" class="col-sm-6 col-md-3 control-label" style="text-align: right">
-                    Subject
-                </label>
-                <div class="col-sm-6 col-md-9" >
-                    <input type="text" id="mailSubject" name="mailSubject" class="form-control input-sm"
-                           ng-model="data.mailSubject"
-                           autocapitalize="off" autocorrect="off" autocomplete="off" />
+            <div class="row" style="margin-top: 24px;">
+                <div class="form-group col-xs-12" style="text-align: right">
+                    <button class="btn btn-default btn-sm" ng-click="$dismiss('aborted')">Close</button>
+                    &nbsp;
+                    <button class="btn btn-primary btn-sm" ng-click="sendMail()"
+                            ng-disabled="mailForm.$pristine || mailForm.$invalid">
+                        <span class="glyphicon glyphicon-envelope"></span>
+                        Send Mail
+                    </button>
                 </div>
             </div>
-
-            <div class="form-group row">
-                <label for="mailTo" class="col-sm-6 col-md-3 control-label" style="text-align: right">
-                    Message
-                </label>
-                <div class="col-sm-6 col-md-9" >
-                        <textarea type="text" id="mailMessage" name="mailMessage" class="form-control input-sm"
-                                  ng-model="data.mailMessage" rows="4"
-                                  autocapitalize="off" autocorrect="off" autocomplete="off" ></textarea>
-                </div>
-            </div>
-        </div>
-
-        <div class="row" style="margin-top: 24px;">
-            <div class="form-group col-xs-12" style="text-align: right">
-                <button class="btn btn-default btn-sm" ng-click="$dismiss('aborted')">Close</button>
-                &nbsp;
-                <button class="btn btn-primary btn-sm" ng-click="sendMail()">
-                    <span class="glyphicon glyphicon-envelope"></span>
-                    Send Mail
-                </button>
-            </div>
-        </div>
+        </form>
     </div>
 </div>
