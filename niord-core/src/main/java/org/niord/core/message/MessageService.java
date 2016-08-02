@@ -363,6 +363,7 @@ public class MessageService extends BaseService {
 
         // Substitute the Area with a persisted one
         message.setAreas(persistedList(Area.class, message.getAreas()));
+        message.setAreaSortOrder(areaService.computeMessageAreaSortingOrder(message));
 
         // Substitute the Categories with the persisted ones
         message.setCategories(persistedList(Category.class, message.getCategories()));
@@ -429,6 +430,7 @@ public class MessageService extends BaseService {
 
         // Substitute the Area with a persisted one
         original.setAreas(persistedList(Area.class, message.getAreas()));
+        original.setAreaSortOrder(areaService.computeMessageAreaSortingOrder(original));
 
         // Substitute the Categories with the persisted ones
         original.setCategories(persistedList(Category.class, message.getCategories()));
