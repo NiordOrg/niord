@@ -4,168 +4,15 @@
 <#assign txtToHtml = "org.niord.core.fm.TextToHtmlDirective"?new()>
 
 <!-- ***************************************  -->
-<!-- Commonly used message styles             -->
+<!-- Parametrized message styles             -->
 <!-- ***************************************  -->
-<#macro messageStyles>
+<#macro pageSizeStyle>
     <style type="text/css" media="all">
 
-        /** General page rules **/
         @page {
             size: ${pageSize!"A4"} ${pageOrientation!"portrait"};
-            margin: 2cm 1.5cm;
-            padding: 0;
-
-            @top-center {
-                content: element(header);
-                vertical-align: bottom;
-            }
-
-            @bottom-center {
-                content: element(footer);
-                vertical-align: top;
-            }
         }
 
-        /** First page rules **/
-        @page :first {
-            margin: 1.5cm;
-            @top-center {
-                content: element(first-page-header);
-            }
-            @bottom-center {
-                content: element(first-page-footer);
-            }
-        }
-
-        div.header {
-            display: block;
-            position: running(header);
-            border-bottom: 0.05em solid gray;
-            padding-bottom: 5px;
-            color: darkgray;
-        }
-
-        div.footer {
-            margin-top: 0.5cm;
-            display: block;
-            position: running(footer);
-            padding-top: 5px;
-            color: darkgray;
-        }
-
-        div.first-page-header {
-            display: block;
-            position: running(first-page-header);
-        }
-
-        div.first-page-footer {
-            display: block;
-            position: running(first-page-footer);
-        }
-
-        #pagenumber:before {
-            content: counter(page);
-        }
-
-        #pagecount:before {
-            content: counter(pages);
-        }
-
-        body{
-            font-size:10px;
-            font-family: Helvetica;
-            margin: 0;
-            padding:0;
-        }
-
-        a {
-            color: #000000;
-        }
-
-        .page-break  {
-            clear: left;
-            display:block;
-            page-break-after:always;
-            margin: 0;
-            padding: 0;
-            height: 0;
-        }
-
-        ol.toc a::after {
-            content: leader('.') target-counter(attr(href), page);
-        }
-
-        table.message-table {
-            table-layout: fixed;
-            width: 100%;
-            max-width: 100%;
-        }
-
-        table.message-table tr, table.message-table tr td {
-            page-break-inside: avoid;
-        }
-
-        td.table-image {
-            vertical-align: top;
-            padding: 10px;
-            border-top: 0.05em dotted gray;
-        }
-
-        td.table-item {
-            vertical-align: top;
-            width: 100%;
-            padding: 10px;
-            border-top: 0.05em dotted gray;
-        }
-
-        .field-name {
-            white-space: nowrap;
-            vertical-align: top;
-            font-style: italic;
-            padding-right: 10px;
-            text-align: right;
-        }
-
-        .field-value {
-            vertical-align: top;
-            width: 100%;
-        }
-
-        .field-value ol {
-            padding-left: 0;
-        }
-
-        .feature-name {
-            margin-top: 5px;
-            margin-bottom: 5px;
-            text-decoration: underline;
-        }
-
-        ol.feature-coordinates {
-            margin-left: 20px;
-            margin-bottom: 0;
-            margin-top: 0;
-        }
-
-        ol.feature-coordinates li {
-            color: darkgray;
-        }
-        ol.feature-coordinates li span {
-            color: black;
-        }
-
-        .attachment {
-            text-align: center;
-        }
-
-        .separate-attachment-page {
-            text-align: center;
-            clear: left;
-            display:block;
-            page-break-before:always;
-            margin: 5mm;
-            padding: 0;
-        }
     </style>
 </#macro>
 
@@ -481,5 +328,41 @@
     <@renderMessageAttachments msg=msg type="BELOW" />
 
     </div>
+
+</#macro>
+
+
+<!-- ***************************************  -->
+<!-- Renders a list of messages               -->
+<!-- ***************************************  -->
+<#macro renderMessageList messages>
+
+    <#assign areaHeadingId=-9999999 />
+
+    <table class="message-table">
+        <!-- Layout row for fixed-layout table -->
+        <tr><td width="140"></td><td width="*"></td></tr>
+
+        <#list messages as msg>
+
+            <#if msg.areas?has_content>
+                <#assign area=areaHeading(msg.areas[0]) />
+                <#if areaHeadings && area?? && area.id != areaHeadingId>
+                    <#assign areaHeadingId=area.id />
+                    <tr>
+                        <td colspan="2"><h4 style="color: #8f2f7b; font-size: 16px;" id="${areaHeadingId?c}"><@areaLineage area=areaHeading(area) /></h4></td>
+                    </tr>
+                </#if>
+            </#if>
+            <tr>
+                <td class="table-image">
+                    <img src="/rest/message-map-image/${msg.id}.png" width="120" height="120"/>
+                </td>
+                <td class="table-item">
+                    <@renderMessage msg=msg />
+                </td>
+            </tr>
+        </#list>
+    </table>
 
 </#macro>

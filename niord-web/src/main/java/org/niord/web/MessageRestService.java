@@ -721,7 +721,7 @@ public class MessageRestService extends AbstractBatchableRestService {
             StreamingOutput stream = os -> {
                 try {
                     fmService.newTemplateBuilder()
-                            .setTemplatePath("/templates/messages/message-details.ftl")
+                            .setTemplatePath("/templates/messages/message-details-pdf.ftl")
                             .setData("msg", message)
                             .setData("pageSize", pageSize)
                             .setData("pageOrientation", pageOrientation)
@@ -770,7 +770,7 @@ public class MessageRestService extends AbstractBatchableRestService {
             StreamingOutput stream = os -> {
                 try {
                     fmService.newTemplateBuilder()
-                            .setTemplatePath("/templates/messages/message-list.ftl")
+                            .setTemplatePath("/templates/messages/message-list-pdf.ftl")
                             .setData("messages", result.getData())
                             .setData("areaHeadings", params.sortByArea())
                             .setData("searchCriteria", result.getDescription())

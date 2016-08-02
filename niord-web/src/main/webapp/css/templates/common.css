@@ -1,0 +1,64 @@
+
+table.message-table {
+    font-size:10px;
+    table-layout: fixed;
+    width: 100%;
+    max-width: 100%;
+}
+
+table.message-table tr, table.message-table tr td {
+    page-break-inside: avoid;
+}
+
+td.table-image {
+    vertical-align: top;
+    padding: 10px;
+    border-top: 0.05em dotted gray;
+}
+
+td.table-item {
+    vertical-align: top;
+    width: 100%;
+    padding: 10px;
+    border-top: 0.05em dotted gray;
+}
+
+.field-name {
+    white-space: nowrap;
+    vertical-align: top;
+    font-style: italic;
+    padding-right: 10px;
+    text-align: right;
+}
+
+.field-value {
+    vertical-align: top;
+    width: 100%;
+}
+
+.field-value ol {
+    padding-left: 0;
+}
+
+.feature-name {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    text-decoration: underline;
+}
+
+ol.feature-coordinates {
+    margin-left: 20px;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+ol.feature-coordinates li {
+    color: darkgray;
+}
+ol.feature-coordinates li span {
+    color: black;
+}
+
+.attachment {
+    text-align: center;
+}

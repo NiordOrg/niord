@@ -1,0 +1,94 @@
+
+/** General page rules **/
+@page {
+    margin: 2cm 1.5cm;
+    padding: 0;
+
+    @top-center {
+        content: element(header);
+        vertical-align: bottom;
+    }
+
+    @bottom-center {
+        content: element(footer);
+        vertical-align: top;
+    }
+}
+
+/** First page rules **/
+@page :first {
+    margin: 1.5cm;
+    @top-center {
+        content: element(first-page-header);
+    }
+    @bottom-center {
+        content: element(first-page-footer);
+    }
+}
+
+div.header {
+    display: block;
+    position: running(header);
+    border-bottom: 0.05em solid gray;
+    padding-bottom: 5px;
+    color: darkgray;
+}
+
+div.footer {
+    margin-top: 0.5cm;
+    display: block;
+    position: running(footer);
+    padding-top: 5px;
+    color: darkgray;
+}
+
+div.first-page-header {
+    display: block;
+    position: running(first-page-header);
+}
+
+div.first-page-footer {
+    display: block;
+    position: running(first-page-footer);
+}
+
+#pagenumber:before {
+    content: counter(page);
+}
+
+#pagecount:before {
+    content: counter(pages);
+}
+
+body{
+    font-size:10px;
+    font-family: Helvetica;
+    margin: 0;
+    padding:0;
+}
+
+a {
+    color: #000000;
+}
+
+.page-break  {
+    clear: left;
+    display:block;
+    page-break-after:always;
+    margin: 0;
+    padding: 0;
+    height: 0;
+}
+
+ol.toc a::after {
+    content: leader('.') target-counter(attr(href), page);
+}
+
+.separate-attachment-page {
+    text-align: center;
+    clear: left;
+    display:block;
+    page-break-before:always;
+    margin: 5mm;
+    padding: 0;
+}

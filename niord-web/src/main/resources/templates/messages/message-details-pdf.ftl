@@ -7,7 +7,9 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <title>${text("pdf.details.title")}</title>
 
-    <@messageStyles />
+    <@pageSizeStyle />
+    <link rel="stylesheet" type="text/css" href="/css/templates/pdf.css">
+    <link rel="stylesheet" type="text/css" href="/css/templates/common.css">
 </head>
 <body>
 
