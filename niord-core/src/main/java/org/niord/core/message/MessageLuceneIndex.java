@@ -15,7 +15,6 @@
  */
 package org.niord.core.message;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -73,6 +72,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static org.niord.core.settings.Setting.Type.Boolean;
 
@@ -133,8 +133,8 @@ public class MessageLuceneIndex extends BaseService {
 
     DirectoryReader reader;
     int optimizeIndexCount = 0;
-    boolean locked = false;
     boolean allMessagesIndexed;
+    private final ReentrantLock lock = new ReentrantLock();
 
 
     /**
@@ -149,11 +149,6 @@ public class MessageLuceneIndex extends BaseService {
             } catch (IOException e) {
                 log.error("Error creating index dir " + indexFolder, e);
             }
-        }
-
-        // Remove any stale write locks
-        if (FileUtils.deleteQuietly(indexFolder.resolve("write.lock").toFile())) {
-            log.info("Deleted Lucene write lock file");
         }
 
         // Check if we need to delete the old index on start-up
@@ -180,11 +175,19 @@ public class MessageLuceneIndex extends BaseService {
 
     /**
      * Called when the service starts up and then every minute to update the Lucene index
+     * <p>
+     * Note to self: It's tempting to use @Lock(WRITE) here. However, that would lock search access
+     * to the index while it is being updated, and we really do not want that.
      */
     @Timeout
     @Schedule(persistent=false, second="38", minute="*/1", hour="*")
     private int updateLuceneIndex() {
-        return updateLuceneIndex(LUCENE_MAX_INDEX_COUNT, false);
+        lock.lock();
+        try {
+            return updateLuceneIndex(LUCENE_MAX_INDEX_COUNT);
+        } finally {
+            lock.unlock();
+        }
     }
 
 
@@ -401,22 +404,16 @@ public class MessageLuceneIndex extends BaseService {
      * Call this to re-index the message index completely
      */
     public int recreateIndex() throws IOException {
-        // Check if we are already in the middle of re-indexing
-        if (locked) {
-            return 0;
-        }
-
-        // Go ahead and re-index all
-        locked = true;
+        lock.lock();
         try {
             // delete the old index
             deleteIndex();
 
             // Update all messages
-            return updateLuceneIndex(Integer.MAX_VALUE, true);
+            return updateLuceneIndex(Integer.MAX_VALUE);
 
         } finally {
-            locked = false;
+            lock.unlock();
         }
     }
 
@@ -470,14 +467,9 @@ public class MessageLuceneIndex extends BaseService {
      * Updates the Lucene index
      *
      * @param maxIndexCount max number of messages to index at a time
-     * @param force update even if the locked flag is set
      * @return the number of updates
      */
-    public int updateLuceneIndex(int maxIndexCount, boolean force) {
-        // Check if we are in the middle of re-indexing
-        if (!force && locked) {
-            return 0;
-        }
+    private int updateLuceneIndex(int maxIndexCount) {
 
         Date lastUpdated = getLastUpdated();
 
