@@ -1,7 +1,7 @@
 
 /** General page rules **/
 @page {
-    margin: 2cm 1.5cm;
+    margin: 2cm 1.5cm 3cm 1.5cm;
     padding: 0;
 
     @top-center {
@@ -36,6 +36,7 @@ div.header {
 
 div.footer {
     margin-top: 0.5cm;
+    text-align: center;
     display: block;
     position: running(footer);
     padding-top: 5px;

@@ -29,11 +29,7 @@
         &nbsp;
     </div>
 
-    <div class="first-page-footer">
-    </div>
-    <div class="footer">
-        <div style="text-align: center"><img src="/img/company-logo.png" style="height: 1cm"></div>
-    </div>
+    <#include "message-list-pdf-footer.ftl">
 </#macro>
 
 
@@ -178,7 +174,7 @@
 
     <#if msg.shortId?has_content>
         <div>
-            <strong>${msg.shortId}.</strong>
+            <strong>${msg.shortId}</strong>
         </div>
     </#if>
 
