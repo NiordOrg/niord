@@ -84,11 +84,6 @@ import static org.niord.core.settings.Setting.Type.Boolean;
  * <p>
  * Note to self: Using "Hibernate Search" for message (as for AtoNs), was ruled out because it would
  * be too complex to index all related entities by language.
- * <p>
- * TODO: Upon start-up, there may be a race condition because the periodic call to updateLuceneIndex() may
- *       overlap the PostConstruct call to the same method (via a timer service call). Hence you may see
- *       an error stating that Lucene failed obtaining a lock on write.lock.
- *       Should be fixed...
  */
 @Singleton
 @Lock(LockType.READ)
