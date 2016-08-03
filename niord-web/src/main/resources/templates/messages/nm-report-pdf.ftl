@@ -28,12 +28,36 @@
         .nm-section {
             page-break-before:always;
         }
+        h1 {
+            margin-top: 2cm;
+            text-align: center;
+            font-size: 36px;
+        }
         /** TODO: The string-set does not work - Flying Saucer problem? **/
         h3 {
             string-set: sectiontitle content();
         }
         #section-title:before {
             content: string(sectiontitle);
+        }
+        .nm-toc {
+            margin-top: 2cm;
+        }
+        .toc {
+            font-size: 12px;
+        }
+        .intro {
+            margin-top: 2cm;
+            font-size: 12px;
+        }
+        .intro table {
+            margin: 0 auto;
+            font-size: 12px;
+            text-align: left;
+        }
+        .intro table th {
+            width: 2cm;
+            font-weight: normal;
         }
     </style>
 
@@ -50,10 +74,13 @@
 </div>
 <#include "message-list-pdf-footer.ftl">
 
-<!-- First page -->
-<h1>${text("pdf.list.title")}</h1>
 
-<ol>
+<!-- First page -->
+<h1>${text("pdf.nm")}</h1>
+
+<div class="nm-toc">
+    <h2>${text("pdf.toc")}</h2>
+    <ol>
     <#if permMessages?has_content>
         <li>
             <div class="toc"><a href='#perm'>Chart Updates</a></div>
@@ -71,7 +98,14 @@
             <div class="toc"><a href='#misc'>Announcements...</a></div>
         </li>
     </#if>
-</ol>
+    </ol>
+</div>
+
+
+<div class="intro">
+    <#include "nm-report-pdf-intro.ftl">
+</div>
+
 
 <!-- Permanent messages -->
 <#if permMessages?has_content>
