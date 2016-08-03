@@ -1058,8 +1058,8 @@ angular.module('niord.editor')
     /*******************************************************************
      * Controller that handles the message Thumbnail dialog
      *******************************************************************/
-    .controller('MessageComparisonDialogCtrl', ['$scope', '$timeout', 'MessageService', 'message',
-        function ($scope, $timeout, MessageService, message) {
+    .controller('MessageComparisonDialogCtrl', ['$scope', '$timeout', 'growl', 'MessageService', 'message',
+        function ($scope, $timeout, growl, MessageService, message) {
             'use strict';
 
             $scope.message = message;
@@ -1092,6 +1092,9 @@ angular.module('niord.editor')
                                 $scope.selectedHistory.unshift({ snapshot: angular.toJson(compareMessage) });
                                 $timeout($scope.compareHtml);
                             }
+                        })
+                        .error(function (data, status) {
+                            growl.error("Error loading message (code: " + status + ")", {ttl: 5000})
                         })
                 }
             }, true);
