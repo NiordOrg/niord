@@ -1105,6 +1105,10 @@ angular.module('niord.editor')
                     var msg1 = $('#message1').html();
                     var msg2 = $('#message2').html();
                     $scope.messageDiff = htmldiff(msg1, msg2);
+                    $timeout(function () {
+                        // Disable all links
+                        $('#message-diff').find('*').removeAttr('href ng-click');
+                    });
                 }
             }
         }])
