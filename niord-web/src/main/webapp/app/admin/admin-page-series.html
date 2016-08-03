@@ -35,6 +35,20 @@
                         </div>
 
                         <div class="form-group">
+                            <label class="col-sm-4">Number Sequence Type</label>
+                            <div class="btn-group col-sm-8">
+                                <label class="btn btn-default btn-sm" ng-model="series.numberSequenceType"
+                                       uib-btn-radio="'YEARLY'">
+                                    Yearly
+                                </label>
+                                <label class="btn btn-default btn-sm" ng-model="series.numberSequenceType"
+                                       uib-btn-radio="'CONTINUOUS'">
+                                    Continuous
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
                             <label class="col-sm-4">MRN Format</label>
                             <div class="col-sm-8">
                                 <div class="input-group">
@@ -96,7 +110,8 @@
                             <label class="col-sm-4">Next number ({{currentYear}})</label>
                             <div class="col-sm-8">
                                 {{series.nextMessageNumber}}&nbsp;
-                                <button class="btn btn-xs btn-default" ng-click="editNextNumber(series);" title="Edit Next Message Series Number">
+                                <button class="btn btn-xs btn-default" title="Edit Next Message Series Number"
+                                        ng-click="editNextNumber(series);" ng-disabled="seriesForm.$dirty">
                                     <i class="glyphicon glyphicon-pencil"></i>
                                 </button>
                             </div>
@@ -145,6 +160,7 @@
                             <th>Type</th>
                             <th>MRN Format</th>
                             <th>Short Format</th>
+                            <th>Sequence</th>
                             <th>Next Number ({{currentYear}})</th>
                             <th></th>
                         </tr>
@@ -153,6 +169,7 @@
                             <td>{{series.mainType}}</td>
                             <td>{{series.mrnFormat}}</td>
                             <td>{{series.shortFormat}}</td>
+                            <td>{{series.numberSequenceType | lowercase}}</td>
                             <td>{{series.nextMessageNumber}}</td>
                             <td nowrap align="right">
                                 <a href ng-click="editMessageSeries(series);" title="Edit Message Series"><i class="glyphicon glyphicon-pencil"></i></a>
@@ -183,7 +200,7 @@
 
         <div class="container-fluid">
 
-            <div class="form-group row">
+            <div ng-show="series.numberSequenceType == 'YEARLY'" class="form-group row">
                 <label class="col-sm-4">Year</label>
                 <div class="col-sm-8">
                     <select id="year" name="year" class="form-control input-sm" style="width: 120px"

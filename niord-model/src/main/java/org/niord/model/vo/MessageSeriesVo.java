@@ -27,15 +27,24 @@ import javax.xml.bind.annotation.XmlType;
 @ApiModel(value = "MessageSeries", description = "A message series")
 @XmlRootElement(name = "messageSeries")
 @XmlType(propOrder = {
-        "seriesId", "mainType", "mrnFormat", "shortFormat", "nextMessageNumber"
+        "seriesId", "mainType", "mrnFormat", "shortFormat", "nextMessageNumber", "numberSequenceType"
 })
 @SuppressWarnings("unused")
 public class MessageSeriesVo implements IJsonSerializable {
+
+    public enum NumberSequenceType {
+        /** Associated number sequence will reset to 1 every year **/
+        YEARLY,
+
+        /** Associated number sequence will never reset **/
+        CONTINUOUS
+    }
 
     String seriesId;
     MainType mainType;
     String mrnFormat;
     String shortFormat;
+    NumberSequenceType numberSequenceType;
     Integer nextMessageNumber;
 
     /*************************/
@@ -72,6 +81,14 @@ public class MessageSeriesVo implements IJsonSerializable {
 
     public void setShortFormat(String shortFormat) {
         this.shortFormat = shortFormat;
+    }
+
+    public NumberSequenceType getNumberSequenceType() {
+        return numberSequenceType;
+    }
+
+    public void setNumberSequenceType(NumberSequenceType numberSequenceType) {
+        this.numberSequenceType = numberSequenceType;
     }
 
     public Integer getNextMessageNumber() {

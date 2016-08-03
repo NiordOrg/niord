@@ -24,6 +24,7 @@ import org.niord.core.sequence.Sequence;
 import org.niord.core.sequence.SequenceService;
 import org.niord.core.service.BaseService;
 import org.niord.core.util.TimeUtils;
+import org.niord.model.vo.MessageSeriesVo;
 import org.niord.model.vo.Type;
 import org.slf4j.Logger;
 
@@ -45,6 +46,9 @@ import java.util.stream.Collectors;
  */
 @Stateless
 public class MessageSeriesService extends BaseService {
+
+    public static final String NUMBER_SEQUENCE_TYPE_YEARLY = "MESSAGE_SERIES_NUMBER_%s_%d";
+    public static final String NUMBER_SEQUENCE_TYPE_CONTINUOUS = "MESSAGE_SERIES_NUMBER_%s";
 
     @Inject
     private Logger log;
@@ -173,6 +177,8 @@ public class MessageSeriesService extends BaseService {
         original.setMrnFormat(series.getMrnFormat());
         original.setMainType(series.getMainType());
         original.setShortFormat(series.getShortFormat());
+        original.setNumberSequenceType(series.getNumberSequenceType() != null
+            ? series.getNumberSequenceType() : null);
 
         log.info("Updating message series " + series.getSeriesId());
         return saveEntity(original);
@@ -209,7 +215,8 @@ public class MessageSeriesService extends BaseService {
     private Sequence sequenceForSeries(String seriesId, int year, int initialValue) {
 
         // Validate that seriesId designates a valid messaage series
-        if (findBySeriesId(seriesId) == null) {
+        MessageSeries messageSeries = findBySeriesId(seriesId);
+        if (messageSeries == null) {
             throw new IllegalArgumentException("Invalid message series " + seriesId);
         }
 
@@ -218,7 +225,11 @@ public class MessageSeriesService extends BaseService {
             throw new IllegalArgumentException("Invalid year " + year);
         }
 
-        String sequenceKey = String.format("MESSAGE_SERIES_NUMBER_%s_%d", seriesId, year);
+        String sequenceKey
+                = messageSeries.getNumberSequenceType() == MessageSeriesVo.NumberSequenceType.CONTINUOUS
+                ? String.format(NUMBER_SEQUENCE_TYPE_CONTINUOUS, seriesId)
+                : String.format(NUMBER_SEQUENCE_TYPE_YEARLY, seriesId, year);
+
         return new DefaultSequence(sequenceKey, initialValue);
     }
 

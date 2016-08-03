@@ -593,6 +593,7 @@ angular.module('niord.admin')
                 $scope.series = {
                     seriesId: '',
                     mainType: 'NW',
+                    numberSequenceType: 'YEARLY',
                     mrnFormat: '',
                     shortFormat: ''
                 };

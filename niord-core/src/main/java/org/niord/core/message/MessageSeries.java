@@ -19,6 +19,7 @@ import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.vo.MainType;
 import org.niord.model.vo.MessageSeriesVo;
+import org.niord.model.vo.MessageSeriesVo.NumberSequenceType;
 
 import javax.persistence.Cacheable;
 import javax.persistence.Column;
@@ -59,6 +60,8 @@ public class MessageSeries extends VersionedEntity<Integer> {
 
     String shortFormat;
 
+    @NotNull
+    NumberSequenceType numberSequenceType = NumberSequenceType.YEARLY;
 
     /** Constructor */
     public MessageSeries() {
@@ -71,6 +74,9 @@ public class MessageSeries extends VersionedEntity<Integer> {
         this.mainType = series.getMainType();
         this.mrnFormat = series.getMrnFormat();
         this.shortFormat = series.getShortFormat();
+        this.numberSequenceType = series.getNumberSequenceType() != null
+                ? series.getNumberSequenceType()
+                : NumberSequenceType.YEARLY;
     }
 
 
@@ -84,6 +90,7 @@ public class MessageSeries extends VersionedEntity<Integer> {
             series.setMainType(mainType);
             series.setMrnFormat(mrnFormat);
             series.setShortFormat(shortFormat);
+            series.setNumberSequenceType(numberSequenceType);
         }
         return series;
     }
@@ -127,5 +134,13 @@ public class MessageSeries extends VersionedEntity<Integer> {
 
     public void setShortFormat(String shortFormat) {
         this.shortFormat = shortFormat;
+    }
+
+    public NumberSequenceType getNumberSequenceType() {
+        return numberSequenceType;
+    }
+
+    public void setNumberSequenceType(NumberSequenceType numberSequenceType) {
+        this.numberSequenceType = numberSequenceType;
     }
 }
