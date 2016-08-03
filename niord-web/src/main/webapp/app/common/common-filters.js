@@ -43,7 +43,13 @@ angular.module('niord.common')
             }
             return text;
         };
-    });
+    })
+
+    .filter('toTrusted', ['$sce', function ($sce) {
+        return function (value) {
+            return $sce.trustAsHtml(value);
+        };
+    }]);
 
 
 

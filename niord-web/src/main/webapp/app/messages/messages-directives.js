@@ -717,8 +717,9 @@ angular.module('niord.messages')
                 messageList:    "=",
                 selection:      "=",
                 format:         "@",
-                showDetailsMenu: "@",
-                showDetails:    "&"
+                showDetailsMenu:"@",
+                showDetails:    "&",
+                compact:        "="
             },
             link: function(scope, element, attrs) {
                 scope.language = $rootScope.language;
@@ -726,7 +727,10 @@ angular.module('niord.messages')
                 scope.featureCoordinates = [];
                 scope.attachmentsAbove = [];
                 scope.attachmentsBelow = [];
+                scope.showLocations = scope.compact || false;
+                scope.showAttachments = scope.compact || false;
 
+                // Serializes the coordinates and caches the results
                 scope.serializeCoordinates = function () {
                     // Compute on-demand
                     if (scope.featureCoordinates.length == 0 && scope.msg.geometry && scope.msg.geometry.features) {
@@ -790,6 +794,18 @@ angular.module('niord.messages')
                             return att.display == 'BELOW';
                         });
                     }
+                };
+
+
+                // Sets whether to show the locations or not
+                scope.setShowLocations = function (value) {
+                    scope.showLocations = value;
+                };
+
+
+                // Sets whether to show the attachments or not
+                scope.setShowAttachments = function (value) {
+                    scope.showAttachments = value;
                 };
 
                 scope.$watch("msg", scope.initMessage);

@@ -434,3 +434,13 @@ i.mce-i-map-marker:before {
     margin-bottom: 0;
 }
 
+
+/** Message Comparison Dialog **/
+
+#message-diff del {
+    background-color: rgba(255, 0, 0, 0.4);
+}
+
+#message-diff ins {
+    background-color: rgba(0, 255, 0, 0.4);
+}

@@ -17,7 +17,7 @@
                               message-id="msg.id" msg="msg" messages="messageList" size="xs"></message-details-menu>
 
         <!-- Attachments to be displayed above message -->
-        <div class="row" ng-repeat="att in attachmentsAbove">
+        <div class="row" ng-repeat="att in attachmentsAbove" ng-if="!compact">
             <div class="col-sm-12">
                 <message-attachment message="msg" attachment="att" image-type="source" label-type="caption"></message-attachment>
             </div>
@@ -29,7 +29,7 @@
         <div ng-if="msg.shortId"><span class="label label-message-id">{{msg.shortId}}</span></div>
         <div message-details-link="msg.id" message-list="messageList"  selection="selection" disabled="format == 'details'">
             <strong>{{msg.descs[0].title}}</strong>
-            <span ng-if="msg.descs[0].lang != language" style="color: darkgray;">
+            <span ng-if="msg.descs[0].lang != language && !compact" style="color: darkgray;">
                 <img ng-src="/img/flags/{{msg.descs[0].lang}}.png" style="height: 12px; opacity: 0.5;"/>
             </span>
         </div>
@@ -65,12 +65,12 @@
             <tr ng-if="msg.geometry">
                 <th translate>msg.field.positions</th>
                 <td>
-                    <div>
+                    <div ng-if="!compact">
                         <span class="glyphicon glyphicon-map-marker" style="color: darkgray"></span>
-                        <a href ng-if="msg.showLocations" ng-click="msg.showLocations = false" class="clickable" translate>msg.hide_positions</a>
-                        <a href ng-if="!msg.showLocations" ng-click="msg.showLocations = true" class="clickable" translate>msg.show_positions</a>
+                        <a href ng-if="showLocations" ng-click="setShowLocations(false)" class="clickable" translate>msg.hide_positions</a>
+                        <a href ng-if="!showLocations" ng-click="setShowLocations(true)" class="clickable" translate>msg.show_positions</a>
                     </div>
-                    <div ng-if="msg.showLocations">
+                    <div ng-if="showLocations || compact">
                         <div ng-repeat="featureCoords in serializeCoordinates()">
                             <div ng-if="featureCoords.name" class="message-details-position-names">{{featureCoords.name}}</div>
                             <ol class="message-details-positions" start="{{featureCoords.startIndex}}">
@@ -95,12 +95,12 @@
             <tr ng-if="msg.attachments">
                 <th translate>msg.field.attachments</th>
                 <td>
-                    <div>
+                    <div ng-if="!compact">
                         <span class="glyphicon glyphicon-paperclip" style="color: darkgray"></span>
-                        <a href ng-if="msg.showAttachments" ng-click="msg.showAttachments = false" class="clickable" translate>msg.hide_attachments</a>
-                        <a href ng-if="!msg.showAttachments" ng-click="msg.showAttachments = true" class="clickable" translate>msg.show_attachments</a>
+                        <a href ng-if="showAttachments" ng-click="setShowAttachments(false)" class="clickable" translate>msg.hide_attachments</a>
+                        <a href ng-if="!showAttachments" ng-click="setShowAttachments(true)" class="clickable" translate>msg.show_attachments</a>
                     </div>
-                    <div ng-if="msg.showAttachments">
+                    <div ng-if="showAttachments || compact">
                         <span class="attachment-list" ng-repeat="att in msg.attachments">
                             <message-attachment message="msg" attachment="att" size="32"></message-attachment>
                         </span>
@@ -141,7 +141,7 @@
         </table>
 
         <!-- Attachments to be displayed below message -->
-        <div class="row" ng-repeat="att in attachmentsBelow">
+        <div class="row" ng-repeat="att in attachmentsBelow" ng-if="!compact">
             <div class="col-sm-12">
                 <message-attachment message="msg" attachment="att" image-type="source" label-type="caption"></message-attachment>
             </div>

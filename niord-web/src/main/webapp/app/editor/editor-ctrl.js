@@ -1058,12 +1058,13 @@ angular.module('niord.editor')
     /*******************************************************************
      * Controller that handles the message Thumbnail dialog
      *******************************************************************/
-    .controller('MessageComparisonDialogCtrl', ['$scope', 'MessageService', 'message',
-        function ($scope, MessageService, message) {
+    .controller('MessageComparisonDialogCtrl', ['$scope', '$timeout', 'MessageService', 'message',
+        function ($scope, $timeout, MessageService, message) {
             'use strict';
 
             $scope.message = message;
             $scope.compareMessage = undefined;
+            $scope.messageDiff = '';
             $scope.selectedHistory = [ ];
 
             /** Initialize the list of messages to compare **/
@@ -1089,11 +1090,23 @@ angular.module('niord.editor')
                             if (compareMessage) {
                                 // Add on position 0
                                 $scope.selectedHistory.unshift({ snapshot: angular.toJson(compareMessage) });
+                                $timeout($scope.compareHtml);
                             }
                         })
                 }
             }, true);
 
+
+            /** Compares the HTML of the two messages **/
+            $scope.compareHtml = function () {
+                if ($scope.compareMessage == undefined) {
+                    $scope.messageDiff = '';
+                } else {
+                    var msg1 = $('#message1').html();
+                    var msg2 = $('#message2').html();
+                    $scope.messageDiff = htmldiff(msg1, msg2);
+                }
+            }
         }])
 
 

@@ -17,17 +17,65 @@
         </div>
 
 
-        <div ng-if="compareMessage" class="row" style="margin-top: 20px">
-            <div class="col-sm-12">
-                Comparing messages with
-                <span style="background-color: #fcff7f">changes</span>,
-                <span style="background-color: #8bff7f">additions</span>
-                and <span style="background-color: #fd7f7f">deletions</span>.
-            </div>
-        </div>
+        <uib-tabset class="framed-tabs" style="margin-top: 20px">
+            <uib-tab>
+                <tab-heading>
+                    Side-by-side
+                </tab-heading>
+                <div class="row">
+                    <div id="message1" class="col-sm-6">
+                        <table class='table table-condensed'>
+                            <tr render-message-details msg="message" format="details" show-details-menu="false"
+                                compact="true"></tr>
+                        </table>
+                    </div>
+                    <div id="message2" class="col-sm-6">
+                        <table ng-if="compareMessage" class='table table-condensed'>
+                            <tr render-message-details msg="compareMessage" format="details" show-details-menu="false"
+                                compact="true"></tr>
+                        </table>
+                    </div>
+                </div>
+            </uib-tab>
 
 
-        <div class="message-history-json json-diff"  style="margin-top: 20px" history-json-diff="selectedHistory"></div>
+            <uib-tab>
+                <tab-heading>
+                    Changes
+                </tab-heading>
+                <div ng-if="compareMessage" class="row" style="margin-top: 10px">
+                    <div class="col-sm-12">
+                        Comparing messages with
+                        <span style="background-color: #8bff7f">additions</span>
+                        and <span style="background-color: #fd7f7f">deletions</span>.
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div id="message-diff" ng-bind-html="messageDiff | toTrusted"></div>
+                    </div>
+                </div>
+            </uib-tab>
+
+
+            <uib-tab>
+                <tab-heading>
+                    Data
+                </tab-heading>
+
+                <div ng-if="compareMessage" class="row" style="margin-top: 10px">
+                    <div class="col-sm-12">
+                        Comparing messages with
+                        <span style="background-color: #fcff7f">changes</span>,
+                        <span style="background-color: #8bff7f">additions</span>
+                        and <span style="background-color: #fd7f7f">deletions</span>.
+                    </div>
+                </div>
+
+                <div class="message-history-json json-diff"  style="margin-top: 20px" history-json-diff="selectedHistory"></div>
+            </uib-tab>
+        </uib-tabset>
 
 
         <div class="row" style="margin-top: 24px;">
