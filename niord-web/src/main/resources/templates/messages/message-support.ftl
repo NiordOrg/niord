@@ -132,29 +132,30 @@
 <!-- ***************************************  -->
 <!-- Renders the TOC for area-headings        -->
 <!-- ***************************************  -->
-<#macro renderTOC areaHeadings>
+<#macro renderTOC messages areaHeadings prefix="">
     <#if areaHeadings>
-
-        <#assign tocAreaHeadingId=-9999999 />
-
         <div>
             <h2>${text("pdf.toc")}</h2>
-            <ol class='toc'>
-                <#list messages as msg>
-                    <#if msg.areas?has_content>
-                        <#assign area=areaHeading(msg.areas[0]) />
-                        <#if area?? && area.id != tocAreaHeadingId>
-                            <#assign tocAreaHeadingId=area.id />
-                            <li><a href='#${tocAreaHeadingId?c}'><@areaLineage area=areaHeading(area) /></a></li>
-                        </#if>
-                    </#if>
-                </#list>
-            </ol>
+            <@renderTOCEntries messages=messages prefix=prefix />
         </div>
-        <div class="page-break">&nbsp;</div>
     </#if>
 </#macro>
 
+
+<#macro renderTOCEntries messages prefix="">
+    <#assign tocAreaHeadingId=-9999999 />
+    <ol class='toc'>
+        <#list messages as msg>
+            <#if msg.areas?has_content>
+                <#assign area=areaHeading(msg.areas[0]) />
+                <#if area?? && area.id != tocAreaHeadingId>
+                    <#assign tocAreaHeadingId=area.id />
+                    <li><a href='#${prefix}${tocAreaHeadingId?c}'><@areaLineage area=areaHeading(area) /></a></li>
+                </#if>
+            </#if>
+        </#list>
+    </ol>
+</#macro>
 
 <!-- ***************************************  -->
 <!-- Renders a message                        -->
@@ -331,7 +332,7 @@
 <!-- ***************************************  -->
 <!-- Renders a list of messages               -->
 <!-- ***************************************  -->
-<#macro renderMessageList messages>
+<#macro renderMessageList messages areaHeadings prefix="">
 
     <#assign areaHeadingId=-9999999 />
 
@@ -350,10 +351,10 @@
 
             <#if msg.areas?has_content>
                 <#assign area=areaHeading(msg.areas[0]) />
-                <#if areaHeadings?? && areaHeadings && area?? && area.id != areaHeadingId>
+                <#if areaHeadings && area?? && area.id != areaHeadingId>
                     <#assign areaHeadingId=area.id />
                     <tr>
-                        <td colspan="2"><h4 style="color: #8f2f7b; font-size: 16px;" id="${areaHeadingId?c}"><@areaLineage area=areaHeading(area) /></h4></td>
+                        <td colspan="2"><h4 style="color: #8f2f7b; font-size: 16px;" id="${prefix}${areaHeadingId?c}"><@areaLineage area=areaHeading(area) /></h4></td>
                     </tr>
                 </#if>
             </#if>

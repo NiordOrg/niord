@@ -22,7 +22,7 @@
   </#if>
 </h1>
 
-<@renderMessageList messages=messages />
+<@renderMessageList messages=messages areaHeadings=false/>
 
 </body>
 </html>

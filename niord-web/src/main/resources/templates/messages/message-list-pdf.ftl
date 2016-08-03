@@ -34,9 +34,11 @@
     </table>
 </div>
 
-<@renderTOC areaHeadings=areaHeadings />
+<@renderTOC messages=messages areaHeadings=areaHeadings />
 
-<@renderMessageList messages=messages />
+<div class="page-break">&nbsp;</div>
+
+<@renderMessageList messages=messages areaHeadings=areaHeadings/>
 
 </body>
 </html>

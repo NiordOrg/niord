@@ -85,6 +85,10 @@ ol.toc a::after {
     content: leader('.') target-counter(attr(href), page);
 }
 
+div.toc a::after {
+    content: leader('.') target-counter(attr(href), page);
+}
+
 .separate-attachment-page {
     text-align: center;
     clear: left;
