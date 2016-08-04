@@ -106,6 +106,120 @@ angular.module('niord.common')
 
 
     /**
+     * Used for editing a lat-lon position in an input field using a mask
+     */
+    .directive('positionInput', ['$timeout', function($timeout) {
+        return {
+            restrict: 'E',
+            require: 'ngModel',
+            templateUrl:  '/app/common/position-input.html',
+            replace: true,
+            scope: {
+                pos:            "=ngModel",
+                decimals:       "="
+            },
+            compile: function() {
+
+                // Return link function
+                return {
+                    pre: function (scope, element, attrs) {
+
+                        scope.decimals = attrs.decimals ? scope.decimals : 3;
+                        scope.pos = scope.pos || { lat : undefined, lon: undefined };
+
+                        var decimalMask = '99999999'.substr(0, scope.decimals);
+                        if (scope.decimals > 0) {
+                            var decimalDelim = numeral(0.0).format('.0').substr(0, 1);
+                            decimalMask = decimalDelim + decimalMask;
+                        }
+
+                        scope.latMask = '99° 59' + decimalMask + '\'Y';
+                        scope.lonMask = '199° 59' + decimalMask + '\'X';
+                        scope.mask = scope.latMask + "  -  " + scope.lonMask;
+                        scope.options = {
+                            maskDefinitions: { 'X': /[EW]/, 'Y': /[NS]/, '1': /[01]/, '5': /[0-5]/ }
+                        };
+                    },
+
+                    post: function (scope, element) {
+
+                        /** Prepends a character to a string **/
+                        function pad(n, width, z) {
+                            z = z || '0';
+                            n = n + '';
+                            return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+                        }
+
+                        /** Parses the string value to a latitude or longitude **/
+                        function parse(val, lat) {
+                            var degLen = lat ? 2 : 3;
+                            if (val == undefined || val.length != degLen + 2 + scope.decimals + 1) {
+                                return undefined;
+                            }
+                            var degreeStr = val.substr(0, degLen);
+                            var minuteStr = val.substr(degLen, degLen + 2 + scope.decimals);
+                            var direction = val.substr(val.length - 1);
+                            var sign = direction == 'N' || direction == 'E' ? 1 : -1;
+
+                            return sign * (
+                                    parseInt(degreeStr)
+                                    + (parseInt(minuteStr.substr(0, 2)) + parseInt(minuteStr.substr(2)) / 100.0) / 60.0
+                                );
+                        }
+
+
+                        /** Formats the decimal latitude or longitude as a string */
+                        function format(val, lat) {
+                            if (val === undefined) {
+                                return undefined;
+                            }
+                            var dir = lat ? (val < 0 ? 'S' : 'N') : (val < 0 ? 'W' : 'E');
+                            val = Math.abs(val);
+                            var degrees = Math.floor(val);
+                            var minutes = (val - degrees) * 60;
+                            var decimalStr = [ '0', '0.0', '0.00', '0.000', '0.0000', '0.00000'];
+
+                            return pad(degrees, lat ? 2 : 3)
+                                 + pad(Math.floor(minutes), 2)
+                                 + numeral(minutes - Math.floor(minutes)).format(decimalStr[scope.decimals]).substr(2)
+                                 + dir;
+                        }
+
+
+                        // Watch for changes to the underlying position model
+                        scope.$watch("pos", function (pos) {
+                            scope.latlon = format(pos.lat, true) + format(pos.lon, false);
+                        }, true);
+
+
+                        // Watch for changes to the input field value
+                        scope.$watch("latlon", function (latlon) {
+                            var latSpec = undefined;
+                            var lonSpec = undefined;
+                            if (latlon && latlon.length > 0) {
+                                // NB lon-spec i one char longer than lat-spec
+                                var index = Math.floor(latlon.length / 2);
+                                latSpec = latlon.substr(0, index);
+                                lonSpec = latlon.substr(index);
+                            }
+                            scope.pos.lat = parse(latSpec, true);
+                            scope.pos.lon = parse(lonSpec, false);
+                        }, true);
+
+
+                        /** Called in order to clear the position input field **/
+                        scope.clearPos = function () {
+                            scope.latlon = undefined;
+                            $timeout(function() { $(element[0]).find('input')[0].focus() } );
+                        }
+                    }
+                }
+            }
+        }
+    }])
+
+
+    /**
      * Tag an input field with this directive to avoid changes making the form dirty. See:
      * http://stackoverflow.com/questions/28721959/angular-1-2-is-it-possible-to-exclude-an-input-on-form-dirty-checking/28722106
      */
