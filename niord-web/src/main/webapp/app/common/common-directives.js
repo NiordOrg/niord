@@ -197,7 +197,7 @@ angular.module('niord.common')
 
                             return sign * (
                                     parseInt(degreeStr)
-                                    + (parseInt(minuteStr.substr(0, 2)) + parseInt(minuteStr.substr(2)) / 100.0) / 60.0
+                                    + parseFloat(minuteStr.substr(0, 2) + '.' + minuteStr.substr(2)) / 60.0
                                 );
                         }
 
