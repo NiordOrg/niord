@@ -142,7 +142,7 @@ angular.module('niord.common')
                         scope.lonMask = '199° 59' + decimalMask + '\'X';
                         scope.mask = scope.latMask + "  -  " + scope.lonMask;
                         scope.options = {
-                            maskDefinitions: { 'X': /[EW]/, 'Y': /[NS]/, '1': /[01]/, '5': /[0-5]/ }
+                            maskDefinitions: { 'X': /[ewEW]/, 'Y': /[nsNS]/, '1': /[01]/, '5': /[0-5]/ }
                         };
                     },
 
@@ -186,6 +186,7 @@ angular.module('niord.common')
                             if (val == undefined || val.length != degLen + 2 + scope.decimals + 1) {
                                 return undefined;
                             }
+                            val = val.toUpperCase();
                             var degreeStr = val.substr(0, degLen);
                             var minuteStr = val.substr(degLen, degLen + 2 + scope.decimals);
                             var direction = val.substr(val.length - 1);
