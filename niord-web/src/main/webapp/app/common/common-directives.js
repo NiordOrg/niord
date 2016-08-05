@@ -106,7 +106,7 @@ angular.module('niord.common')
 
 
     /**
-     * Used for editing a lat-lon position in an input field using a mask
+     * Used for editing a lat-lon position in an input field using a mask.
      */
     .directive('positionInput', ['$timeout', function($timeout) {
         return {
@@ -116,16 +116,21 @@ angular.module('niord.common')
             replace: true,
             scope: {
                 pos:            "=ngModel",
-                decimals:       "="
+                decimals:       "=",
+                placeholder:    "@"
             },
             compile: function() {
 
-                // Return link function
+                // Note to self: The "compile" function is used rather than the "link" because the "uib-mask"
+                // directive will not pick up "uib-options", unless they are defined in the "pre" function below.
+
                 return {
                     pre: function (scope, element, attrs) {
 
                         scope.decimals = attrs.decimals ? scope.decimals : 3;
                         scope.pos = scope.pos || { lat : undefined, lon: undefined };
+                        scope.placeholder = scope.placeholder || 'Latitude - Longitude';
+                        scope.latlon = undefined;
 
                         var decimalMask = '99999999'.substr(0, scope.decimals);
                         if (scope.decimals > 0) {
@@ -143,14 +148,39 @@ angular.module('niord.common')
 
                     post: function (scope, element) {
 
-                        /** Prepends a character to a string **/
+                        // Get a reference to the input field
+                        var inputField = $(element[0]).find('input');
+
+                        // When a blank input field loses focus, display placeholder
+                        inputField.bind('blur', function () {
+                            if (scope.latlon === undefined) {
+                                inputField.attr('placeholder', scope.placeholder);
+                            }
+                        });
+
+                        // Remove any place-holder from the input field when it is focused
+                        inputField.bind('focus', function () {
+                            inputField.removeAttr('placeholder');
+                        });
+
+                        // Initially, display the placeholder
+                        $timeout(function() { inputField.attr('placeholder', scope.placeholder); });
+
+
+                        /** Generic function that prepends a character to a string **/
                         function pad(n, width, z) {
                             z = z || '0';
                             n = n + '';
                             return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
                         }
 
-                        /** Parses the string value to a latitude or longitude **/
+
+                        /**
+                         * Parses the string value to a latitude or longitude
+                         * <p>
+                         * If the mask is e.g. "99° 59,999\'Y  -  199° 59,999\'X", then a valid position
+                         * for the pos 56 30.444'N 11 05.111'E will have the format: "5630444N01105111E"
+                         **/
                         function parse(val, lat) {
                             var degLen = lat ? 2 : 3;
                             if (val == undefined || val.length != degLen + 2 + scope.decimals + 1) {
@@ -168,7 +198,12 @@ angular.module('niord.common')
                         }
 
 
-                        /** Formats the decimal latitude or longitude as a string */
+                        /**
+                         * Formats the decimal latitude or longitude as a string
+                         * <p>
+                         * If the mask is e.g. "99° 59,999\'Y  -  199° 59,999\'X", then a valid position
+                         * for the pos 56 30.444'N 11 05.111'E will have the format: "5630444N01105111E"
+                         */
                         function format(val, lat) {
                             if (val === undefined) {
                                 return undefined;
@@ -188,7 +223,9 @@ angular.module('niord.common')
 
                         // Watch for changes to the underlying position model
                         scope.$watch("pos", function (pos) {
-                            scope.latlon = format(pos.lat, true) + format(pos.lon, false);
+                            var latSpec = format(pos.lat, true);
+                            var lonSpec = format(pos.lon, false);
+                            scope.latlon = latSpec !== undefined && lonSpec !== undefined ? latSpec + lonSpec : undefined;
                         }, true);
 
 
@@ -197,7 +234,7 @@ angular.module('niord.common')
                             var latSpec = undefined;
                             var lonSpec = undefined;
                             if (latlon && latlon.length > 0) {
-                                // NB lon-spec i one char longer than lat-spec
+                                // NB: lon-spec is one char longer than lat-spec
                                 var index = Math.floor(latlon.length / 2);
                                 latSpec = latlon.substr(0, index);
                                 lonSpec = latlon.substr(index);
@@ -210,7 +247,7 @@ angular.module('niord.common')
                         /** Called in order to clear the position input field **/
                         scope.clearPos = function () {
                             scope.latlon = undefined;
-                            $timeout(function() { $(element[0]).find('input')[0].focus() } );
+                            $timeout(function() { inputField[0].focus() } );
                         }
                     }
                 }
