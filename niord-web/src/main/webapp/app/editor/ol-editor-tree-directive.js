@@ -1,8 +1,15 @@
 /**
  * The Location Tree directive
  * <p>
- * The editor tree can be initialized with "edit-type" set to "simple" or "advanced". If "simple" is chosen, you merely edit
- * a feature geometry. If "advanced" is chosen, you also edit the names of each coordinates.
+ * The editor tree can be initialized with "edit-type" set to the following values:
+ * <ul>
+ *     <li>"features": You edit a GeoJson feature collection.</li>
+ *     <li>"feature": You edit a GeoJson feature collection, but when you save, all features are merged
+ *                   into a single feature.</li>
+ *     <li>"message": You edit the feature collection of a message, which means that there are a lot of extra
+ *                    functionality, such as allowing the user to specify names for each feature and position,
+ *                    an affected radius, etc.</li>
+ * </ul>
  * <p>
  * A few things to keep in mind:
  * <ul>

@@ -1,0 +1,17 @@
+
+<table class="position-list">
+    <tr>
+        <th colspan="2">
+            {{type}}
+        </th>
+    </tr>
+    <tr ng-repeat="pos in positions">
+        <td>
+            <position-input ng-model="pos" decimals="3"></position-input>
+        </td>
+        <td align="right">
+            <i class="glyphicon glyphicon-trash position-list-btn"></i>
+            <i class="glyphicon glyphicon-plus position-list-btn"></i>
+        </td>
+    </tr>
+</table>

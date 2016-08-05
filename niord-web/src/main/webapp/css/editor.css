@@ -405,6 +405,30 @@ i.mce-i-map-marker:before {
     font-size: 10px;
 }
 
+.gj-editor .feature-position-list {
+    margin: 0 5px 5px 5px;
+}
+
+.gj-editor table.position-list {
+    width: 100%;
+}
+
+.gj-editor table.position-list th {
+    text-align: center;
+    color: gray;
+    border-bottom: 1px solid lightgray;
+    padding: 3px 0;
+}
+
+.gj-editor table.position-list td {
+    padding-top: 5px;
+}
+
+.gj-editor .position-list-btn {
+    cursor: pointer;
+    color: #666;
+    margin: 2px 2px;
+}
 
 /** Editor -> Thumbnail editor **/
 

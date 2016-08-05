@@ -777,6 +777,44 @@ angular.module('niord.editor')
                 };
 
 
+                /**
+                 * Returns if the feature has a "simple" geometry, i.e. a geometry that can be
+                 * edited in a simple position list editor.
+                 */
+                scope.simpleGeometry = function (feature) {
+                    if (!feature || !feature.getGeometry()) {
+                        return false;
+                    }
+                    var type = feature.getGeometry().getType();
+                    if (type != 'Point' && type != 'LineString' && type != 'Polygon') {
+                        return false;
+                    } else if (type == 'Polygon' && feature.getGeometry().getCoordinates().length > 1) {
+                        // Only polygons with a single exterior ring is supported in the simple editor
+                        return false;
+                    }
+                    return true;
+                };
+
+
+                /** Returns whether to show the simplified position list for the given feature. **/
+                scope.showFeaturePositionList = function (featureCtx, feature) {
+                    // Do not show the position list for buffer features and AtoNs (which have their own editor)
+                    if (featureCtx.parentFeatureIds || featureCtx.aton) {
+                        return false;
+                    }
+                    return scope.simpleGeometry(feature);
+                };
+
+
+                /** Returns whether to show the geometry tree for the given feature. **/
+                scope.showFeatureGeometryTree = function (featureCtx, feature) {
+                    // Do not show the position list for buffer features and AtoNs (which have their own editor)
+                    if (featureCtx.parentFeatureIds || featureCtx.aton) {
+                        return false;
+                    }
+                    return !scope.simpleGeometry(feature);
+                };
+
                 /** ************************ **/
                 /** Event handling           **/
                 /** ************************ **/
