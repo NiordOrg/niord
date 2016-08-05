@@ -191,7 +191,7 @@ angular.module('niord.common')
                             }
                             val = val.toUpperCase();
                             var degreeStr = val.substr(0, degLen);
-                            var minuteStr = val.substr(degLen, degLen + 2 + scope.decimals);
+                            var minuteStr = val.substr(degLen, 2 + scope.decimals);
                             var direction = val.substr(val.length - 1);
                             var sign = direction == 'N' || direction == 'E' ? 1 : -1;
 
