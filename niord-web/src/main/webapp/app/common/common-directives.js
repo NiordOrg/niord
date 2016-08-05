@@ -107,6 +107,9 @@ angular.module('niord.common')
 
     /**
      * Used for editing a lat-lon position in an input field using a mask.
+     * <p>
+     * TODO: Proper handling of positions outside the normal lat-lon ranges (e.g. 512°E)
+     *       - Roll over to a valid position range.
      */
     .directive('positionInput', ['$timeout', function($timeout) {
         return {
