@@ -120,6 +120,9 @@ angular.module('niord.common')
                 lat:            "=",
                 lon:            "=",
                 decimals:       "=",
+                posClass:       "=",
+                posRequired:    "=",
+                posChange:      "&",
                 placeholder:    "@"
             },
             compile: function() {
@@ -133,6 +136,7 @@ angular.module('niord.common')
                         scope.decimals = attrs.decimals ? scope.decimals : 3;
                         scope.placeholder = scope.placeholder || 'Latitude - Longitude';
                         scope.latlon = undefined;
+                        scope.posClass = scope.posClass || {};
 
                         var decimalMask = '99999999'.substr(0, scope.decimals);
                         if (scope.decimals > 0) {
@@ -148,7 +152,7 @@ angular.module('niord.common')
                         };
                     },
 
-                    post: function (scope, element) {
+                    post: function (scope, element, attrs) {
 
                         // Get a reference to the input field
                         var inputField = $(element[0]).find('input');
@@ -167,7 +171,6 @@ angular.module('niord.common')
 
                         // Initially, display the placeholder
                         $timeout(function() { inputField.attr('placeholder', scope.placeholder); });
-
 
                         /** Generic function that prepends a character to a string **/
                         function pad(n, width, z) {
@@ -233,7 +236,10 @@ angular.module('niord.common')
 
 
                         // Watch for changes to the input field value
-                        scope.$watch("latlon", function (latlon) {
+                        scope.$watch("latlon", function (latlon, oldLatlon) {
+                            if (latlon == oldLatlon) {
+                                return;
+                            }
                             var latSpec = undefined;
                             var lonSpec = undefined;
                             if (latlon && latlon.length > 0) {
@@ -244,6 +250,12 @@ angular.module('niord.common')
                             }
                             scope.lat = parse(latSpec, true);
                             scope.lon = parse(lonSpec, false);
+
+
+                            // Broadcast change
+                            if (attrs.posChange) {
+                                scope.posChange({});
+                            }
                         }, true);
 
 
@@ -251,7 +263,7 @@ angular.module('niord.common')
                         scope.clearPos = function () {
                             scope.latlon = undefined;
                             $timeout(function() { inputField[0].focus() } );
-                        }
+                        };
                     }
                 }
             }

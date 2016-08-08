@@ -1,6 +1,7 @@
 <div class="position-input-field">
     <input type="text" class="form-control input-sm" ng-model="latlon"
-           ui-mask="{{mask}}" ui-options="options">
+           ui-mask="{{mask}}" ui-options="options"
+            ng-class="posClass" ng-required="posRequired">
     <span class="glyphicon glyphicon-remove clear-input"
           ng-click="clearPos()" ng-show="latlon"></span>
 </div>

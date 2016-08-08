@@ -42,14 +42,10 @@
                     <tr>
                         <th class="osm-tag-info border-b">position</th>
                         <td class="osm-tag-info border-b" colspan="2">
-                            <input latitude  type="text" ng-model="aton.lat" required
-                                   ng-class="{'changed' : changed('lat')}"
-                                   ng-change="atonUpdated()"
-                                   class="form-control form-control-inline input-sm" style="width: 100px; height: 26px">
-                            <input longitude type="text" ng-model="aton.lon" required
-                                   ng-change="atonUpdated()"
-                                   ng-class="{'changed' : changed('lon')}"
-                                   class="form-control form-control-inline input-sm" style="width: 100px; height: 26px">
+
+                            <position-input lat="aton.lat" lon="aton.lon" decimals="3"
+                                    pos-class="{'changed' : changed('lat') || changed('lon')}"
+                                    pos-change="atonUpdated()" pos-required="true"></position-input>
                         </td>
                     </tr>
                     <tr ng-repeat="tag in tags" ng-if="tag.k != 'seamark:ref'">
