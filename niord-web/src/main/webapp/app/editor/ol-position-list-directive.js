@@ -32,8 +32,9 @@ angular.module('niord.editor')
                 editType: "@"
             },
 
-            link: function (scope, element) {
+            link: function (scope) {
 
+                scope.languages = $rootScope.modelLanguages;
                 scope.editType = scope.editType || 'features';
                 scope.positions = [];
                 scope.type = scope.feature.getGeometry().getType();
@@ -70,10 +71,25 @@ angular.module('niord.editor')
                     scope.positions.length = 0;
                     for (var x = 0; x < coordinates.length; x++) {
                         var lonLat = MapService.toLonLat(coordinates[x]);
-                        scope.positions.push({
+                        var pos = {
+                            coordIndex: x,
+                            showNames: false,
                             lat: lonLat[1],
-                            lon: lonLat[0]
-                        });
+                            lon: lonLat[0],
+                            descs: []
+                        };
+                        scope.positions.push(pos);
+
+                        // Get the language-specific names associated with the coordinate
+                        angular.forEach($rootScope.modelLanguages, function (lang) {
+                            var langKey = 'name:' + x + ':' + lang;
+                            var name = scope.feature.get(langKey);
+                            pos.descs.push({
+                                lang: lang,
+                                name: name
+                            });
+                            pos.showNames |= scope.editType == 'message' && name !== undefined;
+                        })
                     }
                     $rootScope.$$phase || $rootScope.$apply();
                 };
@@ -81,13 +97,25 @@ angular.module('niord.editor')
 
                 /** Called when the editor position has been updated **/
                 scope.updateFeature = function () {
+
+                    // Clear all feature names
+                    MapService.clearFeatureCoordNames(scope.feature);
+
                     var coordinates = [];
-                    angular.forEach(scope.positions, function (pos) {
+                    for (var x = 0, coordIndex = 0; x < scope.positions.length; x++) {
+                        var pos = scope.positions[x];
                         if (pos.lat && pos.lon) {
                             var xy = MapService.fromLonLat([pos.lon, pos.lat]);
-                            coordinates.push(xy)
+                            coordinates.push(xy);
+
+                            // Update the coordinate names
+                            angular.forEach(pos.descs, function (desc) {
+                                MapService.setFeatureCoordName(scope.feature, coordIndex, desc.lang, desc.name);
+                            });
+
+                            coordIndex++;
                         }
-                    });
+                    }
 
                     var geom = scope.feature.getGeometry();
                     switch (geom.getType()) {
@@ -105,6 +133,50 @@ angular.module('niord.editor')
                             break;
                     }
                     emit('feature-modified', scope.feature.getId());
+                };
+
+
+                /** Toggle display the names associated with the coordinates **/
+                scope.toggleShowNames = function (pos) {
+                    pos.showNames = !pos.showNames;
+                };
+
+
+                /** Called when a name is updated **/
+                scope.nameUpdated = function (pos, desc) {
+                    MapService.setFeatureCoordName(scope.feature, pos.coordIndex, desc.lang, desc.name);
+                    emit('name-updated');
+                };
+
+
+                /** Adds a position after the given index **/
+                scope.addPositionAfter = function (index) {
+                    var pos = {
+                        coordIndex: index + 1,
+                        showNames: false,
+                        descs: []
+                    };
+                    angular.forEach($rootScope.modelLanguages, function (lang) {
+                        pos.descs.push({
+                            lang: lang,
+                            name: undefined
+                        });
+                    });
+                    scope.positions.splice(index + 1, 0, pos);
+                    for (var x = index + 2; x < scope.positions.length; x++) {
+                        scope.positions[x].coordIndex++;
+                    }
+                    scope.updateFeature();
+                };
+
+
+                /** Removes the position at the given index **/
+                scope.removePosition = function (index) {
+                    scope.positions.splice( index, 1 );
+                    for (var x = index; x < scope.positions.length; x++) {
+                        scope.positions[x].coordIndex--;
+                    }
+                    scope.updateFeature();
                 };
 
 

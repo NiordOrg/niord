@@ -6,12 +6,21 @@
         </th>
     </tr>
     <tr ng-repeat="pos in positions">
-        <td>
-            <position-input ng-model="pos" decimals="3"></position-input>
-        </td>
         <td align="right">
-            <i class="glyphicon glyphicon-trash position-list-btn"></i>
-            <i class="glyphicon glyphicon-plus position-list-btn"></i>
+            <position-input ng-model="pos" decimals="3"></position-input>
+            <div ng-if="pos.showNames" ng-repeat="desc in pos.descs" style="margin-top: 3px">
+                <input type="text" style="width: 180px"
+                       ng-model="desc.name"
+                       ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"
+                       ng-change="nameUpdated(pos, desc)"
+                       autocomplete="off" spellcheck="false"
+                       bg-flag="desc.lang">
+            </div>
+        </td>
+        <td align="right" valign="top" width="60" nowrap="nowrap">
+            <i ng-if="type != 'Point'" class="glyphicon glyphicon-trash position-list-btn" ng-click="removePosition($index)"></i>
+            <i ng-if="type != 'Point'" class="glyphicon glyphicon-plus position-list-btn" ng-click="addPositionAfter($index)"></i>
+            <i ng-if="editType == 'message'" class="glyphicon glyphicon-info-sign position-list-btn" ng-click="toggleShowNames(pos)"></i>
         </td>
     </tr>
 </table>

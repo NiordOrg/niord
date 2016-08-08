@@ -6,8 +6,8 @@ angular.module('niord.map')
     /**
      * The language service is used for changing language, etc.
      */
-    .service('MapService', ['$rootScope', '$http',
-        function ($rootScope, $http) {
+    .service('MapService', ['$rootScope',
+        function ($rootScope) {
             'use strict';
 
             var that = this;
@@ -284,6 +284,51 @@ angular.module('niord.map')
                 return point;
             };
 
+
+            /**
+             * Sets the name associated with the OL feature
+             * @param olFeature the OL feature
+             * @param lang the language code
+             * @param name the name to set
+             */
+            this.setFeatureName = function (olFeature, lang, name) {
+                var langKey = 'name:' + lang;
+                if (name && name.trim().length > 0) {
+                    olFeature.set(langKey, name);
+                } else {
+                    olFeature.unset(langKey);
+                }
+            };
+
+
+            /**
+             * Sets the name associated with the OL feature coordinate
+             * @param olFeature the OL feature
+             * @param coordIndex the coordinate index
+             * @param lang the language code
+             * @param name the name to set
+             */
+            this.setFeatureCoordName = function (olFeature, coordIndex, lang, name) {
+                var langKey = 'name:' + coordIndex + ':' + lang;
+                if (name && name.trim().length > 0) {
+                    olFeature.set(langKey, name);
+                } else {
+                    olFeature.unset(langKey);
+                }
+            };
+
+
+            /**
+             * Clears all feature coordinate names from the OL feature
+             * @param olFeature the feature
+             */
+            this.clearFeatureCoordNames = function (olFeature) {
+                angular.forEach(FeatureName.readFeatureNames(olFeature), function (name) {
+                    olFeature.unset(name.key);
+                });
+            };
+
+
             /** ************************ **/
             /** GeoJSON Functionality    **/
             /** ************************ **/
@@ -414,21 +459,6 @@ angular.module('niord.map')
                 });
             };
 
-
-            /** Test - test test **/
-            this.getAllFeatureCollections = function() {
-                return $http.get('/rest/test/shapes');
-            };
-
-            /** Test - test test **/
-            this.createFeatureCollection = function(fc) {
-                return $http.post('/rest/test/shapes', fc);
-            };
-
-            /** Test - test test **/
-            this.updateFeatureCollection = function(fc) {
-                return $http.put('/rest/test/shapes', fc);
-            };
 
             /**
              * Fast UUID generator, RFC4122 version 4 compliant.
