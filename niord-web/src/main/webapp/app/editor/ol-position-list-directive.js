@@ -120,7 +120,9 @@ angular.module('niord.editor')
                     var geom = scope.feature.getGeometry();
                     switch (geom.getType()) {
                         case 'Point':
-                            geom.setCoordinates(coordinates[0]);
+                            if (coordinates.length > 0) {
+                                geom.setCoordinates(coordinates[0]);
+                            }
                             break;
                         case 'LineString':
                             geom.setCoordinates(coordinates);

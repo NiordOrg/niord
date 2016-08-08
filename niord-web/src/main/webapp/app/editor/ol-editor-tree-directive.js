@@ -35,6 +35,11 @@ angular.module('niord.editor')
 
             link: function (scope, element) {
 
+                $.mask.definitions['X'] = "[ewEW]";
+                $.mask.definitions['Y'] = "[nsNS]";
+                $.mask.definitions['1'] = "[01]";
+                $.mask.definitions['5'] = "[0-5]";
+
                 scope.expandedNodeKeys = [];
                 scope.activeNodeKey = undefined;
                 scope.editType = scope.editType || 'features';
@@ -259,6 +264,17 @@ angular.module('niord.editor')
                 };
 
 
+                /** Installs a position format mask in the position editor field **/
+                scope.editInstallPositionMask = function (event, data) {
+                    var node = data.node;
+                    if (node.data.type == 'Position') {
+                        var input = data.input;
+                        var decimalDelim = numeral(0.0).format('.0').substr(0, 1);
+                        $(input).mask('99° 59' + decimalDelim + '999\'Y - 199° 59' + decimalDelim + '999\'X');
+                    }
+                };
+
+
                 /** Called before a node editor is closed **/
                 scope.editBeforeClose = function(event, data) {
                     var node = data.node;
@@ -292,7 +308,8 @@ angular.module('niord.editor')
                     var node = data.node;
                     if (node.data.type == 'Position') {
                         try {
-                            var pos = parseLatLon(data.input.val());
+                            var posTxt = data.input.val().replace(/°/g, '').replace(/'/g, '');
+                            var pos = parseLatLon(posTxt);
                             var xy = MapService.fromLonLat([pos.lon, pos.lat]);
                             node.data.coordinates = xy;
                             var geometry = scope.updateFeatureGeometry(tree.rootNode.children[0]);
@@ -332,11 +349,11 @@ angular.module('niord.editor')
                     activate: scope.activateNode,
                     deactivate: scope.deactivateNode,
                     edit: {
-                        inputCss: {minWidth: "140px", maxWidth: "140px"},
+                        inputCss: {minWidth: "150px", maxWidth: "150px"},
                         triggerCancel: ["esc", "tab", "click"],
                         triggerStart: ["f2", "dblclick", "shift+click", "mac+enter"],
                         beforeEdit: scope.editBeforeEdit,
-                        edit: $.noop,
+                        edit: scope.editInstallPositionMask,
                         beforeClose: scope.editBeforeClose,
                         save: scope.editSave,
                         close: function(event, data) { scope.makeVisible(data.node); }
@@ -397,7 +414,7 @@ angular.module('niord.editor')
                         var posNode = {
                             type: 'Position',
                             key: posKey,
-                            title: formatLatLon({ lon: lonLat[0], lat: lonLat[1] }),
+                            title: formatLatLon({ lon: lonLat[0], lat: lonLat[1] }, 3, true),
                             coordIndex: coordIndex++,
                             coordCount: 1,
                             coordinates: coord,

@@ -802,7 +802,9 @@ angular.module('niord.editor')
                     if (featureCtx.parentFeatureIds || featureCtx.aton) {
                         return false;
                     }
-                    return scope.simpleGeometry(feature);
+                    // NB The simple editor has been disabled for now
+                    //return scope.simpleGeometry(feature);
+                    return false;
                 };
 
 
@@ -812,7 +814,9 @@ angular.module('niord.editor')
                     if (featureCtx.parentFeatureIds || featureCtx.aton) {
                         return false;
                     }
-                    return !scope.simpleGeometry(feature);
+                    // NB The simple editor has been disabled for now
+                    //return !scope.simpleGeometry(feature);
+                    return true;
                 };
 
                 /** ************************ **/
