@@ -114,11 +114,11 @@ angular.module('niord.common')
     .directive('positionInput', ['$timeout', function($timeout) {
         return {
             restrict: 'E',
-            require: 'ngModel',
             templateUrl:  '/app/common/position-input.html',
             replace: true,
             scope: {
-                pos:            "=ngModel",
+                lat:            "=",
+                lon:            "=",
                 decimals:       "=",
                 placeholder:    "@"
             },
@@ -131,7 +131,6 @@ angular.module('niord.common')
                     pre: function (scope, element, attrs) {
 
                         scope.decimals = attrs.decimals ? scope.decimals : 3;
-                        scope.pos = scope.pos || { lat : undefined, lon: undefined };
                         scope.placeholder = scope.placeholder || 'Latitude - Longitude';
                         scope.latlon = undefined;
 
@@ -226,9 +225,9 @@ angular.module('niord.common')
 
 
                         // Watch for changes to the underlying position model
-                        scope.$watch("pos", function (pos) {
-                            var latSpec = format(pos.lat, true);
-                            var lonSpec = format(pos.lon, false);
+                        scope.$watch("[lat,lon]", function (value) {
+                            var latSpec = format(scope.lat, true);
+                            var lonSpec = format(scope.lon, false);
                             scope.latlon = latSpec !== undefined && lonSpec !== undefined ? latSpec + lonSpec : undefined;
                         }, true);
 
@@ -243,8 +242,8 @@ angular.module('niord.common')
                                 latSpec = latlon.substr(0, index);
                                 lonSpec = latlon.substr(index);
                             }
-                            scope.pos.lat = parse(latSpec, true);
-                            scope.pos.lon = parse(lonSpec, false);
+                            scope.lat = parse(latSpec, true);
+                            scope.lon = parse(lonSpec, false);
                         }, true);
 
 

@@ -116,12 +116,10 @@
                             </div>
                             <div class="col-sm-8" ng-if="editArea.messageSorting == 'CW' || editArea.messageSorting == 'CCW'"
                                 style="padding-left:0">
-                                <input latitude  type="text" ng-model="editArea.originLatitude" placeholder="Latitude"
-                                       class="form-control form-control-inline input-sm" style="width: 90px; height: 26px">
-                                <input longitude type="text" ng-model="editArea.originLongitude" placeholder="Longitude"
-                                       class="form-control form-control-inline input-sm" style="width: 90px; height: 26px">
+                                <position-input lat="editArea.originLatitude" lon="editArea.originLongitude" decimals="2"></position-input>
                                 <input type="number" min="0" max="360" step="1" ng-model="editArea.originAngle" placeholder="Angle"
-                                       class="form-control form-control-inline input-sm no-spinner" style="width: 70px; height: 26px">
+                                       class="form-control form-control-inline input-sm no-spinner"
+                                       style="width: 70px; height: 26px; margin-top: 5px">
                             </div>
                         </div>
                     </div>
