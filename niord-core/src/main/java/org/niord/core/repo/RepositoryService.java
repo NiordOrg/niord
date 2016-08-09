@@ -266,19 +266,24 @@ public class RepositoryService {
     @javax.ws.rs.Path("/file/{file:.+}")
     @Produces("text/plain")
     @RolesAllowed({ "editor" })
-    public String deleteFile(@PathParam("file") String path) throws IOException {
+    public Response deleteFile(@PathParam("file") String path) throws IOException {
 
         Path f = repoRoot.resolve(path);
 
         if (Files.notExists(f) || Files.isDirectory(f)) {
-            log.warn("Failed deleting file: " + f);
-            throw new WebApplicationException(404);
+            log.warn("Failed deleting non-existing file: " + f);
+            return Response
+                    .status(HttpServletResponse.SC_NOT_FOUND)
+                    .entity("File not found: " + path)
+                    .build();
         }
 
         Files.delete(f);
         log.info("Deleted file " + f);
 
-        return "OK";
+        return Response
+                .ok("File deleted " + f)
+                .build();
     }
 
     /**

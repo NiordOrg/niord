@@ -748,6 +748,11 @@ angular.module('niord.editor')
                         .success(function () {
                             $scope.message.attachments.splice( $.inArray(attachment, $scope.message.attachments), 1 );
                             $scope.setDirty();
+                        })
+                        .error(function () {
+                            // NB: We allow deletion of the attachment event if the physical file did not exist
+                            $scope.message.attachments.splice( $.inArray(attachment, $scope.message.attachments), 1 );
+                            $scope.setDirty();
                         });
                 }
             };
