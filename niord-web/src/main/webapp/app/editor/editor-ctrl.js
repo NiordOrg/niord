@@ -599,8 +599,8 @@ angular.module('niord.editor')
             $scope.tinymceOptions = {
                 resize: false,
                 valid_elements : '*[*]', // NB: This allows insertion of all html elements, including javascript
-                theme: "modern",
-                skin: 'light',
+                // theme: "modern",
+                // skin: 'light',
                 statusbar : false,
                 menubar: false,
                 plugins: [ "autolink lists link image anchor", "code textcolor", "media table contextmenu paste" ],
