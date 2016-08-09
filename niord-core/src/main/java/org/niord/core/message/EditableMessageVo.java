@@ -46,6 +46,23 @@ public class EditableMessageVo extends MessageVo {
     }
 
     /**
+     * Annoyingly, the TinyMCE editor used for editing the rich text description, will rewrite paths
+     * attachments (i.e. used in hyperlinks and embedded images), so that "/rest/repo/file/..." becomes
+     * "rest/repo/file/...". This causes problems if the description html is used outside the "/" context
+     * root, as is the case when you e.g. print reports.
+     * <p>
+     * This function fixes the links to attachment resources.
+     */
+    private void fixDescriptionRepoPaths() {
+        if (getDescs() != null) {
+            getDescs().stream()
+                    .filter(desc -> StringUtils.isNotBlank(desc.getDescription()))
+                    .filter(desc -> desc.getDescription().contains("\"rest/repo/file"))
+                    .forEach(desc -> desc.setDescription(desc.getDescription().replace("\"rest/repo/file", "\"/rest/repo/file")));
+        }
+    }
+
+    /**
      * Should be called on a message before editing it, to point links and embedded images
      * to the temporary message repository folder used whilst editing.
      */
@@ -59,7 +76,8 @@ public class EditableMessageVo extends MessageVo {
      * back to the message repository
      */
     public void descsToMessageRepo() {
-        rewriteDescs(getRepoPath(), getEditRepoPath());
+        rewriteDescs(getEditRepoPath(), getRepoPath());
+        fixDescriptionRepoPaths();
     }
 
     /*************************/
