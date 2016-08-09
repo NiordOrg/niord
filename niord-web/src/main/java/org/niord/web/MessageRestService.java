@@ -27,8 +27,10 @@ import org.niord.core.NiordApp;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.fm.FmReport;
 import org.niord.core.fm.FmService;
 import org.niord.core.fm.FmService.ProcessFormat;
+import org.niord.core.fm.vo.FmReportVo;
 import org.niord.core.geojson.FeatureService;
 import org.niord.core.mail.HtmlMail;
 import org.niord.core.mail.Mail;
@@ -691,6 +693,20 @@ public class MessageRestService extends AbstractBatchableRestService {
      * PDF functionality
      ***************************/
 
+    /**
+     * Returns the reports available for printing message lists
+     * @return the reports available for printing message lists
+     */
+    @GET
+    @Path("/reports")
+    @GZIP
+    @NoCache
+    public List<FmReportVo> getReports() {
+        return fmService.getReports().stream()
+                .map(FmReport::toVo)
+                .collect(Collectors.toList());
+    }
+
 
     /**
      * Generates a PDF for the message with the given message id, which may be either a UID,
@@ -766,12 +782,14 @@ public class MessageRestService extends AbstractBatchableRestService {
         PagedSearchResultVo<MessageVo> result = search(params);
 
         try {
+            FmReport report = fmService.getReport(params.getReport());
+
             ProcessFormat format = params.getDebug() ? ProcessFormat.TEXT : ProcessFormat.PDF;
 
             StreamingOutput stream = os -> {
                 try {
                     fmService.newTemplateBuilder()
-                            .setTemplatePath("/templates/messages/message-list-pdf.ftl")
+                            .setTemplatePath(report.getTemplatePath())
                             .setData("messages", result.getData())
                             .setData("areaHeadings", params.sortByArea())
                             .setData("searchCriteria", result.getDescription())

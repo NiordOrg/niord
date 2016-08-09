@@ -222,13 +222,15 @@ angular.module('niord.messages')
     /*******************************************************************
      * Controller that handles the message Print dialog
      *******************************************************************/
-    .controller('MessagePrintDialogCtrl', ['$scope', '$document', '$window', 'total',
-        function ($scope, $document, $window, total) {
+    .controller('MessagePrintDialogCtrl', ['$scope', '$document', '$window', 'MessageService', 'total', 'reports',
+        function ($scope, $document, $window, MessageService, total, reports) {
             'use strict';
 
             $scope.totalMessageNo = total;
+            $scope.reports = undefined;
 
             $scope.data = {
+                report: undefined,
                 pageSize : 'A4',
                 pageOrientation: 'portrait'
             };
@@ -238,6 +240,17 @@ angular.module('niord.messages')
                     angular.copy(angular.fromJson($window.localStorage.printSettings), $scope.data);
                 } catch (error) {
                 }
+            }
+
+            // If requested, load the message reports
+            if (reports) {
+                MessageService.printReports()
+                    .success(function (reports) {
+                        $scope.reports = reports;
+                        if (reports.length > 0) {
+                            $scope.data.report = reports[0].reportId;
+                        }
+                    })
             }
 
             // Register and unregister event-handler to listen for return key

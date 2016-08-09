@@ -71,6 +71,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     Boolean includeGeneral;
 
     // Print parameters
+    String report;
     String pageSize;
     String pageOrientation;
     Boolean debug;
@@ -110,6 +111,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
                 .includeGeneral(checkNull(req.getParameter("includeGeneral"), Boolean::valueOf))
 
                 // Print parameters
+                .report(req.getParameter("report"))
                 .pageSize(checkNull(req.getParameter("pageSize"), "A4", Function.identity()))
                 .pageOrientation(checkNull(req.getParameter("pageOrientation"), "portrait", Function.identity()))
                 .debug(checkNull(req.getParameter("debug"), false, Boolean::valueOf))
@@ -390,6 +392,15 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public MessageSearchParams includeGeneral(Boolean includeGeneral) {
         this.includeGeneral = includeGeneral;
+        return this;
+    }
+
+    public String getReport() {
+        return report;
+    }
+
+    public MessageSearchParams report(String report) {
+        this.report = report;
         return this;
     }
 

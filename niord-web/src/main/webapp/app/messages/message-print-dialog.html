@@ -8,6 +8,16 @@
     <div class="modal-body print" style="padding-bottom: 0">
         <div>
             <table cellspacing="5">
+                <tr ng-if="reports">
+                    <td align="right">Report </td>
+                    <td>
+                        <div class="btn-group" style="margin: 5px">
+                            <select class="form-control input-sm" ng-model="data.report"
+                                    ng-options="report.reportId as report.name for report in reports">
+                            </select>
+                        </div>
+                    </td>
+                </tr>
                 <tr>
                     <td align="right">Layout </td>
                     <td>

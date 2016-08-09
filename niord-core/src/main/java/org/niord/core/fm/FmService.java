@@ -26,6 +26,7 @@ import org.niord.core.NiordApp;
 import org.niord.core.dictionary.DictionaryService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.service.BaseService;
 import org.niord.core.util.TextUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +38,9 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -49,7 +52,7 @@ import java.util.TimeZone;
  */
 @Stateless
 @SuppressWarnings("unused")
-public class FmService {
+public class FmService extends BaseService {
 
     public static final String BUNDLE_PROPERTY = "text";
     public static final String TIME_ZONE_PROPERTY = "timeZone";
@@ -70,6 +73,96 @@ public class FmService {
 
     @Inject
     DomainService domainService;
+
+
+    /***************************************/
+    /** Report methods                    **/
+    /***************************************/
+
+
+    /** Upon start-up, check that the standard report is defined **/
+    private void init() {
+        getStandardReport();
+    }
+
+
+    /**
+     * Returns the standard report used for generating PDFs from message lists
+     * @return the standard report used for generating PDFs from message lists
+     */
+    public FmReport getStandardReport() {
+        // Check that the standard report is defined
+        FmReport report = findByReportId("standard");
+        if (report == null) {
+            report = new FmReport();
+            report.setReportId("standard");
+            report.setName("Standard");
+            report.setTemplatePath("/templates/messages/message-list-pdf.ftl");
+            try {
+                em.persist(report);
+                log.info("Created standard report");
+            } catch (Exception e) {
+                log.error("Failed creating standard report", e);
+            }
+        }
+        return report;
+    }
+
+    /**
+     * Returns the report with the given report ID, or null if not found
+     * @param reportId the report ID
+     * @return the report with the given report ID, or null if not found
+     */
+    public FmReport findByReportId(String reportId) {
+        try {
+            return em.createNamedQuery("FmReport.findByReportId", FmReport.class)
+                    .setParameter("reportId", reportId)
+                    .getSingleResult();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Returns the report with the given report ID, or the standard report if not found
+     * @param reportId the report ID
+     * @return the report with the given report ID, or the standard report if not found
+     */
+    public FmReport getReport(String reportId) {
+        FmReport report = (StringUtils.isNotBlank(reportId)) ? findByReportId(reportId) : null;
+        if (report == null) {
+            report = getStandardReport();
+        }
+        return report;
+    }
+
+    /**
+     * Returns the reports available in the current domain
+     * @return the reports available in the current domain
+     */
+    public List<FmReport> getReports() {
+        List<FmReport> reports = new ArrayList<>();
+
+        // First get the public reports
+        reports.addAll(em.createNamedQuery("FmReport.findPublicReports", FmReport.class)
+                .getResultList());
+
+        // If a current domain is defined, add the domain specific reports
+        Domain domain = domainService.currentDomain();
+        if (domain != null) {
+            reports.addAll(em.createNamedQuery("FmReport.findReportsByDomain", FmReport.class)
+                    .setParameter("domain", domain)
+                    .getResultList());
+
+        }
+
+        return reports;
+    }
+
+
+    /***************************************/
+    /** Template methods                  **/
+    /***************************************/
 
     /**
      * Create a new Freemarker template builder.

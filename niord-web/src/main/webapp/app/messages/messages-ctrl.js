@@ -725,14 +725,14 @@ angular.module('niord.messages')
 
             /** Opens the message print dialog */
             $scope.pdf = function () {
-                MessageService.messagePrintDialog($scope.totalMessageNo).result
+                MessageService.messagePrintDialog($scope.totalMessageNo, true).result
                     .then($scope.generatePdf);
             };
 
 
             /** Opens the message print dialog for the current selection */
             $scope.pdfForSelection = function () {
-                MessageService.messagePrintDialog($scope.selection.size()).result
+                MessageService.messagePrintDialog($scope.selection.size(), true).result
                     .then(function (printSettings) {
                         // Generate a temporary, short-lived message tag for the selection
                         MessageService.createTempMessageTag($scope.selection.keys)
@@ -765,6 +765,9 @@ angular.module('niord.messages')
                         }
                         if (printSettings && printSettings.pageSize) {
                             params += '&pageSize=' + printSettings.pageSize;
+                        }
+                        if (printSettings && printSettings.report) {
+                            params += '&report=' + encodeURIComponent(printSettings.report);
                         }
 
                         $window.location = '/rest/messages/search.pdf?' + params;
