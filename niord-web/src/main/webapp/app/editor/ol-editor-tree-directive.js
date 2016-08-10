@@ -271,6 +271,7 @@ angular.module('niord.editor')
                         var input = data.input;
                         var decimalDelim = numeral(0.0).format('.0').substr(0, 1);
                         $(input).mask('99° 59' + decimalDelim + '999\'Y - 199° 59' + decimalDelim + '999\'X');
+                        $(input).select();
                     }
                 };
 
