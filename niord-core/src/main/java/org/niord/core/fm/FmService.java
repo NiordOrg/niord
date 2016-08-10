@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import java.io.IOException;
@@ -81,6 +82,7 @@ public class FmService extends BaseService {
 
 
     /** Upon start-up, check that the standard report is defined **/
+    @PostConstruct
     private void init() {
         getStandardReport();
     }
