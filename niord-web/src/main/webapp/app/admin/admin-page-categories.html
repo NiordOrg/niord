@@ -39,6 +39,7 @@
                     </div>
                     <div entity-tree entities="categories"
                          filter="categoryFilter"
+                         flag-inactive="true"
                          entity-selected="selectCategory(entity)"
                          entity-moved="moveCategory(entity, parent)"
                          class="category-tree"></div>
@@ -48,6 +49,15 @@
             <!-- Category editor -->
             <form name="categoryForm" id="categoryForm" class="col-md-5 panel panel-default category-panel" role="form">
                 <fieldset ng-if="editCategory">
+
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <input type="checkbox" ng-model="editCategory.active">&nbsp;&nbsp;Active
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-group" ng-if="action == 'add'">
                         <label class="control-label" for="parent">Parent Category</label>
                         <div class="input-group input-group-sm">

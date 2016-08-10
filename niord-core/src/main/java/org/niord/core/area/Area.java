@@ -287,6 +287,7 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
      * If the area is active, ensure that parent areas are active.
      * If the area is inactive, ensure that child areas are inactive.
      */
+    @SuppressWarnings("all")
     public void updateActiveFlag() {
         if (active) {
             // Ensure that parent areas are active

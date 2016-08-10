@@ -56,11 +56,12 @@ public class CategoryService extends BaseService {
      * @param lang the language
      * @param name the search term
      * @param domain  restrict the search to the current domain or not
+     * @param inactive  whether to include inactive categories in the search result
      * @param limit the maximum number of results
      * @return the search result
      */
     @SuppressWarnings("all")
-    public List<Category> searchCategories(Integer parentId, String lang, String name, boolean domain, int limit) {
+    public List<Category> searchCategories(Integer parentId, String lang, String name, boolean domain, boolean inactive, int limit) {
 
         // Sanity check
         if (StringUtils.isBlank(name)) {
@@ -99,6 +100,11 @@ public class CategoryService extends BaseService {
                         .toArray(Predicate[]::new);
                 criteriaHelper.add(cb.or(categoryMatch));
             }
+        }
+
+        // Unless the "inactive" search flag is set, only include active categories.
+        if (!inactive) {
+            criteriaHelper.add(cb.equal(categoryRoot.get("active"), true));
         }
 
         // Complete the query
@@ -169,8 +175,11 @@ public class CategoryService extends BaseService {
         Category original = getByPrimaryKey(Category.class, category.getId());
 
         original.setMrn(category.getMrn());
+        original.setActive(category.isActive());
         original.copyDescsAndRemoveBlanks(category.getDescs());
+
         original.updateLineage();
+        original.updateActiveFlag();
 
         original = saveEntity(original);
 
@@ -198,6 +207,7 @@ public class CategoryService extends BaseService {
 
         // The category now has an ID - Update lineage
         category.updateLineage();
+        category.updateActiveFlag();
         category = saveEntity(category);
 
         em.flush();
@@ -235,6 +245,7 @@ public class CategoryService extends BaseService {
 
         // Update all lineages
         updateLineages();
+        category.updateActiveFlag();
 
         // Evict all cached messages for the category subtree
         //category = getByPrimaryKey(Category.class, category.getId());
@@ -311,7 +322,7 @@ public class CategoryService extends BaseService {
      */
     public Category findByName(String name, String lang, Integer parentId) {
 
-        List<Category> categories = searchCategories(parentId, lang, name, false, 1);
+        List<Category> categories = searchCategories(parentId, lang, name, false, true, 1);
 
         return categories.isEmpty() ? null : categories.get(0);
     }

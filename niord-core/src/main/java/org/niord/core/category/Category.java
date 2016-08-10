@@ -20,7 +20,15 @@ import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.vo.CategoryVo;
 
-import javax.persistence.*;
+import javax.persistence.Cacheable;
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
+import javax.persistence.Transient;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -45,6 +53,8 @@ import java.util.stream.Collectors;
 public class Category extends VersionedEntity<Integer> implements ILocalizable<CategoryDesc> {
 
     String mrn;
+
+    boolean active = true;
 
     @ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE, CascadeType.DETACH })
     private Category parent;
@@ -83,6 +93,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
 
         this.id = category.getId();
         this.mrn = category.getMrn();
+        this.active = category.isActive();
         if (compFilter.includeParent() && category.getParent() != null) {
             parent = new Category(category.getParent(), filter);
         }
@@ -106,6 +117,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
         CategoryVo category = new CategoryVo();
         category.setId(id);
         category.setMrn(mrn);
+        category.setActive(active);
 
         if (compFilter.includeChildren()) {
             children.forEach(child -> category.checkCreateChildren().add(child.toVo(compFilter)));
@@ -139,6 +151,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     @Transient
     public boolean hasChanged(Category template) {
         return !Objects.equals(mrn, template.getMrn()) ||
+                !Objects.equals(active, template.isActive()) ||
                 descsChanged(template) ||
                 parentChanged(template);
     }
@@ -196,6 +209,29 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
 
 
     /**
+     * If the category is active, ensure that parent categories are active.
+     * If the category is inactive, ensure that child categories are inactive.
+     */
+    @SuppressWarnings("all")
+    public void updateActiveFlag() {
+        if (active) {
+            // Ensure that parent categories are active
+            if (getParent() != null && !getParent().isActive()) {
+                getParent().setActive(true);
+                getParent().updateActiveFlag();
+            }
+        } else {
+            // Ensure that child categories are inactive
+            getChildren().stream()
+                    .filter(Category::isActive)
+                    .forEach(child -> {
+                        child.setActive(false);
+                        child.updateActiveFlag();
+                    });
+        }
+    }
+
+    /**
      * Checks if this is a root category
      *
      * @return if this is a root category
@@ -216,6 +252,14 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
 
     public void setMrn(String mrn) {
         this.mrn = mrn;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     @Override

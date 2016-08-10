@@ -74,17 +74,18 @@ public class CategoryRestService extends AbstractBatchableRestService {
             @QueryParam("lang") String lang,
             @QueryParam("name") String name,
             @QueryParam("domain") @DefaultValue("false") boolean domain,
+            @QueryParam("inactive") @DefaultValue("false") boolean inactive,
             @QueryParam("limit") int limit) {
 
-        log.debug(String.format("Searching for categories lang=%s, name='%s', domain=%s, limit=%d",
-                lang, name, domain, limit));
+        log.debug(String.format("Searching for categories lang=%s, name='%s', domain=%s, inactive=%s, limit=%d",
+                lang, name, domain, inactive, limit));
 
         DataFilter filter = DataFilter.get()
                 .fields(DataFilter.PARENT)
                 .lang(lang);
 
-        return categoryService.searchCategories(null, lang, name, domain, limit).stream()
-                .map(a -> a.toVo(filter))
+        return categoryService.searchCategories(null, lang, name, domain, inactive, limit).stream()
+                .map(c -> c.toVo(filter))
                 .collect(Collectors.toList());
     }
 
@@ -110,7 +111,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
                 .fields(DataFilter.PARENT);
 
         return categoryService.getCategoryDetails(ids).stream()
-                .map(a -> a.toVo(filter))
+                .map(c -> c.toVo(filter))
                 .limit(limit)
                 .collect(Collectors.toList());
     }
@@ -129,7 +130,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
                 .fields(DataFilter.CHILDREN);
 
         return categoryService.getCategoryTree().stream()
-                .map(a -> a.toVo(filter))
+                .map(c -> c.toVo(filter))
                 .collect(Collectors.toList());
     }
 
@@ -146,7 +147,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
                 .fields(DataFilter.CHILDREN);
 
         return categoryService.getCategoryTree().stream()
-                .map(a -> a.toVo(filter))
+                .map(c -> c.toVo(filter))
                 .collect(Collectors.toList());
     }
 

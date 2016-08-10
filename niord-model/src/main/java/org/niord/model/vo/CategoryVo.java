@@ -31,12 +31,13 @@ import java.util.List;
 @ApiModel(value = "Category", description = "Hierarchical category model")
 @XmlRootElement(name = "category")
 @XmlType(propOrder = {
-        "mrn", "parent", "children", "descs"
+        "mrn", "active", "parent", "children", "descs"
 })
 @SuppressWarnings("unused")
 public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializable {
     Integer id;
     String mrn;
+    boolean active = true;
     CategoryVo parent;
     List<CategoryVo> children;
     List<CategoryDescVo> descs;
@@ -79,6 +80,14 @@ public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializab
 
     public void setMrn(String mrn) {
         this.mrn = mrn;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public CategoryVo getParent() {

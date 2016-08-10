@@ -444,7 +444,7 @@ angular.module('niord.admin')
             /** Creates a new category */
             $scope.newCategory = function() {
                 $scope.action = "add";
-                $scope.editCategory = LangService.checkDescs({}, ensureNameField);
+                $scope.editCategory = LangService.checkDescs({ active: true }, ensureNameField);
                 if ($scope.category) {
                     $scope.editCategory.parent = { id: $scope.category.id };
                 }
