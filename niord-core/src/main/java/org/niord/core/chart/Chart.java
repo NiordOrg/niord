@@ -43,9 +43,10 @@ import java.util.Objects;
 @NamedQueries({
 
         @NamedQuery(name  = "Chart.searchCharts",
-                query = "select distinct c from Chart c where lower(c.chartNumber) like lower(:term) "
+                query = "select distinct c from Chart c where c.active in (:active) and "
+                        +"(lower(c.chartNumber) like lower(:term) "
                         + "or str(c.internationalNumber) like lower(:term) "
-                        + "or lower(c.name) like lower(:term) "),
+                        + "or lower(c.name) like lower(:term) )"),
 
         @NamedQuery(name  = "Chart.findAll",
                 query = "select c from Chart c order by coalesce(scale, 99999999) asc, chartNumber"),
@@ -63,6 +64,8 @@ public class Chart extends VersionedEntity<Integer> {
     String chartNumber;
 
     Integer internationalNumber;
+
+    boolean active = true;
 
     @Column(columnDefinition = "GEOMETRY")
     Geometry geometry;
@@ -101,6 +104,7 @@ public class Chart extends VersionedEntity<Integer> {
     public void updateChart(ChartVo chart) {
         this.chartNumber = chart.getChartNumber();
         this.internationalNumber = chart.getInternationalNumber();
+        this.active = chart.isActive();
         this.geometry = JtsConverter.toJts(chart.getGeometry());
         this.horizontalDatum = chart.getHorizontalDatum();
         this.scale = chart.getScale();
@@ -117,6 +121,7 @@ public class Chart extends VersionedEntity<Integer> {
         ChartVo chart = new ChartVo();
         chart.setChartNumber(chartNumber);
         chart.setInternationalNumber(internationalNumber);
+        chart.setActive(active);
 
         DataFilter compFilter = filter.forComponent(Chart.class);
         if (compFilter.includeGeometry()) {
@@ -142,6 +147,7 @@ public class Chart extends VersionedEntity<Integer> {
     public boolean hasChanged(Chart template) {
         return !Objects.equals(chartNumber, template.getChartNumber()) ||
                 !Objects.equals(internationalNumber, template.getInternationalNumber()) ||
+                !Objects.equals(active, template.isActive()) ||
                 !Objects.equals(horizontalDatum, template.getHorizontalDatum()) ||
                 !Objects.equals(scale, template.getScale()) ||
                 !Objects.equals(name, template.getName()) ||
@@ -216,6 +222,14 @@ public class Chart extends VersionedEntity<Integer> {
 
     public void setInternationalNumber(Integer internationalNumber) {
         this.internationalNumber = internationalNumber;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public Geometry getGeometry() {

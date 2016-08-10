@@ -79,8 +79,9 @@ public class ChartRestService extends AbstractBatchableRestService {
     @GZIP
     @NoCache
     public List<ChartVo> searchCharts(@QueryParam("name") @DefaultValue("") String name,
+                                      @QueryParam("inactive") @DefaultValue("false") boolean inactive,
                                       @QueryParam("limit") @DefaultValue("1000") int limit) {
-        return chartService.searchCharts(name, limit).stream()
+        return chartService.searchCharts(name, inactive, limit).stream()
                 .map(Chart::toVo)
                 .collect(Collectors.toList());
     }

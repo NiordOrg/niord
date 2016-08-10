@@ -113,6 +113,7 @@ angular.module('niord.admin')
                 $scope.chart = {
                     chartNumber: undefined,
                     internationalNumber: undefined,
+                    active: true,
                     horizontalDatum: 'WGS84'
                 };
                 $scope.chartFeatureCollection.features.length = 0;

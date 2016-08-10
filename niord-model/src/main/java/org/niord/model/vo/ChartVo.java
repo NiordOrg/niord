@@ -28,12 +28,13 @@ import javax.xml.bind.annotation.XmlType;
 @ApiModel(value = "Chart", description = "Sea chart model")
 @XmlRootElement(name = "chart")
 @XmlType(propOrder = {
-        "chartNumber", "internationalNumber", "geometry", "horizontalDatum", "scale", "name"
+        "chartNumber", "internationalNumber", "active", "geometry", "horizontalDatum", "scale", "name"
 })
 public class ChartVo implements IJsonSerializable {
 
     String chartNumber;
     Integer internationalNumber;
+    boolean active = true;
     GeometryVo geometry;
     String horizontalDatum;
     Integer scale;
@@ -68,6 +69,14 @@ public class ChartVo implements IJsonSerializable {
 
     public void setInternationalNumber(Integer internationalNumber) {
         this.internationalNumber = internationalNumber;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public GeometryVo getGeometry() {

@@ -30,7 +30,9 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -47,14 +49,21 @@ public class ChartService extends BaseService {
      * Searches for charts matching the given term
      *
      * @param term the search term
+     * @param inactive whether to include inactive charts as well as active
      * @param limit the maximum number of results
      * @return the search result
      */
-    public List<Chart> searchCharts(String term, int limit) {
+    public List<Chart> searchCharts(String term, boolean inactive, int limit) {
 
         if (StringUtils.isNotBlank(term)) {
+            Set<Boolean> activeFlag = new HashSet<>();
+            activeFlag.add(Boolean.TRUE);
+            if (inactive) {
+                activeFlag.add(Boolean.FALSE);
+            }
             return em
                     .createNamedQuery("Chart.searchCharts", Chart.class)
+                    .setParameter("active", activeFlag)
                     .setParameter("term", "%" + term + "%")
                     .getResultList()
                     .stream()
@@ -122,6 +131,7 @@ public class ChartService extends BaseService {
 
         // Copy the chart data
         original.setInternationalNumber(chart.getInternationalNumber());
+        original.setActive(chart.isActive());
         original.setHorizontalDatum(chart.getHorizontalDatum());
         original.setName(chart.getName());
         original.setScale(chart.getScale());
@@ -191,10 +201,10 @@ public class ChartService extends BaseService {
 
 
     /**
-     * Returns the list of charts intersecting with the given geometry.
+     * Returns the list of active charts intersecting with the given geometry.
      * The resulting charts will be ordered by scale
      * @param geometry the geometry
-     * @return the list of charts intersecting with the given geometry
+     * @return the list of active charts intersecting with the given geometry
      */
     public List<Chart> getIntersectingCharts(Geometry geometry) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
@@ -210,6 +220,9 @@ public class ChartService extends BaseService {
                 chartRoot.get("geometry"),
                 geometry);
         criteriaHelper.add(geomPredicate);
+
+        // Only search for active charts
+        criteriaHelper.add(cb.equal(chartRoot.get("active"), true));
 
         // Complete the query
         chartQuery.select(chartRoot)
