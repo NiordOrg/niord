@@ -19,7 +19,7 @@
     ${text("mail.greetings.best.regards", mailSender)}
 </p>
 
-<@renderMessageList messages=messages />
+<@renderMessageList messages=messages areaHeadings=false />
 
 </body>
 </html>

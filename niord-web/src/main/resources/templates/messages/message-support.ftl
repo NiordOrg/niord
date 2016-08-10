@@ -339,7 +339,7 @@
     <table class="message-table">
         <!-- Layout row for fixed-layout table -->
         <tr>
-            <#if mapThumbnails>
+            <#if mapThumbnails!true>
                 <td width="140"></td>
                 <td width="*"></td>
             <#else>
@@ -359,7 +359,7 @@
                 </#if>
             </#if>
             <tr>
-                <#if mapThumbnails>
+                <#if mapThumbnails!trueq>
                     <td class="table-image">
                         <img src="/rest/message-map-image/${msg.id}.png" width="120" height="120"/>
                     </td>
