@@ -122,6 +122,11 @@ public class AreaService extends BaseService {
             criteriaHelper.add(cb.isNotNull(areaRoot.get("messageSorting")));
         }
 
+        // Unless the "inactive" search flag is set, only include active areas.
+        if (!params.isInactive()) {
+            criteriaHelper.add(cb.equal(areaRoot.get("active"), true));
+        }
+
         // Complete the query
         areaQuery.select(areaRoot)
                 .distinct(true)
@@ -191,6 +196,7 @@ public class AreaService extends BaseService {
 
         original.setMrn(area.getMrn());
         original.setType(area.getType());
+        original.setActive(area.isActive());
         original.setSiblingSortOrder(area.getSiblingSortOrder());
         original.copyDescsAndRemoveBlanks(area.getDescs());
         original.setGeometry(area.getGeometry());
@@ -200,6 +206,7 @@ public class AreaService extends BaseService {
         original.setOriginAngle(area.getOriginAngle());
 
         original.updateLineage();
+        original.updateActiveFlag();
 
         original = saveEntity(original);
 
@@ -227,6 +234,7 @@ public class AreaService extends BaseService {
 
         // The area now has an ID - Update lineage
         area.updateLineage();
+        area.updateActiveFlag();
         area = saveEntity(area);
 
         em.flush();
@@ -264,6 +272,7 @@ public class AreaService extends BaseService {
 
         // Update all lineages
         updateLineages();
+        area.updateActiveFlag();
 
         // Evict all cached messages for the area subtree
         //area = getByPrimaryKey(Area.class, area.getId());
@@ -402,6 +411,7 @@ public class AreaService extends BaseService {
         AreaSearchParams params = new AreaSearchParams();
         params.parentId(parentId)
                 .language(lang)
+                .inactive(true) // Also search inactive areas
                 .name(name)
                 .maxSize(1);
 

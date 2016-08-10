@@ -35,6 +35,7 @@ public class AreaSearchParams extends PagedSearchParamsVo {
     boolean domain;         // Only include areas for current domain
     boolean geometry;       // Only include areas that define a geometry
     boolean messageSorting; // Only include areas that define a message sorting type
+    boolean inactive;       // Include inactive areas
 
     /**
      * Returns a string representation of the search criteria
@@ -49,6 +50,7 @@ public class AreaSearchParams extends PagedSearchParamsVo {
         if (domain) { desc.add("Domain: true"); }
         if (geometry) { desc.add("Geometry: true"); }
         if (messageSorting) { desc.add("Message-Sorting: true"); }
+        if (inactive) { desc.add("Include inactive: true"); }
 
         return desc.stream().collect(Collectors.joining(", "));
     }
@@ -108,6 +110,15 @@ public class AreaSearchParams extends PagedSearchParamsVo {
 
     public AreaSearchParams messageSorting(boolean messageSorting) {
         this.messageSorting = messageSorting;
+        return this;
+    }
+
+    public boolean isInactive() {
+        return inactive;
+    }
+
+    public AreaSearchParams inactive(boolean inactive) {
+        this.inactive = inactive;
         return this;
     }
 }

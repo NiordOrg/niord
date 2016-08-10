@@ -77,6 +77,7 @@ public class AreaRestService extends AbstractBatchableRestService {
             @QueryParam("domain") @DefaultValue("false") boolean domain,
             @QueryParam("geometry") @DefaultValue("false") boolean geometry,
             @QueryParam("messageSorting") @DefaultValue("false") boolean messageSorting,
+            @QueryParam("inactive") @DefaultValue("false") boolean inactive,
             @QueryParam("limit") int limit) {
 
         AreaSearchParams params = new AreaSearchParams();
@@ -85,6 +86,7 @@ public class AreaRestService extends AbstractBatchableRestService {
                 .domain(domain)
                 .geometry(geometry)
                 .messageSorting(messageSorting)
+                .inactive(inactive)
                 .maxSize(limit);
 
         log.debug(String.format("Searching for areas: %s", params));

@@ -33,7 +33,7 @@ import java.util.List;
 @ApiModel(value = "Area", description = "Hierarchical area model")
 @XmlRootElement(name = "area")
 @XmlType(propOrder = {
-        "mrn", "type", "parent", "geometry", "children", "descs",
+        "mrn", "type", "active", "parent", "geometry", "children", "descs",
         "messageSorting", "originLatitude", "originLongitude", "originAngle"
 })
 @SuppressWarnings("unused")
@@ -45,6 +45,7 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comp
     Integer id;
     String mrn;
     AreaType type;
+    boolean active = true;
     AreaVo parent;
     GeometryVo geometry;
     List<AreaVo> children;
@@ -54,6 +55,7 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comp
     Float originLongitude;  // For CW and CCW message sorting
     Integer originAngle;    // For CW and CCW message sorting
     List<AreaDescVo> descs;
+
 
     /** {@inheritDoc} */
     @Override
@@ -118,6 +120,14 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comp
 
     public void setType(AreaType type) {
         this.type = type;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public AreaVo getParent() {

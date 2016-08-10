@@ -67,6 +67,8 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
 
     AreaType type;
 
+    boolean active = true;
+
     @ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE, CascadeType.DETACH })
     private Area parent;
 
@@ -122,6 +124,7 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
 
         this.mrn = area.getMrn();
         this.type = area.getType();
+        this.active = area.isActive();
         this.id = area.getId();
         this.siblingSortOrder = area.getSiblingSortOrder() == null ? 0 : area.getSiblingSortOrder();
         this.messageSorting = area.getMessageSorting();
@@ -155,6 +158,7 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
         AreaVo area = new AreaVo();
         area.setId(id);
         area.setMrn(mrn);
+        area.setActive(active);
 
         if (compFilter.includeField(DataFilter.DETAILS)) {
             area.setType(type);
@@ -203,6 +207,7 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
         return !Objects.equals(siblingSortOrder, template.getSiblingSortOrder()) ||
                 !Objects.equals(mrn, template.getMrn()) ||
                 !Objects.equals(type, template.getType()) ||
+                !Objects.equals(active, template.isActive()) ||
                 descsChanged(template) ||
                 parentChanged(template) ||
                 geometryChanged(template);
@@ -275,6 +280,29 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
                 ? "/" + id + "/"
                 : getParent().getLineage() + id + "/";
         return !lineage.equals(oldLineage);
+    }
+
+
+    /**
+     * If the area is active, ensure that parent areas are active.
+     * If the area is inactive, ensure that child areas are inactive.
+     */
+    public void updateActiveFlag() {
+        if (active) {
+            // Ensure that parent areas are active
+            if (getParent() != null && !getParent().isActive()) {
+                getParent().setActive(true);
+                getParent().updateActiveFlag();
+            }
+        } else {
+            // Ensure that child areas are inactive
+            getChildren().stream()
+                    .filter(Area::isActive)
+                    .forEach(child -> {
+                child.setActive(false);
+                child.updateActiveFlag();
+            });
+        }
     }
 
 
@@ -362,6 +390,14 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
 
     public void setType(AreaType type) {
         this.type = type;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     @Override

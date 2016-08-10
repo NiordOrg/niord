@@ -241,7 +241,7 @@ angular.module('niord.admin')
             /** Creates a new area */
             $scope.newArea = function() {
                 $scope.action = "add";
-                $scope.editArea = LangService.checkDescs({}, ensureNameField);
+                $scope.editArea = LangService.checkDescs({ active: true }, ensureNameField);
                 if ($scope.area) {
                     $scope.editArea.parent = { id: $scope.area.id };
                 }
