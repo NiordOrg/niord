@@ -581,6 +581,9 @@ public class MessageService extends BaseService {
         message.setStatus(Status.DRAFT);
         message.setGeometry(new FeatureCollection());
         message.setAutoTitle(true);
+        if (mainType == MainType.NM) {
+            message.setOriginalInformation(true);
+        }
         return  message;
     }
 
