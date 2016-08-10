@@ -240,6 +240,27 @@ angular.module('niord.editor')
 
             /** Save the current message **/
             $scope.saveMessage = function () {
+                // Perform a couple of validations
+                var msg = $scope.message;
+                if (!msg.mainType || !msg.type) {
+                    growl.error("Please specify message type before saving", { ttl: 5000 });
+                    return;
+                } else if (!msg.messageSeries) {
+                    growl.error("Please specify message series before saving", {ttl: 5000});
+                    return;
+                } else if (!msg.areas || msg.areas.length == 0) {
+                    growl.error("Please specify message area before saving", {ttl: 5000});
+                    return;
+                }
+                if (msg.dateIntervals) {
+                    for (var x = 0; x < msg.dateIntervals.length; x++) {
+                        var di = msg.dateIntervals[x];
+                        if (di.toDate && !di.fromDate) {
+                            growl.error("Please specify date interval from-date before saving", {ttl: 5000});
+                            return;
+                        }
+                    }
+                }
 
                 // Prevent double-submissions
                 $scope.messageSaving = true;
