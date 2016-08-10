@@ -359,7 +359,7 @@
                 </#if>
             </#if>
             <tr>
-                <#if mapThumbnails!trueq>
+                <#if mapThumbnails!true>
                     <td class="table-image">
                         <img src="/rest/message-map-image/${msg.id}.png" width="120" height="120"/>
                     </td>
