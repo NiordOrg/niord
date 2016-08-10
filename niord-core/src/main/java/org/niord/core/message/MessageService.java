@@ -1076,7 +1076,7 @@ public class MessageService extends BaseService {
             java.nio.file.Path srcPath = repositoryService.getRepoRoot().resolve(message.getRepoPath());
             java.nio.file.Path dstPath = repositoryService.getRepoRoot().resolve(editRepoPath);
             if (Files.exists(srcPath)) {
-                log.debug("Copy message folder " + srcPath + " to temporary message folder " + dstPath);
+                log.info("Copy message folder " + srcPath + " to temporary message folder " + dstPath);
                 FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
             }
         }
@@ -1093,7 +1093,7 @@ public class MessageService extends BaseService {
             java.nio.file.Path srcPath = repositoryService.getRepoRoot().resolve(message.getEditRepoPath());
             java.nio.file.Path dstPath = repositoryService.getRepoRoot().resolve(message.getRepoPath());
             if (Files.exists(srcPath)) {
-                log.debug("Syncing temporary message folder " + srcPath + " with message folder " + dstPath);
+                log.info("Syncing temporary message folder " + srcPath + " with message folder " + dstPath);
                 FileUtils.deleteDirectory(dstPath.toFile());
                 FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
             }
