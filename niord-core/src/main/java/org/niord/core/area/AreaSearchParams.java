@@ -16,6 +16,7 @@
 package org.niord.core.area;
 
 import org.niord.model.PagedSearchParamsVo;
+import org.niord.model.vo.AreaType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,7 @@ public class AreaSearchParams extends PagedSearchParamsVo {
     Integer parentId;
     String language;
     String name;
+    AreaType type;
     boolean domain;         // Only include areas for current domain
     boolean geometry;       // Only include areas that define a geometry
     boolean messageSorting; // Only include areas that define a message sorting type
@@ -47,6 +49,7 @@ public class AreaSearchParams extends PagedSearchParamsVo {
         if (parentId != null) { desc.add(String.format("Parent: %s", parentId)); }
         if (isNotBlank(language)) { desc.add(String.format("Language: %s", language)); }
         if (isNotBlank(name)) { desc.add(String.format("Name: '%s'", name)); }
+        if (type != null) { desc.add(String.format("Type: %s", type)); }
         if (domain) { desc.add("Domain: true"); }
         if (geometry) { desc.add("Geometry: true"); }
         if (messageSorting) { desc.add("Message-Sorting: true"); }
@@ -83,6 +86,15 @@ public class AreaSearchParams extends PagedSearchParamsVo {
 
     public AreaSearchParams name(String name) {
         this.name = name;
+        return this;
+    }
+
+    public AreaType getType() {
+        return type;
+    }
+
+    public AreaSearchParams setType(AreaType type) {
+        this.type = type;
         return this;
     }
 

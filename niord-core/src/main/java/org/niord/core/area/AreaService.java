@@ -112,6 +112,11 @@ public class AreaService extends BaseService {
             }
         }
 
+        // Optionally, search by type
+        if (params.getType() != null) {
+            criteriaHelper.add(cb.equal(areaRoot.get("type"), params.getType()));
+        }
+
         // Optionally, require that the area has an associated geometry
         if (params.isGeometry()) {
             criteriaHelper.add(cb.isNotNull(areaRoot.get("geometry")));
