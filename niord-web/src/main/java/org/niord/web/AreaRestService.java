@@ -15,6 +15,7 @@
  */
 package org.niord.web;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
@@ -36,6 +37,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -79,6 +81,10 @@ public class AreaRestService extends AbstractBatchableRestService {
             @QueryParam("messageSorting") @DefaultValue("false") boolean messageSorting,
             @QueryParam("inactive") @DefaultValue("false") boolean inactive,
             @QueryParam("limit") int limit) {
+
+        if (StringUtils.isBlank(name)) {
+            return Collections.emptyList();
+        }
 
         AreaSearchParams params = new AreaSearchParams();
         params.language(lang)

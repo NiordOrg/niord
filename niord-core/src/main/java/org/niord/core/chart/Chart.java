@@ -31,6 +31,8 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Represents a chart
@@ -59,6 +61,14 @@ import java.util.Objects;
 })
 @SuppressWarnings("unused")
 public class Chart extends VersionedEntity<Integer> {
+
+    public static Pattern CHART_FORMAT = Pattern.compile(
+                "^" +
+                "(?<chartNumber>\\w+)" +
+                "([ ]*\\(INT (?<intNumber>\\d+)\\))?" +
+                "$",
+            Pattern.CASE_INSENSITIVE
+    );
 
     @Column(unique = true, nullable = false)
     String chartNumber;
@@ -202,6 +212,29 @@ public class Chart extends VersionedEntity<Integer> {
             sortKey += 1000 - indexChartNumber;
         }
         return -sortKey;
+    }
+
+    /**
+     * Parses the chart spec into a chart template, or null if not valid
+     * @param chartSpec the chart spec to parse
+     * @return the parsed chart
+     */
+    public static Chart parse(String chartSpec) {
+        if (StringUtils.isNotBlank(chartSpec)) {
+            Matcher m = Chart.CHART_FORMAT.matcher(chartSpec.trim());
+            if (m.find()) {
+                try {
+                    Chart chart = new Chart();
+                    chart.setChartNumber(m.group("chartNumber"));
+                    if (StringUtils.isNumeric(m.group("intNumber"))) {
+                        chart.setInternationalNumber(Integer.valueOf(m.group("intNumber")));
+                    }
+                    return chart;
+                } catch (Exception ignored) {
+                }
+            }
+        }
+        return null;
     }
 
     /*************************/

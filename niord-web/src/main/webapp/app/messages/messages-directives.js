@@ -132,7 +132,54 @@ angular.module('niord.messages')
         };
     }])
 
-        
+
+    /****************************************************************
+     * The message-tag-field directive supports selecting a single message tag
+     ****************************************************************/
+    .directive('messageTagField', ['$http', 'MessageService', function($http, MessageService) {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: '/app/messages/message-tag-field.html',
+            scope: {
+                tagData: "="
+            },
+            link: function(scope) {
+
+                scope.tagData = scope.tagData || { tag: undefined };
+
+                /** Refreshes the tags search result */
+                scope.tags = [];
+                scope.refreshTags = function(name) {
+                    if (!name || name.length == 0) {
+                        return [];
+                    }
+                    return $http.get(
+                        '/rest/tags/search?name=' + encodeURIComponent(name) + '&limit=10'
+                    ).then(function(response) {
+                        scope.tags = response.data;
+                    });
+                };
+
+
+                /** Opens the tags dialog */
+                scope.openTagsDialog = function () {
+                    MessageService.messageTagsDialog().result
+                        .then(function (tag) {
+                            scope.tagData.tag = tag;
+                        });
+                };
+
+
+                /** Removes the current tag selection */
+                scope.removeTag = function () {
+                    scope.tagData.tag = undefined;
+                };
+            }
+        }
+    }])
+
+
     /****************************************************************
      * The map-message-list-layer directive supports drawing a list of messages on a map layer
      ****************************************************************/

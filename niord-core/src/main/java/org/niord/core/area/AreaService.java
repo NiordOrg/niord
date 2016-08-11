@@ -73,11 +73,6 @@ public class AreaService extends BaseService {
     @SuppressWarnings("all")
     public List<Area> searchAreas(AreaSearchParams params) {
 
-        // Sanity check
-        if (StringUtils.isBlank(params.getName())) {
-            return Collections.emptyList();
-        }
-
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Area> areaQuery = cb.createQuery(Area.class);
 
@@ -413,6 +408,10 @@ public class AreaService extends BaseService {
      * @return The matching area, or null if not found
      */
     public Area findByName(String name, String lang, Integer parentId) {
+        if (StringUtils.isBlank(name)) {
+            return null;
+        }
+
         AreaSearchParams params = new AreaSearchParams();
         params.parentId(parentId)
                 .language(lang)

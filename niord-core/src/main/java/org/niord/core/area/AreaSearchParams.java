@@ -93,7 +93,7 @@ public class AreaSearchParams extends PagedSearchParamsVo {
         return type;
     }
 
-    public AreaSearchParams setType(AreaType type) {
+    public AreaSearchParams type(AreaType type) {
         this.type = type;
         return this;
     }
