@@ -13,17 +13,26 @@ table.message-table tr, table.message-table tr td {
     page-break-inside: avoid;
 }
 
+td.table-header {
+    border-bottom: 0.05em solid #8f2f7b;
+}
+
+td.table-header h4 {
+    color: #8f2f7b;
+    font-size: 16px;
+}
+
 td.table-image {
     vertical-align: top;
     padding: 10px;
-    border-top: 0.05em dotted gray;
+    border-bottom: 0.05em dotted gray;
 }
 
 td.table-item {
     vertical-align: top;
     width: 100%;
     padding: 10px;
-    border-top: 0.05em dotted gray;
+    border-bottom: 0.05em dotted gray;
 }
 
 .field-name {

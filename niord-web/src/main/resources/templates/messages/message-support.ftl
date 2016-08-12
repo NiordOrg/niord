@@ -356,7 +356,7 @@
                 <#if areaHeadings && area?? && area.id != areaHeadingId>
                     <#assign areaHeadingId=area.id />
                     <tr>
-                        <td colspan="2"><h4 style="color: #8f2f7b; font-size: 16px;" id="${prefix}${areaHeadingId?c}"><@areaLineage area=areaHeading(area) /></h4></td>
+                        <td colspan="2" class="table-header"><h4 id="${prefix}${areaHeadingId?c}"><@areaLineage area=areaHeading(area) /></h4></td>
                     </tr>
                 </#if>
             </#if>
