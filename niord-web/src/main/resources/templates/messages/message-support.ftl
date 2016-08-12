@@ -175,7 +175,7 @@
 
     <#if msg.shortId?has_content>
         <div>
-            <strong>${msg.shortId}</strong>
+            <span class="label-message-id">${msg.shortId}</span>
         </div>
     </#if>
 
