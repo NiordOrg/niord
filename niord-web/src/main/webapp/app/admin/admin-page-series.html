@@ -38,17 +38,21 @@
                             <label class="col-sm-4">Number Sequence Type</label>
                             <div class="btn-group col-sm-8">
                                 <label class="btn btn-default btn-sm" ng-model="series.numberSequenceType"
-                                       uib-btn-radio="'YEARLY'">
+                                       uib-btn-radio="'YEARLY'" ng-change="updateMrnFormat(true)">
                                     Yearly
                                 </label>
                                 <label class="btn btn-default btn-sm" ng-model="series.numberSequenceType"
-                                       uib-btn-radio="'CONTINUOUS'">
+                                       uib-btn-radio="'CONTINUOUS'" ng-change="updateMrnFormat(true)">
                                     Continuous
+                                </label>
+                                <label class="btn btn-default btn-sm" ng-model="series.numberSequenceType"
+                                       uib-btn-radio="'MANUAL'" ng-change="updateMrnFormat(true)">
+                                    Manual
                                 </label>
                             </div>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group" ng-if="series.numberSequenceType != 'MANUAL'">
                             <label class="col-sm-4">MRN Format</label>
                             <div class="col-sm-8">
                                 <div class="input-group">
@@ -77,7 +81,7 @@
                             </div>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group" ng-if="series.numberSequenceType != 'MANUAL'">
                             <label class="col-sm-4">Short Format</label>
                             <div class="col-sm-8">
                                 <div class="input-group">
@@ -106,7 +110,7 @@
                         </div>
 
 
-                        <div class="form-group" ng-if="editMode == 'edit'">
+                        <div class="form-group" ng-if="series.numberSequenceType != 'MANUAL' && editMode == 'edit'">
                             <label class="col-sm-4">Next number ({{currentYear}})</label>
                             <div class="col-sm-8">
                                 {{series.nextMessageNumber}}&nbsp;
@@ -170,7 +174,7 @@
                             <td>{{series.mrnFormat}}</td>
                             <td>{{series.shortFormat}}</td>
                             <td>{{series.numberSequenceType | lowercase}}</td>
-                            <td>{{series.nextMessageNumber}}</td>
+                            <td><span ng-if="series.numberSequenceType != 'MANUAL'">{{series.nextMessageNumber}}</span></td>
                             <td nowrap align="right">
                                 <a href ng-click="editMessageSeries(series);" title="Edit Message Series"><i class="glyphicon glyphicon-pencil"></i></a>
                                 &nbsp;

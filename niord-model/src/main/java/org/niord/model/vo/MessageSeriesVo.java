@@ -37,7 +37,10 @@ public class MessageSeriesVo implements IJsonSerializable {
         YEARLY,
 
         /** Associated number sequence will never reset **/
-        CONTINUOUS
+        CONTINUOUS,
+
+        /** The user manually specifies the short ID and MRN **/
+        MANUAL
     }
 
     String seriesId;

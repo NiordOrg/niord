@@ -306,6 +306,16 @@ public class MessageSeriesService extends BaseService {
         if (messageSeries == null) {
             throw new IllegalArgumentException("Message series must be specified");
         }
+
+        // If the short ID and MRN is assigned manually, check validity
+        if (messageSeries.getNumberSequenceType() == MessageSeriesVo.NumberSequenceType.MANUAL) {
+            if (StringUtils.isBlank(message.getMrn())) {
+                throw new IllegalArgumentException("Message must be assigned an MRN");
+            }
+            // The manual assignment is valid ... do nothing further
+            return;
+        }
+
         if (publishDate == null) {
             throw new IllegalArgumentException("Publish date must be specified");
         }

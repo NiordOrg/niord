@@ -55,7 +55,6 @@ public class MessageSeries extends VersionedEntity<Integer> {
     @Enumerated(EnumType.STRING)
     MainType mainType;
 
-    @NotNull
     String mrnFormat;
 
     String shortFormat;

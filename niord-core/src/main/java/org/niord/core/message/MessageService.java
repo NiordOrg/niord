@@ -169,7 +169,7 @@ public class MessageService extends BaseService {
      * Returns the messages with the given short ID.
      *
      * @param shortId the short ID of the messages
-     * @return the messages with the given MRN
+     * @return the messages with the given short ID
      */
     public List<Message> findByShortId(String shortId) {
         return em.createNamedQuery("Message.findByShortId", Message.class)

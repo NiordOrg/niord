@@ -296,12 +296,26 @@ angular.module('niord.editor')
             };
 
 
+            /** Returns if the message short ID and MRN are editable **/
+            $scope.mrnAndShortIdEditable = function () {
+                var msg = $scope.message;
+                if (msg.messageSeries && $rootScope.domain.messageSeries) {
+                    var series = $.grep($rootScope.domain.messageSeries, function (ms) {
+                        return ms.seriesId == msg.messageSeries.seriesId;
+                    });
+                    return series != null && series.length > 0 && series[0].numberSequenceType == 'MANUAL';
+                }
+                return false;
+            };
+
+
             /** Reference DnD configuration **/
             $scope.referencesSortableCfg = {
                 group: 'reference',
                 handle: '.move-btn',
                 onEnd: $scope.setDirty
             };
+
 
             /** Called when a message reference is clicked **/
             $scope.referenceClicked = function(messageId) {

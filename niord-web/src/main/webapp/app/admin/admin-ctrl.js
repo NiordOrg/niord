@@ -556,14 +556,21 @@ angular.module('niord.admin')
 
             /** Update the MRN prefix and suffix of the message series being edited */
             $scope.updateMrnFormat = function (updateSuffix) {
-                $scope.series.mrnPrefix = $scope.series.mainType == 'NW'
-                    ? $rootScope.nwMrnPrefix
-                    : $rootScope.nmMrnPrefix;
-                if (updateSuffix) {
-                    $scope.series.mrnSuffix = '';
-                    if ($scope.series.mrnFormat &&
-                        $scope.series.mrnFormat.substring(0, $scope.series.mrnPrefix.length) === $scope.series.mrnPrefix) {
-                        $scope.series.mrnSuffix = $scope.series.mrnFormat.substring($scope.series.mrnPrefix.length);
+                if ($scope.series.numberSequenceType == 'MANUAL') {
+                    delete $scope.series.shortFormat;
+                    delete $scope.series.mrnFormat;
+                    delete $scope.series.mrnPrefix;
+                    delete $scope.series.mrnSuffix;
+                } else {
+                    $scope.series.mrnPrefix = $scope.series.mainType == 'NW'
+                        ? $rootScope.nwMrnPrefix
+                        : $rootScope.nmMrnPrefix;
+                    if (updateSuffix) {
+                        $scope.series.mrnSuffix = '';
+                        if ($scope.series.mrnFormat &&
+                            $scope.series.mrnFormat.substring(0, $scope.series.mrnPrefix.length) == $scope.series.mrnPrefix) {
+                            $scope.series.mrnSuffix = $scope.series.mrnFormat.substring($scope.series.mrnPrefix.length);
+                        }
                     }
                 }
             };
