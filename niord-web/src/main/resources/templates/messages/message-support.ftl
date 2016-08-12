@@ -222,22 +222,24 @@
 
 
         <!-- Time line -->
-        <tr>
-            <td class="field-name">${text("msg.field.time")}</td>
-            <td class="field-value">
-                <#if msg.descs?has_content && msg.descs[0].time?has_content>
-                    <div><@txtToHtml text=msg.descs[0].time /></div>
-                <#elseif msg.dateIntervals?has_content>
-                    <#list msg.dateIntervals as dateInterval>
-                        <div>
-                            <@formatDateInterval dateInterval=dateInterval />
-                        </div>
-                    </#list>
-                <#else>
-                    <@formatDateInterval />
-                </#if>
-            </td>
-        </tr>
+        <#if  (msg.descs?has_content && msg.descs[0].time?has_content) || msg.dateIntervals?has_content>
+            <tr>
+                <td class="field-name">${text("msg.field.time")}</td>
+                <td class="field-value">
+                    <#if msg.descs?has_content && msg.descs[0].time?has_content>
+                        <div><@txtToHtml text=msg.descs[0].time /></div>
+                    <#elseif msg.dateIntervals?has_content>
+                        <#list msg.dateIntervals as dateInterval>
+                            <div>
+                                <@formatDateInterval dateInterval=dateInterval />
+                            </div>
+                        </#list>
+                    <#else>
+                        <@formatDateInterval />
+                    </#if>
+                </td>
+            </tr>
+        </#if>
 
 
         <!-- Geometry line -->
