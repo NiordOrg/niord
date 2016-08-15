@@ -1,7 +1,7 @@
 <job id="area-import" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
-    <step id="setupStep" allow-start-if-complete="true" next="importAreaStep">
-        <batchlet ref="jobStartBatchlet"/>
-    </step>
+    <listeners>
+        <listener ref="batchJobListener"/>
+    </listeners>
     <step id="importAreaStep">
         <chunk item-count="10">
             <reader ref="batchAreaImportReader" />

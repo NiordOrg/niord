@@ -25,8 +25,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.FileHandler;
-import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -70,6 +70,16 @@ public abstract class AbstractItemHandler implements ItemReader, ItemProcessor, 
 
         log = Logger.getLogger(getClass().getSimpleName());
 
+
+        // Store the log in the transient user data, so that it can be properly closed after the batch job is complete.
+        // This is handler by the BatchJobListener
+        @SuppressWarnings("unchecked")
+        Map<String, Logger> logs = (Map<String, java.util.logging.Logger>)jobContext.getTransientUserData();
+        if (logs != null) {
+            logs.put(getClass().getSimpleName(), log);
+        }
+
+
         try {
             Path batchJobFolder = batchService.computeBatchJobPath(job.computeBatchJobFolderPath());
             String file = batchJobFolder.resolve(getClass().getSimpleName() + "Log.txt")
@@ -87,6 +97,7 @@ public abstract class AbstractItemHandler implements ItemReader, ItemProcessor, 
 
         return log;
     }
+
 
     /**
      * Updates progress (0-100) for the current batch job.
@@ -113,14 +124,6 @@ public abstract class AbstractItemHandler implements ItemReader, ItemProcessor, 
     /** {@inheritDoc} */
     @Override
     public void close() throws Exception {
-        if (log != null) {
-            try {
-                for (Handler handler : log.getHandlers()) {
-                    handler.close();
-                }
-            } catch (Exception ignored) {
-            }
-        }
     }
 
     /** {@inheritDoc} */

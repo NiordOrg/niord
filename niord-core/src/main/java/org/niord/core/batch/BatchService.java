@@ -45,6 +45,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -124,7 +125,7 @@ public class BatchService extends BaseService {
 
         // Note to self:
         // There are some transaction issues with storing the BatchData in the current transaction,
-        // so, we leave it to the JobStartBatchlet batch step.
+        // so, we leave it to the BatchJobListener.
 
         // Launch the batch job
         Properties props = new Properties();
@@ -405,9 +406,11 @@ public class BatchService extends BaseService {
         }
 
         int skipLineNo = fromLineNo == null ? 0 : fromLineNo;
-        return Files.lines(path)
-                .skip(skipLineNo)
-                .collect(Collectors.joining("\n"));
+        try (Stream<String> logStream = Files.lines(path)) {
+            return logStream
+                    .skip(skipLineNo)
+                    .collect(Collectors.joining("\n"));
+        }
     }
 
     /****************************/
