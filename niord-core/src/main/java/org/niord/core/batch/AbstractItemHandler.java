@@ -26,6 +26,7 @@ import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.logging.FileHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -112,7 +113,14 @@ public abstract class AbstractItemHandler implements ItemReader, ItemProcessor, 
     /** {@inheritDoc} */
     @Override
     public void close() throws Exception {
-
+        if (log != null) {
+            try {
+                for (Handler handler : log.getHandlers()) {
+                    handler.close();
+                }
+            } catch (Exception ignored) {
+            }
+        }
     }
 
     /** {@inheritDoc} */
