@@ -30,7 +30,7 @@
                              ng-if="message.descs[0].time || (message.dateIntervals && message.dateIntervals.length > 0)">
                             <small><i class="glyphicon glyphicon-time"></i> <render-message-dates msg="message"/></small>
                         </div>
-                        <span ng-bind-html="message.descs[0].description"/>
+                        <span ng-bind-html="message.descs[0].description | toTrusted"/>
                     </div>
                 </div>
                 <span class="select-btn" ng-click="toggleSelectMessage(message)" ng-class="{'message-selected' : isSelected(message)}">
