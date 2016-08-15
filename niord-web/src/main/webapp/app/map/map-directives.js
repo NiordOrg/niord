@@ -173,6 +173,8 @@ angular.module('niord.map')
      * Used as a child-directive to ol-map and will convert the map to a cesium map.
      *
      * See: http://openlayers.org/ol3-cesium/
+     *
+     * NB: Cesium support has been removed, as the cesium map did not work properly when navigating to and fro the map.
      */
     .directive('cesiumMap', [function () {
         return {

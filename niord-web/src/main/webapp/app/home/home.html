@@ -2,9 +2,7 @@
 <div class="home-content" ng-controller="HomeCtrl" ng-init="init()">
 
     <ol-map class="home-map" zoom="3">
-        <!--cesium-map></cesium-map-->
         <map-tile-layer name="Sat" visible="true" source="OSM"></map-tile-layer>
-        <!--static-image-layer name="old map" visible="true" url="'/img/frontpage.jpg'" extent="[ 06.80, 53.10, 20.40, 58.80 ]"></static-image-layer-->
         <map-message-list-layer name="Messages" visible="true" layer-switcher="false"
                                 message-list="messageList" show-outline="true" show-general="true">
         </map-message-list-layer>
