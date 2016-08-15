@@ -31,6 +31,13 @@ import java.util.logging.Handler;
 /**
  * A listener used for setting up and removing batch job log files.
  * The listener should be added to all Niord batch jobs.
+ * <p>
+ * Configure using:
+ * <pre>
+ *  &lt;listeners&gt;
+ *      &lt;listener ref="batchJobListener"/&gt;
+ *  &lt;/listeners&gt;
+ * </pre>
  */
 @Named
 public class BatchJobListener extends AbstractJobListener {
