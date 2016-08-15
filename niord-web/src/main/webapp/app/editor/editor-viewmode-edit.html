@@ -424,8 +424,7 @@
             <editor-field edit-mode="editMode" field-id="charts" field-title="msg.field.charts">
 
                 <editor-field-value-viewer>
-                    <span ng-repeat="chart in message.charts"><span ng-if="$index > 0">,</span>
-                        {{chart.chartNumber}}<span ng-if="chart.internationalNumber"> (INT {{chart.internationalNumber}})</span></span>
+                    <span render-charts="message.charts"></span>
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12 col-md-10">
