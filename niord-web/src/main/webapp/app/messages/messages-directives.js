@@ -427,7 +427,7 @@ angular.module('niord.messages')
                             // Update the tooltip
                             info.css({
                                 left: pixel[0] + 'px',
-                                top: (pixel[1] + 15) + 'px',
+                                top: (pixel[1] + 15) + 'px'
                             });
                             info.tooltip('hide')
                                 .attr('data-original-title', html)
@@ -910,7 +910,7 @@ angular.module('niord.messages')
                     size:           "@",
                     dismissAction:  "&"
                 },
-                link: function(scope, element, attrs) {
+                link: function(scope, element) {
 
                     if (scope.style) {
                         element.attr('style', scope.style);
