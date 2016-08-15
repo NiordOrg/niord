@@ -21,13 +21,14 @@
                     <div class="grid-map-image-header">
                         <div ng-if="message.shortId"><span class="label label-message-id">{{message.shortId}}</span></div>
                         <span ng-if="message.descs[0].title">{{message.descs[0].title}}</span>
-                    <span ng-if="message.descs[0].lang != language" style="color: darkgray;">
-                        <flag lang="message.descs[0].lang" style="height: 10px;"></flag>
-                    </span>
+                        <span ng-if="message.descs[0].lang != language" style="color: darkgray;">
+                            <flag lang="message.descs[0].lang" style="height: 10px;"></flag>
+                        </span>
                     </div>
                     <div class="grid-map-image-details">
-                        <div class="grid-map-image-date">
-                            <small><render-message-dates msg="message"/></small>
+                        <div class="grid-map-image-date"
+                             ng-if="message.descs[0].time || (message.dateIntervals && message.dateIntervals.length > 0)">
+                            <small><i class="glyphicon glyphicon-time"></i> <render-message-dates msg="message"/></small>
                         </div>
                         <span ng-bind-html="message.descs[0].description"/>
                     </div>

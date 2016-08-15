@@ -56,8 +56,6 @@ angular.module('niord.messages')
                         for (var x = 0; x < scope.msg.dateIntervals.length; x++) {
                             time += DateIntervalService.translateDateInterval(lang, scope.msg.dateIntervals[x]) + "<br/>";
                         }
-                    } else {
-                        time = DateIntervalService.translateDateInterval(lang, null);
                     }
                     element.html(time);
                 };
