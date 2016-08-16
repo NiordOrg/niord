@@ -17,7 +17,7 @@ package org.niord.core.category;
 
 import org.niord.core.model.DescEntity;
 import org.niord.model.ILocalizedDesc;
-import org.niord.model.vo.CategoryDescVo;
+import org.niord.model.message.CategoryDescVo;
 
 import javax.persistence.Cacheable;
 import javax.persistence.Entity;

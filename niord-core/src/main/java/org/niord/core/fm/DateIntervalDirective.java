@@ -23,7 +23,7 @@ import freemarker.template.TemplateDirectiveBody;
 import freemarker.template.TemplateDirectiveModel;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateModel;
-import org.niord.model.vo.DateIntervalVo;
+import org.niord.model.message.DateIntervalVo;
 
 import java.io.IOException;
 import java.text.DateFormat;

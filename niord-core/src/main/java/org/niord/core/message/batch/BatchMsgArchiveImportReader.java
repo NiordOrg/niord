@@ -21,8 +21,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.repo.RepositoryService;
-import org.niord.core.message.vo.PagedSearchResultVo;
-import org.niord.model.vo.MessageVo;
+import org.niord.model.search.PagedSearchResultVo;
+import org.niord.model.message.MessageVo;
 
 import javax.inject.Inject;
 import javax.inject.Named;

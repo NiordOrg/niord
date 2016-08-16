@@ -46,7 +46,7 @@ import org.niord.core.service.BaseService;
 import org.niord.core.settings.annotation.Setting;
 import org.niord.core.util.LuceneUtils;
 import org.niord.core.util.TextUtils;
-import org.niord.model.vo.Status;
+import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
 import javax.annotation.PostConstruct;

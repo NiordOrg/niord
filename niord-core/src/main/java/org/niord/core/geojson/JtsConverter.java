@@ -15,18 +15,14 @@ import com.vividsolutions.jts.geom.PrecisionModel;
 import com.vividsolutions.jts.io.ParseException;
 import com.vividsolutions.jts.io.WKTReader;
 import org.apache.commons.lang.StringUtils;
-import org.niord.model.vo.geojson.GeoJsonVo;
-import org.niord.model.vo.geojson.GeometryCollectionVo;
-import org.niord.model.vo.geojson.GeometryVo;
-import org.niord.model.vo.geojson.LineStringVo;
-import org.niord.model.vo.geojson.MultiLineStringVo;
-import org.niord.model.vo.geojson.MultiPointVo;
-import org.niord.model.vo.geojson.MultiPolygonVo;
-import org.niord.model.vo.geojson.PointVo;
-import org.niord.model.vo.geojson.PolygonVo;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import org.niord.model.message.geojson.GeometryCollectionVo;
+import org.niord.model.message.geojson.GeometryVo;
+import org.niord.model.message.geojson.LineStringVo;
+import org.niord.model.message.geojson.MultiLineStringVo;
+import org.niord.model.message.geojson.MultiPointVo;
+import org.niord.model.message.geojson.MultiPolygonVo;
+import org.niord.model.message.geojson.PointVo;
+import org.niord.model.message.geojson.PolygonVo;
 
 /**
  * Utility functions for converting between the Niord and JTS GeoJSON representations

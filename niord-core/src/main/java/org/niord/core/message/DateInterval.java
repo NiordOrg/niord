@@ -17,7 +17,7 @@ package org.niord.core.message;
 
 import org.niord.core.model.BaseEntity;
 import org.niord.core.model.IndexedEntity;
-import org.niord.model.vo.DateIntervalVo;
+import org.niord.model.message.DateIntervalVo;
 
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;

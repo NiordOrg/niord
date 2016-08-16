@@ -16,7 +16,7 @@
 package org.niord.core.message.vo;
 
 import org.apache.commons.lang.StringUtils;
-import org.niord.model.vo.MessageVo;
+import org.niord.model.message.MessageVo;
 
 /**
  * Extends the {@linkplain MessageVo} class with various message attributes only relevant

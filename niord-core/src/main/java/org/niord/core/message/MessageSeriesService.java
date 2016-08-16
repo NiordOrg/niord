@@ -24,8 +24,8 @@ import org.niord.core.sequence.Sequence;
 import org.niord.core.sequence.SequenceService;
 import org.niord.core.service.BaseService;
 import org.niord.core.util.TimeUtils;
-import org.niord.model.vo.MessageSeriesVo;
-import org.niord.model.vo.Type;
+import org.niord.model.message.MessageSeriesVo;
+import org.niord.model.message.Type;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;

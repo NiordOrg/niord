@@ -18,7 +18,7 @@ package org.niord.core.category.batch;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.util.JsonUtils;
-import org.niord.model.vo.CategoryVo;
+import org.niord.model.message.CategoryVo;
 
 import javax.inject.Named;
 import java.io.Serializable;

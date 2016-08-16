@@ -21,8 +21,8 @@ import io.swagger.annotations.ApiParam;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.niord.core.NiordApp;
-import org.niord.model.vo.MainType;
-import org.niord.model.vo.MessageVo;
+import org.niord.model.message.MainType;
+import org.niord.model.message.MessageVo;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;

@@ -17,7 +17,7 @@ package org.niord.core.message;
 
 import org.niord.core.conf.TextResource;
 import org.niord.core.service.BaseService;
-import org.niord.model.vo.Status;
+import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
 import javax.ejb.Schedule;

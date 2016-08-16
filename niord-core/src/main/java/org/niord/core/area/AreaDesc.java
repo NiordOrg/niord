@@ -17,7 +17,7 @@ package org.niord.core.area;
 
 import org.niord.core.model.DescEntity;
 import org.niord.model.ILocalizedDesc;
-import org.niord.model.vo.AreaDescVo;
+import org.niord.model.message.AreaDescVo;
 
 import javax.persistence.Cacheable;
 import javax.persistence.Entity;

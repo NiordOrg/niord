@@ -16,7 +16,7 @@
 package org.niord.core.message.vo;
 
 import org.niord.model.IJsonSerializable;
-import org.niord.model.vo.Status;
+import org.niord.model.message.Status;
 
 import java.util.Date;
 

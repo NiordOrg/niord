@@ -1,7 +1,7 @@
 package org.niord.core.geojson;
 
 import org.niord.core.service.BaseService;
-import org.niord.model.vo.geojson.FeatureCollectionVo;
+import org.niord.model.message.geojson.FeatureCollectionVo;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;

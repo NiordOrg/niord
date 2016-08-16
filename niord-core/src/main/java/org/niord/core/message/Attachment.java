@@ -19,9 +19,9 @@ import org.niord.core.model.BaseEntity;
 import org.niord.core.model.IndexedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
-import org.niord.model.vo.AttachmentDescVo;
-import org.niord.model.vo.AttachmentVo;
-import org.niord.model.vo.AttachmentVo.AttachmentDisplayType;
+import org.niord.model.message.AttachmentDescVo;
+import org.niord.model.message.AttachmentVo;
+import org.niord.model.message.AttachmentVo.AttachmentDisplayType;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;

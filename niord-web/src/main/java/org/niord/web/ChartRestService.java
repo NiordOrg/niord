@@ -23,9 +23,9 @@ import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
 import org.niord.core.geojson.JtsConverter;
-import org.niord.model.vo.ChartVo;
-import org.niord.model.vo.geojson.FeatureCollectionVo;
-import org.niord.model.vo.geojson.GeometryVo;
+import org.niord.model.message.ChartVo;
+import org.niord.model.message.geojson.FeatureCollectionVo;
+import org.niord.model.message.geojson.GeometryVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;

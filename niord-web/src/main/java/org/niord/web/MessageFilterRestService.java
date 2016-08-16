@@ -5,7 +5,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.message.MessageFilter;
 import org.niord.core.message.MessageFilterService;
-import org.niord.model.vo.MessageFilterVo;
+import org.niord.model.message.MessageFilterVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.RolesAllowed;

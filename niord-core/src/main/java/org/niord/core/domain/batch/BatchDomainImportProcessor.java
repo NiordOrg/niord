@@ -18,7 +18,7 @@ package org.niord.core.domain.batch;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
-import org.niord.model.vo.DomainVo;
+import org.niord.model.message.DomainVo;
 
 import javax.inject.Inject;
 import javax.inject.Named;

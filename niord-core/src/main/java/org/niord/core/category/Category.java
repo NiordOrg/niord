@@ -18,7 +18,7 @@ package org.niord.core.category;
 import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
-import org.niord.model.vo.CategoryVo;
+import org.niord.model.message.CategoryVo;
 
 import javax.persistence.Cacheable;
 import javax.persistence.CascadeType;

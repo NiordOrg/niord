@@ -25,10 +25,10 @@ import org.niord.core.message.vo.EditableMessageVo;
 import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
-import org.niord.model.vo.MainType;
-import org.niord.model.vo.MessageVo;
-import org.niord.model.vo.Status;
-import org.niord.model.vo.Type;
+import org.niord.model.message.MainType;
+import org.niord.model.message.MessageVo;
+import org.niord.model.message.Status;
+import org.niord.model.message.Type;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;

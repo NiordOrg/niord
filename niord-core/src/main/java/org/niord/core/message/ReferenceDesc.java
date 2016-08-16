@@ -17,8 +17,8 @@ package org.niord.core.message;
 
 import org.niord.core.model.DescEntity;
 import org.niord.model.ILocalizedDesc;
-import org.niord.model.vo.AttachmentDescVo;
-import org.niord.model.vo.ReferenceDescVo;
+import org.niord.model.message.AttachmentDescVo;
+import org.niord.model.message.ReferenceDescVo;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;

@@ -18,7 +18,7 @@ package org.niord.core.area.batch;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.util.JsonUtils;
-import org.niord.model.vo.AreaVo;
+import org.niord.model.message.AreaVo;
 
 import javax.inject.Named;
 import java.io.Serializable;

@@ -22,9 +22,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.niord.core.conf.TextResource;
 import org.niord.core.repo.RepositoryService;
-import org.niord.core.message.vo.PagedSearchResultVo;
-import org.niord.model.vo.AttachmentVo;
-import org.niord.model.vo.MessageVo;
+import org.niord.model.search.PagedSearchResultVo;
+import org.niord.model.message.AttachmentVo;
+import org.niord.model.message.MessageVo;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;

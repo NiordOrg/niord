@@ -20,7 +20,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageSeriesService;
-import org.niord.model.vo.MessageSeriesVo;
+import org.niord.model.message.MessageSeriesVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;

@@ -15,8 +15,8 @@
  */
 package org.niord.web.api;
 
-import org.niord.model.vo.MainType;
-import org.niord.model.vo.MessageVo;
+import org.niord.model.message.MainType;
+import org.niord.model.message.MessageVo;
 
 import javax.ejb.Stateless;
 import javax.jws.WebMethod;

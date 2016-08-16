@@ -19,7 +19,7 @@ import freemarker.template.DefaultObjectWrapper;
 import freemarker.template.TemplateModel;
 import freemarker.template.TemplateModelException;
 import freemarker.template.Version;
-import org.niord.model.vo.geojson.FeatureCollectionVo;
+import org.niord.model.message.geojson.FeatureCollectionVo;
 
 /**
  * Custom object wrapper.

@@ -50,15 +50,15 @@ import org.niord.core.user.User;
 import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
-import org.niord.core.message.vo.PagedSearchResultVo;
-import org.niord.model.vo.AttachmentVo;
-import org.niord.model.vo.MainType;
+import org.niord.model.search.PagedSearchResultVo;
+import org.niord.model.message.AttachmentVo;
+import org.niord.model.message.MainType;
 import org.niord.core.message.vo.MessageHistoryVo;
-import org.niord.model.vo.MessageVo;
-import org.niord.model.vo.ReferenceType;
-import org.niord.model.vo.ReferenceVo;
-import org.niord.model.vo.Status;
-import org.niord.model.vo.geojson.FeatureCollectionVo;
+import org.niord.model.message.MessageVo;
+import org.niord.model.message.ReferenceType;
+import org.niord.model.message.ReferenceVo;
+import org.niord.model.message.Status;
+import org.niord.model.message.geojson.FeatureCollectionVo;
 import org.slf4j.Logger;
 
 import javax.annotation.Resource;
@@ -99,9 +99,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import static org.niord.core.message.vo.MessageTagVo.MessageTagType.PUBLIC;
-import static org.niord.model.vo.Status.DRAFT;
-import static org.niord.model.vo.Status.IMPORTED;
-import static org.niord.model.vo.Status.VERIFIED;
+import static org.niord.model.message.Status.DRAFT;
+import static org.niord.model.message.Status.IMPORTED;
+import static org.niord.model.message.Status.VERIFIED;
 
 /**
  * REST interface for managing messages.

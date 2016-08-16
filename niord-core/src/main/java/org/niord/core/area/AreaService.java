@@ -23,7 +23,7 @@ import org.niord.core.message.Message;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
-import org.niord.model.vo.AreaVo.AreaMessageSorting;
+import org.niord.model.message.AreaVo.AreaMessageSorting;
 import org.slf4j.Logger;
 
 import javax.ejb.Schedule;
@@ -44,7 +44,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.niord.model.vo.AreaVo.AreaMessageSorting.CW;
+import static org.niord.model.message.AreaVo.AreaMessageSorting.CW;
 
 /**
  * Business interface for accessing Niord areas

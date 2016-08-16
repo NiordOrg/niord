@@ -20,7 +20,7 @@ import org.niord.core.category.Category;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.model.BaseEntity;
 import org.niord.model.DataFilter;
-import org.niord.model.vo.DomainVo;
+import org.niord.model.message.DomainVo;
 
 import javax.persistence.Cacheable;
 import javax.persistence.Entity;

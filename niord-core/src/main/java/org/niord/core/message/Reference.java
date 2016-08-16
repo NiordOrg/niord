@@ -19,9 +19,9 @@ import org.niord.core.model.BaseEntity;
 import org.niord.core.model.IndexedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
-import org.niord.model.vo.ReferenceDescVo;
-import org.niord.model.vo.ReferenceType;
-import org.niord.model.vo.ReferenceVo;
+import org.niord.model.message.ReferenceDescVo;
+import org.niord.model.message.ReferenceType;
+import org.niord.model.message.ReferenceVo;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;

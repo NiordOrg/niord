@@ -24,11 +24,11 @@ import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
 import org.niord.core.model.BaseEntity;
 import org.niord.model.DataFilter;
-import org.niord.core.message.vo.PagedSearchParamsVo;
-import org.niord.core.message.vo.PagedSearchResultVo;
-import org.niord.model.vo.MainType;
-import org.niord.model.vo.MessageVo;
-import org.niord.model.vo.Status;
+import org.niord.model.search.PagedSearchParamsVo;
+import org.niord.model.search.PagedSearchResultVo;
+import org.niord.model.message.MainType;
+import org.niord.model.message.MessageVo;
+import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;

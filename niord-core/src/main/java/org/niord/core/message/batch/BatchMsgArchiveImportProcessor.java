@@ -30,7 +30,7 @@ import org.niord.core.message.MessageSeriesService;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.batch.BatchMsgArchiveImportReader.ExtractedArchiveMessageVo;
 import org.niord.core.settings.SettingsService;
-import org.niord.model.vo.Status;
+import org.niord.model.message.Status;
 
 import javax.inject.Inject;
 import javax.inject.Named;

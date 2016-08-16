@@ -23,7 +23,7 @@ import org.niord.core.category.Category;
 import org.niord.core.category.CategoryService;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
-import org.niord.model.vo.CategoryVo;
+import org.niord.model.message.CategoryVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;

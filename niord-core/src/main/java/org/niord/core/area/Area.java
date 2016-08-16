@@ -21,9 +21,9 @@ import org.niord.core.geojson.JtsConverter;
 import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
-import org.niord.model.vo.AreaType;
-import org.niord.model.vo.AreaVo;
-import org.niord.model.vo.AreaVo.AreaMessageSorting;
+import org.niord.model.message.AreaType;
+import org.niord.model.message.AreaVo;
+import org.niord.model.message.AreaVo.AreaMessageSorting;
 
 import javax.persistence.Cacheable;
 import javax.persistence.CascadeType;

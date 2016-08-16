@@ -3,7 +3,7 @@ package org.niord.web.conf;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.niord.core.settings.SettingsService;
-import org.niord.model.vo.DomainVo;
+import org.niord.model.message.DomainVo;
 import org.niord.web.DomainRestService;
 import org.slf4j.Logger;
 

@@ -22,7 +22,7 @@ import freemarker.template.TemplateModelException;
 import freemarker.template.TemplateSequenceModel;
 import freemarker.template.WrappingTemplateModel;
 import org.niord.core.geojson.GeoJsonUtils;
-import org.niord.model.vo.geojson.FeatureCollectionVo;
+import org.niord.model.message.geojson.FeatureCollectionVo;
 
 import java.util.List;
 

@@ -19,7 +19,7 @@ import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.model.DataFilter;
-import org.niord.model.vo.AreaVo;
+import org.niord.model.message.AreaVo;
 
 import javax.inject.Inject;
 import javax.inject.Named;

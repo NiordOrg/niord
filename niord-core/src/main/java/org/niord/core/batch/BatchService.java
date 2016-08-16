@@ -31,7 +31,7 @@ import org.niord.core.settings.Setting.Type;
 import org.niord.core.settings.annotation.Setting;
 import org.niord.core.user.UserService;
 import org.niord.core.util.JsonUtils;
-import org.niord.core.message.vo.PagedSearchResultVo;
+import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.batch.operations.JobOperator;

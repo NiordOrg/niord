@@ -4,7 +4,7 @@ import com.vividsolutions.jts.geom.Geometry;
 import org.niord.core.db.JpaPropertiesAttributeConverter;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.model.IndexedEntity;
-import org.niord.model.vo.geojson.FeatureVo;
+import org.niord.model.message.geojson.FeatureVo;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;

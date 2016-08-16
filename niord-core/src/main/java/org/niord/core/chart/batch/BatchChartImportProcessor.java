@@ -18,7 +18,7 @@ package org.niord.core.chart.batch;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
-import org.niord.model.vo.ChartVo;
+import org.niord.model.message.ChartVo;
 
 import javax.inject.Inject;
 import javax.inject.Named;

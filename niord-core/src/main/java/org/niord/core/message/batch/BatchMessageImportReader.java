@@ -19,7 +19,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.util.JsonUtils;
-import org.niord.model.vo.MessageVo;
+import org.niord.model.message.MessageVo;
 
 import javax.inject.Named;
 import java.io.Serializable;

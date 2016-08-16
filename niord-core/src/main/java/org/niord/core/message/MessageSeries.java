@@ -17,9 +17,9 @@ package org.niord.core.message;
 
 import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
-import org.niord.model.vo.MainType;
-import org.niord.model.vo.MessageSeriesVo;
-import org.niord.model.vo.MessageSeriesVo.NumberSequenceType;
+import org.niord.model.message.MainType;
+import org.niord.model.message.MessageSeriesVo;
+import org.niord.model.message.MessageSeriesVo.NumberSequenceType;
 
 import javax.persistence.Cacheable;
 import javax.persistence.Column;

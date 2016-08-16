@@ -1,8 +1,8 @@
 package org.niord.core.aton.batch;
 
 import org.niord.core.batch.AbstractItemHandler;
-import org.niord.model.vo.aton.AtonNodeVo;
-import org.niord.model.vo.aton.AtonOsmVo;
+import org.niord.model.message.aton.AtonNodeVo;
+import org.niord.model.message.aton.AtonOsmVo;
 
 import javax.inject.Named;
 import javax.xml.bind.JAXBContext;

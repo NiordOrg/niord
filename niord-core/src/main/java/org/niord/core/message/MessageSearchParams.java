@@ -18,10 +18,10 @@ package org.niord.core.message;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.io.ParseException;
 import org.niord.core.geojson.JtsConverter;
-import org.niord.core.message.vo.PagedSearchParamsVo;
-import org.niord.model.vo.MainType;
-import org.niord.model.vo.Status;
-import org.niord.model.vo.Type;
+import org.niord.model.search.PagedSearchParamsVo;
+import org.niord.model.message.MainType;
+import org.niord.model.message.Status;
+import org.niord.model.message.Type;
 
 import javax.servlet.http.HttpServletRequest;
 import java.text.SimpleDateFormat;
