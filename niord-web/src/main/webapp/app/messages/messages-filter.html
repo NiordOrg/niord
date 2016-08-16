@@ -99,9 +99,9 @@
             <div class="btn-group" style="margin-right: 20px">
                 <label class="btn btn-default btn-sm" ng-model="state.comments.comments" uib-btn-radio="''">Ignore comments</label>
                 <label class="btn btn-default btn-sm" ng-model="state.comments.comments" uib-btn-radio="'ANY'">Any</label>
-                <label class="btn btn-default btn-sm" ng-model="state.comments.comments" uib-btn-radio="'OWN'">Own</label>
+                <label ng-if="loggedIn" class="btn btn-default btn-sm" ng-model="state.comments.comments" uib-btn-radio="'OWN'">Own</label>
                 <label class="btn btn-default btn-sm" ng-model="state.comments.comments" uib-btn-radio="'ANY_UNACK'">Any unack.</label>
-                <label class="btn btn-default btn-sm" ng-model="state.comments.comments" uib-btn-radio="'OWN_UNACK'">Own unack.</label>
+                <label ng-if="loggedIn" class="btn btn-default btn-sm" ng-model="state.comments.comments" uib-btn-radio="'OWN_UNACK'">Own unack.</label>
             </div>
         </view-mode-filter-panel>
 

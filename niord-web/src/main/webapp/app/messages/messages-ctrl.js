@@ -14,6 +14,7 @@ angular.module('niord.messages')
 
             var loadTimer;
 
+            $scope.loggedIn = AuthService.loggedIn;
             $scope.page = 0;
             $scope.maxSize = 100;
             $scope.showFilter = true;
@@ -651,7 +652,7 @@ angular.module('niord.messages')
             /*****************************/
 
             $scope.loadNamedFilters = function () {
-                if (AuthService.loggedIn) {
+                if ($scope.loggedIn) {
                     FilterService
                         .getFilters()
                         .success(function (filters) { $scope.namedFilters = filters; });
