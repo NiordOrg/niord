@@ -21,6 +21,7 @@ import org.niord.core.category.Category;
 import org.niord.core.chart.Chart;
 import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.geojson.GeoJsonUtils;
+import org.niord.core.message.vo.EditableMessageVo;
 import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;

@@ -17,7 +17,7 @@ package org.niord.core.message.batch;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.batch.AbstractItemHandler;
-import org.niord.core.message.EditableMessageVo;
+import org.niord.core.message.vo.EditableMessageVo;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTag;

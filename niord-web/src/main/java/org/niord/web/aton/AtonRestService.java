@@ -23,7 +23,7 @@ import org.niord.core.aton.AtonNode;
 import org.niord.core.aton.AtonSearchParams;
 import org.niord.core.aton.AtonService;
 import org.niord.model.IJsonSerializable;
-import org.niord.model.PagedSearchResultVo;
+import org.niord.core.message.vo.PagedSearchResultVo;
 import org.niord.model.vo.aton.AtonNodeVo;
 import org.slf4j.Logger;
 

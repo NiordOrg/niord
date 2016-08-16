@@ -2,7 +2,7 @@ package org.niord.core.aton;
 
 import com.vividsolutions.jts.geom.Geometry;
 import org.niord.core.geojson.JtsConverter;
-import org.niord.model.PagedSearchParamsVo;
+import org.niord.core.message.vo.PagedSearchParamsVo;
 
 import java.util.HashSet;
 import java.util.Set;

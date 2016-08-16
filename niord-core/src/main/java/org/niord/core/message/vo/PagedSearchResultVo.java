@@ -1,4 +1,6 @@
-package org.niord.model;
+package org.niord.core.message.vo;
+
+import org.niord.model.IJsonSerializable;
 
 import java.util.ArrayList;
 import java.util.Comparator;

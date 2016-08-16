@@ -17,7 +17,7 @@ package org.niord.core.message;
 
 import org.niord.core.model.BaseEntity;
 import org.niord.core.user.User;
-import org.niord.model.vo.MessageHistoryVo;
+import org.niord.core.message.vo.MessageHistoryVo;
 import org.niord.model.vo.Status;
 
 import javax.persistence.Entity;

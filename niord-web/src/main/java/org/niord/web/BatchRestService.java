@@ -24,7 +24,7 @@ import org.niord.core.batch.vo.BatchStatusVo;
 import org.niord.core.repo.FileTypes;
 import org.niord.core.repo.IconSize;
 import org.niord.core.user.UserService;
-import org.niord.model.PagedSearchResultVo;
+import org.niord.core.message.vo.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;

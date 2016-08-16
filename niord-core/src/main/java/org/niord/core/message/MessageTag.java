@@ -19,8 +19,8 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.domain.Domain;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.user.User;
-import org.niord.model.vo.MessageTagVo;
-import org.niord.model.vo.MessageTagVo.MessageTagType;
+import org.niord.core.message.vo.MessageTagVo;
+import org.niord.core.message.vo.MessageTagVo.MessageTagType;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;

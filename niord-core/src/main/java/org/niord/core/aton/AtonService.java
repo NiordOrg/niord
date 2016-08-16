@@ -30,7 +30,7 @@ import org.niord.core.db.CriteriaHelper;
 import org.niord.core.db.SpatialWithinPredicate;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.service.BaseService;
-import org.niord.model.PagedSearchResultVo;
+import org.niord.core.message.vo.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;

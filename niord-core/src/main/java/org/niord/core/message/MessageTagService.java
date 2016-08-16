@@ -35,9 +35,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.niord.model.vo.MessageTagVo.MessageTagType.DOMAIN;
-import static org.niord.model.vo.MessageTagVo.MessageTagType.PRIVATE;
-import static org.niord.model.vo.MessageTagVo.MessageTagType.TEMP;
+import static org.niord.core.message.vo.MessageTagVo.MessageTagType.DOMAIN;
+import static org.niord.core.message.vo.MessageTagVo.MessageTagType.PRIVATE;
+import static org.niord.core.message.vo.MessageTagVo.MessageTagType.TEMP;
 
 
 /**

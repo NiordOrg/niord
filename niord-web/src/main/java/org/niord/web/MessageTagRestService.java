@@ -5,7 +5,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
-import org.niord.model.vo.MessageTagVo;
+import org.niord.core.message.vo.MessageTagVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
