@@ -216,6 +216,28 @@ i.mce-i-map-marker:before {
     padding: 5px 10px;
 }
 
+/** Editor -> Comments **/
+
+.message-comments-table {
+    font-size: 12px;
+}
+
+.message-comment-selected {
+    color: white;
+    background-color: darkgray!important;
+}
+
+.message-comment {
+    font-size: 12px;
+    border: 1px solid lightgray;
+    padding: 10px;
+}
+
+.message-comment-editor {
+    width: 100%;
+    height: 200px;
+}
+
 /** Editor -> GeoJson Editor directive **/
 
 .gj-editor .viewer {

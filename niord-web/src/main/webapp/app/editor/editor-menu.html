@@ -17,6 +17,14 @@
         </li>
 
         <li class="view-mode-menu-btn">
+            <span ui-sref="editor.comments({ id: initId, referenceType: referenceType })" ui-sref-active="active">
+                <span class="glyphicon glyphicon-comment"></span>
+                <span class="view-mode-menu-text" translate>view_mode.comments</span>
+                <span class="badge" ng-if="message && message.unackComments > 0">{{message.unackComments | numeral}}</span>
+            </span>
+        </li>
+
+        <li class="view-mode-menu-btn">
             <span ui-sref="editor.history({ id: initId, referenceType: referenceType })" ui-sref-active="active">
                 <span class="glyphicon glyphicon-calendar"></span>
                 <span class="view-mode-menu-text" translate>view_mode.history</span>

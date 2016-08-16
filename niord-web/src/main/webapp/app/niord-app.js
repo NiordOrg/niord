@@ -67,6 +67,10 @@ var app = angular.module('niord.admin', [
                 url: "/status/:id",
                 templateUrl: "/app/editor/editor-viewmode-status.html"
             })
+            .state('editor.comments', {
+                url: "/comments/:id",
+                templateUrl: "/app/editor/editor-viewmode-comments.html"
+            })
             .state('editor.history', {
                 url: "/history/:id",
                 templateUrl: "/app/editor/editor-viewmode-history.html"

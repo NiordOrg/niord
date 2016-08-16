@@ -22,10 +22,12 @@ import org.niord.model.message.MessageVo;
  * Extends the {@linkplain MessageVo} class with various message attributes only relevant
  * when editing a message.
  */
+@SuppressWarnings("unused")
 public class EditableMessageVo extends MessageVo {
 
     Boolean autoTitle;
     String editRepoPath;
+    Integer unackComments;
 
 
     /**
@@ -98,5 +100,13 @@ public class EditableMessageVo extends MessageVo {
 
     public void setEditRepoPath(String editRepoPath) {
         this.editRepoPath = editRepoPath;
+    }
+
+    public Integer getUnackComments() {
+        return unackComments;
+    }
+
+    public void setUnackComments(Integer unackComments) {
+        this.unackComments = unackComments;
     }
 }

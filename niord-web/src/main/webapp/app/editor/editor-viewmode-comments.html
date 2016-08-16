@@ -1,0 +1,95 @@
+
+<div class="editor-contents container" ng-controller="EditorCommentsCtrl">
+    <h3 class="page-header">
+        Message Comments
+
+        <a ng-href="{{backToListUrl}}" ng-if="backToListUrl"
+           class="btn btn-default btn-xs pull-right">
+            <span class="glyphicon glyphicon-arrow-left"></span> Back to list
+        </a>
+    </h3>
+
+    <div class="empty-search-result" ng-if="!message.created">
+        <p>No persisted message selected</p>
+    </div>
+
+    <div ng-if="message.created" class="row">
+
+        <!-- Comment List -->
+        <div class="col-sm-12 col-md-6 col-lg-6">
+            <table class='table table-condensed message-comments-table'>
+                <tr>
+                    <th>Date</th>
+                    <th>Submitter</th>
+                    <th>Ack. date</th>
+                    <th>Ack. by</th>
+                </tr>
+                <tr ng-if="comments.length == 0">
+                    <td colspan="4" align="center">No comments</td>
+                </tr>
+                <tr ng-repeat="comment in comments" class="pointer"
+                    ng-click="selectComment(comment)"
+                    ng-class="{ 'message-comment-selected' : isSelected(comment) }">
+                    <td>{{comment.created | formatDate:'ll'}}</td>
+                    <td>{{comment.user}}</td>
+                    <td>{{comment.acknowledgeDate | formatDate:'ll'}}</td>
+                    <td>{{comment.acknowledgedBy}}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Comment Viewer / Editor -->
+        <div class="col-sm-12 col-md-6 col-lg-6">
+
+            <div ng-if="!comment" style="text-align: center">
+                <button class="btn btn-sm btn-primary" ng-click="newComment()">
+                    <span class="glyphicon glyphicon-pencil"></span> New Comment
+                </button>
+            </div>
+
+            <div ng-if="canEditComment()">
+                <form name="commentForm">
+                    <div>
+                        <textarea id="comment" class="message-comment-editor" ui-tinymce="commentTinymceOptions"
+                                  ng-model="comment.comment" required></textarea>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <span ng-if="comment.id && !comment.acknowledgeDate">
+                            <button class="btn btn-sm btn-success" ng-click="acknowledge()">
+                                Acknowledge
+                            </button>
+                        </span>
+                        <span class="pull-right">
+                            <button class="btn btn-sm btn-default" ng-click="cancel()">
+                                Cancel
+                            </button>
+                            <button class="btn btn-sm btn-primary" ng-click="saveComment()"
+                                    ng-disabled="commentForm.$pristine || commentForm.$invalid">
+                                <span class="glyphicon glyphicon-floppy-disk"></span> Save Comment
+                            </button>
+                        </span>
+                    </div>
+                </form>
+            </div>
+
+            <div ng-if="comment && !canEditComment()">
+                <div class="message-comment">
+                    <span ng-bind-html="comment.comment | toTrusted"></span>
+                </div>
+                <div style="margin-top: 10px;">
+                    <span ng-if="comment.id && !comment.acknowledgeDate">
+                        <button class="btn btn-sm btn-success" ng-click="acknowledge()">
+                            Acknowledge
+                        </button>
+                    </span>
+                    <span class="pull-right">
+                        <button class="btn btn-sm btn-default" ng-click="cancel()">
+                            Cancel
+                        </button>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

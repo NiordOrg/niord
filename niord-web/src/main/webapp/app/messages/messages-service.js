@@ -132,6 +132,30 @@ angular.module('niord.messages')
             },
 
 
+            /** Returns the comments for the given message */
+            comments: function(id) {
+                return $http.get('/rest/messages/message/' + id + '/comments');
+            },
+
+
+            /** Creates a comment for the given message */
+            createComment: function(id, comment) {
+                return $http.post('/rest/messages/message/' + id + '/comment', comment);
+            },
+
+
+            /** Updates a comment for the given message */
+            updateComment: function(id, comment) {
+                return $http.put('/rest/messages/message/' + id + '/comment/' + comment.id, comment);
+            },
+
+
+            /** Acknowledges a comment for the given message */
+            acknowledgeComment: function(id, comment) {
+                return $http.put('/rest/messages/message/' + id + '/comment/' + comment.id + '/ack');
+            },
+
+
             /** Changes the the message map image to be the base-64 encoded png */
             changeMessageMapImage: function (repoPath, image) {
                 return $http.put('/rest/message-map-image/' + repoPath, image);

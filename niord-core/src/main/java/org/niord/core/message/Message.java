@@ -199,6 +199,10 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     @OrderColumn(name = "indexNo")
     List<Attachment> attachments = new ArrayList<>();
 
+    @OneToMany(mappedBy = "message")
+    List<Comment> comments = new ArrayList<>();
+
+
     /**
      * Constructor
      */
@@ -348,6 +352,11 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         message.setAutoTitle(autoTitle);
 
         message.sort(filter.getLang());
+
+        long cnt = getComments().stream()
+                .filter(c -> c.getAcknowledgeDate() == null)
+                .count();
+        message.setUnackComments((int)cnt);
 
         return message;
     }
@@ -762,5 +771,13 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setAttachments(List<Attachment> attachments) {
         this.attachments = attachments;
+    }
+
+    public List<Comment> getComments() {
+        return comments;
+    }
+
+    public void setComments(List<Comment> comments) {
+        this.comments = comments;
     }
 }

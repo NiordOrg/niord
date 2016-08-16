@@ -35,6 +35,7 @@ import org.niord.core.message.MessageSearchParams.DateType;
 import org.niord.core.message.vo.EditableMessageVo;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
+import org.niord.core.user.User;
 import org.niord.core.user.UserService;
 import org.niord.core.util.TimeUtils;
 import org.niord.model.DataFilter;
@@ -1061,6 +1062,86 @@ public class MessageService extends BaseService {
                 .getResultList();
     }
 
+
+    /***************************************/
+    /** Message Comments                  **/
+    /***************************************/
+
+
+    /**
+     * Returns the message comments for the given message UID
+     *
+     * @param uid the message UID
+     * @return the message comments
+     */
+    public List<Comment> getComments(String uid) {
+        return em.createNamedQuery("Comment.findByMessageUid", Comment.class)
+                .setParameter("uid", uid)
+                .getResultList();
+    }
+
+
+    /**
+     * Creates a new message comment
+     *
+     * @param comment the comment template
+     * @return the persisted message comment
+     */
+    public Comment createComment(Comment comment) {
+        if (comment.getMessage() == null || comment.getUser() == null) {
+            throw new IllegalArgumentException("Message or user not defined");
+        }
+        comment.getMessage().getComments().add(comment);
+        saveEntity(comment);
+        return comment;
+    }
+
+
+    /**
+     * Updates the message comment. The only thing that can be updated using this method is
+     * the actual comment of the entity.
+     * The comment will subsequently be flagged as unacknowledged.
+     *
+     * @param comment the comment to update
+     * @return the updated message comment
+     */
+    public Comment updateComment(Comment comment) {
+        Comment original = getByPrimaryKey(Comment.class, comment.getId());
+        if (original == null) {
+            throw new IllegalArgumentException("No comment with id " + comment.getId());
+        }
+
+        original.setComment(comment.getComment());
+        original.setAcknowledgeDate(null);
+        original.setAcknowledgedBy(null);
+        saveEntity(original);
+
+        return original;
+    }
+
+
+    /**
+     * Acknowledges the message comment.
+     *
+     * @param user the user
+     * @param commentId the ID of the comment to acknowledge
+     * @return the acknowledged message comment
+     */
+    public Comment acknowledgeComment(User user, Integer commentId) {
+        if (user == null) {
+            throw new IllegalArgumentException("User must be defined");
+        }
+        Comment original = getByPrimaryKey(Comment.class,commentId);
+        if (original == null) {
+            throw new IllegalArgumentException("No comment with id " + commentId);
+        }
+
+        original.setAcknowledgedBy(user);
+        original.setAcknowledgeDate(new Date());
+        saveEntity(original);
+
+        return original;
+    }
 
     /***************************************/
     /** Repo methods                      **/

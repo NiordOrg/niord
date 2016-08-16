@@ -35,6 +35,8 @@ import org.niord.core.geojson.FeatureService;
 import org.niord.core.mail.HtmlMail;
 import org.niord.core.mail.Mail;
 import org.niord.core.mail.MailService;
+import org.niord.core.message.Comment;
+import org.niord.core.message.vo.CommentVo;
 import org.niord.core.message.vo.EditableMessageVo;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageExportService;
@@ -1030,6 +1032,115 @@ public class MessageRestService extends AbstractBatchableRestService {
     }
 
 
+    /***************************************/
+    /** Message Comments methods          **/
+    /***************************************/
+
+    /**
+     * Returns the comments for the given message ID
+     * @param messageId the message ID or message series ID
+     * @return the message comments
+     */
+    @GET
+    @Path("/message/{messageId}/comments")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public List<CommentVo> getComments(@PathParam("messageId") String messageId) {
+
+        // Get the message id
+        Message message = messageService.resolveMessage(messageId);
+        if (message == null) {
+            return Collections.emptyList();
+        }
+
+        User user = userService.currentUser();
+        return messageService.getComments(message.getUid()).stream()
+                .map(c -> c.toVo(user))
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Creates a comments for the given message ID
+     * @param messageId the message ID or message series ID
+     * @param comment the template comment to create
+     * @return the persisted comment
+     */
+    @POST
+    @Path("/message/{messageId}/comment")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @NoCache
+    @RolesAllowed({"editor"})
+    public CommentVo createComment(@PathParam("messageId") String messageId, CommentVo comment) {
+
+        // Get the message by message id
+        Message message = messageService.resolveMessage(messageId);
+        if (message == null) {
+            throw new IllegalArgumentException("Invalid message ID " + messageId);
+        }
+
+        return messageService
+                .createComment(new Comment(comment, message, userService.currentUser()))
+                .toVo();
+    }
+
+
+    /**
+     * Updates a comments for the given message ID
+     * @param messageId the message ID or message series ID
+     * @param commentId the message ID or message series ID
+     * @param comment the template comment to updated
+     * @return the message comments
+     */
+    @PUT
+    @Path("/message/{messageId}/comment/{commentId}")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @NoCache
+    @RolesAllowed({"editor"})
+    public CommentVo updateComment(@PathParam("messageId") String messageId, @PathParam("commentId") Integer commentId,
+                                   CommentVo comment) {
+        // Enforce REST PUT pattern
+        if (!Objects.equals(commentId, comment.getId())) {
+            throw new WebApplicationException(400);
+        }
+        // Get the message by nessage id
+        Message message = messageService.resolveMessage(messageId);
+        if (message == null || !message.getComments().stream().anyMatch(c -> c.getId().equals(commentId))) {
+            throw new IllegalArgumentException("Invalid message or comment ID " + messageId);
+        }
+        return messageService
+                .updateComment(new Comment(comment, message, userService.currentUser()))
+                .toVo();
+    }
+
+
+    /**
+     * Acknowledges a comments for the given message ID
+     * @param messageId the message ID or message series ID
+     * @param commentId the message ID or message series ID
+     * @return the message comment
+     */
+    @PUT
+    @Path("/message/{messageId}/comment/{commentId}/ack")
+    @Produces("application/json;charset=UTF-8")
+    @NoCache
+    @RolesAllowed({"editor"})
+    public CommentVo acknowledgeComment(@PathParam("messageId") String messageId, @PathParam("commentId") Integer commentId) {
+        // Get the message by message id
+        Message message = messageService.resolveMessage(messageId);
+        if (message == null || !message.getComments().stream().anyMatch(c -> c.getId().equals(commentId))) {
+            throw new IllegalArgumentException("Invalid message or comment ID " + messageId);
+        }
+        return messageService
+                .acknowledgeComment(userService.currentUser(), commentId)
+                .toVo();
+    }
+
+
     /***************************
      * Sorting functionality
      ***************************/
@@ -1086,8 +1197,8 @@ public class MessageRestService extends AbstractBatchableRestService {
      */
     @POST
     @Path("/compute-title-line")
-    @Consumes("application/json")
-    @Produces("application/json")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
@@ -1108,7 +1219,7 @@ public class MessageRestService extends AbstractBatchableRestService {
      */
     @POST
     @Path("/format-message-geometry")
-    @Consumes("application/json")
+    @Consumes("application/json;charset=UTF-8")
     @Produces("text/plain;charset=UTF-8")
     @GZIP
     @NoCache

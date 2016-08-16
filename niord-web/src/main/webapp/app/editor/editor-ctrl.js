@@ -1062,6 +1062,105 @@ angular.module('niord.editor')
         }])
 
 
+    /*******************************************************************
+     * EditorCtrl sub-controller that handles message comments.
+     *******************************************************************/
+    .controller('EditorCommentsCtrl', ['$scope', '$rootScope', '$timeout', 'MessageService',
+        function ($scope, $rootScope, $timeout, MessageService) {
+            'use strict';
+
+            $scope.comments = [];
+            $scope.comment = undefined;
+
+            // Configuration of the Comment TinyMCE editors
+            $scope.commentTinymceOptions = {
+                resize: false,
+                valid_elements : '*[*]', // NB: This allows insertion of all html elements, including javascript
+                statusbar : false,
+                menubar: false,
+                plugins: [ "autolink lists link image anchor", "code textcolor", "media table contextmenu paste" ],
+                contextmenu: "link image inserttable | cell row column deletetable",
+                toolbar: "styleselect | bold italic | forecolor backcolor | alignleft aligncenter alignright alignjustify | "
+                + "bullist numlist  | outdent indent | link image table"
+            };
+
+
+            /** Loads the message history **/
+            $scope.loadComments = function () {
+                $scope.comment = undefined;
+                if ($scope.message && $scope.message.id) {
+                    MessageService.comments($scope.message.id)
+                        .success(function (comments) {
+                            $scope.comments = comments;
+
+                            // Update the number of unacknowledged comments for the message
+                            var unackComments = 0;
+                            angular.forEach(comments, function (comment) {
+                                if (!comment.acknowledgeDate) {
+                                    unackComments++;
+                                }
+                                $scope.message.unackComments = unackComments;
+                            })
+
+                        });
+                }
+            };
+
+            // Load the message comments (after the message has been loaded)
+            $timeout($scope.loadComments, 200);
+
+            /** Selects a new comment for viewing/editing **/
+            $scope.selectComment = function (comment) {
+                $scope.comment = comment;
+            };
+
+
+            /** Returns if the given comment is selected **/
+            $scope.isSelected = function (comment) {
+                return comment && $scope.comment && comment.id == $scope.comment.id;
+            };
+
+
+            /** Create a template for a new comment **/
+            $scope.newComment = function () {
+                $scope.comment = { comment: '' };
+            };
+
+
+            /** Saves the current comment comment **/
+            $scope.saveComment = function () {
+                if ($scope.comment && $scope.comment.id) {
+                    MessageService.updateComment($scope.message.id, $scope.comment)
+                        .success($scope.loadComments);
+                } else if ($scope.comment) {
+                    MessageService.createComment($scope.message.id, $scope.comment)
+                        .success($scope.loadComments);
+                }
+            };
+
+
+            /** Acknowledges the current comment comment **/
+            $scope.acknowledge = function () {
+                if ($scope.comment && $scope.comment.id) {
+                    MessageService.acknowledgeComment($scope.message.id, $scope.comment)
+                        .success($scope.loadComments);
+                }
+            };
+
+
+            /** Returns if the current comment can be edited **/
+            $scope.canEditComment = function () {
+                return $scope.comment &&
+                    (!$scope.comment.id || $scope.comment.ownComment || $rootScope.hasRole('sysadmin'));
+            };
+
+
+            /** Cancels editing a comment **/
+            $scope.cancel = function () {
+                $scope.comment = undefined;
+            };
+        }])
+
 
     /*******************************************************************
      * Controller that handles the message Thumbnail dialog
