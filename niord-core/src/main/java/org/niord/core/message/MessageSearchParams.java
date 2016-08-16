@@ -45,6 +45,8 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public enum DateType { PUBLISH_DATE, ACTIVE_DATE, CREATED_DATE }
 
+    public enum CommentsType { ANY, OWN, ANY_UNACK, OWN_UNACK }
+
     String language;
     String query;
     Boolean domain;
@@ -55,6 +57,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     DateType dateType;
     Date updatedFrom;
     Date updatedTo;
+    CommentsType commentsType;
     Set<Status> statuses = new HashSet<>();
     Set<Type> types = new HashSet<>();
     Set<MainType> mainTypes = new HashSet<>();
@@ -101,6 +104,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
                 .from((Long)checkNull(req.getParameter("fromDate"), Long::valueOf))
                 .to((Long)checkNull(req.getParameter("toDate"), Long::valueOf))
                 .dateType(checkNull(req.getParameter("dateType"), DateType::valueOf))
+                .commentsType(checkNull(req.getParameter("comments"), CommentsType::valueOf))
                 .viewMode(req.getParameter("viewMode"))
 
                 // Extent parameters
@@ -177,6 +181,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         if (dateType != null) { desc.add(String.format("Date Type: %s", dateType)); }
         if (updatedFrom != null) { desc.add(String.format("Updated from: %s", new SimpleDateFormat(DATE_FORMAT).format(updatedFrom))); }
         if (updatedTo != null) { desc.add(String.format("Updated to: %s", new SimpleDateFormat(DATE_FORMAT).format(updatedTo))); }
+        if (commentsType != null) { desc.add(String.format("Comments: %s", commentsType)); }
         if (statuses.size() > 0) { desc.add(String.format("Statuses: %s", statuses)); }
         if (types.size() > 0) { desc.add(String.format("Types: %s", types)); }
         if (mainTypes.size() > 0) { desc.add(String.format("Main types: %s", mainTypes)); }
@@ -293,6 +298,15 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public MessageSearchParams updatedTo(Date updatedTo) {
         this.updatedTo = updatedTo;
+        return this;
+    }
+
+    public CommentsType getCommentsType() {
+        return commentsType;
+    }
+
+    public MessageSearchParams commentsType(CommentsType commentsType) {
+        this.commentsType = commentsType;
         return this;
     }
 

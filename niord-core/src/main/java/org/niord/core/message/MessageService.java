@@ -71,6 +71,7 @@ import java.util.stream.Collectors;
 import static java.util.Arrays.asList;
 import static org.niord.core.geojson.Feature.WGS84_SRID;
 import static org.niord.core.message.MessageIdMatch.MatchType.*;
+import static org.niord.core.message.MessageSearchParams.CommentsType.*;
 import static org.niord.core.message.MessageSearchParams.SortOrder;
 
 /**
@@ -865,6 +866,26 @@ public class MessageService extends BaseService {
                     .map(t -> builder.equal(tags.get("id"), t.getId()))
                     .toArray(Predicate[]::new);
             criteriaHelper.add(builder.or(tagMatch));
+        }
+
+
+        // Comments
+        if (param.getCommentsType() != null) {
+            Join<Message, Comment> comments = msgRoot.join("comments", JoinType.LEFT);
+            User user = userService.currentUser();
+            Predicate own = user != null ? builder.equal(comments.get("user"), user) : null;
+            Predicate exists = builder.isNotNull(comments.get("id"));
+            Predicate unack = builder.isNull(comments.get("acknowledgedBy"));
+
+            if (user != null && param.getCommentsType() == OWN) {
+                criteriaHelper.add(own);
+            } else if (user != null && param.getCommentsType() == OWN_UNACK) {
+                criteriaHelper.add(builder.and(own, unack));
+            } else if (param.getCommentsType() == ANY_UNACK) {
+                criteriaHelper.add(builder.and(exists, unack));
+            } else if (param.getCommentsType() == ANY) {
+                criteriaHelper.add(exists);
+            }
         }
 
 

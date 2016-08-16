@@ -22,7 +22,7 @@ angular.module('niord.messages')
             $scope.selectionList = []; // Flattened list of selected messages
             $scope.totalMessageNo = 0;
             $scope.filterNames = [ 'messageSeries', 'text', 'type', 'status', 'tag',
-                'reference', 'aton', 'chart', 'area', 'category', 'date' ];
+                'comments', 'reference', 'aton', 'chart', 'area', 'category', 'date' ];
             if ($rootScope.domain) {
                 $scope.filterNames.unshift('domain');
             }
@@ -71,6 +71,10 @@ angular.module('niord.messages')
                     enabled: false,
                     focusField: '#tags > div > input.ui-select-search',
                     tags: []
+                },
+                comments: {
+                    enabled: false,
+                    comments: ''
                 },
                 reference: {
                     enabled: false,
@@ -165,6 +169,9 @@ angular.module('niord.messages')
                         break;
                     case 'tag':
                         filter.tags = [];
+                        break;
+                    case 'comments':
+                        filter.comments = '';
                         break;
                     case 'reference':
                         filter.messageId = undefined;
@@ -284,6 +291,9 @@ angular.module('niord.messages')
                         params += '&tag=' + tag.tagId;
                     })
                 }
+                if (s.comments.enabled && s.comments.comments.length > 0) {
+                    params += '&comments=' + s.comments.comments;
+                }
                 if (s.reference.enabled && s.reference.messageId) {
                     params += '&messageId=' + encodeURIComponent(s.reference.messageId)
                             + '&referenceLevels=' + s.reference.referenceLevels;
@@ -379,6 +389,10 @@ angular.module('niord.messages')
                     $http.get('/rest/tags/tag/' + tags).then(function(response) {
                         s.tag.tags = response.data;
                     });
+                }
+                if (params.comments) {
+                    s.comments.enabled = true;
+                    s.comments.comments = params.comments;
                 }
                 if (params.messageId) {
                     s.reference.enabled = true;
