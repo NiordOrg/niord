@@ -58,7 +58,7 @@ import org.niord.model.message.MessageVo;
 import org.niord.model.message.ReferenceType;
 import org.niord.model.message.ReferenceVo;
 import org.niord.model.message.Status;
-import org.niord.model.message.geojson.FeatureCollectionVo;
+import org.niord.model.geojson.FeatureCollectionVo;
 import org.slf4j.Logger;
 
 import javax.annotation.Resource;

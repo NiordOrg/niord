@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.model.message.aton;
+package org.niord.model.aton;
 
 import org.niord.model.IJsonSerializable;
 

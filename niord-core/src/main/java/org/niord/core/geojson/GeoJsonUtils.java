@@ -1,17 +1,17 @@
 package org.niord.core.geojson;
 
 import org.apache.commons.lang.StringUtils;
-import org.niord.model.message.geojson.FeatureCollectionVo;
-import org.niord.model.message.geojson.FeatureVo;
-import org.niord.model.message.geojson.GeoJsonVo;
-import org.niord.model.message.geojson.GeometryCollectionVo;
-import org.niord.model.message.geojson.GeometryVo;
-import org.niord.model.message.geojson.LineStringVo;
-import org.niord.model.message.geojson.MultiLineStringVo;
-import org.niord.model.message.geojson.MultiPointVo;
-import org.niord.model.message.geojson.MultiPolygonVo;
-import org.niord.model.message.geojson.PointVo;
-import org.niord.model.message.geojson.PolygonVo;
+import org.niord.model.geojson.FeatureCollectionVo;
+import org.niord.model.geojson.FeatureVo;
+import org.niord.model.geojson.GeoJsonVo;
+import org.niord.model.geojson.GeometryCollectionVo;
+import org.niord.model.geojson.GeometryVo;
+import org.niord.model.geojson.LineStringVo;
+import org.niord.model.geojson.MultiLineStringVo;
+import org.niord.model.geojson.MultiPointVo;
+import org.niord.model.geojson.MultiPolygonVo;
+import org.niord.model.geojson.PointVo;
+import org.niord.model.geojson.PolygonVo;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

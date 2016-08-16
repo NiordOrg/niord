@@ -19,7 +19,7 @@ import io.swagger.annotations.ApiModel;
 import org.apache.commons.lang.StringUtils;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
-import org.niord.model.message.geojson.FeatureCollectionVo;
+import org.niord.model.geojson.FeatureCollectionVo;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;

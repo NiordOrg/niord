@@ -16,8 +16,8 @@
 package org.niord.core.geojson;
 
 import org.niord.core.model.BaseEntity;
-import org.niord.model.message.geojson.FeatureCollectionVo;
-import org.niord.model.message.geojson.FeatureVo;
+import org.niord.model.geojson.FeatureCollectionVo;
+import org.niord.model.geojson.FeatureVo;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;

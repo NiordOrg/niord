@@ -13,48 +13,43 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.model.message.geojson;
+package org.niord.model.geojson;
 
 import io.swagger.annotations.ApiModel;
 
-import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.function.Consumer;
 
 /**
- * GeoJSON GeometryCollection, as defined in the specification:
- * http://geojson.org/geojson-spec.html#geometry-collection
+ * GeoJSON Point, as defined in the specification:
+ * http://geojson.org/geojson-spec.html#linestring
  */
-@ApiModel(value = "GeometryCollection", description = "GeoJson GeometryCollection type")
-@XmlRootElement(name = "geometryCollection")
-public class GeometryCollectionVo extends GeometryVo {
+@ApiModel(value = "LineString", description = "GeoJson LineString type")
+@XmlRootElement(name = "lineString")
+public class LineStringVo extends GeometryVo {
 
-    private GeometryVo[] geometries;
+    private double[][] coordinates;
 
     @SuppressWarnings("unused")
-    public GeometryCollectionVo() {
+    public LineStringVo() {
     }
 
-    public GeometryCollectionVo(GeometryVo[] geometries) {
-        this.geometries = geometries;
+    public LineStringVo(double[][] coordinates) {
+        this.coordinates = coordinates;
     }
 
     /** {@inheritDoc} */
     @Override
     public void visitCoordinates(Consumer<double[]> handler) {
-        if (geometries != null) {
-            for (GeometryVo geometry : geometries) {
-                geometry.visitCoordinates(handler);
-            }
-        }
+        visitCoordinates(coordinates, handler);
     }
 
-    @XmlElementRef
-    public GeometryVo[] getGeometries() {
-        return geometries;
+    public double[][] getCoordinates() {
+        return coordinates;
     }
 
-    public void setGeometries(GeometryVo[] geometries) {
-        this.geometries = geometries;
+    public void setCoordinates(double[][] coordinates) {
+        this.coordinates = coordinates;
     }
 }
+

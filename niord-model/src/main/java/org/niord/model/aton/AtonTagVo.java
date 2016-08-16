@@ -1,4 +1,4 @@
-package org.niord.model.message.aton;
+package org.niord.model.aton;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.model.IJsonSerializable;

@@ -24,7 +24,7 @@ import org.niord.core.aton.AtonSearchParams;
 import org.niord.core.aton.AtonService;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.search.PagedSearchResultVo;
-import org.niord.model.message.aton.AtonNodeVo;
+import org.niord.model.aton.AtonNodeVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;

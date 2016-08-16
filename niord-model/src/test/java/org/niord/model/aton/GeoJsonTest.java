@@ -13,15 +13,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.model.message.aton;
+package org.niord.model.aton;
 
 import org.junit.Test;
-import org.niord.model.message.geojson.FeatureCollectionVo;
-import org.niord.model.message.geojson.FeatureVo;
-import org.niord.model.message.geojson.GeometryCollectionVo;
-import org.niord.model.message.geojson.GeometryVo;
-import org.niord.model.message.geojson.MultiPointVo;
-import org.niord.model.message.geojson.PointVo;
+import org.niord.model.geojson.FeatureCollectionVo;
+import org.niord.model.geojson.FeatureVo;
+import org.niord.model.geojson.GeometryCollectionVo;
+import org.niord.model.geojson.GeometryVo;
+import org.niord.model.geojson.MultiPointVo;
+import org.niord.model.geojson.PointVo;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;

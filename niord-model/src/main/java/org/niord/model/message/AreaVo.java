@@ -18,7 +18,7 @@ package org.niord.model.message;
 import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
-import org.niord.model.message.geojson.GeometryVo;
+import org.niord.model.geojson.GeometryVo;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;

@@ -5,9 +5,9 @@ import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
 import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.geojson.JtsConverter;
-import org.niord.model.message.geojson.FeatureCollectionVo;
-import org.niord.model.message.geojson.GeoJsonVo;
-import org.niord.model.message.geojson.GeometryVo;
+import org.niord.model.geojson.FeatureCollectionVo;
+import org.niord.model.geojson.GeoJsonVo;
+import org.niord.model.geojson.GeometryVo;
 
 import java.io.IOException;
 import java.util.List;

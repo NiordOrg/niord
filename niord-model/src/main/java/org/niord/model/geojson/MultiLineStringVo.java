@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.model.message.geojson;
+package org.niord.model.geojson;
 
 import io.swagger.annotations.ApiModel;
 
@@ -21,20 +21,20 @@ import javax.xml.bind.annotation.XmlRootElement;
 import java.util.function.Consumer;
 
 /**
- * GeoJSON Point, as defined in the specification:
- * http://geojson.org/geojson-spec.html#linestring
+ * GeoJSON MultiLineString, as defined in the specification:
+ * http://geojson.org/geojson-spec.html#multilinestring
  */
-@ApiModel(value = "LineString", description = "GeoJson LineString type")
-@XmlRootElement(name = "lineString")
-public class LineStringVo extends GeometryVo {
+@ApiModel(value = "MultiLineString", description = "GeoJson MultiLineString type")
+@XmlRootElement(name = "multiLineString")
+public class MultiLineStringVo extends GeometryVo {
 
-    private double[][] coordinates;
+    private double[][][] coordinates;
 
     @SuppressWarnings("unused")
-    public LineStringVo() {
+    public MultiLineStringVo() {
     }
 
-    public LineStringVo(double[][] coordinates) {
+    public MultiLineStringVo(double[][][] coordinates) {
         this.coordinates = coordinates;
     }
 
@@ -44,11 +44,11 @@ public class LineStringVo extends GeometryVo {
         visitCoordinates(coordinates, handler);
     }
 
-    public double[][] getCoordinates() {
+    public double[][][] getCoordinates() {
         return coordinates;
     }
 
-    public void setCoordinates(double[][] coordinates) {
+    public void setCoordinates(double[][][] coordinates) {
         this.coordinates = coordinates;
     }
 }

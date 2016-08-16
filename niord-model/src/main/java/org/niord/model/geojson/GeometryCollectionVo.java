@@ -13,43 +13,48 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.model.message.geojson;
+package org.niord.model.geojson;
 
 import io.swagger.annotations.ApiModel;
 
+import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.function.Consumer;
 
 /**
- * GeoJSON MultiPoint, as defined in the specification:
- * http://geojson.org/geojson-spec.html#multipoint
+ * GeoJSON GeometryCollection, as defined in the specification:
+ * http://geojson.org/geojson-spec.html#geometry-collection
  */
-@ApiModel(value = "MultiPoint", description = "GeoJson MultiPoint type")
-@XmlRootElement(name = "multiPoint")
-public class MultiPointVo extends GeometryVo {
+@ApiModel(value = "GeometryCollection", description = "GeoJson GeometryCollection type")
+@XmlRootElement(name = "geometryCollection")
+public class GeometryCollectionVo extends GeometryVo {
 
-    private double[][] coordinates;
+    private GeometryVo[] geometries;
 
     @SuppressWarnings("unused")
-    public MultiPointVo() {
+    public GeometryCollectionVo() {
     }
 
-    public MultiPointVo(double[][] coordinates) {
-        this.coordinates = coordinates;
+    public GeometryCollectionVo(GeometryVo[] geometries) {
+        this.geometries = geometries;
     }
 
     /** {@inheritDoc} */
     @Override
     public void visitCoordinates(Consumer<double[]> handler) {
-        visitCoordinates(coordinates, handler);
+        if (geometries != null) {
+            for (GeometryVo geometry : geometries) {
+                geometry.visitCoordinates(handler);
+            }
+        }
     }
 
-    public double[][] getCoordinates() {
-        return coordinates;
+    @XmlElementRef
+    public GeometryVo[] getGeometries() {
+        return geometries;
     }
 
-    public void setCoordinates(double[][] coordinates) {
-        this.coordinates = coordinates;
+    public void setGeometries(GeometryVo[] geometries) {
+        this.geometries = geometries;
     }
 }
-

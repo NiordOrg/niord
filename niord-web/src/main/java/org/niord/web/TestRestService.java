@@ -6,7 +6,7 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.geojson.FeatureService;
 import org.niord.core.keycloak.KeycloakIntegrationService;
-import org.niord.model.message.geojson.FeatureCollectionVo;
+import org.niord.model.geojson.FeatureCollectionVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;

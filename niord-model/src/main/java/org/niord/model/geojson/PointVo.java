@@ -13,7 +13,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.niord.model.message.geojson;
+package org.niord.model.geojson;
 
 import io.swagger.annotations.ApiModel;
 
@@ -21,20 +21,20 @@ import javax.xml.bind.annotation.XmlRootElement;
 import java.util.function.Consumer;
 
 /**
- * GeoJSON MultiPolygon, as defined in the specification:
- * http://geojson.org/geojson-spec.html#multipolygon
+ * GeoJSON Point, as defined in the specification:
+ * http://geojson.org/geojson-spec.html#point
  */
-@ApiModel(value = "MultiPolygon", description = "GeoJson MultiPolygon type")
-@XmlRootElement(name = "multiPolygon")
-public class MultiPolygonVo extends GeometryVo {
+@ApiModel(value = "Point", description = "GeoJson Point type")
+@XmlRootElement(name = "point")
+public class PointVo extends GeometryVo {
 
-    private double[][][][] coordinates;
+    private double[] coordinates;
 
     @SuppressWarnings("unused")
-    public MultiPolygonVo() {
+    public PointVo() {
     }
 
-    public MultiPolygonVo(double[][][][] coordinates) {
+    public PointVo(double[] coordinates) {
         this.coordinates = coordinates;
     }
 
@@ -44,11 +44,11 @@ public class MultiPolygonVo extends GeometryVo {
         visitCoordinates(coordinates, handler);
     }
 
-    public double[][][][] getCoordinates() {
+    public double[] getCoordinates() {
         return coordinates;
     }
 
-    public void setCoordinates(double[][][][] coordinates) {
+    public void setCoordinates(double[] coordinates) {
         this.coordinates = coordinates;
     }
 }

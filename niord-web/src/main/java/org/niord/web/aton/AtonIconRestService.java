@@ -20,7 +20,7 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.niord.core.aton.AtonNode;
 import org.niord.core.repo.RepositoryService;
-import org.niord.model.message.aton.AtonNodeVo;
+import org.niord.model.aton.AtonNodeVo;
 import org.slf4j.Logger;
 
 import javax.ejb.Singleton;
