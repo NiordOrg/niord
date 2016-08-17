@@ -9,14 +9,14 @@
             </span>
         </li>
 
-        <li class="view-mode-menu-btn">
+        <li class="view-mode-menu-btn" ng-if="message.created">
             <span ui-sref="editor.status({ id: initId, referenceType: referenceType })" ui-sref-active="active">
                 <span class="glyphicon glyphicon-wrench"></span>
                 <span class="view-mode-menu-text" translate>view_mode.status</span>
             </span>
         </li>
 
-        <li class="view-mode-menu-btn">
+        <li class="view-mode-menu-btn" ng-if="message.created">
             <span ui-sref="editor.comments({ id: initId, referenceType: referenceType })" ui-sref-active="active">
                 <span class="glyphicon glyphicon-comment"></span>
                 <span class="view-mode-menu-text" translate>view_mode.comments</span>
@@ -24,7 +24,7 @@
             </span>
         </li>
 
-        <li class="view-mode-menu-btn">
+        <li class="view-mode-menu-btn" ng-if="message.created">
             <span ui-sref="editor.history({ id: initId, referenceType: referenceType })" ui-sref-active="active">
                 <span class="glyphicon glyphicon-calendar"></span>
                 <span class="view-mode-menu-text" translate>view_mode.history</span>
