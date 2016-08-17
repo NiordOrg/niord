@@ -382,6 +382,11 @@ li.view-mode-menu-btn .active .badge {
     line-height: 1.5;
 }
 
+.glyphicon-none:before {
+    content: "\2122";
+    color: transparent !important;
+}
+
 /** ui-select modifications **/
 
 .ui-select-search {
