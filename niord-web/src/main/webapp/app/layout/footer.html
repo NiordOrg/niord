@@ -7,10 +7,10 @@
         <div class="col-sm-4 footer-center">
             <a href="{{'footer.link' | translate}}" target="_blank"><img src="/img/company-logo.png" height="34"/></a>
         </div>
-        <div class="col-sm-4 footer-right">
-            <a href translate>footer.disclaimer</a>
+        <div ng-controller="FooterCtrl" class="col-sm-4 footer-right">
+            <a href ng-click="disclaimerDlg()" translate>footer.disclaimer</a>
             &bull;
-            <a href translate>footer.cookies</a>
+            <a href ng-click="cookiesDlg()" translate>footer.cookies</a>
         </div>
     </div>
 </footer>
