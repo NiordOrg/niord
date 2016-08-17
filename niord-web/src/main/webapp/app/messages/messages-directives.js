@@ -911,8 +911,8 @@ angular.module('niord.messages')
     /****************************************************************
      * Adds a message details drop-down menu
      ****************************************************************/
-    .directive('messageDetailsMenu', ['$rootScope', '$window', 'growl', 'MessageService',
-        function ($rootScope, $window, growl, MessageService) {
+    .directive('messageDetailsMenu', ['$rootScope', '$window', '$state', 'growl', 'MessageService', 'DialogService',
+        function ($rootScope, $window, $state, growl, MessageService, DialogService) {
             'use strict';
 
             return {
@@ -1007,6 +1007,20 @@ angular.module('niord.messages')
                         if (scope.dismissAction) {
                             scope.dismissAction();
                         }
+                    };
+
+                    /** Copies the message **/
+                    scope.copy = function () {
+                        DialogService.showConfirmDialog(
+                            "Copy Message?", "Copy Message?")
+                            .then(function() {
+                                // Navigate to the message editor page
+                                $state.go(
+                                    'editor.copy',
+                                    { id: scope.messageId,  referenceType : 'REFERENCE' },
+                                    { reload: true }
+                                );
+                            });
                     };
                 }
             }

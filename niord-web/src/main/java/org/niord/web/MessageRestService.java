@@ -164,11 +164,7 @@ public class MessageRestService extends AbstractBatchableRestService {
      */
     private void checkMessageEditingAccess(Message message, boolean update) {
         Domain domain = domainService.currentDomain();
-        if (domain == null ||
-                message == null ||
-                message.getMessageSeries() == null ||
-                domain.getMessageSeries().stream()
-                        .noneMatch(ms -> ms.getSeriesId().equals(message.getMessageSeries().getSeriesId()))) {
+        if (domain == null || message == null || !domain.containsMessageSeries(message.getMessageSeries())) {
             throw new WebApplicationException(403);
         }
 
@@ -204,10 +200,7 @@ public class MessageRestService extends AbstractBatchableRestService {
 
         // 2) Grant access if the current domain of the user matches the message series of the message
         Domain domain = domainService.currentDomain();
-        if (domain != null &&
-                message.getMessageSeries() != null &&
-                domain.getMessageSeries().stream()
-                        .anyMatch(ms -> ms.getSeriesId().equals(message.getMessageSeries().getSeriesId()))) {
+        if (domain != null && domain.containsMessageSeries(message.getMessageSeries())) {
             return;
         }
 
@@ -259,6 +252,29 @@ public class MessageRestService extends AbstractBatchableRestService {
 
 
     /**
+     * Returns an editable version of the message, which has been directed to use a temporary
+     * repository folder.
+     *
+     * @param message the message get an editable version of
+     * @return the editable version of the message
+     */
+    private EditableMessageVo toEditableMessage(Message message) throws Exception {
+
+        DataFilter filter = DataFilter.get()
+                .fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
+
+        EditableMessageVo messageVo =  message.toEditableVo(filter);
+
+        // Create a temporary repository folder for the message
+        messageService.createTempMessageRepoFolder(messageVo);
+        // Point embedded links and images to the temporary repository folder
+        messageVo.descsToEditRepo();
+
+        return messageVo;
+    }
+
+
+    /**
      * Returns the editable message with the given message id, which may be either a UID,
      * or a short ID or an MRN of a message.
      *
@@ -286,17 +302,8 @@ public class MessageRestService extends AbstractBatchableRestService {
         // Validate access to the message
         checkMessageEditingAccess(message, false);
 
-        DataFilter filter = DataFilter.get()
-                .fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
-
-        EditableMessageVo messageVo =  message.toEditableVo(filter);
-
-        // Create a temporary repository folder for the message
-        messageService.createTempMessageRepoFolder(messageVo);
-        // Point embedded links and images to the temporary repository folder
-        messageVo.descsToEditRepo();
-
-        return messageVo;
+        // Returns an editable version of the message
+        return toEditableMessage(message);
     }
 
 
@@ -361,44 +368,66 @@ public class MessageRestService extends AbstractBatchableRestService {
             @QueryParam("lang") String language) throws Exception {
 
         log.info("Creating copy of message " + messageId);
+        Domain domain = domainService.currentDomain();
 
-        // Get an editable version of the message to copy - incl. editRepoPath containing original repo files
-        EditableMessageVo message =  getEditableMessage(messageId, language);
+        Message message = messageService.resolveMessage(messageId);
         if (message == null) {
             return null;
         }
 
+        // Validate viewing access to the message
+        checkMessageViewingAccess(message);
+
+        // Create an editable version of the message
+        EditableMessageVo editMessage = toEditableMessage(message);
+
         // Optionally, add a reference to the original message (before resetting IDs, etc)
         if (referenceType != null) {
-            if (message.getReferences() == null) {
-                message.setReferences(new ArrayList<>());
+            if (editMessage.getReferences() == null) {
+                editMessage.setReferences(new ArrayList<>());
             }
             ReferenceVo ref = new ReferenceVo();
-            ref.setMessageId(StringUtils.isNotBlank(message.getShortId()) ? message.getShortId() : message.getId());
+            ref.setMessageId(StringUtils.isNotBlank(editMessage.getShortId()) ? editMessage.getShortId() : editMessage.getId());
             ref.setType(referenceType);
-            message.getReferences().add(ref);
+            editMessage.getReferences().add(ref);
         }
 
         // Create a new template message to get hold of a UID and repoPath
-        Message tmp = messageService.newTemplateMessage(message.getMainType());
-        message.setId(tmp.getUid());
-        message.setRepoPath(tmp.getRepoPath());
+        Message tmp = messageService.newTemplateMessage(editMessage.getMainType());
+        editMessage.setId(tmp.getUid());
+        editMessage.setRepoPath(tmp.getRepoPath());
+        editMessage.setUnackComments(0);
+
+        // Reset mainType, if not part of the current domain
+        if (editMessage.getMainType() != null && !domain.supportsMainType(editMessage.getMainType())) {
+            editMessage.setMainType(null);
+            editMessage.setType(null);
+            if (!domain.getMessageSeries().isEmpty()) {
+                editMessage.setMainType(domain.getMessageSeries().get(0).getMainType());
+            }
+        }
+
+        // Reset message series, if not part of the current domain
+        if (editMessage.getMessageSeries() != null
+                && !domain.containsMessageSeries(editMessage.getMessageSeries().getSeriesId())) {
+            editMessage.setMessageSeries(null);
+        }
 
         // Reset various fields
-        message.setShortId(null);
-        message.setMrn(null);
-        message.setStatus(DRAFT);
-        message.setCreated(null);
-        message.setUpdated(null);
-        message.setVersion(null);
-        message.setNumber(null);
-        message.setPublishDate(null);
-        if (message.getAttachments() != null) {
-            message.getAttachments().forEach(att -> att.setId(null));
+        editMessage.setShortId(null);
+        editMessage.setMrn(null);
+        editMessage.setStatus(DRAFT);
+        editMessage.setCreated(null);
+        editMessage.setUpdated(null);
+        editMessage.setVersion(null);
+        editMessage.setNumber(null);
+        editMessage.setPublishDate(null);
+        if (editMessage.getAttachments() != null) {
+            editMessage.getAttachments().forEach(att -> att.setId(null));
         }
-        message.setGeometry(featureService.copyFeatureCollection(message.getGeometry()));
+        editMessage.setGeometry(featureService.copyFeatureCollection(editMessage.getGeometry()));
 
-        return message;
+        return editMessage;
     }
 
 

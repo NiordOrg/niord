@@ -15,12 +15,14 @@
  */
 package org.niord.core.domain;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.category.Category;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.model.BaseEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.message.DomainVo;
+import org.niord.model.message.MainType;
 
 import javax.persistence.Cacheable;
 import javax.persistence.Entity;
@@ -190,6 +192,26 @@ public class Domain extends BaseEntity<Integer> {
         return list2.stream()
                 .anyMatch(e -> !ids.contains(e.getId()));
     }
+
+
+    /** Returns if the domain contain the given message series **/
+    public boolean containsMessageSeries(String seriesId) {
+        return StringUtils.isNotBlank(seriesId) &&
+                getMessageSeries().stream().anyMatch(ms -> Objects.equals(ms.getSeriesId(), seriesId));
+    }
+
+
+    /** Returns if the domain contain the given message series **/
+    public boolean containsMessageSeries(MessageSeries messageSeries) {
+        return messageSeries != null && containsMessageSeries(messageSeries.getSeriesId());
+    }
+
+
+    /** Returns if the domain supports the given main type **/
+    public boolean supportsMainType(MainType mainType) {
+        return mainType != null && getMessageSeries().stream().anyMatch(ms -> ms.getMainType() == mainType);
+    }
+
 
     /*************************/
     /** Getters and Setters **/

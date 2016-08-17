@@ -12,6 +12,12 @@
                 <span translate>menu.action.edit</span>
             </a>
         </li>
+        <li ng-if="hasRole('editor')">
+            <a href ng-click="copy()">
+                <span class="glyphicon glyphicon-duplicate"></span>&nbsp;
+                <span translate>menu.action.copy</span>
+            </a>
+        </li>
         <li ng-if="hasRole('editor')" role="separator" class="divider"></li>
         <li>
             <a href ng-click="pdf()">
