@@ -117,7 +117,11 @@ public class WmsProxyServlet extends HttpServlet {
         }
 
         // Fall back to return a blank image
-        response.sendRedirect(BLANK_IMAGE);
+        try {
+            response.sendRedirect(BLANK_IMAGE);
+        } catch (IOException e) {
+            log.trace("Failed returning blank image for URL " + url + ": " + e);
+        }
     }
 
     /**
