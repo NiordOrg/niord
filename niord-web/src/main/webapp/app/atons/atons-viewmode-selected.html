@@ -51,6 +51,7 @@
                 <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
                 <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
                                 source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
+                <map-open-sea-map-layer name="OpenSeaMap" visible="false" layer-switcher="openSeaMapLayerEnabled"></map-open-sea-map-layer>
                 <map-message-details-layer name="Messages" visible="true" layer-switcher="false" feature-collection="featureCollection" fit-extent="true"></map-message-details-layer>
                 <map-layer-switcher></map-layer-switcher>
             </ol-map>

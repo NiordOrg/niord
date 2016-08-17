@@ -188,6 +188,7 @@
             <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
             <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
                             source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
+            <map-open-sea-map-layer name="OpenSeaMap" visible="false" layer-switcher="openSeaMapLayerEnabled"></map-open-sea-map-layer>
             <map-aton-layer name="AtoN" visible="false" layer-switcher="true" aton-selected="atonSelected(aton)"></map-aton-layer>
             <map-ol-editor-layer name="Locations" visible="true" layer-switcher="false"
                                  features="features" buffer-features="bufferFeatures" draw-control="drawControl"></map-ol-editor-layer>

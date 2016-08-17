@@ -1283,6 +1283,7 @@ angular.module('niord.editor')
             'use strict';
 
             $scope.wmsLayerEnabled = $rootScope.wmsLayerEnabled;
+            $scope.openSeaMapLayerEnabled = $rootScope.openSeaMapLayerEnabled;
             $scope.featureCollection = angular.copy(featureCollection);
             $scope.lang = lang;
             $scope.selectedFeatures = {

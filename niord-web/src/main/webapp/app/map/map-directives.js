@@ -404,6 +404,52 @@ angular.module('niord.map')
     }])
 
 
+
+
+    /**
+     * The map-open-sea-map-layer directive will add an OpenSeaMap layer to the map
+     */
+    .directive('mapOpenSeaMapLayer', ['MapService', function (MapService) {
+        return {
+            restrict: 'E',
+            replace: false,
+            require: '^olMap',
+            scope: {
+                name: '@',
+                visible: '=',
+                layerSwitcher: '='
+            },
+            link: function(scope, element, attrs, ctrl) {
+                var olScope = ctrl.getOpenlayersScope();
+                var olLayer;
+
+                olScope.getMap().then(function(map) {
+
+                    scope.$on('$destroy', function() {
+                        if (angular.isDefined(olLayer)) {
+                            map.removeLayer(olLayer);
+                        }
+                    });
+
+                    // Supports dynamically adding and removing the layer from the layer switcher
+                    scope.$watch("layerSwitcher", function (layerSwitcher) {
+                        olLayer.set('displayInLayerSwitcher', layerSwitcher);
+                    }, true);
+
+                    olLayer = new ol.layer.Tile({
+                        source: new ol.source.XYZ({
+                            url: '//t1.openseamap.org/seamark/{z}/{x}/{y}.png'
+                        })
+                    });
+                    olLayer = MapService.initLayer(olLayer, scope.name, scope.visible, scope.layerSwitcher);
+                    map.addLayer(olLayer);
+                });
+
+            }
+        };
+    }])
+
+
     /**
      * The map-charts-layer directive will outline the given sea charts
      */

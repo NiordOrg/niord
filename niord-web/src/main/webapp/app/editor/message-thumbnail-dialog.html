@@ -23,7 +23,9 @@
 
         <div style="margin-top: 10px">
           <span class="message-thumbnail-layer" ng-repeat='l in switcherLayers'>
-             <input type='checkbox' ng-model='l.visible' ng-change='updateVisibility(l)'>&nbsp;{{l.name}}
+              <span style="white-space: nowrap">
+                 <input type='checkbox' ng-model='l.visible' ng-change='updateVisibility(l)'>&nbsp;{{l.name}}
+              </span>
           </span>
         </div>
 

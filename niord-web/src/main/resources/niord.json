@@ -92,5 +92,12 @@
     "value"       : false,
     "web"         : true,
     "editable"    : true
+  },
+  {
+    "key"         : "openSeaMapLayerEnabled",
+    "description" : "Whether or not to display the OpenSeaMap layer in maps",
+    "value"       : false,
+    "web"         : true,
+    "editable"    : true
   }
 ]

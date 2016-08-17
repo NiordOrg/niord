@@ -34,6 +34,7 @@
                     <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
                     <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
                                     source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
+                    <map-open-sea-map-layer name="OpenSeaMap" visible="false" layer-switcher="openSeaMapLayerEnabled"></map-open-sea-map-layer>
                     <map-aton-layer name="AtoN" visible="false" layer-switcher="true"></map-aton-layer>
                     <map-gj-layer name="Locations" visible="true" layer-switcher="false" feature-collection="selectedFeatures"
                                   fit-extent="true" max-zoom="10"></map-gj-layer>
