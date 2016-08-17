@@ -1001,8 +1001,19 @@ angular.module('niord.messages')
                         MessageService.printMessage(scope.messageId);
                     };
 
+
+                    /** Returns if the user can edit the current message */
+                    scope.canEdit = function () {
+                        return scope.hasRole('editor') &&
+                                scope.msg && scope.msg.messageSeries &&
+                                $rootScope.domain && $rootScope.domain.messageSeries &&
+                                $.grep($rootScope.domain.messageSeries, function (ms) {
+                                    return ms.seriesId == scope.msg.messageSeries.seriesId;
+                                }).length > 0;
+                    };
+
                     
-                    // Navigate to the message editor page
+                    /** Navigate to the message editor page **/
                     scope.edit = function() {
                         if (scope.dismissAction) {
                             scope.dismissAction();
@@ -1020,6 +1031,9 @@ angular.module('niord.messages')
                                     { id: scope.messageId,  referenceType : 'REFERENCE' },
                                     { reload: true }
                                 );
+                                if (scope.dismissAction) {
+                                    scope.dismissAction();
+                                }
                             });
                     };
                 }
