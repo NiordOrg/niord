@@ -45,7 +45,7 @@
             <ul class="dropdown-menu">
                 <li ng-repeat="name in filterNames">
                     <a ng-click="enableFilter(name, !filterEnabled(name))" href>
-                        <span class="glyphicon" style="color: darkgray"
+                        <span class="glyphicon view-mode-menu-checkmark"
                               ng-class="{ 'glyphicon-ok': filterEnabled(name), 'glyphicon-none': !filterEnabled(name) }"></span>
                         <span ng-bind-html="'menu.filter.' + name | translate"></span>
                     </a>

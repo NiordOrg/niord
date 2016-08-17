@@ -337,6 +337,11 @@ li.view-mode-menu-btn .active .badge {
     color: darkgray;
 }
 
+.view-mode-menu-checkmark {
+    color: darkgray;
+    font-size: 10px!important;
+}
+
 /** View mode filter **/
 
 .view-mode-filter {
