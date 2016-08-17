@@ -107,6 +107,13 @@ angular.module('niord.atons')
             };
 
 
+            /** Returns if the filter is enabled **/
+            $scope.filterEnabled = function (name) {
+                var filter = $scope.state[name];
+                return filter && filter.enabled;
+            };
+
+
             /** Clears the given filter **/
             $scope.clearFilter = function (name) {
                 var filter = $scope.state[name];
