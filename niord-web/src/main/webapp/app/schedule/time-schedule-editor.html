@@ -1,0 +1,44 @@
+
+<div>
+
+    <div ng-if="message.editing" class="time-schedule-editor">
+        <div>
+
+            <table>
+                <tr ng-repeat="ti in message.editSchedule">
+                    <td>
+                        <date-time-picker id="fromTime" ng-model="ti.fromTime" placeholder="From" style="width: 120px"
+                                          format="'LT'"></date-time-picker>
+                    </td>
+                    <td width="20" align="center">&nbsp;-&nbsp;</td>
+                    <td>
+                        <date-time-picker id="toTime" ng-model="ti.toTime" placeholder="To" style="width: 120px"
+                                          format="'LT'"></date-time-picker>
+                    </td>
+                </tr>
+            </table>
+
+
+        </div>
+        <div style="margin-top: 10px; text-align: center">
+            <button class="btn btn-default btn-sm" ng-click="addTimeInterval()">
+                <span class="glyphicon glyphicon-plus"></span> Add
+            </button>
+            &nbsp;
+            <button class="btn btn-default btn-sm" ng-click="cancel()">
+                Cancel
+            </button>
+            &nbsp;
+            <button class="btn btn-primary btn-sm" ng-click="save()">
+                <span class="glyphicon glyphicon-floppy-disk"></span> Save
+            </button>
+        </div>
+    </div>
+
+
+    <div ng-if="!message.editing">
+
+    </div>
+
+
+</div>

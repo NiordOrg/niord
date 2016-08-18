@@ -28,12 +28,13 @@ angular.module('niord.common', []);
 angular.module('niord.conf', []);
 angular.module('niord.map', []);
 angular.module('niord.editor', []);
+angular.module('niord.schedule', []);
 angular.module('niord.home', []);
 
 
 var app = angular.module('niord.admin', [
         'ngSanitize', 'ui.bootstrap', 'ui.select', 'ui.router', 'ui.tinymce', 'ui.mask', 'pascalprecht.translate', 'angular-growl', 'ng-sortable', 'angularFileUpload',
-        'niord.common', 'niord.auth', 'niord.admin', 'niord.atons', 'niord.messages', 'niord.conf', 'niord.map', 'niord.editor', 'niord.home' ])
+        'niord.common', 'niord.auth', 'niord.admin', 'niord.atons', 'niord.messages', 'niord.conf', 'niord.map', 'niord.editor', 'niord.schedule', 'niord.home' ])
 
     .config(['$stateProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $urlRouterProvider, $httpProvider) {
         'use strict';
@@ -90,6 +91,14 @@ var app = angular.module('niord.admin', [
             .state('editor.history', {
                 url: "/history/:id",
                 templateUrl: "/app/editor/editor-viewmode-history.html"
+            })
+
+
+            /** Schedule **/
+            .state('schedule', {
+                url: "/schedule",
+                templateUrl: "/app/schedule/schedule.html",
+                data: { rolesRequired: ["editor", "admin", "sysadmin"] }
             })
 
 

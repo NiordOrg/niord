@@ -382,10 +382,11 @@ angular.module('niord.common')
                 format: '=',
                 time: '=',
                 readonly: '=',
-                placeholder: '@'
+                placeholder: '@',
+                size: '@'
             },
             template : '<div class="input-group date" data-date-format="l">'
-                     + '  <input type="text" class="input-sm form-control" />'
+                     + '  <input type="text" class="input-{{size}} form-control" />'
                      + '  <span class="input-group-addon">'
                      + '    <span class="glyphicon glyphicon-calendar"></span>'
                      + '  </span>'
@@ -397,6 +398,7 @@ angular.module('niord.common')
 
                 var input = element.find("input");
 
+                scope.size = scope.size || 'sm';
                 scope.format = scope.format || "DD/MM/YYYY HH:mm";
                 scope.$watch("format", function () {
                     element.attr('data-date-format', scope.format);

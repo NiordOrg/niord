@@ -1,0 +1,50 @@
+
+
+<div class="schedule" ng-controller="ScheduleCtrl">
+
+    <div ng-include="'/app/schedule/schedule-filter.html'"></div>
+
+    <div class="container schedule-content">
+
+        <h3 class="page-header">
+            Schedule
+        </h3>
+
+        <div class="pull-right" style="margin-bottom: 20px">
+            <date-time-picker id="fromDate" ng-model="date" placeholder="Date" style="width: 200px"
+                              time="'00:00:00'" format="'l'" size="lg"></date-time-picker>
+        </div>
+
+        <table class='table table-condensed' ng-if="messageList.length > 0">
+            <tr style="background-color: lightgray">
+                <th width="120">ID</th>
+                <th width="*">Title</th>
+                <th width="300" align="center">Time</th>
+                <th width="30"></th>
+            </tr>
+            <tr ng-repeat-start="message in messageList" ng-if="message.areaHeading">
+                <td colspan="4"><h4 class="message-list-area-heading" render-areas="[message.areaHeading]"></h4></td>
+            </tr>
+            <tr ng-repeat-end>
+                <td nowrap><span class="label label-message-id">{{message.shortId}}</span></td>
+                <td message-details-link="message.id" message-list="messageList"  selection="selection">
+                    <span class="glyphicon glyphicon-new-window"></span>&nbsp;
+                    {{message.descs[0].title}}
+                </td>
+                <td>
+                    <time-schedule-editor message="message" date="date"></time-schedule-editor>
+                </td>
+                <td>
+                    <button class="btn btn-default btn-xs" ng-click="edit(message)"
+                        ng-disabled="message.editing">
+                        <span class="glyphicon glyphicon-pencil"></span>
+                    </button>
+                </td>
+            </tr>
+        </table>
+
+    </div>
+
+    <div ng-include="'app/layout/footer.html'"></div>
+</div>
+

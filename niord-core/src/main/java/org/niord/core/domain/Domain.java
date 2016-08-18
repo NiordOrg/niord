@@ -77,6 +77,8 @@ public class Domain extends BaseEntity<Integer> {
     @ManyToMany
     List<MessageSeries> messageSeries = new ArrayList<>();
 
+    Boolean schedule;
+
     @Transient
     Boolean inKeycloak;
 
@@ -99,6 +101,7 @@ public class Domain extends BaseEntity<Integer> {
         this.latitude = domain.getLat();
         this.longitude = domain.getLon();
         this.zoomLevel = domain.getZoomLevel();
+        this.schedule = domain.getSchedule();
         this.inKeycloak = domain.getInKeycloak();
 
         this.areas.clear();
@@ -133,6 +136,7 @@ public class Domain extends BaseEntity<Integer> {
         domain.setLat(latitude);
         domain.setLon(longitude);
         domain.setZoomLevel(zoomLevel);
+        domain.setSchedule(schedule);
         domain.setInKeycloak(inKeycloak);
 
         if (!areas.isEmpty()) {
@@ -173,6 +177,7 @@ public class Domain extends BaseEntity<Integer> {
                 !Objects.equals(latitude, template.getLatitude()) ||
                 !Objects.equals(longitude, template.getLongitude()) ||
                 !Objects.equals(zoomLevel, template.getZoomLevel()) ||
+                !Objects.equals(schedule, template.getSchedule()) ||
                 hasChanged(areas, template.getAreas()) ||
                 hasChanged(categories, template.getCategories()) ||
                 hasChanged(messageSeries, template.getMessageSeries());
@@ -287,6 +292,14 @@ public class Domain extends BaseEntity<Integer> {
 
     public void setMessageSeries(List<MessageSeries> messageSeries) {
         this.messageSeries = messageSeries;
+    }
+
+    public Boolean getSchedule() {
+        return schedule;
+    }
+
+    public void setSchedule(Boolean scheduler) {
+        this.schedule = scheduler;
     }
 
     public Boolean getInKeycloak() {

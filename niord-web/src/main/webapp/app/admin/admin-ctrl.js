@@ -816,7 +816,8 @@ angular.module('niord.admin')
                 $scope.domain = {
                     domainId: undefined,
                     name: undefined,
-                    timeZone: moment.tz.guess()
+                    timeZone: moment.tz.guess(),
+                    schedule: false
                 };
                 $scope.areas.length = 0;
                 $scope.categories.length = 0;

@@ -33,6 +33,7 @@ public class DomainVo implements IJsonSerializable {
     private List<AreaVo> areas;
     private List<CategoryVo> categories;
     private List<MessageSeriesVo> messageSeries;
+    private Boolean schedule;
     private Boolean inKeycloak;
 
     /*************************/
@@ -109,6 +110,14 @@ public class DomainVo implements IJsonSerializable {
 
     public void setMessageSeries(List<MessageSeriesVo> messageSeries) {
         this.messageSeries = messageSeries;
+    }
+
+    public Boolean getSchedule() {
+        return schedule;
+    }
+
+    public void setSchedule(Boolean schedule) {
+        this.schedule = schedule;
     }
 
     public Boolean getInKeycloak() {

@@ -1,0 +1,20 @@
+
+.schedule {
+    background-color: #eee;
+}
+
+.schedule-content {
+    padding: 20px 30px;
+    background-color: white;
+}
+
+.time-schedule-editor {
+    width: 300px;
+    padding: 10px;
+    border: 1px solid lightgray;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.time-schedule-editor table tr td {
+    padding-bottom: 5px;
+}

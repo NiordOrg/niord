@@ -1,0 +1,39 @@
+
+<div class="view-mode-filter">
+
+    <div class="row">
+
+        <!-- Text Filter -->
+        <view-mode-filter-panel state="state" filter-name="text" closable="false" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
+            <div class="btn-group full-width">
+                <input id="query" type="search" class="form-control input-sm" placeholder="Search Terms" ng-model="state.text.query"
+                        ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"
+                        autocomplete="off" spellcheck="false">
+                <span class="glyphicon glyphicon-remove clear-input"
+                      ng-click="state.text.query = ''" ng-show="state.text.query != ''"></span>
+            </div>
+        </view-mode-filter-panel>
+
+
+        <!-- Area Filter -->
+        <view-mode-filter-panel state="state" filter-name="area" closable="false" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
+            <ui-select multiple id="areas" ng-model="state.area.areas" >
+                <ui-select-match placeholder="Select areas">
+                    {{$item.descs[0].name}}
+                </ui-select-match>
+                <ui-select-choices repeat="area in areas"
+                                   refresh="refreshAreas($select.search)"
+                                   refresh-delay="100">
+                    <div>
+                        <span ng-bind-html="area.descs[0].name | highlight: $select.search"></span>
+                        <small ng-if="area.parent">({{formatParents(area.parent)}})</small>
+                    </div>
+
+                </ui-select-choices>
+            </ui-select>
+        </view-mode-filter-panel>
+
+
+    </div>
+
+</div>
