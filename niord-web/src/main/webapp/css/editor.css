@@ -222,8 +222,12 @@ i.mce-i-map-marker:before {
     font-size: 12px;
 }
 
+.message-comment-acknowledged {
+    color: darkgray;
+}
+
 .message-comment-selected {
-    color: white;
+    color: white!important;
     background-color: darkgray!important;
 }
 

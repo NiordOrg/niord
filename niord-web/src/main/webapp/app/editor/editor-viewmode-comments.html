@@ -29,7 +29,7 @@
                 </tr>
                 <tr ng-repeat="comment in comments" class="pointer"
                     ng-click="selectComment(comment)"
-                    ng-class="{ 'message-comment-selected' : isSelected(comment) }">
+                    ng-class="{ 'message-comment-selected' : isSelected(comment), 'message-comment-acknowledged' : comment.acknowledgeDate !== undefined }">
                     <td>{{comment.created | formatDate:'ll'}}</td>
                     <td>{{comment.user}}</td>
                     <td>{{comment.acknowledgeDate | formatDate:'ll'}}</td>
