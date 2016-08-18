@@ -36,6 +36,7 @@ import org.niord.core.mail.HtmlMail;
 import org.niord.core.mail.Mail;
 import org.niord.core.mail.MailService;
 import org.niord.core.message.Comment;
+import org.niord.core.message.CommentService;
 import org.niord.core.message.vo.CommentVo;
 import org.niord.core.message.vo.EditableMessageVo;
 import org.niord.core.message.Message;
@@ -150,6 +151,9 @@ public class MessageRestService extends AbstractBatchableRestService {
 
     @Inject
     MailService mailService;
+
+    @Inject
+    CommentService commentService;
 
     /***************************
      * Message access functions
@@ -1085,7 +1089,7 @@ public class MessageRestService extends AbstractBatchableRestService {
         }
 
         User user = userService.currentUser();
-        return messageService.getComments(message.getUid()).stream()
+        return commentService.getComments(message.getUid()).stream()
                 .map(c -> c.toVo(user))
                 .collect(Collectors.toList());
     }
@@ -1111,7 +1115,7 @@ public class MessageRestService extends AbstractBatchableRestService {
             throw new IllegalArgumentException("Invalid message ID " + messageId);
         }
 
-        return messageService
+        return commentService
                 .createComment(new Comment(comment, message, userService.currentUser()))
                 .toVo();
     }
@@ -1141,7 +1145,7 @@ public class MessageRestService extends AbstractBatchableRestService {
         if (message == null || !message.getComments().stream().anyMatch(c -> c.getId().equals(commentId))) {
             throw new IllegalArgumentException("Invalid message or comment ID " + messageId);
         }
-        return messageService
+        return commentService
                 .updateComment(new Comment(comment, message, userService.currentUser()))
                 .toVo();
     }
@@ -1164,7 +1168,7 @@ public class MessageRestService extends AbstractBatchableRestService {
         if (message == null || !message.getComments().stream().anyMatch(c -> c.getId().equals(commentId))) {
             throw new IllegalArgumentException("Invalid message or comment ID " + messageId);
         }
-        return messageService
+        return commentService
                 .acknowledgeComment(userService.currentUser(), commentId)
                 .toVo();
     }
