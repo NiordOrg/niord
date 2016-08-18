@@ -808,7 +808,7 @@ angular.module('niord.messages')
                             params += '&report=' + encodeURIComponent(printSettings.report);
                         }
 
-                        $window.location = '/rest/messages/search.pdf?' + params;
+                        $window.location = '/rest/message-reports/report.pdf?' + params;
                     });
             };
 
@@ -863,7 +863,7 @@ angular.module('niord.messages')
                             + '&lang=' + $rootScope.language
                             + '&ticket=' + encodeURIComponent(ticket);
 
-                        $window.location = '/rest/messages/search.zip?' + params;
+                        $window.location = '/rest/message-io/export.zip?' + params;
                     });
             };
 

@@ -15,53 +15,36 @@
  */
 package org.niord.web;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.NiordApp;
-import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
-import org.niord.core.fm.FmReport;
 import org.niord.core.fm.FmService;
 import org.niord.core.fm.FmService.ProcessFormat;
-import org.niord.core.fm.vo.FmReportVo;
 import org.niord.core.geojson.FeatureService;
-import org.niord.core.mail.HtmlMail;
-import org.niord.core.mail.Mail;
-import org.niord.core.mail.MailService;
-import org.niord.core.message.Comment;
-import org.niord.core.message.CommentService;
-import org.niord.core.message.vo.CommentVo;
-import org.niord.core.message.vo.EditableMessageVo;
 import org.niord.core.message.Message;
-import org.niord.core.message.MessageExportService;
 import org.niord.core.message.MessageHistory;
-import org.niord.core.message.MessageIdMatch;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
-import org.niord.core.model.BaseEntity;
+import org.niord.core.message.vo.EditableMessageVo;
+import org.niord.core.message.vo.MessageHistoryVo;
 import org.niord.core.repo.FileTypes;
 import org.niord.core.repo.RepositoryService;
-import org.niord.core.user.User;
 import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
-import org.niord.model.search.PagedSearchResultVo;
+import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.message.AttachmentVo;
 import org.niord.model.message.MainType;
-import org.niord.core.message.vo.MessageHistoryVo;
 import org.niord.model.message.MessageVo;
 import org.niord.model.message.ReferenceType;
 import org.niord.model.message.ReferenceVo;
 import org.niord.model.message.Status;
-import org.niord.model.geojson.FeatureCollectionVo;
+import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.annotation.Resource;
@@ -70,7 +53,6 @@ import javax.annotation.security.RolesAllowed;
 import javax.ejb.SessionContext;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
@@ -88,23 +70,17 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import static org.niord.core.message.vo.MessageTagVo.MessageTagType.PUBLIC;
-import static org.niord.model.message.Status.DRAFT;
-import static org.niord.model.message.Status.IMPORTED;
-import static org.niord.model.message.Status.VERIFIED;
+import static org.niord.model.message.Status.*;
 
 /**
  * REST interface for managing messages.
@@ -114,7 +90,7 @@ import static org.niord.model.message.Status.VERIFIED;
 @SecurityDomain("keycloak")
 @PermitAll
 @SuppressWarnings("unused")
-public class MessageRestService extends AbstractBatchableRestService {
+public class MessageRestService  {
 
     @Resource
     SessionContext ctx;
@@ -135,9 +111,6 @@ public class MessageRestService extends AbstractBatchableRestService {
     MessageService messageService;
 
     @Inject
-    MessageExportService messageExportService;
-
-    @Inject
     DomainService domainService;
 
     @Inject
@@ -149,11 +122,6 @@ public class MessageRestService extends AbstractBatchableRestService {
     @Inject
     FmService fmService;
 
-    @Inject
-    MailService mailService;
-
-    @Inject
-    CommentService commentService;
 
     /***************************
      * Message access functions
@@ -605,437 +573,6 @@ public class MessageRestService extends AbstractBatchableRestService {
     }
 
 
-    /***************************
-     * Search functionality
-     ***************************/
-
-
-    /**
-     * Main search method
-     */
-    @GET
-    @Path("/search")
-    @Produces("application/json;charset=UTF-8")
-    @GZIP
-    @NoCache
-    public PagedSearchResultVo<MessageVo> search(@Context  HttpServletRequest request) throws Exception {
-        MessageSearchParams params = MessageSearchParams.instantiate(request);
-        return search(params);
-    }
-
-
-    /**
-     * Main search method
-     */
-    PagedSearchResultVo<MessageVo> search(MessageSearchParams params) throws Exception {
-
-
-        Domain currentDomain = domainService.currentDomain();
-
-        // Enforce security rules - depends on whether the current user is in the context of a domain or not.
-        if (params.getDomain() && currentDomain != null) {
-
-            Set<String> domainSeries = currentDomain.getMessageSeries().stream()
-                    .map(MessageSeries::getSeriesId)
-                    .collect(Collectors.toSet());
-
-            // Restrict message series IDs to valid ones for the current domain
-            params.seriesIds(
-                    params.getSeriesIds().stream()
-                    .filter(domainSeries::contains)
-                    .collect(Collectors.toSet())
-            );
-            // If no message series is specified, use the ones of the current domain
-            if (params.getSeriesIds().isEmpty()) {
-                params.seriesIds(domainSeries);
-            }
-
-            // If no areas specified, use the ones of the current domain
-            if (params.getAreaIds().isEmpty() && !currentDomain.getAreas().isEmpty()) {
-                params.areaIds(
-                        currentDomain.getAreas().stream()
-                                .map(BaseEntity::getId)
-                                .collect(Collectors.toSet())
-                );
-            }
-
-            // If no categories specified, use the ones of the current domain
-            if (params.getCategoryIds().isEmpty() && !currentDomain.getCategories().isEmpty()) {
-                params.categoryIds(
-                        currentDomain.getCategories().stream()
-                                .map(BaseEntity::getId)
-                                .collect(Collectors.toSet())
-                );
-            }
-
-            // Return published messages if no status is defined and no tags has been specified
-            if (params.getStatuses().isEmpty() && params.getTags().isEmpty()) {
-                params.getStatuses().add(Status.PUBLISHED);
-            }
-
-        } else {
-            // Return published messages if no tags has been specified
-            if (params.getTags().isEmpty()) {
-                params.statuses(Collections.singleton(Status.PUBLISHED));
-            }
-        }
-
-        // Perform the search
-        long t0 = System.currentTimeMillis();
-        PagedSearchResultVo<Message> searchResult = messageService.search(params);
-
-        // Record a textual description of the search
-        String description = params.toString();
-        searchResult.setDescription(description);
-
-        log.info(String.format("Search [%s] returns %d of %d messages in %d ms",
-                description, searchResult.getData().size(), searchResult.getTotal(), System.currentTimeMillis() - t0));
-
-        DataFilter filter = ("map".equalsIgnoreCase(params.getViewMode()))
-                ? DataFilter.get().lang(params.getLanguage()).fields("Message.geometry", "MessageDesc.title")
-                : DataFilter.get().lang(params.getLanguage()).fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
-
-        return searchResult.map(m -> m.toVo(filter));
-    }
-
-
-    /**
-     * Returns a list of message IDs (database ID, MRN or shortId) that - possibly partially - matches
-     * real text.
-     *
-     * @param lang the language to return the title in
-     * @param txt the text to match
-     * @param maxGroupCount the max number of matching message IDs to return.
-     * @param includeText whether to include the search text as a match
-     * @return the search result
-     */
-    @GET
-    @Path("/search-message-ids")
-    @Produces("application/json;charset=UTF-8")
-    @GZIP
-    @NoCache
-    public List<MessageIdMatch> searchMessageIds(
-            @QueryParam("lang") String lang,
-            @QueryParam("txt") String txt,
-            @QueryParam("maxGroupCount") @DefaultValue("10") int maxGroupCount,
-            @QueryParam("includeText") @DefaultValue("true") boolean includeText) {
-
-        return messageService.searchMessageIds(lang, txt, maxGroupCount, includeText);
-    }
-
-
-    /***************************
-     * PDF functionality
-     ***************************/
-
-    /**
-     * Returns the reports available for printing message lists
-     * @return the reports available for printing message lists
-     */
-    @GET
-    @Path("/reports")
-    @GZIP
-    @NoCache
-    public List<FmReportVo> getReports() {
-        return fmService.getReports().stream()
-                .map(FmReport::toVo)
-                .collect(Collectors.toList());
-    }
-
-
-    /**
-     * Generates a PDF for the message with the given message id, which may be either a UID,
-     * or a short ID or an MRN of a message.
-     *
-     * If the debug flag is set to true, the HTML that is used for the PDF is returned directly.
-     *
-     * @param messageId the message ID
-     * @param language the language of the returned data
-     * @return the message as a PDF
-     */
-    @GET
-    @Path("/message/{messageId}.pdf")
-    @GZIP
-    @NoCache
-    public Response generatePdfForMessage(
-            @PathParam("messageId") String messageId,
-            @QueryParam("lang") String language,
-            @QueryParam("pageSize") @DefaultValue("A4") String pageSize,
-            @QueryParam("pageOrientation") @DefaultValue("portrait") String pageOrientation,
-            @QueryParam("debug") @DefaultValue("false") boolean debug) throws Exception {
-
-        MessageVo message = getMessage(messageId, language);
-
-        try {
-            ProcessFormat format = debug ? ProcessFormat.TEXT : ProcessFormat.PDF;
-
-            StreamingOutput stream = os -> {
-                try {
-                    fmService.newTemplateBuilder()
-                            .setTemplatePath("/templates/messages/message-details-pdf.ftl")
-                            .setData("messages", Collections.singleton(message))
-                            .setData("pageSize", pageSize)
-                            .setData("pageOrientation", pageOrientation)
-                            .setData("mapThumbnails", true)
-                            .setDictionaryNames("web", "message", "pdf")
-                            .setLanguage(language)
-                            .process(format, os);
-                } catch (Exception e) {
-                    throw new WebApplicationException("Error generating PDF for message " + messageId, e);
-                }
-            };
-
-            Response.ResponseBuilder response = Response.ok(stream);
-            return debug
-                    ? response.type("text/html;charset=UTF-8").build()
-                    : response.type("application/pdf")
-                    .header("Content-Disposition", "attachment; filename=\"message-" + messageId + ".pdf\"")
-                    .build();
-
-        } catch (Exception e) {
-            log.error("Error generating PDF for message " + messageId, e);
-            throw e;
-        }
-    }
-
-
-    /**
-     * Generates a PDF for the message search result.
-     *
-     * If the debug flag is set to true, the HTML that is used for the PDF is returned directly.
-     */
-    @GET
-    @Path("/search.pdf")
-    @GZIP
-    @NoCache
-    public Response generatePdfForSearch(@Context HttpServletRequest request) throws Exception {
-
-        // Perform a search for at most 1000 messages
-        MessageSearchParams params = MessageSearchParams.instantiate(request);
-        params.maxSize(1000).page(0);
-
-        PagedSearchResultVo<MessageVo> result = search(params);
-
-        try {
-            FmReport report = fmService.getReport(params.getReport());
-
-            ProcessFormat format = params.getDebug() ? ProcessFormat.TEXT : ProcessFormat.PDF;
-
-            StreamingOutput stream = os -> {
-                try {
-                    fmService.newTemplateBuilder()
-                            .setTemplatePath(report.getTemplatePath())
-                            .setData("messages", result.getData())
-                            .setData("areaHeadings", params.sortByArea())
-                            .setData("searchCriteria", result.getDescription())
-                            .setData("pageSize", params.getPageSize())
-                            .setData("pageOrientation", params.getPageOrientation())
-                            .setData("mapThumbnails", true)
-                            .setDictionaryNames("web", "message", "pdf")
-                            .setLanguage(params.getLanguage())
-                            .process(format, os);
-                } catch (Exception e) {
-                    throw new WebApplicationException("Error generating PDF for messages", e);
-                }
-            };
-
-            Response.ResponseBuilder response = Response.ok(stream);
-            return params.getDebug()
-                    ? response.type("text/html;charset=UTF-8").build()
-                    : response.type("application/pdf")
-                    .header("Content-Disposition", "attachment; filename=\"messages.pdf\"")
-                    .build();
-
-        } catch (Exception e) {
-            log.error("Error generating PDF for messages", e);
-            throw e;
-        }
-    }
-
-
-    /***************************************/
-    /** Mails                             **/
-    /***************************************/
-
-    /**
-     * Generates and sends an e-mail for the message search result.
-     */
-    @GET
-    @Path("/mail")
-    @Produces("text/plain")
-    @GZIP
-    @NoCache
-    @RolesAllowed({"editor"})
-    public String sendMessageMail(@Context HttpServletRequest request) throws Exception {
-
-        long t0 = System.currentTimeMillis();
-        String mailTo = request.getParameter("mailTo");
-        String mailSubject = request.getParameter("mailSubject");
-        String mailMessage = request.getParameter("mailMessage");
-
-        if (StringUtils.isBlank(mailTo)) {
-            throw new WebApplicationException(400);
-        }
-        mailSubject = StringUtils.defaultIfBlank(mailSubject, "No subject");
-        mailMessage = StringEscapeUtils.escapeHtml(StringUtils.defaultIfBlank(mailMessage, "")).replace("\n", "<br>");
-
-        // Perform a search for at most 1000 messages
-        MessageSearchParams params = MessageSearchParams.instantiate(request);
-        params.maxSize(1000).page(0);
-        PagedSearchResultVo<MessageVo> result = search(params);
-
-        User user = userService.currentUser();
-
-        try {
-            String mailContents =
-                    fmService.newTemplateBuilder()
-                            .setTemplatePath("/templates/messages/message-mail.ftl")
-                            .setData("messages", result.getData())
-                            .setData("areaHeadings", params.sortByArea())
-                            .setData("searchCriteria", result.getDescription())
-                            .setData("mailTo", mailTo)
-                            .setData("mailMessage", mailMessage)
-                            .setData("mailSender", user.getName())
-                            .setDictionaryNames("web", "message", "mail")
-                            .setLanguage(params.getLanguage())
-                            .process();
-
-            Mail mail = HtmlMail.fromHtml(mailContents, app.getBaseUri(), HtmlMail.StyleHandling.INLINE_STYLES, true)
-                    .sender(new InternetAddress("noreply@e-navigation.net"))
-                    .from(new InternetAddress("noreply@e-navigation.net"))
-                    .replyTo(new InternetAddress(user.getEmail()))
-                    .recipient(javax.mail.Message.RecipientType.TO, new InternetAddress(mailTo))
-                    .subject(mailSubject);
-            mailService.sendMail(mail);
-
-            String msg = "Mail sent to " + mailTo + " in " + (System.currentTimeMillis() - t0) + " ms";
-            log.info(msg);
-            return msg;
-
-        } catch (Exception e) {
-            log.error("Error generating PDF for messages", e);
-            throw e;
-        }
-    }
-
-
-
-    /***************************************/
-    /** Exporting and Importing           **/
-    /***************************************/
-
-
-    /**
-     * Generates a ZIP archive for the message search result including attachments.
-     */
-    @GET
-    @Path("/search.zip")
-    @GZIP
-    @NoCache
-    public Response generateZipArchiveForSearch(@Context HttpServletRequest request) throws Exception {
-
-        // Perform a search for at most 1000 messages
-        MessageSearchParams params = MessageSearchParams.instantiate(request);
-        params.language(null).maxSize(1000).page(0);
-
-        PagedSearchResultVo<MessageVo> result = search(params);
-        result.getData().forEach(m -> m.sort(params.getLanguage()));
-
-        try {
-            StreamingOutput stream = os -> messageExportService.export(result, os);
-
-            return Response.ok(stream)
-                    .type("application/zip")
-                    .header("Content-Disposition", "attachment; filename=\"messages.zip\"")
-                    .build();
-
-        } catch (Exception e) {
-            log.error("Error generating ZIP archive for messages", e);
-            throw e;
-        }
-    }
-
-
-    /**
-     * Imports an uploaded messages zip archive
-     *
-     * @param request the servlet request
-     * @return a status
-     */
-    @POST
-    @Path("/import")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Produces("text/plain")
-    @RolesAllowed("admin")
-    public String importMessages(@Context HttpServletRequest request) throws Exception {
-        return executeBatchJobFromUploadedFile(request, "msg-archive-import");
-    }
-
-
-    /** {@inheritDoc} */
-    @Override
-    protected void checkBatchJob(String batchJobName, FileItem fileItem, Map<String, Object> params) throws Exception {
-
-        // Check that the zip file contains a messages.json file
-        if (!checkForMessagesFileInImportArchive(fileItem.getInputStream())) {
-            throw new Exception("Zip archive is missing a valid messages.json entry");
-        }
-
-        // Read and validate the parameters associated with the batch job
-        ImportMessagesArchiveParams batchData;
-        try {
-            batchData = new ObjectMapper().readValue((String)params.get("data"), ImportMessagesArchiveParams.class);
-        } catch (IOException e) {
-            throw new Exception("Missing batch data with tag and message series", e);
-        }
-
-        if (StringUtils.isBlank(batchData.getSeriesId())) {
-            throw new Exception("Missing message series for imported NMs");
-        }
-
-        // Determine all valid message series for the current user
-        Set<String> validMessageSeries = domainService.domainsWithUserRole("admin").stream()
-                .flatMap(d -> d.getMessageSeries().stream())
-                .map(MessageSeries::getSeriesId)
-                .collect(Collectors.toSet());
-
-        // Update parameters
-        params.remove("data");
-        params.put("seriesId", batchData.getSeriesId());
-        if (StringUtils.isNotBlank(batchData.getTagId())) {
-            params.put("tagId", batchData.getTagId());
-        }
-        params.put("assignNewUids", batchData.getAssignNewUids() == null ? false : batchData.getAssignNewUids());
-        params.put("preserveStatus", batchData.getPreserveStatus() == null ? false : batchData.getPreserveStatus());
-        params.put("assignDefaultSeries", batchData.getAssignDefaultSeries() == null ? false : batchData.getAssignDefaultSeries());
-        params.put("createBaseData", batchData.getCreateBaseData() == null ? false : batchData.getCreateBaseData());
-        params.put("validMessageSeries", validMessageSeries);
-    }
-
-
-    /** Checks for a valid "messages.xml" zip file entry **/
-    private boolean checkForMessagesFileInImportArchive(InputStream in) throws Exception {
-        try (ZipInputStream zipFile = new ZipInputStream(in)) {
-            ZipEntry entry;
-            while ((entry = zipFile.getNextEntry()) != null) {
-                if ("messages.json".equals(entry.getName())) {
-                    try {
-                        ObjectMapper mapper = new ObjectMapper();
-                        PagedSearchResultVo<MessageVo> messages = mapper.readValue(
-                                zipFile,
-                                new TypeReference<PagedSearchResultVo<MessageVo>>() {});
-                        return  messages != null;
-                    } catch (Exception e) {
-                        return false;
-                    }
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        return false;
-    }
-
-
     /***************************************/
     /** Message History methods           **/
     /***************************************/
@@ -1062,115 +599,6 @@ public class MessageRestService extends AbstractBatchableRestService {
         return messageService.getMessageHistory(message.getId()).stream()
                 .map(MessageHistory::toVo)
                 .collect(Collectors.toList());
-    }
-
-
-    /***************************************/
-    /** Message Comments methods          **/
-    /***************************************/
-
-    /**
-     * Returns the comments for the given message ID
-     * @param messageId the message ID or message series ID
-     * @return the message comments
-     */
-    @GET
-    @Path("/message/{messageId}/comments")
-    @Produces("application/json;charset=UTF-8")
-    @GZIP
-    @NoCache
-    @RolesAllowed({"editor"})
-    public List<CommentVo> getComments(@PathParam("messageId") String messageId) {
-
-        // Get the message id
-        Message message = messageService.resolveMessage(messageId);
-        if (message == null) {
-            return Collections.emptyList();
-        }
-
-        User user = userService.currentUser();
-        return commentService.getComments(message.getUid()).stream()
-                .map(c -> c.toVo(user))
-                .collect(Collectors.toList());
-    }
-
-
-    /**
-     * Creates a comments for the given message ID
-     * @param messageId the message ID or message series ID
-     * @param comment the template comment to create
-     * @return the persisted comment
-     */
-    @POST
-    @Path("/message/{messageId}/comment")
-    @Consumes("application/json;charset=UTF-8")
-    @Produces("application/json;charset=UTF-8")
-    @NoCache
-    @RolesAllowed({"editor"})
-    public CommentVo createComment(@PathParam("messageId") String messageId, CommentVo comment) {
-
-        // Get the message by message id
-        Message message = messageService.resolveMessage(messageId);
-        if (message == null) {
-            throw new IllegalArgumentException("Invalid message ID " + messageId);
-        }
-
-        return commentService
-                .createComment(new Comment(comment, message, userService.currentUser()))
-                .toVo();
-    }
-
-
-    /**
-     * Updates a comments for the given message ID
-     * @param messageId the message ID or message series ID
-     * @param commentId the message ID or message series ID
-     * @param comment the template comment to updated
-     * @return the message comments
-     */
-    @PUT
-    @Path("/message/{messageId}/comment/{commentId}")
-    @Consumes("application/json;charset=UTF-8")
-    @Produces("application/json;charset=UTF-8")
-    @NoCache
-    @RolesAllowed({"editor"})
-    public CommentVo updateComment(@PathParam("messageId") String messageId, @PathParam("commentId") Integer commentId,
-                                   CommentVo comment) {
-        // Enforce REST PUT pattern
-        if (!Objects.equals(commentId, comment.getId())) {
-            throw new WebApplicationException(400);
-        }
-        // Get the message by nessage id
-        Message message = messageService.resolveMessage(messageId);
-        if (message == null || !message.getComments().stream().anyMatch(c -> c.getId().equals(commentId))) {
-            throw new IllegalArgumentException("Invalid message or comment ID " + messageId);
-        }
-        return commentService
-                .updateComment(new Comment(comment, message, userService.currentUser()))
-                .toVo();
-    }
-
-
-    /**
-     * Acknowledges a comments for the given message ID
-     * @param messageId the message ID or message series ID
-     * @param commentId the message ID or message series ID
-     * @return the message comment
-     */
-    @PUT
-    @Path("/message/{messageId}/comment/{commentId}/ack")
-    @Produces("application/json;charset=UTF-8")
-    @NoCache
-    @RolesAllowed({"editor"})
-    public CommentVo acknowledgeComment(@PathParam("messageId") String messageId, @PathParam("commentId") Integer commentId) {
-        // Get the message by message id
-        Message message = messageService.resolveMessage(messageId);
-        if (message == null || !message.getComments().stream().anyMatch(c -> c.getId().equals(commentId))) {
-            throw new IllegalArgumentException("Invalid message or comment ID " + messageId);
-        }
-        return commentService
-                .acknowledgeComment(userService.currentUser(), commentId)
-                .toVo();
     }
 
 
@@ -1356,66 +784,6 @@ public class MessageRestService extends AbstractBatchableRestService {
 
         public void setAfterId(String afterId) {
             this.afterId = afterId;
-        }
-    }
-
-
-    /** Defines the parameters used when starting an import a messages zip archive */
-    public static class ImportMessagesArchiveParams implements IJsonSerializable {
-
-        Boolean assignNewUids;
-        Boolean preserveStatus;
-        Boolean assignDefaultSeries;
-        Boolean createBaseData;
-        String seriesId;
-        String tagId;
-
-        public Boolean getAssignNewUids() {
-            return assignNewUids;
-        }
-
-        public void setAssignNewUids(Boolean assignNewUids) {
-            this.assignNewUids = assignNewUids;
-        }
-
-        public Boolean getPreserveStatus() {
-            return preserveStatus;
-        }
-
-        public void setPreserveStatus(Boolean preserveStatus) {
-            this.preserveStatus = preserveStatus;
-        }
-
-        public Boolean getAssignDefaultSeries() {
-            return assignDefaultSeries;
-        }
-
-        public void setAssignDefaultSeries(Boolean assignDefaultSeries) {
-            this.assignDefaultSeries = assignDefaultSeries;
-        }
-
-        public Boolean getCreateBaseData() {
-            return createBaseData;
-        }
-
-        public void setCreateBaseData(Boolean createBaseData) {
-            this.createBaseData = createBaseData;
-        }
-
-        public String getSeriesId() {
-            return seriesId;
-        }
-
-        public void setSeriesId(String seriesId) {
-            this.seriesId = seriesId;
-        }
-
-        public String getTagId() {
-            return tagId;
-        }
-
-        public void setTagId(String tagId) {
-            this.tagId = tagId;
         }
     }
 

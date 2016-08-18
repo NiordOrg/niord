@@ -438,7 +438,7 @@ angular.module('niord.messages')
         function ($scope, $rootScope, $http, MessageService) {
             'use strict';
 
-            $scope.importUrl = '/rest/messages/import';
+            $scope.importUrl = '/rest/message-io/import';
             $scope.result = '';
 
             /** Displays the error message */

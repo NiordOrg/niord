@@ -309,7 +309,7 @@ angular.module('niord.messages')
 
             /** Returns the message print reports */
             printReports: function () {
-                return $http.get('/rest/messages/reports');
+                return $http.get('/rest/message-reports/reports');
             },
 
 
@@ -343,7 +343,7 @@ angular.module('niord.messages')
                                     params += '&pageSize=' + printSettings.pageSize;
                                 }
 
-                                $window.location = '/rest/messages/message/' + messageId + '.pdf?' + params;
+                                $window.location = '/rest/message-reports/message/' + messageId + '.pdf?' + params;
                             });
                     });
             },
@@ -365,7 +365,7 @@ angular.module('niord.messages')
 
             /** Sends a message e-mail based on the given parameters */
             sendMessageMail: function (params) {
-                return $http.get('/rest/messages/mail?' + params);
+                return $http.get('/rest/message-mail/send?' + params);
             },
 
 
