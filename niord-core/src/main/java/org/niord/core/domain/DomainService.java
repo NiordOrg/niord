@@ -50,7 +50,7 @@ public class DomainService extends BaseService {
 
     /** Returns the current domain or null if none are set */
     public Domain currentDomain() {
-        String domainId = userService.getCurrentResourceName();
+        String domainId = userService.getCurrentKeycloakDomainId();
         if (StringUtils.isNotBlank(domainId)) {
             return findByDomainId(domainId);
         }
@@ -110,9 +110,9 @@ public class DomainService extends BaseService {
      * @return all domains for which the current user has the given role
      */
     public List<Domain> domainsWithUserRole(String role) {
-        Set<String> resourceNames = userService.getResourcesNamesWithRoles(role);
+        Set<String> domainIds = userService.getKeycloakDomainIdsForRole(role);
         return getDomains().stream()
-                .filter(d -> resourceNames.contains(d.getDomainId()))
+                .filter(d -> domainIds.contains(d.getDomainId()))
                 .collect(Collectors.toList());
     }
 

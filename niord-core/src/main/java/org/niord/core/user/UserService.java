@@ -65,11 +65,11 @@ public class UserService extends BaseService {
 
 
     /**
-     * Returns all the resource names (domain client ID) where the current user has the given role
+     * Returns all the Keycloak domain IDs where the current user has the given role
      * @param role the role to check for
-     * @return all the resource names (domain client ID) where the current user has the given role
+     * @return all the Keycloak domain IDs where the current user has the given role
      */
-    public Set<String> getResourcesNamesWithRoles(String role) {
+    public Set<String> getKeycloakDomainIdsForRole(String role) {
         KeycloakPrincipal keycloakPrincipal = getCallerPrincipal();
         if (keycloakPrincipal != null) {
             KeycloakSecurityContext ctx = keycloakPrincipal.getKeycloakSecurityContext();
@@ -84,8 +84,8 @@ public class UserService extends BaseService {
     }
 
 
-    /** Returns the Keycloak resource (client) associated with the current user */
-    public String getCurrentResourceName() {
+    /** Returns the Keycloak domain ID associated with the current user */
+    public String getCurrentKeycloakDomainId() {
 
         // Get the current Keycloak principal
         KeycloakPrincipal keycloakPrincipal = getCallerPrincipal();
