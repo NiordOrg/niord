@@ -153,8 +153,8 @@ angular.module('niord.common')
             this.changeDomain = function(domain) {
                 if (domain) {
                     $rootScope.domain = domain;
-                    $window.localStorage.domain = domain.clientId;
-                    $window.localStorage.lastDomain = domain.clientId;
+                    $window.localStorage.domain = domain.domainId;
+                    $window.localStorage.lastDomain = domain.domainId;
                     if (domain.timeZone) {
                         moment.tz.setDefault(domain.timeZone);
                     }
@@ -170,12 +170,12 @@ angular.module('niord.common')
 
                 // Prune the list of domains to be the one the user has roles for
                 $rootScope.domains = $.grep($rootScope.domains, function (domain) {
-                    return AuthService.hasRolesFor(domain.clientId);
+                    return AuthService.hasRolesFor(domain.domainId);
                 });
 
                 var domainId = $window.localStorage.domain || $window.localStorage.lastDomain;
                 var matchingDomains = $.grep($rootScope.domains, function (domain) {
-                    return domain.clientId == domainId;
+                    return domain.domainId == domainId;
                 });
                 var domain = matchingDomains.length == 1
                     ? matchingDomains[0]

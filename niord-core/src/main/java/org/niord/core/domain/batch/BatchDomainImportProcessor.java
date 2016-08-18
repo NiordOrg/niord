@@ -39,8 +39,8 @@ public class BatchDomainImportProcessor extends AbstractItemHandler {
         DomainVo domainVo = (DomainVo) item;
         Domain domain = new Domain(domainVo);
 
-        // Look up any existing domain with the same client ID
-        Domain orig = domainService.findByClientId(domain.getClientId());
+        // Look up any existing domain with the same domain ID
+        Domain orig = domainService.findByDomainId(domain.getDomainId());
 
         if (orig == null) {
             // Persist new domain
@@ -49,13 +49,13 @@ public class BatchDomainImportProcessor extends AbstractItemHandler {
 
         } else if (orig.hasChanged(domain)) {
             // Update original
-            getLog().info("Updating domain " + orig.getClientId());
+            getLog().info("Updating domain " + orig.getDomainId());
             orig.updateDomain(domainVo);
             return orig;
         }
 
         // No change, ignore...
-        getLog().info("Ignoring unchanged domain " + orig.getClientId());
+        getLog().info("Ignoring unchanged domain " + orig.getDomainId());
         return null;
     }
 }

@@ -50,20 +50,20 @@ public class NiordKeycloakConfigResolver implements KeycloakConfigResolver {
     public KeycloakDeployment resolve(HttpFacade.Request request) {
 
         // Resolves the domain, i.e. the Keycloak client ID, from the request
-        String clientId = domainResolver.resolveDomain(request);
+        String domainId = domainResolver.resolveDomain(request);
 
-        if (StringUtils.isBlank(clientId)) {
+        if (StringUtils.isBlank(domainId)) {
             return noDeployment;
         }
 
-        // Look up, or create, cached Keycloak deployment for the client ID
-        KeycloakDeployment deployment = cache.get(clientId);
+        // Look up, or create, cached Keycloak deployment for the domain ID
+        KeycloakDeployment deployment = cache.get(domainId);
         if (deployment == null) {
             // If there are concurrent requests, only instantiate once
             synchronized (cache) {
-                deployment = cache.get(clientId);
+                deployment = cache.get(domainId);
                 if (deployment == null) {
-                    deployment = instantiateDeployment(clientId);
+                    deployment = instantiateDeployment(domainId);
                 }
             }
         }
@@ -76,19 +76,19 @@ public class NiordKeycloakConfigResolver implements KeycloakConfigResolver {
     }
 
 
-    /** Instantiates and caches a keycloak deployment for the given client ID */
-    private KeycloakDeployment instantiateDeployment(String clientId) {
+    /** Instantiates and caches a keycloak deployment for the given domain ID */
+    private KeycloakDeployment instantiateDeployment(String domainId) {
 
         try {
             KeycloakIntegrationService keycloak = CdiUtils.getBean(KeycloakIntegrationService.class);
 
             // Instantiate the Keycloak deployment
-            KeycloakDeployment deployment = keycloak.createKeycloakDeploymentForDomain(clientId);
+            KeycloakDeployment deployment = keycloak.createKeycloakDeploymentForDomain(domainId);
 
-            log.info("Instantiated keycloak deployment for client " + clientId);
+            log.info("Instantiated keycloak deployment for domain " + domainId);
 
             // Cache the deployment
-            cache.put(clientId, deployment);
+            cache.put(domainId, deployment);
             return deployment;
 
         } catch (Exception e) {

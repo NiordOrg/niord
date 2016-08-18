@@ -580,7 +580,7 @@ angular.module('niord.common')
 
                         // Handle domain and authentication headers (todo: move to common function)
                         if ($rootScope.domain) {
-                            scope.uploader.headers.NiordDomain = $rootScope.domain.clientId;
+                            scope.uploader.headers.NiordDomain = $rootScope.domain.domainId;
                         }
                         if (AuthService.keycloak.token) {
                             scope.uploader.headers.Authorization = 'bearer ' + AuthService.keycloak.token;

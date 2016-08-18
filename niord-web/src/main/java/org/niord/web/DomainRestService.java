@@ -106,14 +106,14 @@ public class DomainRestService extends AbstractBatchableRestService {
 
     /** Updates an existing domain */
     @PUT
-    @Path("/domain/{clientId}")
+    @Path("/domain/{domainId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({ "sysadmin" })
     @GZIP
     @NoCache
-    public DomainVo updateDomain(@PathParam("clientId") String clientId, DomainVo domain) throws Exception {
-        if (!Objects.equals(clientId, domain.getClientId())) {
+    public DomainVo updateDomain(@PathParam("domainId") String domainId, DomainVo domain) throws Exception {
+        if (!Objects.equals(domainId, domain.getDomainId())) {
             throw new WebApplicationException(400);
         }
 
@@ -123,14 +123,14 @@ public class DomainRestService extends AbstractBatchableRestService {
 
     /** Deletes an existing domain */
     @DELETE
-    @Path("/domain/{clientId}")
+    @Path("/domain/{domainId}")
     @Consumes("application/json;charset=UTF-8")
     @RolesAllowed({ "sysadmin" })
     @GZIP
     @NoCache
-    public void deleteDomain(@PathParam("clientId") String clientId) throws Exception {
-        log.info("Deleting domain " + clientId);
-        domainService.deleteDomain(clientId);
+    public void deleteDomain(@PathParam("domainId") String domainId) throws Exception {
+        log.info("Deleting domain " + domainId);
+        domainService.deleteDomain(domainId);
     }
 
 

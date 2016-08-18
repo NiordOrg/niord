@@ -580,7 +580,7 @@ public class BatchService extends BaseService {
                 i.setFileName(data.getDataFileName());
                 i.setJobNo(data.getJobNo());
                 i.setUser(data.getUser() != null ? data.getUser().getName() : null);
-                i.setDomain(data.getDomain() != null ? data.getDomain().getClientId() : null);
+                i.setDomain(data.getDomain() != null ? data.getDomain().getDomainId() : null);
                 i.setJobName(data.getJobName());
                 i.setProperties(data.getProperties());
                 i.setProgress(data.getProgress());

@@ -68,7 +68,7 @@ public abstract class AbstractApiService {
 
         // Check if a domain has been specified
         if (StringUtils.isNotBlank(domainId)) {
-            Domain domain = domainService.findByClientId(domainId);
+            Domain domain = domainService.findByDomainId(domainId);
             if (domain != null) {
                 // Add the message series of the domain as a filter
                 params.seriesIds(

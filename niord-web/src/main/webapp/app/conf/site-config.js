@@ -44,10 +44,10 @@ angular.module('niord.conf')
         $rootScope.nmMrnPrefix = "urn:mrn:iho:nm:";
 
         $rootScope.domains = [{
-                "clientId" : "niord-client-nw",
+                "domainId" : "niord-client-nw",
                 "name" : "NW"
               }, {
-                "clientId" : "niord-client-nm",
+                "domainId" : "niord-client-nm",
                 "name" : "NM"
               }];
 

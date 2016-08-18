@@ -43,7 +43,7 @@ angular.module('niord.messages')
             publicMessages: function() {
                 var params = 'lang=' + $rootScope.language;
                 if ($rootScope.domain) {
-                    params += '&domain=' + $rootScope.domain.clientId;
+                    params += '&domain=' + $rootScope.domain.domainId;
                 }
                 return $http.get('/rest/public/v1/messages?' + params);
             },

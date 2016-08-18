@@ -226,13 +226,13 @@ angular.module('niord.admin')
 
             /** Updates the given domain **/
             updateDomain: function(domain) {
-                return $http.put('/rest/domains/domain/' + encodeURIComponent(domain.clientId), domain);
+                return $http.put('/rest/domains/domain/' + encodeURIComponent(domain.domainId), domain);
             },
 
 
             /** Deletes the given domain **/
             deleteDomain: function(domain) {
-                return $http.delete('/rest/domains/domain/' + encodeURIComponent(domain.clientId));
+                return $http.delete('/rest/domains/domain/' + encodeURIComponent(domain.domainId));
             },
 
 

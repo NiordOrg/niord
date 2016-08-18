@@ -96,7 +96,7 @@ angular.module('niord.auth')
             /** Returns if the user has the given role in Keycloak **/
             $rootScope.hasRole = function (role) {
                 return AuthService.keycloak.hasRealmRole(role) ||
-                    ($rootScope.domain && AuthService.keycloak.hasResourceRole(role, $rootScope.domain.clientId));
+                    ($rootScope.domain && AuthService.keycloak.hasResourceRole(role, $rootScope.domain.domainId));
             };
 
 
@@ -150,12 +150,12 @@ function bootstrapKeycloak(angularAppName, onLoad) {
         auth.loggedIn = authenticated;
         auth.keycloak = keycloak;
 
-        // Returns whether the current user has any roles defined for the given client
-        auth.hasRolesFor = function (clientId) {
+        // Returns whether the current user has any roles defined for the given domain
+        auth.hasRolesFor = function (domainId) {
             if (!keycloak.resourceAccess) {
                 return false;
             }
-            var access = keycloak.resourceAccess[clientId];
+            var access = keycloak.resourceAccess[domainId];
             return !!access && access.roles.length > 0;
         };
         

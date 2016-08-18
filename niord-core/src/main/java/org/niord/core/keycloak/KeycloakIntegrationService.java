@@ -114,7 +114,7 @@ public class KeycloakIntegrationService {
      *
      * @return the Keycloak public key
      */
-    public PublicKey resolveKeycloakPublicRealmKey() throws Exception {
+    private PublicKey resolveKeycloakPublicRealmKey() throws Exception {
 
         return executeAdminRequest(
                 new HttpGet(resolveAuthServerUrl() + "/realms/" + KEYCLOAK_REALM),
@@ -137,7 +137,7 @@ public class KeycloakIntegrationService {
      *
      * @return the Keycloak public key
      */
-    public String getKeycloakPublicRealmKey() throws Exception {
+    private String getKeycloakPublicRealmKey() throws Exception {
         if (StringUtils.isNotBlank(authServerRealmKey)) {
             return authServerRealmKey;
         }
@@ -153,22 +153,22 @@ public class KeycloakIntegrationService {
 
 
     /**
-     * Creates a new Keycloak deployment for the given domain client ID.
+     * Creates a new Keycloak deployment for the given domain domain ID.
      *
      * If the "authServerRealmKey" setting is defined, this is used as the realm public key,
      * otherwise, the public key is looked up from the Keycloak server
      *
-     * @param clientId the domain client ID
+     * @param domainId the domain ID
      * @return the Keycloak deployment
      */
-    public KeycloakDeployment createKeycloakDeploymentForDomain(String clientId) throws Exception {
+    public KeycloakDeployment createKeycloakDeploymentForDomain(String domainId) throws Exception {
         AdapterConfig cfg = new AdapterConfig();
         cfg.setRealm(KEYCLOAK_REALM);
         cfg.setRealmKey(getKeycloakPublicRealmKey());
         cfg.setBearerOnly(true);
         cfg.setAuthServerUrl(authServerUrl);
         cfg.setSslRequired("external");
-        cfg.setResource(clientId);
+        cfg.setResource(domainId);
         cfg.setUseResourceRoleMappings(true);
 
         return KeycloakDeploymentBuilder.build(cfg);
@@ -200,7 +200,7 @@ public class KeycloakIntegrationService {
      * Returns the list of Keycloak clients
      * @return the list of Keycloak clients
      */
-    public List<ClientRepresentation> getKeycloakDomainClients() throws Exception {
+    private List<ClientRepresentation> getKeycloakDomainClients() throws Exception {
 
         return executeAdminRequest(
                 new HttpGet(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/clients"),
@@ -214,10 +214,10 @@ public class KeycloakIntegrationService {
 
 
     /**
-     * Returns the list of Keycloak client ids
-     * @return the list of Keycloak client ids
+     * Returns the list of Keycloak domain IDs
+     * @return the list of Keycloak domain IDs
      */
-    public Set<String> getKeycloakDomainClientIds() throws Exception {
+    public Set<String> getKeycloakDomainIds() throws Exception {
 
         return getKeycloakDomainClients()
                 .stream()
@@ -229,13 +229,13 @@ public class KeycloakIntegrationService {
     /**
      * Creates a new Keycloak client based on the given domain template
      * @param domain the domain template
-     * @return the list of Keycloak clients
+     * @return if the domain was successfully created
      */
-    public boolean createKeycloakDomainClient(Domain domain) throws Exception {
+    public boolean createKeycloakDomain(Domain domain) throws Exception {
 
         // If the domain already exists, bail out
-        if (getKeycloakDomainClientIds().contains(domain.getClientId())) {
-            log.warn("Domain " + domain.getClientId() + " already exists");
+        if (getKeycloakDomainIds().contains(domain.getDomainId())) {
+            log.warn("Domain " + domain.getDomainId() + " already exists");
             return false;
         }
 
@@ -248,7 +248,7 @@ public class KeycloakIntegrationService {
 
         // Instantiate it from the domain
         client.setId(null);
-        client.setClientId(domain.getClientId());
+        client.setClientId(domain.getDomainId());
         client.setName(domain.getName());
 
         HttpPost post = new HttpPost(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/clients");
@@ -258,14 +258,14 @@ public class KeycloakIntegrationService {
         boolean success = executeAdminRequest(post, true, is -> true);
 
         if (!success) {
-            log.error("Failed creating client " + domain.getClientId());
+            log.error("Failed creating Keycloak domain client " + domain.getDomainId());
             return false;
         }
-        log.info("Created client " + domain.getClientId());
+        log.info("Created Keycloak domain client " + domain.getDomainId());
 
         // Get hold of the newly created client (with a proper ID)
         client = getKeycloakDomainClients().stream()
-                .filter(c -> c.getClientId().equals(domain.getClientId()))
+                .filter(c -> c.getClientId().equals(domain.getDomainId()))
                 .findFirst()
                 .orElse(null);
         String clientsUri = resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/clients/" + client.getId();
@@ -286,7 +286,7 @@ public class KeycloakIntegrationService {
             post = new HttpPost(clientsUri + "/roles");
             post.setEntity(new StringEntity(mapper.writeValueAsString(role), ContentType.APPLICATION_JSON));
             success &= executeAdminRequest(post, true, is -> true);
-            log.info("Created role " + role.getName() + " for client " + domain.getClientId());
+            log.info("Created role " + role.getName() + " for client " + domain.getDomainId());
 
             // The roles are ordered, so that a roles is a composite of its previous roles
             if (prevRole != null) {

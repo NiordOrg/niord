@@ -203,7 +203,7 @@ var app = angular.module('niord.admin', [
             for (var x = 0; x < roles.length; x++) {
                 var role = roles[x];
                 if (AuthService.keycloak.hasRealmRole(role) ||
-                    ($rootScope.domain && AuthService.keycloak.hasResourceRole(role, $rootScope.domain.clientId)))
+                    ($rootScope.domain && AuthService.keycloak.hasResourceRole(role, $rootScope.domain.domainId)))
                     return true;
             }
             return false;

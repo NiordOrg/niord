@@ -45,17 +45,17 @@ import java.util.stream.Collectors;
 @Entity
 @Cacheable
 @Table(indexes = {
-        @Index(name = "domain_client_id", columnList="clientId", unique = true)
+        @Index(name = "domain_domain_id", columnList="domainId", unique = true)
 })
 @NamedQueries({
-        @NamedQuery(name="Domain.findByClientId",
-                query="SELECT d FROM Domain d where d.clientId = :clientId")
+        @NamedQuery(name="Domain.findByDomainId",
+                query="SELECT d FROM Domain d where d.domainId = :domainId")
 })
 @SuppressWarnings("unused")
 public class Domain extends BaseEntity<Integer> {
 
     @NotNull
-    String clientId;
+    String domainId;
 
     @NotNull
     String name;
@@ -93,7 +93,7 @@ public class Domain extends BaseEntity<Integer> {
 
     /** Updates this domain from the given domain */
     public void updateDomain(DomainVo domain) {
-        this.clientId = domain.getClientId();
+        this.domainId = domain.getDomainId();
         this.name = domain.getName();
         this.timeZone = domain.getTimeZone();
         this.latitude = domain.getLat();
@@ -127,7 +127,7 @@ public class Domain extends BaseEntity<Integer> {
     /** Converts this entity to a value object */
     public DomainVo toVo() {
         DomainVo domain = new DomainVo();
-        domain.setClientId(clientId);
+        domain.setDomainId(domainId);
         domain.setName(name);
         domain.setTimeZone(timeZone);
         domain.setLat(latitude);
@@ -167,7 +167,7 @@ public class Domain extends BaseEntity<Integer> {
      */
     @Transient
     public boolean hasChanged(Domain template) {
-        return !Objects.equals(clientId, template.getClientId()) ||
+        return !Objects.equals(domainId, template.getDomainId()) ||
                 !Objects.equals(name, template.getName()) ||
                 !Objects.equals(timeZone, template.getTimeZone()) ||
                 !Objects.equals(latitude, template.getLatitude()) ||
@@ -217,12 +217,12 @@ public class Domain extends BaseEntity<Integer> {
     /** Getters and Setters **/
     /*************************/
 
-    public String getClientId() {
-        return clientId;
+    public String getDomainId() {
+        return domainId;
     }
 
-    public void setClientId(String clientId) {
-        this.clientId = clientId;
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public String getName() {

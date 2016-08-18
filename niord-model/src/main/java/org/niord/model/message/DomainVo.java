@@ -24,7 +24,7 @@ import java.util.List;
  */
 public class DomainVo implements IJsonSerializable {
 
-    private String clientId;
+    private String domainId;
     private String name;
     private String timeZone;
     private Float lat;
@@ -39,12 +39,12 @@ public class DomainVo implements IJsonSerializable {
     /** Getters and Setters **/
     /*************************/
 
-    public String getClientId() {
-        return clientId;
+    public String getDomainId() {
+        return domainId;
     }
 
-    public void setClientId(String clientId) {
-        this.clientId = clientId;
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 
     public String getName() {

@@ -94,7 +94,7 @@ public class TicketService extends BaseCache<String, TicketService.TicketData> {
         String ticket = UUID.randomUUID().toString();
 
         TicketData ticketData = new TicketData(
-                domain != null ? domain.getClientId() : null,
+                domain != null ? domain.getDomainId() : null,
                 user != null ? user.getUsername() : null,
                 roles
         );

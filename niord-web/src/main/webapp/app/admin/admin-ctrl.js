@@ -803,7 +803,7 @@ angular.module('niord.admin')
             $scope.searchUpdated = function() {
                 var search = $scope.search.toLowerCase();
                 $scope.domains = $scope.allDomains.filter(function (domain) {
-                    return match(domain.clientId, search) ||
+                    return match(domain.domainId, search) ||
                         match(domain.name, search);
                 });
             };
@@ -814,7 +814,7 @@ angular.module('niord.admin')
             $scope.addDomain = function () {
                 $scope.editMode = 'add';
                 $scope.domain = {
-                    clientId: undefined,
+                    domainId: undefined,
                     name: undefined,
                     timeZone: moment.tz.guess()
                 };
@@ -828,7 +828,7 @@ angular.module('niord.admin')
             $scope.copyDomain = function (domain) {
                 $scope.editMode = 'add';
                 $scope.domain = angular.copy(domain);
-                $scope.domain.clientId = undefined;
+                $scope.domain.domainId = undefined;
                 $scope.areas.length = 0;
                 $scope.categories.length = 0;
                 $scope.messageSeries.length = 0;
@@ -871,7 +871,7 @@ angular.module('niord.admin')
             /** Deletes the given domain */
             $scope.deleteDomain = function (domain) {
                 DialogService.showConfirmDialog(
-                    "Delete domain?", "Delete domain ID '" + domain.clientId + "'?")
+                    "Delete domain?", "Delete domain ID '" + domain.domainId + "'?")
                     .then(function() {
                         AdminDomainService
                             .deleteDomain(domain)

@@ -50,24 +50,24 @@ public class DomainService extends BaseService {
 
     /** Returns the current domain or null if none are set */
     public Domain currentDomain() {
-        String clientId = userService.getCurrentResourceName();
-        if (StringUtils.isNotBlank(clientId)) {
-            return findByClientId(clientId);
+        String domainId = userService.getCurrentResourceName();
+        if (StringUtils.isNotBlank(domainId)) {
+            return findByDomainId(domainId);
         }
         return null;
     }
 
 
     /**
-     * Returns the domain with the given clientId
-     * @param clientId the clientId
-     * @return the domain with the given clientId
+     * Returns the domain with the given domainId
+     * @param domainId the domainId
+     * @return the domain with the given domainId
      */
-    public Domain findByClientId(String clientId) {
+    public Domain findByDomainId(String domainId) {
         try {
             return em
-                    .createNamedQuery("Domain.findByClientId", Domain.class)
-                    .setParameter("clientId", clientId)
+                    .createNamedQuery("Domain.findByDomainId", Domain.class)
+                    .setParameter("domainId", domainId)
                     .getSingleResult();
         } catch (Exception e) {
             return null;
@@ -93,8 +93,8 @@ public class DomainService extends BaseService {
         List<Domain> domains = getAll(Domain.class);
         if (keycloakState) {
             try {
-                Set<String> keycloakClients = keycloakService.getKeycloakDomainClientIds();
-                domains.forEach(d -> d.setInKeycloak(keycloakClients.contains(d.getClientId())));
+                Set<String> keycloakClients = keycloakService.getKeycloakDomainIds();
+                domains.forEach(d -> d.setInKeycloak(keycloakClients.contains(d.getDomainId())));
             } catch (Exception e) {
                 log.error("Failed loading Keycloak states for domains" + e);
             }
@@ -112,7 +112,7 @@ public class DomainService extends BaseService {
     public List<Domain> domainsWithUserRole(String role) {
         Set<String> resourceNames = userService.getResourcesNamesWithRoles(role);
         return getDomains().stream()
-                .filter(d -> resourceNames.contains(d.getClientId()))
+                .filter(d -> resourceNames.contains(d.getDomainId()))
                 .collect(Collectors.toList());
     }
 
@@ -123,10 +123,10 @@ public class DomainService extends BaseService {
      * @return the updated domain
      */
     public Domain updateDomain(Domain domain) {
-        Domain original = findByClientId(domain.getClientId());
+        Domain original = findByDomainId(domain.getDomainId());
         if (original == null) {
             throw new IllegalArgumentException("Cannot update non-existing domain "
-                    + domain.getClientId());
+                    + domain.getDomainId());
         }
 
         // Copy the domain data
@@ -155,10 +155,10 @@ public class DomainService extends BaseService {
      * @return the created domain
      */
     public Domain createDomain(Domain domain, boolean createInKeycloak) {
-        Domain original = findByClientId(domain.getClientId());
+        Domain original = findByDomainId(domain.getDomainId());
         if (original != null) {
-            throw new IllegalArgumentException("Cannot create domain with duplicate client ID "
-                    + domain.getClientId());
+            throw new IllegalArgumentException("Cannot create domain with duplicate domain ID "
+                    + domain.getDomainId());
         }
 
         // Substitute the areas with the persisted ones
@@ -175,7 +175,7 @@ public class DomainService extends BaseService {
         // If request, create the domain in Keycloak - but do not throw an error in case of an error
         if (createInKeycloak) {
             try {
-                keycloakService.createKeycloakDomainClient(domain);
+                keycloakService.createKeycloakDomain(domain);
             } catch (Exception e) {
                 log.error("Error creating new domain in Keycloak", e);
             }
@@ -187,11 +187,11 @@ public class DomainService extends BaseService {
 
     /**
      * Deletes the domain
-     * @param clientId the client id of the domain to delete
+     * @param domainId the ID of the domain to delete
      */
-    public boolean deleteDomain(String clientId) {
+    public boolean deleteDomain(String domainId) {
 
-        Domain domain = findByClientId(clientId);
+        Domain domain = findByDomainId(domainId);
         if (domain != null) {
             remove(domain);
             return true;
@@ -208,10 +208,10 @@ public class DomainService extends BaseService {
 
         long t0 = System.currentTimeMillis();
 
-        boolean result = keycloakService.createKeycloakDomainClient(domain);
+        boolean result = keycloakService.createKeycloakDomain(domain);
 
-        log.info(String.format("Created client %s in Keycloak in %d ms. Result: %s",
-                domain.getClientId(), System.currentTimeMillis() - t0, result));
+        log.info(String.format("Created domain %s in Keycloak in %d ms. Result: %s",
+                domain.getDomainId(), System.currentTimeMillis() - t0, result));
 
     }
 }

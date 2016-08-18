@@ -34,7 +34,7 @@
                         <li ng-repeat="d in domains">
                             <a href ng-click="changeDomain(d)">
                                 {{d.name}}
-                                <span ng-if="d.clientId == domain.clientId">&#10004;</span>
+                                <span ng-if="d.domainId == domain.domainId">&#10004;</span>
                             </a>
                         </li>
                     </ul>
