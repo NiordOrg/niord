@@ -15,6 +15,11 @@
                         <date-time-picker id="toTime" ng-model="ti.toTime" placeholder="To" style="width: 120px"
                                           format="'LT'"></date-time-picker>
                     </td>
+                    <td width="30" align="right">
+                        <a hreg ng-click="removeTimeInterval($index)">
+                            <span class="glyphicon glyphicon-trash"></span>
+                        </a>
+                    </td>
                 </tr>
             </table>
 
@@ -24,11 +29,13 @@
             <button class="btn btn-default btn-sm" ng-click="addTimeInterval()">
                 <span class="glyphicon glyphicon-plus"></span> Add
             </button>
+            <button class="btn btn-default btn-sm" ng-click="clear()">
+                <span class="glyphicon glyphicon-trash"></span> Clear
+            </button>
             &nbsp;
             <button class="btn btn-default btn-sm" ng-click="cancel()">
                 Cancel
             </button>
-            &nbsp;
             <button class="btn btn-primary btn-sm" ng-click="save()">
                 <span class="glyphicon glyphicon-floppy-disk"></span> Save
             </button>
@@ -36,8 +43,10 @@
     </div>
 
 
-    <div ng-if="!message.editing">
-
+    <div ng-if="!message.editing" style="text-align: right">
+        <div ng-repeat="ti in message.schedule">
+            {{formatTimeInterval(ti)}}
+        </div>
     </div>
 
 

@@ -86,7 +86,6 @@ angular.module('niord.schedule')
             /** Enter edit mode for the given message **/
             $scope.edit = function (message) {
                 message.editing = true;
-                message.editSchedule = [];
             };
 
 

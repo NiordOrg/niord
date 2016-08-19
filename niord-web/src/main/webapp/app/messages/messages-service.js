@@ -478,6 +478,23 @@ angular.module('niord.messages')
                 } else {
                     return $translate.instant('msg.time.until_further_notice', {}, null, lang);
                 }
+            },
+
+            /** Translates a time interval */
+            translateTimeInterval: function(lang, di) {
+                var from = di && di.fromTime ? moment(di.fromTime).locale(lang) : undefined;
+                var to = di && di.toTime ? moment(di.toTime).locale(lang) : undefined;
+
+                var time = '';
+                if (from && to) {
+                    time = from.format('LT') + ' - ' + to.format('LT z');
+                } else if (from) {
+                    time = $translate.instant('msg.time.from_date', { fromDate : from.format('LT z') }, null, lang);
+                } else if (to) {
+                    time = $translate.instant('msg.time.to_date', { toDate : to.format('LT z') }, null, lang);
+                }
+
+                return time;
             }
         };
     }])
