@@ -123,6 +123,10 @@ i.mce-i-map-marker:before {
     font-family: "Glyphicons Halflings";
 }
 
+div.mce-fullscreen {
+    z-index: 1050;
+}
+
 /** Editor -> Format locations dialog **/
 
 .format-locations-result {

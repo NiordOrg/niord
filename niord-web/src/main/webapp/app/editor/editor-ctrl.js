@@ -654,10 +654,10 @@ angular.module('niord.editor')
                 // skin: 'light',
                 statusbar : false,
                 menubar: false,
-                plugins: [ "autolink lists link image anchor", "code textcolor", "media table contextmenu paste" ],
+                plugins: [ "autolink lists link image anchor", "code fullscreen textcolor", "media table contextmenu paste" ],
                 contextmenu: "link image inserttable | cell row column deletetable",
                 toolbar: "styleselect | bold italic | forecolor backcolor | alignleft aligncenter alignright alignjustify | "
-                         + "bullist numlist  | outdent indent | link image table | code | niordlocations",
+                         + "bullist numlist  | outdent indent | link image table | code fullscreen | niordlocations",
                 file_browser_callback: $scope.fileBrowserCallback,
                 setup : function ( editor ) {
                     editor.addButton( 'niordlocations', {
