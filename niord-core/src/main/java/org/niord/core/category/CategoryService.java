@@ -50,6 +50,24 @@ public class CategoryService extends BaseService {
     @Inject
     DomainService domainService;
 
+
+    /**
+     * Returns the category with the given legacy id
+     *
+     * @param legacyId the id of the category
+     * @return the category with the given id or null if not found
+     */
+    public Category findByLegacyId(String legacyId) {
+        try {
+            return em.createNamedQuery("Category.findByLegacyId", Category.class)
+                    .setParameter("legacyId", legacyId)
+                    .getSingleResult();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
     /**
      * Searches for categories matching the given term in the given language
      *

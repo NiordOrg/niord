@@ -64,6 +64,24 @@ public class AreaService extends BaseService {
     @Inject
     DomainService domainService;
 
+
+    /**
+     * Returns the area with the given legacy id
+     *
+     * @param legacyId the id of the area
+     * @return the area with the given id or null if not found
+     */
+    public Area findByLegacyId(String legacyId) {
+        try {
+            return em.createNamedQuery("Area.findByLegacyId", Area.class)
+                    .setParameter("legacyId", legacyId)
+                    .getSingleResult();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
     /**
      * Searches for areas matching the given search params
      *

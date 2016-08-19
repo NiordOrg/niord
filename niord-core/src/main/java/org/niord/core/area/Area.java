@@ -49,6 +49,8 @@ import java.util.stream.Collectors;
 @Entity
 @Cacheable
 @NamedQueries({
+        @NamedQuery(name="Area.findByLegacyId",
+                query = "select a FROM Area a where a.legacyId = :legacyId"),
         @NamedQuery(name  = "Area.findRootAreas",
                 query = "select distinct a from Area a left join fetch a.children where a.parent is null order by a.siblingSortOrder"),
         @NamedQuery(name  = "Area.findAreasWithDescs",
@@ -62,6 +64,8 @@ import java.util.stream.Collectors;
 })
 @SuppressWarnings("unused")
 public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaDesc>, Comparable<Area> {
+
+    String legacyId;
 
     String mrn;
 
@@ -376,6 +380,14 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public String getLegacyId() {
+        return legacyId;
+    }
+
+    public void setLegacyId(String legacyId) {
+        this.legacyId = legacyId;
+    }
 
     public String getMrn() {
         return mrn;

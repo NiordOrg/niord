@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.db.SpatialIntersectsPredicate;
 import org.niord.core.service.BaseService;
+import org.omg.CORBA.ORB;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
@@ -44,6 +45,24 @@ public class ChartService extends BaseService {
 
     @Inject
     private Logger log;
+
+
+    /**
+     * Returns the chart with the given legacy id
+     *
+     * @param legacyId the id of the category
+     * @return the chart with the given id or null if not found
+     */
+    public Chart findByLegacyId(String legacyId) {
+        try {
+            return em.createNamedQuery("Chart.findByLegacyId", Chart.class)
+                    .setParameter("legacyId", legacyId)
+                    .getSingleResult();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
 
     /**
      * Searches for charts matching the given term

@@ -40,6 +40,8 @@ import java.util.stream.Collectors;
 @Entity
 @Cacheable
 @NamedQueries({
+        @NamedQuery(name="Category.findByLegacyId",
+                query = "select c FROM Category c where c.legacyId = :legacyId"),
         @NamedQuery(name  = "Category.findRootCategories",
                 query = "select distinct c from Category c left join fetch c.children where c.parent is null"),
         @NamedQuery(name  = "Category.findCategoriesWithDescs",
@@ -51,6 +53,8 @@ import java.util.stream.Collectors;
 })
 @SuppressWarnings("unused")
 public class Category extends VersionedEntity<Integer> implements ILocalizable<CategoryDesc> {
+
+    String legacyId;
 
     String mrn;
 
@@ -245,6 +249,14 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public String getLegacyId() {
+        return legacyId;
+    }
+
+    public void setLegacyId(String legacyId) {
+        this.legacyId = legacyId;
+    }
 
     public String getMrn() {
         return mrn;

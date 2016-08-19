@@ -43,6 +43,8 @@ import java.util.regex.Pattern;
         @Index(name = "chart_chart_number", columnList="chartNumber", unique = true)
 })
 @NamedQueries({
+        @NamedQuery(name="Chart.findByLegacyId",
+                query = "select c FROM Chart c where c.legacyId = :legacyId"),
 
         @NamedQuery(name  = "Chart.searchCharts",
                 query = "select distinct c from Chart c where c.active in (:active) and "
@@ -69,6 +71,8 @@ public class Chart extends VersionedEntity<Integer> {
                 "$",
             Pattern.CASE_INSENSITIVE
     );
+
+    String legacyId;
 
     @Column(unique = true, nullable = false)
     String chartNumber;
@@ -240,6 +244,14 @@ public class Chart extends VersionedEntity<Integer> {
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public String getLegacyId() {
+        return legacyId;
+    }
+
+    public void setLegacyId(String legacyId) {
+        this.legacyId = legacyId;
+    }
 
     public String getChartNumber() {
         return chartNumber;
