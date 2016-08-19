@@ -72,11 +72,13 @@ angular.module('niord.schedule')
             $scope.loadSchedule = function () {
                 var messageIds = [];
                 angular.forEach($scope.messageList, function (message) {
+                    message.editing = false;
+                    message.schedule = [];
                     messageIds.push(message.id);
                 });
 
                 // TODO: Load schedule
-                console.log("LOADING SCHEDULE");
+
             };
 
             // Monitor changes to the date
