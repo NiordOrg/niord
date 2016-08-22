@@ -22,8 +22,7 @@
         td.table-item {
             vertical-align: top;
             width: 100%;
-            padding: 5px;
-            border-top: 0.05em dotted gray;
+            padding: 5px 0;
         }
         h4 {
             color: #8f2f7b;
