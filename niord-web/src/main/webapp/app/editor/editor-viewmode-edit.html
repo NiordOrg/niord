@@ -519,7 +519,7 @@
             <editor-field edit-mode="editMode" field-id="description" field-title="msg.field.description">
 
                 <editor-field-value-viewer>
-                    <div ng-if="message.descs.length > 0" ng-bind-html="message.descs[0].description | toTrusted"></div>
+                    <div class="message-description" ng-if="message.descs.length > 0" ng-bind-html="message.descs[0].description | toTrusted"></div>
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">

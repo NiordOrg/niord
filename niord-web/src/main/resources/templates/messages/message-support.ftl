@@ -272,7 +272,7 @@
         <#if msg.descs?has_content && msg.descs[0].description?has_content>
             <tr>
                 <td class="field-name">${text("msg.field.details")}</td>
-                <td class="field-value">
+                <td class="field-value message-description">
                 ${msg.descs[0].description}
                 </td>
             </tr>

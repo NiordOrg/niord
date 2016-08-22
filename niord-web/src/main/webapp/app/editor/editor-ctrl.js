@@ -654,6 +654,8 @@ angular.module('niord.editor')
                 // skin: 'light',
                 statusbar : false,
                 menubar: false,
+                content_css : '/css/messages.css',
+                body_class : 'message-description',
                 plugins: [ "autolink lists link image anchor", "code fullscreen textcolor", "media table contextmenu paste" ],
                 contextmenu: "link image inserttable | cell row column deletetable",
                 toolbar: "styleselect | bold italic | forecolor backcolor | alignleft aligncenter alignright alignjustify | "

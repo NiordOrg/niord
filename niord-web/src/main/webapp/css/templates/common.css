@@ -71,6 +71,17 @@ ol.feature-coordinates li span {
     color: black;
 }
 
+/** For tables in the message rich text description field **/
+.message-description table {
+    border-collapse: collapse;
+    border: 0.05em solid #333;
+}
+
+.message-description table td, .message-description table th {
+    border: 0.05em solid #333;
+    padding: 3px;
+}
+
 .attachment {
     text-align: center;
 }

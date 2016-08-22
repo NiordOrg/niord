@@ -346,6 +346,18 @@ ol.message-details-positions li span {
     color:#333;
 }
 
+/** For tables in the message rich text description field **/
+.message-description table {
+    border-collapse: collapse;
+    border: 1px solid #333;
+}
+
+.message-description table td, .message-description table th {
+    border: 1px solid #333;
+    padding: 3px;
+}
+
+
 /**
  * Message selection styles
  */
