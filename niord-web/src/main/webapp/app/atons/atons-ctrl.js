@@ -68,7 +68,7 @@ angular.module('niord.atons')
                 },
                 area: {
                     enabled: false,
-                    focusField: '#areas > div > input.ui-select-search',
+                    focusField: '#areas input.ui-select-search',
                     areas: []
                 }
             };
@@ -89,6 +89,9 @@ angular.module('niord.atons')
                     $scope.updateFeatureCollection();
                 }
             };
+
+            // Determines whether to use domain filtering for area searches or not
+            $scope.domain = $rootScope.domain !== undefined;
 
             /*****************************/
             /** Filter Handling         **/
@@ -126,7 +129,7 @@ angular.module('niord.atons')
                         filter.charts = [];
                         break;
                     case 'area':
-                        filter.areas = [];
+                        filter.areas.length = 0;
                         break;
                 }
             };
@@ -193,22 +196,6 @@ angular.module('niord.atons')
                 });
             };
 
-
-            // Use for area selection
-            $scope.areas = [];
-            $scope.refreshAreas = function(name) {
-                if (!name || name.length == 0) {
-                    return [];
-                }
-                return $http.get(
-                    '/rest/areas/search?name=' + encodeURIComponent(name)
-                        + '&domain=' + ($rootScope.domain !== undefined)
-                        + '&lang=' + $rootScope.language
-                        + '&limit=10&geometry=true'
-                ).then(function(response) {
-                    $scope.areas = response.data;
-                });
-            };
 
             /** Recursively formats the names of the parent lineage for areas and categories **/
             $scope.formatParents = function(child) {
