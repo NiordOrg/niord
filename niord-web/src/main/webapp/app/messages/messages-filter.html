@@ -128,22 +128,7 @@
 
         <!-- Chart Filter -->
         <view-mode-filter-panel state="state" filter-name="chart" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
-            <ui-select multiple id="charts" ng-model="state.chart.charts" >
-                <ui-select-match placeholder="Select charts">
-                    {{$item.chartNumber}}
-                    <span ng-if="$item.internationalNumber">(INT {{$item.internationalNumber}})</span>
-                </ui-select-match>
-                <ui-select-choices repeat="chart in charts"
-                                   refresh="refreshCharts($select.search)"
-                                   refresh-delay="100">
-                    <div>
-                        <span ng-bind-html="chart.chartNumber | highlight: $select.search"></span>
-                        <span ng-if="chart.internationalNumber">(INT {{chart.internationalNumber}})</span>
-                        <small ng-bind-html="chart.name | highlight: $select.search"></small>
-                    </div>
-
-                </ui-select-choices>
-            </ui-select>
+            <charts-field id="charts" chart-data="state.chart" init-ids="initChartIds" multiple="true"></charts-field>
         </view-mode-filter-panel>
 
 

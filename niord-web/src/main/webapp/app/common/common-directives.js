@@ -203,6 +203,82 @@ angular.module('niord.common')
     }])
 
 
+    /****************************************************************
+     * The charts-field directive supports selecting either a
+     * single chart or a list of charts. For single-chart selection use
+     * chartData.chart and for multi-chart selection use chartData.charts.
+     * Use "init-ids" to initialize the charts using a list of chart ids.
+     ****************************************************************/
+    .directive('chartsField', ['$rootScope', '$http', function($rootScope, $http) {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: '/app/common/charts-field.html',
+            scope: {
+                chartData:      "=",
+                initIds:        "=",
+                geometry:       "=",
+                multiple:       "="
+            },
+            link: function(scope) {
+
+                scope.chartData = scope.chartData || {};
+
+                // Chart search parameters
+                scope.multiple = scope.multiple || false;
+                scope.geometry = scope.geometry || false;
+
+                if (scope.multiple && !scope.chartData.charts) {
+                    scope.chartData.charts = [];
+                }
+
+                // init-ids can be used to instantiate the field from a list of chart IDs
+                scope.$watch("initIds", function (initIds) {
+                    if (initIds && initIds.length > 0) {
+                        $http.get('/rest/charts/search/' + initIds.join() + '?lang=' + $rootScope.language + '&limit=20')
+                            .then(function(response) {
+                                angular.forEach(response.data, function (chart) {
+                                    if (scope.multiple) {
+                                        scope.chartData.charts.push(chart);
+                                    } else {
+                                        scope.chartData.chart = chart;
+                                    }
+                                });
+                            });
+                    }
+                }, true);
+
+
+                /** Refreshes the chart search result */
+                scope.searchResult = [];
+                scope.refreshCharts = function(name) {
+                    if (!name || name.length == 0) {
+                        return [];
+                    }
+                    return $http.get(
+                        '/rest/charts/search?name=' + encodeURIComponent(name) +
+                        '&geometry=' + scope.geometry +
+                        '&lang=' + $rootScope.language +
+                        '&limit=10'
+                    ).then(function(response) {
+                        scope.searchResult = response.data;
+                    });
+                };
+
+
+                /** Removes the current chart selection */
+                scope.removeCharts = function () {
+                    if (scope.multiple) {
+                        scope.chartData.charts.length = 0;
+                    } else {
+                        scope.chartData.chart = undefined;
+                    }
+                };
+            }
+        }
+    }])
+
+
     /** Use this directive to set focus **/
     .directive('focus', ['$timeout', function ($timeout) {
         'use strict';

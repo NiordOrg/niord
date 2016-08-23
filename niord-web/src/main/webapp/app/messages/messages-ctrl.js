@@ -105,7 +105,7 @@ angular.module('niord.messages')
                 },
                 chart: {
                     enabled: false,
-                    focusField: '#charts > div > input.ui-select-search',
+                    focusField: '#charts input.ui-select-search',
                     charts: []
                 },
                 messageSeries: {
@@ -135,6 +135,7 @@ angular.module('niord.messages')
             $scope.initTagIds = [];
             $scope.initAreaIds = [];
             $scope.initCategoryIds = [];
+            $scope.initChartIds = [];
 
 
             /** Destroy any pending message loading operations **/
@@ -210,7 +211,7 @@ angular.module('niord.messages')
                         filter.atons = [];
                         break;
                     case 'chart':
-                        filter.charts = [];
+                        filter.charts.length = 0;
                         break;
                     case 'messageSeries':
                         filter.sereis = [];
@@ -435,11 +436,7 @@ angular.module('niord.messages')
                 }
                 if (params.chart && params.chart.length > 0) {
                     s.chart.enabled = true;
-                    var charts = (typeof params.chart === 'string') ? params.chart : params.chart.join();
-                    $http.get('/rest/charts/search/' + charts + '?lang=' + $rootScope.language + '&limit=10')
-                        .then(function(response) {
-                            s.chart.charts = response.data;
-                        });
+                    $scope.initChartIds = (typeof params.chart === 'string') ? [ params.chart ] : params.chart;
                 }
                 if (params.messageSeries && params.messageSeries.length > 0) {
                     s.messageSeries.enabled = true;
@@ -519,20 +516,6 @@ angular.module('niord.messages')
                     '/rest/atons/search-name?name=' + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&maxAtonNo=10'
                 ).then(function(response) {
                     $scope.atons = response.data;
-                });
-            };
-
-
-            // Use for charts selection
-            $scope.charts = [];
-            $scope.refreshCharts = function(name) {
-                if (!name || name.length == 0) {
-                    return [];
-                }
-                return $http.get(
-                    '/rest/charts/search?name=' + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10'
-                ).then(function(response) {
-                    $scope.charts = response.data;
                 });
             };
 

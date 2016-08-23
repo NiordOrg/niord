@@ -1,0 +1,33 @@
+<div class="input-group">
+
+    <ui-select ng-if="!multiple" ng-model="chartData.chart">
+        <ui-select-match placeholder="Select chart">
+            {{chartData.chart.chartNumber}}
+            <span ng-if="chartData.chart.internationalNumber">(INT {{chartData.chart.internationalNumber}})</span>
+        </ui-select-match>
+        <ui-select-choices repeat="chart in searchResult"
+                           refresh="refreshCharts($select.search)"
+                           refresh-delay="100">
+            <span ng-bind-html="chart.chartNumber | highlight: $select.search"></span>
+            <span ng-if="chart.internationalNumber">(INT {{chart.internationalNumber}})</span>
+            <small ng-bind-html="chart.name | highlight: $select.search"></small>
+        </ui-select-choices>
+    </ui-select>
+
+
+    <ui-select ng-if="multiple" multiple ng-model="chartData.charts">
+        <ui-select-match placeholder="Select charts">
+            {{$item.chartNumber}}
+            <span ng-if="$item.internationalNumber">(INT {{$item.internationalNumber}})</span>
+        </ui-select-match>
+        <ui-select-choices repeat="chart in searchResult"
+                           refresh="refreshCharts($select.search)"
+                           refresh-delay="100">
+            <span ng-bind-html="chart.chartNumber | highlight: $select.search"></span>
+            <span ng-if="chart.internationalNumber">(INT {{chart.internationalNumber}})</span>
+            <small ng-bind-html="chart.name | highlight: $select.search"></small>
+        </ui-select-choices>
+    </ui-select>
+
+    <span class="input-group-addon clickable" style="font-size: 12px" ng-click="removeCharts()"><span class="glyphicon glyphicon-trash"></span></span>
+</div>

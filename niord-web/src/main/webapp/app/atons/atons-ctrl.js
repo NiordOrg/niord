@@ -197,19 +197,6 @@ angular.module('niord.atons')
             };
 
 
-            /** Recursively formats the names of the parent lineage for areas and categories **/
-            $scope.formatParents = function(child) {
-                var txt = undefined;
-                if (child) {
-                    txt = (child.descs && child.descs.length > 0) ? child.descs[0].name : 'N/A';
-                    if (child.parent) {
-                        txt = $scope.formatParents(child.parent) + " - " + txt;
-                    }
-                }
-                return txt;
-            };
-
-
             // Only apply the map extent as a filter if the map view mode used
             $scope.$watch(
                 function () { return $location.path(); },
