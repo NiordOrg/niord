@@ -1,6 +1,6 @@
 <div class="input-group">
 
-    <ui-select ng-if="!multiple" ng-model="areaData.area" >
+    <ui-select ng-if="!multiple" ng-model="areaData.area" ng-change="areaUpdated()">
         <ui-select-match placeholder="Select area">
             {{areaData.area.descs[0].name}}
         </ui-select-match>
@@ -16,7 +16,7 @@
     </ui-select>
 
 
-    <ui-select ng-if="multiple" multiple ng-model="areaData.areas" >
+    <ui-select ng-if="multiple" multiple ng-model="areaData.areas" ng-change="areaUpdated()">
         <ui-select-match placeholder="Select areas">
             {{$item.descs[0].name}}
         </ui-select-match>

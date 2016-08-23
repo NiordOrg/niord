@@ -437,23 +437,6 @@ angular.module('niord.editor')
             };
 
 
-            // Use for area selection
-            $scope.areas = [];
-            $scope.refreshAreas = function(name) {
-                if (!name || name.length == 0) {
-                    return [];
-                }
-                return $http.get(
-                    '/rest/areas/search?name=' + encodeURIComponent(name) +
-                    '&domain=true'+
-                    '&lang=' + $rootScope.language +
-                    '&limit=10'
-                ).then(function(response) {
-                    $scope.areas = response.data;
-                });
-            };
-
-
             /** Copies the locations from the selected area to the message **/
             $scope.copyAreaLocations = function() {
                 var msg = $scope.message;

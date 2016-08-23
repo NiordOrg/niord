@@ -32,13 +32,14 @@ angular.module('niord.common')
             templateUrl: '/app/common/areas-field.html',
             scope: {
                 areaData:       "=",
+                areaChanged:    "&",
                 initIds:        "=",
                 domain:         "=",
                 messageSorting: "=",
                 geometry:       "=",
                 multiple:       "="
             },
-            link: function(scope) {
+            link: function(scope, element, attrs) {
 
                 scope.formatParents = LangService.formatParents;
                 scope.areaData = scope.areaData || {};
@@ -52,6 +53,14 @@ angular.module('niord.common')
                 if (scope.multiple && !scope.areaData.areas) {
                     scope.areaData.areas = [];
                 }
+
+
+                /** Called whenever the area has been updated **/
+                scope.areaUpdated = function () {
+                    if (attrs.areaChanged) {
+                        scope.areaChanged();
+                    }
+                };
 
 
                 // init-ids can be used to instantiate the field from a list of area IDs
@@ -97,13 +106,14 @@ angular.module('niord.common')
                     } else {
                         scope.areaData.area = undefined;
                     }
+                    scope.areaUpdated();
                 };
             }
         }
     }])
 
 
-
+    /** Use this directive to set focus **/
     .directive('focus', ['$timeout', function ($timeout) {
         'use strict';
 
