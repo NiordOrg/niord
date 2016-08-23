@@ -111,7 +111,7 @@ angular.module('niord.messages')
                 messageSeries: {
                     enabled: false,
                     focusField: '#messageSeries input.ui-select-search',
-                    series: []
+                    messageSeries: []
                 },
                 area: {
                     enabled: false,
@@ -215,7 +215,7 @@ angular.module('niord.messages')
                         filter.charts.length = 0;
                         break;
                     case 'messageSeries':
-                        filter.series.length = 0;
+                        filter.messageSeries.length = 0;
                         break;
                     case 'area':
                         filter.areas.length = 0;
@@ -340,7 +340,7 @@ angular.module('niord.messages')
                     })
                 }
                 if (s.messageSeries.enabled) {
-                    angular.forEach(s.messageSeries.series, function (s) {
+                    angular.forEach(s.messageSeries.messageSeries, function (s) {
                         params += '&messageSeries=' + s.seriesId;
                     })
                 }

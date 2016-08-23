@@ -304,8 +304,8 @@ angular.module('niord.common')
                 scope.multiple = scope.multiple || false;
                 scope.domain = scope.domain || false;
 
-                if (scope.multiple && !scope.seriesData.series) {
-                    scope.seriesData.series = [];
+                if (scope.multiple && !scope.seriesData.messageSeries) {
+                    scope.seriesData.messageSeries = [];
                 }
 
                 // init-ids can be used to instantiate the field from a list of message series IDs
@@ -315,9 +315,9 @@ angular.module('niord.common')
                             .then(function(response) {
                                 angular.forEach(response.data, function (series) {
                                     if (scope.multiple) {
-                                        scope.seriesData.series.push(series);
+                                        scope.seriesData.messageSeries.push(series);
                                     } else {
-                                        scope.seriesData.series = series;
+                                        scope.seriesData.messageSeries = series;
                                     }
                                 });
                             });
@@ -345,9 +345,9 @@ angular.module('niord.common')
                 /** Removes the current message series selection */
                 scope.removeMessageSeries = function () {
                     if (scope.multiple) {
-                        scope.seriesData.series.length = 0;
+                        scope.seriesData.messageSeries.length = 0;
                     } else {
-                        scope.seriesData.series = undefined;
+                        scope.seriesData.messageSeries = undefined;
                     }
                 };
             }

@@ -819,7 +819,6 @@ angular.module('niord.admin')
                     timeZone: moment.tz.guess(),
                     schedule: false
                 };
-                $scope.messageSeries.length = 0;
             };
 
 
@@ -828,7 +827,6 @@ angular.module('niord.admin')
                 $scope.editMode = 'add';
                 $scope.domain = angular.copy(domain);
                 $scope.domain.domainId = undefined;
-                $scope.messageSeries.length = 0;
             };
 
 
@@ -836,7 +834,6 @@ angular.module('niord.admin')
             $scope.editDomain = function (domain) {
                 $scope.editMode = 'edit';
                 $scope.domain = angular.copy(domain);
-                $scope.messageSeries.length = 0;
             };
 
 
@@ -891,20 +888,6 @@ angular.module('niord.admin')
                     'Upload Domains File',
                     '/rest/domains/upload-domains',
                     'json');
-            };
-
-
-            /** Use for message series selection */
-            $scope.messageSeries = [];
-            $scope.refreshMessageSeries = function(name) {
-                if (!name || name.length == 0) {
-                    return [];
-                }
-                return AdminDomainService
-                    .searchMessageSeries(name)
-                    .then(function(response) {
-                        $scope.messageSeries = response.data;
-                    });
             };
         }])
 

@@ -76,19 +76,7 @@
                         <div class="form-group">
                             <label class="col-sm-4">Message Series</label>
                             <div class="col-sm-8">
-                                <ui-select multiple id="messageSeries" ng-model="domain.messageSeries" >
-                                    <ui-select-match placeholder="Select Message Series">
-                                        {{$item.seriesId}}
-                                    </ui-select-match>
-                                    <ui-select-choices repeat="series in messageSeries"
-                                                       refresh="refreshMessageSeries($select.search)"
-                                                       refresh-delay="100">
-                                        <div>
-                                            <span ng-bind-html="series.seriesId | highlight: $select.search"></span>
-                                        </div>
-
-                                    </ui-select-choices>
-                                </ui-select>
+                                <message-series-field id="messageSeries" series-data="domain" multiple="true"></message-series-field>
                             </div>
                         </div>
 

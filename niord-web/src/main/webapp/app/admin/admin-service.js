@@ -239,14 +239,7 @@ angular.module('niord.admin')
             /** Creates the domain in Keycloak **/
             createDomainInKeycloak : function (domain) {
                 return $http.post('/rest/domains/keycloak', domain);
-            },
-
-            /** Returns the message series matching the given name */
-            searchMessageSeries : function (name) {
-                return $http.get('/rest/message-series/search?name='
-                    + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10')
             }
-
         };
     }])
 

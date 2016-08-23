@@ -1,8 +1,8 @@
 <div class="input-group">
 
-    <ui-select ng-if="!multiple" ng-model="seriesData.series" >
+    <ui-select ng-if="!multiple" ng-model="seriesData.messageSeries" >
         <ui-select-match placeholder="Select Message Series">
-            {{seriesData.series.seriesId}}
+            {{seriesData.messageSeries.seriesId}}
         </ui-select-match>
         <ui-select-choices repeat="series in searchResult"
                            refresh="refreshMessageSeries($select.search)"
@@ -15,7 +15,7 @@
     </ui-select>
 
 
-    <ui-select ng-if="multiple" multiple ng-model="seriesData.series" >
+    <ui-select ng-if="multiple" multiple ng-model="seriesData.messageSeries" >
         <ui-select-match placeholder="Select Message Series">
             {{$item.seriesId}}
         </ui-select-match>
