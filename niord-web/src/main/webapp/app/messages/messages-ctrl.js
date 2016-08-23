@@ -110,7 +110,7 @@ angular.module('niord.messages')
                 },
                 messageSeries: {
                     enabled: false,
-                    focusField: '#messageSeries > div > input.ui-select-search',
+                    focusField: '#messageSeries input.ui-select-search',
                     series: []
                 },
                 area: {
@@ -136,6 +136,7 @@ angular.module('niord.messages')
             $scope.initAreaIds = [];
             $scope.initCategoryIds = [];
             $scope.initChartIds = [];
+            $scope.initSeriesIds = [];
 
 
             /** Destroy any pending message loading operations **/
@@ -214,7 +215,7 @@ angular.module('niord.messages')
                         filter.charts.length = 0;
                         break;
                     case 'messageSeries':
-                        filter.sereis = [];
+                        filter.series.length = 0;
                         break;
                     case 'area':
                         filter.areas.length = 0;
@@ -440,11 +441,7 @@ angular.module('niord.messages')
                 }
                 if (params.messageSeries && params.messageSeries.length > 0) {
                     s.messageSeries.enabled = true;
-                    var series = (typeof params.messageSeries === 'string') ? params.messageSeries : params.messageSeries.join();
-                    $http.get('/rest/message-series/search/' + series + '?lang=' + $rootScope.language + '&limit=10')
-                        .then(function(response) {
-                            s.messageSeries.series = response.data;
-                        });
+                    $scope.initSeriesIds = (typeof params.messageSeries === 'string') ? [ params.messageSeries ] : params.messageSeries;
                 }
                 if (params.area && params.area.length > 0) {
                     s.area.enabled = true;
@@ -516,23 +513,6 @@ angular.module('niord.messages')
                     '/rest/atons/search-name?name=' + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&maxAtonNo=10'
                 ).then(function(response) {
                     $scope.atons = response.data;
-                });
-            };
-
-
-            // Use for message series selection
-            $scope.messageSeries = [];
-            $scope.refreshMessageSeries = function(name) {
-                if (!name || name.length == 0) {
-                    return [];
-                }
-                return $http.get(
-                    '/rest/message-series/search?name=' + encodeURIComponent(name) +
-                    '&domain=' + $scope.state.domain.enabled +
-                    '&lang=' + $rootScope.language +
-                    '&limit=10'
-                ).then(function(response) {
-                    $scope.messageSeries = response.data;
                 });
             };
 
