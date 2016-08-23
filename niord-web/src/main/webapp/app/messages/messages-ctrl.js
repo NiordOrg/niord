@@ -120,7 +120,7 @@ angular.module('niord.messages')
                 },
                 category: {
                     enabled: false,
-                    focusField: '#categories > div > input.ui-select-search',
+                    focusField: '#categories input.ui-select-search',
                     categories: []
                 },
                 date: {
@@ -134,6 +134,7 @@ angular.module('niord.messages')
             // Used for initializing base data from parameters
             $scope.initTagIds = [];
             $scope.initAreaIds = [];
+            $scope.initCategoryIds = [];
 
 
             /** Destroy any pending message loading operations **/
@@ -218,7 +219,7 @@ angular.module('niord.messages')
                         filter.areas.length = 0;
                         break;
                     case 'category':
-                        filter.categories = [];
+                        filter.categories.length = 0;
                         break;
                     case 'date':
                         filter.dateType = 'PUBLISH_DATE';
@@ -454,11 +455,7 @@ angular.module('niord.messages')
                 }
                 if (params.category && params.category.length > 0) {
                     s.category.enabled = true;
-                    var categories = (typeof params.category === 'string') ? params.category : params.category.join();
-                    $http.get('/rest/categories/search/' + categories + '?lang=' + $rootScope.language + '&limit=10')
-                        .then(function(response) {
-                            s.category.categories = response.data;
-                        });
+                    $scope.initCategoryIds = (typeof params.category === 'string') ? [ params.category ] : params.category;
                 }
                 if (params.fromDate || params.toDate) {
                     s.date.enabled = true;
@@ -554,35 +551,6 @@ angular.module('niord.messages')
                 ).then(function(response) {
                     $scope.messageSeries = response.data;
                 });
-            };
-
-
-            // Use for category selection
-            $scope.categories = [];
-            $scope.refreshCategories = function(name) {
-                if (!name || name.length == 0) {
-                    return [];
-                }
-                return $http.get(
-                    '/rest/categories/search?name=' + encodeURIComponent(name) +
-                    '&domain=' + $scope.state.domain.enabled +
-                    '&lang=' + $rootScope.language +
-                    '&limit=10'
-                ).then(function(response) {
-                    $scope.categories = response.data;
-                });
-            };
-
-            // Recursively formats the names of the parent lineage for areas and categories
-            $scope.formatParents = function(child) {
-                var txt = undefined;
-                if (child) {
-                    txt = (child.descs && child.descs.length > 0) ? child.descs[0].name : 'N/A';
-                    if (child.parent) {
-                        txt = $scope.formatParents(child.parent) + " - " + txt;
-                    }
-                }
-                return txt;
             };
 
 

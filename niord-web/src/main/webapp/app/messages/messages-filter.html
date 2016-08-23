@@ -173,20 +173,7 @@
 
         <!-- Category Filter -->
         <view-mode-filter-panel state="state" filter-name="category" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
-            <ui-select multiple id="categories" ng-model="state.category.categories" >
-                <ui-select-match placeholder="Select categories">
-                    {{$item.descs[0].name}}
-                </ui-select-match>
-                <ui-select-choices repeat="category in categories"
-                                   refresh="refreshCategories($select.search)"
-                                   refresh-delay="100">
-                    <div>
-                        <span ng-bind-html="category.descs[0].name | highlight: $select.search"></span>
-                        <small ng-if="category.parent">({{formatParents(category.parent)}})</small>
-                    </div>
-
-                </ui-select-choices>
-            </ui-select>
+            <categories-field id="categories" category-data="state.category" init-ids="initCategoryIds" multiple="true" domain="state.domain.enabled"></categories-field>
         </view-mode-filter-panel>
 
 

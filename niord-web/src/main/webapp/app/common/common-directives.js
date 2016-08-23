@@ -21,7 +21,7 @@ angular.module('niord.common')
 
     /****************************************************************
      * The areas-field directive supports selecting either a
-     * single area or a list of areas. For single-tag selection use
+     * single area or a list of areas. For single-area selection use
      * areaData.area and for multi-area selection use areaData.areas.
      * Use "init-ids" to initialize the areas using a list of area ids.
      ****************************************************************/
@@ -107,6 +107,96 @@ angular.module('niord.common')
                         scope.areaData.area = undefined;
                     }
                     scope.areaUpdated();
+                };
+            }
+        }
+    }])
+
+
+    /****************************************************************
+     * The categories-field directive supports selecting either a
+     * single category or a list of categories. For single-category
+     * selection use categoryData.category and for multi-category
+     * selection use categoryData.categories.
+     * Use "init-ids" to initialize the categories using a list of
+     * category ids.
+     ****************************************************************/
+    .directive('categoriesField', ['$rootScope', '$http', 'LangService', function($rootScope, $http, LangService) {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: '/app/common/categories-field.html',
+            scope: {
+                categoryData:    "=",
+                categoryChanged: "&",
+                initIds:         "=",
+                domain:          "=",
+                multiple:        "="
+            },
+            link: function(scope, element, attrs) {
+
+                scope.formatParents = LangService.formatParents;
+                scope.categoryData = scope.categoryData || {};
+
+                // Category search parameters
+                scope.multiple = scope.multiple || false;
+                scope.domain = scope.domain || false;
+
+                if (scope.multiple && !scope.categoryData.categories) {
+                    scope.categoryData.categories = [];
+                }
+
+
+                /** Called whenever the category has been updated **/
+                scope.categoryUpdated = function () {
+                    if (attrs.categoryChanged) {
+                        scope.categoryChanged();
+                    }
+                };
+
+
+                // init-ids can be used to instantiate the field from a list of category IDs
+                scope.$watch("initIds", function (initIds) {
+                    if (initIds && initIds.length > 0) {
+                        $http.get('/rest/categories/search/' + initIds.join() + '?lang=' + $rootScope.language + '&limit=20')
+                            .then(function(response) {
+                                angular.forEach(response.data, function (category) {
+                                    if (scope.multiple) {
+                                        scope.categoryData.categories.push(category);
+                                    } else {
+                                        scope.categoryData.category = category;
+                                    }
+                                });
+                            });
+                    }
+                }, true);
+
+
+                /** Refreshes the categories search result */
+                scope.searchResult = [];
+                scope.refreshCategories = function(name) {
+                    if (!name || name.length == 0) {
+                        return [];
+                    }
+                    return $http.get(
+                        '/rest/categories/search?name=' + encodeURIComponent(name) +
+                        '&domain=' + scope.domain +
+                        '&lang=' + $rootScope.language +
+                        '&limit=10'
+                    ).then(function(response) {
+                        scope.searchResult = response.data;
+                    });
+                };
+
+
+                /** Removes the current category selection */
+                scope.removeCategories = function () {
+                    if (scope.multiple) {
+                        scope.categoryData.categories.length = 0;
+                    } else {
+                        scope.categoryData.category = undefined;
+                    }
+                    scope.categoryUpdated();
                 };
             }
         }
@@ -581,6 +671,7 @@ angular.module('niord.common')
             }
         };
     }])
+
 
     /**
      * File upload, based on:
