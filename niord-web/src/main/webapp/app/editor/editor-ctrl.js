@@ -405,20 +405,6 @@ angular.module('niord.editor')
             };
 
 
-            // Use for charts selection
-            $scope.charts = [];
-            $scope.refreshCharts = function(name) {
-                if (!name || name.length == 0) {
-                    return [];
-                }
-                return $http.get(
-                    '/rest/charts/search?name=' + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10'
-                ).then(function(response) {
-                    $scope.charts = response.data;
-                });
-            };
-
-
             /** Computes the charts intersecting with the current message geometry **/
             $scope.computeCharts = function () {
                 if ($scope.message.geometry.features.length > 0) {
@@ -696,7 +682,7 @@ angular.module('niord.editor')
             };
 
 
-            /** Opens the upload-charts dialog **/
+            /** Opens the upload-message thumbnail dialog **/
             $scope.uploadMessageThumbnailDialog = function () {
                 if ($scope.message.editRepoPath) {
                     UploadFileService.showUploadFileDialog(

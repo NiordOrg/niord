@@ -416,19 +416,7 @@
                 <editor-field-value-editor value-class="col-sm-12 col-md-10">
                     <div class="row">
                         <div class="col-sm-6 col-md-8">
-                            <ui-select multiple id="charts" ng-model="message.charts" >
-                                <ui-select-match placeholder="Select charts">
-                                    {{$item.chartNumber}}
-                                    <span ng-if="$item.internationalNumber">(INT {{$item.internationalNumber}})</span>
-                                </ui-select-match>
-                                <ui-select-choices repeat="chart in charts"
-                                                   refresh="refreshCharts($select.search)"
-                                                   refresh-delay="100">
-                                    <span ng-bind-html="chart.chartNumber | highlight: $select.search"></span>
-                                    <span ng-if="chart.internationalNumber">(INT {{chart.internationalNumber}})</span>
-                                    <small ng-bind-html="chart.name | highlight: $select.search"></small>
-                                </ui-select-choices>
-                            </ui-select>
+                            <charts-field id="charts" chart-data="message" multiple="true"></charts-field>
                         </div>
                         <div class="col-sm-6 col-md-4">
                             <button href class="btn btn-default btn-sm" ng-disabled="message.geometry.features.length == 0"
