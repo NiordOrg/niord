@@ -192,18 +192,16 @@ angular.module('niord.messages')
             replace: true,
             templateUrl: '/app/messages/message-tags-field.html',
             scope: {
-                tags:       "=",
+                tagData:    "=",
                 initIds:    "=",
                 multiple:   "="
             },
             link: function(scope) {
 
-                scope.tags = scope.tags || [];
+                scope.tagData = scope.tagData || {};
                 scope.multiple = scope.multiple || false;
-
-                // For single selection, use tags[0] to designated the selected tag
-                if (!scope.multiple && scope.tags.length == 0) {
-                    scope.tags[0] = undefined;
+                if (scope.multiple && !scope.tagData.tags) {
+                    scope.tags = [];
                 }
 
 
@@ -213,9 +211,9 @@ angular.module('niord.messages')
                         $http.get('/rest/tags/tag/' + initIds.join()).then(function(response) {
                             angular.forEach(response.data, function (tag) {
                                 if (scope.multiple) {
-                                    scope.tags.push(tag);
+                                    scope.tagData.tags.push(tag);
                                 } else {
-                                    scope.tags[0] = tag;
+                                    scope.tagData.tag = tag;
                                 }
                             });
                         });
@@ -242,9 +240,9 @@ angular.module('niord.messages')
                     MessageService.messageTagsDialog().result
                         .then(function (tag) {
                             if (tag && scope.multiple) {
-                                scope.tags.push(tag)
+                                scope.tagData.tags.push(tag)
                             } else if (tag) {
-                                scope.tags[0] = tag;
+                                scope.tagData.tag = tag;
                             }
                         });
                 };
@@ -253,10 +251,9 @@ angular.module('niord.messages')
                 /** Removes the current tag selection */
                 scope.removeTag = function () {
                     if (scope.multiple) {
-                        scope.tags.length = 0;
+                        scope.tagData.tags.length = 0;
                     } else {
-                        scope.tags.length = 1;
-                        scope.tags = [ undefined ];
+                        scope.tagData.tag = undefined;
                     }
                 };
             }

@@ -86,7 +86,7 @@ angular.module('niord.messages')
                 },
                 tag: {
                     enabled: false,
-                    focusField: '#tags > div > input.ui-select-search',
+                    focusField: '#tags input.ui-select-search',
                     tags: []
                 },
                 comments: {
@@ -130,6 +130,9 @@ angular.module('niord.messages')
                     toDate: undefined
                 }
             };
+
+            // Used for initializing tags from parameters
+            $scope.initTagIds = [];
 
 
             /** Destroy any pending message loading operations **/
@@ -192,7 +195,7 @@ angular.module('niord.messages')
                         filter.DELETED = false;
                         break;
                     case 'tag':
-                        filter.tags = [];
+                        filter.tags.length = 0;
                         break;
                     case 'comments':
                         filter.comments = '';
@@ -409,10 +412,7 @@ angular.module('niord.messages')
                 }
                 if (params.tag && params.tag.length > 0) {
                     s.tag.enabled = true;
-                    var tags = (typeof params.tag === 'string') ? params.tag : params.tag.join();
-                    $http.get('/rest/tags/tag/' + tags).then(function(response) {
-                        s.tag.tags = response.data;
-                    });
+                    $scope.initTagIds = (typeof params.tag === 'string') ? [ params.tag ] : params.tag;
                 }
                 if (params.comments) {
                     s.comments.enabled = true;
@@ -515,20 +515,6 @@ angular.module('niord.messages')
             };
 
             
-            // Use for tag selection
-            $scope.tags = [];
-            $scope.refreshTags = function(name) {
-                if (!name || name.length == 0) {
-                    return [];
-                }
-                return $http.get(
-                    '/rest/tags/search?name=' + encodeURIComponent(name) + '&limit=10'
-                ).then(function(response) {
-                    $scope.tags = response.data;
-                });
-            };
-
-
             // Use for AtoN selection
             $scope.atons = [];
             $scope.refreshAtons = function(name) {
@@ -715,18 +701,6 @@ angular.module('niord.messages')
             /*****************************/
             /** Message Tag functions   **/
             /*****************************/
-
-            /** Opens the tags dialog */
-            $scope.openTagsDialog = function () {
-                MessageService.messageTagsDialog().result
-                    .then(function (tag) {
-                        if (tag) {
-                            $location.search('tag=' + tag.tagId);
-                            $scope.readRequestFilterParameters();
-                        }
-                    });
-            };
-
 
             /** Adds the currently selected messages to the tag selected via the Message Tag dialog */
             $scope.addToTagDialog = function () {

@@ -1,7 +1,7 @@
 <div class="input-group">
-    <ui-select ng-if="!multiple" ng-model="tags[0]">
+    <ui-select ng-if="!multiple" ng-model="tagData.tag">
         <ui-select-match placeholder="Select tag">
-            {{tags[0].name}}
+            {{tagData.tag.name}}
         </ui-select-match>
         <ui-select-choices repeat="tag in searchResult"
                            refresh="refreshTags($select.search)"
@@ -13,7 +13,7 @@
     </ui-select>
 
 
-    <ui-select ng-if="multiple" multiple id="tags" ng-model="tags" >
+    <ui-select ng-if="multiple" multiple  ng-model="tagData.tags" >
         <ui-select-match placeholder="Select Tags">
             {{$item.name}}
         </ui-select-match>
@@ -28,6 +28,6 @@
     </ui-select>
 
 
-    <span class="input-group-addon clickable" ng-click="openTagsDialog()"><span class="glyphicon glyphicon-tags"></span></span>
-    <span class="input-group-addon clickable" ng-click="removeTag()"><span class="glyphicon glyphicon-trash"></span></span>
+    <span class="input-group-addon clickable" style="font-size: 12px" ng-click="openTagsDialog()"><span class="glyphicon glyphicon-tags"></span></span>
+    <span class="input-group-addon clickable" style="font-size: 12px" ng-click="removeTag()"><span class="glyphicon glyphicon-trash"></span></span>
 </div>
