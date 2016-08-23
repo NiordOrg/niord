@@ -819,8 +819,6 @@ angular.module('niord.admin')
                     timeZone: moment.tz.guess(),
                     schedule: false
                 };
-                $scope.areas.length = 0;
-                $scope.categories.length = 0;
                 $scope.messageSeries.length = 0;
             };
 
@@ -830,8 +828,6 @@ angular.module('niord.admin')
                 $scope.editMode = 'add';
                 $scope.domain = angular.copy(domain);
                 $scope.domain.domainId = undefined;
-                $scope.areas.length = 0;
-                $scope.categories.length = 0;
                 $scope.messageSeries.length = 0;
             };
 
@@ -840,7 +836,6 @@ angular.module('niord.admin')
             $scope.editDomain = function (domain) {
                 $scope.editMode = 'edit';
                 $scope.domain = angular.copy(domain);
-                $scope.categories.length = 0;
                 $scope.messageSeries.length = 0;
             };
 
@@ -899,20 +894,6 @@ angular.module('niord.admin')
             };
 
 
-            /** Use for category selection */
-            $scope.categories = [];
-            $scope.refreshCategories = function(name) {
-                if (!name || name.length == 0) {
-                    return [];
-                }
-                return AdminDomainService
-                    .searchCategories(name)
-                    .then(function(response) {
-                        $scope.categories = response.data;
-                    });
-            };
-
-
             /** Use for message series selection */
             $scope.messageSeries = [];
             $scope.refreshMessageSeries = function(name) {
@@ -924,19 +905,6 @@ angular.module('niord.admin')
                     .then(function(response) {
                         $scope.messageSeries = response.data;
                     });
-            };
-
-
-            /** Recursively formats the names of the parent lineage for areas and categories */
-            $scope.formatParents = function(child) {
-                var txt = undefined;
-                if (child) {
-                    txt = (child.descs && child.descs.length > 0) ? child.descs[0].name : 'N/A';
-                    if (child.parent) {
-                        txt = $scope.formatParents(child.parent) + " - " + txt;
-                    }
-                }
-                return txt;
             };
         }])
 

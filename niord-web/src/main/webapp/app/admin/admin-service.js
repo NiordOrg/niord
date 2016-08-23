@@ -241,13 +241,6 @@ angular.module('niord.admin')
                 return $http.post('/rest/domains/keycloak', domain);
             },
 
-
-            /** Returns the categories matching the given name */
-            searchCategories : function (name) {
-                return $http.get('/rest/categories/search?name='
-                    + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10')
-            },
-
             /** Returns the message series matching the given name */
             searchMessageSeries : function (name) {
                 return $http.get('/rest/message-series/search?name='

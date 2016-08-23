@@ -69,20 +69,7 @@
                         <div class="form-group">
                             <label class="col-sm-4">Categories</label>
                             <div class="col-sm-8">
-                                <ui-select multiple id="categories" ng-model="domain.categories" >
-                                    <ui-select-match placeholder="Select categories">
-                                        {{$item.descs[0].name}}
-                                    </ui-select-match>
-                                    <ui-select-choices repeat="category in categories"
-                                                       refresh="refreshCategories($select.search)"
-                                                       refresh-delay="100">
-                                        <div>
-                                            <span ng-bind-html="category.descs[0].name | highlight: $select.search"></span>
-                                            <small ng-if="category.parent">({{formatParents(category.parent)}})</small>
-                                        </div>
-
-                                    </ui-select-choices>
-                                </ui-select>
+                                <categories-field id="categories" category-data="domain" multiple="true"></categories-field>
                             </div>
                         </div>
 
