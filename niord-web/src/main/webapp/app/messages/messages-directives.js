@@ -181,9 +181,9 @@ angular.module('niord.messages')
 
 
     /****************************************************************
-     * The message-tag-field directive supports selecting either a
-     * single tag or a list of tags. For single-tag selection tags[0]
-     * will be the selected tag or undefined.
+     * The message-tags-field directive supports selecting either a
+     * single tag or a list of tags. For single-tag selection use
+     * tagData.tag and for multi-tag selection use tagData.tags.
      * Use "init-ids" to initialize the tags using a list of tag ids.
      ****************************************************************/
     .directive('messageTagsField', ['$http', 'MessageService', function($http, MessageService) {
@@ -201,7 +201,7 @@ angular.module('niord.messages')
                 scope.tagData = scope.tagData || {};
                 scope.multiple = scope.multiple || false;
                 if (scope.multiple && !scope.tagData.tags) {
-                    scope.tags = [];
+                    scope.tagData.tags = [];
                 }
 
 

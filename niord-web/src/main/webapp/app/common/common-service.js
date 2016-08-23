@@ -113,6 +113,7 @@ angular.module('niord.common')
                 return elm;
             };
 
+
             /**
              * Computes a sort value by comparing the desc language to the
              * current language or else the index in the list of available languages.
@@ -135,7 +136,22 @@ angular.module('niord.common')
                         return sortValue(d1) - sortValue(d2);
                     });
                 }
-            }
+            };
+
+
+            /**
+             * Recursively formats the names of the parent lineage for areas and categories
+             **/
+            this.formatParents = function(child) {
+                var txt = undefined;
+                if (child) {
+                    txt = (child.descs && child.descs.length > 0) ? child.descs[0].name : 'N/A';
+                    if (child.parent) {
+                        txt = this.formatParents(child.parent) + " - " + txt;
+                    }
+                }
+                return txt;
+            };
 
         }])
 

@@ -115,7 +115,7 @@ angular.module('niord.messages')
                 },
                 area: {
                     enabled: false,
-                    focusField: '#areas > div > input.ui-select-search',
+                    focusField: '#areas input.ui-select-search',
                     areas: []
                 },
                 category: {
@@ -131,8 +131,9 @@ angular.module('niord.messages')
                 }
             };
 
-            // Used for initializing tags from parameters
+            // Used for initializing base data from parameters
             $scope.initTagIds = [];
+            $scope.initAreaIds = [];
 
 
             /** Destroy any pending message loading operations **/
@@ -214,7 +215,7 @@ angular.module('niord.messages')
                         filter.sereis = [];
                         break;
                     case 'area':
-                        filter.areas = [];
+                        filter.areas.length = 0;
                         break;
                     case 'category':
                         filter.categories = [];
@@ -449,11 +450,7 @@ angular.module('niord.messages')
                 }
                 if (params.area && params.area.length > 0) {
                     s.area.enabled = true;
-                    var areas = (typeof params.area === 'string') ? params.area : params.area.join();
-                    $http.get('/rest/areas/search/' + areas + '?lang=' + $rootScope.language + '&limit=10')
-                        .then(function(response) {
-                            s.area.areas = response.data;
-                        });
+                    $scope.initAreaIds = (typeof params.area === 'string') ? [ params.area ] : params.area;
                 }
                 if (params.category && params.category.length > 0) {
                     s.category.enabled = true;
@@ -559,22 +556,6 @@ angular.module('niord.messages')
                 });
             };
 
-
-            // Use for area selection
-            $scope.areas = [];
-            $scope.refreshAreas = function(name) {
-                if (!name || name.length == 0) {
-                    return [];
-                }
-                return $http.get(
-                    '/rest/areas/search?name=' + encodeURIComponent(name) +
-                    '&domain=' + $scope.state.domain.enabled +
-                    '&lang=' + $rootScope.language +
-                    '&limit=10'
-                ).then(function(response) {
-                    $scope.areas = response.data;
-                });
-            };
 
             // Use for category selection
             $scope.categories = [];

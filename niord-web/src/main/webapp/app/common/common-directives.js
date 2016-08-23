@@ -19,6 +19,85 @@
  */
 angular.module('niord.common')
 
+    /****************************************************************
+     * The areas-field directive supports selecting either a
+     * single area or a list of areas. For single-tag selection use
+     * areaData.area and for multi-area selection use areaData.areas.
+     * Use "init-ids" to initialize the areas using a list of area ids.
+     ****************************************************************/
+    .directive('areasField', ['$rootScope', '$http', 'LangService', function($rootScope, $http, LangService) {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: '/app/common/areas-field.html',
+            scope: {
+                areaData:       "=",
+                initIds:        "=",
+                domain:         "=",
+                messageSorting: "=",
+                multiple:       "="
+            },
+            link: function(scope) {
+
+                scope.formatParents = LangService.formatParents;
+                scope.areaData = scope.areaData || {};
+                scope.multiple = scope.multiple || false;
+                scope.domain = scope.domain || false;
+                scope.messageSorting = scope.messageSorting || false;
+
+                if (scope.multiple && !scope.areaData.areas) {
+                    scope.areaData.areas = [];
+                }
+
+
+                // init-ids can be used to instantiate the field from a list of area IDs
+                scope.$watch("initIds", function (initIds) {
+                    if (initIds && initIds.length > 0) {
+                        $http.get('/rest/areas/search/' + initIds.join() + '?lang=' + $rootScope.language + '&limit=20')
+                            .then(function(response) {
+                                angular.forEach(response.data, function (area) {
+                                    if (scope.multiple) {
+                                        scope.areaData.areas.push(area);
+                                    } else {
+                                        scope.areaData.area = area;
+                                    }
+                                });
+                            });
+                    }
+                }, true);
+
+
+                /** Refreshes the areas search result */
+                scope.searchResult = [];
+                scope.refreshAreas = function(name) {
+                    if (!name || name.length == 0) {
+                        return [];
+                    }
+                    return $http.get(
+                        '/rest/areas/search?name=' + encodeURIComponent(name) +
+                        '&domain=' + scope.domain +
+                        '&messageSorting=' + scope.messageSorting +
+                        '&lang=' + $rootScope.language +
+                        '&limit=10'
+                    ).then(function(response) {
+                        scope.searchResult = response.data;
+                    });
+                };
+
+
+                /** Removes the current area selection */
+                scope.removeAreas = function () {
+                    if (scope.multiple) {
+                        scope.areaData.areas.length = 0;
+                    } else {
+                        scope.areaData.area = undefined;
+                    }
+                };
+            }
+        }
+    }])
+
+
 
     .directive('focus', ['$timeout', function ($timeout) {
         'use strict';

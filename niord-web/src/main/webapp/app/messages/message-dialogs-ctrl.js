@@ -337,8 +337,8 @@ angular.module('niord.messages')
     /*******************************************************************
      * Controller that handles sorting of messages withing an area
      *******************************************************************/
-    .controller('SortAreaDialogCtrl', ['$scope', '$rootScope', '$http', '$timeout', 'MessageService',
-        function ($scope, $rootScope, $http, $timeout, MessageService) {
+    .controller('SortAreaDialogCtrl', ['$scope', '$rootScope', '$timeout', 'MessageService',
+        function ($scope, $rootScope, $timeout, MessageService) {
             'use strict';
 
             $scope.data = {
@@ -346,39 +346,7 @@ angular.module('niord.messages')
                 status: 'PUBLISHED'
             };
             $scope.messageList = [];
-
-            /** Searches areas associated with the current domain, which have defined a message sorting */
-            $scope.searchAreas = function (name) {
-                return $http.get('/rest/areas/search?name=' + encodeURIComponent(name)
-                    + '&domain=' + ($rootScope.domain !== undefined)
-                    + '&lang=' + $rootScope.language
-                    + '&limit=10&messageSorting=true');
-            };
-
-            // Auto-completion handling for area selection
-            $scope.areas = [];
-            $scope.refreshAreas = function(name) {
-                if (!name || name.length == 0) {
-                    return [];
-                }
-                return $scope
-                    .searchAreas(name)
-                    .then(function(response) {
-                        $scope.areas = response.data;
-                    });
-            };
-
-            /** Recursively formats the names of the parent lineage for areas */
-            $scope.formatParents = function(child) {
-                var txt = undefined;
-                if (child) {
-                    txt = (child.descs && child.descs.length > 0) ? child.descs[0].name : 'N/A';
-                    if (child.parent) {
-                        txt = $scope.formatParents(child.parent) + " - " + txt;
-                    }
-                }
-                return txt;
-            };
+            $scope.domain = $rootScope.domain !== undefined;
 
 
             /** Refreshes the list of messages matching the message filter */
@@ -425,7 +393,7 @@ angular.module('niord.messages')
 
             // Initially, give focus to the area field
             $timeout(function () {
-                $('#area').controller('uiSelect').activate(false, true);
+                $('#area').find('div').controller('uiSelect').activate(false, true);
             }, 100);
 
         }])
