@@ -181,22 +181,50 @@ angular.module('niord.messages')
 
 
     /****************************************************************
-     * The message-tag-field directive supports selecting a single message tag
+     * The message-tag-field directive supports selecting either a
+     * single tag or a list of tags. For single-tag selection tags[0]
+     * will be the selected tag or undefined.
+     * Use "init-ids" to initialize the tags using a list of tag ids.
      ****************************************************************/
-    .directive('messageTagField', ['$http', 'MessageService', function($http, MessageService) {
+    .directive('messageTagsField', ['$http', 'MessageService', function($http, MessageService) {
         return {
             restrict: 'E',
             replace: true,
-            templateUrl: '/app/messages/message-tag-field.html',
+            templateUrl: '/app/messages/message-tags-field.html',
             scope: {
-                tagData: "="
+                tags:       "=",
+                initIds:    "=",
+                multiple:   "="
             },
             link: function(scope) {
 
-                scope.tagData = scope.tagData || { tag: undefined };
+                scope.tags = scope.tags || [];
+                scope.multiple = scope.multiple || false;
+
+                // For single selection, use tags[0] to designated the selected tag
+                if (!scope.multiple && scope.tags.length == 0) {
+                    scope.tags[0] = undefined;
+                }
+
+
+                // init-ids can be used to instantiate the field from a list of tags IDs
+                scope.$watch("initIds", function (initIds) {
+                    if (initIds && initIds.length > 0) {
+                        $http.get('/rest/tags/tag/' + initIds.join()).then(function(response) {
+                            angular.forEach(response.data, function (tag) {
+                                if (scope.multiple) {
+                                    scope.tags.push(tag);
+                                } else {
+                                    scope.tags[0] = tag;
+                                }
+                            });
+                        });
+                    }
+                }, true);
+
 
                 /** Refreshes the tags search result */
-                scope.tags = [];
+                scope.searchResult = [];
                 scope.refreshTags = function(name) {
                     if (!name || name.length == 0) {
                         return [];
@@ -204,7 +232,7 @@ angular.module('niord.messages')
                     return $http.get(
                         '/rest/tags/search?name=' + encodeURIComponent(name) + '&limit=10'
                     ).then(function(response) {
-                        scope.tags = response.data;
+                        scope.searchResult = response.data;
                     });
                 };
 
@@ -213,14 +241,23 @@ angular.module('niord.messages')
                 scope.openTagsDialog = function () {
                     MessageService.messageTagsDialog().result
                         .then(function (tag) {
-                            scope.tagData.tag = tag;
+                            if (tag && scope.multiple) {
+                                scope.tags.push(tag)
+                            } else if (tag) {
+                                scope.tags[0] = tag;
+                            }
                         });
                 };
 
 
                 /** Removes the current tag selection */
                 scope.removeTag = function () {
-                    scope.tagData.tag = undefined;
+                    if (scope.multiple) {
+                        scope.tags.length = 0;
+                    } else {
+                        scope.tags.length = 1;
+                        scope.tags = [ undefined ];
+                    }
                 };
             }
         }
