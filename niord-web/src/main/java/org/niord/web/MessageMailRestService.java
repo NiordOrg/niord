@@ -104,15 +104,15 @@ public class MessageMailRestService {
         try {
             String mailContents =
                     fmService.newTemplateBuilder()
-                            .setTemplatePath("/templates/messages/message-mail.ftl")
-                            .setData("messages", result.getData())
-                            .setData("areaHeadings", params.sortByArea())
-                            .setData("searchCriteria", result.getDescription())
-                            .setData("mailTo", mailTo)
-                            .setData("mailMessage", mailMessage)
-                            .setData("mailSender", user.getName())
-                            .setDictionaryNames("web", "message", "mail")
-                            .setLanguage(params.getLanguage())
+                            .templatePath("/templates/messages/message-mail.ftl")
+                            .data("messages", result.getData())
+                            .data("areaHeadings", params.sortByArea())
+                            .data("searchCriteria", result.getDescription())
+                            .data("mailTo", mailTo)
+                            .data("mailMessage", mailMessage)
+                            .data("mailSender", user.getName())
+                            .dictionaryNames("web", "message", "mail")
+                            .language(params.getLanguage())
                             .process();
 
             Mail mail = HtmlMail.fromHtml(mailContents, app.getBaseUri(), HtmlMail.StyleHandling.INLINE_STYLES, true)

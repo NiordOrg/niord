@@ -328,7 +328,7 @@ public class FmService extends BaseService {
             return templatePath;
         }
 
-        public FmTemplateBuilder setTemplatePath(String templatePath) {
+        public FmTemplateBuilder templatePath(String templatePath) {
             this.templatePath = templatePath;
             return this;
         }
@@ -337,12 +337,12 @@ public class FmService extends BaseService {
             return data;
         }
 
-        public FmTemplateBuilder setData(Map<String, Object> data) {
+        public FmTemplateBuilder data(Map<String, Object> data) {
             this.data = data;
             return this;
         }
 
-        public FmTemplateBuilder setData(String key, Object value) {
+        public FmTemplateBuilder data(String key, Object value) {
             if (data == null) {
                 data = new HashMap<>();
             }
@@ -354,7 +354,7 @@ public class FmService extends BaseService {
             return language;
         }
 
-        public FmTemplateBuilder setLanguage(String language) {
+        public FmTemplateBuilder language(String language) {
             this.language = language;
             return this;
         }
@@ -363,7 +363,7 @@ public class FmService extends BaseService {
             return dictionaryNames;
         }
 
-        public FmTemplateBuilder setDictionaryNames(String... dictionaryNames) {
+        public FmTemplateBuilder dictionaryNames(String... dictionaryNames) {
             this.dictionaryNames = dictionaryNames;
             return this;
         }

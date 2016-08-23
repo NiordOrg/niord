@@ -115,13 +115,13 @@ public class MessageReportRestService {
             StreamingOutput stream = os -> {
                 try {
                     fmService.newTemplateBuilder()
-                            .setTemplatePath("/templates/messages/message-details-pdf.ftl")
-                            .setData("messages", Collections.singleton(message))
-                            .setData("pageSize", pageSize)
-                            .setData("pageOrientation", pageOrientation)
-                            .setData("mapThumbnails", true)
-                            .setDictionaryNames("web", "message", "pdf")
-                            .setLanguage(language)
+                            .templatePath("/templates/messages/message-details-pdf.ftl")
+                            .data("messages", Collections.singleton(message))
+                            .data("pageSize", pageSize)
+                            .data("pageOrientation", pageOrientation)
+                            .data("mapThumbnails", true)
+                            .dictionaryNames("web", "message", "pdf")
+                            .language(language)
                             .process(format, os);
                 } catch (Exception e) {
                     throw new WebApplicationException("Error generating PDF for message " + messageId, e);
@@ -167,15 +167,15 @@ public class MessageReportRestService {
             StreamingOutput stream = os -> {
                 try {
                     fmService.newTemplateBuilder()
-                            .setTemplatePath(report.getTemplatePath())
-                            .setData("messages", result.getData())
-                            .setData("areaHeadings", params.sortByArea())
-                            .setData("searchCriteria", result.getDescription())
-                            .setData("pageSize", params.getPageSize())
-                            .setData("pageOrientation", params.getPageOrientation())
-                            .setData("mapThumbnails", true)
-                            .setDictionaryNames("web", "message", "pdf")
-                            .setLanguage(params.getLanguage())
+                            .templatePath(report.getTemplatePath())
+                            .data("messages", result.getData())
+                            .data("areaHeadings", params.sortByArea())
+                            .data("searchCriteria", result.getDescription())
+                            .data("pageSize", params.getPageSize())
+                            .data("pageOrientation", params.getPageOrientation())
+                            .data("mapThumbnails", true)
+                            .dictionaryNames("web", "message", "pdf")
+                            .language(params.getLanguage())
                             .process(format, os);
                 } catch (Exception e) {
                     throw new WebApplicationException("Error generating PDF for messages", e);

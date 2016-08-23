@@ -700,11 +700,11 @@ public class MessageRestService  {
             StreamingOutput stream = os -> {
                 try {
                     fmService.newTemplateBuilder()
-                            .setTemplatePath(templatePath)
-                            .setData("geometry", geometry)
-                            .setData("format", format)
-                            .setDictionaryNames("web", "message")
-                            .setLanguage(lang)
+                            .templatePath(templatePath)
+                            .data("geometry", geometry)
+                            .data("format", format)
+                            .dictionaryNames("web", "message")
+                            .language(lang)
                             .process(ProcessFormat.TEXT, os);
 
                 } catch (Exception e) {
