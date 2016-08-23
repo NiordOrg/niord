@@ -840,7 +840,6 @@ angular.module('niord.admin')
             $scope.editDomain = function (domain) {
                 $scope.editMode = 'edit';
                 $scope.domain = angular.copy(domain);
-                $scope.areas.length = 0;
                 $scope.categories.length = 0;
                 $scope.messageSeries.length = 0;
             };
@@ -897,20 +896,6 @@ angular.module('niord.admin')
                     'Upload Domains File',
                     '/rest/domains/upload-domains',
                     'json');
-            };
-
-
-            /** Use for area selection */
-            $scope.areas = [];
-            $scope.refreshAreas = function(name) {
-                if (!name || name.length == 0) {
-                    return [];
-                }
-                return AdminDomainService
-                    .searchAreas(name)
-                    .then(function(response) {
-                        $scope.areas = response.data;
-                    });
             };
 
 
