@@ -26,8 +26,8 @@ angular.module('niord.atons')
     /**
      * Controller used on the AtoN page
      */
-    .controller('AtonsCtrl', ['$scope', '$rootScope', '$location', '$http', '$timeout', '$state', 'AtonService',
-        function ($scope, $rootScope, $location, $http, $timeout, $state, AtonService) {
+    .controller('AtonsCtrl', ['$scope', '$rootScope', '$location', '$timeout', '$state', 'AtonService',
+        function ($scope, $rootScope, $location, $timeout, $state, AtonService) {
             'use strict';
 
             /*****************************/
@@ -63,7 +63,7 @@ angular.module('niord.atons')
                 },
                 chart: {
                     enabled: false,
-                    focusField: '#charts > div > input.ui-select-search',
+                    focusField: '#charts input.ui-select-search',
                     charts: []
                 },
                 area: {
@@ -126,7 +126,7 @@ angular.module('niord.atons')
                         filter.query = '';
                         break;
                     case 'chart':
-                        filter.charts = [];
+                        filter.charts.length = 0;
                         break;
                     case 'area':
                         filter.areas.length = 0;
@@ -180,20 +180,6 @@ angular.module('niord.atons')
             /** Called when the filter is updated **/
             $scope.filterUpdated = function () {
                 $scope.refreshAtons();
-            };
-
-
-            // Use for charts selection
-            $scope.charts = [];
-            $scope.refreshCharts = function(name) {
-                if (!name || name.length == 0) {
-                    return [];
-                }
-                return $http.get(
-                    '/rest/charts/search?name=' + encodeURIComponent(name) + '&lang=' + $rootScope.language + '&limit=10'
-                ).then(function(response) {
-                    $scope.charts = response.data;
-                });
             };
 
 
