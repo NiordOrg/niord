@@ -262,6 +262,82 @@ angular.module('niord.messages')
 
 
     /****************************************************************
+     * The message-series-field directive supports selecting either a
+     * single message series or a list of message series.
+     * Use "init-ids" to initialize the message series using a list of
+     * message series ids.
+     ****************************************************************/
+    .directive('messageSeriesField', ['$rootScope', '$http', function($rootScope, $http) {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: '/app/messages/message-series-field.html',
+            scope: {
+                seriesData:     "=",
+                initIds:        "=",
+                domain:         "=",
+                multiple:       "="
+            },
+            link: function(scope) {
+
+                scope.seriesData = scope.seriesData || {};
+
+                // Message series search parameters
+                scope.multiple = scope.multiple || false;
+                scope.domain = scope.domain || false;
+
+                if (scope.multiple && !scope.seriesData.messageSeries) {
+                    scope.seriesData.messageSeries = [];
+                }
+
+                // init-ids can be used to instantiate the field from a list of message series IDs
+                scope.$watch("initIds", function (initIds) {
+                    if (initIds && initIds.length > 0) {
+                        $http.get('/rest/message-series/search/' + initIds.join() + '?lang=' + $rootScope.language + '&limit=20')
+                            .then(function(response) {
+                                angular.forEach(response.data, function (series) {
+                                    if (scope.multiple) {
+                                        scope.seriesData.messageSeries.push(series);
+                                    } else {
+                                        scope.seriesData.messageSeries = series;
+                                    }
+                                });
+                            });
+                    }
+                }, true);
+
+
+                /** Refreshes the message series search result */
+                scope.searchResult = [];
+                scope.refreshMessageSeries = function(name) {
+                    if (!name || name.length == 0) {
+                        return [];
+                    }
+                    return $http.get(
+                        '/rest/message-series/search?name=' + encodeURIComponent(name) +
+                        '&domain=' + scope.domain +
+                        '&lang=' + $rootScope.language +
+                        '&limit=10'
+                    ).then(function(response) {
+                        scope.searchResult = response.data;
+                    });
+                };
+
+
+                /** Removes the current message series selection */
+                scope.removeMessageSeries = function () {
+                    if (scope.multiple) {
+                        scope.seriesData.messageSeries.length = 0;
+                    } else {
+                        scope.seriesData.messageSeries = undefined;
+                    }
+                };
+            }
+        }
+    }])
+
+
+    /****************************************************************
      * The map-message-list-layer directive supports drawing a list of messages on a map layer
      ****************************************************************/
     .directive('mapMessageListLayer', ['$rootScope', 'MapService', 'LangService', 'MessageService',
