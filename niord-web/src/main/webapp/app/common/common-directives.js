@@ -35,15 +35,19 @@ angular.module('niord.common')
                 initIds:        "=",
                 domain:         "=",
                 messageSorting: "=",
+                geometry:       "=",
                 multiple:       "="
             },
             link: function(scope) {
 
                 scope.formatParents = LangService.formatParents;
                 scope.areaData = scope.areaData || {};
+
+                // Area search parameters
                 scope.multiple = scope.multiple || false;
                 scope.domain = scope.domain || false;
                 scope.messageSorting = scope.messageSorting || false;
+                scope.geometry = scope.geometry || false;
 
                 if (scope.multiple && !scope.areaData.areas) {
                     scope.areaData.areas = [];
@@ -77,6 +81,7 @@ angular.module('niord.common')
                         '/rest/areas/search?name=' + encodeURIComponent(name) +
                         '&domain=' + scope.domain +
                         '&messageSorting=' + scope.messageSorting +
+                        '&geometry=' + scope.geometry +
                         '&lang=' + $rootScope.language +
                         '&limit=10'
                     ).then(function(response) {

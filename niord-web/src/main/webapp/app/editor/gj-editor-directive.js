@@ -949,38 +949,7 @@ angular.module('niord.editor')
             $scope.data = {
                 area: undefined
             };
-
-            /** Searches areas associated with the current domain, which have a geometry */
-            $scope.searchAreas = function (name) {
-                return $http.get('/rest/areas/search?name=' + encodeURIComponent(name)
-                    + '&domain=' + ($rootScope.domain !== undefined)
-                    + '&lang=' + $rootScope.language
-                    + '&limit=10&geometry=true');
-            };
-
-            $scope.areas = [];
-            $scope.refreshAreas = function(name) {
-                if (!name || name.length == 0) {
-                    return [];
-                }
-                return $scope
-                    .searchAreas(name)
-                    .then(function(response) {
-                        $scope.areas = response.data;
-                    });
-            };
-
-            /** Recursively formats the names of the parent lineage for areas */
-            $scope.formatParents = function(child) {
-                var txt = undefined;
-                if (child) {
-                    txt = (child.descs && child.descs.length > 0) ? child.descs[0].name : 'N/A';
-                    if (child.parent) {
-                        txt = $scope.formatParents(child.parent) + " - " + txt;
-                    }
-                }
-                return txt;
-            };
+            $scope.domain = $rootScope.domain !== undefined;
 
 
             /** Returns the fully loaded area to the callee **/
@@ -996,7 +965,7 @@ angular.module('niord.editor')
 
             // Initially, give focus to the area field
             $timeout(function () {
-                $('#area').controller('uiSelect').activate(false, true);
+                $('#area').find('div').controller('uiSelect').activate(false, true);
             }, 100);
 
         }]);
