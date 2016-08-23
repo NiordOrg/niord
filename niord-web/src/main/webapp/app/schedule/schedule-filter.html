@@ -17,20 +17,7 @@
 
         <!-- Area Filter -->
         <view-mode-filter-panel state="state" filter-name="area" closable="false" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
-            <ui-select multiple id="areas" ng-model="state.area.areas" >
-                <ui-select-match placeholder="Select areas">
-                    {{$item.descs[0].name}}
-                </ui-select-match>
-                <ui-select-choices repeat="area in areas"
-                                   refresh="refreshAreas($select.search)"
-                                   refresh-delay="100">
-                    <div>
-                        <span ng-bind-html="area.descs[0].name | highlight: $select.search"></span>
-                        <small ng-if="area.parent">({{formatParents(area.parent)}})</small>
-                    </div>
-
-                </ui-select-choices>
-            </ui-select>
+            <areas-field id="areas" area-data="state.area" multiple="true" domain="true"></areas-field>
         </view-mode-filter-panel>
 
 

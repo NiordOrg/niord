@@ -22,8 +22,8 @@ angular.module('niord.schedule')
     /**
      * Main message schedule controller
      */
-    .controller('ScheduleCtrl', ['$scope', '$rootScope', '$http', 'growl', 'MessageService',
-        function ($scope, $rootScope, $http, growl, MessageService) {
+    .controller('ScheduleCtrl', ['$scope', '$rootScope', 'growl', 'MessageService',
+        function ($scope, $rootScope, growl, MessageService) {
             'use strict';
 
             $scope.messageList = [];
@@ -115,36 +115,5 @@ angular.module('niord.schedule')
                     }
                 }
             };
-
-
-            // Use for area selection
-            $scope.areas = [];
-            $scope.refreshAreas = function(name) {
-                if (!name || name.length == 0) {
-                    return [];
-                }
-                return $http.get(
-                    '/rest/areas/search?name=' + encodeURIComponent(name) +
-                    '&domain=true' +
-                    '&lang=' + $rootScope.language +
-                    '&limit=10'
-                ).then(function(response) {
-                    $scope.areas = response.data;
-                });
-            };
-
-
-            // Recursively formats the names of the parent lineage for areas and categories
-            $scope.formatParents = function(child) {
-                var txt = undefined;
-                if (child) {
-                    txt = (child.descs && child.descs.length > 0) ? child.descs[0].name : 'N/A';
-                    if (child.parent) {
-                        txt = $scope.formatParents(child.parent) + " - " + txt;
-                    }
-                }
-                return txt;
-            };
-
         }]);
 
