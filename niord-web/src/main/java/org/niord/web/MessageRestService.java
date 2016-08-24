@@ -25,6 +25,7 @@ import org.niord.core.domain.DomainService;
 import org.niord.core.fm.FmService;
 import org.niord.core.fm.FmService.ProcessFormat;
 import org.niord.core.geojson.FeatureService;
+import org.niord.core.geojson.PlainTextConverter;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageHistory;
 import org.niord.core.message.MessageSearchParams;
@@ -724,6 +725,27 @@ public class MessageRestService  {
     }
 
 
+    /**
+     * Converts a plain-text geometry representation into a GeoJSON representation
+     */
+    @POST
+    @Path("/parse-geometry")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public FeatureCollectionVo parseGeometry(
+            @QueryParam("lang") @DefaultValue("en") String language,
+            PlainTextGeometryParam param) throws Exception {
+        try {
+            return PlainTextConverter.fromPlainText(param.getGeometryText(), language);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
+
     /***************************
      * Helper classes
      ***************************/
@@ -787,4 +809,17 @@ public class MessageRestService  {
         }
     }
 
+
+    /** Parameter that encapsulates a plain-text geometry specification */
+    public static class PlainTextGeometryParam implements IJsonSerializable {
+        String geometryText;
+
+        public String getGeometryText() {
+            return geometryText;
+        }
+
+        public void setGeometryText(String geometryText) {
+            this.geometryText = geometryText;
+        }
+    }
 }

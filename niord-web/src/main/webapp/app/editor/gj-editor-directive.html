@@ -67,7 +67,7 @@
                         <ul uib-dropdown-menu class="dropdown-menu" role="menu" aria-labelledby="single-button">
                             <li role="menuitem"><a href ng-click="clearAll()">Clear all</a></li>
                             <li role="menuitem"><a href ng-click="zoomToExtent()">Zoom to extent</a></li>
-                            <li role="menuitem" ng-if="editType == 'message'"><a href ng-click="addAreaFeature()">Add Area...</a></li>
+                            <li role="menuitem" ng-if="editType == 'message'"><a href ng-click="importGeometry()">Import...</a></li>
                             <li class="divider" ng-if="editType == 'message' && selection.length > 0"></li>
                             <li role="menuitem" ng-if="canAddBufferedFeature('radius')"><a href ng-click="addBufferedFeature('radius')">Add affected radius</a></li>
                             <li role="menuitem" ng-if="canAddBufferedFeature('path')"><a href ng-click="addBufferedFeature('path')">Add affected path</a></li>

@@ -21,6 +21,7 @@ import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
 import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.geojson.JtsConverter;
+import org.niord.core.geojson.PlainTextConverter;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.geojson.GeoJsonVo;
 import org.niord.model.geojson.GeometryVo;
@@ -92,9 +93,9 @@ public class GeoJsonTest {
             assertEquals(coords.get(1).getName(), "ged");
             assertEquals(coords.get(1).getCoordinates().get(0).getName(), "aa");
 
-            coords.stream().forEach(sf -> {
+            coords.forEach(sf -> {
                 System.out.println("Feature: " + sf.getName());
-                sf.getCoordinates().stream().forEach(sc -> {
+                sf.getCoordinates().forEach(sc -> {
                     StringBuilder str = new StringBuilder();
                     str.append(String.format("lat=%.2f, lon=%.2f", sc.getCoordinates()[1], sc.getCoordinates()[0]));
                     if (StringUtils.isNotBlank(sc.getName())) {
@@ -108,6 +109,18 @@ public class GeoJsonTest {
             e.printStackTrace();
         }
     }
+
+
+    @Test
+    public void plainTextConverterTest() throws Exception {
+
+        String text = "54° 41,000'N - 010° 35,000'E\n54° 35,566'N - 010° 35,010'E\n54° 38,397'N - 010° 25,125'E";
+        System.out.println(PlainTextConverter.fromPlainText(text, "da"));
+
+        text = "1) 54° 45,7' N 10° 29,1' E, Ærø S.\n2) 54° 41,2' N 10° 36,9' E, Keldsnor SW.\n3) 54° 38,3' N 10° 40,1' E, Keldsnor S.";
+        System.out.println(PlainTextConverter.fromPlainText(text, "da"));
+    }
+
 
 
     class CoordCounter implements Consumer<double[]> {

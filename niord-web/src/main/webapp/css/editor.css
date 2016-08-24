@@ -460,6 +460,18 @@ div.mce-fullscreen {
     margin: 2px 2px;
 }
 
+.geometry-text-editor {
+    width: 100%;
+    min-height: 400px;
+    font-size: 12px;
+    font-family: "Courier New", serif;
+    color: black;
+}
+
+.geometry-text-invalid {
+    color: red;
+}
+
 /** Editor -> Thumbnail editor **/
 
 .message-thumbnail-map {

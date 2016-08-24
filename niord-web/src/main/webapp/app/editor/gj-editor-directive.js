@@ -199,6 +199,18 @@ angular.module('niord.editor')
                     return null;
                 }
 
+                /** Initializes the featureCtx.showXXX flags based on feature properties **/
+                function initFeatureCtxShowFlags(featureCtx) {
+                    featureCtx.showRestriction = featureCtx.restriction && featureCtx.restriction.length > 0;
+                    featureCtx.showName = false;
+                    angular.forEach(scope.languages, function (lang) {
+                        if (featureCtx['name:' + lang] && featureCtx['name:' + lang].length > 0) {
+                            featureCtx.showName = true;
+                        }
+                    });
+                    featureCtx.showRadius = toMeters(featureCtx.bufferRadius, featureCtx.bufferRadiusType) > 0;
+                    featureCtx.showAton = featureCtx.aton !== undefined;
+                }
 
                 /** Updates the list of selected features **/
                 function recomputeFeatureSelection() {
@@ -248,15 +260,7 @@ angular.module('niord.editor')
 
                     // By default, display only the types of data that are filled out
                     angular.forEach(scope.featureContexts, function (featureCtx) {
-                        featureCtx.showRestriction = featureCtx.restriction && featureCtx.restriction.length > 0;
-                        featureCtx.showName = false;
-                        angular.forEach(scope.languages, function (lang) {
-                            if (featureCtx['name:' + lang] && featureCtx['name:' + lang].length > 0) {
-                                featureCtx.showName = true;
-                            }
-                        });
-                        featureCtx.showRadius = toMeters(featureCtx.bufferRadius, featureCtx.bufferRadiusType) > 0;
-                        featureCtx.showAton = featureCtx.aton !== undefined;
+                        initFeatureCtxShowFlags(featureCtx);
                     });
 
                     // Enter editor mode
@@ -450,31 +454,22 @@ angular.module('niord.editor')
                 };
 
 
-                /** Creates an area feature for the selected area **/
-                scope.addAreaFeature = function () {
+                /** Imports geometries from various sources **/
+                scope.importGeometry = function () {
                     // Get the user to pick an area with a geometry
                     $uibModal.open({
-                            controller: "AreaSelectorDialogCtrl",
-                            templateUrl: "/app/editor/area-selector-dialog.html",
-                            size: 'sm'
-                    }).result.then(function (area) {
-                        if (area && area.geometry) {
-                            var feature = new ol.Feature();
+                            controller: "GeometryImportDialogCtrl",
+                            templateUrl: "/app/editor/geometry-import-dialog.html",
+                            size: 'md'
+                    }).result.then(function (features) {
+                        angular.forEach(features, function (feature) {
                             MapService.checkCreateId(feature);
-                            feature.setGeometry(MapService.gjToOlGeometry(area.geometry));
-                            feature.set('restriction', 'affected');
-                            feature.set('areaId', area.id);
-                            angular.forEach(area.descs, function (desc) {
-                                feature.set('name:' + desc.lang, desc.name);
-                            });
                             scope.features.push(feature);
-
                             var featureCtx = createFeatureCtxFromFeature(feature);
-                            featureCtx.showName = true;
-                            featureCtx.showRestriction = true;
+                            initFeatureCtxShowFlags(featureCtx);
                             scope.featureContexts.push(featureCtx);
                             broadcast('feature-added', feature.getId());
-                        }
+                        });
                     });
                 };
 
@@ -940,34 +935,71 @@ angular.module('niord.editor')
 
 
     /*******************************************************************
-     * Controller that handles selecting an area in a dialog
+     * Controller that handles importing geometries from various
+     * sources.
      *******************************************************************/
-    .controller('AreaSelectorDialogCtrl', ['$scope', '$rootScope', '$http', '$timeout',
-        function ($scope, $rootScope, $http, $timeout) {
+    .controller('GeometryImportDialogCtrl', ['$scope', '$rootScope', '$http', 'MapService',
+        function ($scope, $rootScope, $http, MapService) {
             'use strict';
 
+            $scope.features = [];
             $scope.data = {
-                area: undefined
+                area: undefined,
+                geometryText: ''
             };
             $scope.domain = $rootScope.domain !== undefined;
 
 
-            /** Returns the fully loaded area to the callee **/
+            /** Called when an area has been selected **/
             $scope.areaSelected = function () {
+                $scope.features.length = 0;
                 if ($scope.data.area) {
-                    return $http.get('/rest/areas/area/' + $scope.data.area.id)
-                            .success(function (area) {
-                                $scope.$close(area);
-                            })
+                    // Load the area details including geometry
+                    $http.get('/rest/areas/area/' + $scope.data.area.id)
+                        .success(function (area) {
+                            if (area && area.geometry) {
+                                var feature = new ol.Feature();
+                                MapService.checkCreateId(feature);
+                                feature.setGeometry(MapService.gjToOlGeometry(area.geometry));
+                                feature.set('restriction', 'affected');
+                                feature.set('areaId', area.id);
+                                angular.forEach(area.descs, function (desc) {
+                                    feature.set('name:' + desc.lang, desc.name);
+                                });
+                                $scope.features.push(feature);
+                            }
+                        })
                 }
             };
 
 
-            // Initially, give focus to the area field
-            $timeout(function () {
-                $('#area').find('div').controller('uiSelect').activate(false, true);
-            }, 100);
+            /** Checks if the geometry text is valid **/
+            $scope.geometryTextValid = function () {
+                return $scope.data.geometryText && $scope.data.geometryText.length > 0
+                    && $scope.features.length > 0;
+            };
 
+
+            /** Called whenever the geometry text changes **/
+            $scope.geometryTextChanged = function () {
+                $scope.features.length = 0;
+
+                $http.post('/rest/messages/parse-geometry?lang=' + $rootScope.language, { geometryText: $scope.data.geometryText })
+                    .success(function (fc) {
+                        if (fc && fc.features && fc.features.length > 0) {
+                            angular.forEach(fc.features, function (feature) {
+                                var olFeature = MapService.gjToOlFeature(feature);
+                                $scope.features.push(olFeature);
+                            });
+                        }
+                    });
+            };
+
+
+            /** Returns the fully loaded area to the callee **/
+            $scope.import = function () {
+                $scope.$close($scope.features);
+            };
         }]);
 
 
