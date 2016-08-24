@@ -16,6 +16,7 @@
 
 package org.niord.core.geojson;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.service.BaseService;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.slf4j.Logger;
@@ -34,6 +35,7 @@ import static java.util.Objects.requireNonNull;
  * Feature service
  */
 @Stateless
+@SuppressWarnings("unused")
 public class FeatureService extends BaseService {
 
 
@@ -127,16 +129,29 @@ public class FeatureService extends BaseService {
 
 
     /**
-     * Updates the given feature collection
+     * Updates the given feature collection.
+     * NB: For a feature collection without features, null is returned.
      * @param fc the feature collection
      * @return the updated feature collection
      */
     public FeatureCollection updateFeatureCollection(FeatureCollection fc) throws Exception {
-        if (fc == null) {
+        if (fc == null || fc.getFeatures().isEmpty()) {
             return null;
         }
-        FeatureCollection orig = requireNonNull(findFeatureCollectionByUid(fc.getUid()));
 
+        // For new feature collections, ensure they have a UUID
+        if (StringUtils.isBlank(fc.getUid())) {
+            fc.assignNewUid();
+        }
+
+        // Check it this is a new or existing feature collection
+        FeatureCollection orig = findFeatureCollectionByUid(fc.getUid());
+        if (orig == null) {
+            // New feature collection
+            return fc;
+        }
+
+        // Update existing feature collection
         orig.getFeatures().clear();
         fc.getFeatures().forEach(f -> {
             Feature of = findFeatureByUid(f.getUid());
@@ -151,7 +166,6 @@ public class FeatureService extends BaseService {
             }
         });
 
-        em.persist(orig);
         return orig;
     }
 }

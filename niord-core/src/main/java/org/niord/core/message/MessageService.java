@@ -431,6 +431,9 @@ public class MessageService extends BaseService {
             original.setStatus(Status.DRAFT);
         }
 
+        original.setHorizontalDatum(message.getHorizontalDatum());
+        original.setGeometry(featureService.updateFeatureCollection(message.getGeometry()));
+
         // Substitute the Area with a persisted one
         original.setAreas(persistedList(Area.class, message.getAreas()));
         original.setAreaSortOrder(areaService.computeMessageAreaSortingOrder(original));
@@ -440,9 +443,6 @@ public class MessageService extends BaseService {
 
         // Substitute the Charts with the persisted ones
         original.setCharts(chartService.persistedCharts(message.getCharts()));
-
-        original.setHorizontalDatum(message.getHorizontalDatum());
-        original.setGeometry(featureService.updateFeatureCollection(message.getGeometry()));
 
         original.setPublishDate(message.getPublishDate());
         original.setUnpublishDate(message.getUnpublishDate());
