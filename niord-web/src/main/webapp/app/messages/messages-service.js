@@ -517,13 +517,13 @@ angular.module('niord.messages')
 
             /** Adds a new message filter */
             addFilter: function(filter) {
-                return $http.post('/rest/filters/', filter);
+                return $http.post('/rest/filters/filter/', filter);
             },
 
 
             /** Removes hte message filter with the given ID */
             removeFilter: function(filterId) {
-                return $http.delete('/rest/filters/' + filterId);
+                return $http.delete('/rest/filters/filter/' + filterId);
             }
 
         };

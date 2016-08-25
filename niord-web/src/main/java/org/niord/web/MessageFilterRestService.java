@@ -68,7 +68,7 @@ public class MessageFilterRestService {
 
     /** Returns the filter with the given ID */
     @GET
-    @Path("/{filterId}")
+    @Path("/filter/{filterId}")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
@@ -80,7 +80,7 @@ public class MessageFilterRestService {
 
     /** Creates a new filter from the given template */
     @POST
-    @Path("/")
+    @Path("/filter/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @GZIP
@@ -93,7 +93,7 @@ public class MessageFilterRestService {
 
     /** Deletes the filter with the given ID */
     @DELETE
-    @Path("/{filterId}")
+    @Path("/filter/{filterId}")
     @GZIP
     @NoCache
     public void deleteMessageFilter(@PathParam("filterId") Integer filterId) {
