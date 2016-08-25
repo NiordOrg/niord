@@ -30,7 +30,7 @@
         <dependency>
             <groupId>org.picketbox</groupId>
             <artifactId>picketbox</artifactId>
-            <version>4.9.3.Final</version>
+            <version>4.9.6.Final</version>
             <scope>provided</scope>
         </dependency>
 
@@ -127,7 +127,7 @@
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-spatial</artifactId>
-            <version>5.0.1.Final</version>
+            <version>5.0.10.Final</version>
             <!-- Prevent double inclusion of Hibernate -->
             <exclusions>
                 <exclusion>
