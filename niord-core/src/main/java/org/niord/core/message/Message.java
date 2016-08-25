@@ -199,7 +199,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     @OrderColumn(name = "indexNo")
     List<Attachment> attachments = new ArrayList<>();
 
-    @OneToMany(cascade = { CascadeType.REMOVE }, mappedBy = "message")
+    @OneToMany(mappedBy = "message")
     List<Comment> comments = new ArrayList<>();
 
 
