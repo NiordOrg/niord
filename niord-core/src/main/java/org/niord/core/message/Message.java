@@ -45,7 +45,6 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.OrderColumn;
 import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
@@ -363,9 +362,18 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     }
 
 
-    /** Whenever the message is persisted, re-compute the start and end dates */
+    /**
+     * Whenever the message is persisted, re-compute the start and end dates.
+     * <p>
+     * Important:
+     * This function is not annotated with @PreUpdate anymore. Instead, the function is called explicitly
+     * from MessageService.updateMessage(). This is because we would occasionally see the following Hibernate error:
+     * "AssertionFailure: collection owner not associated with session: org.niord.core.message.Reference.descs"
+     * The error would depend on how many related entities (area, category, geometry, references,...) were defined
+     * for the messages. Surely a Hibernate error, methinks...
+     */
     @PrePersist
-    @PreUpdate
+    //@PreUpdate
     public void onPersist() {
 
         if (uid == null) {

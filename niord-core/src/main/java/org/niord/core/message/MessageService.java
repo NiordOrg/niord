@@ -321,6 +321,9 @@ public class MessageService extends BaseService {
     public Message saveMessage(Message message) {
         boolean wasPersisted = message.isPersisted();
 
+        // Please see comment on Message.onPersist()
+        message.onPersist();
+
         // Save the message
         message = saveEntity(message);
 
@@ -392,6 +395,7 @@ public class MessageService extends BaseService {
      * @param message the template for the message to update
      * @return the updated message
      */
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public Message updateMessage(Message message) throws Exception {
 
         Message original = findByUid(message.getUid());
