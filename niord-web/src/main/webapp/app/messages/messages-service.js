@@ -108,7 +108,7 @@ angular.module('niord.messages')
 
             /** Changes the statuses of a list of messages message */
             updateMessageStatuses: function(updates) {
-                return $http.put('/rest/messages/message/statuses', updates);
+                return $http.put('/rest/messages/update-statuses', updates);
             },
 
 

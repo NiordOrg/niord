@@ -507,7 +507,7 @@ public class MessageRestService  {
      * @return the updated messages
      */
     @PUT
-    @Path("/message/statuses")
+    @Path("/update-statuses")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @GZIP
