@@ -430,7 +430,7 @@ angular.module('niord.messages')
                 if (params.aton && params.aton.length > 0) {
                     s.aton.enabled = true;
                     var atons = (typeof params.aton === 'string') ? params.aton : params.aton.join();
-                    $http.get('/rest/atons/' + atons + '?lang=' + $rootScope.language)
+                    $http.get('/rest/atons/aton/' + atons + '?lang=' + $rootScope.language)
                         .then(function(response) {
                             s.aton.atons = response.data;
                         });

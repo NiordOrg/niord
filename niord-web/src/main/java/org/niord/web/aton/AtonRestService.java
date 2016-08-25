@@ -57,7 +57,7 @@ public class AtonRestService {
 
     /** Returns the AtoN with the given comma-separated IDs */
     @GET
-    @Path("/{atonUids}")
+    @Path("/aton/{atonUids}")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
