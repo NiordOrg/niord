@@ -29,6 +29,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class Attachment extends BaseEntity<Integer> implements ILocalizable<AttachmentDesc>, IndexedEntity {
 
+    @NotNull
     @ManyToOne
     Message message;
 
@@ -73,7 +75,6 @@ public class Attachment extends BaseEntity<Integer> implements ILocalizable<Atta
     /** Constructor */
     public Attachment(AttachmentVo attachment) {
 
-        this.id = attachment.getId();
         this.type = attachment.getType();
         this.fileName = attachment.getFileName();
         this.fileUpdated = attachment.getFileUpdated();
@@ -94,7 +95,6 @@ public class Attachment extends BaseEntity<Integer> implements ILocalizable<Atta
     public AttachmentVo toVo(DataFilter filter) {
 
         AttachmentVo attachment = new AttachmentVo();
-        attachment.setId(id);
         attachment.setType(type);
         attachment.setFileName(fileName);
         attachment.setFileUpdated(fileUpdated);

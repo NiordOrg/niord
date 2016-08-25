@@ -199,7 +199,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     @OrderColumn(name = "indexNo")
     List<Attachment> attachments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "message")
+    @OneToMany(cascade = { CascadeType.REMOVE }, mappedBy = "message")
     List<Comment> comments = new ArrayList<>();
 
 
@@ -269,6 +269,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                 .forEach(di -> addDateInterval(new DateInterval(di)));
         }
         this.publishDate = message.getPublishDate();
+        this.references.clear();
         if (message.getReferences() != null) {
             message.getReferences().stream()
                 .filter(r -> StringUtils.isNotBlank(r.getMessageId()))

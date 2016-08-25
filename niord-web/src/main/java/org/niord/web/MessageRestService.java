@@ -395,9 +395,6 @@ public class MessageRestService  {
         editMessage.setVersion(null);
         editMessage.setNumber(null);
         editMessage.setPublishDate(null);
-        if (editMessage.getAttachments() != null) {
-            editMessage.getAttachments().forEach(att -> att.setId(null));
-        }
         editMessage.setGeometry(featureService.copyFeatureCollection(editMessage.getGeometry()));
 
         return editMessage;

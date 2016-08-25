@@ -19,7 +19,6 @@ import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
-import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import java.util.Date;
@@ -38,7 +37,6 @@ public class AttachmentVo implements ILocalizable<AttachmentDescVo>, IJsonSerial
 
     public enum AttachmentDisplayType { ABOVE, BELOW, SEPARATE_PAGE }
 
-    Integer id;
     String type;
     String fileName;
     Date fileUpdated;
@@ -61,15 +59,6 @@ public class AttachmentVo implements ILocalizable<AttachmentDescVo>, IJsonSerial
     /*************************/
     /** Getters and Setters **/
     /*************************/
-
-    @XmlAttribute
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
 
     public String getType() {
         return type;

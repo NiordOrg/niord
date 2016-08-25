@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class Reference extends BaseEntity<Integer> implements ILocalizable<ReferenceDesc>, IndexedEntity {
 
+    @NotNull
     @ManyToOne
     Message message;
 
