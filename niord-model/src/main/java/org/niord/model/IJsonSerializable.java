@@ -16,6 +16,7 @@
 package org.niord.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 /**
@@ -25,7 +26,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
  * Hence all implementing VO classes should e.g. take care not to instantiate lists to empty
  * lists, but leave them as null until an actual value is added.
  */
-@JsonIgnoreProperties(ignoreUnknown=true)
-@JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
+@JsonSerialize
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(value = JsonInclude.Include.NON_NULL)
 public interface IJsonSerializable {
 }
