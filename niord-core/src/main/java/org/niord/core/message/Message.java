@@ -367,7 +367,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
      * <p>
      * Important:
      * This function is not annotated with @PreUpdate anymore. Instead, the function is called explicitly
-     * from MessageService.updateMessage(). This is because we would occasionally see the following Hibernate error:
+     * from MessageService.saveMessage(). This is because we would occasionally see the following Hibernate error:
      * "AssertionFailure: collection owner not associated with session: org.niord.core.message.Reference.descs"
      * The error would depend on how many related entities (area, category, geometry, references,...) were defined
      * for the messages. Surely a Hibernate error, methinks...
