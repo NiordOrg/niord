@@ -78,8 +78,33 @@ ol.feature-coordinates li span {
 }
 
 .message-description table td, .message-description table th {
+    vertical-align: top;
     border: 0.05em solid #333;
     padding: 3px;
+}
+
+.message-description table.no-border {
+    border: 0;
+}
+
+.message-description table.no-border td, .message-description table.no-border th {
+    border: 0;
+}
+
+.message-description table.condensed {
+    padding: 0;
+}
+
+.message-description table.condensed td, .message-description table.condensed th {
+    padding: 0;
+}
+
+.message-description table tr.underline td {
+    border-bottom: 0.05em solid #333;
+}
+
+.message-description table tr td.underline {
+    border-bottom: 0.05em solid #333;
 }
 
 .attachment {

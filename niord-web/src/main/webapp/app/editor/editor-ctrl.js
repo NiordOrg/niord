@@ -622,6 +622,20 @@ angular.module('niord.editor')
                 contextmenu: "link image inserttable | cell row column deletetable",
                 toolbar: "styleselect | bold italic | forecolor backcolor | alignleft aligncenter alignright alignjustify | "
                          + "bullist numlist  | outdent indent | link image table | code fullscreen | niordlocations",
+                table_class_list: [
+                    { title: 'None', value: ''},
+                    { title: 'No border', value: 'no-border'},
+                    { title: 'Condensed', value: 'condensed'},
+                    { title: 'No border + condensed', value: 'no-border condensed'}
+                ],
+                table_cell_class_list: [
+                    {title: 'None', value: ''},
+                    {title: 'Underline', value: 'underline'}
+                ],
+                table_row_class_list: [
+                    {title: 'None', value: ''},
+                    {title: 'Underline', value: 'underline'}
+                ],
                 file_browser_callback: $scope.fileBrowserCallback,
                 setup : function ( editor ) {
                     editor.addButton( 'niordlocations', {
