@@ -56,6 +56,16 @@ public abstract class DescEntity<E extends ILocalizable> extends BaseEntity<Inte
         this.entity = entity;
     }
 
+
+    /** Truncates the string to at most len characters **/
+    public static String trunc(String value, int len) {
+        if (value != null && value.length() > len) {
+            value = value.substring(0, len).trim();
+        }
+        return value;
+    }
+
+
     /*************************/
     /** Getters and Setters **/
     /*************************/

@@ -80,18 +80,17 @@ public class MessageDesc extends DescEntity<Message> {
             this.title = desc.getTitle();
         } else {
             // Copy all fields
-            this.lang = desc.getLang();
-            this.title = desc.getTitle();
-            this.subject = desc.getSubject();
+            this.title = trunc(desc.getTitle(), 1000);
+            this.subject = trunc(desc.getSubject(), 500);
             this.description = desc.getDescription();
-            this.otherCategories = desc.getOtherCategories();
-            this.time = desc.getTime();
-            this.vicinity = desc.getVicinity();
-            this.note = desc.getNote();
-            this.publication = desc.getPublication();
-            this.source = desc.getSource();
-            this.prohibition = desc.getProhibition();
-            this.signals = desc.getSignals();
+            this.otherCategories = trunc(desc.getOtherCategories(), 256);
+            this.time = trunc(desc.getTime(), 1000);
+            this.vicinity = trunc(desc.getVicinity(), 256);
+            this.note = trunc(desc.getNote(), 1000);
+            this.publication = trunc(desc.getPublication(), 256);
+            this.source = trunc(desc.getSource(), 256);
+            this.prohibition = trunc(desc.getProhibition(), 256);
+            this.signals = trunc(desc.getSignals(), 2000);
         }
     }
 
