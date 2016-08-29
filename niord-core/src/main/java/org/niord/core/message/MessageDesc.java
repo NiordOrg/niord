@@ -57,7 +57,7 @@ public class MessageDesc extends DescEntity<Message> {
 
     String prohibition;
 
-    @Column(length = 1000)
+    @Column(length = 2000)
     String signals;
 
 
