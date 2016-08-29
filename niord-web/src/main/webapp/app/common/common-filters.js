@@ -61,11 +61,28 @@ angular.module('niord.common')
         };
     })
 
+
     .filter('toTrusted', ['$sce', function ($sce) {
         return function (value) {
             return $sce.trustAsHtml(value);
         };
-    }]);
+    }])
+
+
+    /** Improve HTML rendering of plain text by e.g. replacing new-lines + other characters **/
+    .filter('plain2html', function () {
+        return function (text) {
+            return ((text || "") + "")  // make sure it's a string;
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/\t/g, "    ")
+                .replace(/ /g, "&#8203;&nbsp;&#8203;")
+                .replace(/\r\n|\r|\n/g, "<br />");
+        };
+    });
+
+
 
 
 

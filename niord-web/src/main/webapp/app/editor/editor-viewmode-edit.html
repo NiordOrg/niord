@@ -572,6 +572,77 @@
 
             </editor-field>
 
+
+            <!-- ********************* -->
+            <!-- ** Note            ** -->
+            <!-- ********************* -->
+            <editor-field edit-mode="editMode" field-id="note" field-title="msg.field.note">
+
+                <editor-field-value-viewer>
+                    <div ng-if="message.descs.length > 0" ng-bind-html="message.descs[0].note | plain2html"></div>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12">
+                    <div class="row">
+                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
+                            <textarea rows="3" class="form-control input-sm" placeholder="Note" type="text"
+                                   autocapitalize="off" autocorrect="off" autocomplete="off"
+                                   ng-model="desc.note" bg-flag="desc.lang"></textarea>
+                        </div>
+                    </div>
+                </editor-field-value-editor>
+
+            </editor-field>
+
+
+            <!-- ********************* -->
+            <!-- ** Publication     ** -->
+            <!-- ********************* -->
+            <editor-field edit-mode="editMode" field-id="publication" field-title="msg.field.publication">
+
+                <editor-field-value-viewer>
+                    <div ng-if="message.descs.length > 0">
+                        {{message.descs[0].publication}}
+                    </div>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12">
+                    <div class="row">
+                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
+                            <input class="form-control input-sm" placeholder="Publication" type="text"
+                                   autocapitalize="off" autocorrect="off" autocomplete="off"
+                                   ng-model="desc.publication" bg-flag="desc.lang"/>
+                        </div>
+                    </div>
+                </editor-field-value-editor>
+
+            </editor-field>
+
+
+
+            <!-- ********************* -->
+            <!-- ** Source          ** -->
+            <!-- ********************* -->
+            <editor-field edit-mode="editMode" field-id="source" field-title="msg.field.source">
+
+                <editor-field-value-viewer>
+                    <div ng-if="message.descs.length > 0">
+                        {{message.descs[0].source}}
+                    </div>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12">
+                    <div class="row">
+                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
+                            <input class="form-control input-sm" placeholder="Source" type="text"
+                                   autocapitalize="off" autocorrect="off" autocomplete="off"
+                                   ng-model="desc.source" bg-flag="desc.lang"/>
+                        </div>
+                    </div>
+                </editor-field-value-editor>
+
+            </editor-field>
+
         </div>
 
         <!-- Save and revert buttons -->

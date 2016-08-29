@@ -55,6 +55,11 @@ public class MessageDesc extends DescEntity<Message> {
 
     String source;
 
+    String prohibition;
+
+    String signals;
+
+
     /** Constructor */
     public MessageDesc() {
     }
@@ -84,6 +89,8 @@ public class MessageDesc extends DescEntity<Message> {
             this.note = desc.getNote();
             this.publication = desc.getPublication();
             this.source = desc.getSource();
+            this.prohibition = desc.getProhibition();
+            this.signals = desc.getSignals();
         }
     }
 
@@ -105,6 +112,8 @@ public class MessageDesc extends DescEntity<Message> {
             desc.setNote(note);
             desc.setPublication(publication);
             desc.setSource(source);
+            desc.setProhibition(prohibition);
+            desc.setSignals(signals);
         }
         return desc;
     }
@@ -114,7 +123,7 @@ public class MessageDesc extends DescEntity<Message> {
     @Override
     public boolean descDefined() {
         return ILocalizedDesc.fieldsDefined(title, subject, description, otherCategories,
-                time, vicinity, note, publication, source);
+                time, vicinity, note, publication, source, prohibition, signals);
     }
 
 
@@ -132,6 +141,8 @@ public class MessageDesc extends DescEntity<Message> {
         this.note = desc.getNote();
         this.publication = desc.getPublication();
         this.source = desc.getSource();
+        this.prohibition = desc.getProhibition();
+        this.signals = desc.getSignals();
     }
 
     /*************************/
@@ -208,5 +219,21 @@ public class MessageDesc extends DescEntity<Message> {
 
     public void setSource(String source) {
         this.source = source;
+    }
+
+    public String getProhibition() {
+        return prohibition;
+    }
+
+    public void setProhibition(String prohibition) {
+        this.prohibition = prohibition;
+    }
+
+    public String getSignals() {
+        return signals;
+    }
+
+    public void setSignals(String signals) {
+        this.signals = signals;
     }
 }

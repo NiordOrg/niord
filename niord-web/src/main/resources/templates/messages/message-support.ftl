@@ -283,7 +283,7 @@
             <tr>
                 <td class="field-name">${text("msg.field.note")}</td>
                 <td class="field-value">
-                ${msg.descs[0].note}
+                    <@txtToHtml text=msg.descs[0].note />
                 </td>
             </tr>
         </#if>

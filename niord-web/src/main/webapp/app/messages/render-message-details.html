@@ -112,7 +112,7 @@
             <!-- Note line -->
             <tr ng-if="msg.descs[0].note">
                 <th translate>msg.field.note</th>
-                <td>{{msg.descs[0].note}}</td>
+                <td ng-bind-html="msg.descs[0].note | plain2html"></td>
             </tr>
 
 

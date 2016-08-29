@@ -46,7 +46,10 @@ angular.module('niord.editor')
                 charts: false,
                 subject: false,
                 description: false,
-                attachments: false
+                attachments: false,
+                note: false,
+                publication: false,
+                source: false
             };
 
             $scope.messageSeries = [];
