@@ -278,6 +278,26 @@
             </tr>
         </#if>
 
+        <!-- Prohibition line -->
+        <#if msg.descs?has_content && msg.descs[0].prohibition?has_content>
+            <tr>
+                <td class="field-name">${text("msg.field.prohibition")}</td>
+                <td class="field-value">
+                ${msg.descs[0].prohibition}
+                </td>
+            </tr>
+        </#if>
+
+        <!-- Signals line -->
+        <#if msg.descs?has_content && msg.descs[0].signals?has_content>
+            <tr>
+                <td class="field-name">${text("msg.field.signals")}</td>
+                <td class="field-value">
+                    <@txtToHtml text=msg.descs[0].signals />
+                </td>
+            </tr>
+        </#if>
+
         <!-- Note line -->
         <#if msg.descs?has_content && msg.descs[0].note?has_content>
             <tr>

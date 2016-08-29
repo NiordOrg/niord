@@ -60,7 +60,7 @@
             <!-- ********************* -->
             <!-- ** Original Info   ** -->
             <!-- ********************* -->
-            <editor-field ng-if="message.mainType == 'NM'" edit-mode="editMode" field-id="orig_info" field-title="msg.field.orig_info">
+            <editor-field ng-if="showField('orig_info')" edit-mode="editMode" field-id="orig_info" field-title="msg.field.orig_info">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.originalInformation">&#9733;</div>
@@ -574,9 +574,55 @@
 
 
             <!-- ********************* -->
+            <!-- ** Prohibition     ** -->
+            <!-- ********************* -->
+            <editor-field ng-if="showField('prohibition')" edit-mode="editMode" field-id="prohibition" field-title="msg.field.prohibition">
+
+                <editor-field-value-viewer>
+                    <div ng-if="message.descs.length > 0">
+                        {{message.descs[0].prohibition}}
+                    </div>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12">
+                    <div class="row">
+                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
+                            <input class="form-control input-sm" placeholder="Prohibition" type="text"
+                                   autocapitalize="off" autocorrect="off" autocomplete="off"
+                                   ng-model="desc.prohibition" bg-flag="desc.lang"/>
+                        </div>
+                    </div>
+                </editor-field-value-editor>
+
+            </editor-field>
+
+
+            <!-- ********************* -->
+            <!-- ** Signals         ** -->
+            <!-- ********************* -->
+            <editor-field ng-if="showField('signals')" edit-mode="editMode" field-id="signals" field-title="msg.field.signals">
+
+                <editor-field-value-viewer>
+                    <div ng-if="message.descs.length > 0" ng-bind-html="message.descs[0].signals | plain2html"></div>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12">
+                    <div class="row">
+                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
+                            <textarea rows="3" class="form-control input-sm" placeholder="Signals" type="text"
+                                      autocapitalize="off" autocorrect="off" autocomplete="off"
+                                      ng-model="desc.signals" bg-flag="desc.lang"></textarea>
+                        </div>
+                    </div>
+                </editor-field-value-editor>
+
+            </editor-field>
+
+
+            <!-- ********************* -->
             <!-- ** Note            ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="note" field-title="msg.field.note">
+            <editor-field ng-if="showField('note')" edit-mode="editMode" field-id="note" field-title="msg.field.note">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.descs.length > 0" ng-bind-html="message.descs[0].note | plain2html"></div>
@@ -598,7 +644,7 @@
             <!-- ********************* -->
             <!-- ** Publication     ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="publication" field-title="msg.field.publication">
+            <editor-field ng-if="showField('publication')" edit-mode="editMode" field-id="publication" field-title="msg.field.publication">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.descs.length > 0">
@@ -619,11 +665,10 @@
             </editor-field>
 
 
-
             <!-- ********************* -->
             <!-- ** Source          ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="source" field-title="msg.field.source">
+            <editor-field ng-if="showField('source')" edit-mode="editMode" field-id="source" field-title="msg.field.source">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.descs.length > 0">

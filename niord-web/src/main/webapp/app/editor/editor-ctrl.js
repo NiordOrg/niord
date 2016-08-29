@@ -49,7 +49,9 @@ angular.module('niord.editor')
                 attachments: false,
                 note: false,
                 publication: false,
-                source: false
+                source: false,
+                prohibition: false,
+                signals: false
             };
 
             $scope.messageSeries = [];
@@ -310,6 +312,23 @@ angular.module('niord.editor')
                         return msg.messageSeries !== undefined;
                     case 'areas':
                         return msg.areas && msg.areas.length > 0;
+                }
+                return true;
+            };
+
+
+            /** Returns if the given message field (group) should be displayed **/
+            $scope.showField = function (fieldId) {
+                var msg = $scope.message;
+                switch (fieldId) {
+                    case 'orig_info':
+                    case 'source':
+                    case 'publication':
+                        return msg.mainType == 'NM';
+                    case 'prohibition':
+                    case 'signals':
+                        // TODO: Determine if this is a firing area - from category or areas
+                        return true;
                 }
                 return true;
             };

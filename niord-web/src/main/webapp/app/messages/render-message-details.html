@@ -109,6 +109,20 @@
             </tr>
 
 
+            <!-- Prohibition line -->
+            <tr ng-if="msg.descs[0].prohibition">
+                <th translate>msg.field.prohibition</th>
+                <td>{{msg.descs[0].prohibition}}</td>
+            </tr>
+
+
+            <!-- Signals line -->
+            <tr ng-if="msg.descs[0].signals">
+                <th translate>msg.field.signals</th>
+                <td ng-bind-html="msg.descs[0].signals | plain2html"></td>
+            </tr>
+
+
             <!-- Note line -->
             <tr ng-if="msg.descs[0].note">
                 <th translate>msg.field.note</th>
