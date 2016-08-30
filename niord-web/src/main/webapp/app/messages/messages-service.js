@@ -65,13 +65,13 @@ angular.module('niord.messages')
 
             /** Returns the message with the given ID */
             details: function (id) {
-                return $http.get('/rest/messages/message/' + id + '?lang=' + $rootScope.language);
+                return $http.get('/rest/messages/message/' + encodeURIComponent(id) + '?lang=' + $rootScope.language);
             },
 
 
             /** Returns the editable message with the given ID */
             editableDetails: function (id) {
-                return $http.get('/rest/messages/editable-message/' + id + '?lang=' + $rootScope.language);
+                return $http.get('/rest/messages/editable-message/' + encodeURIComponent(id) + '?lang=' + $rootScope.language);
             },
 
 
@@ -85,7 +85,7 @@ angular.module('niord.messages')
             copyMessageTemplate: function (id, referenceType) {
 
                 var refParam = (referenceType) ? '&referenceType=' + referenceType : '';
-                return $http.get('/rest/messages/copy-message-template/' + id
+                return $http.get('/rest/messages/copy-message-template/' + encodeURIComponent(id)
                             + '?lang=' + $rootScope.language + refParam);
             },
 
