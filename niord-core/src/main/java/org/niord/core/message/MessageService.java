@@ -39,10 +39,10 @@ import org.niord.core.user.User;
 import org.niord.core.user.UserService;
 import org.niord.core.util.TimeUtils;
 import org.niord.model.DataFilter;
-import org.niord.model.search.PagedSearchResultVo;
 import org.niord.model.message.MainType;
 import org.niord.model.message.MessageVo;
 import org.niord.model.message.Status;
+import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
@@ -54,7 +54,6 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
@@ -912,7 +911,7 @@ public class MessageService extends BaseService {
 
 
         // Determine the fields to fetch
-        Path<Area> areaRoot = null;
+        Join<Message, Area> areaRoot = null;
         List<Selection<?>> fields = new ArrayList<>();
         fields.add(msgRoot.get("id"));
         if (param.sortByDate()) {
@@ -920,7 +919,7 @@ public class MessageService extends BaseService {
         } else if (param.sortById()) {
             fields.add(msgRoot.get("publishDate"));
         } else if (param.sortByArea()) {
-            areaRoot = msgRoot.get("area");
+            areaRoot = msgRoot.join("area", JoinType.LEFT);
             fields.add(areaRoot.get("treeSortOrder"));
             fields.add(msgRoot.get("areaSortOrder"));
         }

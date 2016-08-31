@@ -269,9 +269,6 @@ angular.module('niord.editor')
                 } else if (!msg.messageSeries) {
                     growl.error("Please specify message series before saving", {ttl: 5000});
                     return;
-                } else if (!msg.areas || msg.areas.length == 0) {
-                    growl.error("Please specify message area before saving", {ttl: 5000});
-                    return;
                 }
                 if (msg.dateIntervals) {
                     for (var x = 0; x < msg.dateIntervals.length; x++) {
@@ -310,8 +307,6 @@ angular.module('niord.editor')
                         return msg.mainType && msg.type;
                     case 'id':
                         return msg.messageSeries !== undefined;
-                    case 'areas':
-                        return msg.areas && msg.areas.length > 0;
                 }
                 return true;
             };
@@ -852,9 +847,6 @@ angular.module('niord.editor')
                 }
                 if (!msg.messageSeries) {
                     error += '<li>Message Series</li>';
-                }
-                if (!msg.areas || msg.areas.length == 0) {
-                    error += '<li>Areas</li>';
                 }
                 if (!descFieldDefined('subject')) {
                     error += '<li>Subject</li>';

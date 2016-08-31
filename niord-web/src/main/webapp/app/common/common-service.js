@@ -47,6 +47,13 @@ angular.module('niord.common')
             };
 
 
+            /** Translates the given key **/
+            this.translate = function (key, params, language) {
+                language = language || $rootScope.language;
+                return $translate.instant(key, params, null, language)
+            };
+
+
             /** look for a description entity with the given language */
             this.descForLanguage = function(elm, lang) {
                 if (elm && elm.descs) {

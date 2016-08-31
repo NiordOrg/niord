@@ -849,6 +849,12 @@ angular.module('niord.messages')
                                     msg.areaHeading = area;
                                 }
                             }
+                        } else {
+                            // Use a special "General" heading for messages without an area
+                            if (lastAreaId != -999999) {
+                                lastAreaId = -999999;
+                                msg.areaHeading =  { id: -999999 };
+                            }
                         }
                     }
                 }

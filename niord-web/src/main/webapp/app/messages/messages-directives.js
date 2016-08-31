@@ -32,13 +32,25 @@ angular.module('niord.messages')
             link: function(scope, element, attrs) {
                 var divider = (attrs.areaDivider) ? attrs.areaDivider : " - ";
 
+                /** Prepends the prefix to the result **/
+                function prepend(prefix, result) {
+                    return prefix
+                        + ((result.length > 0 && prefix.length > 0) ? divider : '')
+                        + result;
+                }
+
                 scope.updateAreas = function(areas) {
                     var result = '';
                     if (areas && areas.length > 0) {
                         for (var area = areas[0]; area; area = area.parent) {
-                            var desc = LangService.desc(area);
-                            var areaName = (desc) ? desc.name : '';
-                            result = areaName + ((result.length > 0 && areaName.length > 0) ? divider : '') + result;
+                            if (area.id == -999999) {
+                                // Special "General" area used for messages without an assigned area
+                                result = prepend(LangService.translate('msg.area.general'), result);
+                            } else {
+                                var desc = LangService.desc(area);
+                                var areaName = (desc) ? desc.name : '';
+                                result = prepend(areaName, result);
+                            }
                         }
                     }
                     element.html(result);
