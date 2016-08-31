@@ -325,6 +325,18 @@ public class AreaService extends BaseService {
 
         int index = siblings.indexOf(area);
 
+
+        // As a bootstrap issue, some sibling areas may have the same sibling sort order, e.g. 0.0.
+        // If that is the case, simply re-assign new values
+        if (siblings.stream().map(Area::getSiblingSortOrder).distinct().count() != siblings.size()) {
+            for (int x = 0; x < siblings.size(); x++) {
+                Area a = siblings.get(x);
+                a.setSiblingSortOrder(x);
+                saveEntity(a);
+            }
+        }
+
+
         if (moveUp) {
             if (index == 1) {
                 area.setSiblingSortOrder(siblings.get(0).getSiblingSortOrder() - 10.0);
