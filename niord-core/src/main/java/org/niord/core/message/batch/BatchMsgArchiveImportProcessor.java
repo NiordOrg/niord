@@ -143,7 +143,7 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
 
             // Status handling
             Boolean preserveStatus = (Boolean)job.getProperties().get("preserveStatus");
-            if (!preserveStatus || message.getStatus() == Status.PUBLISHED) {
+            if (!preserveStatus) {
                 // Force "IMPORTED" status
                 message.setStatus(Status.IMPORTED);
 
