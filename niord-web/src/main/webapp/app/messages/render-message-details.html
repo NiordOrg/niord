@@ -62,7 +62,7 @@
 
 
             <!-- Geometry line -->
-            <tr ng-if="msg.geometry">
+            <tr ng-if="msg.geometry && msg.geometry.features && msg.geometry.features.length > 0">
                 <th translate>msg.field.positions</th>
                 <td>
                     <div ng-if="!compact">

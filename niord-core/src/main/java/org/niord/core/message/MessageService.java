@@ -367,6 +367,11 @@ public class MessageService extends BaseService {
             message.setStatus(Status.DRAFT);
         }
 
+        // Remove empty geometries
+        if (message.getGeometry() != null && message.getGeometry().getFeatures().isEmpty()) {
+            message.setGeometry(null);
+        }
+
         // Substitute the Area with a persisted one
         message.setAreas(persistedList(Area.class, message.getAreas()));
         message.setAreaSortOrder(areaService.computeMessageAreaSortingOrder(message));
