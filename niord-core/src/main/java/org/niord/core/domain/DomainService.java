@@ -135,6 +135,7 @@ public class DomainService extends BaseService {
         original.setLatitude(domain.getLatitude());
         original.setLongitude(domain.getLongitude());
         original.setZoomLevel(domain.getZoomLevel());
+        original.setMessageSortOrder(domain.getMessageSortOrder());
         original.setSchedule(domain.getSchedule());
 
         // Substitute the areas with the persisted ones

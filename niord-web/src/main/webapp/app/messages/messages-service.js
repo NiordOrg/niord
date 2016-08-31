@@ -39,6 +39,38 @@ angular.module('niord.messages')
 
         return {
 
+            /** Returns the default sort-by key **/
+            defaultSortBy : function () {
+                if ($rootScope.domain && $rootScope.domain.messageSortOrder) {
+                    // messageSortOrder should have the format "AREA ASC"
+                    var sort = $rootScope.domain.messageSortOrder.toUpperCase();
+                    if (sort.startsWith('AREA')) {
+                        return "AREA";
+                    } else if (sort.startsWith('ID')) {
+                            return "ID";
+                    } else if (sort.startsWith('DATE')) {
+                        return "DATE";
+                    }
+                }
+                return "AREA";
+            },
+
+
+            /** Returns the default sort-order **/
+            defaultSortOrder : function () {
+                if ($rootScope.domain && $rootScope.domain.messageSortOrder) {
+                    // messageSortOrder should have the format "AREA ASC"
+                    var sort = $rootScope.domain.messageSortOrder.toUpperCase();
+                    if (sort.endsWith('ASC')) {
+                        return "ASC";
+                    } else if (sort.endsWith('DESC')) {
+                        return "DESC";
+                    }
+                }
+                return "ASC";
+            },
+
+
             /** Returns the message filters */
             publicMessages: function() {
                 var params = 'lang=' + $rootScope.language;

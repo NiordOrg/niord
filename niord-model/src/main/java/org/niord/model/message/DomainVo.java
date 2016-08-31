@@ -30,6 +30,7 @@ public class DomainVo implements IJsonSerializable {
     private Float lat;
     private Float lon;
     private Integer zoomLevel;
+    private String messageSortOrder;
     private List<AreaVo> areas;
     private List<CategoryVo> categories;
     private List<MessageSeriesVo> messageSeries;
@@ -86,6 +87,14 @@ public class DomainVo implements IJsonSerializable {
 
     public void setZoomLevel(Integer zoomLevel) {
         this.zoomLevel = zoomLevel;
+    }
+
+    public String getMessageSortOrder() {
+        return messageSortOrder;
+    }
+
+    public void setMessageSortOrder(String messageSortOrder) {
+        this.messageSortOrder = messageSortOrder;
     }
 
     public List<AreaVo> getAreas() {

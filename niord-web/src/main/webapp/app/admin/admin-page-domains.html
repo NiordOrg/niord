@@ -60,6 +60,22 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="timeZone" class="col-sm-4">Message Sort Order</label>
+                            <div class="col-sm-8">
+                                <select id="sortOrder" name="sortOrder" class="form-control input-sm"
+                                        style="width: 210px"
+                                        ng-model="domain.messageSortOrder">
+                                    <option value="AREA ASC">Area - ascending</option>
+                                    <option value="AREA DESC">Area - descending</option>
+                                    <option value="ID ASC">ID - ascending</option>
+                                    <option value="ID DESC">ID - descending</option>
+                                    <option value="DATE ASC">Date - ascending</option>
+                                    <option value="DATE DESC">Date - descending</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
                             <label class="col-sm-4">Areas</label>
                             <div class="col-sm-8">
                                 <areas-field id="areas" area-data="domain" multiple="true"></areas-field>

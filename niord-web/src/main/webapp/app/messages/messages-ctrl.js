@@ -46,8 +46,8 @@ angular.module('niord.messages')
             $scope.state = {
 
                 /** Sorting **/
-                sortBy : 'AREA',
-                sortOrder : 'ASC',
+                sortBy : MessageService.defaultSortBy(),
+                sortOrder : MessageService.defaultSortOrder(),
 
                 /** Map state. Also serves as a mandatory filter in map mode **/
                 map : {
@@ -917,7 +917,7 @@ angular.module('niord.messages')
             // Returns the sort indicator to display for the given field
             $scope.sortIndicator = function(sortBy) {
                 if (sortBy == $scope.state.sortBy) {
-                    return $scope.state.sortOrder == 'DESC' ? '&#9650;' : '&#9660';
+                    return $scope.state.sortOrder == 'DESC' ? '&#9650;' : '&#9660;';
                 }
                 return "";
             };

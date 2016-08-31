@@ -68,6 +68,8 @@ public class Domain extends BaseEntity<Integer> {
 
     Integer zoomLevel;
 
+    String messageSortOrder;
+
     @ManyToMany
     List<Area> areas = new ArrayList<>();
 
@@ -101,6 +103,7 @@ public class Domain extends BaseEntity<Integer> {
         this.latitude = domain.getLat();
         this.longitude = domain.getLon();
         this.zoomLevel = domain.getZoomLevel();
+        this.messageSortOrder = StringUtils.isBlank(domain.getMessageSortOrder()) ? null : domain.getMessageSortOrder();
         this.schedule = domain.getSchedule();
         this.inKeycloak = domain.getInKeycloak();
 
@@ -136,6 +139,7 @@ public class Domain extends BaseEntity<Integer> {
         domain.setLat(latitude);
         domain.setLon(longitude);
         domain.setZoomLevel(zoomLevel);
+        domain.setMessageSortOrder(messageSortOrder);
         domain.setSchedule(schedule);
         domain.setInKeycloak(inKeycloak);
 
@@ -177,6 +181,7 @@ public class Domain extends BaseEntity<Integer> {
                 !Objects.equals(latitude, template.getLatitude()) ||
                 !Objects.equals(longitude, template.getLongitude()) ||
                 !Objects.equals(zoomLevel, template.getZoomLevel()) ||
+                !Objects.equals(messageSortOrder, template.getMessageSortOrder()) ||
                 !Objects.equals(schedule, template.getSchedule()) ||
                 hasChanged(areas, template.getAreas()) ||
                 hasChanged(categories, template.getCategories()) ||
@@ -268,6 +273,14 @@ public class Domain extends BaseEntity<Integer> {
 
     public void setZoomLevel(Integer zoomLevel) {
         this.zoomLevel = zoomLevel;
+    }
+
+    public String getMessageSortOrder() {
+        return messageSortOrder;
+    }
+
+    public void setMessageSortOrder(String messageSortOrder) {
+        this.messageSortOrder = messageSortOrder;
     }
 
     public List<Area> getAreas() {

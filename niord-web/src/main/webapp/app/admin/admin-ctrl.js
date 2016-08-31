@@ -817,6 +817,7 @@ angular.module('niord.admin')
                     domainId: undefined,
                     name: undefined,
                     timeZone: moment.tz.guess(),
+                    messageSortOrder: 'AREA ASC',
                     schedule: false
                 };
             };
