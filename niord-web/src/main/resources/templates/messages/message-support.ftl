@@ -119,7 +119,7 @@
                     <#assign messageId=msg.shortId />
                 </#if>
                 <div style="margin: 1mm">
-                    <h4 style="color: #8f2f7b; font-size: 16px;" id="${messageId}">${text("pdf.attchment.title", messageId)}</h4>
+                    <h4 style="color: #8f2f7b; font-size: 16px;" id="${messageId}">${text("pdf.attachment.title", messageId)}</h4>
                 </div>
                 <@renderAttachment msg=msg att=att />
             </div>
@@ -160,7 +160,7 @@
 <!-- ***************************************  -->
 <!-- Renders a message                        -->
 <!-- ***************************************  -->
-<#macro renderMessage msg>
+<#macro renderMessage msg positions=true>
 
     <div style="width: 100%;">
 
@@ -182,7 +182,7 @@
     <#if msg.descs?has_content && msg.descs[0].title?has_content>
         <div>
             <strong>
-                <a href="${baseUri}/#/message/${msg.id}" target="_blank">
+                <a href="${baseUri}/#/message/${msg.id}" target="_blank" id="msg_${msg.id}">
                     ${msg.descs[0].title}
                 </a>
             </strong>
@@ -243,7 +243,7 @@
 
 
         <!-- Geometry line -->
-        <#if msg.geometry?has_content>
+        <#if positions && msg.geometry?has_content>
             <tr>
                 <td class="field-name">${text("msg.field.positions")}</td>
                 <td class="field-value">
@@ -354,7 +354,7 @@
 <!-- ***************************************  -->
 <!-- Renders a list of messages               -->
 <!-- ***************************************  -->
-<#macro renderMessageList messages areaHeadings prefix="">
+<#macro renderMessageList messages positions=true areaHeadings=true prefix="">
 
     <#assign areaHeadingId=-9999999 />
 
@@ -362,9 +362,11 @@
         <!-- Layout row for fixed-layout table -->
         <tr>
             <#if mapThumbnails!true>
+                <#assign colspan=2 />
                 <td width="140"></td>
                 <td width="*"></td>
             <#else>
+                <#assign colspan=1 />
                 <td width="100%"></td>
             </#if>
         </tr>
@@ -376,7 +378,7 @@
                 <#if areaHeadings && area?? && area.id != areaHeadingId>
                     <#assign areaHeadingId=area.id />
                     <tr>
-                        <td colspan="2" class="table-header"><h4 id="${prefix}${areaHeadingId?c}"><@areaLineage area=areaHeading(area) /></h4></td>
+                        <td colspan="${colspan}" class="table-header"><h4 id="${prefix}${areaHeadingId?c}"><@areaLineage area=areaHeading(area) /></h4></td>
                     </tr>
                 </#if>
             </#if>
@@ -387,7 +389,7 @@
                     </td>
                 </#if>
                 <td class="table-item">
-                    <@renderMessage msg=msg />
+                    <@renderMessage msg=msg positions=positions/>
                 </td>
             </tr>
         </#list>

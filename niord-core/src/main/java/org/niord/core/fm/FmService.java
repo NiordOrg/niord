@@ -125,6 +125,7 @@ public class FmService extends BaseService {
         }
     }
 
+
     /**
      * Returns the report with the given report ID, or the standard report if not found
      * @param reportId the report ID
@@ -137,6 +138,7 @@ public class FmService extends BaseService {
         }
         return report;
     }
+
 
     /**
      * Returns the reports available in the current domain
@@ -338,7 +340,10 @@ public class FmService extends BaseService {
         }
 
         public FmTemplateBuilder data(Map<String, Object> data) {
-            this.data = data;
+            if (data == null) {
+                data = new HashMap<>();
+            }
+            this.data.putAll(data);
             return this;
         }
 

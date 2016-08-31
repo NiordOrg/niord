@@ -15,18 +15,22 @@
  */
 package org.niord.core.fm;
 
+import org.niord.core.db.JpaPropertiesAttributeConverter;
 import org.niord.core.domain.Domain;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.fm.vo.FmReportVo;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.ManyToMany;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Defines a freemarker report that generates PDF for a list of messages
@@ -55,6 +59,10 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
     @ManyToMany
     List<Domain> domains = new ArrayList<>();
 
+    @Column(name="properties", columnDefinition = "TEXT")
+    @Convert(converter = JpaPropertiesAttributeConverter.class)
+    Map<String, Object> properties = new HashMap<>();
+
     /**
      * Constructor
      */
@@ -67,6 +75,7 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
         report.setReportId(reportId);
         report.setName(name);
         report.setTemplatePath(templatePath);
+        report.setProperties(properties);
         return report;
     }
 
@@ -113,5 +122,13 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
 
     public void setDomains(List<Domain> domains) {
         this.domains = domains;
+    }
+
+    public Map<String, Object> getProperties() {
+        return properties;
+    }
+
+    public void setProperties(Map<String, Object> properties) {
+        this.properties = properties;
     }
 }

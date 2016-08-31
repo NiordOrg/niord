@@ -17,6 +17,9 @@ package org.niord.core.fm.vo;
 
 import org.niord.model.IJsonSerializable;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Defines a freemarker report that generates PDF for a list of messages
  */
@@ -26,6 +29,7 @@ public class FmReportVo implements IJsonSerializable {
     String reportId;
     String name;
     String templatePath;
+    Map<String, Object> properties = new HashMap<>();
 
     /*************************/
     /** Getters and Setters **/
@@ -54,4 +58,13 @@ public class FmReportVo implements IJsonSerializable {
     public void setTemplatePath(String templatePath) {
         this.templatePath = templatePath;
     }
+
+    public Map<String, Object> getProperties() {
+        return properties;
+    }
+
+    public void setProperties(Map<String, Object> properties) {
+        this.properties = properties;
+    }
+
 }

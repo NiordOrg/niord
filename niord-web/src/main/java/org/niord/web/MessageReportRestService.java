@@ -174,6 +174,7 @@ public class MessageReportRestService {
                             .data("pageSize", params.getPageSize())
                             .data("pageOrientation", params.getPageOrientation())
                             .data("mapThumbnails", true)
+                            .data(report.getProperties()) // Let report override settings
                             .dictionaryNames("web", "message", "pdf")
                             .language(params.getLanguage())
                             .process(format, os);
