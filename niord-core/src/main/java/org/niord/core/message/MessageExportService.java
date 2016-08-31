@@ -68,6 +68,9 @@ public class MessageExportService {
         try {
             ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(os));
 
+            // Rewrite links in message description to remove "/rest/repo/file/" prefix
+            result.getData().forEach(m -> m.rewriteDescs("\"/rest/repo/file/" + m.getRepoPath(), "\"" + m.getRepoPath()));
+
             // Write the messages file to the Zip file
             log.debug("Adding messages.json to zip archive");
             out.putNextEntry(new ZipEntry("messages.json"));

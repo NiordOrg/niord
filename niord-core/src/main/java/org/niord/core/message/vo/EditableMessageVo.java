@@ -31,23 +31,6 @@ public class EditableMessageVo extends MessageVo {
 
 
     /**
-     * Rewrites the rich text description from one repository path to another.
-     * This happens when a message is edited and its associated repository folder gets
-     * copied to a temporary folder until the message is saved.
-     * <p>
-     * The repository paths may occur in e.g. embedded images and links.
-     */
-    private void rewriteDescs(String repoPath1, String repoPath2) {
-        if (getDescs() != null && StringUtils.isNotBlank(repoPath1) && StringUtils.isNotBlank(repoPath2)) {
-            getDescs().forEach(desc -> {
-                if (desc.getDescription() != null && desc.getDescription().contains(repoPath1)) {
-                    desc.setDescription(desc.getDescription().replace(repoPath1, repoPath2));
-                }
-            });
-        }
-    }
-
-    /**
      * Annoyingly, the TinyMCE editor used for editing the rich text description, will rewrite paths
      * attachments (i.e. used in hyperlinks and embedded images), so that "/rest/repo/file/..." becomes
      * "rest/repo/file/...". This causes problems if the description html is used outside the "/" context

@@ -92,6 +92,23 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
         }
     }
 
+    /**
+     * Rewrites the rich text description from one repository path to another.
+     * This happens when a message is edited and its associated repository folder gets
+     * copied to a temporary folder until the message is saved.
+     * <p>
+     * The repository paths may occur in e.g. embedded images and links.
+     */
+    public void rewriteDescs(String repoPath1, String repoPath2) {
+        if (getDescs() != null && StringUtils.isNotBlank(repoPath1) && StringUtils.isNotBlank(repoPath2)) {
+            getDescs().forEach(desc -> {
+                if (desc.getDescription() != null && desc.getDescription().contains(repoPath1)) {
+                    desc.setDescription(desc.getDescription().replace(repoPath1, repoPath2));
+                }
+            });
+        }
+    }
+
 
     /*************************/
     /** Collection Handling **/

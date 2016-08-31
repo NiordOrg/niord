@@ -587,7 +587,7 @@ public class MessageService extends BaseService {
     public Message newTemplateMessage(MainType mainType) {
 
         Message message = new Message();
-        message.assignNewUid();
+        message.assignNewUid(false);
         message.setMainType(mainType);
         message.setStatus(Status.DRAFT);
         message.setGeometry(new FeatureCollection());

@@ -75,9 +75,14 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
     public Object processItem(Object item) throws Exception {
 
         ExtractedArchiveMessageVo messageVo = (ExtractedArchiveMessageVo) item;
-        Message message = new Message(messageVo.getMessage());
+
+        // When the message archive was exported, links embedded in the message description field were
+        // rewritten to point to the zip archive folder. Rewrite back to the Niord repository structure
+        String repoPath = messageVo.getMessage().getRepoPath();
+        messageVo.getMessage().rewriteDescs("\"" + repoPath, "\"/rest/repo/file/" + repoPath);
 
         // Process related message base data
+        Message message = new Message(messageVo.getMessage());
         message = processMessage(message);
         if (message == null) {
            getLog().log(Level.WARNING, "Skipping existing message " + messageVo.getMessage().getId());
@@ -102,7 +107,7 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
             Boolean assignNewUids = (Boolean)job.getProperties().get("assignNewUids");
             if (assignNewUids) {
                 message.setLegacyId(message.getUid());
-                message.assignNewUid();
+                message.assignNewUid(true);
             }
 
             // Check that an existing message with the message UID does not exist

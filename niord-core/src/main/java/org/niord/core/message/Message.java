@@ -377,7 +377,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     public void onPersist() {
 
         if (uid == null) {
-            assignNewUid();
+            assignNewUid(false);
         }
         repoPath = uidToMessageRepoPath(uid);
 
@@ -455,9 +455,21 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
 
     /** Assigns a new UID to the Feature **/
-    public String assignNewUid() {
+    public String assignNewUid(boolean rewriteDescription) {
+        String oldRepoPath = repoPath;
+
         uid = UUID.randomUUID().toString();
         repoPath = uidToMessageRepoPath(uid);
+
+        // Rewrite any links pointing to the old repository path
+        if (StringUtils.isNotBlank(oldRepoPath)) {
+            String prefix = "\"/rest/repo/file/";
+            getDescs().forEach(desc -> {
+                if (desc.getDescription() != null && desc.getDescription().contains(prefix + oldRepoPath)) {
+                    desc.setDescription(desc.getDescription().replace(prefix + oldRepoPath, prefix + repoPath));
+                }
+            });
+        }
         return uid;
     }
 
