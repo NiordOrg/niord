@@ -201,7 +201,7 @@
                 <td class="field-value">
                     <#list msg.references as ref>
                         <div>
-                            <a href="${baseUri}/#/message/${ref.messageId}" target="_blank">${ref.messageId}</a>
+                            <a href="${baseUri}/#/message/${ref.messageId?url('ASCII')}" target="_blank">${ref.messageId}</a>
 
                             <#if ref.type == 'REPETITION'>
                                 ${text("msg.reference.repetition")}

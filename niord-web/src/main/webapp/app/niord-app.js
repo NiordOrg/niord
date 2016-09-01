@@ -57,7 +57,7 @@ var app = angular.module('niord.admin', [
                 templateUrl: "/app/home/home.html"
             })
             .state('home.message', {
-                url: "message/:messageId",
+                url: "message/{messageId:.*}",
                 templateUrl: "/app/home/home.html"
             })
 
