@@ -38,7 +38,7 @@ angular.module('niord.conf')
         $rootScope.mapDefaultZoomLevel = 6;
         $rootScope.modelLanguages = ["da","en"];
         $rootScope.siteLanguages = ["da","en"];
-        $rootScope.numeralLauguages = {"da":"da-dk","en":"en"};
+        $rootScope.numeralLanguages = {"da":"da-dk","en":"en"};
         $rootScope.wmsLayerEnabled = true;
         $rootScope.nwMrnPrefix = "urn:mrn:iho:nw:";
         $rootScope.nmMrnPrefix = "urn:mrn:iho:nm:";

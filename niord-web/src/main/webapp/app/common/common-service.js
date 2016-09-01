@@ -32,7 +32,7 @@ angular.module('niord.common')
                 $rootScope.language = lang;
                 $window.localStorage.lang = lang;
                 moment.locale(lang);
-                numeral.language($rootScope.numeralLauguages[lang]);
+                numeral.language($rootScope.numeralLanguages[lang]);
             };
 
 

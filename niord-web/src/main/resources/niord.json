@@ -37,7 +37,7 @@
     "editable"    : true
   },
   {
-    "key"         : "numeralLauguages",
+    "key"         : "numeralLanguages",
     "description" : "A mapping from the site languages to the corresponding Numeral.js language code",
     "value"       : { "en": "en" },
     "type"        : "json",
