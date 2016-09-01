@@ -95,7 +95,7 @@ public class KeycloakIntegrationService {
 
         // Handle relative auth server url
         if (!url.toLowerCase().startsWith("http")) {
-            String baseUri = app.getBaseUri();
+            String baseUri = app.getServerNameForCurrentThreadOrBaseUri();
             if (!url.startsWith("/") && !baseUri.endsWith("/")) {
                 url = "/" + url;
             } else if (url.startsWith("/") && baseUri.endsWith("/")) {

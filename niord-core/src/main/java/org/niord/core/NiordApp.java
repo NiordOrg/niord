@@ -15,11 +15,13 @@
  */
 package org.niord.core;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.servlet.ServletRequest;
 import java.util.List;
 import java.util.Locale;
 
@@ -29,6 +31,8 @@ import java.util.Locale;
 @Stateless
 @SuppressWarnings("unused")
 public class NiordApp {
+
+    private final static ThreadLocal<String> THREAD_LOCAL_SERVER_NAME = new ThreadLocal<>();
 
     private static final Setting BASE_URI =
             new Setting("baseUri", "http://localhost:8080")
@@ -112,4 +116,45 @@ public class NiordApp {
     }
 
 
+    /**
+     * Registers the server name associated with the current thread (i.e. servlet request)
+     * @param req the servlet request
+     */
+    public void registerServerNameForCurrentThread(ServletRequest req) {
+        String scheme = StringUtils.defaultIfBlank(req.getScheme(), "http");
+        String serverName = StringUtils.defaultIfBlank(req.getServerName(), "localhost");
+        String port = (scheme.equalsIgnoreCase("https"))
+                        ? (req.getServerPort() == 443 ? "" : ":" + req.getServerPort())
+                        : (req.getServerPort() == 80 ? "" : ":" + req.getServerPort());
+        if (StringUtils.isNotBlank(serverName)) {
+            THREAD_LOCAL_SERVER_NAME.set(scheme + "://" + serverName + port);
+        }
+    }
+
+
+    /**
+     * Removes the server name associated with the current thread (i.e. servlet request)
+     */
+    public void removeServerNameForCurrentThread() {
+        THREAD_LOCAL_SERVER_NAME.remove();
+    }
+
+
+    /**
+     * Returns the server name associated with the current thread (i.e. servlet request)
+     * @return the server name associated with the current thread
+     */
+    public String getServerNameForCurrentThread() {
+        return THREAD_LOCAL_SERVER_NAME.get();
+    }
+
+
+    /**
+     * Returns the server name associated with the current thread (i.e. servlet request)
+     * or the base URI if the server name is undefined.
+     * @return the server name associated with the current thread or the base URI if the server name is undefined
+     */
+    public String getServerNameForCurrentThreadOrBaseUri() {
+        return StringUtils.defaultIfBlank(getServerNameForCurrentThread(), getBaseUri());
+    }
 }
