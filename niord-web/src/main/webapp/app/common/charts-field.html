@@ -4,6 +4,7 @@
         <ui-select-match placeholder="Select chart">
             {{chartData.chart.chartNumber}}
             <span ng-if="chartData.chart.internationalNumber">(INT {{chartData.chart.internationalNumber}})</span>
+            <span ng-if="!chartData.chart.active">*inactive*</span>
         </ui-select-match>
         <ui-select-choices repeat="chart in searchResult"
                            refresh="refreshCharts($select.search)"
@@ -11,6 +12,7 @@
             <span ng-bind-html="chart.chartNumber | highlight: $select.search"></span>
             <span ng-if="chart.internationalNumber">(INT {{chart.internationalNumber}})</span>
             <small ng-bind-html="chart.name | highlight: $select.search"></small>
+            <span ng-if="!chart.active">*inactive*</span>
         </ui-select-choices>
     </ui-select>
 
@@ -19,6 +21,7 @@
         <ui-select-match placeholder="Select charts">
             {{$item.chartNumber}}
             <span ng-if="$item.internationalNumber">(INT {{$item.internationalNumber}})</span>
+            <span ng-if="!$item.active">*inactive*</span>
         </ui-select-match>
         <ui-select-choices repeat="chart in searchResult"
                            refresh="refreshCharts($select.search)"
@@ -26,6 +29,7 @@
             <span ng-bind-html="chart.chartNumber | highlight: $select.search"></span>
             <span ng-if="chart.internationalNumber">(INT {{chart.internationalNumber}})</span>
             <small ng-bind-html="chart.name | highlight: $select.search"></small>
+            <span ng-if="!chart.active">*inactive*</span>
         </ui-select-choices>
     </ui-select>
 
