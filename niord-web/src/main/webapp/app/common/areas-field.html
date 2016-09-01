@@ -3,7 +3,7 @@
     <ui-select ng-if="!multiple" ng-model="areaData.area" ng-change="areaUpdated()">
         <ui-select-match placeholder="Select area">
             {{areaData.area.descs[0].name}}
-            <span ng-if="!areaData.area.active">*inactive*</span>
+            <span class="base-data-inactive" ng-if="!areaData.area.active">(inactive)</span>
         </ui-select-match>
         <ui-select-choices repeat="area in searchResult"
                            refresh="refreshAreas($select.search)"
@@ -11,7 +11,7 @@
             <div>
                 <span ng-bind-html="area.descs[0].name | highlight: $select.search"></span>
                 <small ng-if="area.parent">({{formatParents(area.parent)}})</small>
-                <span ng-if="!area.active">*inactive*</span>
+                <span class="base-data-inactive" ng-if="!area.active">(inactive)</span>
             </div>
 
         </ui-select-choices>
@@ -21,7 +21,7 @@
     <ui-select ng-if="multiple" multiple ng-model="areaData.areas" ng-change="areaUpdated()">
         <ui-select-match placeholder="Select areas">
             {{$item.descs[0].name}}
-            <span ng-if="!$item.active">*inactive*</span>
+            <span class="base-data-inactive" ng-if="!$item.active">(inactive)</span>
         </ui-select-match>
         <ui-select-choices repeat="area in searchResult"
                            refresh="refreshAreas($select.search)"
@@ -29,7 +29,7 @@
             <div>
                 <span ng-bind-html="area.descs[0].name | highlight: $select.search"></span>
                 <small ng-if="area.parent">({{formatParents(area.parent)}})</small>
-                <span ng-if="!area.active">*inactive*</span>
+                <span class="base-data-inactive" ng-if="!area.active">(inactive)</span>
             </div>
 
         </ui-select-choices>

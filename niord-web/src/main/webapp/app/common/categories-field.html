@@ -3,7 +3,7 @@
     <ui-select ng-if="!multiple" ng-model="categoryData.category" ng-change="categoryUpdated()">
         <ui-select-match placeholder="Select category">
             {{categoryData.category.descs[0].name}}
-            <span ng-if="!categoryData.category.active">*inactive*</span>
+            <span class="base-data-inactive" ng-if="!categoryData.category.active">(inactive)</span>
         </ui-select-match>
         <ui-select-choices repeat="category in searchResult"
                            refresh="refreshCategories($select.search)"
@@ -11,7 +11,7 @@
             <div>
                 <span ng-bind-html="category.descs[0].name | highlight: $select.search"></span>
                 <small ng-if="category.parent">({{formatParents(category.parent)}})</small>
-                <span ng-if="!category.active">*inactive*</span>
+                <span class="base-data-inactive" ng-if="!category.active">(inactive)</span>
             </div>
 
         </ui-select-choices>
@@ -21,7 +21,7 @@
     <ui-select ng-if="multiple" multiple ng-model="categoryData.categories" ng-change="categoryUpdated()">
         <ui-select-match placeholder="Select category">
             {{$item.descs[0].name}}
-            <span ng-if="!$item.active">*inactive*</span>
+            <span class="base-data-inactive" ng-if="!$item.active">(inactive)</span>
         </ui-select-match>
         <ui-select-choices repeat="category in searchResult"
                            refresh="refreshCategories($select.search)"
@@ -29,7 +29,7 @@
             <div>
                 <span ng-bind-html="category.descs[0].name | highlight: $select.search"></span>
                 <small ng-if="category.parent">({{formatParents(category.parent)}})</small>
-                <span ng-if="!category.active">*inactive*</span>
+                <span class="base-data-inactive" ng-if="!category.active">(inactive)</span>
             </div>
 
         </ui-select-choices>
