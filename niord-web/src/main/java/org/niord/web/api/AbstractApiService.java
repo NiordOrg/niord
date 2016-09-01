@@ -55,7 +55,7 @@ public abstract class AbstractApiService {
      * Returns all published messages.
      * Optionally, filter by a geometry defined by the WKT (well-known text) parameter.
      */
-    public List<MessageVo> search(String language, String domainId, Set<MainType> mainTypes, String wkt) throws Exception {
+    public List<MessageVo> search(String language, String domainId, Set<String> messageSeries, Set<MainType> mainTypes, String wkt) throws Exception {
 
         MessageSearchParams params = new MessageSearchParams();
         params.language(language)
@@ -91,6 +91,11 @@ public abstract class AbstractApiService {
                                 .collect(Collectors.toSet())
                 );
             }
+        }
+
+        // Check if specific message series has been specified
+        if (messageSeries != null && !messageSeries.isEmpty()) {
+            params.getSeriesIds().addAll(messageSeries);
         }
 
         long t0 = System.currentTimeMillis();

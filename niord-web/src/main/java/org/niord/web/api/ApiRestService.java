@@ -77,6 +77,9 @@ public class ApiRestService extends AbstractApiService {
             @ApiParam(value = "The ID of the domain to select messages from", example="niord-client-nw")
             @QueryParam("domain") String domain,
 
+            @ApiParam(value = "Specific message series to select messages from", example="dma-nw")
+            @QueryParam("messageSeries") Set<String> messageSeries,
+
             @ApiParam(value = "Either NW (navigational warnings) or NM (notices to mariners)", example="NW")
             @QueryParam("mainType") Set<MainType> mainTypes,
 
@@ -84,7 +87,7 @@ public class ApiRestService extends AbstractApiService {
             @QueryParam("wkt") String wkt
 
     ) throws Exception {
-        return super.search(language, domain, mainTypes, wkt);
+        return super.search(language, domain, messageSeries, mainTypes, wkt);
     }
 
 

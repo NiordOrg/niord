@@ -76,6 +76,10 @@ angular.module('niord.messages')
                 var params = 'lang=' + $rootScope.language;
                 if ($rootScope.domain) {
                     params += '&domain=' + $rootScope.domain.domainId;
+                } else if ($rootScope.frontPageMessageSeries && $rootScope.frontPageMessageSeries.length > 0) {
+                    angular.forEach($rootScope.frontPageMessageSeries, function (messageSeries) {
+                        params += '&messageSeries=' + encodeURIComponent(messageSeries);
+                    })
                 }
                 return $http.get('/rest/public/v1/messages?' + params);
             },

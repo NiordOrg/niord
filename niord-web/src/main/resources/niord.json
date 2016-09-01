@@ -45,6 +45,14 @@
     "editable"    : true
   },
   {
+    "key"         : "frontPageMessageSeries",
+    "description" : "The list of message series IDs to display on the front page when not logged in",
+    "value"       : [],
+    "type"        : "json",
+    "web"         : true,
+    "editable"    : true
+  },
+  {
     "key"         : "nwMrnPrefix",
     "description" : "The MRN prefix to use for NW messages",
     "value"       : "urn:mrn:iho:nw:",
