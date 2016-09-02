@@ -329,16 +329,24 @@ angular.module('niord.editor')
             };
 
 
-            /** Returns if the message short ID and MRN are editable **/
-            $scope.mrnAndShortIdEditable = function () {
+            /** Returns the number sequence type of the message series **/
+            $scope.numberSequenceType = function () {
                 var msg = $scope.message;
                 if (msg.messageSeries && $rootScope.domain.messageSeries) {
                     var series = $.grep($rootScope.domain.messageSeries, function (ms) {
                         return ms.seriesId == msg.messageSeries.seriesId;
                     });
-                    return series != null && series.length > 0 && series[0].numberSequenceType == 'MANUAL';
+                    if (series != null && series.length == 1) {
+                        return series[0].numberSequenceType;
+                    }
                 }
-                return false;
+                return null;
+            };
+
+
+            /** Returns if the MRN and short ID is editable **/
+            $scope.mrnAndShortIdEditable = function () {
+                return $scope.numberSequenceType() == 'MANUAL';
             };
 
 

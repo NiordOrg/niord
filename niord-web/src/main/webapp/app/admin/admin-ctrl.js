@@ -570,9 +570,15 @@ angular.module('niord.admin')
             };
 
 
+            /** Returns if the message series automatically assigns a number **/
+            $scope.autoAssigned = function (series) {
+                return  series.numberSequenceType != 'MANUAL' && series.numberSequenceType != 'NONE';
+            };
+
+
             /** Update the MRN prefix and suffix of the message series being edited */
             $scope.updateMrnFormat = function (updateSuffix) {
-                if ($scope.series.numberSequenceType == 'MANUAL') {
+                if (!$scope.autoAssigned($scope.series)) {
                     delete $scope.series.shortFormat;
                     delete $scope.series.mrnFormat;
                     delete $scope.series.mrnPrefix;

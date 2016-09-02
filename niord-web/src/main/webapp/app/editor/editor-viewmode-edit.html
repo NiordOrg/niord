@@ -100,7 +100,7 @@
                             <th>UID</th>
                             <td>{{message.id}}</td>
                         </tr>
-                        <tr>
+                        <tr ng-if="numberSequenceType() != 'NONE'">
                             <th>Short ID</th>
                             <td>
                                 <span ng-if="!mrnAndShortIdEditable()"
@@ -112,7 +112,7 @@
                                 </div>
                             </td>
                         </tr>
-                        <tr>
+                        <tr ng-if="numberSequenceType() != 'NONE'">
                             <th>MRN</th>
                             <td>
                                 <span ng-if="!mrnAndShortIdEditable()">{{message.mrn}}</span>

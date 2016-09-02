@@ -49,10 +49,14 @@
                                        uib-btn-radio="'MANUAL'" ng-change="updateMrnFormat(true)">
                                     Manual
                                 </label>
+                                <label class="btn btn-default btn-sm" ng-model="series.numberSequenceType"
+                                       uib-btn-radio="'NONE'" ng-change="updateMrnFormat(true)">
+                                    None
+                                </label>
                             </div>
                         </div>
 
-                        <div class="form-group" ng-if="series.numberSequenceType != 'MANUAL'">
+                        <div class="form-group" ng-if="autoAssigned(series)">
                             <label class="col-sm-4">MRN Format</label>
                             <div class="col-sm-8">
                                 <div class="input-group">
@@ -81,7 +85,7 @@
                             </div>
                         </div>
 
-                        <div class="form-group" ng-if="series.numberSequenceType != 'MANUAL'">
+                        <div class="form-group" ng-if="autoAssigned(series)">
                             <label class="col-sm-4">Short Format</label>
                             <div class="col-sm-8">
                                 <div class="input-group">
@@ -110,7 +114,7 @@
                         </div>
 
 
-                        <div class="form-group" ng-if="series.numberSequenceType != 'MANUAL' && editMode == 'edit'">
+                        <div class="form-group" ng-if="autoAssigned(series) && editMode == 'edit'">
                             <label class="col-sm-4">Next number ({{currentYear}})</label>
                             <div class="col-sm-8">
                                 {{series.nextMessageNumber}}&nbsp;
@@ -174,7 +178,7 @@
                             <td>{{series.mrnFormat}}</td>
                             <td>{{series.shortFormat}}</td>
                             <td>{{series.numberSequenceType | lowercase}}</td>
-                            <td><span ng-if="series.numberSequenceType != 'MANUAL'">{{series.nextMessageNumber}}</span></td>
+                            <td><span ng-if="autoAssigned(series)">{{series.nextMessageNumber}}</span></td>
                             <td nowrap align="right">
                                 <a href ng-click="editMessageSeries(series);" title="Edit Message Series"><i class="glyphicon glyphicon-pencil"></i></a>
                                 &nbsp;

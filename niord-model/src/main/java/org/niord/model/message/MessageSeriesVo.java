@@ -40,7 +40,10 @@ public class MessageSeriesVo implements IJsonSerializable {
         CONTINUOUS,
 
         /** The user manually specifies the short ID and MRN **/
-        MANUAL
+        MANUAL,
+
+        /** No short ID or MRN is assigned **/
+        NONE
     }
 
     String seriesId;
