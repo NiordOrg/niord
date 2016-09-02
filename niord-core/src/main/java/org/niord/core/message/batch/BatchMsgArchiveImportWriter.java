@@ -15,19 +15,15 @@
  */
 package org.niord.core.message.batch;
 
-import org.apache.commons.lang.StringUtils;
-import org.niord.core.batch.AbstractItemHandler;
-import org.niord.core.message.vo.EditableMessageVo;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTag;
-import org.niord.core.message.MessageTagService;
 import org.niord.core.message.batch.BatchMsgArchiveImportProcessor.ExtractedArchiveMessage;
+import org.niord.core.message.vo.EditableMessageVo;
 import org.niord.model.DataFilter;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -38,15 +34,10 @@ import java.util.List;
  * at a time before committing. Not fast but more secure.
  */
 @Named
-public class BatchMsgArchiveImportWriter extends AbstractItemHandler {
+public class BatchMsgArchiveImportWriter extends AbstractMessageImportWriter {
 
     @Inject
     MessageService messageService;
-
-    @Inject
-    MessageTagService messageTagService;
-
-    MessageTag tag = null;
 
     /** {@inheritDoc} **/
     @Override
@@ -63,10 +54,7 @@ public class BatchMsgArchiveImportWriter extends AbstractItemHandler {
             messageService.createMessage(message);
 
             // Add the message to the tag
-            if (tag != null && !tag.getMessages().stream().anyMatch(m -> m.getId().equals(message.getId()))) {
-                tag.getMessages().add(message);
-                message.getTags().add(tag);
-            }
+            checkAddMessageToTag(message, tag);
 
 
             // Since saving the message did not cause an error, copy attachments.
@@ -78,29 +66,9 @@ public class BatchMsgArchiveImportWriter extends AbstractItemHandler {
             messageService.updateMessageFromTempRepoFolder(editableMessageVo);
         }
 
-        if (tag != null) {
-            tag.updateMessageCount();
-            messageService.saveEntity(tag);
-            getLog().info(String.format("Updated tag '%s' with messages", tag.getTagId()));
-        }
+        // Update and save the message tag
+        saveMessageTag(tag);
 
         getLog().info(String.format("Persisted %d messages in %d ms", items.size(), System.currentTimeMillis() - t0));
-    }
-
-
-    /** Looks up and caches the message tag associated with the batch job */
-    protected MessageTag getMessageTag() throws IOException {
-        // Has it been resolved already
-        if (tag != null) {
-            return tag;
-        }
-
-        String tagId = (String)job.getProperties().get("tagId");
-        if (StringUtils.isBlank(tagId)) {
-            return null;
-        }
-
-        tag = messageTagService.findTag(tagId);
-        return tag;
     }
 }

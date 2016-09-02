@@ -15,38 +15,29 @@
  */
 package org.niord.core.message.batch;
 
-import org.apache.commons.lang.StringUtils;
-import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTag;
-import org.niord.core.message.MessageTagService;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.io.IOException;
 import java.util.List;
 
 /**
  * Persists the NWs to the database
  */
 @Named
-public class BatchMessageImportWriter extends AbstractItemHandler {
+public class BatchMessageImportWriter extends AbstractMessageImportWriter {
 
     @Inject
     MessageService messageService;
-
-    @Inject
-    MessageTagService messageTagService;
-
-    MessageTag tag = null;
 
     /** {@inheritDoc} **/
     @Override
     public void writeItems(List<Object> items) throws Exception {
         long t0 = System.currentTimeMillis();
 
-        MessageTag tag = checkCreateMessageTag();
+        MessageTag tag = getMessageTag();
 
         for (Object i : items) {
             Message message = (Message)i;
@@ -58,35 +49,13 @@ public class BatchMessageImportWriter extends AbstractItemHandler {
             }
 
             // Add the message to the tag
-            if (tag != null && !tag.getMessages().stream().anyMatch(m -> m.getId().equals(message.getId()))) {
-                tag.getMessages().add(message);
-                message.getTags().add(tag);
-            }
+            checkAddMessageToTag(message, tag);
         }
 
-        if (tag != null) {
-            tag.updateMessageCount();
-            messageService.saveEntity(tag);
-            getLog().info(String.format("Updated tag '%s' with messages", tag.getTagId()));
-        }
+        // Update and save the message tag
+        saveMessageTag(tag);
 
         getLog().info(String.format("Persisted %d messages in %d ms", items.size(), System.currentTimeMillis() - t0));
     }
 
-
-    /** Looks up or creates the message tag associated with the batch job */
-    protected MessageTag checkCreateMessageTag() throws IOException {
-        // Has it been resolved already
-        if (tag != null) {
-            return tag;
-        }
-
-        String tagId = (String)job.getProperties().get("tagName");
-        if (StringUtils.isBlank(tagId)) {
-            return null;
-        }
-
-        tag = messageTagService.findTag(tagId);
-        return tag;
-    }
 }
