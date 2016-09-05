@@ -31,7 +31,7 @@ import java.util.List;
 @ApiModel(value = "Category", description = "Hierarchical category model")
 @XmlRootElement(name = "category")
 @XmlType(propOrder = {
-        "mrn", "active", "parent", "children", "descs"
+        "mrn", "active", "parent", "children", "descs", "editorFields"
 })
 @SuppressWarnings("unused")
 public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializable {
@@ -41,6 +41,7 @@ public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializab
     CategoryVo parent;
     List<CategoryVo> children;
     List<CategoryDescVo> descs;
+    List<String> editorFields;
 
 
     /** {@inheritDoc} */
@@ -114,5 +115,13 @@ public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializab
     @Override
     public void setDescs(List<CategoryDescVo> descs) {
         this.descs = descs;
+    }
+
+    public List<String> getEditorFields() {
+        return editorFields;
+    }
+
+    public void setEditorFields(List<String> editorFields) {
+        this.editorFields = editorFields;
     }
 }

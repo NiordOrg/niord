@@ -85,6 +85,15 @@
                     </div>
 
                     <div class="form-group">
+                        <label class="control-label">Additional Editor Fields</label>
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <editor-fields-field editor-data="editCategory"></editor-fields-field>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
                         <button href class="btn btn-primary btn-sm" ng-click="saveCategory()" ng-disabled="categoryForm.$pristine || categoryForm.$invalid">
                             <span class="glyphicon glyphicon-floppy-disk"></span> Save
                         </button>

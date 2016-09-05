@@ -20,6 +20,7 @@ import org.niord.model.IJsonSerializable;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
+import java.util.List;
 
 /**
  * Represents a message series
@@ -27,7 +28,7 @@ import javax.xml.bind.annotation.XmlType;
 @ApiModel(value = "MessageSeries", description = "A message series")
 @XmlRootElement(name = "messageSeries")
 @XmlType(propOrder = {
-        "seriesId", "mainType", "mrnFormat", "shortFormat", "nextMessageNumber", "numberSequenceType"
+        "seriesId", "mainType", "mrnFormat", "shortFormat", "nextMessageNumber", "numberSequenceType", "editorFields"
 })
 @SuppressWarnings("unused")
 public class MessageSeriesVo implements IJsonSerializable {
@@ -52,6 +53,7 @@ public class MessageSeriesVo implements IJsonSerializable {
     String shortFormat;
     NumberSequenceType numberSequenceType;
     Integer nextMessageNumber;
+    List<String> editorFields;
 
     /*************************/
     /** Getters and Setters **/
@@ -103,5 +105,13 @@ public class MessageSeriesVo implements IJsonSerializable {
 
     public void setNextMessageNumber(Integer nextMessageNumber) {
         this.nextMessageNumber = nextMessageNumber;
+    }
+
+    public List<String> getEditorFields() {
+        return editorFields;
+    }
+
+    public void setEditorFields(List<String> editorFields) {
+        this.editorFields = editorFields;
     }
 }

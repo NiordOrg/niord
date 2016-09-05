@@ -23,6 +23,7 @@ import org.niord.model.message.CategoryVo;
 import javax.persistence.Cacheable;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
@@ -72,6 +73,9 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     @Column(length = 256)
     String lineage;
 
+    @ElementCollection
+    List<String> editorFields = new ArrayList<>();
+
 
     /** Constructor */
     public Category() {
@@ -110,6 +114,9 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
             category.getDescs()
                     .forEach(desc -> createDesc(desc.getLang()).setName(desc.getName()));
         }
+        if (category.getEditorFields() != null) {
+            editorFields.addAll(category.getEditorFields());
+        }
     }
 
 
@@ -140,6 +147,10 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
                 .map(CategoryDesc::toVo)
                 .collect(Collectors.toList()));
         }
+
+        if (!editorFields.isEmpty()) {
+            category.setEditorFields(new ArrayList<>(editorFields));
+        }
         return category;
     }
 
@@ -156,6 +167,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     public boolean hasChanged(Category template) {
         return !Objects.equals(mrn, template.getMrn()) ||
                 !Objects.equals(active, template.isActive()) ||
+                !Objects.equals(editorFields, template.getEditorFields()) ||
                 descsChanged(template) ||
                 parentChanged(template);
     }
@@ -246,6 +258,19 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     }
 
 
+    /**
+     * Returns the lineage of this category as a list, ordered with this category first, and the root-most category last
+     * @return the lineage of this category
+     */
+    public List<Category> lineageAsList() {
+        List<Category> categories = new ArrayList<>();
+        for (Category c = this; c != null; c = c.getParent()) {
+            categories.add(c);
+        }
+        return categories;
+    }
+
+
     /*************************/
     /** Getters and Setters **/
     /*************************/
@@ -306,6 +331,14 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
 
     public void setLineage(String lineage) {
         this.lineage = lineage;
+    }
+
+    public List<String> getEditorFields() {
+        return editorFields;
+    }
+
+    public void setEditorFields(List<String> editorFields) {
+        this.editorFields = editorFields;
     }
 }
 

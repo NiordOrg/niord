@@ -179,6 +179,8 @@ public class MessageSeriesService extends BaseService {
         original.setShortFormat(series.getShortFormat());
         original.setNumberSequenceType(series.getNumberSequenceType() != null
             ? series.getNumberSequenceType() : null);
+        original.getEditorFields().clear();
+        original.getEditorFields().addAll(series.getEditorFields());
 
         log.info("Updating message series " + series.getSeriesId());
         return saveEntity(original);

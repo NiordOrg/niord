@@ -572,7 +572,8 @@ angular.module('niord.admin')
 
             /** Returns if the message series automatically assigns a number **/
             $scope.autoAssigned = function (series) {
-                return  series.numberSequenceType != 'MANUAL' && series.numberSequenceType != 'NONE';
+                return  series && series.numberSequenceType &&
+                    series.numberSequenceType != 'MANUAL' && series.numberSequenceType != 'NONE';
             };
 
 

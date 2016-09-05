@@ -195,14 +195,13 @@ public class CategoryService extends BaseService {
         original.setMrn(category.getMrn());
         original.setActive(category.isActive());
         original.copyDescsAndRemoveBlanks(category.getDescs());
+        original.getEditorFields().clear();
+        original.getEditorFields().addAll(category.getEditorFields());
 
         original.updateLineage();
         original.updateActiveFlag();
 
         original = saveEntity(original);
-
-        // Evict all cached messages for the category subtree
-        // evictCachedMessages(original);
 
         return original;
     }
@@ -264,10 +263,6 @@ public class CategoryService extends BaseService {
         // Update all lineages
         updateLineages();
         category.updateActiveFlag();
-
-        // Evict all cached messages for the category subtree
-        //category = getByPrimaryKey(Category.class, category.getId());
-        //evictCachedMessages(category);
 
         return true;
     }

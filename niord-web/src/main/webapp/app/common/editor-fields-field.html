@@ -1,0 +1,15 @@
+<div class="input-group">
+
+    <ui-select multiple ng-model="editorData.editorFields">
+        <ui-select-match placeholder="Select editor fields">
+            {{$item}}
+        </ui-select-match>
+        <ui-select-choices repeat="field in searchResult"
+                           refresh="refreshEditorFields($select.search)"
+                           refresh-delay="100">
+            {{field}}
+        </ui-select-choices>
+    </ui-select>
+
+    <span class="input-group-addon clickable" style="font-size: 12px" ng-click="removeEditorFields()"><span class="glyphicon glyphicon-trash"></span></span>
+</div>

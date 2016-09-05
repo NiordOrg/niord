@@ -280,6 +280,54 @@ angular.module('niord.common')
 
 
 
+    /****************************************************************
+     * The editor-fields-field directive supports selecting a list of
+     * editor fields via the editorData.editorFields attribute.
+     ****************************************************************/
+    .directive('editorFieldsField', ['$rootScope', '$http', function($rootScope, $http) {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: '/app/common/editor-fields-field.html',
+            scope: {
+                editorData:     "="
+            },
+            link: function(scope) {
+
+                scope.editorData = scope.editorData || {};
+                scope.editorData.editorFields = scope.editorData.editorFields || [];
+
+                /** Refreshes the chart search result */
+                scope.searchResult = [];
+                scope.refreshEditorFields = function(name) {
+                    if (!name || name.length == 0) {
+                        return [];
+                    }
+                    scope.searchResult.length = 0;
+                    angular.forEach($rootScope.editorFieldsBase, function (value, key) {
+                        // Add it to the search result, if:
+                        // 1) It is not included by default
+                        // 2) The typed name is a substring match
+                        // 3) It is not already selected
+                        if (!value &&
+                            key.toUpperCase().indexOf(name.toUpperCase()) !== -1 &&
+                            $.inArray(key, scope.editorData.editorFields) == -1) {
+                            scope.searchResult.push(key);
+                        }
+                    });
+                };
+
+
+                /** Removes the current editor fields selection */
+                scope.removeEditorFields = function () {
+                    scope.editorData.editorFields.length = 0;
+                };
+            }
+        }
+    }])
+
+
+
     /** Use this directive to set focus **/
     .directive('focus', ['$timeout', function ($timeout) {
         'use strict';

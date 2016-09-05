@@ -28,6 +28,7 @@ import org.niord.model.message.AreaVo.AreaMessageSorting;
 import javax.persistence.Cacheable;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
@@ -104,6 +105,9 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
     Integer originAngle;    // For CW and CCW message sorting
 
 
+    @ElementCollection
+    List<String> editorFields = new ArrayList<>();
+
     /** Constructor */
     public Area() {
     }
@@ -151,6 +155,9 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
             area.getDescs()
                     .forEach(desc -> createDesc(desc.getLang()).setName(desc.getName()));
         }
+        if (area.getEditorFields() != null) {
+            editorFields.addAll(area.getEditorFields());
+        }
     }
 
 
@@ -171,6 +178,10 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
             area.setOriginLatitude(originLatitude);
             area.setOriginLongitude(originLongitude);
             area.setOriginAngle(originAngle);
+
+            if (!editorFields.isEmpty()) {
+                area.setEditorFields(new ArrayList<>(editorFields));
+            }
         }
 
         if (compFilter.includeGeometry()) {
@@ -194,6 +205,7 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
                 .map(AreaDesc::toVo)
                 .collect(Collectors.toList()));
         }
+
         return area;
     }
 
@@ -331,6 +343,18 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
         return parent == null;
     }
 
+
+    /**
+     * Returns the lineage of this area as a list, ordered with this area first, and the root-most area last
+     * @return the lineage of this area
+     */
+    public List<Area> lineageAsList() {
+        List<Area> areas = new ArrayList<>();
+        for (Area a = this; a != null; a = a.getParent()) {
+            areas.add(a);
+        }
+        return areas;
+    }
 
     /**
      * By convention, a list of areas will be emitted top-to-bottom. So, if we have a list with:
@@ -501,6 +525,14 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
 
     public void setOriginAngle(Integer originAngle) {
         this.originAngle = originAngle;
+    }
+
+    public List<String> getEditorFields() {
+        return editorFields;
+    }
+
+    public void setEditorFields(List<String> editorFields) {
+        this.editorFields = editorFields;
     }
 }
 

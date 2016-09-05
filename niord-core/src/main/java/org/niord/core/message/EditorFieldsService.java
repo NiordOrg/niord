@@ -17,6 +17,7 @@
 package org.niord.core.message;
 
 import org.niord.core.area.Area;
+import org.niord.core.category.Category;
 import org.niord.core.message.vo.EditableMessageVo;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.Setting;
@@ -26,7 +27,10 @@ import org.niord.model.message.MainType;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -36,14 +40,11 @@ import java.util.Map;
  * <ol>
  *     <li>Base editor fields: A default set of editor fields. Defined in settings.</li>
  *     <li>Main-type editor fields: NW or NM specific editor fields. Defined in settings.</li>
- *     <li>Area editor fields: Each message area (or parent areas) may define editor fields.</li>
+ *     <li>Area editor fields: Each message area (or parent areas) may define editor fields.<br>
+ *                     Additionally, all firing areas will be assigned the "prohibition" and "signals" fields.</li>
  *     <li>Category editor fields: Each message category (or parent categories) may define editor fields.</li>
  *     <li>Message series editor fields: Each associated message series may define editor fields.</li>
  * </ol>
- *
- * TODO: Currently, the area, category and message series editor fields have not been implemented.
- * For now, hardcoded firing area editor fields are added.
- *
  */
 @Stateless
 public class EditorFieldsService extends BaseService {
@@ -53,9 +54,13 @@ public class EditorFieldsService extends BaseService {
     private static final Setting EDITOR_FIELDS_NW   = new Setting("editorFieldsNw");
     private static final Setting EDITOR_FIELDS_NM   = new Setting("editorFieldsNm");
 
+    private final static String[] EDITOR_FIELDS_FIRING_EXERCISE = { "prohibition", "signals" };
 
     @Inject
     SettingsService settingsService;
+
+    @Inject
+    MessageSeriesService messageSeriesService;
 
 
     /**
@@ -86,35 +91,39 @@ public class EditorFieldsService extends BaseService {
             addEditorFields(result, (Map) settingsService.get(EDITOR_FIELDS_NM));
         }
 
-        // Add firing-area editor fields if any of the message areas (or parent areas) is a firing area
+        // Add fields relating to the associated areas and their parent areas (in root-most order)
         message.setAreas(persistedList(Area.class, message.getAreas()));
-        boolean isFiringArea = false;
-        for (Area area : message.getAreas()) {
-            for (Area a = area; a != null; a = a.getParent()) {
-                isFiringArea |= a.getType() == AreaType.FIRING_AREA;
-            }
-        }
-        if (isFiringArea) {
-            addEditorFields(result, getFiringExerciseEditorFields());
+        message.getAreas().forEach(area -> {
+            List<Area> lineage = area.lineageAsList();
+            Collections.reverse(lineage); // Root-most order
+            lineage.forEach(a -> {
+                addEditorFields(result, a.getEditorFields());
+                // A firing area will always be assigned the "prohibition" and "signals" fields
+                if (a.getType() == AreaType.FIRING_AREA) {
+                    addEditorFields(result, Arrays.asList(EDITOR_FIELDS_FIRING_EXERCISE));
+                }
+            });
+        });
+
+        // Add fields relating to the associated categories and their parent categories (in root-most order)
+        message.setCategories(persistedList(Category.class, message.getCategories()));
+        message.getCategories().forEach(cat -> {
+            List<Category> lineage = cat.lineageAsList();
+            Collections.reverse(lineage); // Root-most order
+            lineage.forEach(c -> addEditorFields(result, c.getEditorFields()));
+        });
+
+        // Add fields relating to the associated message series
+        message.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
+        if (message.getMessageSeries() != null) {
+            addEditorFields(result, message.getMessageSeries().getEditorFields());
         }
 
         return result;
     }
 
 
-    /**
-     * Returns the editor fields for firing areas/exercises
-     * @return the editor fields for firing areas/exercises
-     */
-    private Map<String, Boolean> getFiringExerciseEditorFields() {
-        Map<String, Boolean> result = new HashMap<>();
-        result.put("prohibition", Boolean.TRUE);
-        result.put("signals", Boolean.TRUE);
-        return result;
-    }
-
-
-    /** Adds teh editor fields to the result, overwriting existing fields settings **/
+    /** Adds the editor fields to the result, overwriting existing fields settings **/
     @SuppressWarnings("unchecked")
     private void addEditorFields(Map<String, Boolean> result, Map editorFields) {
         editorFields.keySet().forEach(k -> {
@@ -123,4 +132,10 @@ public class EditorFieldsService extends BaseService {
         });
     }
 
+
+    /** Adds the editor fields to the result, overwriting existing fields settings **/
+    @SuppressWarnings("unchecked")
+    private void addEditorFields(Map<String, Boolean> result, List<String> editorFields) {
+        editorFields.forEach(k -> result.put(k, Boolean.TRUE));
+    }
 }

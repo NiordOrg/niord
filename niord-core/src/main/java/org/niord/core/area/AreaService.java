@@ -222,14 +222,13 @@ public class AreaService extends BaseService {
         original.setOriginLatitude(area.getOriginLatitude());
         original.setOriginLongitude(area.getOriginLongitude());
         original.setOriginAngle(area.getOriginAngle());
+        original.getEditorFields().clear();
+        original.getEditorFields().addAll(area.getEditorFields());
 
         original.updateLineage();
         original.updateActiveFlag();
 
         original = saveEntity(original);
-
-        // Evict all cached messages for the area subtree
-        // evictCachedMessages(original);
 
         return original;
     }
@@ -291,10 +290,6 @@ public class AreaService extends BaseService {
         // Update all lineages
         updateLineages();
         area.updateActiveFlag();
-
-        // Evict all cached messages for the area subtree
-        //area = getByPrimaryKey(Area.class, area.getId());
-        //evictCachedMessages(area);
 
         return true;
     }
@@ -365,7 +360,6 @@ public class AreaService extends BaseService {
             log.info("Updates sort order for area " + area.getId() + " to " + area.getSiblingSortOrder());
             // Save the entity
             saveEntity(area);
-            // NB: Cache eviction not needed since lineage is the same...
         }
 
         return updated;

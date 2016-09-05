@@ -5,9 +5,10 @@
 
         <p>Add, modify and manage message series.</p>
 
-        <!-- Add/edit message series -->
-        <div ng-show="series !== undefined" style="margin-top: 20px">
-            <form id="seriesForm" name="seriesForm" class="form-horizontal">
+        <form id="seriesForm" name="seriesForm" class="form-horizontal">
+
+            <!-- Add/edit message series -->
+            <div ng-if="series !== undefined" style="margin-top: 20px">
 
                 <div class="row">
                     <div class="form-controls col-sm-12 col-md-6 col-lg-8">
@@ -125,6 +126,14 @@
                             </div>
                         </div>
 
+
+                        <div class="form-group">
+                            <label class="col-sm-4">Additional Editor Fields</label>
+                            <div class="col-sm-8">
+                                <editor-fields-field editor-data="series"></editor-fields-field>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -140,58 +149,58 @@
                         </button>
                     </div>
                 </div>
-            </form>
-        </div>
+            </div>
 
 
-        <!-- List message series -->
-        <div ng-show="series === undefined">
+            <!-- List message series -->
+            <div ng-if="series === undefined">
 
-            <div class="row">
-                <div class="col-xs-8 col-sm-6 col-md-4">
-                    <input class="form-control input-sm col-sm-2" ng-model="search" type="text" placeholder="Filter">
-                    <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
-                          ng-click="search = ''" ng-show="search != ''"></span>
+                <div class="row">
+                    <div class="col-xs-8 col-sm-6 col-md-4">
+                        <input class="form-control input-sm col-sm-2" ng-model="search" type="text" placeholder="Filter">
+                        <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
+                              ng-click="search = ''" ng-show="search != ''"></span>
+                    </div>
+                    <div class="col-xs-4 col-sm-6 col-md-8">
+                        <button type="submit" class="btn btn-primary btn-sm" ng-click="addMessageSeries()">
+                            <span class="glyphicon glyphicon-plus"></span> New Message Series
+                        </button>
+                    </div>
                 </div>
-                <div class="col-xs-4 col-sm-6 col-md-8">
-                    <button type="submit" class="btn btn-primary btn-sm" ng-click="addMessageSeries()">
-                        <span class="glyphicon glyphicon-plus"></span> New Message Series
-                    </button>
+
+                <div class="row" style="padding-top: 20px;">
+                    <div class="col-sm-12 col-md-12">
+                        <table class='table table-condensed table-hover'>
+                            <tr>
+                                <th>ID</th>
+                                <th>Type</th>
+                                <th>MRN Format</th>
+                                <th>Short Format</th>
+                                <th>Sequence</th>
+                                <th>Next Number ({{currentYear}})</th>
+                                <th></th>
+                            </tr>
+                            <tr ng-repeat="series in messageSeries | filter: { seriesId: search }">
+                                <td>{{series.seriesId}}</td>
+                                <td>{{series.mainType}}</td>
+                                <td>{{series.mrnFormat}}</td>
+                                <td>{{series.shortFormat}}</td>
+                                <td>{{series.numberSequenceType | lowercase}}</td>
+                                <td><span ng-if="autoAssigned(series)">{{series.nextMessageNumber}}</span></td>
+                                <td nowrap align="right">
+                                    <a href ng-click="editMessageSeries(series);" title="Edit Message Series"><i class="glyphicon glyphicon-pencil"></i></a>
+                                    &nbsp;
+                                    <a href ng-click="copyMessageSeries(series);" title="Copy Message Series"><i class="glyphicon glyphicon-duplicate"></i></a>
+                                    &nbsp;
+                                    <a href ng-click="deleteMessageSeries(series);" title="Delete Message Series"><i class="glyphicon glyphicon-trash"></i></a>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            <div class="row" style="padding-top: 20px;">
-                <div class="col-sm-12 col-md-12">
-                    <table class='table table-condensed table-hover'>
-                        <tr>
-                            <th>ID</th>
-                            <th>Type</th>
-                            <th>MRN Format</th>
-                            <th>Short Format</th>
-                            <th>Sequence</th>
-                            <th>Next Number ({{currentYear}})</th>
-                            <th></th>
-                        </tr>
-                        <tr ng-repeat="series in messageSeries | filter: { seriesId: search }">
-                            <td>{{series.seriesId}}</td>
-                            <td>{{series.mainType}}</td>
-                            <td>{{series.mrnFormat}}</td>
-                            <td>{{series.shortFormat}}</td>
-                            <td>{{series.numberSequenceType | lowercase}}</td>
-                            <td><span ng-if="autoAssigned(series)">{{series.nextMessageNumber}}</span></td>
-                            <td nowrap align="right">
-                                <a href ng-click="editMessageSeries(series);" title="Edit Message Series"><i class="glyphicon glyphicon-pencil"></i></a>
-                                &nbsp;
-                                <a href ng-click="copyMessageSeries(series);" title="Copy Message Series"><i class="glyphicon glyphicon-duplicate"></i></a>
-                                &nbsp;
-                                <a href ng-click="deleteMessageSeries(series);" title="Delete Message Series"><i class="glyphicon glyphicon-trash"></i></a>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-        </div>
-
+        </form>
     </div>
 
 </admin-page>

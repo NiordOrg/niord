@@ -520,7 +520,9 @@ angular.module('niord.editor')
                 // Construct a message template that contains attributes affecting title line and editor fields
                 var msgTemplate = {
                     mainType: msg.mainType,
+                    messageSeries: msg.messageSeries,
                     areas: msg.areas,
+                    categories: msg.categories,
                     autoTitle: msg.autoTitle,
                     descs: msg.descs.map(function (desc) {
                        return { lang: desc.lang, subject: desc.subject, vicinity: desc.vicinity }

@@ -34,7 +34,7 @@ import java.util.List;
 @XmlRootElement(name = "area")
 @XmlType(propOrder = {
         "mrn", "type", "active", "parent", "geometry", "children", "descs",
-        "messageSorting", "originLatitude", "originLongitude", "originAngle"
+        "messageSorting", "originLatitude", "originLongitude", "originAngle", "editorFields"
 })
 @SuppressWarnings("unused")
 public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comparable<AreaVo> {
@@ -55,10 +55,12 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comp
     Float originLongitude;  // For CW and CCW message sorting
     Integer originAngle;    // For CW and CCW message sorting
     List<AreaDescVo> descs;
+    List<String> editorFields;
 
 
     /** {@inheritDoc} */
     @Override
+    @SuppressWarnings("all")
     public int compareTo(AreaVo area) {
         return (area == null || siblingSortOrder == area.getSiblingSortOrder()) ? 0 : (siblingSortOrder < area.getSiblingSortOrder() ? -1 : 1);
     }
@@ -203,5 +205,13 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comp
     @Override
     public void setDescs(List<AreaDescVo> descs) {
         this.descs = descs;
+    }
+
+    public List<String> getEditorFields() {
+        return editorFields;
+    }
+
+    public void setEditorFields(List<String> editorFields) {
+        this.editorFields = editorFields;
     }
 }

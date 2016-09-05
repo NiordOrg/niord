@@ -23,12 +23,15 @@ import org.niord.model.message.MessageSeriesVo.NumberSequenceType;
 
 import javax.persistence.Cacheable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -62,6 +65,10 @@ public class MessageSeries extends VersionedEntity<Integer> {
     @NotNull
     NumberSequenceType numberSequenceType = NumberSequenceType.YEARLY;
 
+
+    @ElementCollection
+    List<String> editorFields = new ArrayList<>();
+
     /** Constructor */
     public MessageSeries() {
     }
@@ -76,6 +83,9 @@ public class MessageSeries extends VersionedEntity<Integer> {
         this.numberSequenceType = series.getNumberSequenceType() != null
                 ? series.getNumberSequenceType()
                 : NumberSequenceType.YEARLY;
+        if (series.getEditorFields() != null) {
+            editorFields.addAll(series.getEditorFields());
+        }
     }
 
 
@@ -90,6 +100,9 @@ public class MessageSeries extends VersionedEntity<Integer> {
             series.setMrnFormat(mrnFormat);
             series.setShortFormat(shortFormat);
             series.setNumberSequenceType(numberSequenceType);
+            if (!editorFields.isEmpty()) {
+                series.setEditorFields(new ArrayList<>(editorFields));
+            }
         }
         return series;
     }
@@ -141,5 +154,13 @@ public class MessageSeries extends VersionedEntity<Integer> {
 
     public void setNumberSequenceType(NumberSequenceType numberSequenceType) {
         this.numberSequenceType = numberSequenceType;
+    }
+
+    public List<String> getEditorFields() {
+        return editorFields;
+    }
+
+    public void setEditorFields(List<String> editorFields) {
+        this.editorFields = editorFields;
     }
 }
