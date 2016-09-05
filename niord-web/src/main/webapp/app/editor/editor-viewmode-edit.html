@@ -324,7 +324,7 @@
                 <editor-field-value-editor value-class="col-sm-12 col-md-8">
                     <div class="row">
                         <div class="col-sm-6">
-                            <areas-field id="areas" area-data="message" multiple="true" domain="true" area-changed="updateTitleLine()"></areas-field>
+                            <areas-field id="areas" area-data="message" multiple="true" domain="true" area-changed="adjustEditableMessage()"></areas-field>
                         </div>
                         <div class="col-sm-4">
                             <button href class="btn btn-default btn-sm" ng-disabled="!message.areas || message.areas.length == 0"
@@ -335,7 +335,7 @@
                         <div class="col-sm-6" ng-repeat="desc in message.descs">
                             <input class="form-control input-sm" placeholder="Vicinity" type="text"
                                    ng-model="desc.vicinity" bg-flag="desc.lang"
-                                   ng-change="updateTitleLine()"
+                                   ng-change="adjustEditableMessage()"
                                    ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }">
                         </div>
                     </div>
@@ -467,7 +467,7 @@
                             <input class="form-control input-sm" placeholder="Subject" type="text"
                                    autocapitalize="off" autocorrect="off" autocomplete="off"
                                    ng-model="desc.subject" bg-flag="desc.lang"
-                                   ng-change="updateTitleLine()"
+                                   ng-change="adjustEditableMessage()"
                                    ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"/>
                         </div>
                     </div>

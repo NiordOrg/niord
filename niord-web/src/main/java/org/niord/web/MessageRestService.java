@@ -26,6 +26,7 @@ import org.niord.core.fm.FmService;
 import org.niord.core.fm.FmService.ProcessFormat;
 import org.niord.core.geojson.FeatureService;
 import org.niord.core.geojson.PlainTextConverter;
+import org.niord.core.message.EditorFieldsService;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageHistory;
 import org.niord.core.message.MessageSearchParams;
@@ -122,6 +123,9 @@ public class MessageRestService  {
 
     @Inject
     FmService fmService;
+
+    @Inject
+    EditorFieldsService editorFieldsService;
 
 
     /***************************
@@ -238,6 +242,9 @@ public class MessageRestService  {
 
         EditableMessageVo messageVo =  message.toEditableVo(filter);
 
+        // Compute the default set of editor fields to display for the message
+        editorFieldsService.computeEditorFields(messageVo);
+
         // Create a temporary repository folder for the message
         messageService.createTempMessageRepoFolder(messageVo);
         // Point embedded links and images to the temporary repository folder
@@ -315,6 +322,9 @@ public class MessageRestService  {
 
         EditableMessageVo messageVo =  message.toEditableVo(DataFilter.get().fields("Message.details"));
 
+        // Compute the default set of editor fields to display for the message
+        editorFieldsService.computeEditorFields(messageVo);
+
         // Create a temporary repository folder for the message
         messageService.createTempMessageRepoFolder(messageVo);
         // Point embedded links and images to the temporary repository folder
@@ -385,6 +395,9 @@ public class MessageRestService  {
                 && !domain.containsMessageSeries(editMessage.getMessageSeries().getSeriesId())) {
             editMessage.setMessageSeries(null);
         }
+
+        // Compute the default set of editor fields to display for the message
+        editorFieldsService.computeEditorFields(editMessage);
 
         // Reset various fields
         editMessage.setShortId(null);
@@ -649,21 +662,49 @@ public class MessageRestService  {
 
 
     /**
-     * Computes the title lines for the given message template
+     * Adjust two aspects of the edited message:
+     * <ul>
+     *     <li>Computes the editor fields to display for the message</li>
+     *     <li>If "autoTitle" is set, computes the title lines for the given message template</li>
+     * </ul>
      *
-     * @param message the message template to compute the title line for
+     * @param message the message template to adjust
      * @return the updated message template
      */
     @POST
-    @Path("/compute-title-line")
+    @Path("/adjust-editable-message")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public MessageVo computeTitleLine(MessageVo message) throws Exception {
-        DataFilter filter = DataFilter.get().fields("MessageDesc.title");
-        return messageService.computeTitleLine(new Message(message)).toVo(filter);
+    public EditableMessageVo adjustEditableMessage(EditableMessageVo message) throws Exception {
+
+        // Compute the editor fields to use for the message
+        editorFieldsService.computeEditorFields(message);
+
+        // If auto-title is on, compute the title line from area + vicinity + subject
+        if (message.isAutoTitle() != null && message.isAutoTitle()) {
+            Message msg = new Message(message);
+            messageService.computeTitleLine(msg);
+
+            // Replace the value object with title line descriptors.
+            message.setDescs(null);
+            DataFilter filter = DataFilter.get().fields("MessageDesc.title");
+            msg.getDescs().forEach(desc -> message.checkCreateDescs().add(desc.toVo(filter)));
+
+        } else {
+            message.setDescs(null);
+        }
+
+        // Prune irrelevant fields
+        message.setMainType(null);
+        message.setAutoTitle(null);
+        message.setAreas(null);
+        message.setCategories(null);
+        message.setMessageSeries(null);
+
+        return message;
     }
 
 

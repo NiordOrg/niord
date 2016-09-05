@@ -18,6 +18,8 @@ package org.niord.core.message.vo;
 import org.apache.commons.lang.StringUtils;
 import org.niord.model.message.MessageVo;
 
+import java.util.Map;
+
 /**
  * Extends the {@linkplain MessageVo} class with various message attributes only relevant
  * when editing a message.
@@ -28,6 +30,7 @@ public class EditableMessageVo extends MessageVo {
     Boolean autoTitle;
     String editRepoPath;
     Integer unackComments;
+    Map<String, Boolean> editorFields;
 
 
     /**
@@ -91,5 +94,13 @@ public class EditableMessageVo extends MessageVo {
 
     public void setUnackComments(Integer unackComments) {
         this.unackComments = unackComments;
+    }
+
+    public Map<String, Boolean> getEditorFields() {
+        return editorFields;
+    }
+
+    public void setEditorFields(Map<String, Boolean> editorFields) {
+        this.editorFields = editorFields;
     }
 }

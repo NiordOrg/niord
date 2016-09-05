@@ -160,9 +160,9 @@ angular.module('niord.messages')
             },
 
 
-            /** Computes the title line for the given message */
-            computeTitleLine: function (msg) {
-                return $http.post('/rest/messages/compute-title-line', msg);
+            /** Computes the editor fields and the title line for the given message */
+            adjustEditableMessage: function (msg) {
+                return $http.post('/rest/messages/adjust-editable-message', msg);
             },
 
 

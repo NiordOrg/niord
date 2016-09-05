@@ -45,6 +45,33 @@
     "editable"    : true
   },
   {
+    "key"         : "editorFieldsBase",
+    "description" : "The base set of editor fields to display in the message editor",
+    "value"       : { "type": true, "orig_info": false, "id": true, "title": true, "references": true, "time": true,
+                      "areas": true, "categories": true, "positions": true, "charts": true, "subject": true,
+                      "description": true, "attachments": true, "note": false, "publication": false, "source": false,
+                      "prohibition": false, "signals": false },
+    "type"        : "json",
+    "web"         : true,
+    "editable"    : true
+  },
+  {
+    "key"         : "editorFieldsNw",
+    "description" : "The additional set of editor fields to display for NW messages",
+    "value"       : { },
+    "type"        : "json",
+    "web"         : true,
+    "editable"    : true
+  },
+  {
+    "key"         : "editorFieldsNm",
+    "description" : "The additional set of editor fields to display for NM messages",
+    "value"       : { "orig_info": true, "note": true, "publication": true, "source": true },
+    "type"        : "json",
+    "web"         : true,
+    "editable"    : true
+  },
+  {
     "key"         : "frontPageMessageSeries",
     "description" : "The list of message series IDs to display on the front page when not logged in",
     "value"       : [],

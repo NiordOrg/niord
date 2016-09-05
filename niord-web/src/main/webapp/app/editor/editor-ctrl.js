@@ -54,6 +54,8 @@ angular.module('niord.editor')
                 signals: false
             };
 
+            $scope.editorFields = $rootScope.editorFieldsBase;
+
             $scope.messageSeries = [];
 
             $scope.attachmentUploadUrl = undefined;
@@ -95,6 +97,8 @@ angular.module('niord.editor')
                 if (!msg) {
                     return;
                 }
+
+                $scope.editorFields = msg.editorFields || $rootScope.editorFieldsBase;
 
                 // Ensure that the list of date intervals is defined
                 if (!msg.dateIntervals) {
@@ -314,18 +318,7 @@ angular.module('niord.editor')
 
             /** Returns if the given message field (group) should be displayed **/
             $scope.showField = function (fieldId) {
-                var msg = $scope.message;
-                switch (fieldId) {
-                    case 'orig_info':
-                    case 'source':
-                    case 'publication':
-                        return msg.mainType == 'NM';
-                    case 'prohibition':
-                    case 'signals':
-                        // TODO: Determine if this is a firing area - from category or areas
-                        return true;
-                }
-                return true;
+                return $scope.editorFields[fieldId];
             };
 
 
@@ -518,26 +511,35 @@ angular.module('niord.editor')
             };
 
 
-            /** Called when relevant attributes have been changed that may affect the auto-generated title lines */
-            $scope.updateTitleLine = function () {
-                if ($scope.message.autoTitle) {
-                    // Construct a  message template that contains attributes affecting title line
-                    var msg = {
-                        areas: $scope.message.areas,
-                        descs: $scope.message.descs.map(function (desc) {
-                           return { lang: desc.lang, subject: desc.subject, vicinity: desc.vicinity }
-                        })
-                    };
-                    MessageService.computeTitleLine(msg)
-                        .success(function (message) {
+            /**
+             * Called when relevant attributes have been changed that may affect the auto-generated title lines
+             * and the editor fields
+             */
+            $scope.adjustEditableMessage = function () {
+                var msg = $scope.message;
+                // Construct a message template that contains attributes affecting title line and editor fields
+                var msgTemplate = {
+                    mainType: msg.mainType,
+                    areas: msg.areas,
+                    autoTitle: msg.autoTitle,
+                    descs: msg.descs.map(function (desc) {
+                       return { lang: desc.lang, subject: desc.subject, vicinity: desc.vicinity }
+                    })
+                };
+                MessageService.adjustEditableMessage(msgTemplate)
+                    .success(function (message) {
+
+                        $scope.editorFields = message.editorFields || $rootScope.editorFieldsBase;
+
+                        if (msg.autoTitle) {
                             angular.forEach(message.descs, function (desc) {
                                 var d = LangService.descForLanguage($scope.message, desc.lang);
                                 if (d) {
                                     d.title = desc.title;
                                 }
                             })
-                        })
-                }
+                        }
+                    })
             };
 
 
