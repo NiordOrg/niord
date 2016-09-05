@@ -105,7 +105,7 @@ public class BatchJobListener extends AbstractJobListener {
 
                 } catch (Exception ignored) {
                 }
-                log.info("Closed log for batch item handler " + batchLog.getKey());
+                log.debug("Closed log for batch item handler " + batchLog.getKey());
             }
         }
     }

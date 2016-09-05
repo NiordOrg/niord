@@ -90,7 +90,7 @@ public abstract class AbstractItemHandler implements ItemReader, ItemProcessor, 
             fh.setLevel(Level.ALL);
             log.addHandler(fh);
 
-            systemLog.info("Logging batch job to " + file);
+            systemLog.debug("Logging batch job to " + file);
         } catch (IOException e) {
             systemLog.info("Error Logging batch job", e);
         }
