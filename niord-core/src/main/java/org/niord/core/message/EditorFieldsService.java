@@ -114,8 +114,8 @@ public class EditorFieldsService extends BaseService {
         });
 
         // Add fields relating to the associated message series
-        message.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
         if (message.getMessageSeries() != null) {
+            message.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
             addEditorFields(result, message.getMessageSeries().getEditorFields());
         }
 
