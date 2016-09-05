@@ -55,6 +55,7 @@ angular.module('niord.editor')
             };
 
             $scope.editorFields = $rootScope.editorFieldsBase;
+            $scope.unusedEditorFields = {};
 
             $scope.messageSeries = [];
 
@@ -98,7 +99,7 @@ angular.module('niord.editor')
                     return;
                 }
 
-                $scope.editorFields = msg.editorFields || $rootScope.editorFieldsBase;
+                $scope.setEditorFields(msg.editorFields, true);
 
                 // Ensure that the list of date intervals is defined
                 if (!msg.dateIntervals) {
@@ -318,7 +319,33 @@ angular.module('niord.editor')
 
             /** Returns if the given message field (group) should be displayed **/
             $scope.showField = function (fieldId) {
-                return $scope.editorFields[fieldId];
+                return $scope.editorFields[fieldId] || $scope.unusedEditorFields[fieldId];
+            };
+
+
+            /** Sets the current editor fields **/
+            $scope.setEditorFields = function (editorFields, reset) {
+                $scope.editorFields = editorFields || $rootScope.editorFieldsBase;
+
+                // Compute the list of unused editor fields, which may manually be selected
+                if (reset) {
+                    $scope.unusedEditorFields = {};
+                }
+                angular.forEach($scope.editorFields, function (enabled, field) {
+                    if (enabled) {
+                        // Not unused
+                        delete $scope.unusedEditorFields[field];
+                    } else if (reset || $scope.unusedEditorFields[field] === undefined) {
+                        // Unused - don't show
+                        $scope.unusedEditorFields[field] = false;
+                    }
+                })
+            };
+
+
+            /** Toggles whether or not to show the given editor field **/
+            $scope.toggleUseEditorField = function (fieldId) {
+                $scope.unusedEditorFields[fieldId] = !$scope.unusedEditorFields[fieldId];
             };
 
 
@@ -531,7 +558,7 @@ angular.module('niord.editor')
                 MessageService.adjustEditableMessage(msgTemplate)
                     .success(function (message) {
 
-                        $scope.editorFields = message.editorFields || $rootScope.editorFieldsBase;
+                        $scope.setEditorFields(message.editorFields);
 
                         if (msg.autoTitle) {
                             angular.forEach(message.descs, function (desc) {

@@ -44,7 +44,14 @@
                         <span translate>menu.action.print</span>
                     </a>
                 </li>
-                <li ng-if="message.id" role="separator" class="divider"></li>
+                <li role="separator" class="divider"></li>
+                <li>
+                    <a href ng-click="compareMessages()">
+                        <span class="glyphicon glyphicon-transfer"></span>&nbsp;
+                        <span translate>menu.action.message.compare</span>
+                    </a>
+                </li>
+                <li ng-if="onPage('editor.edit')" role="separator" class="divider"></li>
                 <li ng-if="onPage('editor.edit')">
                     <a href ng-click="expandCollapseFields(true)">
                         <span class="glyphicon glyphicon-expand"></span>&nbsp;
@@ -57,11 +64,14 @@
                         <span translate>menu.action.fields.collapse</span>
                     </a>
                 </li>
-                <li ng-if="onPage('editor.edit')" role="separator" class="divider"></li>
-                <li>
-                    <a href ng-click="compareMessages()">
-                        <span class="glyphicon glyphicon-transfer"></span>&nbsp;
-                        <span translate>menu.action.message.compare</span>
+                <li ng-if="onPage('editor.edit')">
+                    <div style="color: lightgray; line-height: 20px; margin-left: 20px;">More fields:</div>
+                </li>
+                <li ng-repeat="(field, enabled) in unusedEditorFields" ng-if="onPage('editor.edit')">
+                    <a href ng-click="toggleUseEditorField(field)">
+                        <span class="glyphicon view-mode-menu-checkmark"
+                              ng-class="{ 'glyphicon-ok': enabled, 'glyphicon-none': !enabled }"></span>
+                        {{'msg.field.' + field | translate}}
                     </a>
                 </li>
             </ul>
