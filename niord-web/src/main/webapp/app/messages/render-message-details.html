@@ -26,7 +26,7 @@
 
         <!-- Title line -->
         <div ng-if="msg.originalInformation">&#9733;</div>
-        <div ng-if="msg.shortId"><span class="label label-message-id">{{msg.shortId}}</span></div>
+        <div><message-id-badge msg="msg" show-blank="true"></message-id-badge></div>
         <div message-details-link="msg.id" message-list="messageList"  selection="selection" disabled="format == 'details'">
             <strong>{{msg.descs[0].title}}</strong>
             <span ng-if="msg.descs[0].lang != language && !compact" style="color: darkgray;">

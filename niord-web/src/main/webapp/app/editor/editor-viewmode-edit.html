@@ -82,7 +82,7 @@
             <editor-field edit-mode="editMode" field-id="id" field-title="msg.field.id" field-valid="fieldValid(fieldId)">
 
                 <editor-field-value-viewer>
-                    <span class="label label-message-id" style="font-size: 11px">{{message.shortId}}</span>
+                    <message-id-badge msg="message"></message-id-badge>
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">
@@ -103,8 +103,7 @@
                         <tr ng-if="numberSequenceType() != 'NONE'">
                             <th>Short ID</th>
                             <td>
-                                <span ng-if="!mrnAndShortIdEditable()"
-                                      class="label label-message-id" style="font-size: 11px">{{message.shortId}}</span>
+                                <message-id-badge ng-if="!mrnAndShortIdEditable()" msg="message"></message-id-badge>
                                 <div ng-if="mrnAndShortIdEditable()">
                                     <input class="form-control input-sm" placeholder="Short ID" type="text"
                                            autocapitalize="off" autocorrect="off" autocomplete="off"

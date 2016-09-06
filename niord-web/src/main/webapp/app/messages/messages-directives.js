@@ -19,6 +19,69 @@
  */
 angular.module('niord.messages')
 
+
+    /********************************
+     * Renders a badge with the message
+     * ID and a colour that signals the
+     * current status
+     ********************************/
+    .directive('messageIdBadge', ['LangService', function (LangService) {
+        'use strict';
+
+        return {
+            restrict: 'E',
+            template: '<span class="label label-message-id" ng-style="style">{{shortId}}</span>',
+            scope: {
+                msg:       "=",
+                showBlank: "="
+            },
+            link: function(scope) {
+
+                /** Assigns a color based on the status **/
+                function statusColor(status) {
+                    switch (status) {
+                        case 'PUBLISHED':
+                            return "#559955";
+                        case 'IMPORTED':
+                        case 'DRAFT':
+                        case 'VERIFIED':
+                            return "#5555CC";
+                        case 'DELETED':
+                            return "#BB5555";
+                        case 'EXPIRED':
+                        case 'CANCELLED':
+                            return "#999999";
+                        default:
+                            return "#999999"
+                    }
+
+                }
+
+                /** Updates the label based on the current status and short ID **/
+                function updateIdLabel() {
+                    var msg = scope.msg;
+                    var status = msg && msg.status ? msg.status : 'DRAFT';
+                    var color = statusColor(status);
+                    scope.style = {};
+
+                    scope.shortId = '';
+                    if (msg && msg.shortId) {
+                        scope.shortId = msg.shortId;
+                        scope.style['background-color'] = color;
+                    } else if (scope.showBlank) {
+                        scope.shortId = msg.type ? LangService.translate('msg.type.' + msg.type) + ' ' : '';
+                        scope.shortId = scope.shortId + (msg.mainType ? msg.mainType : '');
+                        scope.style['background-color'] = 'white';
+                        scope.style['color'] = color;
+                        scope.style['border'] = '1px solid ' + color;
+                    }
+                }
+
+                scope.$watch('[msg.shortId, msg.status, msg.mainType, msg.type]', updateIdLabel, true);
+            }
+        }
+    }])
+
     /****************************************************************
      * Replaces the content of the element with the area description
      ****************************************************************/
@@ -109,7 +172,7 @@ angular.module('niord.messages')
                 scope.updateTime = function () {
                     var lang = $rootScope.language;
                     var time = '';
-                    var desc = scope.msg.descs[0];
+                    var desc = scope.msg && scope.msg.descs ? scope.msg.descs[0] : null;
                     // First check for a textual time description
                     if (desc && desc.time) {
                         time = desc.time.replace(/\n/g, "<br/>");

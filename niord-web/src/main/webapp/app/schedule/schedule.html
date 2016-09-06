@@ -26,7 +26,7 @@
                 <td colspan="4"><h4 class="message-list-area-heading" render-areas="[message.areaHeading]"></h4></td>
             </tr>
             <tr ng-repeat-end>
-                <td nowrap><span class="label label-message-id">{{message.shortId}}</span></td>
+                <td nowrap><message-id-badge msg="message" show-blank="true"></message-id-badge></td>
                 <td message-details-link="message.id" message-list="messageList"  selection="selection">
                     <span class="glyphicon glyphicon-new-window"></span>&nbsp;
                     {{message.descs[0].title}}
