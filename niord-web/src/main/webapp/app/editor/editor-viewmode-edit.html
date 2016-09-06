@@ -500,7 +500,7 @@
             <!-- ********************* -->
             <!-- ** Attachments     ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="attachments" field-title="msg.field.attachments">
+            <editor-field ng-if="showField('attachments')" edit-mode="editMode" field-id="attachments" field-title="msg.field.attachments">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.attachments.length > 0">
