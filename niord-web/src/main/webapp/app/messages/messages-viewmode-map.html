@@ -11,24 +11,15 @@
             <div ng-include="'/app/messages/messages-empty-search-result.html'"></div>
         </div>
 
-        <table style="margin-top: 5px">
-            <tr ng-repeat="msg in messageList">
-                <td style="vertical-align: top">
-                    <img ng-src="/img/{{msg.mainType | lowercase}}.png"
-                         class="map-general-message-icon"
-                         message-details-link="msg.id" message-list="messages" selection="selection"/>
-                </td>
-                <td>
-                    <div message-details-link="msg.id" message-list="messages" selection="selection">
-                        <span ng-if="msg.shortId">{{msg.shortId}}<br/></span>
-                        {{msg.descs[0].title}}
-                        <span ng-if="msg.descs[0].lang != language" style="color: darkgray;">
-                            <img ng-src="/img/flags/{{msg.descs[0].lang}}.png" style="height: 12px; opacity: 0.5;"/>
-                        </span>
-                    </div>
-                </td>
-            </tr>
-        </table>
+        <div ng-repeat="msg in messageList" style="padding: 5px">
+            <div message-details-link="msg.id" message-list="messages" selection="selection">
+                <message-id-badge msg="msg" show-blank="true"></message-id-badge><br/>
+                {{msg.descs[0].title}}
+                <span ng-if="msg.descs[0].lang != language" style="color: darkgray;">
+                    <img ng-src="/img/flags/{{msg.descs[0].lang}}.png" style="height: 12px; opacity: 0.5;"/>
+                </span>
+            </div>
+        </div>
     </div>
     <div class="load-more-messages" ng-if="messageList.length < totalMessageNo"
          load-more-messages="messageList" total-message-no="totalMessageNo" max-size="maxSize" load-more="loadMore()" >

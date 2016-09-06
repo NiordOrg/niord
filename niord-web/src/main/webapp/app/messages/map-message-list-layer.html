@@ -3,25 +3,14 @@
 
 <div class="map-general-messages" ng-if="generalMessages.length > 0">
     <h4 translate>msg.general_messages</h4>
-    <table>
-        <tr ng-repeat="msg in generalMessages">
-            <td style="border: none; padding-bottom: 10px; vertical-align: top">
-                <img ng-src="/img/{{msg.mainType | lowercase}}.png"
-                     class="map-general-message-icon"
-                     message-details-link="msg.id" message-list="messages" selection="selection"/>
-            </td>
-            <td style="border: none; padding-bottom: 10px;">
-                <div message-details-link="msg.id" message-list="messages" selection="selection">
-                    <strong>{{msg.descs[0].title}}</strong>
-                    <span ng-if="msg.shortId">
-                        &nbsp;(<strong>{{msg.shortId}}</strong>)
-                    </span>
-                    <span ng-if="msg.descs[0].lang != language" style="color: darkgray;">
-                        <img ng-src="/img/flags/{{msg.descs[0].lang}}.png" style="height: 12px; opacity: 0.5;"/>
-                    </span>
-                </div>
-            </td>
-        </tr>
-    </table>
+    <div ng-repeat="msg in generalMessages" style="padding: 5px 0; border-bottom: 1px solid lightgray">
+        <div message-details-link="msg.id" message-list="messages" selection="selection">
+            <message-id-badge msg="msg" show-blank="true"></message-id-badge>&nbsp;
+            <strong>{{msg.descs[0].title}}</strong>
+            <span ng-if="msg.descs[0].lang != language" style="color: darkgray;">
+                <img ng-src="/img/flags/{{msg.descs[0].lang}}.png" style="height: 12px; opacity: 0.5;"/>
+            </span>
+        </div>
+    </div>
 </div>
 

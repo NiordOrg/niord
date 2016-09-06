@@ -303,6 +303,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         message.setNumber(number);
         message.setMrn(mrn);
         message.setShortId(shortId);
+        message.setStatus(status);
         message.setMainType(mainType);
         message.setType(type);
 
@@ -314,7 +315,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             if (messageSeries != null) {
                 message.setMessageSeries(messageSeries.toVo(filter));
             }
-            message.setStatus(status);
             areas.forEach(a -> message.checkCreateAreas().add(a.toVo(filter)));
             categories.forEach(c -> message.checkCreateCategories().add(c.toVo(filter)));
             charts.forEach(c -> message.checkCreateCharts().add(c.toVo(filter)));

@@ -33,7 +33,7 @@
                 </tr>
                 <tbody ng-sortable="messagesSortableCfg">
                     <tr ng-repeat="message in messageList">
-                        <td nowrap><span>{{message.shortId}}</span></td>
+                        <td nowrap><message-id-badge msg="message" show-blank="true"></message-id-badge></td>
                         <td>
                             {{message.descs[0].title}}
                         </td>
