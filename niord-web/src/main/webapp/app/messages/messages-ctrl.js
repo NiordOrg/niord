@@ -151,7 +151,7 @@ angular.module('niord.messages')
             /** Filter Handling         **/
             /*****************************/
 
-            // Enables or disables the given filter
+            /** Enables or disables the given filter **/
             $scope.enableFilter = function (name, enabled) {
                 var filter = $scope.state[name];
                 filter.enabled = enabled;
@@ -200,7 +200,7 @@ angular.module('niord.messages')
             };
 
 
-            // Clears the given filter
+            /** Clears the given filter **/
             $scope.clearFilter = function (name) {
                 var filter = $scope.state[name];
                 filter.enabled = false;
@@ -249,14 +249,16 @@ angular.module('niord.messages')
                 }
             };
 
-            // Clears all filters
+
+            /** Clears all filters **/
             $scope.clearAllFilters = function () {
                 angular.forEach($scope.filterNames, function (name) {
                     $scope.clearFilter(name);
                 })
             };
 
-            // Converts the filters into a request parameter string
+
+            /** Converts the filters into a request parameter string **/
             $scope.toRequestFilterParameters = function () {
 
                 var params = '';
@@ -389,7 +391,7 @@ angular.module('niord.messages')
             };
 
 
-            // Parses the request parameters into a filter
+            /** Parses the request parameters into a filter **/
             $scope.readRequestFilterParameters = function () {
 
                 var params = $location.search();
@@ -486,7 +488,7 @@ angular.module('niord.messages')
             };
 
 
-            // Called when the filter is updated
+            /** Called when the filter is updated **/
             $scope.filterUpdated = function () {
                 
                 // Enforce validity of the filter selection
@@ -526,13 +528,13 @@ angular.module('niord.messages')
             /** Selection Handling      **/
             /*****************************/
 
-            // Returns if the given message is selected or not
+            /** Returns if the given message is selected or not **/
             $scope.isSelected = function (message) {
                 return $scope.selection.get(message.id) !== undefined;
             };
 
 
-            // Toggle the selection state of the message
+            /** Toggle the selection state of the message **/
             $scope.toggleSelectMessage = function (message) {
                 if ($scope.isSelected(message)) {
                     $scope.selection.remove(message.id);
@@ -577,6 +579,7 @@ angular.module('niord.messages')
             /** Named Filters Handling  **/
             /*****************************/
 
+            /** Loads the persisted names filters **/
             $scope.loadNamedFilters = function () {
                 if ($scope.loggedIn) {
                     FilterService
@@ -588,6 +591,8 @@ angular.module('niord.messages')
             $scope.namedFilters = [];
             $scope.loadNamedFilters();
 
+
+            /** Saves the current filter as a named filter **/
             $scope.saveNamedFilter = function () {
                 var name = prompt("Please enter filter name");
                 if (name) {
@@ -601,12 +606,16 @@ angular.module('niord.messages')
                 }
             };
 
+
+            /** Removes the given persisted named filter **/
             $scope.removeNamedFilter = function (filter) {
                 FilterService
                     .removeFilter(filter.id)
                     .success($scope.loadNamedFilters);
             };
 
+
+            /** Sets the given named filter as the current filter **/
             $scope.applyNamedFilter = function (filter) {
                 $scope.clearAllFilters();
                 $location.search(filter.parameters);
@@ -834,7 +843,10 @@ angular.module('niord.messages')
             /*****************************/
 
 
-            // Scans through the search result and marks all messages that should potentially display an area head line
+            /**
+             * Scans through the search result and marks all messages that should potentially
+             * display an area head line
+             **/
             $scope.checkGroupByArea = function (maxLevels) {
                 maxLevels = maxLevels || 2;
                 var lastAreaId = undefined;
@@ -870,7 +882,7 @@ angular.module('niord.messages')
             $scope.$watch("state", $scope.filterUpdated, true);
 
 
-            // Called when the state have been updated
+            /** Called when the state have been updated **/
             $scope.refreshMessages = function (append) {
 
                 var params = $scope.toRequestFilterParameters();
@@ -908,7 +920,7 @@ angular.module('niord.messages')
             };
 
 
-            // Toggle the sort order of the current sort field
+            /** Toggle the sort order of the current sort field **/
             $scope.toggleSortOrder = function(sortBy) {
                 if (sortBy == $scope.state.sortBy) {
                     $scope.state.sortOrder = $scope.state.sortOrder == 'ASC' ? 'DESC' : 'ASC';
@@ -919,7 +931,7 @@ angular.module('niord.messages')
             };
 
 
-            // Returns the sort indicator to display for the given field
+            /** Returns the sort indicator to display for the given field **/
             $scope.sortIndicator = function(sortBy) {
                 if (sortBy == $scope.state.sortBy) {
                     return $scope.state.sortOrder == 'DESC' ? '&#9650;' : '&#9660;';
