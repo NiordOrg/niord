@@ -26,7 +26,6 @@ import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.db.SpatialIntersectsPredicate;
-import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.geojson.Feature;
 import org.niord.core.geojson.FeatureCollection;
@@ -71,7 +70,7 @@ import static java.util.Arrays.asList;
 import static org.niord.core.geojson.Feature.WGS84_SRID;
 import static org.niord.core.message.MessageIdMatch.MatchType.*;
 import static org.niord.core.message.MessageSearchParams.CommentsType.*;
-import static org.niord.core.message.MessageSearchParams.SortOrder;
+import static org.niord.model.search.PagedSearchParamsVo.SortOrder;
 
 /**
  * Business interface for managing messages
@@ -235,18 +234,8 @@ public class MessageService extends BaseService {
 
     /** Returns a single message from the list - preferably from the current domain */
     private Message resolveMessage(List<Message> messages) {
-        // Check if any of the messages belong to the current domain
-        Domain currentDomain = domainService.currentDomain();
-        if (currentDomain != null) {
-            Set<String> currentMessageSeries = currentDomain.getMessageSeries().stream()
-                    .map(MessageSeries::getSeriesId)
-                    .collect(Collectors.toSet());
-            return messages.stream()
-                    .filter(m -> m.getMessageSeries() != null)
-                    .filter(m -> currentMessageSeries.contains(m.getMessageSeries().getSeriesId()))
-                    .findFirst()
-                    .orElse(messages.get(0)); // No message for the current domain - return the first
-        }
+        // Sort messages by domain and status
+        messages.sort(new MessageIdMatchComparator(domainService.currentDomain()));
 
         // No current domain - just return the first message
         return messages.get(0);
