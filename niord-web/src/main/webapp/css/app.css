@@ -368,6 +368,16 @@ li.view-mode-menu-btn .active .badge {
     cursor: pointer;
 }
 
+.view-mode-filter .small-link {
+    margin: 10px 0 0 10px;
+    font-size: 9px;
+    display: inline-block;
+}
+
+.view-mode-filter .small-link a {
+    color: #333;
+}
+
 /** Bootstrap modifications/additions **/
 
 .input-xs {

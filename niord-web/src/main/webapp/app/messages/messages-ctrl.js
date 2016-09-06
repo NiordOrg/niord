@@ -170,6 +170,36 @@ angular.module('niord.messages')
             };
 
 
+            /** Updates all values of the status filter to have the given selected state **/
+            $scope.updateStateFilter = function (selected) {
+                var status = $scope.state.status;
+                status.PUBLISHED = selected;
+                status.DRAFT = selected;
+                status.IMPORTED = selected;
+                status.VERIFIED = selected;
+                status.CANCELLED = selected;
+                status.EXPIRED = selected;
+                status.DELETED = selected;
+            };
+
+
+            /** Updates all values of the type filter to have the given selected state **/
+            $scope.updateTypeFilter = function (mainType, selected) {
+                var type = $scope.state.type;
+                if (mainType == 'NW') {
+                    type.COASTAL_WARNING = selected;
+                    type.SUBAREA_WARNING = selected;
+                    type.NAVAREA_WARNING = selected;
+                    type.LOCAL_WARNING = selected;
+                } else if (mainType == 'NM') {
+                    type.PERMANENT_NOTICE = selected;
+                    type.TEMPORARY_NOTICE = selected;
+                    type.PRELIMINARY_NOTICE = selected;
+                    type.MISCELLANEOUS_NOTICE = selected;
+                }
+            };
+
+
             // Clears the given filter
             $scope.clearFilter = function (name) {
                 var filter = $scope.state[name];
@@ -180,23 +210,11 @@ angular.module('niord.messages')
                         break;
                     case 'type':
                         filter.mainType = '';
-                        filter.PERMANENT_NOTICE = false;
-                        filter.TEMPORARY_NOTICE = false;
-                        filter.PRELIMINARY_NOTICE = false;
-                        filter.MISCELLANEOUS_NOTICE = false;
-                        filter.COASTAL_WARNING = false;
-                        filter.SUBAREA_WARNING = false;
-                        filter.NAVAREA_WARNING = false;
-                        filter.LOCAL_WARNING = false;
+                        $scope.updateTypeFilter('NW', false);
+                        $scope.updateTypeFilter('NM', false);
                         break;
                     case 'status':
-                        filter.PUBLISHED = false;
-                        filter.DRAFT = false;
-                        filter.IMPORTED = false;
-                        filter.VERIFIED = false;
-                        filter.CANCELLED = false;
-                        filter.EXPIRED = false;
-                        filter.DELETED = false;
+                        $scope.updateStateFilter(false);
                         break;
                     case 'tag':
                         filter.tags.length = 0;
@@ -467,32 +485,19 @@ angular.module('niord.messages')
                 }
             };
 
-            
+
             // Called when the filter is updated
             $scope.filterUpdated = function () {
                 
                 // Enforce validity of the filter selection
                 if ($scope.state.type.mainType == 'NW') {
-                    $scope.state.type.PERMANENT_NOTICE = false;
-                    $scope.state.type.TEMPORARY_NOTICE = false;
-                    $scope.state.type.PRELIMINARY_NOTICE = false;
-                    $scope.state.type.MISCELLANEOUS_NOTICE = false;
+                    $scope.updateTypeFilter('NM', false);
+                } else if ($scope.state.type.mainType == 'NM') {
+                    $scope.updateTypeFilter('NW', false);
                 }
-                if ($scope.state.type.mainType == 'NM') {
-                    $scope.state.type.COASTAL_WARNING = false;
-                    $scope.state.type.SUBAREA_WARNING = false;
-                    $scope.state.type.NAVAREA_WARNING = false;
-                    $scope.state.type.LOCAL_WARNING = false;
-                }
-                
+
                 if (!$scope.state.domain.enabled) {
-                    $scope.state.status.PUBLISHED = false;
-                    $scope.state.status.DRAFT = false;
-                    $scope.state.status.IMPORTED = false;
-                    $scope.state.status.VERIFIED = false;
-                    $scope.state.status.CANCELLED = false;
-                    $scope.state.status.EXPIRED = false;
-                    $scope.state.status.DELETED = false;
+                    $scope.updateStateFilter(false);
                 }
 
                 if (loadTimer) {
@@ -502,7 +507,7 @@ angular.module('niord.messages')
                 loadTimer = $timeout($scope.refreshMessages, 100);
             };
 
-            
+
             // Use for AtoN selection
             $scope.atons = [];
             $scope.refreshAtons = function(name) {

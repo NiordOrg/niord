@@ -49,12 +49,20 @@
                 <label class="btn btn-default btn-sm" ng-model="state.type.COASTAL_WARNING" uib-btn-checkbox>Coastal</label>
                 <label class="btn btn-default btn-sm" ng-model="state.type.SUBAREA_WARNING" uib-btn-checkbox>Subarea</label>
                 <label class="btn btn-default btn-sm" ng-model="state.type.NAVAREA_WARNING" uib-btn-checkbox>Navarea</label>
+                <span class="small-link">
+                    <a href ng-click="updateTypeFilter('NW', true)" translate>msg.filter.all</a> /
+                    <a href  ng-click="updateTypeFilter('NW', false)" translate>msg.filter.reset</a>
+                </span>
             </div>
             <div class="btn-group" ng-if="state.type.mainType == 'NM' || supportsNm(true)">
                 <label class="btn btn-default btn-sm" ng-model="state.type.TEMPORARY_NOTICE" uib-btn-checkbox>Temp.</label>
                 <label class="btn btn-default btn-sm" ng-model="state.type.PRELIMINARY_NOTICE" uib-btn-checkbox>Prelim.</label>
                 <label class="btn btn-default btn-sm" ng-model="state.type.PERMANENT_NOTICE" uib-btn-checkbox>Perm.</label>
                 <label class="btn btn-default btn-sm" ng-model="state.type.MISCELLANEOUS_NOTICE" uib-btn-checkbox>Misc.</label>
+                <span class="small-link">
+                    <a href ng-click="updateTypeFilter('NM', true)" translate>msg.filter.all</a> /
+                    <a href  ng-click="updateTypeFilter('NM', false)" translate>msg.filter.reset</a>
+                </span>
             </div>
         </view-mode-filter-panel>
 
@@ -69,6 +77,10 @@
                 <label class="btn btn-default btn-sm" ng-disabled="!state.domain.enabled" ng-model="state.status.CANCELLED" uib-btn-checkbox>Cancelled</label>
                 <label class="btn btn-default btn-sm" ng-disabled="!state.domain.enabled" ng-model="state.status.EXPIRED" uib-btn-checkbox>Expired</label>
                 <label class="btn btn-default btn-sm" ng-disabled="!state.domain.enabled" ng-model="state.status.DELETED" uib-btn-checkbox>Deleted</label>
+                <span class="small-link">
+                    <a href ng-click="updateStateFilter(true)" translate>msg.filter.all</a> /
+                    <a href  ng-click="updateStateFilter(false)" translate>msg.filter.reset</a>
+                </span>
             </div>
         </view-mode-filter-panel>
 
