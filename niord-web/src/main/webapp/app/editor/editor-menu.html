@@ -65,7 +65,7 @@
                     </a>
                 </li>
                 <li ng-if="onPage('editor.edit')">
-                    <div style="color: lightgray; line-height: 20px; margin-left: 20px;">More fields:</div>
+                    <div style="color: lightgray; line-height: 20px; margin-left: 20px;" translate>menu.action.fields.more</div>
                 </li>
                 <li ng-repeat="(field, enabled) in unusedEditorFields" ng-if="onPage('editor.edit')">
                     <a href ng-click="toggleUseEditorField(field)">
