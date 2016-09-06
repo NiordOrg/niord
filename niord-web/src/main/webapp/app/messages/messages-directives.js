@@ -192,6 +192,45 @@ angular.module('niord.messages')
     }])
 
 
+
+    /********************************
+     * Defines a message id field, e.g
+     * used for references.
+     ********************************/
+    .directive('messageIdField', [ '$http', '$rootScope', function ($http, $rootScope) {
+        'use strict';
+
+        return {
+            restrict: 'E',
+            templateUrl: '/app/messages/message-id-field.html',
+            replace: false,
+            scope: {
+                reference:  "=",
+                minLength:  "="
+            },
+            link: function(scope) {
+
+                scope.minLength = scope.minLength | 3;
+
+                // Use for message id selection
+                scope.messageIds = [];
+                scope.refreshMessageIds = function (text) {
+                    if (!text || text.length < scope.minLength) {
+                        return [];
+                    }
+                    return $http.get(
+                        '/rest/messages/search-message-ids?txt=' + encodeURIComponent(text) +
+                        '&lang=' + $rootScope.language
+                    ).then(function(response) {
+                        scope.messageIds = response.data;
+                    });
+                };
+
+            }
+        }
+    }])
+
+
     /****************************************************************
      * The message-tags-field directive supports selecting either a
      * single tag or a list of tags. For single-tag selection use

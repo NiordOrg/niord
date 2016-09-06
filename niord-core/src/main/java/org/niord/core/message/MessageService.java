@@ -282,7 +282,8 @@ public class MessageService extends BaseService {
 
         // Search shortIds
         // NB: This idiotic way of forming the query is to avoid Intellij wrongly flagging errors :-(
-        String searchShortIdSql = "select distinct m from Message m where lower(m.shortId) like lower(:term) ";
+        String searchShortIdSql = "select distinct m from Message m where lower(m.shortId) like lower(:term) "
+                                + "and m.status != 'DELETED' ";
         String searchShortIdOrderSql = "order by locate(lower(:sort), lower(m.shortId)) asc ";
         em.createQuery(searchShortIdSql + searchShortIdOrderSql, Message.class)
                 .setParameter("term", "%" + txt + "%")
@@ -293,7 +294,8 @@ public class MessageService extends BaseService {
 
         // Search MRNs
         // NB: This idiotic way of forming the query is to avoid Intellij wrongly flagging errors :-(
-        String searchMrnSql = "select distinct m from Message m where lower(m.mrn) like lower(:term) ";
+        String searchMrnSql = "select distinct m from Message m where lower(m.mrn) like lower(:term) "
+                            + "and m.status != 'DELETED' ";
         String searchMrnOrderSql =  "order by locate(lower(:sort), lower(m.mrn)) asc ";
         em.createQuery(searchMrnSql + searchMrnOrderSql, Message.class)
                 .setParameter("term", "%" + txt + "%")

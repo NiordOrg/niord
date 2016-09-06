@@ -17,6 +17,7 @@ package org.niord.core.message;
 
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
+import org.niord.model.message.Status;
 
 import java.util.List;
 
@@ -33,6 +34,7 @@ public class MessageIdMatch implements IJsonSerializable {
     String messageId;
     MatchType type;
     String title;
+    Status status;
 
     /** Constructor **/
     public MessageIdMatch() {
@@ -57,6 +59,7 @@ public class MessageIdMatch implements IJsonSerializable {
         if (!descs.isEmpty()) {
             title = descs.get(0).getTitle();
         }
+        this.status = message.getStatus();
     }
 
     /*************************/
@@ -85,5 +88,13 @@ public class MessageIdMatch implements IJsonSerializable {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
     }
 }

@@ -105,12 +105,12 @@ public class MessageLuceneIndex extends BaseService {
 
     @Inject
     @Setting(value = "messageIndexDeleteOnStartup", defaultValue = "true", type = Boolean,
-            description = "Whether the message index is re-created for each restart or not")
+            description = "Whether the message lucene index is re-created for each restart or not")
     Boolean deleteOnStartup;
 
     @Inject
-    @Setting(value = "messageIndexIncludeDeletedMessages", defaultValue = "true", type = Boolean,
-            description = "Whether the message index should include deleted messages or not")
+    @Setting(value = "messageIndexIncludeDeletedMessages", defaultValue = "false", type = Boolean,
+            description = "Whether the message lucene index should include deleted messages or not")
     Boolean includeDeletedMessages;
 
     @Inject
