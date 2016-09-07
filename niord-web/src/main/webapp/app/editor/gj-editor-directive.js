@@ -583,7 +583,7 @@ angular.module('niord.editor')
 
                     angular.forEach(selected, function (feature) {
                         var geom = feature.getGeometry();
-                        if (geom.getType() == 'Point' || geom.getType() == 'LineString' || geom.getType() == 'Polygon') {
+                        if (geom.getType() == 'Point') {
                             return;
                         }
 
@@ -591,6 +591,21 @@ angular.module('niord.editor')
                         scope.deleteFeature(feature.getId());
                         var geoms = [];
                         switch (geom.getType()) {
+                            case 'LineString':
+                                angular.forEach(geom.getCoordinates(), function (coord) {
+                                    geoms.push(new ol.geom.Point(coord));
+                                });
+                                break;
+                            case 'Polygon':
+                                // Note to self: Only the exterior ring has feature names associated.
+                                // Thus, we do not have to offset the coord-indexes of the feature names
+                                angular.forEach(geom.getCoordinates(), function (ringCoords) {
+                                    // For linear rings, skip the last coordinate (same as the first)
+                                    for (var x = 0; x < ringCoords.length - 1; x++) {
+                                        geoms.push(new ol.geom.Point(ringCoords[x]));
+                                    }
+                                });
+                                break;
                             case 'MultiPoint':
                                 geoms = geom.getPoints();
                                 break;
