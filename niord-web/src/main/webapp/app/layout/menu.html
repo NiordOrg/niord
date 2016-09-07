@@ -34,8 +34,9 @@
                     <ul ng-if="domains.length" class="dropdown-menu">
                         <li ng-repeat="d in domains">
                             <a href ng-click="changeDomain(d)">
+                                <span class="glyphicon"
+                                      ng-class="{ 'glyphicon-ok': d.domainId == domain.domainId, 'glyphicon-none': d.domainId != domain.domainId }"></span>
                                 {{d.name}}
-                                <span ng-if="d.domainId == domain.domainId">&#10004;</span>
                             </a>
                         </li>
                     </ul>
