@@ -114,11 +114,17 @@ public class GeoJsonTest {
     @Test
     public void plainTextConverterTest() throws Exception {
 
+        String[] languages = {"da", "en"};
+        PlainTextConverter converter = PlainTextConverter.newInstance(languages);
+
         String text = "\nPolygon, Goat-Ice\n54° 41,000'N - 010° 35,000'E\n54° 35,566'N - 010° 35,010'E\n54° 38,397'N - 010° 25,125'E";
-        System.out.println(PlainTextConverter.fromPlainText(text, "da"));
+        System.out.println(converter.fromPlainText(text));
 
         text = "1) 54° 45,7' N 10° 29,1' E, Ærø S.\n2) 54° 41,2' N 10° 36,9' E, Keldsnor SW.\n3) 54° 38,3' N 10° 40,1' E, Keldsnor S.";
-        System.out.println(PlainTextConverter.fromPlainText(text, "da"));
+        System.out.println(converter.fromPlainText(text));
+
+        text = "Point, da: Ubåd U-9, en: Submarine U-9.\n54° 45,7' N 10° 29,1' E, da: Ærø S. en: Aeroe S.";
+        System.out.println(converter.fromPlainText(text));
     }
 
 

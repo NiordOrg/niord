@@ -772,11 +772,10 @@ public class MessageRestService  {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public FeatureCollectionVo parseGeometry(
-            @QueryParam("lang") @DefaultValue("en") String language,
-            PlainTextGeometryParam param) throws Exception {
+    public FeatureCollectionVo parseGeometry(PlainTextGeometryParam param) throws Exception {
         try {
-            return PlainTextConverter.fromPlainText(param.getGeometryText(), language);
+            PlainTextConverter converter = PlainTextConverter.newInstance(app.getLanguages());
+            return converter.fromPlainText(param.getGeometryText());
         } catch (Exception e) {
             return null;
         }

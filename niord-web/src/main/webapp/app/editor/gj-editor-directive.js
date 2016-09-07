@@ -1080,7 +1080,7 @@ angular.module('niord.editor')
             $scope.geometryTextChanged = function () {
                 $scope.features.length = 0;
 
-                $http.post('/rest/messages/parse-geometry?lang=' + $rootScope.language, { geometryText: $scope.data.geometryText })
+                $http.post('/rest/messages/parse-geometry', { geometryText: $scope.data.geometryText })
                     .success(function (fc) {
                         if (fc && fc.features && fc.features.length > 0) {
                             angular.forEach(fc.features, function (feature) {

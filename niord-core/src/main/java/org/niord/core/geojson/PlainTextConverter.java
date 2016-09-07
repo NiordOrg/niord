@@ -27,10 +27,13 @@ import org.niord.model.geojson.PolygonVo;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Converts a human-writable plain-text geometry specification into
@@ -51,18 +54,47 @@ import java.util.regex.Pattern;
  *   54° 35,566'N - 010° 35,010'E
  *   54° 38,397'N - 010° 25,125'E
  * </pre>
+ * Or:
+ * <pre>
+ *   Point, da:Slukket bøje, en: Unlit buoy
+ *   54° 41,000'N - 010° 35,000'E
+ *
+ *   LineString
+ *   54° 35,566'N - 010° 35,010'E, da: kyst, en: shore
+ *   54° 38,397'N - 010° 25,125'E
+ *   54° 39,111'N - 010° 21,202'E
+ * </pre>
  */
 public class PlainTextConverter {
 
-    public static Pattern TYPE_FORMAT = Pattern.compile(
+    public static final Pattern TYPE_FORMAT = Pattern.compile(
             "^(?<type>Point|MultiPoint|LineString|Polygon)(?<desc>,.+)?$",
             Pattern.CASE_INSENSITIVE
     );
 
-    public static Pattern POSITION_FORMAT = Pattern.compile(
+    public static final Pattern POSITION_FORMAT = Pattern.compile(
             "^(?<lat>[^NS]+)(?<latDir>[NS])([ -])*(?<lon>[^EW]+)(?<lonDir>[EW])(?<desc>.*)$",
             Pattern.CASE_INSENSITIVE
     );
+
+    private final Set<String> languages = new HashSet<>();
+
+    /**
+     * Constructor
+     * @param languages the supported languages
+     */
+    private PlainTextConverter(String[] languages) {
+        if (languages == null || languages.length == 0) {
+            this.languages.add("en");
+        } else {
+            this.languages.addAll(Arrays.asList(languages));
+        }
+    }
+
+    /** Factory method - returns a new plain text converter that supports the given languages **/
+    public static PlainTextConverter newInstance(String[] languages) {
+        return new PlainTextConverter(languages);
+    }
 
 
     /**
@@ -73,9 +105,7 @@ public class PlainTextConverter {
      * @param text the plain text representation
      * @return the resulting GeoJSON feature collection
      */
-    public static FeatureCollectionVo fromPlainText(String text, String lang) throws Exception {
-
-        lang = StringUtils.defaultIfBlank(lang, "en");
+    public FeatureCollectionVo fromPlainText(String text) throws Exception {
 
         if (StringUtils.isBlank(text)) {
             return null;
@@ -101,7 +131,7 @@ public class PlainTextConverter {
         // Convert the feature lines into proper features
         List<FeatureVo> features = new ArrayList<>();
         for (List<String> fl : featureCollectionLines) {
-            FeatureVo feature = fromPlainText(fl, lang);
+            FeatureVo feature = fromPlainText(fl);
             if (feature == null) {
                 return null;
             } else {
@@ -122,7 +152,7 @@ public class PlainTextConverter {
 
     /** Converts a list of lines into a feature **/
     @SuppressWarnings("all")
-    private static FeatureVo fromPlainText(List<String> lines, String lang) throws Exception {
+    private FeatureVo fromPlainText(List<String> lines) throws Exception {
 
         Map<String, Object> properties = new HashMap<>();
         List<double[]> coordinates = new ArrayList<>();
@@ -134,19 +164,13 @@ public class PlainTextConverter {
         if (m.find()) {
             offset = 1;
             type = m.group("type");
-            String desc = m.group("desc");
-
-            if (StringUtils.isNotBlank(desc)) {
-                desc = desc.replaceFirst("^,?\\s+", "");
-                if (StringUtils.isNotBlank(desc)) {
-                    properties.put("name:" + lang, desc);
-                }
-            }
+            parseFeatureNames(properties, "name:", m.group("desc"));
         }
 
+        // Parse the coordinates
         for (int coordIndex = offset; coordIndex < lines.size(); coordIndex++) {
             String line = lines.get(coordIndex);
-            if (!parsePosition(line, coordinates, properties, coordIndex - offset, lang)) {
+            if (!parsePosition(line, coordinates, properties, coordIndex - offset)) {
                 throw new Exception("Invalid format: " + line);
             }
         }
@@ -208,7 +232,7 @@ public class PlainTextConverter {
 
 
     /** Parses a single line as a position and optionally the name properties **/
-    private static boolean parsePosition(String line, List<double[]> coordinates, Map<String, Object> properties, int index, String lang) throws Exception {
+    private boolean parsePosition(String line, List<double[]> coordinates, Map<String, Object> properties, int index) throws Exception {
         line = line.replaceFirst("^\\d+\\)", "").trim();
         Matcher m = POSITION_FORMAT.matcher(line);
         if (m.find()) {
@@ -217,14 +241,7 @@ public class PlainTextConverter {
                 parseCoordinate(m.group("lat"), m.group("latDir"))
             };
             coordinates.add(coord);
-            String desc = m.group("desc");
-
-            if (StringUtils.isNotBlank(desc)) {
-                desc = desc.replaceFirst("^,?\\s+", "");
-                if (StringUtils.isNotBlank(desc)) {
-                    properties.put("name:" + index + ":" + lang, desc);
-                }
-            }
+            parseFeatureNames(properties, "name:"+ index + ":", m.group("desc"));
             return true;
         }
         return false;
@@ -232,7 +249,7 @@ public class PlainTextConverter {
 
 
     /**  Parses the degree (either latitude or longitude) **/
-    private static double parseCoordinate(String deg, String dir) throws Exception {
+    private double parseCoordinate(String deg, String dir) throws Exception {
         String[] parts = deg.replace("°", " ")
                 .replace("'", "")
                 .replace("I", " ") // When you copy-paste ° from DMA NtM PDF
@@ -257,6 +274,59 @@ public class PlainTextConverter {
             return val;
         } catch (NumberFormatException e) {
             throw new Exception("Invalid degree format: " + deg);
+        }
+    }
+
+
+    /**
+     * Parses the feature name properties from the description line.
+     * <p>
+     * For general lines, feature names are defined for all languages of this converter instance.
+     * <p>
+     * However, if the line contains language indicators ("lang:"), then this is used to split
+     * the description line into separate language-specific parts. Example:<br>
+     * <pre>, da: Ubåd U-9., en: Submarine U-9.</pre>
+     **/
+    private void parseFeatureNames(Map<String, Object> properties, String namePrefix, String desc) {
+        if (StringUtils.isNotBlank(desc)) {
+            desc = desc.replaceFirst("^,?\\s+", "");
+            if (StringUtils.isNotBlank(desc)) {
+
+                // Convert languages to regex string like "da:|en:|fr:"
+                String langs = languages.stream()
+                        .map(l -> l + ":")
+                        .collect(Collectors.joining("|"));
+
+                Pattern LANG_MATCH = Pattern.compile(
+                        ",?\\s*(?<lang>" + langs + ")\\s*((^" + langs + ")*)",
+                        Pattern.CASE_INSENSITIVE
+                );
+
+                Matcher m = LANG_MATCH.matcher(desc);
+                String lang = null;
+                int startIndex = 0;
+                while (m.find()) {
+                    if (lang != null) {
+                        properties.put(namePrefix + lang, desc.substring(startIndex, m.start()));
+                    }
+
+                    lang = m.group("lang");
+                    // Strip colon from language
+                    lang = lang.substring(0, lang.length() - 1);
+                    startIndex = m.end();
+                }
+
+                if (lang != null) {
+                    properties.put(namePrefix + lang, desc.substring(startIndex));
+
+                } else {
+                    // Add the feature name for all languages
+                    for (String l : languages) {
+                        properties.put(namePrefix + l, desc);
+                    }
+
+                }
+            }
         }
     }
 }
