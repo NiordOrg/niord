@@ -640,25 +640,31 @@ angular.module('niord.editor')
                 /** Creates the difference between two geometries **/
                 scope.difference = function () {
                     var selected = scope.selection.slice();
-                    if (selected.length != 2) {
+                    if (selected.length < 2) {
                         return;
                     }
 
                     var jstsOlParser = new jsts.io.OL3Parser();
-                    var f1 = selected[0];
-                    var f2 = selected[1];
-                    var g1 = jstsOlParser.read(f1.getGeometry());
-                    var g2 = jstsOlParser.read(f2.getGeometry());
+                    var geom = null;
+                    for (var x = 0; x < selected.length; x++) {
+                        var feature = selected[x];
+                        var g = jstsOlParser.read(feature.getGeometry());
 
-                    // Create the difference geometry
-                    var geom = jstsOlParser.write(g1.difference(g2));
+                        if (geom == null) {
+                            geom = g;
+                        } else {
+                            // Create the difference geometry
+                            geom = geom.difference(g);
+                        }
 
-                    // Delete the old features
-                    scope.deleteFeature(f1.getId());
-                    scope.deleteFeature(f2.getId());
+                        // Delete the old features
+                        scope.deleteFeature(feature.getId());
+                    }
 
                     // Create the feature for the geometry
-                    scope.createNewFeature(geom);
+                    if (geom !== null) {
+                        scope.createNewFeature(jstsOlParser.write(geom));
+                    }
                     broadcast('refresh-all');
                 };
 
