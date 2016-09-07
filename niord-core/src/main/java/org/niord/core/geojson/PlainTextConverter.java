@@ -19,7 +19,10 @@ package org.niord.core.geojson;
 import org.apache.commons.lang.StringUtils;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.geojson.FeatureVo;
+import org.niord.model.geojson.LineStringVo;
 import org.niord.model.geojson.MultiPointVo;
+import org.niord.model.geojson.PointVo;
+import org.niord.model.geojson.PolygonVo;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,6 +53,17 @@ import java.util.regex.Pattern;
  * </pre>
  */
 public class PlainTextConverter {
+
+    public static Pattern TYPE_FORMAT = Pattern.compile(
+            "^(?<type>Point|MultiPoint|LineString|Polygon)(?<desc>,.+)?$",
+            Pattern.CASE_INSENSITIVE
+    );
+
+    public static Pattern POSITION_FORMAT = Pattern.compile(
+            "^(?<lat>[^NS]+)(?<latDir>[NS])([ -])*(?<lon>[^EW]+)(?<lonDir>[EW])(?<desc>.*)$",
+            Pattern.CASE_INSENSITIVE
+    );
+
 
     /**
      * Returns the geometry given by the given plain text representation.
@@ -88,7 +102,9 @@ public class PlainTextConverter {
         List<FeatureVo> features = new ArrayList<>();
         for (List<String> fl : featureCollectionLines) {
             FeatureVo feature = fromPlainText(fl, lang);
-            if (feature != null) {
+            if (feature == null) {
+                return null;
+            } else {
                 features.add(feature);
             }
         }
@@ -105,33 +121,91 @@ public class PlainTextConverter {
 
 
     /** Converts a list of lines into a feature **/
+    @SuppressWarnings("all")
     private static FeatureVo fromPlainText(List<String> lines, String lang) throws Exception {
+
         Map<String, Object> properties = new HashMap<>();
         List<double[]> coordinates = new ArrayList<>();
-        for (int x = 0; x < lines.size(); x++) {
-            String line = lines.get(x);
-            if (!parsePosition(line, coordinates, properties, x, lang)) {
+        String type = null;
+        int offset = 0;
+
+        // Check if the first line designates the geometry type
+        Matcher m = TYPE_FORMAT.matcher(lines.get(0));
+        if (m.find()) {
+            offset = 1;
+            type = m.group("type");
+            String desc = m.group("desc");
+
+            if (StringUtils.isNotBlank(desc)) {
+                desc = desc.replaceFirst("^,?\\s+", "");
+                if (StringUtils.isNotBlank(desc)) {
+                    properties.put("name:" + lang, desc);
+                }
+            }
+        }
+
+        for (int coordIndex = offset; coordIndex < lines.size(); coordIndex++) {
+            String line = lines.get(coordIndex);
+            if (!parsePosition(line, coordinates, properties, coordIndex - offset, lang)) {
                 throw new Exception("Invalid format: " + line);
             }
         }
 
         if (coordinates.isEmpty()) {
             return null;
+        } else if (type == null && coordinates.size() == 1) {
+            type = "Point";
+        } else if (type == null && coordinates.size() > 1) {
+            type = "MultiPoint";
         }
+
         FeatureVo feature = new FeatureVo();
         feature.setProperties(properties);
-        MultiPointVo geometry = new MultiPointVo();
-        geometry.setCoordinates(coordinates.toArray(new double[coordinates.size()][]));
-        feature.setGeometry(geometry);
+
+        switch (type.toLowerCase()) {
+            case "point":
+                if (coordinates.size() != 1) {
+                    return null;
+                }
+                PointVo point = new PointVo();
+                point.setCoordinates(coordinates.get(0));
+                feature.setGeometry(point);
+                break;
+            case "multipoint":
+                if (coordinates.isEmpty()) {
+                    return null;
+                }
+                MultiPointVo multiPoint = new MultiPointVo();
+                multiPoint.setCoordinates(coordinates.toArray(new double[coordinates.size()][]));
+                feature.setGeometry(multiPoint);
+                break;
+            case "linestring":
+                if (coordinates.size() < 2) {
+                    return null;
+                }
+                LineStringVo lineString = new LineStringVo();
+                lineString.setCoordinates(coordinates.toArray(new double[coordinates.size()][]));
+                feature.setGeometry(lineString);
+                break;
+            case "polygon":
+                if (coordinates.size() < 3) {
+                    return null;
+                }
+                // Same first and last coordinate in GeoJSON Polygon linear rings.
+                coordinates.add(coordinates.get(0));
+                PolygonVo polygon = new PolygonVo();
+                double[][][] coords = new double[1][][];
+                coords[0] = coordinates.toArray(new double[coordinates.size()][]);
+                polygon.setCoordinates(coords);
+                feature.setGeometry(polygon);
+                break;
+            default:
+                return null;
+        }
+
         return feature;
     }
 
-
-    public static Pattern POSITION_FORMAT = Pattern.compile(
-            //"^(\\d+\\)\\w+)?(?<lat>.+)[NS]([ -])*(?<lon>.+)[EW].*$",
-            "^(?<lat>[^NS]+)(?<latDir>[NS])([ -])*(?<lon>[^EW]+)(?<lonDir>[EW])(?<desc>.*)$",
-            Pattern.CASE_INSENSITIVE
-    );
 
     /** Parses a single line as a position and optionally the name properties **/
     private static boolean parsePosition(String line, List<double[]> coordinates, Map<String, Object> properties, int index, String lang) throws Exception {
