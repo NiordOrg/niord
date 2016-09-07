@@ -547,7 +547,7 @@ angular.module('niord.editor')
 
                 /** Merges the selected features **/
                 scope.merge = function () {
-                    var selected = angular.copy(scope.selection);
+                    var selected = scope.selection.slice();
                     if (selected.length < 2) {
                         return;
                     }
@@ -566,7 +566,7 @@ angular.module('niord.editor')
 
                 /** Splits the selected features into sub-geometries **/
                 scope.split = function () {
-                    var selected = angular.copy(scope.selection);
+                    var selected = scope.selection.slice();
 
                     angular.forEach(selected, function (feature) {
                         var geom = feature.getGeometry();
@@ -599,7 +599,7 @@ angular.module('niord.editor')
 
                 /** Creates the difference between two geometries **/
                 scope.difference = function () {
-                    var selected = angular.copy(scope.selection);
+                    var selected = scope.selection.slice();
                     if (selected.length != 2) {
                         return;
                     }
