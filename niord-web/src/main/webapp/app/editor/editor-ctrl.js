@@ -459,7 +459,8 @@ angular.module('niord.editor')
                             $scope.message.charts = charts.map(function (chart) {
                                 return {
                                     chartNumber: chart.chartNumber,
-                                    internationalNumber: chart.internationalNumber
+                                    internationalNumber: chart.internationalNumber,
+                                    active: chart.active
                                 }
                             });
                             $scope.setDirty();
