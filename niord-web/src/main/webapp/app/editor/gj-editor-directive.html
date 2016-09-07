@@ -76,6 +76,8 @@
                             <li role="menuitem" ng-if="selection.length > 1"><a href ng-click="merge()">Merge geometries</a></li>
                             <li role="menuitem" ng-if="selection.length > 0"><a href ng-click="split()">Split geometries</a></li>
                             <li role="menuitem" ng-if="selection.length >= 2"><a href ng-click="difference()">Subtract geometries</a></li>
+                            <li role="menuitem" ng-if="canConvert('LineString')"><a href ng-click="convert('LineString')">Convert to LineString</a></li>
+                            <li role="menuitem" ng-if="canConvert('Polygon')"><a href ng-click="convert('Polygon')">Convert to Polygon</a></li>
                         </ul>
                     </span>
 

@@ -492,7 +492,10 @@ angular.module('niord.editor')
                 }
 
 
-                /** Merges a g2 into g1 **/
+                /**
+                 * Merges a g2 into g1.
+                 * Will mainly handle merging of the same type of geometries, e.g. MultiPoint + Point -> MultiPoint.
+                 **/
                 function mergeGeometries(g1, g2) {
                     if (g1.getType() == 'GeometryCollection') {
                         var geometries = g1.getGeometries() || [];
@@ -543,7 +546,6 @@ angular.module('niord.editor')
                     }
                     angular.forEach(features, function (feature) {
                         geom = mergeGeometries(geom, feature.getGeometry());
-                        // TODO: Copy name properties
                     });
                     return geom;
                 }
@@ -573,6 +575,54 @@ angular.module('niord.editor')
 
                     // Create a feature for the merged geometry
                     scope.createNewFeature(geom, properties);
+                    broadcast('refresh-all');
+                };
+
+
+                /** Checks if the current geometry selection can be converted to the given type **/
+                scope.canConvert = function (type) {
+                    switch (type) {
+                        case 'LineString':
+                            return scope.selection.length == 1 &&
+                                scope.selection[0].getGeometry().getType() == 'MultiPoint';
+                            break;
+                        case 'Polygon':
+                            return scope.selection.length == 1 &&
+                                (scope.selection[0].getGeometry().getType() == 'MultiPoint' ||
+                                scope.selection[0].getGeometry().getType() == 'LineString');
+                            break;
+                    }
+                    return false;
+                };
+
+
+                /** Converts the currently selected geometries to the given type **/
+                scope.convert = function (type) {
+                    if (!scope.canConvert(type)) {
+                        return;
+                    }
+
+                    var feature = scope.selection[0];
+                    var featureNames = FeatureName.readFeatureNames(feature);
+
+                    // Get MultiPoint or LineString coordinates (same cardinality)
+                    var coordinates = feature.getGeometry().getCoordinates();
+
+                    // Convert coordinates if target type is Polygon
+                    if (type == 'Polygon') {
+                        coordinates.push(coordinates[0]);
+                        coordinates = [ coordinates ];
+                    }
+
+                    // Delete the original feature
+                    scope.deleteFeature(feature.getId());
+
+                    // Construct the resulting geometry
+                    var geom = new ol.geom[type]();
+                    geom.setCoordinates(coordinates);
+
+                    // Create a feature for the converted geometry
+                    scope.createNewFeature(geom, FeatureName.featureNamesToProperties(featureNames));
                     broadcast('refresh-all');
                 };
 
