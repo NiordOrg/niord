@@ -604,7 +604,7 @@ angular.module('niord.editor')
                         return;
                     }
 
-                    var jstsOlParser = new jsts.io.olParser();
+                    var jstsOlParser = new jsts.io.OL3Parser();
                     var f1 = selected[0];
                     var f2 = selected[1];
                     var g1 = jstsOlParser.read(f1.getGeometry());

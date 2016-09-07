@@ -186,7 +186,7 @@ angular.module('niord.map')
                     return olGeometry;
                 }
 
-                var jstsOlParser = new jsts.io.olParser();
+                var jstsOlParser = new jsts.io.OL3Parser();
 
                 // convert the GeoJson geometry to a JSTS geometry
                 var jstsGeom = jstsOlParser.read(olGeometry);
