@@ -330,10 +330,14 @@ angular.module('niord.editor')
 
 
                 /** Creates a new feature ***/
-                scope.createNewFeature = function (geom) {
+                scope.createNewFeature = function (geom, properties) {
                     var f = new ol.Feature();
                     MapService.checkCreateId(f);
                     f.setGeometry(geom);
+
+                    if (properties) {
+                        f.setProperties(properties, true);
+                    }
 
                     scope.features.push(f);
                     var featureCtx = createFeatureCtxFromFeature(f);
@@ -552,14 +556,23 @@ angular.module('niord.editor')
                         return;
                     }
 
+                    var properties = {};
+                    var coordOffset = 0;
                     var geom = mergeFeatureGeometries(selected);
                     angular.forEach(selected, function (feature) {
+
+                        // Store the old feature names
+                        var featureNames = FeatureName.readFeatureNames(feature);
+                        FeatureName.offsetFeatureNames(featureNames, coordOffset);
+                        FeatureName.featureNamesToProperties(featureNames, properties);
+                        coordOffset += MapService.getCoordinateNo(feature);
+
+                        // Delete the original feature
                         scope.deleteFeature(feature.getId());
-                        // TODO: Copy name properties
                     });
 
                     // Create a feature for the merged geometry
-                    scope.createNewFeature(geom);
+                    scope.createNewFeature(geom, properties);
                     broadcast('refresh-all');
                 };
 
@@ -573,6 +586,8 @@ angular.module('niord.editor')
                         if (geom.getType() == 'Point' || geom.getType() == 'LineString' || geom.getType() == 'Polygon') {
                             return;
                         }
+
+                        var origFeatureNames = FeatureName.readFeatureNames(feature);
                         scope.deleteFeature(feature.getId());
                         var geoms = [];
                         switch (geom.getType()) {
@@ -589,8 +604,18 @@ angular.module('niord.editor')
                                 geoms = geom.getGeometries();
                                 break;
                         }
+
+                        var coordOffset = 0;
                         angular.forEach(geoms, function (g) {
-                            scope.createNewFeature(g.clone());
+
+                            // Determine the feature names to use for this geometry
+                            var coordNo = MapService.getCoordinateNo(g);
+                            var featureNames = FeatureName.featureNamesByOffset(origFeatureNames, coordOffset, coordOffset + coordNo);
+                            FeatureName.offsetFeatureNames(featureNames, -coordOffset);
+                            var properties = FeatureName.featureNamesToProperties(featureNames);
+                            coordOffset += coordNo;
+
+                            scope.createNewFeature(g.clone(), properties);
                         });
                     });
                     broadcast('refresh-all');

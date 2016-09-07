@@ -515,8 +515,22 @@ angular.module('niord.map')
 
 
 /** ****************** **/
-/** Utility classes    **/
+/** FeatureName class  **/
 /** ****************** **/
+/**
+ * The FeatureName class represents the localized name of a feature or any of its coordinates.
+ * Both types are stored in the GeoJSON (and OL3) Feature "properties" field as described below:
+ * <p>
+ * <b>Type "feature-name":</b><br>
+ * The name of the entire feature is encoded in the "name:lang" Feature property, where
+ * "lang" is the language code, e.g. "da" or "en".
+ * <p>
+ * <b>Type "feature-coord-name":</b><br>
+ * The name of one of the coordinates of the feature is encoded in the "name:index:lang" Feature property, where
+ * "index" is the zero-based coordinate index and "lang" is the language code, e.g. "da" or "en".<br>
+ * The coordinate index is relative to the zero-based index defined by visiting all coordinates of a feature
+ * geometry in a breadth-first traversal.
+ */
 
 var featureNameKey = new RegExp("^name:([a-zA-Z_]+)$");
 var coordinateNameKey = new RegExp("^name:(\\d+):([a-zA-Z_]+)$");
@@ -571,6 +585,7 @@ FeatureName.prototype.offset = function(offset) {
     }
 };
 
+/** Reads the feature names of an OL3 Feature. Returns an array with the result **/
 FeatureName.readFeatureNames = function (feature) {
     var featureNames = [];
     angular.forEach(feature.getKeys(), function (key) {
@@ -582,3 +597,37 @@ FeatureName.readFeatureNames = function (feature) {
     return featureNames;
 };
 
+/** Offsets the coordinate index of the feature names in the given array **/
+FeatureName.offsetFeatureNames = function (featureNames, offset) {
+    if (featureNames && featureNames.length && offset) {
+        for (var x = 0; x < featureNames.length; x++) {
+            featureNames[x].offset(offset);
+        }
+    }
+};
+
+/** Writes the feature names of the given array into a properties object **/
+FeatureName.featureNamesToProperties = function (featureNames, properties) {
+    properties = properties || {};
+    if (featureNames && featureNames.length) {
+        for (var x = 0; x < featureNames.length; x++) {
+            var name = featureNames[x];
+            properties[name.getKey()] = name.getValue();
+        }
+    }
+    return properties;
+};
+
+/** Returns all feature names of the array where the coordinate index is between (incl., excl.) the given interval **/
+FeatureName.featureNamesByOffset = function (featureNames, fromIndex, toIndex) {
+    var result = [];
+    if (featureNames && featureNames.length) {
+        for (var x = 0; x < featureNames.length; x++) {
+            var name = featureNames[x];
+            if (name.isFeatureCoordName() && name.coordIndex >= fromIndex &&  name.coordIndex < toIndex) {
+                result.push(name);
+            }
+        }
+    }
+    return result;
+};
