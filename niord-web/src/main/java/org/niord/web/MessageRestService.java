@@ -40,6 +40,7 @@ import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.geojson.FeatureCollectionVo;
+import org.niord.model.geojson.GeoJsonVo;
 import org.niord.model.message.AttachmentVo;
 import org.niord.model.message.MainType;
 import org.niord.model.message.MessageVo;
@@ -764,7 +765,8 @@ public class MessageRestService  {
 
 
     /**
-     * Converts a plain-text geometry representation into a GeoJSON representation
+     * Converts a plain-text geometry representation into a GeoJSON representation.
+     * Returns null if the parsing fails.
      */
     @POST
     @Path("/parse-geometry")
@@ -782,6 +784,33 @@ public class MessageRestService  {
     }
 
 
+    /**
+     * Converts a GeoJSON geometry to a plain-text representation
+     * Returns null if the formatting fails.
+     */
+    @POST
+    @Path("/format-geometry")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("plain/text;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public String formatGeometry(
+            @QueryParam("lang") @DefaultValue("en") String language,
+            GeoJsonVo geoJson) throws Exception {
+        try {
+            // Sort languages so that the language parameter comes first (decides decimal separator being used)
+            List<String> languages = new ArrayList<>();
+            languages.add(language);
+            Arrays.stream(app.getLanguages())
+                    .filter(lang -> !lang.equalsIgnoreCase(language))
+                    .forEach(languages::add);
+
+            PlainTextConverter converter = PlainTextConverter.newInstance(languages.toArray(new String[languages.size()]));
+            return converter.toPlainText(geoJson);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     /***************************
      * Helper classes

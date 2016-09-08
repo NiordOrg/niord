@@ -1,0 +1,36 @@
+<div>
+
+    <div class="modal-header" style="text-align: center; padding: 5px 15px">
+        <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
+        <h4>Edit Geometry</h4>
+    </div>
+
+    <div class="modal-body print" style="padding-bottom: 0">
+
+        <div class="row" ng-if="data.message">
+            <div class="col-sm-12" style="color: darkred; text-align: center; padding: 10px">
+                <span class="glyphicon glyphicon-warning-sign"></span>
+                {{data.message}}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12">
+                <textarea ng-model="data.geometryText" class="form-control input-sm geometry-text-editor"
+                          ng-class="{ 'geometry-text-invalid': !geometryTextValid() }"
+                          ng-change="geometryTextChanged()"
+                          ng-model-options="{ updateOn: 'default blur', debounce: { default: 1000, blur: 0 } }">
+                </textarea>
+            </div>
+        </div>
+
+        <div class="row" style="margin-top: 24px;">
+            <div class="form-group col-xs-12" style="text-align: right">
+                <button class="btn btn-default btn-sm" ng-click="$dismiss('aborted')">Cancel</button>
+                &nbsp;
+                <button id="printBtn" class="btn btn-primary btn-sm" ng-click="import()"
+                        ng-disabled="features.length == 0">Save Geometry</button>
+            </div>
+        </div>
+    </div>
+</div>

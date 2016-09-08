@@ -464,7 +464,10 @@ angular.module('niord.editor')
                     $uibModal.open({
                             controller: "GeometryImportDialogCtrl",
                             templateUrl: "/app/editor/geometry-import-dialog.html",
-                            size: 'md'
+                            size: 'md',
+                            resolve: {
+                                features: function () { return undefined;  }
+                            }
                     }).result.then(function (features) {
                         angular.forEach(features, function (feature) {
                             MapService.checkCreateId(feature);
@@ -474,6 +477,31 @@ angular.module('niord.editor')
                             scope.featureContexts.push(featureCtx);
                             broadcast('feature-added', feature.getId());
                         });
+                    });
+                };
+
+
+                /** Edits geometries as plain-text **/
+                scope.editAsPlainText = function () {
+
+                    // Get the user to pick an area with a geometry
+                    $uibModal.open({
+                        controller: "GeometryImportDialogCtrl",
+                        templateUrl: "/app/editor/plain-text-editor-dialog.html",
+                        size: 'lg',
+                        resolve: {
+                            features: function () { return scope.features.slice();  }
+                        }
+                    }).result.then(function (features) {
+                        scope.clearAll();
+                        angular.forEach(features, function (feature) {
+                            MapService.checkCreateId(feature);
+                            scope.features.push(feature);
+                            var featureCtx = createFeatureCtxFromFeature(feature);
+                            initFeatureCtxShowFlags(featureCtx);
+                            scope.featureContexts.push(featureCtx);
+                        });
+                        broadcast('refresh-all');
                     });
                 };
 
@@ -1034,16 +1062,37 @@ angular.module('niord.editor')
      * Controller that handles importing geometries from various
      * sources.
      *******************************************************************/
-    .controller('GeometryImportDialogCtrl', ['$scope', '$rootScope', '$http', 'MapService',
-        function ($scope, $rootScope, $http, MapService) {
+    .controller('GeometryImportDialogCtrl', ['$scope', '$rootScope', '$http', 'MapService', 'features',
+        function ($scope, $rootScope, $http, MapService, features) {
             'use strict';
 
-            $scope.features = [];
+            $scope.features = features || [];
             $scope.data = {
+                message: undefined,
                 area: undefined,
                 geometryText: ''
             };
             $scope.domain = $rootScope.domain !== undefined;
+
+            // Initialize the editor from the features
+            if (features && features.length > 0) {
+                var featureCollection = {
+                    type: 'FeatureCollection',
+                    features: []
+                };
+                angular.forEach(features, function (olFeature) {
+                    featureCollection.features.push(MapService.olToGjFeature(olFeature));
+                });
+
+                MapService.formatAsPlainText(featureCollection)
+                    .success(function (geometryText) {
+                        $scope.data.geometryText = geometryText || '';
+                        if (!geometryText) {
+                            $scope.features.length = 0;
+                            $scope.data.message = 'Could not parse original geometry as plain text!';
+                        }
+                    });
+            }
 
 
             /** Called when an area has been selected **/
@@ -1080,7 +1129,7 @@ angular.module('niord.editor')
             $scope.geometryTextChanged = function () {
                 $scope.features.length = 0;
 
-                $http.post('/rest/messages/parse-geometry', { geometryText: $scope.data.geometryText })
+                MapService.parsePlainText($scope.data.geometryText)
                     .success(function (fc) {
                         if (fc && fc.features && fc.features.length > 0) {
                             angular.forEach(fc.features, function (feature) {

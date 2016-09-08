@@ -22,8 +22,8 @@ angular.module('niord.map')
     /**
      * The language service is used for changing language, etc.
      */
-    .service('MapService', ['$rootScope',
-        function ($rootScope) {
+    .service('MapService', ['$rootScope', '$http',
+        function ($rootScope, $http) {
             'use strict';
 
             var that = this;
@@ -509,6 +509,21 @@ angular.module('niord.map')
                     feature.setId(this.uuid());
                 }
                 return feature;
+            };
+
+
+            /** ********************************* **/
+            /** GeoJSON to plain-text conversion  **/
+            /** ********************************* **/
+
+            /** Parses plain text as GeoJSON **/
+            this.parsePlainText = function (geometryText) {
+                return $http.post('/rest/messages/parse-geometry', { geometryText: geometryText });
+            };
+
+            /** Formats (simplified) GeoJSON as plain text **/
+            this.formatAsPlainText = function (geometry) {
+                return $http.post('/rest/messages/format-geometry?lang=' + $rootScope.language, geometry);
             }
 
         }]);
