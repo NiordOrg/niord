@@ -466,6 +466,8 @@ div.mce-fullscreen {
     font-size: 12px;
     font-family: "Courier New", serif;
     color: black;
+    overflow-wrap: normal;
+    overflow-x: scroll;
 }
 
 .geometry-text-invalid {
