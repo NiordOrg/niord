@@ -17,8 +17,11 @@
 package org.niord.core.geojson;
 
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.util.PositionFormatter;
+import org.niord.core.util.PositionFormatter.Format;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.geojson.FeatureVo;
+import org.niord.model.geojson.GeoJsonVo;
 import org.niord.model.geojson.LineStringVo;
 import org.niord.model.geojson.MultiPointVo;
 import org.niord.model.geojson.PointVo;
@@ -27,20 +30,26 @@ import org.niord.model.geojson.PolygonVo;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
  * Converts a human-writable plain-text geometry specification into
- * a proper GeoJSON representation.
+ * a proper GeoJSON representation, and vice versa.
  * <p>
- * The supported plain text specification is very simple and constitutes lists of point, along with
- * localized names.<br>
+ * When formatting GeoJSON, only the following simple types of geometries are supported:
+ * Point, MultiPoint, LineString, Polygon.<br>
+ * For polygons, only an exterior ring is supported, and the last coordinate (same as the first) will be omitted.<br>
+ * Feature and FeatureCollection are also supported if their geometries are as described above.<br>
+ * The actual plain-text format is exemplified below.
+ * <p>
+ * When parsing GeoJSON, the supported plain text specification is very simple and constitutes lists of point,
+ * along with localized names.<br>
  * Example:
  * <pre>
  *   1) 54° 45,7' N 10° 29,1' E, Ærø S.
@@ -77,7 +86,7 @@ public class PlainTextConverter {
             Pattern.CASE_INSENSITIVE
     );
 
-    private final Set<String> languages = new HashSet<>();
+    private final List<String> languages = new ArrayList<>();
 
     /**
      * Constructor
@@ -91,10 +100,138 @@ public class PlainTextConverter {
         }
     }
 
+
     /** Factory method - returns a new plain text converter that supports the given languages **/
     public static PlainTextConverter newInstance(String[] languages) {
         return new PlainTextConverter(languages);
     }
+
+
+    /***********************************************/
+    /** Formatting GeoJSON as plain-text          **/
+    /***********************************************/
+
+    /**
+     * Converts the GeoJSON to plain text.
+     * <p>
+     * Only the following simple types of geometries are supported:
+     * Point, MultiPoint, LineString, Polygon.<br>
+     *
+     * For polygons, only an exterior ring is supported, and the last coordinate (same as the first) will be omitted.<br>
+     * Feature and FeatureCollection are also supported if their geometries are as described above.<br>
+     * The actual plain-text format is exemplified below.
+     *
+     * @param g the GeoJSON to format as plain text
+     * @return the formatted GeoJSON
+     */
+    public String toPlainText(GeoJsonVo g) throws Exception {
+        if (g == null) {
+            return null;
+        }
+        StringBuilder result = new StringBuilder();
+        formatGeoJson(result, g, null);
+        return result.toString();
+    }
+
+
+    /**
+     * Formats the GeoJSON as plain text
+     * @param result the result
+     * @param g the GeoJSON to format
+     */
+    @SuppressWarnings("all")
+    private void formatGeoJson(StringBuilder result, GeoJsonVo g, Map<String, Object> properties) throws Exception {
+        if (g == null) {
+            return;
+        } else if (g instanceof PointVo) {
+            PointVo point = (PointVo)g;
+            if (point.getCoordinates() == null) {
+                throw new Exception("Point has no associated coordinates");
+            }
+            result.append("Point");
+            formatFeatureName(result, "name:", properties);
+            formatCoordinates(result, g, properties);
+
+        } else if (g instanceof MultiPointVo) {
+            MultiPointVo multiPoint = (MultiPointVo)g;
+            if (multiPoint.getCoordinates() == null || multiPoint.getCoordinates().length == 0) {
+                throw new Exception("MultiPoint has no associated coordinates");
+            }
+            result.append("MultiPoint");
+            formatFeatureName(result, "name:", properties);
+            formatCoordinates(result, g, properties);
+
+        } else if (g instanceof LineStringVo) {
+            LineStringVo lineString = (LineStringVo)g;
+            if (lineString.getCoordinates() == null || lineString.getCoordinates().length == 0) {
+                throw new Exception("LineString has no associated coordinates");
+            }
+            result.append("LineString");
+            formatFeatureName(result, "name:", properties);
+            formatCoordinates(result, g, properties);
+
+        } else if (g instanceof PolygonVo) {
+            PolygonVo polygon = (PolygonVo)g;
+            if (polygon.getCoordinates() == null || polygon.getCoordinates().length > 1 ||
+                    polygon.getCoordinates()[0].length == 0) {
+                throw new Exception("Only polygons with an exterior ring and no interior rings supported");
+            }
+            result.append("Polygon");
+            formatFeatureName(result, "name:", properties);
+            formatCoordinates(result, g, properties);
+
+        } else if (g instanceof FeatureVo) {
+            FeatureVo feature = (FeatureVo)g;
+            if (feature.getGeometry() == null) {
+                throw new Exception("Feature has no associated geometry");
+            }
+            formatGeoJson(result, feature.getGeometry(), feature.getProperties());
+
+        } else if (g instanceof FeatureCollectionVo) {
+            FeatureCollectionVo featureCollection = (FeatureCollectionVo)g;
+            if (featureCollection.getFeatures() != null) {
+                for (FeatureVo feature : featureCollection.getFeatures()) {
+                    formatGeoJson(result, feature, null);
+                    // Add a blank line between each feature
+                    result.append(System.lineSeparator());
+                }
+            }
+
+        } else {
+            throw new Exception("Unsupported GeoJSON type " + g.getClass().getSimpleName());
+        }
+    }
+
+
+    /** Formats the coordinates of the geometry **/
+    private void formatCoordinates(StringBuilder result, GeoJsonVo g, Map<String, Object> properties) {
+        Format format = PositionFormatter.LATLON_DEC;
+        Locale locale = new Locale(languages.get(0));
+        AtomicInteger coordIndex = new AtomicInteger(0);
+        g.visitCoordinates(xy -> {
+            result.append(PositionFormatter.format(locale, format, xy[1], xy[0]));
+            formatFeatureName(result, "name:" + coordIndex.getAndIncrement() + ":", properties);
+        });
+    }
+
+
+    /** Formats the localized feature names **/
+    private void formatFeatureName(StringBuilder result, String prefix, Map<String, Object> properties) {
+        if (properties != null) {
+            for (String lang : languages) {
+                Object name = properties.get(prefix + lang);
+                if (name != null) {
+                    result.append(", ").append(lang).append(": ").append(name);
+                }
+            }
+        }
+        result.append(System.lineSeparator());
+    }
+
+
+    /***********************************************/
+    /** Parsing plain-text as GeoJSON             **/
+    /***********************************************/
 
 
     /**
@@ -189,7 +326,7 @@ public class PlainTextConverter {
         switch (type.toLowerCase()) {
             case "point":
                 if (coordinates.size() != 1) {
-                    return null;
+                    throw new Exception("Point must have one coordinate");
                 }
                 PointVo point = new PointVo();
                 point.setCoordinates(coordinates.get(0));
@@ -197,7 +334,7 @@ public class PlainTextConverter {
                 break;
             case "multipoint":
                 if (coordinates.isEmpty()) {
-                    return null;
+                    throw new Exception("MultiPoint must have at least one coordinate");
                 }
                 MultiPointVo multiPoint = new MultiPointVo();
                 multiPoint.setCoordinates(coordinates.toArray(new double[coordinates.size()][]));
@@ -205,7 +342,7 @@ public class PlainTextConverter {
                 break;
             case "linestring":
                 if (coordinates.size() < 2) {
-                    return null;
+                    throw new Exception("LineString must have at least two coordinates");
                 }
                 LineStringVo lineString = new LineStringVo();
                 lineString.setCoordinates(coordinates.toArray(new double[coordinates.size()][]));
@@ -213,7 +350,7 @@ public class PlainTextConverter {
                 break;
             case "polygon":
                 if (coordinates.size() < 3) {
-                    return null;
+                    throw new Exception("Polygon must have at least three coordinates");
                 }
                 // Same first and last coordinate in GeoJSON Polygon linear rings.
                 coordinates.add(coordinates.get(0));
@@ -224,7 +361,7 @@ public class PlainTextConverter {
                 feature.setGeometry(polygon);
                 break;
             default:
-                return null;
+                throw new Exception("Unknown type " + type);
         }
 
         return feature;

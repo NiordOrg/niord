@@ -117,28 +117,40 @@ public class GeoJsonTest {
     @Test
     public void plainTextConverterTest() throws Exception {
 
-        String[] languages = {"da", "en"};
+        String[] languages = {"en", "da"};
         PlainTextConverter converter = PlainTextConverter.newInstance(languages);
 
         String text = "\nPolygon, Goat-Ice\n54° 41,000'N - 010° 35,000'E\n54° 35,566'N - 010° 35,010'E\n54° 38,397'N - 010° 25,125'E";
         FeatureCollectionVo result = converter.fromPlainText(text);
-        System.out.println(result);
+        System.out.println("Parsed: " + result);
         assertNotNull(result);
         assertEquals(1, result.getFeatures().length);
         assertEquals(PolygonVo.class, result.getFeatures()[0].getGeometry().getClass());
         assertEquals("Goat-Ice", result.getFeatures()[0].getProperties().get("name:da"));
         assertEquals("Goat-Ice", result.getFeatures()[0].getProperties().get("name:en"));
 
+        String formattedGeoJson = converter.toPlainText(result);
+        assertNotNull(formattedGeoJson);
+        System.out.println("Formatted:\n" + formattedGeoJson);
+
+
         text = "1) 54° 45,7' N 10° 29,1' E, Ærø S.\n2) 54° 41,2' N 10° 36,9' E, Keldsnor SW.\n3) 54° 38,3' N 10° 40,1' E, Keldsnor S.";
         result = converter.fromPlainText(text);
         assertEquals(MultiPointVo.class, result.getFeatures()[0].getGeometry().getClass());
-        System.out.println(result);
+        System.out.println("Parsed: " + result);
+
+        formattedGeoJson = converter.toPlainText(result);
+        System.out.println("Formatted:\n" + formattedGeoJson);
+
 
         text = "Point, da: Ubåd U-9, en: Submarine U-9.\n54° 45,7' N 10° 29,1' E, da: Ærø S. en: Aeroe S.";
         result = converter.fromPlainText(text);
         assertEquals("Ærø S.", result.getFeatures()[0].getProperties().get("name:0:da"));
         assertEquals("Aeroe S.", result.getFeatures()[0].getProperties().get("name:0:en"));
-        System.out.println(result);
+        System.out.println("Parsed: " + result);
+
+        formattedGeoJson = converter.toPlainText(result);
+        System.out.println("Formatted:\n" + formattedGeoJson);
     }
 
 
