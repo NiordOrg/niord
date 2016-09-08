@@ -15,6 +15,21 @@
         </div>
 
         <div class="row">
+            <div class="col-sm-12" style="padding: 10px 20px">
+                This editor allows you to edit a subset of GeoJSON as plain text.
+                <div ng-if="!data.showExamples" ><a href ng-click="data.showExamples = true">Show Examples</a></div>
+                <div ng-if="data.showExamples" ><a href ng-click="data.showExamples = false">Hide Examples</a></div>
+                <div ng-if="data.showExamples" style="border: 1px solid lightgray; margin: 20px; padding: 5px 10px; font-size: 11px">
+                    Simple point:
+                    <pre style="font-size: 11px">56N 11 30.23E</pre>
+                    Named polygon + line-string with named coordinates:
+                    <pre style="font-size: 11px">Polygon, da: ES D 139 Bornholm Ø., en: ES D 139 Bornholm E.<br>54° 54.967'N 015° 49.961'E<br>54° 54.969'N 015° 15.029'E<br>55° 03.006'N 015° 15.029'E<br>55° 19.930'N 015° 49.942'E<br>54° 54.967'N 015° 49.961'E
+                    <br>LineString<br>1) 54° 53.397'N 009° 53.071'E, da: kyst, en: coast<br>2) 54° 53.982'N 009° 52.170'E, da: kyst, en: coast</pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
             <div class="col-sm-12">
                 <textarea ng-model="data.geometryText" class="form-control input-sm geometry-text-editor" wrap="off"
                           ng-class="{ 'geometry-text-invalid': !geometryTextValid() }"
