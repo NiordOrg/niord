@@ -47,7 +47,7 @@ angular.module('niord.messages')
                         case 'VERIFIED':
                             return "#5555CC";
                         case 'DELETED':
-                            return "#BB5555";
+                            return "#333333";
                         case 'EXPIRED':
                         case 'CANCELLED':
                             return "#999999";
