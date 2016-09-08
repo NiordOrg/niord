@@ -175,11 +175,7 @@
                         </table>
                     </div>
 
-                    <div class="feature-position-list" ng-if="showFeaturePositionList(featureCtx, features[$index])">
-                        <ol-position-list feature="features[$index]" edit-type="{{editType}}"></ol-position-list>
-                    </div>
-
-                    <div class="feature-geometry-tree" ng-if="showFeatureGeometryTree(featureCtx, features[$index])">
+                    <div class="feature-geometry-tree">
                         <ol-editor-tree feature="features[$index]" edit-type="{{editType}}" tabindex="-1"></ol-editor-tree>
                     </div>
                 </div>
