@@ -612,7 +612,8 @@ angular.module('niord.editor')
                     switch (type) {
                         case 'LineString':
                             return scope.selection.length == 1 &&
-                                scope.selection[0].getGeometry().getType() == 'MultiPoint';
+                                (scope.selection[0].getGeometry().getType() == 'MultiPoint' ||
+                                scope.selection[0].getGeometry().getType() == 'Polygon');
                             break;
                         case 'Polygon':
                             return scope.selection.length == 1 &&
@@ -625,28 +626,32 @@ angular.module('niord.editor')
 
 
                 /** Converts the currently selected geometries to the given type **/
-                scope.convert = function (type) {
-                    if (!scope.canConvert(type)) {
+                scope.convert = function (toType) {
+                    if (!scope.canConvert(toType)) {
                         return;
                     }
 
                     var feature = scope.selection[0];
+                    var fromType = feature.getGeometry().getType();
                     var featureNames = FeatureName.readFeatureNames(feature);
 
                     // Get MultiPoint or LineString coordinates (same cardinality)
                     var coordinates = feature.getGeometry().getCoordinates();
 
                     // Convert coordinates if target type is Polygon
-                    if (type == 'Polygon') {
+                    if (toType == 'Polygon') {
                         coordinates.push(coordinates[0]);
                         coordinates = [ coordinates ];
+                    } else if (fromType == 'Polygon') {
+                        coordinates = coordinates[0];
+                        coordinates.pop();
                     }
 
                     // Delete the original feature
                     scope.deleteFeature(feature.getId());
 
                     // Construct the resulting geometry
-                    var geom = new ol.geom[type]();
+                    var geom = new ol.geom[toType]();
                     geom.setCoordinates(coordinates);
 
                     // Create a feature for the converted geometry
