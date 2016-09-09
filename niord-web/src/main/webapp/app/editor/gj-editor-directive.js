@@ -608,18 +608,15 @@ angular.module('niord.editor')
 
 
                 /** Checks if the current geometry selection can be converted to the given type **/
-                scope.canConvert = function (type) {
-                    switch (type) {
-                        case 'LineString':
-                            return scope.selection.length == 1 &&
-                                (scope.selection[0].getGeometry().getType() == 'MultiPoint' ||
-                                scope.selection[0].getGeometry().getType() == 'Polygon');
-                            break;
-                        case 'Polygon':
-                            return scope.selection.length == 1 &&
-                                (scope.selection[0].getGeometry().getType() == 'MultiPoint' ||
-                                scope.selection[0].getGeometry().getType() == 'LineString');
-                            break;
+                scope.canConvert = function (toType) {
+                    if (scope.selection.length != 1) {
+                        return false;
+                    }
+                    var fromType = scope.selection[0].getGeometry().getType();
+                    switch (toType) {
+                        case 'MultiPoint': return fromType == 'LineString' || fromType == 'Polygon';
+                        case 'LineString': return fromType == 'MultiPoint' || fromType == 'Polygon';
+                        case 'Polygon':    return fromType == 'MultiPoint' || fromType == 'LineString';
                     }
                     return false;
                 };
