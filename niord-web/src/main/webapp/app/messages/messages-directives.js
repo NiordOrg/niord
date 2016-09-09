@@ -184,7 +184,7 @@ angular.module('niord.messages')
                     if (scope.firstLine) {
                         var index = time.indexOf("<br/>");
                         if (index != -1) {
-                            time = time.substr(0, index) + ' &hellip;';
+                            time = time.substr(0, index) + ' <span style="color:red">&hellip;</span>';
                         }
                     }
                     element.html(time);
