@@ -164,7 +164,8 @@ angular.module('niord.messages')
         return {
             restrict: 'E',
             scope: {
-                msg: "="
+                msg: "=",
+                firstLine: "="
             },
             link: function(scope, element) {
 
@@ -178,6 +179,12 @@ angular.module('niord.messages')
                     } else if (scope.msg.dateIntervals && scope.msg.dateIntervals.length > 0) {
                         for (var x = 0; x < scope.msg.dateIntervals.length; x++) {
                             time += DateIntervalService.translateDateInterval(lang, scope.msg.dateIntervals[x]) + "<br/>";
+                        }
+                    }
+                    if (scope.firstLine) {
+                        var index = time.indexOf("<br/>");
+                        if (index != -1) {
+                            time = time.substr(0, index) + ' &hellip;';
                         }
                     }
                     element.html(time);
