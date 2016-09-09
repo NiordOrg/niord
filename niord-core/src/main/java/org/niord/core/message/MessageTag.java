@@ -144,7 +144,7 @@ public class MessageTag extends BaseEntity<Integer> implements Comparable<Messag
     @Override
     @SuppressWarnings("all")
     public int compareTo(MessageTag t) {
-        return t == null ? -1 : tagId.toLowerCase().compareTo(t.getTagId().toLowerCase());
+        return t == null ? -1 : name.toLowerCase().compareTo(t.getName().toLowerCase());
     }
 
 
