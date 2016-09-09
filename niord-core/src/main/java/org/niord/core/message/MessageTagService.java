@@ -147,19 +147,13 @@ public class MessageTagService extends BaseService {
             return Collections.emptyList();
         }
 
-        // Only search tags that the user has access to
-        Set<String> idSet = findUserTags().stream()
-                .map(MessageTag::getTagId)
-                .collect(Collectors.toSet());
-        if (idSet.isEmpty()) {
-            return Collections.emptyList();
-        }
-
+        User user = userService.currentUser();
+        Domain domain = domainService.currentDomain();
         return em.createNamedQuery("MessageTag.findTagsByMessageUid", MessageTag.class)
-                .setParameter("tagIds", idSet)
                 .setParameter("messageUid", messageUid)
                 .getResultList()
                 .stream()
+                .filter(t -> validateAccess(t, user, domain))
                 .sorted()
                 .collect(Collectors.toList());
     }

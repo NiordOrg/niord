@@ -64,7 +64,7 @@ import java.util.UUID;
         @NamedQuery(name="MessageTag.findTagsByTagIds",
                 query="SELECT t FROM MessageTag t where t.tagId in (:tagIds)"),
         @NamedQuery(name= "MessageTag.findTagsByMessageUid",
-                query="SELECT t FROM MessageTag t join t.messages m where t.tagId in (:tagIds) and m.uid = :messageUid and m.type <> 'TEMP'"),
+                query="SELECT t FROM MessageTag t join t.messages m where m.uid = :messageUid and m.type <> 'TEMP'"),
         @NamedQuery(name= "MessageTag.findExpiredMessageTags",
                 query="SELECT t FROM MessageTag t where t.expiryDate is not null and t.expiryDate < current_timestamp"),
 })
