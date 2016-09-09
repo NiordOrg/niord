@@ -42,7 +42,6 @@ angular.module('niord.messages')
                     switch (status) {
                         case 'PUBLISHED':
                             return "#559955";
-                        case 'IMPORTED':
                         case 'DRAFT':
                         case 'VERIFIED':
                             return "#5555CC";

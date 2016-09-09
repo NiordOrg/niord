@@ -40,7 +40,7 @@ import java.util.List;
 /**
  * Processes imported messages.
  * <p>
- * Messages are always imported with the status "IMPORTED" and may never be used to update existing messages.
+ * Messages are always imported with the status "DRAFT" and may never be used to update existing messages.
  */
 @Named
 public class BatchMessageImportProcessor extends AbstractItemHandler {
@@ -91,7 +91,7 @@ public class BatchMessageImportProcessor extends AbstractItemHandler {
     protected Message processMessage(Message message) throws Exception {
         try {
             if (message.getStatus() == null) {
-                message.setStatus(Status.IMPORTED);
+                message.setStatus(Status.DRAFT);
             }
 
             // Check that a message series is defined

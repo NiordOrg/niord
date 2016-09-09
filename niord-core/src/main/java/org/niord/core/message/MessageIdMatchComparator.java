@@ -59,10 +59,8 @@ public class MessageIdMatchComparator implements Comparator<Message> {
             case DRAFT:
             case VERIFIED:
                 return 2;
-            case IMPORTED:
-                return 1;
             case DELETED:
-                return 0;
+                return 1;
         }
         return 0;
     }

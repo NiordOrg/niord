@@ -42,7 +42,9 @@ import java.util.stream.Collectors;
 /**
  * Processes imported messages.
  * <p>
- * Messages are always imported with the status "IMPORTED" and may never be used to update existing messages.
+ * Unless the "preserveStatus" batch property is set, messages are always imported with the
+ * status "DRAFT".
+ * Also, messages may never be used to update existing messages.
  */
 @Named
 public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
@@ -144,8 +146,8 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
             // Status handling
             Boolean preserveStatus = (Boolean)job.getProperties().get("preserveStatus");
             if (!preserveStatus) {
-                // Force "IMPORTED" status
-                message.setStatus(Status.IMPORTED);
+                // Force "DRAFT" status
+                message.setStatus(Status.DRAFT);
 
                 // Reset various fields and flags
                 message.setMrn(null);

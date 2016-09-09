@@ -498,7 +498,6 @@ angular.module('niord.messages')
             $scope.validStatuses = {
                 'DRAFT':     [ 'VERIFIED', 'DELETED' ],
                 'VERIFIED':  [ 'PUBLISHED', 'DRAFT', 'DELETED' ],
-                'IMPORTED':  [ 'DRAFT', 'DELETED' ],
                 'PUBLISHED': [ 'CANCELLED' ]
             };
 

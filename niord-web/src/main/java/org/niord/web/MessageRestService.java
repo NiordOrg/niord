@@ -149,8 +149,7 @@ public class MessageRestService  {
         if (update) {
             // We know that the use is already an "editor".
             boolean draft = message.getStatus() == DRAFT
-                    || message.getStatus() == VERIFIED
-                    || message.getStatus() == IMPORTED;
+                    || message.getStatus() == VERIFIED;
             if (!draft && !ctx.isCallerInRole("sysadmin")) {
                 throw new WebApplicationException(403);
             }

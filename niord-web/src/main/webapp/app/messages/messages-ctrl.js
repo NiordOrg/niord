@@ -78,7 +78,6 @@ angular.module('niord.messages')
                     enabled: false,
                     PUBLISHED: false,
                     DRAFT: false,
-                    IMPORTED: false,
                     VERIFIED: false,
                     CANCELLED: false,
                     EXPIRED: false,
@@ -175,7 +174,6 @@ angular.module('niord.messages')
                 var status = $scope.state.status;
                 status.PUBLISHED = selected;
                 status.DRAFT = selected;
-                status.IMPORTED = selected;
                 status.VERIFIED = selected;
                 status.CANCELLED = selected;
                 status.EXPIRED = selected;
@@ -320,9 +318,6 @@ angular.module('niord.messages')
                     }
                     if (s.status.DRAFT) {
                         params += '&status=DRAFT';
-                    }
-                    if (s.status.IMPORTED) {
-                        params += '&status=IMPORTED';
                     }
                     if (s.status.VERIFIED) {
                         params += '&status=VERIFIED';

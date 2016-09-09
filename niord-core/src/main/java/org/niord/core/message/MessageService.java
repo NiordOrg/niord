@@ -561,8 +561,6 @@ public class MessageService extends BaseService {
                 return new HashSet<>(asList(Status.VERIFIED, Status.DELETED));
             case VERIFIED:
                 return new HashSet<>(asList(Status.PUBLISHED, Status.DRAFT, Status.DELETED));
-            case IMPORTED:
-                return new HashSet<>(asList(Status.DRAFT, Status.DELETED));
             case PUBLISHED:
                 return new HashSet<>(asList(Status.EXPIRED, Status.CANCELLED));
             default:
