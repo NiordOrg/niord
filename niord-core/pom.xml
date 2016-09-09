@@ -103,6 +103,12 @@
             <artifactId>jtidy</artifactId>
             <version>r938</version>
         </dependency>
+        <!-- Used for encryption of PDF files: -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.55</version>
+        </dependency>
 
         <!-- Hibernate Search -->
         <dependency>

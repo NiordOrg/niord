@@ -81,8 +81,14 @@ public class Setting implements IJsonSerializable {
 
     /** Constructor */
     public Setting(String key, Object value, String description, boolean cached, boolean web, boolean editable) {
+        this(key, value, null, description, cached, web, editable);
+    }
+
+    /** Designated Constructor */
+    public Setting(String key, Object value, Type type, String description, boolean cached, boolean web, boolean editable) {
         this.key = key;
         this.value = value;
+        this.type = type;
         this.description = StringUtils.defaultString(description, null);
         this.cached = cached;
         this.web = web;
@@ -92,15 +98,8 @@ public class Setting implements IJsonSerializable {
 
     /** Constructor */
     public Setting(Setting template) {
-        this.key = template.getKey();
-        this.value = template.getValue();
-        this.cached = template.isCached();
-        this.type = template.getType();
-        this.description = template.getDescription();
-        this.web = template.isWeb();
-        this.editable = template.isEditable();
-        this.cached = template.isCached();
-        updateType();
+        this(template.getKey(), template.getValue(), template.getType(), template.getDescription(),
+                template.isCached(), template.isWeb(), template.isEditable());
     }
 
 

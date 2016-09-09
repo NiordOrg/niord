@@ -27,11 +27,13 @@ import org.niord.core.dictionary.DictionaryService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.service.BaseService;
+import org.niord.core.settings.annotation.Setting;
 import org.niord.core.util.TextUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.xhtmlrenderer.pdf.ITextRenderer;
+import org.xhtmlrenderer.pdf.PDFEncryption;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Stateless;
@@ -48,6 +50,9 @@ import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
 
+import static org.niord.core.settings.Setting.Type.Boolean;
+import static org.niord.core.settings.Setting.Type.Password;
+
 /**
  * Main interface for accessing and processing Freemarker templates
  */
@@ -61,7 +66,17 @@ public class FmService extends BaseService {
     public enum ProcessFormat { TEXT, PDF }
 
     @Inject
-    private Logger log;
+    @Setting(value = "pdfEncryptionEnabled", description = "Whether PDF reports should be encrypted or not",
+            defaultValue = "false", type = Boolean)
+    Boolean pdfEncryptionEnabled;
+
+    @Inject
+    @Setting(value = "pdfEncryptionPassword", description = "The PDF reports encryption password",
+            defaultValue = "Samuel Pepys started the 1666 fire", type = Password)
+    String pdfEncryptionPassword;
+
+    @Inject
+    Logger log;
 
     @Inject
     NiordApp app;
@@ -161,6 +176,19 @@ public class FmService extends BaseService {
         }
 
         return reports;
+    }
+
+
+    /**
+     * If enabled, constructs a PDF encryption to use whilst generating PDF reports.
+     * Otherwise, returns null.
+     * @return a PDF encryption
+     */
+    private PDFEncryption getPDFEncryption() {
+        if (pdfEncryptionEnabled != null && pdfEncryptionEnabled) {
+            return new PDFEncryption(null, pdfEncryptionPassword.getBytes());
+        }
+        return null;
     }
 
 
@@ -307,6 +335,13 @@ public class FmService extends BaseService {
 
                     // Generate PDF from the HTML
                     ITextRenderer renderer = new ITextRenderer();
+
+                    // Check if we need to encrypt the PDF
+                    PDFEncryption encryption = fmService.getPDFEncryption();
+                    if (encryption != null) {
+                        renderer.setPDFEncryption(encryption);
+                    }
+
                     renderer.setDocument(xhtmlContent, fmService.getBaseUri());
                     renderer.layout();
                     renderer.createPDF(out);

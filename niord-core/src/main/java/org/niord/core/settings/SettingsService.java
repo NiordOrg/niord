@@ -90,12 +90,11 @@ public class SettingsService extends BaseService {
                     .forEach(settingMap::remove);
 
             // Persist all settings not yet persisted to the database
-            settingMap.values().stream()
-                    .forEach(s -> {
-                        s.updateType();
-                        em.persist(s);
-                        log.info(String.format("Loaded setting %s from niord.json", s.getKey()));
-                    });
+            settingMap.values().forEach(s -> {
+                s.updateType();
+                em.persist(s);
+                log.info(String.format("Loaded setting %s from niord.json", s.getKey()));
+            });
 
         } catch (Exception e) {
             // Stop the application starting up
@@ -650,7 +649,7 @@ public class SettingsService extends BaseService {
                 }
                 break;
         }
-        return new Setting(key, value, ann.description(), ann.cached(), ann.web(), ann.editable());
+        return new Setting(key, value, ann.type(), ann.description(), ann.cached(), ann.web(), ann.editable());
     }
 
 }
