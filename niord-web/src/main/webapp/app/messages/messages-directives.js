@@ -175,16 +175,20 @@ angular.module('niord.messages')
                     var desc = scope.msg && scope.msg.descs ? scope.msg.descs[0] : null;
                     // First check for a textual time description
                     if (desc && desc.time) {
-                        time = desc.time.replace(/\n/g, "<br/>");
+                        time = desc.time.replace(/\n/g, "<br>");
                     } else if (scope.msg.dateIntervals && scope.msg.dateIntervals.length > 0) {
                         for (var x = 0; x < scope.msg.dateIntervals.length; x++) {
-                            time += DateIntervalService.translateDateInterval(lang, scope.msg.dateIntervals[x]) + "<br/>";
+                            time += DateIntervalService.translateDateInterval(lang, scope.msg.dateIntervals[x]) + "<br>";
                         }
                     }
+                    time = time.replace(/<br>$/g, '');
+
                     if (scope.firstLine) {
-                        var index = time.indexOf("<br/>");
+                        var index = time.indexOf("<br>");
                         if (index != -1) {
-                            time = time.substr(0, index) + ' <span style="color:red">&hellip;</span>';
+                            time = time.substr(0, index) +
+                                ' <span style="color:red; cursor: pointer" title="' +
+                                time.replace(/<br>/g, '\n') + '">&hellip;</span>';
                         }
                     }
                     element.html(time);
