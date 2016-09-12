@@ -783,7 +783,7 @@ public class MessageService extends BaseService {
             try {
                 ids = messageLuceneIndex.searchIndex(param.getQuery(), param.getLanguage(), Integer.MAX_VALUE);
             } catch (Exception e) {
-                log.warn("Error searching lucene index for query " + param.getQuery() + ": " + e);
+                log.warn("Error searching lucene index for query " + param.getQuery());
                 ids = Collections.emptyList();
             }
             criteriaHelper.in(msgRoot.get("id"), ids);
