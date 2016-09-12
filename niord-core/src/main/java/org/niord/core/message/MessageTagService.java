@@ -246,9 +246,6 @@ public class MessageTagService extends BaseService {
         //tag.setUser(userService.currentUser());
         //tag.setDomain(domainService.currentDomain());
 
-        // Replace the messages with the persisted messages
-        original.setMessages(persistedList(Message.class, tag.getMessages()));
-
         log.info("Updating message tag " + original.getTagId());
         return saveEntity(original);
     }
