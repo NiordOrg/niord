@@ -248,7 +248,10 @@ public class MessageLuceneIndex extends BaseService {
             // References
             message.getReferences().forEach(ref -> {
                 addPhraseSearchField(doc, searchField, ref.getMessageId());
-                ref.getDescs().forEach(desc -> addPhraseSearchField(doc, searchField, desc.getDescription()));
+                ReferenceDesc desc = ref.getDesc(language);
+                if (desc != null) {
+                    addPhraseSearchField(doc, searchField, desc.getDescription());
+                }
             });
 
             // Areas
@@ -281,22 +284,30 @@ public class MessageLuceneIndex extends BaseService {
             addPhraseSearchField(doc, searchField, message.getHorizontalDatum());
 
             // Add language specific fields
-            message.getDescs().forEach(desc -> {
-                addPhraseSearchField(doc, searchField, desc.getTitle());
-                addPhraseSearchField(doc, searchField, desc.getSubject());
-                addPhraseSearchField(doc, searchField, TextUtils.html2txt(desc.getDescription()));
-                addPhraseSearchField(doc, searchField, desc.getNote());
-                addPhraseSearchField(doc, searchField, desc.getOtherCategories());
-                addPhraseSearchField(doc, searchField, desc.getVicinity());
-                addPhraseSearchField(doc, searchField, desc.getPublication());
-                addPhraseSearchField(doc, searchField, desc.getSource());
-            });
+            MessageDesc msgDesc = message.getDesc(language);
+            if (msgDesc != null) {
+                addPhraseSearchField(doc, searchField, msgDesc.getTitle());
+                addPhraseSearchField(doc, searchField, msgDesc.getSubject());
+                addPhraseSearchField(doc, searchField, TextUtils.html2txt(msgDesc.getDescription()));
+                addPhraseSearchField(doc, searchField, msgDesc.getNote());
+                addPhraseSearchField(doc, searchField, msgDesc.getOtherCategories());
+                addPhraseSearchField(doc, searchField, msgDesc.getVicinity());
+                addPhraseSearchField(doc, searchField, msgDesc.getPublication());
+                addPhraseSearchField(doc, searchField, msgDesc.getSource());
+                addPhraseSearchField(doc, searchField, msgDesc.getProhibition());
+                addPhraseSearchField(doc, searchField, msgDesc.getSignals());
+            }
 
             message.getAtonUids()
                     .forEach(a -> addPhraseSearchField(doc, searchField, a));
 
             // Attachments
-            message.getAttachments().forEach(att -> att.getDescs().forEach(desc -> addPhraseSearchField(doc, searchField, desc.getCaption())));
+            message.getAttachments().forEach(att -> {
+                AttachmentDesc desc = att.getDesc(language);
+                if (desc != null) {
+                    addPhraseSearchField(doc, searchField, desc.getCaption());
+                }
+            });
 
 
             // TODO
