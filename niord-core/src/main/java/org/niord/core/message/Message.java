@@ -307,7 +307,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         message.setMainType(mainType);
         message.setType(type);
 
-        if (compFilter.includeField(DataFilter.DETAILS)) {
+        if (compFilter.includeDetails()) {
             message.setRepoPath(repoPath);
             message.setCreated(getCreated());
             message.setUpdated(getUpdated());

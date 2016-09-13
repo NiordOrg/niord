@@ -95,7 +95,7 @@ public class MessageSeries extends VersionedEntity<Integer> {
         series.setSeriesId(seriesId);
 
         DataFilter compFilter = filter.forComponent(MessageSeries.class);
-        if (compFilter.includeField(DataFilter.DETAILS)) {
+        if (compFilter.includeDetails()) {
             series.setMainType(mainType);
             series.setMrnFormat(mrnFormat);
             series.setShortFormat(shortFormat);

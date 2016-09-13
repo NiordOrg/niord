@@ -45,7 +45,7 @@ public class ChartVo implements IJsonSerializable {
      * @return a string representation of the chart
      */
     @SuppressWarnings("unused")
-    public String getFullChartNumber() {
+    public String toFullChartNumber() {
         return (internationalNumber == null)
                 ? chartNumber
                 : String.format("%s (INT %d)", chartNumber, internationalNumber);

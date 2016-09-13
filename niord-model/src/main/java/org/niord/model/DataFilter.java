@@ -265,4 +265,13 @@ public class DataFilter {
     public boolean includeGeometry() {
         return includeField(GEOMETRY);
     }
+
+    /**
+     * Shortcut method that returns whether to include the details field
+     *
+     * @return whether to include the details field
+     */
+    public boolean includeDetails() {
+        return includeField(DETAILS);
+    }
 }

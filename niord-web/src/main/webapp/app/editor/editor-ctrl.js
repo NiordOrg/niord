@@ -459,11 +459,24 @@ angular.module('niord.editor')
                                 return {
                                     chartNumber: chart.chartNumber,
                                     internationalNumber: chart.internationalNumber,
-                                    active: chart.active
+                                    active: chart.active,
+                                    scale: chart.scale
                                 }
                             });
                             $scope.setDirty();
                         });
+                }
+            };
+
+
+            /** Sorts the current selection of charts **/
+            $scope.sortCharts = function () {
+                if ($scope.message.charts) {
+                    $scope.message.charts.sort(function (c1, c2) {
+                        var scale1 = c1.scale || 10000000;
+                        var scale2 = c2.scale || 10000000;
+                        return scale1 - scale2;
+                    });
                 }
             };
 

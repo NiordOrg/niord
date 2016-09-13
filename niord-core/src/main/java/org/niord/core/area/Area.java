@@ -171,7 +171,7 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
         area.setMrn(mrn);
         area.setActive(active);
 
-        if (compFilter.includeField(DataFilter.DETAILS)) {
+        if (compFilter.includeDetails()) {
             area.setType(type);
             area.setSiblingSortOrder(siblingSortOrder);
             area.setMessageSorting(messageSorting);

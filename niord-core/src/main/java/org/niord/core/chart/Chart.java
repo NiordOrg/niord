@@ -136,14 +136,14 @@ public class Chart extends VersionedEntity<Integer> {
         chart.setChartNumber(chartNumber);
         chart.setInternationalNumber(internationalNumber);
         chart.setActive(active);
+        chart.setScale(scale);
 
         DataFilter compFilter = filter.forComponent(Chart.class);
         if (compFilter.includeGeometry()) {
             chart.setGeometry(JtsConverter.fromJts(geometry));
         }
-        if (compFilter.includeField(DataFilter.DETAILS)) {
+        if (compFilter.includeDetails()) {
             chart.setHorizontalDatum(horizontalDatum);
-            chart.setScale(scale);
             chart.setName(name);
         }
         return chart;
