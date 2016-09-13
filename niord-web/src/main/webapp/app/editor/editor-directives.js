@@ -57,9 +57,13 @@ angular.module('niord.editor')
                     if (!focused || evt.isDefaultPrevented()) {
                         return evt;
                     }
-                    if (evt.which == 13 /* enter */ || evt.which == 39 /* right arrow */) {
+                    if (evt.which == 39 /* right arrow */
+                        || (!scope.editModeOn() && evt.which == 32 /* space */)
+                        || (!scope.editModeOn() && evt.which == 13 /* enter */)) {
                         scope.updateEditField(evt, true);
-                    } else if (evt.which == 37 /* left arrow */) {
+                    } else if (evt.which == 37 /* left arrow */
+                        || (scope.editModeOn() && evt.which == 32 /* space */)
+                        || (scope.editModeOn() && evt.which == 13 /* enter */)) {
                         scope.updateEditField(evt, false);
                     } else if (evt.which == 38 /* up arrow */) {
                         elm.prev('.field-editor').find('.editor-field-label').focus();
