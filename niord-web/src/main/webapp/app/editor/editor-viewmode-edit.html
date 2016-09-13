@@ -27,7 +27,7 @@
     </div>
 
 
-    <form ng-if="message && message.mainType && editable()" method="post" name="editForm" id="editForm">
+    <form ng-if="message && message.mainType && editable()" method="post" name="editForm" id="editForm" ng-init="focusEditor()">
         <div class="editor-fields" style="margin-bottom: 40px;">
 
             <!-- ********************* -->
