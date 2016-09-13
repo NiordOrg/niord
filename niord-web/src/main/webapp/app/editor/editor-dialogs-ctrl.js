@@ -55,40 +55,61 @@ angular.module('niord.editor')
     /*******************************************************************
      * Controller that handles the message Thumbnail dialog
      *******************************************************************/
-    .controller('MessageComparisonDialogCtrl', ['$scope', '$timeout', 'growl', 'MessageService', 'message',
-        function ($scope, $timeout, growl, MessageService, message) {
+    .controller('MessageComparisonDialogCtrl', ['$scope', '$timeout', 'growl', 'MessageService', 'messageId1', 'messageId2',
+        function ($scope, $timeout, growl, MessageService, messageId1, messageId2) {
             'use strict';
 
-            $scope.message = message;
-            $scope.compareMessage = undefined;
+            $scope.message1 = undefined;
+            $scope.message2 = undefined;
+
+            // Contains a visual diff of the two message html representations
             $scope.messageDiff = '';
-            $scope.selectedHistory = [ ];
+
+            // Contains the JSON data of message1 and message2 used for data comparison
+            $scope.messageData = [ ];
 
             /** Initialize the list of messages to compare **/
-            $scope.init = function () {
-                $scope.compareMessage = undefined;
-                $scope.selectedHistory.length = 0;
-                $scope.selectedHistory.push({ snapshot: angular.toJson(message) });
-            };
-            $scope.init();
+            $scope.initData = function () {
+                $scope.messageData.length = 0;
+                if ($scope.message2) {
+                    $scope.messageData.push({ snapshot: angular.toJson($scope.message2) });
+                }
+                if ($scope.message1) {
+                    $scope.messageData.push({ snapshot: angular.toJson($scope.message1) });
+                }
 
-            $scope.reference = {
-                messageId : undefined
+                $scope.messageDiff = '';
+                if ($scope.message1 != undefined && $scope.message2 != undefined) {
+                    $timeout(function () {
+                        var msg1 = $('#message1').html();
+                        var msg2 = $('#message2').html();
+                        $scope.messageDiff = htmldiff(msg1, msg2);
+                        $timeout(function () {
+                            // Disable all links
+                            $('#message-diff').find('*').removeAttr('href ng-click');
+                        });
+                    })
+                }
             };
-            $scope.$watch("reference.messageId", function (messageId) {
+
+            $scope.reference1 = {
+                messageId : messageId1
+            };
+            $scope.reference2 = {
+                messageId : messageId2
+            };
+
+            $scope.$watch("reference1.messageId", function (messageId) {
                 // Reset the message history
-                $scope.init();
+                $scope.message1 = undefined;
+                $scope.initData();
 
                 // Fetch the message to compare with
                 if (messageId && messageId.length > 0) {
-                    MessageService.editableDetails(messageId)
-                        .success(function (compareMessage) {
-                            $scope.compareMessage = compareMessage;
-                            if (compareMessage) {
-                                // Add on position 0
-                                $scope.selectedHistory.unshift({ snapshot: angular.toJson(compareMessage) });
-                                $timeout($scope.compareHtml);
-                            }
+                    MessageService.details(messageId)
+                        .success(function (message) {
+                            $scope.message1 = message;
+                            $scope.initData();
                         })
                         .error(function (data, status) {
                             growl.error("Error loading message (code: " + status + ")", {ttl: 5000})
@@ -96,21 +117,24 @@ angular.module('niord.editor')
                 }
             }, true);
 
+            $scope.$watch("reference2.messageId", function (messageId) {
+                // Reset the message history
+                $scope.message2 = undefined;
+                $scope.initData();
 
-            /** Compares the HTML of the two messages **/
-            $scope.compareHtml = function () {
-                if ($scope.compareMessage == undefined) {
-                    $scope.messageDiff = '';
-                } else {
-                    var msg1 = $('#message1').html();
-                    var msg2 = $('#message2').html();
-                    $scope.messageDiff = htmldiff(msg1, msg2);
-                    $timeout(function () {
-                        // Disable all links
-                        $('#message-diff').find('*').removeAttr('href ng-click');
-                    });
+                // Fetch the message to compare with
+                if (messageId && messageId.length > 0) {
+                    MessageService.details(messageId)
+                        .success(function (message) {
+                            $scope.message2 = message;
+                            $scope.initData();
+                        })
+                        .error(function (data, status) {
+                            growl.error("Error loading message (code: " + status + ")", {ttl: 5000})
+                        })
                 }
-            }
+            }, true);
+
         }])
 
 

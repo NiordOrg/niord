@@ -728,6 +728,19 @@ angular.module('niord.messages')
 
 
             /*****************************/
+            /** Message Comparison      **/
+            /*****************************/
+
+
+            /** Opens a dialog that allows the editor to compare two selected messages **/
+            $scope.compareMessages = function () {
+                if ($scope.selectionList.length == 2) {
+                    MessageService.compareMessagesDialog($scope.selectionList[0].id, $scope.selectionList[1].id);
+                }
+            };
+
+
+            /*****************************/
             /** Export/Import functions **/
             /*****************************/
 

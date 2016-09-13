@@ -385,6 +385,20 @@ angular.module('niord.messages')
             },
 
 
+            /** Compares two messages **/
+            compareMessagesDialog: function (messageId1, messageId2) {
+                return $uibModal.open({
+                    controller: "MessageComparisonDialogCtrl",
+                    templateUrl: "/app/editor/message-comparison-dialog.html",
+                    size: 'lg',
+                    resolve: {
+                        messageId1: function () { return messageId1; },
+                        messageId2: function () { return messageId2; }
+                    }
+                });
+            },
+
+
             /** Opens the message send-mail dialog */
             messageMailDialog: function (total, params) {
                 return $uibModal.open({

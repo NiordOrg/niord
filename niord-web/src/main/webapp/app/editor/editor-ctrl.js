@@ -711,7 +711,7 @@ angular.module('niord.editor')
 
             /** Opens the message print dialog */
             $scope.pdf = function () {
-                if ($scope.message.id) {
+                if ($scope.message.created) {
                     MessageService.printMessage($scope.message.id);
                 }
             };
@@ -719,14 +719,9 @@ angular.module('niord.editor')
 
             /** Opens a dialog that allows the editor to compare this message with another message **/
             $scope.compareMessages = function () {
-                $uibModal.open({
-                    controller: "MessageComparisonDialogCtrl",
-                    templateUrl: "/app/editor/message-comparison-dialog.html",
-                    size: 'lg',
-                    resolve: {
-                        message: function () { return $scope.message; }
-                    }
-                });
+                if ($scope.message.created) {
+                    MessageService.compareMessagesDialog($scope.message.id, undefined);
+                }
             };
 
 

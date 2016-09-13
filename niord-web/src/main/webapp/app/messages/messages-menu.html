@@ -128,6 +128,16 @@
                 </li>
 
 
+                <!-- Compare -->
+                <li ng-if="selection.size() == 2" role="separator" class="divider"></li>
+                <li ng-if="selection.size() == 2">
+                    <a href ng-click="compareMessages()">
+                        <span class="glyphicon glyphicon-transfer"></span>&nbsp;
+                        <span translate>menu.action.message.compare</span>
+                    </a>
+                </li>
+
+
                 <!-- Exporting and Importing -->
                 <li ng-if="isLoggedIn" role="separator" class="divider"></li>
                 <li ng-if="isLoggedIn">
