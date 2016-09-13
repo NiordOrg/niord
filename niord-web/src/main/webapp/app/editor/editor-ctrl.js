@@ -229,7 +229,6 @@ angular.module('niord.editor')
 
             /** Place focus in the editor **/
             $scope.focusEditor = function () {
-                console.log("FOCUS EDITOR");
                 $timeout(function () {
                     $('.editor-field-label').first().focus();
                 });
