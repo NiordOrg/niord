@@ -250,9 +250,10 @@ public class MessageService extends BaseService {
      * @param txt the text to match
      * @param maxGroupCount the max number of matching message IDs to return.
      * @param includeText whether to include the search text as a match
+     * @param includeDeleted whether to include deleted messages in the result
      * @return the search result
      */
-    public List<MessageIdMatch> searchMessageIds(String lang, String txt, int maxGroupCount, boolean includeText) {
+    public List<MessageIdMatch> searchMessageIds(String lang, String txt, int maxGroupCount, boolean includeText, boolean includeDeleted) {
         List<MessageIdMatch> result = new ArrayList<>();
         if (StringUtils.isBlank(txt)) {
             return result;
@@ -270,11 +271,12 @@ public class MessageService extends BaseService {
         }
 
         // Search shortIds
-        // NB: This idiotic way of forming the query is to avoid Intellij wrongly flagging errors :-(
-        String searchShortIdSql = "select distinct m from Message m where lower(m.shortId) like lower(:term) "
-                                + "and m.status != 'DELETED' ";
-        String searchShortIdOrderSql = "order by locate(lower(:sort), lower(m.shortId)) asc ";
-        em.createQuery(searchShortIdSql + searchShortIdOrderSql, Message.class)
+        String searchShortIdSql = "select distinct m from Message m where lower(m.shortId) like lower(:term) ";
+        if (!includeDeleted) {
+            searchShortIdSql += "and m.status != 'DELETED' ";
+        }
+        searchShortIdSql += "order by locate(lower(:sort), lower(m.shortId)) asc, m.updated desc ";
+        em.createQuery(searchShortIdSql, Message.class)
                 .setParameter("term", "%" + txt + "%")
                 .setParameter("sort", txt)
                 .setMaxResults(maxGroupCount)
@@ -282,11 +284,12 @@ public class MessageService extends BaseService {
                 .forEach(m -> result.add(new MessageIdMatch(m.getShortId(), SHORT_ID, m, lang)));
 
         // Search MRNs
-        // NB: This idiotic way of forming the query is to avoid Intellij wrongly flagging errors :-(
-        String searchMrnSql = "select distinct m from Message m where lower(m.mrn) like lower(:term) "
-                            + "and m.status != 'DELETED' ";
-        String searchMrnOrderSql =  "order by locate(lower(:sort), lower(m.mrn)) asc ";
-        em.createQuery(searchMrnSql + searchMrnOrderSql, Message.class)
+        String searchMrnSql = "select distinct m from Message m where lower(m.mrn) like lower(:term) ";
+        if (!includeDeleted) {
+            searchMrnSql += "and m.status != 'DELETED' ";
+        }
+        searchMrnSql +=  "order by locate(lower(:sort), lower(m.mrn)) asc, m.updated desc ";
+        em.createQuery(searchMrnSql, Message.class)
                 .setParameter("term", "%" + txt + "%")
                 .setParameter("sort", txt)
                 .setMaxResults(maxGroupCount)

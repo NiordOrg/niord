@@ -169,6 +169,7 @@ public class MessageSearchRestService {
      * @param txt the text to match
      * @param maxGroupCount the max number of matching message IDs to return.
      * @param includeText whether to include the search text as a match
+     * @param deleted whether to include deleted messages in the result
      * @return the search result
      */
     @GET
@@ -180,9 +181,10 @@ public class MessageSearchRestService {
             @QueryParam("lang") String lang,
             @QueryParam("txt") String txt,
             @QueryParam("maxGroupCount") @DefaultValue("10") int maxGroupCount,
-            @QueryParam("includeText") @DefaultValue("true") boolean includeText) {
+            @QueryParam("includeText") @DefaultValue("true") boolean includeText,
+            @QueryParam("deleted") @DefaultValue("false") boolean deleted) {
 
-        return messageService.searchMessageIds(lang, txt, maxGroupCount, includeText);
+        return messageService.searchMessageIds(lang, txt, maxGroupCount, includeText, deleted);
     }
 
 

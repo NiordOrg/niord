@@ -279,7 +279,8 @@ angular.module('niord.messages')
             replace: false,
             scope: {
                 reference:  "=",
-                minLength:  "="
+                minLength:  "=",
+                deleted:    "="
             },
             link: function(scope) {
 
@@ -293,6 +294,7 @@ angular.module('niord.messages')
                     }
                     return $http.get(
                         '/rest/messages/search-message-ids?txt=' + encodeURIComponent(text) +
+                        '&deleted=' + (scope.deleted === true) +
                         '&lang=' + $rootScope.language
                     ).then(function(response) {
                         scope.messageIds = response.data;
