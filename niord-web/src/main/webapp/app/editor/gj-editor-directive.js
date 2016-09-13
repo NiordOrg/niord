@@ -53,7 +53,8 @@ angular.module('niord.editor')
                 editType:           "@",
                 drawControls:       "@",
                 featureCollection:  "=",
-                onSave:             '&'
+                onSave:             '&',
+                tabIndex:           '='
             },
             link: function(scope, element, attrs) {
 
@@ -86,6 +87,10 @@ angular.module('niord.editor')
                     select:     scope.drawControls.indexOf('select') != -1,
                     remove:     scope.drawControls.indexOf('remove') != -1
                 };
+
+                if (scope.tabIndex) {
+                    element.find("#editorBtn").attr('tabindex', scope.tabIndex);
+                }
 
                 /** ************************ **/
                 /** Utility functions        **/

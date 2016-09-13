@@ -33,7 +33,8 @@
             <!-- ********************* -->
             <!-- ** Type            ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="type" field-title="msg.field.type" field-valid="fieldValid(fieldId)">
+            <editor-field edit-mode="editMode" field-id="type" field-title="msg.field.type" field-valid="fieldValid(fieldId)"
+                          tab-index="100">
 
                 <editor-field-value-viewer>
                     <span ng-if="message.type">{{'msg.type.' + message.type | translate}} {{message.mainType}}</span>
@@ -41,16 +42,24 @@
 
                 <editor-field-value-editor value-class="col-sm-12 col-md-6 col-lg-4">
                     <div class="btn-group" ng-if="message.mainType == 'NW' || supportsNw(true)">
-                        <label class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'LOCAL_WARNING'" translate>msg.type.LOCAL_WARNING</label>
-                        <label class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'COASTAL_WARNING'" translate>msg.type.COASTAL_WARNING</label>
-                        <label class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'SUBAREA_WARNING'" translate>msg.type.SUBAREA_WARNING</label>
-                        <label class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'NAVAREA_WARNING'" translate>msg.type.NAVAREA_WARNING</label>
+                        <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'LOCAL_WARNING'"
+                               tabindex="101" translate>msg.type.LOCAL_WARNING</button>
+                        <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'COASTAL_WARNING'"
+                               tabindex="102"  translate>msg.type.COASTAL_WARNING</button>
+                        <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'SUBAREA_WARNING'"
+                               tabindex="103"  translate>msg.type.SUBAREA_WARNING</button>
+                        <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'NAVAREA_WARNING'"
+                               tabindex="104"  translate>msg.type.NAVAREA_WARNING</button>
                     </div>
                     <div class="btn-group" ng-if="message.mainType == 'NM' || supportsNm(true)">
-                        <label class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'TEMPORARY_NOTICE'" translate>msg.type.TEMPORARY_NOTICE</label>
-                        <label class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'PRELIMINARY_NOTICE'" translate>msg.type.PRELIMINARY_NOTICE</label>
-                        <label class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'PERMANENT_NOTICE'" translate>msg.type.PERMANENT_NOTICE</label>
-                        <label class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'MISCELLANEOUS_NOTICE'" translate>msg.type.MISCELLANEOUS_NOTICE</label>
+                        <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'TEMPORARY_NOTICE'"
+                               tabindex="105"  translate>msg.type.TEMPORARY_NOTICE</button>
+                        <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'PRELIMINARY_NOTICE'"
+                               tabindex="106"  translate>msg.type.PRELIMINARY_NOTICE</button>
+                        <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'PERMANENT_NOTICE'"
+                               tabindex="107"  translate>msg.type.PERMANENT_NOTICE</button>
+                        <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'MISCELLANEOUS_NOTICE'"
+                               tabindex="108"  translate>msg.type.MISCELLANEOUS_NOTICE</button>
                     </div>
                 </editor-field-value-editor>
 
@@ -60,7 +69,8 @@
             <!-- ********************* -->
             <!-- ** Original Info   ** -->
             <!-- ********************* -->
-            <editor-field ng-if="showField('orig_info')" edit-mode="editMode" field-id="orig_info" field-title="msg.field.orig_info">
+            <editor-field ng-if="showField('orig_info')" edit-mode="editMode" field-id="orig_info" field-title="msg.field.orig_info"
+                          tab-index="200">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.originalInformation">&#9733;</div>
@@ -68,7 +78,8 @@
 
                 <editor-field-value-editor value-class="col-sm-12">
                     <button type="button" class="btn btn-sm btn-default" ng-model="message.originalInformation"
-                            uib-btn-checkbox uib-btn-checkbox-true="true" uib-btn-checkbox-false="false">
+                            uib-btn-checkbox uib-btn-checkbox-true="true" uib-btn-checkbox-false="false"
+                            tabindex="201">
                         <span class="glyphicon glyphicon-star"></span>
                     </button>
                 </editor-field-value-editor>
@@ -79,7 +90,8 @@
             <!-- ********************* -->
             <!-- ** Message ID      ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="id" field-title="msg.field.id" field-valid="fieldValid(fieldId)">
+            <editor-field edit-mode="editMode" field-id="id" field-title="msg.field.id" field-valid="fieldValid(fieldId)"
+                          tab-index="300">
 
                 <editor-field-value-viewer>
                     <message-id-badge msg="message"></message-id-badge>
@@ -91,6 +103,7 @@
                             <th>Message series</th>
                             <td>
                                 <select class="form-control input-sm" style="width: 200px"
+                                        tabindex="301"
                                         ng-model="message.messageSeries"
                                         ng-options="series.seriesId for series in messageSeries">
                                 </select>
@@ -106,6 +119,7 @@
                                 <message-id-badge ng-if="!mrnAndShortIdEditable()" msg="message"></message-id-badge>
                                 <div ng-if="mrnAndShortIdEditable()">
                                     <input class="form-control input-sm" placeholder="Short ID" type="text"
+                                           tabindex="302"
                                            autocapitalize="off" autocorrect="off" autocomplete="off"
                                            ng-model="message.shortId"/>
                                 </div>
@@ -117,6 +131,7 @@
                                 <span ng-if="!mrnAndShortIdEditable()">{{message.mrn}}</span>
                                 <div ng-if="mrnAndShortIdEditable()">
                                     <input class="form-control input-sm" placeholder="MRN" type="text"
+                                           tabindex="303"
                                            autocapitalize="off" autocorrect="off" autocomplete="off"
                                            ng-model="message.mrn"/>
                                 </div>
@@ -131,7 +146,8 @@
             <!-- ********************* -->
             <!-- ** Title line      ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="title" field-title="msg.field.title">
+            <editor-field edit-mode="editMode" field-id="title" field-title="msg.field.title"
+                          tab-index="400">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.descs.length > 0">
@@ -146,6 +162,7 @@
                     <div class="row" style="margin-top: 10px">
                         <div class="col-sm-12">
                             <button type="button" class="btn btn-sm btn-default" ng-model="message.autoTitle"
+                                    tabindex="401"
                                     uib-btn-checkbox uib-btn-checkbox-true="true" uib-btn-checkbox-false="false">
                                 <span class="glyphicon glyphicon-lock"></span> Auto-generate
                             </button>
@@ -154,6 +171,7 @@
                     <div class="row" style="margin-top: 10px">
                         <div class="col-sm-12 col-md-8" ng-repeat="desc in message.descs">
                             <input class="form-control input-sm" placeholder="Title" type="text"
+                                   tabindex="402"
                                    ng-model="desc.title" bg-flag="desc.lang" ng-disabled="message.autoTitle">
                         </div>
                     </div>
@@ -165,7 +183,8 @@
             <!-- ********************* -->
             <!-- ** References      ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="references" field-title="msg.field.references">
+            <editor-field edit-mode="editMode" field-id="references" field-title="msg.field.references"
+                          tab-index="500">
 
                 <editor-field-value-viewer>
                     <div ng-repeat="ref in message.references">
@@ -187,19 +206,20 @@
                             <th>Description</th>
                             <th>
                                 <div class="pull-right">
-                                    <button ng-click="addReference()" class="btn btn-default btn-xs">
+                                    <button ng-click="addReference()" class="btn btn-default btn-xs" tabindex="501">
                                         <span class="glyphicon glyphicon-plus"></span> Add
                                     </button>
                                 </div>
                             </th>
                         </tr>
                         <tbody ng-sortable="referencesSortableCfg">
-                            <tr ng-repeat="ref in message.references">
+                            <tr ng-repeat="ref in message.references" ng-init="refIndex = $index">
                                 <td width="30%">
-                                    <message-id-field reference="ref"></message-id-field>
+                                    <message-id-field tab-index="502 + refIndex * 5" reference="ref"></message-id-field>
                                 </td>
                                 <td width="120">
-                                    <select class="form-control input-sm" ng-model="ref.type">
+                                    <select class="form-control input-sm" ng-model="ref.type"
+                                            tabindex="{{503 + refIndex * 5}}">
                                         <option value="REFERENCE" translate>msg.reference.reference</option>
                                         <option value="REPETITION" translate>msg.reference.repetition</option>
                                         <option value="CANCELLATION" translate>msg.reference.cancelled</option>
@@ -209,6 +229,7 @@
                                 <td width="*">
                                     <div ng-repeat="desc in ref.descs">
                                         <input class="form-control input-sm" placeholder="Description" type="text"
+                                               tabindex="{{504 + refIndex * 5}}"
                                                ng-model="desc.description" bg-flag="desc.lang"/>
                                     </div>
                                 </td>
@@ -228,7 +249,8 @@
             <!-- ********************* -->
             <!-- ** Time            ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="time" field-title="msg.field.time" field-valid="fieldValid(fieldId)">
+            <editor-field edit-mode="editMode" field-id="time" field-title="msg.field.time" field-valid="fieldValid(fieldId)"
+                          tab-index="600">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.publishDate && (message.status == 'DRAFT' || message.status == 'VERIFIED')">
@@ -242,7 +264,8 @@
                          ng-if="message.status == 'DRAFT' || message.status == 'VERIFIED'">
                         <div class="col-sm-4 col-md-4 col-lg-2 editor-date-label">Publish Date</div>
                         <div class="col-sm-8 col-md-4">
-                            <date-time-picker ng-model="message.publishDate" placeholder="Publish date" format="'lll z'"></date-time-picker>
+                            <date-time-picker ng-model="message.publishDate" placeholder="Publish date" format="'lll z'"
+                                              tab-index="601"></date-time-picker>
                         </div>
                     </div>
 
@@ -256,7 +279,8 @@
                             <th>End</th>
                             <th>
                                 <div class="pull-right">
-                                    <button ng-click="addDateInterval()" class="btn btn-default btn-xs">
+                                    <button ng-click="addDateInterval()" class="btn btn-default btn-xs"
+                                        tabindex="602">
                                         <span class="glyphicon glyphicon-plus"></span> Add
                                     </button>
                                 </div>
@@ -264,14 +288,17 @@
                         </tr>
                         <tr ng-repeat="di in message.dateIntervals">
                             <td width="60" style="padding-top: 10px" align="center">
-                                <input type="checkbox" ng-model="di.allDay">
+                                <input type="checkbox" ng-model="di.allDay"
+                                        tabindex="{{604 + $index * 5}}">
                             </td>
                             <td width="220">
                                 <date-time-picker ng-model="di.fromDate" placeholder="From date"
+                                                  tab-index="605 + $index * 5"
                                                   time="di.allDay ? '00:00:00' : undefined" format="di.allDay ? 'll' : 'lll z'"></date-time-picker>
                             </td>
                             <td width="220">
                                 <date-time-picker ng-model="di.toDate" placeholder="To date"
+                                                  tab-index="606 + $index * 5"
                                                   time="di.allDay ? '23:59:59' : undefined" format="di.allDay ? 'll' : 'lll z'"></date-time-picker>
                             </td>
                             <td width="*" style="padding-top: 12px" nowrap>
@@ -291,10 +318,12 @@
                     <div class="row">
                         <div class="col-sm-6 col-md-5" ng-repeat="desc in message.descs">
                             <textarea class="form-control input-sm editor-time" placeholder="Time Description" rows="3"
+                                      tabindex="690"
                                       ng-model="desc.time" bg-flag="desc.lang" ></textarea>
                         </div>
                         <div class="col-sm-2 col-md-1">
                             <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown"
+                                    tabindex="691"
                                     ng-click="generateTimeDesc()">
                                 <span class="glyphicon glyphicon-cog"></span>
                                 Generate
@@ -309,7 +338,8 @@
             <!-- ********************* -->
             <!-- ** Areas           ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="areas" field-title="msg.field.areas" field-valid="fieldValid(fieldId)">
+            <editor-field edit-mode="editMode" field-id="areas" field-title="msg.field.areas" field-valid="fieldValid(fieldId)"
+                          tab-index="700">
 
                 <editor-field-value-viewer>
                     <span ng-repeat="area in message.areas"><span ng-if="$index > 0">,</span>
@@ -323,16 +353,20 @@
                 <editor-field-value-editor value-class="col-sm-12 col-md-8">
                     <div class="row">
                         <div class="col-sm-6">
-                            <areas-field id="areas" area-data="message" multiple="true" domain="true" area-changed="adjustEditableMessage()"></areas-field>
+                            <areas-field id="areas" area-data="message" multiple="true" domain="true"
+                                         tab-index="701"
+                                         area-changed="adjustEditableMessage()"></areas-field>
                         </div>
                         <div class="col-sm-4">
                             <button href class="btn btn-default btn-sm" ng-disabled="!message.areas || message.areas.length == 0"
+                                    tabindex="702"
                                     ng-click="copyAreaLocations()">Copy Locations</button>
                         </div>
                     </div>
                     <div class="row" style="margin-top: 10px">
                         <div class="col-sm-6" ng-repeat="desc in message.descs">
                             <input class="form-control input-sm" placeholder="Vicinity" type="text"
+                                   tabindex="703"
                                    ng-model="desc.vicinity" bg-flag="desc.lang"
                                    ng-change="adjustEditableMessage()"
                                    ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }">
@@ -346,7 +380,8 @@
             <!-- ********************* -->
             <!-- ** Positions       ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="positions" field-title="msg.field.positions">
+            <editor-field edit-mode="editMode" field-id="positions" field-title="msg.field.positions"
+                          tab-index="800">
 
                 <editor-field-value-viewer>
                     <div ng-if="featureCoordinates.length > 0">
@@ -371,6 +406,7 @@
                         <div class="col-sm-12 col-md-6 col-lg-8 ">
                             <gj-editor id="position-editor"
                                        class="editor-locations"
+                                       tab-index="801"
                                        edit-type="message"
                                        feature-collection="message.geometry"
                                        on-save="geometrySaved(featureCollection)"></gj-editor>
@@ -406,7 +442,8 @@
             <!-- ********************* -->
             <!-- ** Charts          ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="charts" field-title="msg.field.charts">
+            <editor-field edit-mode="editMode" field-id="charts" field-title="msg.field.charts"
+                          tab-index="900">
 
                 <editor-field-value-viewer>
                     <span render-charts="message.charts"></span>
@@ -415,18 +452,21 @@
                 <editor-field-value-editor value-class="col-sm-12">
                     <div class="row">
                         <div class="col-sm-6 col-md-8">
-                            <charts-field id="charts" chart-data="message" multiple="true"></charts-field>
+                            <charts-field tab-index="901" id="charts" chart-data="message" multiple="true"></charts-field>
                         </div>
                         <div class="col-sm-6 col-md-4">
                             <button href class="btn btn-default btn-sm" ng-disabled="message.charts && message.charts.length == 0"
+                                    tabindex="902"
                                     ng-click="sortCharts()">Sort</button>
                             <button href class="btn btn-default btn-sm" ng-disabled="message.geometry.features.length == 0"
+                                    tabindex="903"
                                     ng-click="computeCharts()">Compute from Locations</button>
                         </div>
                     </div>
                     <div class="row" style="margin-top: 10px">
                         <div class="col-sm-6 col-md-4">
                             <input type="text" class="form-control input-sm" placeholder="Horizontal Datum"
+                                   tabindex="904"
                                    ng-model="message.horizontalDatum" />
                         </div>
                     </div>
@@ -438,14 +478,16 @@
             <!-- ********************* -->
             <!-- ** Categories      ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="categories" field-title="msg.field.categories">
+            <editor-field edit-mode="editMode" field-id="categories" field-title="msg.field.categories"
+                          tab-index="1000">
 
                 <editor-field-value-viewer>
                     <span ng-repeat="category in message.categories"><span ng-if="$index > 0">,</span> {{category.descs[0].name}}</span>
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12 col-md-6">
-                    <categories-field id="categories" category-data="message" multiple="true" domain="true" category-changed="adjustEditableMessage()"></categories-field>
+                    <categories-field id="categories" category-data="message" multiple="true" domain="true" category-changed="adjustEditableMessage()"
+                                    tab-index="1001"></categories-field>
                 </editor-field-value-editor>
 
             </editor-field>
@@ -454,7 +496,8 @@
             <!-- ********************* -->
             <!-- ** Subject         ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="subject" field-title="msg.field.subject">
+            <editor-field edit-mode="editMode" field-id="subject" field-title="msg.field.subject"
+                          tab-index="1100">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.descs.length > 0">
@@ -466,6 +509,7 @@
                     <div class="row">
                         <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
                             <input class="form-control input-sm" placeholder="Subject" type="text"
+                                   tabindex="1101"
                                    autocapitalize="off" autocorrect="off" autocomplete="off"
                                    ng-model="desc.subject" bg-flag="desc.lang"
                                    ng-change="adjustEditableMessage()"
@@ -479,7 +523,8 @@
             <!-- ********************* -->
             <!-- ** Description     ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="description" field-title="msg.field.description">
+            <editor-field edit-mode="editMode" field-id="description" field-title="msg.field.description"
+                          tab-index="1200">
 
                 <editor-field-value-viewer>
                     <div class="message-description" ng-if="message.descs.length > 0" ng-bind-html="message.descs[0].description | toTrusted"></div>
@@ -489,6 +534,7 @@
                     <div class="row">
                         <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs"  id="tinymce-{{desc.lang}}">
                             <textarea class="editor-description" ui-tinymce="tinymceOptions"
+                                      tabindex="1201"
                                       ng-model="desc.description" bg-flag="desc.lang"></textarea>
                             <flag lang="desc.lang" class="editor-description-flag"></flag>
                         </div>
@@ -501,7 +547,8 @@
             <!-- ********************* -->
             <!-- ** Attachments     ** -->
             <!-- ********************* -->
-            <editor-field ng-if="showField('attachments')" edit-mode="editMode" field-id="attachments" field-title="msg.field.attachments">
+            <editor-field ng-if="showField('attachments')" edit-mode="editMode" field-id="attachments" field-title="msg.field.attachments"
+                          tab-index="1300">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.attachments.length > 0">
@@ -521,6 +568,7 @@
                                          multiple="true"
                                          auto-upload="true"
                                          remove-after-upload="true"
+                                         tab-index="1301"
                                          success="attachmentsUploaded(result)"
                                          error="attachmentsUploadError(status, statusText)"></file-upload>
                         </div>
@@ -577,7 +625,8 @@
             <!-- ********************* -->
             <!-- ** Prohibition     ** -->
             <!-- ********************* -->
-            <editor-field ng-if="showField('prohibition')" edit-mode="editMode" field-id="prohibition" field-title="msg.field.prohibition">
+            <editor-field ng-if="showField('prohibition')" edit-mode="editMode" field-id="prohibition" field-title="msg.field.prohibition"
+                          tab-index="1400">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.descs.length > 0">
@@ -589,6 +638,7 @@
                     <div class="row">
                         <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
                             <input class="form-control input-sm" placeholder="Prohibition" type="text"
+                                   tabindex="1401"
                                    autocapitalize="off" autocorrect="off" autocomplete="off"
                                    ng-model="desc.prohibition" bg-flag="desc.lang"/>
                         </div>
@@ -601,7 +651,8 @@
             <!-- ********************* -->
             <!-- ** Signals         ** -->
             <!-- ********************* -->
-            <editor-field ng-if="showField('signals')" edit-mode="editMode" field-id="signals" field-title="msg.field.signals">
+            <editor-field ng-if="showField('signals')" edit-mode="editMode" field-id="signals" field-title="msg.field.signals"
+                          tab-index="1500">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.descs.length > 0" ng-bind-html="message.descs[0].signals | plain2html"></div>
@@ -611,6 +662,7 @@
                     <div class="row">
                         <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
                             <textarea rows="3" class="form-control input-sm" placeholder="Signals" type="text"
+                                      tabindex="1501"
                                       autocapitalize="off" autocorrect="off" autocomplete="off"
                                       ng-model="desc.signals" bg-flag="desc.lang"></textarea>
                         </div>
@@ -623,7 +675,8 @@
             <!-- ********************* -->
             <!-- ** Note            ** -->
             <!-- ********************* -->
-            <editor-field ng-if="showField('note')" edit-mode="editMode" field-id="note" field-title="msg.field.note">
+            <editor-field ng-if="showField('note')" edit-mode="editMode" field-id="note" field-title="msg.field.note"
+                          tab-index="1600">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.descs.length > 0" ng-bind-html="message.descs[0].note | plain2html"></div>
@@ -633,6 +686,7 @@
                     <div class="row">
                         <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
                             <textarea rows="3" class="form-control input-sm" placeholder="Note" type="text"
+                                      tabindex="1601"
                                    autocapitalize="off" autocorrect="off" autocomplete="off"
                                    ng-model="desc.note" bg-flag="desc.lang"></textarea>
                         </div>
@@ -645,7 +699,8 @@
             <!-- ********************* -->
             <!-- ** Publication     ** -->
             <!-- ********************* -->
-            <editor-field ng-if="showField('publication')" edit-mode="editMode" field-id="publication" field-title="msg.field.publication">
+            <editor-field ng-if="showField('publication')" edit-mode="editMode" field-id="publication" field-title="msg.field.publication"
+                          tab-index="1700">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.descs.length > 0">
@@ -657,6 +712,7 @@
                     <div class="row">
                         <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
                             <input class="form-control input-sm" placeholder="Publication" type="text"
+                                   tabindex="1701"
                                    autocapitalize="off" autocorrect="off" autocomplete="off"
                                    ng-model="desc.publication" bg-flag="desc.lang"/>
                         </div>
@@ -669,7 +725,8 @@
             <!-- ********************* -->
             <!-- ** Source          ** -->
             <!-- ********************* -->
-            <editor-field ng-if="showField('source')" edit-mode="editMode" field-id="source" field-title="msg.field.source">
+            <editor-field ng-if="showField('source')" edit-mode="editMode" field-id="source" field-title="msg.field.source"
+                          tab-index="1800">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.descs.length > 0">
@@ -681,6 +738,7 @@
                     <div class="row">
                         <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
                             <input class="form-control input-sm" placeholder="Source" type="text"
+                                   tabindex="1801"
                                    autocapitalize="off" autocorrect="off" autocomplete="off"
                                    ng-model="desc.source" bg-flag="desc.lang"/>
                         </div>
@@ -693,10 +751,14 @@
 
         <!-- Save and revert buttons -->
         <div id="save" class="row editor-section">
-            <button href class="btn btn-primary btn-sm" ng-click="saveMessage()" ng-disabled="editForm.$pristine || editForm.$invalid || messageSaving">
+            <button class="btn btn-primary btn-sm"
+                    tabindex="3000"
+                    ng-click="saveMessage()" ng-disabled="editForm.$pristine || editForm.$invalid || messageSaving">
                 <span class="glyphicon glyphicon-floppy-disk"></span> Save Message
             </button>
-            <button href class="btn btn-default btn-sm" ng-click="init()" ng-if="initId">
+            <button class="btn btn-default btn-sm"
+                    tabindex="3001"
+                    ng-click="init()" ng-if="initId">
                 <span class="glyphicon glyphicon-refresh"></span> Reload Message
             </button>
         </div>

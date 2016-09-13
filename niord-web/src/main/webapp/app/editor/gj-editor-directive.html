@@ -6,7 +6,7 @@
             <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
             <map-gj-layer name="Locations" visible="true" layer-switcher="false" feature-collection="featureCollection" fit-extent="true" max-zoom="12"></map-gj-layer>
             <div class="open-editor text-center">
-                <button class="btn btn-sm btn-primary" style="opacity: 0.7"  ng-click="openEditor()">
+                <button id="editorBtn" class="btn btn-sm btn-primary" style="opacity: 0.7"  ng-click="openEditor()">
                     <span class="glyphicon glyphicon-map-marker"></span>
                     {{openEditorMessage}}
                 </button>

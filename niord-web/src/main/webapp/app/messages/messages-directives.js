@@ -280,11 +280,17 @@ angular.module('niord.messages')
             scope: {
                 reference:  "=",
                 minLength:  "=",
-                deleted:    "="
+                deleted:    "=",
+                tabIndex:   "="
             },
-            link: function(scope) {
+            link: function(scope, element) {
 
                 scope.minLength = scope.minLength | 3;
+
+                if (scope.tabIndex) {
+                    var input = element.find("input");
+                    input.attr('tabindex', scope.tabIndex);
+                }
 
                 // Use for message id selection
                 scope.messageIds = [];

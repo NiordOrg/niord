@@ -1,15 +1,15 @@
 
-<div class="row">
+<div class="row field-editor">
     <div class="col-xs-12 col-sm-4 col-md-2">
-        <div class="editor-field-label" ng-click="toggleEditField()"
-             ng-class="{ 'editor-field-label-editing' : editMode[fieldId], 'editor-field-invalid' : fieldInvalid() }">
+        <div class="editor-field-label" ng-click="toggleEditField()" tabindex="{{tabIndex}}"
+             ng-class="{ 'editor-field-label-editing' : editModeOn(), 'editor-field-invalid' : fieldInvalid() }">
             <span translate>{{fieldTitle}}</span>
         </div>
     </div>
 
     <div class="col-xs-12 col-sm-8 col-md-10">
         <div class="editor-field-value"
-             ng-class="{ 'editor-field-value-editing' : editMode[fieldId] }"
+             ng-class="{ 'editor-field-value-editing' : editModeOn() }"
              ng-transclude></div>
     </div>
 </div>

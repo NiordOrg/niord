@@ -23,7 +23,7 @@ angular.module('niord.editor')
      * Directives that wraps an editable message
      * field with a title.
      **********************************************/
-    .directive('editorField', [function () {
+    .directive('editorField', ['$document', function ($document) {
         return {
             restrict: 'E',
             templateUrl: '/app/editor/editor-field.html',
@@ -33,7 +33,8 @@ angular.module('niord.editor')
                 editMode:   "=",
                 fieldId:    "@",
                 fieldTitle: "@",
-                fieldValid: '&'
+                fieldValid: '&',
+                tabIndex:   '='
             },
 
             controller: function($scope) {
@@ -46,9 +47,55 @@ angular.module('niord.editor')
 
             link: function(scope, element, attrs) {
 
+                scope.tabIndex = scope.tabIndex || -1;
+
+                var elm = $(element[0]);
+
+                // Hook up a key listener that can be used to expand or collapse the field
+                function keydownListener(evt) {
+                    var focused = elm.find('.editor-field-label').is(':focus');
+                    if (!focused || evt.isDefaultPrevented()) {
+                        return evt;
+                    }
+                    if (evt.which == 13 /* enter */ || evt.which == 39 /* right arrow */) {
+                        scope.updateEditField(evt, true);
+                    } else if (evt.which == 37 /* left arrow */) {
+                        scope.updateEditField(evt, false);
+                    } else if (evt.which == 38 /* up arrow */) {
+                        elm.prev('.field-editor').find('.editor-field-label').focus();
+                    } else if (evt.which == 40 /* down arrow */) {
+                        elm.next('.field-editor').find('.editor-field-label').focus();
+                    }
+                }
+                element.on('$destroy', function() {
+                    $document.off('keydown', keydownListener);
+                });
+                $(element[0]).focusin(function() {
+                    $document.on('keydown', keydownListener);
+                });
+                $(element[0]).focusout(function() {
+                    $document.off('keydown', keydownListener);
+                });
+
+
                 /** Toggles the edit mode of the field **/
                 scope.toggleEditField = function () {
                     scope.editMode[scope.fieldId] = !scope.editMode[scope.fieldId];
+                };
+
+
+                /** Updates the edit state of the field editor from a keyboard event **/
+                scope.updateEditField = function(evt, editModeOn) {
+                    scope.editMode[scope.fieldId] = editModeOn;
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    scope.$$phase || scope.$apply();
+                };
+
+
+                /** Returns if the edit mode is on **/
+                scope.editModeOn = function () {
+                    return scope.editMode[scope.fieldId];
                 };
 
 

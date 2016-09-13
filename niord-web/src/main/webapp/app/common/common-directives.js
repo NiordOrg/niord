@@ -25,7 +25,7 @@ angular.module('niord.common')
      * areaData.area and for multi-area selection use areaData.areas.
      * Use "init-ids" to initialize the areas using a list of area ids.
      ****************************************************************/
-    .directive('areasField', ['$rootScope', '$http', 'LangService', function($rootScope, $http, LangService) {
+    .directive('areasField', ['$rootScope', '$timeout', '$http', 'LangService', function($rootScope, $timeout, $http, LangService) {
         return {
             restrict: 'E',
             replace: true,
@@ -37,7 +37,8 @@ angular.module('niord.common')
                 domain:         "=",
                 messageSorting: "=",
                 geometry:       "=",
-                multiple:       "="
+                multiple:       "=",
+                tabIndex:       "="
             },
             link: function(scope, element, attrs) {
 
@@ -54,6 +55,11 @@ angular.module('niord.common')
                     scope.areaData.areas = [];
                 }
 
+                if (scope.tabIndex) {
+                    $timeout(function () {
+                        element.find("input").attr('tabindex', scope.tabIndex);
+                    });
+                }
 
                 /** Called whenever the area has been updated **/
                 scope.areaUpdated = function () {
@@ -121,7 +127,7 @@ angular.module('niord.common')
      * Use "init-ids" to initialize the categories using a list of
      * category ids.
      ****************************************************************/
-    .directive('categoriesField', ['$rootScope', '$http', 'LangService', function($rootScope, $http, LangService) {
+    .directive('categoriesField', ['$rootScope', '$timeout', '$http', 'LangService', function($rootScope, $timeout, $http, LangService) {
         return {
             restrict: 'E',
             replace: true,
@@ -131,7 +137,8 @@ angular.module('niord.common')
                 categoryChanged: "&",
                 initIds:         "=",
                 domain:          "=",
-                multiple:        "="
+                multiple:        "=",
+                tabIndex:        "="
             },
             link: function(scope, element, attrs) {
 
@@ -146,6 +153,11 @@ angular.module('niord.common')
                     scope.categoryData.categories = [];
                 }
 
+                if (scope.tabIndex) {
+                    $timeout(function () {
+                        element.find("input").attr('tabindex', scope.tabIndex);
+                    });
+                }
 
                 /** Called whenever the category has been updated **/
                 scope.categoryUpdated = function () {
@@ -209,7 +221,7 @@ angular.module('niord.common')
      * chartData.chart and for multi-chart selection use chartData.charts.
      * Use "init-ids" to initialize the charts using a list of chart ids.
      ****************************************************************/
-    .directive('chartsField', ['$rootScope', '$http', function($rootScope, $http) {
+    .directive('chartsField', ['$rootScope', '$timeout', '$http', function($rootScope, $timeout, $http) {
         return {
             restrict: 'E',
             replace: true,
@@ -218,9 +230,10 @@ angular.module('niord.common')
                 chartData:      "=",
                 initIds:        "=",
                 geometry:       "=",
-                multiple:       "="
+                multiple:       "=",
+                tabIndex:       "="
             },
-            link: function(scope) {
+            link: function(scope, element) {
 
                 scope.chartData = scope.chartData || {};
 
@@ -230,6 +243,12 @@ angular.module('niord.common')
 
                 if (scope.multiple && !scope.chartData.charts) {
                     scope.chartData.charts = [];
+                }
+
+                if (scope.tabIndex) {
+                    $timeout(function () {
+                        element.find("input").attr('tabindex', scope.tabIndex);
+                    });
                 }
 
                 // init-ids can be used to instantiate the field from a list of chart IDs
@@ -687,12 +706,13 @@ angular.module('niord.common')
             restrict : 'AE',
             replace : true,
             scope: {
-                id: '@',
-                format: '=',
-                time: '=',
-                readonly: '=',
-                placeholder: '@',
-                size: '@'
+                id:             '@',
+                format:         '=',
+                time:           '=',
+                readonly:       '=',
+                placeholder:    '@',
+                size:           '@',
+                tabIndex:       '='
             },
             template : '<div class="input-group date" data-date-format="l">'
                      + '  <input type="text" class="input-{{size}} form-control" />'
@@ -726,6 +746,10 @@ angular.module('niord.common')
 
                 if (scope.placeholder) {
                     input.attr('placeholder', scope.placeholder);
+                }
+
+                if (scope.tabIndex) {
+                    input.attr('tabindex', scope.tabIndex);
                 }
 
                 var picker = $(element).datetimepicker({
@@ -812,8 +836,8 @@ angular.module('niord.common')
      *   <li>error(status, statusText): Error callback function. Optional.</li>
      * </ul>
      */
-    .directive('fileUpload', ['$rootScope', 'FileUploader', 'AuthService',
-        function ($rootScope, FileUploader, AuthService) {
+    .directive('fileUpload', ['$rootScope', '$timeout', 'FileUploader', 'AuthService',
+        function ($rootScope, $timeout, FileUploader, AuthService) {
         'use strict';
 
         return {
@@ -834,7 +858,8 @@ angular.module('niord.common')
                 removeAfterUpload:  '=',
                 data:               '=',
                 success:            '&',
-                error:              '&'
+                error:              '&',
+                tabIndex:           '='
             },
 
             compile: function(element, attrs) {
@@ -845,7 +870,7 @@ angular.module('niord.common')
 
                 // Return link function
                 return {
-                    pre: function (scope, element, attrs) {
+                    pre: function (scope) {
                         // create a uploader with options
                         scope.uploader = new FileUploader({
                             scope: scope,
@@ -855,7 +880,7 @@ angular.module('niord.common')
                         });
                     },
 
-                    post: function (scope) {
+                    post: function (scope, element) {
 
                         scope.extension = function (txt) {
                             return txt.substr((~-txt.lastIndexOf(".") >>> 0) + 2);
@@ -863,6 +888,12 @@ angular.module('niord.common')
 
                         scope.uploadText = scope.uploadText || "Upload all";
                         scope.removeText = scope.removeText || "Remove all";
+
+                        if (scope.tabIndex) {
+                            $timeout(function () {
+                                element.find("input").attr('tabindex', scope.tabIndex);
+                            });
+                        }
 
                         if (scope.data) {
                             scope.uploader.onBeforeUploadItem = function (item) {
