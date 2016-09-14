@@ -15,11 +15,13 @@
  */
 package org.niord.web;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.category.Category;
+import org.niord.core.category.CategorySearchParams;
 import org.niord.core.category.CategoryService;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
@@ -31,10 +33,21 @@ import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -80,11 +93,22 @@ public class CategoryRestService extends AbstractBatchableRestService {
         log.debug(String.format("Searching for categories lang=%s, name='%s', domain=%s, inactive=%s, limit=%d",
                 lang, name, domain, inactive, limit));
 
+        if (StringUtils.isBlank(name)) {
+            return Collections.emptyList();
+        }
+
         DataFilter filter = DataFilter.get()
                 .fields(DataFilter.PARENT)
                 .lang(lang);
 
-        return categoryService.searchCategories(null, lang, name, domain, inactive, limit).stream()
+        CategorySearchParams params = new CategorySearchParams();
+        params.language(lang)
+                .name(name)
+                .domain(domain)
+                .inactive(inactive)
+                .maxSize(limit);
+
+        return categoryService.searchCategories(params).stream()
                 .map(c -> c.toVo(filter))
                 .collect(Collectors.toList());
     }

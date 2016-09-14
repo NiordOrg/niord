@@ -101,7 +101,12 @@ public class AreaService extends BaseService {
 
         // Match the name
         Join<Area, AreaDesc> descs = areaRoot.join("descs", JoinType.LEFT);
-        criteriaHelper.like(descs.get("name"), params.getName());
+        if (params.isExact()) {
+            criteriaHelper.equalsIgnoreCase(descs.get("name"), params.getName());
+        } else {
+            criteriaHelper.like(descs.get("name"), params.getName());
+        }
+
         // Optionally, match the language
         if (StringUtils.isNotBlank(params.getLanguage())) {
             criteriaHelper.equals(descs.get("lang"), params.getLanguage());
@@ -441,6 +446,7 @@ public class AreaService extends BaseService {
                 .language(lang)
                 .inactive(true) // Also search inactive areas
                 .name(name)
+                .exact(true) // Not substring matches
                 .maxSize(1);
 
         List<Area> areas = searchAreas(params);

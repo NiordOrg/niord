@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.niord.core.area;
+
+package org.niord.core.category;
 
 import org.niord.model.search.PagedSearchParamsVo;
-import org.niord.model.message.AreaType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,20 +25,17 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang.StringUtils.isNotBlank;
 
 /**
- * Defines the area search parameters
+ * Defines the category search parameters
  */
 @SuppressWarnings("unused")
-public class AreaSearchParams extends PagedSearchParamsVo {
+public class CategorySearchParams extends PagedSearchParamsVo {
 
     Integer parentId;
     String language;
     String name;
-    AreaType type;
     boolean exact;          // Match the name exactly (though case insensitive) rather than a substring match
-    boolean domain;         // Only include areas for current domain
-    boolean geometry;       // Only include areas that define a geometry
-    boolean messageSorting; // Only include areas that define a message sorting type
-    boolean inactive;       // Include inactive areas
+    boolean domain;         // Only include categories for current domain
+    boolean inactive;       // Include inactive categories
 
     /**
      * Returns a string representation of the search criteria
@@ -50,11 +47,8 @@ public class AreaSearchParams extends PagedSearchParamsVo {
         if (parentId != null) { desc.add(String.format("Parent: %s", parentId)); }
         if (isNotBlank(language)) { desc.add(String.format("Language: %s", language)); }
         if (isNotBlank(name)) { desc.add(String.format("Name: '%s'", name)); }
-        if (type != null) { desc.add(String.format("Type: %s", type)); }
         if (exact) { desc.add("Exact: true"); }
         if (domain) { desc.add("Domain: true"); }
-        if (geometry) { desc.add("Geometry: true"); }
-        if (messageSorting) { desc.add("Message-Sorting: true"); }
         if (inactive) { desc.add("Include inactive: true"); }
 
         return desc.stream().collect(Collectors.joining(", "));
@@ -68,7 +62,7 @@ public class AreaSearchParams extends PagedSearchParamsVo {
         return parentId;
     }
 
-    public AreaSearchParams parentId(Integer parentId) {
+    public CategorySearchParams parentId(Integer parentId) {
         this.parentId = parentId;
         return this;
     }
@@ -77,7 +71,7 @@ public class AreaSearchParams extends PagedSearchParamsVo {
         return language;
     }
 
-    public AreaSearchParams language(String language) {
+    public CategorySearchParams language(String language) {
         this.language = language;
         return this;
     }
@@ -86,17 +80,8 @@ public class AreaSearchParams extends PagedSearchParamsVo {
         return name;
     }
 
-    public AreaSearchParams name(String name) {
+    public CategorySearchParams name(String name) {
         this.name = name;
-        return this;
-    }
-
-    public AreaType getType() {
-        return type;
-    }
-
-    public AreaSearchParams type(AreaType type) {
-        this.type = type;
         return this;
     }
 
@@ -104,7 +89,7 @@ public class AreaSearchParams extends PagedSearchParamsVo {
         return exact;
     }
 
-    public AreaSearchParams exact(boolean exact) {
+    public CategorySearchParams exact(boolean exact) {
         this.exact = exact;
         return this;
     }
@@ -113,26 +98,8 @@ public class AreaSearchParams extends PagedSearchParamsVo {
         return domain;
     }
 
-    public AreaSearchParams domain(boolean domain) {
+    public CategorySearchParams domain(boolean domain) {
         this.domain = domain;
-        return this;
-    }
-
-    public boolean isGeometry() {
-        return geometry;
-    }
-
-    public AreaSearchParams geometry(boolean geometry) {
-        this.geometry = geometry;
-        return this;
-    }
-
-    public boolean isMessageSorting() {
-        return messageSorting;
-    }
-
-    public AreaSearchParams messageSorting(boolean messageSorting) {
-        this.messageSorting = messageSorting;
         return this;
     }
 
@@ -140,7 +107,7 @@ public class AreaSearchParams extends PagedSearchParamsVo {
         return inactive;
     }
 
-    public AreaSearchParams inactive(boolean inactive) {
+    public CategorySearchParams inactive(boolean inactive) {
         this.inactive = inactive;
         return this;
     }

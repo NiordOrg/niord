@@ -115,6 +115,19 @@ public class CriteriaHelper<T> {
     }
 
     /**
+     * If value is defined, matches the attribute with the value in a case-agnostic manner
+     *
+     * @param attr the attribute
+     * @param value the value to match
+     */
+    public CriteriaHelper<T> equalsIgnoreCase(Expression<String> attr, String value) {
+        if (value != null) {
+            where.add(cb.equal(cb.lower(attr), value.toLowerCase()));
+        }
+        return this;
+    }
+
+    /**
      * If value is defined, substring-matches the attribute with the value.
      *
      * @param attr the attribute

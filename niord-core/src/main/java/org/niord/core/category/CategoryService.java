@@ -32,7 +32,6 @@ import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -71,20 +70,11 @@ public class CategoryService extends BaseService {
     /**
      * Searches for categories matching the given term in the given language
      *
-     * @param lang the language
-     * @param name the search term
-     * @param domain  restrict the search to the current domain or not
-     * @param inactive  whether to include inactive categories in the search result
-     * @param limit the maximum number of results
+     * @param params the sesarch params
      * @return the search result
      */
     @SuppressWarnings("all")
-    public List<Category> searchCategories(Integer parentId, String lang, String name, boolean domain, boolean inactive, int limit) {
-
-        // Sanity check
-        if (StringUtils.isBlank(name)) {
-            return Collections.emptyList();
-        }
+    public List<Category> searchCategories(CategorySearchParams params) {
 
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Category> categoryQuery = cb.createQuery(Category.class);
@@ -96,21 +86,26 @@ public class CategoryService extends BaseService {
 
         // Match the name
         Join<Category, CategoryDesc> descs = categoryRoot.join("descs", JoinType.LEFT);
-        criteriaHelper.like(descs.get("name"), name);
+        if (params.isExact()) {
+            criteriaHelper.equalsIgnoreCase(descs.get("name"), params.getName());
+        } else  {
+            criteriaHelper.like(descs.get("name"), params.getName());
+        }
+
         // Optionally, match the language
-        if (StringUtils.isNotBlank(lang)) {
-            criteriaHelper.equals(descs.get("lang"), lang);
+        if (StringUtils.isNotBlank(params.getLanguage())) {
+            criteriaHelper.equals(descs.get("lang"), params.getLanguage());
         }
 
         // Optionally, match the parent
-        if (parentId != null) {
+        if (params.getParentId() != null) {
             categoryRoot.join("parent", JoinType.LEFT);
             Path<Category> parent = categoryRoot.get("parent");
-            criteriaHelper.equals(parent.get("id"), parentId);
+            criteriaHelper.equals(parent.get("id"), params.getParentId());
         }
 
         // Optionally, filter by the domains associated with the current domain
-        if (domain) {
+        if (params.isDomain()) {
             Domain d = domainService.currentDomain();
             if (d != null && d.getCategories().size() > 0) {
                 Predicate[] categoryMatch = d.getCategories().stream()
@@ -121,7 +116,7 @@ public class CategoryService extends BaseService {
         }
 
         // Unless the "inactive" search flag is set, only include active categories.
-        if (!inactive) {
+        if (!params.isInactive()) {
             criteriaHelper.add(cb.equal(categoryRoot.get("active"), true));
         }
 
@@ -133,7 +128,7 @@ public class CategoryService extends BaseService {
 
         // Execute the query and update the search result
         return em.createQuery(categoryQuery)
-                .setMaxResults(limit)
+                .setMaxResults(params.getMaxSize())
                 .getResultList();
     }
 
@@ -334,8 +329,19 @@ public class CategoryService extends BaseService {
      * @return The matching category, or null if not found
      */
     public Category findByName(String name, String lang, Integer parentId) {
+        if (StringUtils.isBlank(name)) {
+            return null;
+        }
 
-        List<Category> categories = searchCategories(parentId, lang, name, false, true, 1);
+        CategorySearchParams params = new CategorySearchParams();
+        params.parentId(parentId)
+                .language(lang)
+                .inactive(true) // Also search inactive areas
+                .name(name)
+                .exact(true) // Not substring matches
+                .maxSize(1);
+
+        List<Category> categories = searchCategories(params);
 
         return categories.isEmpty() ? null : categories.get(0);
     }
