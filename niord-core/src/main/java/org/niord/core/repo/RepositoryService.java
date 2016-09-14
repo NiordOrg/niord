@@ -526,7 +526,7 @@ public class RepositoryService {
      */
     private void checkDeletePath(File file, Date date) {
         if (FileUtils.isFileOlder(file, date)) {
-            log.info("Deleting expired temp file or folder: " + file);
+            log.debug("Deleting expired temp file or folder: " + file);
             FileUtils.deleteQuietly(file);
         } else if (file.isDirectory()) {
             File[] files = file.listFiles();

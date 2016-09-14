@@ -679,7 +679,7 @@ public class BatchService extends BaseService {
                     @Override
                     public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
                         if (isDirEmpty(dir)) {
-                            log.info("Deleting batch job directory :" + dir);
+                            log.debug("Deleting batch job directory :" + dir);
                             Files.delete(dir);
                         }
                         return FileVisitResult.CONTINUE;
@@ -688,7 +688,7 @@ public class BatchService extends BaseService {
                     @Override
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                         if (FileUtils.isFileOlder(file.toFile(), expiryDate.getTime())) {
-                            log.info("Deleting batch job file      :" + file);
+                            log.debug("Deleting batch job file      :" + file);
                             Files.delete(file);
                         }
                         return FileVisitResult.CONTINUE;
@@ -699,7 +699,7 @@ public class BatchService extends BaseService {
             }
         });
 
-        log.info(String.format("Cleaned up expired batch job files in %d ms",
+        log.debug(String.format("Cleaned up expired batch job files in %d ms",
                 System.currentTimeMillis() - t0));
     }
 
