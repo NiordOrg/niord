@@ -663,6 +663,19 @@ angular.module('niord.editor')
             };
 
 
+            /** The TinyMCE editor actually hides the textarea and constructs an iframe. Fix tab-indexing **/
+            $scope.fixTinyMCETabIndex = function (editor) {
+                var id = editor.getElement().parentElement.id;
+                var elm = $('#' + id);
+                var textarea = elm.find('textarea');
+                var tabindex = textarea.attr('tabindex');
+                if (tabindex) {
+                    textarea.attr('tabindex', null);
+                    elm.find('iframe').attr('tabindex', 1101);
+                }
+            };
+
+
             // Configuration of the TinyMCE editors
             $scope.tinymceOptions = {
                 resize: false,
@@ -673,7 +686,7 @@ angular.module('niord.editor')
                 menubar: false,
                 content_css : '/css/messages.css',
                 body_class : 'message-description',
-                plugins: [ "autolink lists link image anchor", "code fullscreen textcolor", "media table contextmenu paste" ],
+                plugins: "autolink lists link image anchor code fullscreen textcolor media table contextmenu paste",
                 contextmenu: "link image inserttable | cell row column deletetable",
                 toolbar: "styleselect | bold italic | forecolor backcolor | alignleft aligncenter alignright alignjustify | "
                          + "bullist numlist  | outdent indent | link image table | code fullscreen | niordlocations",
@@ -698,7 +711,8 @@ angular.module('niord.editor')
                         icon: 'map-marker',
                         onclick : function () { $scope.formatLocations(editor); }
                     });
-                }
+                },
+                init_instance_callback : $scope.fixTinyMCETabIndex
             };
 
 
