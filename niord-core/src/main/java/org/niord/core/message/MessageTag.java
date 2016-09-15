@@ -55,12 +55,6 @@ import java.util.UUID;
     }
 )
 @NamedQueries({
-        @NamedQuery(name="MessageTag.findByUser",
-                query="SELECT t FROM MessageTag t where t.type = 'PRIVATE' and t.user = :user"),
-        @NamedQuery(name="MessageTag.findByDomain",
-                query="SELECT t FROM MessageTag t where t.type = 'DOMAIN' and t.domain = :domain"),
-        @NamedQuery(name="MessageTag.findPublic",
-                query="SELECT t FROM MessageTag t where t.type = 'PUBLIC'"),
         @NamedQuery(name="MessageTag.findTagsByTagIds",
                 query="SELECT t FROM MessageTag t where t.tagId in (:tagIds)"),
         @NamedQuery(name= "MessageTag.findTagsByMessageUid",

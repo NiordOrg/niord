@@ -237,8 +237,9 @@ angular.module('niord.messages')
 
 
             /** Returns the message tags for the current user */
-            tags: function () {
-                return $http.get('/rest/tags/');
+            tags: function (params) {
+                params = params || '';
+                return $http.get('/rest/tags/search?' + params);
             },
 
 

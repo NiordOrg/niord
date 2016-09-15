@@ -141,10 +141,20 @@ angular.module('niord.messages')
             'use strict';
 
             $scope.isLoggedIn = AuthService.loggedIn;
-            $scope.search = '';
+            $scope.filter = {
+                name: '',
+                type: {
+                    PRIVATE: false,
+                    DOMAIN: false,
+                    PUBLIC: false
+                },
+                sortBy: 'NAME',
+                sortOrder: 'ASC'
+            };
             $scope.data = {
                 tags : []
             };
+
 
             /** Displays the error message */
             $scope.displayError = function () {
@@ -152,11 +162,42 @@ angular.module('niord.messages')
             };
 
 
+            /** Toggle the sort order of the current sort field **/
+            $scope.toggleSortOrder = function(sortBy) {
+                if (sortBy == $scope.filter.sortBy) {
+                    $scope.filter.sortOrder = $scope.filter.sortOrder == 'ASC' ? 'DESC' : 'ASC';
+                } else {
+                    $scope.filter.sortBy = sortBy;
+                    $scope.filter.sortOrder = 'ASC';
+                }
+            };
+
+
+            /** Returns the sort indicator to display for the given field **/
+            $scope.sortIndicator = function(sortBy) {
+                if (sortBy == $scope.filter.sortBy) {
+                    return $scope.filter.sortOrder == 'DESC' ? '&#9650;' : '&#9660;';
+                }
+                return "";
+            };
+
+
             // Load the message tags for the current user
             $scope.loadTags = function() {
                 delete $scope.data.editTag;
                 delete $scope.data.editMode;
-                MessageService.tags()
+
+                var params = 'sortBy=' + $scope.filter.sortBy + '&sortOrder=' + $scope.filter.sortOrder;
+                if ($scope.filter.name) {
+                    params += '&name=' + encodeURIComponent($scope.filter.name);
+                }
+                angular.forEach($scope.filter.type, function (value, type) {
+                    if (value) {
+                        params += '&type=' + type;
+                    }
+                });
+
+                MessageService.tags(params)
                     .success(function (tags) {
                         $scope.data.tags.length = 0;
                         angular.forEach(tags, function (tag) {
@@ -165,10 +206,13 @@ angular.module('niord.messages')
                     })
                     .error($scope.displayError);
             };
-            $scope.loadTags();
+
+            // Load tags whenever the filter changes
+            $scope.$watch("filter", $scope.loadTags, true);
 
             // Set focus to the tag filter input field
             $timeout(function () { $('#tagIdFilter').focus() }, 200);
+
 
             // Adds a new tag
             $scope.addTag = function () {

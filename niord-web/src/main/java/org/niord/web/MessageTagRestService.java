@@ -20,8 +20,10 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.message.MessageTag;
+import org.niord.core.message.MessageTagSearchParams;
 import org.niord.core.message.MessageTagService;
 import org.niord.core.message.vo.MessageTagVo;
+import org.niord.model.search.PagedSearchParamsVo.SortOrder;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
@@ -41,6 +43,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -58,18 +61,6 @@ public class MessageTagRestService {
     @Inject
     MessageTagService messageTagService;
 
-    /** Returns all tags available to the current user */
-    @GET
-    @Path("/")
-    @Produces("application/json;charset=UTF-8")
-    @GZIP
-    @NoCache
-    public List<MessageTagVo> findUserTags() {
-        return messageTagService.findUserTags().stream()
-                .map(MessageTag::toVo)
-                .collect(Collectors.toList());
-    }
-
 
     /** Returns the tags with the given IDs */
     @GET
@@ -77,9 +68,23 @@ public class MessageTagRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<MessageTagVo> searchTags( @QueryParam("name")  @DefaultValue("")     String name,
-                                          @QueryParam("limit") @DefaultValue("1000") int limit) {
-        return messageTagService.searchMessageTags(name, limit).stream()
+    public List<MessageTagVo> searchTags(
+            @QueryParam("name")  @DefaultValue("") String name,
+            @QueryParam("type") Set<MessageTagVo.MessageTagType> types,
+            @QueryParam("sortBy") @DefaultValue("name") String sortBy,
+            @QueryParam("sortOrder") @DefaultValue("ASC") SortOrder sortOrder,
+            @QueryParam("limit") @DefaultValue("100") int limit) {
+
+        MessageTagSearchParams params = new MessageTagSearchParams();
+        params.name(name)
+                .sortBy(sortBy)
+                .sortOrder(sortOrder)
+                .maxSize(limit);
+        if (types != null) {
+            params.types(types);
+        }
+
+        return messageTagService.searchMessageTags(params).stream()
                 .map(MessageTag::toVo)
                 .collect(Collectors.toList());
     }

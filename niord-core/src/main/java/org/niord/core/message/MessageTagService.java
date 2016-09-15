@@ -16,8 +16,10 @@
 package org.niord.core.message;
 
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.message.vo.MessageTagVo.MessageTagType;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
 import org.niord.core.user.UserService;
@@ -26,18 +28,29 @@ import org.slf4j.Logger;
 import javax.ejb.Schedule;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Expression;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Order;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.niord.core.message.vo.MessageTagVo.MessageTagType.DOMAIN;
 import static org.niord.core.message.vo.MessageTagVo.MessageTagType.PRIVATE;
+import static org.niord.core.message.vo.MessageTagVo.MessageTagType.PUBLIC;
 import static org.niord.core.message.vo.MessageTagVo.MessageTagType.TEMP;
+import static org.niord.model.search.PagedSearchParamsVo.SortOrder.DESC;
 
 
 /**
@@ -108,36 +121,6 @@ public class MessageTagService extends BaseService {
 
 
     /**
-     * Returns all message tags for the current user
-     *
-     * @return the search result
-     */
-    public List<MessageTag> findUserTags() {
-        List<MessageTag> result = new ArrayList<>();
-
-        User user = userService.currentUser();
-        if (user != null) {
-            result.addAll(em.createNamedQuery("MessageTag.findByUser", MessageTag.class)
-                    .setParameter("user", user)
-                    .getResultList());
-        }
-
-        Domain domain = domainService.currentDomain();
-        if (domain != null) {
-            result.addAll(em.createNamedQuery("MessageTag.findByDomain", MessageTag.class)
-                    .setParameter("domain", domain)
-                    .getResultList());
-        }
-
-        result.addAll(em.createNamedQuery("MessageTag.findPublic", MessageTag.class)
-                .getResultList());
-
-        Collections.sort(result);
-        return result;
-    }
-
-
-    /**
      * Returns the message tags which contain the message with the given ID
      * @param messageUid the tag IDs
      * @return the message tags which contain the message with the given ID
@@ -159,20 +142,93 @@ public class MessageTagService extends BaseService {
     }
 
 
-
     /**
-     * Searches for message tags matching the given term
+     * Searches for message tags matching the given search parameters
      *
-     * @param term the search term
-     * @param limit the maximum number of results
+     * @param params the search parameters
      * @return the search result
      */
-    public List<MessageTag> searchMessageTags(String term, int limit) {
+    public List<MessageTag> searchMessageTags(MessageTagSearchParams params) {
+        User user = userService.currentUser();
+        Domain domain = domainService.currentDomain();
 
-        return findUserTags()
-                .stream()
-                .filter(t -> StringUtils.isBlank(term) || t.getName().toLowerCase().contains(term.toLowerCase()))
-                .collect(Collectors.toList());
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<MessageTag> query = cb.createQuery(MessageTag.class);
+
+        Root<MessageTag> tagRoot = query.from(MessageTag.class);
+
+        // Build the predicate
+        CriteriaHelper<MessageTag> criteriaHelper = new CriteriaHelper<>(cb, query);
+
+        // Name filtering
+        criteriaHelper.like(tagRoot.get("name"), params.getName());
+
+        // Type filtering
+        Set<MessageTagType> types = params.getTypes() != null ? params.getTypes() : new HashSet<>();
+        if (types.isEmpty()) {
+            types.add(PUBLIC);
+            types.add(DOMAIN);
+            types.add(PRIVATE);
+        }
+        List<Predicate> typePredicates = new LinkedList<>();
+        if (types.contains(PUBLIC)) {
+            typePredicates.add(cb.equal(tagRoot.get("type"), MessageTagType.PUBLIC));
+        }
+        if (types.contains(DOMAIN) && domain != null) {
+            Join<MessageTag, Domain> domains = tagRoot.join("domain", JoinType.LEFT);
+            typePredicates.add(cb.and(
+                    cb.equal(tagRoot.get("type"), MessageTagType.DOMAIN),
+                    cb.equal(domains.get("id"), domain.getId())));
+        }
+        if (types.contains(PRIVATE) && user != null) {
+            Join<MessageTag, User> users = tagRoot.join("user", JoinType.LEFT);
+            typePredicates.add(cb.and(
+                    cb.equal(tagRoot.get("type"), MessageTagType.PRIVATE),
+                    cb.equal(users.get("id"), user.getId())));
+        }
+        if (types.contains(TEMP)) {
+            typePredicates.add(cb.equal(tagRoot.get("type"), MessageTagType.TEMP));
+        }
+        criteriaHelper.add(cb.or(typePredicates.toArray(new Predicate[typePredicates.size()])));
+
+        // Compute the sorting
+        List<Order> sortOrders = new ArrayList<>();
+        Order nameAscSortOrder = cb.asc(cb.lower(tagRoot.get("name")));
+        if (params.sortByType()) {
+            Expression sortBy = tagRoot.get("type");
+            sortOrders.add(params.getSortOrder() == DESC ? cb.desc(sortBy) : cb.asc(sortBy));
+            sortOrders.add(nameAscSortOrder);
+        } else if (params.sortByCreated()) {
+            Expression sortBy = tagRoot.get("created");
+            sortOrders.add(params.getSortOrder() == DESC ? cb.desc(sortBy) : cb.asc(sortBy));
+            sortOrders.add(nameAscSortOrder);
+        } else if (params.sortByExpiryDate()) {
+            Expression sortBy = tagRoot.get("expiryDate");
+            sortOrders.add(params.getSortOrder() == DESC ? cb.desc(sortBy) : cb.asc(sortBy));
+            sortOrders.add(nameAscSortOrder);
+        } else if (params.sortByMessageCount()) {
+            Expression sortBy = tagRoot.get("messageCount");
+            sortOrders.add(params.getSortOrder() == DESC ? cb.desc(sortBy) : cb.asc(sortBy));
+            sortOrders.add(nameAscSortOrder);
+        } else {
+            if (StringUtils.isNotBlank(params.getName())) {
+                sortOrders.add(cb.asc(cb.locate(cb.lower(tagRoot.get("name")), params.getName().toLowerCase())));
+            }
+            String name = StringUtils.defaultIfBlank(params.getName(), "");
+            Expression sortBy = cb.lower(tagRoot.get("name"));
+            sortOrders.add(params.getSortOrder() == DESC ? cb.desc(sortBy) : cb.asc(sortBy));
+        }
+
+        // Complete the query
+        query.select(tagRoot)
+                .distinct(true)
+                .where(criteriaHelper.where())
+                .orderBy(sortOrders);
+
+        // Execute the query and update the search result
+        return em.createQuery(query)
+                .setMaxResults(params.getMaxSize())
+                .getResultList();
     }
 
 
