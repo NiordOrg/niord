@@ -341,6 +341,9 @@ angular.module('niord.messages')
                 scope.$watch("initIds", function (initIds) {
                     if (initIds && initIds.length > 0) {
                         $http.get('/rest/tags/tag/' + initIds.join()).then(function(response) {
+                            // Reset the initId array
+                            initIds.length = 0;
+                            // Update the loaded entities
                             angular.forEach(response.data, function (tag) {
                                 if (scope.multiple) {
                                     scope.tagData.tags.push(tag);
@@ -427,6 +430,9 @@ angular.module('niord.messages')
                     if (initIds && initIds.length > 0) {
                         $http.get('/rest/message-series/search/' + initIds.join() + '?lang=' + $rootScope.language + '&limit=20')
                             .then(function(response) {
+                                // Reset the initId array
+                                initIds.length = 0;
+                                // Update the loaded entities
                                 angular.forEach(response.data, function (series) {
                                     if (scope.multiple) {
                                         scope.seriesData.messageSeries.push(series);

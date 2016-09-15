@@ -74,6 +74,9 @@ angular.module('niord.common')
                     if (initIds && initIds.length > 0) {
                         $http.get('/rest/areas/search/' + initIds.join() + '?lang=' + $rootScope.language + '&limit=20')
                             .then(function(response) {
+                                // Reset the initId array
+                                initIds.length = 0;
+                                // Update the loaded entities
                                 angular.forEach(response.data, function (area) {
                                     if (scope.multiple) {
                                         scope.areaData.areas.push(area);
@@ -172,6 +175,9 @@ angular.module('niord.common')
                     if (initIds && initIds.length > 0) {
                         $http.get('/rest/categories/search/' + initIds.join() + '?lang=' + $rootScope.language + '&limit=20')
                             .then(function(response) {
+                                // Reset the initId array
+                                initIds.length = 0;
+                                // Update the loaded entities
                                 angular.forEach(response.data, function (category) {
                                     if (scope.multiple) {
                                         scope.categoryData.categories.push(category);
@@ -256,6 +262,9 @@ angular.module('niord.common')
                     if (initIds && initIds.length > 0) {
                         $http.get('/rest/charts/search/' + initIds.join() + '?lang=' + $rootScope.language + '&limit=20')
                             .then(function(response) {
+                                // Reset the initId array
+                                initIds.length = 0;
+                                // Update the loaded entities
                                 angular.forEach(response.data, function (chart) {
                                     if (scope.multiple) {
                                         scope.chartData.charts.push(chart);

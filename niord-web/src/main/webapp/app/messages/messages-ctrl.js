@@ -130,12 +130,20 @@ angular.module('niord.messages')
                 }
             };
 
-            // Used for initializing base data from parameters
+            // Used for initializing base data filter fields from the initial request parameters.
+            // The fields initialized with these IDs will reset the arrays, once they have
+            // loaded the corresponding entities and updated the "state" object with the them.
             $scope.initTagIds = [];
             $scope.initAreaIds = [];
             $scope.initCategoryIds = [];
             $scope.initChartIds = [];
             $scope.initSeriesIds = [];
+
+            /** Returns the number of pending base entities that has not yet been loaded */
+            $scope.pendingInitDataNo = function () {
+                return $scope.initTagIds.length + $scope.initAreaIds.length + $scope.initCategoryIds.length
+                     + $scope.initChartIds.length + $scope.initSeriesIds.length;
+            };
 
 
             /** Destroy any pending message loading operations **/
@@ -485,7 +493,12 @@ angular.module('niord.messages')
 
             /** Called when the filter is updated **/
             $scope.filterUpdated = function () {
-                
+                // When the page is first loaded, the base entities specified by parameters (e.g. tags, areas, etc)
+                // may not have been loaded yet by the respective filter fields, and thus, the state not yet updated.
+                if ($scope.pendingInitDataNo() > 0) {
+                    return;
+                }
+
                 // Enforce validity of the filter selection
                 if ($scope.state.type.mainType == 'NW') {
                     $scope.updateTypeFilter('NM', false);
@@ -888,6 +901,8 @@ angular.module('niord.messages')
 
             // Monitor changes to the state
             $scope.$watch("state", $scope.filterUpdated, true);
+            // Also monitor base data being loaded when the page first loads
+            $scope.$watch($scope.pendingInitDataNo, $scope.filterUpdated, true);
 
 
             /** Called when the state have been updated **/
