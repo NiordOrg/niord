@@ -17,10 +17,10 @@ package org.niord.core.message;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.domain.Domain;
-import org.niord.core.model.BaseEntity;
-import org.niord.core.user.User;
 import org.niord.core.message.vo.MessageTagVo;
 import org.niord.core.message.vo.MessageTagVo.MessageTagType;
+import org.niord.core.model.VersionedEntity;
+import org.niord.core.user.User;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -69,7 +69,7 @@ import java.util.UUID;
                 query="SELECT t FROM MessageTag t where t.expiryDate is not null and t.expiryDate < current_timestamp"),
 })
 @SuppressWarnings("unused")
-public class MessageTag extends BaseEntity<Integer> implements Comparable<MessageTag> {
+public class MessageTag extends VersionedEntity<Integer> implements Comparable<MessageTag> {
 
     @Column(unique = true, nullable = false)
     String tagId;
@@ -119,6 +119,7 @@ public class MessageTag extends BaseEntity<Integer> implements Comparable<Messag
         MessageTagVo tag = new MessageTagVo();
         tag.setTagId(tagId);
         tag.setName(name);
+        tag.setCreated(getCreated());
         tag.setExpiryDate(expiryDate);
         tag.setType(type);
         tag.setMessageCount(messageCount);
