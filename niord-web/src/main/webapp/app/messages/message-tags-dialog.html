@@ -30,7 +30,8 @@
                         <table class='table table-condensed'>
                             <tr>
                                 <th>tag</th>
-                                <th>Type</th>
+                                <th>type</th>
+                                <th>created</th>
                                 <th>expiry date</th>
                                 <th style="text-align: right">#messages</th>
                                 <th ng-if="isLoggedIn" style="text-align: right">action</th>
@@ -40,6 +41,7 @@
                                 <td>
                                     <span>{{tag.type | lowercase}}</span>
                                 </td>
+                                <td>{{tag.created | formatDate : 'll'}}</td>
                                 <td>{{tag.expiryDate | formatDate : 'll'}}</td>
                                 <td align="right">
                                     {{tag.messageCount | numeral}}
