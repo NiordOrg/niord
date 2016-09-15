@@ -59,6 +59,8 @@ angular.module('niord.editor')
 
             $scope.messageSeries = [];
 
+            $scope.messageTags = [];
+
             $scope.attachmentUploadUrl = undefined;
 
             // Record if the Edit page was entered from a message list URL
@@ -155,6 +157,9 @@ angular.module('niord.editor')
                 } else {
                     $scope.setDirty();
                 }
+
+                // Load the message tags
+                $scope.loadTags();
 
                 // Remove lock on save button
                 $scope.messageSaving = false;
@@ -717,7 +722,69 @@ angular.module('niord.editor')
 
 
             /*****************************/
-            /** Action menu functions   **/
+            /** Message tag handling    **/
+            /*****************************/
+
+
+            /** Loads the tags associated with the current message **/
+            $scope.loadTags = function() {
+                if ($scope.message && $scope.message.created) {
+                    var tag = MessageService.getLastMessageTagSelection();
+                    $scope.lastSelectedMessageTag = (tag) ? tag.name : undefined;
+
+                    MessageService.tagsForMessage($scope.message.id)
+                        .success(function (messageTags) {
+                            $scope.messageTags = messageTags;
+
+                            // If the current message is already associated with the last selected tag,
+                            // Do not provide a link to add it again.
+                            for (var x = 0; x < messageTags.length; x++) {
+                                if (tag && tag.tagId == messageTags[x].tagId) {
+                                    $scope.lastSelectedMessageTag = undefined;
+                                }
+                            }
+                        })
+                }
+            };
+
+
+            /** Adds the current message to the given tag **/
+            $scope.addToTag = function (tag) {
+                if (tag) {
+                    MessageService.addMessagesToTag(tag, [ $scope.message.id ])
+                        .success(function () {
+                            growl.info("Added message to " + tag.name, { ttl: 3000 });
+                            $scope.loadTags();
+                        })
+                }
+            };
+
+
+            /** Adds the current message to the tag selected via the Message Tag dialog */
+            $scope.addToTagDialog = function () {
+                MessageService.messageTagsDialog().result
+                    .then($scope.addToTag);
+            };
+
+
+            /** Adds the current message to the last selected tag */
+            $scope.addToLastSelectedTag = function () {
+                $scope.addToTag(MessageService.getLastMessageTagSelection());
+            };
+
+
+            /** Removes the current message from the given tag */
+            $scope.removeFromTag = function (tag) {
+                MessageService.removeMessagesFromTag(tag, [ $scope.message.id ])
+                    .success(function () {
+                        growl.info("Removed message from " + tag.name, { ttl: 3000 });
+                        $scope.loadTags();
+                    })
+            };
+
+
+            /*****************************/
+            /** Other action menu ops   **/
             /*****************************/
 
 
