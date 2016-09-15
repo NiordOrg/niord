@@ -53,6 +53,7 @@ angular.module('niord.editor')
                 editType:           "@",
                 drawControls:       "@",
                 featureCollection:  "=",
+                showWmsLayer:       "=",
                 onSave:             '&',
                 tabIndex:           '='
             },
@@ -66,6 +67,7 @@ angular.module('niord.editor')
                 scope.languages = $rootScope.modelLanguages;
                 scope.editType = scope.editType || 'features';
                 scope.wmsLayerEnabled = $rootScope.wmsLayerEnabled;
+                scope.showWmsLayer = scope.showWmsLayer && $rootScope.wmsLayerEnabled;
                 scope.openSeaMapLayerEnabled = $rootScope.openSeaMapLayerEnabled;
 
                 /** The OpenLayer features being edited **/

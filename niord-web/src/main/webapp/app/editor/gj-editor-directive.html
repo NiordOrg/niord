@@ -185,8 +185,9 @@
         </div>
 
         <ol-map class="osm-water-bg full-size">
-            <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
-            <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
+            <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"
+                            source-properties="{ url: '//{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png' }"></map-tile-layer>
+            <map-tile-layer name="WMS" visible="showWmsLayer" layer-switcher="wmsLayerEnabled" source="WMS"
                             source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
             <map-open-sea-map-layer name="OpenSeaMap" visible="false" layer-switcher="openSeaMapLayerEnabled"></map-open-sea-map-layer>
             <map-aton-layer name="AtoN" visible="false" layer-switcher="true" aton-selected="atonSelected(aton)"></map-aton-layer>
