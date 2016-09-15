@@ -13,7 +13,8 @@
 
             <div class="row">
                 <div class="col-xs-12 col-sm-3 col-md-3">
-                    <input id="tagIdFilter" class="form-control input-sm col-sm-2" ng-model="filter.name" type="text" placeholder="Name"
+                    <input id="tagIdFilter" class="form-control input-sm col-sm-2" ng-model="filter.name" type="text"
+                           tabindex="1" placeholder="Name"
                            ng-model-options="{ updateOn: 'default blur', debounce: { default: 200, blur: 0 } }"
                            autocomplete="off" spellcheck="false">
                     <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
@@ -21,13 +22,17 @@
                 </div>
                 <div class="col-xs-8 col-sm-6 col-md-6">
                     <div class="btn-group">
-                        <button ng-if="isLoggedIn" class="btn btn-default btn-sm" ng-model="filter.type.PRIVATE" uib-btn-checkbox>private</button>
-                        <button class="btn btn-default btn-sm" ng-model="filter.type.DOMAIN" uib-btn-checkbox>domain</button>
-                        <button class="btn btn-default btn-sm" ng-model="filter.type.PUBLIC" uib-btn-checkbox>public</button>
+                        <button ng-if="isLoggedIn" class="btn btn-default btn-sm"
+                                tabindex="2" ng-model="filter.type.PRIVATE" uib-btn-checkbox>private</button>
+                        <button class="btn btn-default btn-sm"
+                                tabindex="3" ng-model="filter.type.DOMAIN" uib-btn-checkbox>domain</button>
+                        <button class="btn btn-default btn-sm"
+                                tabindex="4" ng-model="filter.type.PUBLIC" uib-btn-checkbox>public</button>
                     </div>
                 </div>
                 <div ng-if="isLoggedIn" class="col-xs-4 col-sm-3 col-md-3" style="text-align: right">
-                    <button type="submit" class="btn btn-primary btn-sm" ng-click="addTag()">
+                    <button type="submit" class="btn btn-primary btn-sm"
+                            tabindex="5" ng-click="addTag()">
                         <span class="glyphicon glyphicon-plus"></span> New Tag
                     </button>
                 </div>
@@ -36,7 +41,7 @@
             <div class="row" style="padding-top: 20px;">
                 <div class="col-sm-12">
                     <div class="message-tags-table">
-                        <table class='table table-condensed'>
+                        <table class='table table-condensed table-hover'>
                             <tr>
                                 <th ng-click="toggleSortOrder('NAME')" class="clickable">
                                     tag
@@ -63,16 +68,16 @@
                                 </th>
                             </tr>
                             <tr ng-repeat="tag in data.tags">
-                                <td>
-                                    <a href ng-click="navigateTag(tag)">{{tag.name}}</a>
+                                <td class="pointer" ng-click="navigateTag(tag)">
+                                    {{tag.name}}
                                 </td>
-                                <td>
+                                <td class="pointer" ng-click="navigateTag(tag)">
                                     <span>{{tag.type | lowercase}}</span>
                                 </td>
-                                <td>
+                                <td class="pointer" ng-click="navigateTag(tag)">
                                     {{tag.created | formatDate : 'll'}}
                                 </td>
-                                <td>
+                                <td class="pointer" ng-click="navigateTag(tag)">
                                     {{tag.expiryDate | formatDate : 'll'}}
                                 </td>
                                 <td align="right">
@@ -143,7 +148,8 @@
 
         <div class="row" style="margin-top: 24px;">
             <div class="form-group col-xs-12">
-                <button class="btn btn-primary btn-sm" ng-click="$dismiss('aborted')">Close</button>
+                <button class="btn btn-default btn-sm"
+                        tabindex="1000" ng-click="$dismiss('aborted')">Close</button>
             </div>
         </div>
     </div>
