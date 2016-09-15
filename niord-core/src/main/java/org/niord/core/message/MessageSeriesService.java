@@ -354,9 +354,9 @@ public class MessageSeriesService extends BaseService {
         message.setMrn(messageSeries.getMrnFormat());
         message.setShortId(messageSeries.getShortFormat());
         params.entrySet().forEach(e -> {
-            message.setMrn(message.getMrn().replace(e.getKey(), e.getValue()));
+            message.setMrn(message.getMrn().replace(e.getKey(), e.getValue()).trim());
             if (StringUtils.isNotBlank(message.getShortId())) {
-                message.setShortId(message.getShortId().replace(e.getKey(), e.getValue()));
+                message.setShortId(message.getShortId().replace(e.getKey(), e.getValue()).trim());
             }
         });
 
