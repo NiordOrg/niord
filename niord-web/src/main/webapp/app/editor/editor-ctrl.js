@@ -668,6 +668,36 @@ angular.module('niord.editor')
             };
 
 
+            /** Dialog that facilitates formatting selected time intervals as text **/
+            $scope.timeDialog = function (lang) {
+                return $uibModal.open({
+                    templateUrl: '/app/editor/format-time-dialog.html',
+                    controller: 'FormatMessageTimeDialogCtrl',
+                    size: 'md',
+                    resolve: {
+                        dateIntervals: function () { return $scope.message.dateIntervals; },
+                        lang: function () { return lang; }
+                    }
+                });
+            };
+
+
+            /** Allows the user to select which time intervals should be inserted and how they should be formatted **/
+            $scope.formatTimeDialog = function (editor) {
+
+                // The ID of the parent div has the format "tinymce-<<lang>>"
+                var parentDivId = editor.getElement().parentElement.id;
+                var lang = parentDivId.split("-")[1];
+
+                $scope.$apply(function() {
+                    $scope.timeDialog(lang).result
+                        .then(function (result) {
+                            editor.insertContent(result);
+                        });
+                });
+            };
+
+
             /** The TinyMCE editor actually hides the textarea and constructs an iframe. Fix tab-indexing **/
             $scope.fixTinyMCETabIndex = function (editor) {
                 var id = editor.getElement().parentElement.id;
@@ -694,7 +724,7 @@ angular.module('niord.editor')
                 plugins: "autolink lists link image anchor code fullscreen textcolor media table contextmenu paste",
                 contextmenu: "link image inserttable | cell row column deletetable",
                 toolbar: "styleselect | bold italic | forecolor backcolor | alignleft aligncenter alignright alignjustify | "
-                         + "bullist numlist  | outdent indent | link image table | code fullscreen | niordlocations",
+                         + "bullist numlist  | outdent indent | link image table | code fullscreen | niordlocations niordtime",
                 table_class_list: [
                     { title: 'None', value: ''},
                     { title: 'No border', value: 'no-border'},
@@ -716,6 +746,11 @@ angular.module('niord.editor')
                         title: 'Insert Locations',
                         icon: 'map-marker',
                         onclick : function () { $scope.formatLocations(editor); }
+                    });
+                    editor.addButton( 'niordtime', {
+                        title: 'Insert Time',
+                        icon: 'time',
+                        onclick : function () { $scope.formatTimeDialog(editor); }
                     });
                 },
                 init_instance_callback : $scope.fixTinyMCETabIndex

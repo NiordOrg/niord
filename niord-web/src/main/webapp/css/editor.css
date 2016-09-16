@@ -125,6 +125,11 @@ i.mce-i-map-marker:before {
     font-family: "Glyphicons Halflings";
 }
 
+i.mce-i-time:before {
+    content: "\e023";
+    font-family: "Glyphicons Halflings";
+}
+
 div.mce-fullscreen {
     z-index: 1050;
 }
@@ -153,6 +158,15 @@ div.mce-fullscreen {
     height: 200px;
     border: 1px solid lightgray;
     box-shadow: 2px 2px 4px rgba(50, 50, 50, 0.5);
+}
+
+
+/** Editor -> Format time dialog **/
+
+.format-time-result {
+    padding: 5px;
+    max-height: 150px;
+    border: 1px solid lightgray;
 }
 
 

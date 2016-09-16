@@ -220,5 +220,57 @@ angular.module('niord.editor')
             $scope.selectFeatures($scope.featureCollection.features.length == 1);
         }])
 
+
+    /*******************************************************************
+     * Controller that allows the user to format selected time intervals as text
+     *******************************************************************/
+    .controller('FormatMessageTimeDialogCtrl', ['$scope', '$rootScope', '$window', 'growl',
+        'DateIntervalService', 'dateIntervals', 'lang',
+        function ($scope, $rootScope, $window, growl,
+                  DateIntervalService, dateIntervals, lang) {
+            'use strict';
+
+            $scope.dateIntervals = angular.copy(dateIntervals);
+            $scope.lang = lang;
+            $scope.data = {
+                result: ''
+            };
+
+            /** Called when the time selection changes */
+            $scope.timeSelectionChanged = function () {
+
+                // Compute the result
+                $scope.data.result = '';
+
+                if ($scope.dateIntervals.length == 0) {
+                    $scope.data.result = DateIntervalService.translateDateInterval($scope.lang, null);
+                } else {
+                    angular.forEach($scope.dateIntervals, function (di) {
+                        if (di.selected) {
+                            $scope.data.result += DateIntervalService.translateDateInterval($scope.lang, di) + '<br>';
+                        }
+                    });
+                }
+            };
+
+
+            /** Called to select all or none of the date intervals */
+            $scope.selectTimeIntervals = function (select) {
+                angular.forEach($scope.dateIntervals, function (di) {
+                    di.selected = select;
+                });
+                $scope.timeSelectionChanged();
+            };
+
+
+            /** Called when Insert is clicked **/
+            $scope.insert = function () {
+                $scope.$close($scope.data.result);
+            };
+
+
+            // Initial selection
+            $scope.selectTimeIntervals($scope.dateIntervals.length == 1);
+        }])
 ;
 
