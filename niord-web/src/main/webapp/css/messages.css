@@ -330,16 +330,13 @@ table.message-details-item-fields td {
     padding-top: 5px;
 }
 
-table.message-details-item-fields td ol {
-    padding-left: 0;
-}
-
 .message-details-position-names {
     margin-top: 10px;
     text-decoration: underline;
 }
 
 ol.message-details-positions {
+    padding-left: 0;
     margin-left: 20px;
     margin-bottom: 0;
     color: darkgray;
@@ -383,6 +380,10 @@ ol.message-details-positions li span {
 
 .message-description table tr td.underline {
     border-bottom: 1px solid #333;
+}
+
+.message-description ol, .message-description ul {
+    padding-left: 20px;
 }
 
 /**

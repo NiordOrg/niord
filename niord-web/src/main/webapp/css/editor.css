@@ -83,10 +83,6 @@
     padding: 2px;
 }
 
-.editor-field-value ol {
-    padding-left: 0;
-}
-
 .editor-field-value-editing {
     border: 1px solid lightgray;
     box-shadow: 2px 2px 4px rgba(50, 50, 50, 0.5);

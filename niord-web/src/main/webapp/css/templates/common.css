@@ -48,10 +48,6 @@ td.table-item {
     width: 100%;
 }
 
-.field-value ol {
-    padding-left: 0;
-}
-
 .feature-name {
     margin-top: 5px;
     margin-bottom: 5px;
@@ -62,6 +58,7 @@ ol.feature-coordinates {
     margin-left: 20px;
     margin-bottom: 0;
     margin-top: 0;
+    padding-left: 0;
 }
 
 ol.feature-coordinates li {
@@ -105,6 +102,10 @@ ol.feature-coordinates li span {
 
 .message-description table tr td.underline {
     border-bottom: 0.05em solid #333;
+}
+
+.message-description ol, .message-description ul {
+    padding-left: 20px;
 }
 
 .attachment {
