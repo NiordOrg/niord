@@ -132,22 +132,13 @@ div.mce-fullscreen {
 /** Editor -> Format locations dialog **/
 
 .format-locations-result {
+    padding: 5px;
     font-size: 12px;
     max-height: 150px;
     height: 150px;
     overflow: hidden;
     overflow-y: scroll;
     border: 1px solid lightgray;
-}
-
-.format-locations-result table {
-    width: 80%;
-    margin: 5px;
-}
-
-.format-locations-result table tr td {
-    padding: 5px 10px;
-    border: 1px solid gray;
 }
 
 .format-locations-selection {

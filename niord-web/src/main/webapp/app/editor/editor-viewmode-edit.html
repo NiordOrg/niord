@@ -391,12 +391,16 @@
                     </div>
                     <div ng-if="showCoordinates">
                         <div ng-repeat="featureCoords in featureCoordinates">
-                            <div ng-if="featureCoords.name" class="message-details-position-names">{{featureCoords.name}}</div>
-                            <ol class="message-details-positions" start="{{featureCoords.startIndex}}">
-                                <li ng-repeat="c in featureCoords.coords">
-                                    <span>{{c | lonlat:{ decimals : 3, pp: true } }}<span ng-if="c.name">, {{c.name}}</span></span>
-                                </li>
-                            </ol>
+                            <table class="positions">
+                                <tr ng-if="featureCoords.name">
+                                    <th colspan="3">{{featureCoords.name}}</th>
+                                </tr>
+                                <tr ng-repeat="c in featureCoords.coords">
+                                    <td nowrap>{{featureCoords.startIndex + $index}})</td>
+                                    <td nowrap>{{c | lonlat:{ decimals : 3, pp: true } }}</td>
+                                    <td>{{c.name}}</td>
+                                </tr>
+                            </table>
                         </div>
                     </div>
                 </editor-field-value-viewer>

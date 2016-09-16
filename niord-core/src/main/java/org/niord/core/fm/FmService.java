@@ -325,7 +325,7 @@ public class FmService extends BaseService {
                 if (format == ProcessFormat.TEXT) {
                     IOUtils.write(result, out, "UTF-8");
 
-                    log.info("Completed Freemarker text generation for " + getTemplatePath()
+                    log.debug("Completed Freemarker text generation for " + getTemplatePath()
                             + " in " + (System.currentTimeMillis() - t0) + " ms");
 
                 } else if (format == ProcessFormat.PDF) {

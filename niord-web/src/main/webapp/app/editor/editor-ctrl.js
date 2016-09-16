@@ -699,7 +699,8 @@ angular.module('niord.editor')
                     { title: 'None', value: ''},
                     { title: 'No border', value: 'no-border'},
                     { title: 'Condensed', value: 'condensed'},
-                    { title: 'No border + condensed', value: 'no-border condensed'}
+                    { title: 'No border + condensed', value: 'no-border condensed'},
+                    { title: 'Positions', value: 'positions'}
                 ],
                 table_cell_class_list: [
                     {title: 'None', value: ''},

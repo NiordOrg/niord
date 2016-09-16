@@ -42,6 +42,7 @@ public class LatLonDirective implements TemplateDirectiveModel {
 
     private static final String PARAM_LAT = "lat";
     private static final String PARAM_LON = "lon";
+    private static final String PARAM_SEPARATOR = "separator";
     private static final String PARAM_FORMAT = "format";
 
     /**
@@ -82,12 +83,14 @@ public class LatLonDirective implements TemplateDirectiveModel {
 
         SimpleNumber latModel = (SimpleNumber)params.get(PARAM_LAT);
         SimpleNumber lonModel = (SimpleNumber)params.get(PARAM_LON);
+        SimpleScalar separatorModel = (SimpleScalar)params.get(PARAM_SEPARATOR);
+
         if (latModel == null && lonModel == null) {
             throw new TemplateModelException("The 'lat' and/or 'lon' parameter must be specified");
         }
 
         try {
-            String separator = "  ";
+            String separator = separatorModel == null ? " - " : separatorModel.getAsString();
             Double lat = (latModel == null) ? null : latModel.getAsNumber().doubleValue();
             Double lon = (lonModel == null) ? null : lonModel.getAsNumber().doubleValue();
 
@@ -100,8 +103,11 @@ public class LatLonDirective implements TemplateDirectiveModel {
                     format = LATLON_SEC;
                 } else if ("navtex".equalsIgnoreCase(formatModel.getAsString())) {
                     format = LATLON_NAVTEX;
+                    // Override separator
+                    separator = " ";
                 } else if ("audio".equalsIgnoreCase(formatModel.getAsString())) {
                     format = getAudioFormat(env.getLocale());
+                    // Override separator
                     separator = " - ";
                 }
             }

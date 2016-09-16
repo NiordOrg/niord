@@ -358,33 +358,51 @@ ol.message-details-positions li span {
     padding: 3px;
 }
 
-.message-description table.no-border {
-    border: 0;
-}
-
-.message-description table.no-border td, .message-description table.no-border th {
-    border: 0;
-}
-
-.message-description table.condensed {
-    padding: 0;
-}
-
-.message-description table.condensed td, .message-description table.condensed th {
-    padding: 0;
-}
-
-.message-description table tr.underline td {
-    border-bottom: 1px solid #333;
-}
-
-.message-description table tr td.underline {
-    border-bottom: 1px solid #333;
-}
-
 .message-description ol, .message-description ul {
     padding-left: 20px;
 }
+
+table.no-border {
+    border: 0;
+}
+
+table.no-border td, table.no-border th {
+    border: 0;
+}
+
+table.condensed {
+    padding: 0;
+}
+
+table.condensed td, table.condensed th {
+    padding: 0;
+}
+
+tr.underline td {
+    border-bottom: 1px solid #333;
+}
+
+td.underline {
+    border-bottom: 1px solid #333;
+}
+
+table.positions {
+    border: 0;
+    margin-bottom: 1mm;
+}
+
+table.positions td, table.positions th {
+    color: #333;
+    border: 0;
+    padding: 0 3mm 0 0;
+    text-align: left;
+}
+
+table.positions td:nth-child(1) {
+    text-align: right;
+    color: darkgray;
+}
+
 
 /**
  * Message selection styles

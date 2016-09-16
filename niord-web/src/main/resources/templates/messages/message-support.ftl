@@ -248,20 +248,20 @@
                 <td class="field-name">${text("msg.field.positions")}</td>
                 <td class="field-value">
                     <#list msg.geometry as feature>
-                        <#if feature.name?has_content>
-                            <div class="feature-name">${feature.name}</div>
-                        </#if>
-                        <#if feature.coordinates?has_content>
-                            <ol class="feature-coordinates" start="${feature.startIndex}">
-                            <#list feature.coordinates as coord>
-                                <li>
-                                    <span>
-                                        <@formatPos lat=coord.coordinates[1] lon=coord.coordinates[0] /><#if coord.name?has_content>,&nbsp;${coord.name}</#if>
-                                    </span>
-                                </li>
-                            </#list>
-                            </ol>
-                        </#if>
+                        <table class="positions">
+                            <#if feature.name?has_content>
+                                <tr><th colspan="3">${feature.name}</th></tr>
+                            </#if>
+                            <#if feature.coordinates?has_content>
+                                <#list feature.coordinates as coord>
+                                    <tr>
+                                        <td nowrap>${feature.startIndex + coord?index})</td>
+                                        <td nowrap><@formatPos lat=coord.coordinates[1] lon=coord.coordinates[0] /></td>
+                                        <td><#if coord.name?has_content>${coord.name}</#if></td>
+                                    </tr>
+                                </#list>
+                            </#if>
+                        </table>
                     </#list>
                 </td>
             </tr>
