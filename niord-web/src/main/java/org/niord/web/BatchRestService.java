@@ -148,6 +148,11 @@ public class BatchRestService {
 
     /**
      * Returns the status of the batch job system
+     *
+     * NB: Since this gets called every 10 seconds, adding a @RolesAllowed("admin") has
+     * the potential of filling up the server log.
+     * Instead, we allow all to call the endpoint, but return an empty result for non-admin users.
+     *
      * @return the status of the batch job system
      */
     @GET
@@ -155,8 +160,11 @@ public class BatchRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed("admin")
+    @PermitAll
     public BatchStatusVo getStatus() {
+        if (!userService.isCallerInRole("admin")) {
+            return new BatchStatusVo();
+        }
         return batchService.getStatus();
     }
 
