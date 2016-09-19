@@ -21,6 +21,8 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.message.MessageFilter;
 import org.niord.core.message.MessageFilterService;
+import org.niord.core.user.User;
+import org.niord.core.user.UserService;
 import org.niord.model.message.MessageFilterVo;
 import org.slf4j.Logger;
 
@@ -34,6 +36,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,7 +46,6 @@ import java.util.stream.Collectors;
 @Path("/filters")
 @Stateless
 @SecurityDomain("keycloak")
-@RolesAllowed({ "editor" })
 public class MessageFilterRestService {
 
     @Inject
@@ -51,6 +53,18 @@ public class MessageFilterRestService {
 
     @Inject
     MessageFilterService messageFilterService;
+
+    @Inject
+    UserService userService;
+
+
+    /** Validates that the user is logged in, but does not check any specific roles **/
+    private void checkUserLoggedIn() {
+        User user = userService.currentUser();
+        if (user == null) {
+            throw new WebApplicationException(403);
+        }
+    }
 
 
     /** Returns all message list filters */
@@ -60,6 +74,9 @@ public class MessageFilterRestService {
     @GZIP
     @NoCache
     public List<MessageFilterVo> getMessageFilters() {
+        // Must be logged in
+        checkUserLoggedIn();
+
         return messageFilterService.getMessageFiltersForUser().stream()
                 .map(MessageFilter::toVo)
                 .collect(Collectors.toList());
@@ -73,6 +90,9 @@ public class MessageFilterRestService {
     @GZIP
     @NoCache
     public MessageFilterVo getMessageFilter(@PathParam("filterId") Integer filterId) {
+        // Must be logged in
+        checkUserLoggedIn();
+
         MessageFilter filter = messageFilterService.findById(filterId);
         return filter == null ? null : filter.toVo();
     }
@@ -86,6 +106,9 @@ public class MessageFilterRestService {
     @GZIP
     @NoCache
     public MessageFilterVo createMessageFilter(MessageFilterVo filter) {
+        // Must be logged in
+        checkUserLoggedIn();
+
         log.info("Creating new message filter " + filter);
         return messageFilterService.createOrUpdateMessageFilter(new MessageFilter(filter)).toVo();
     }
@@ -97,6 +120,9 @@ public class MessageFilterRestService {
     @GZIP
     @NoCache
     public void deleteMessageFilter(@PathParam("filterId") Integer filterId) {
+        // Must be logged in
+        checkUserLoggedIn();
+
         log.info("Deleting message filter " + filterId);
         messageFilterService.deleteMessageFilter(filterId);
     }

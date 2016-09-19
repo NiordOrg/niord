@@ -38,11 +38,8 @@ angular.module('niord.messages')
             $scope.selection = $rootScope.messageSelection;
             $scope.selectionList = []; // Flattened list of selected messages
             $scope.totalMessageNo = 0;
-            $scope.filterNames = [ 'messageSeries', 'text', 'type', 'status', 'tag',
+            $scope.filterNames = [ 'domain', 'messageSeries', 'text', 'type', 'status', 'tag',
                 'comments', 'reference', 'aton', 'chart', 'area', 'category', 'date' ];
-            if ($rootScope.domain) {
-                $scope.filterNames.unshift('domain');
-            }
             $scope.state = {
 
                 /** Sorting **/
@@ -55,7 +52,8 @@ angular.module('niord.messages')
                     reloadMap : false // can be used to trigger a map reload
                 },
                 domain : {
-                    enabled: $rootScope.domain !== undefined
+                    enabled: false,
+                    domain: undefined
                 },
                 text: {
                     enabled: false,
@@ -139,6 +137,7 @@ angular.module('niord.messages')
             $scope.initChartIds = [];
             $scope.initSeriesIds = [];
 
+
             /** Returns the number of pending base entities that has not yet been loaded */
             $scope.pendingInitDataNo = function () {
                 return $scope.initTagIds.length + $scope.initAreaIds.length + $scope.initCategoryIds.length
@@ -153,6 +152,22 @@ angular.module('niord.messages')
                     loadTimer = undefined;
                 }
             });
+
+
+            /** Returns the domain used for searching messages **/
+            $scope.searchDomain = function () {
+                if ($scope.state.domain.enabled && $scope.state.domain.domain) {
+                    return $scope.state.domain.domain;
+                }
+                return $rootScope.domain;
+            };
+
+
+            /** Returns if the domain used for searching messages is the current domain **/
+            $scope.searchCurrentDomain = function () {
+                return $rootScope.domain == $scope.searchDomain();
+            };
+
 
             /*****************************/
             /** Filter Handling         **/
@@ -238,6 +253,9 @@ angular.module('niord.messages')
                     case 'chart':
                         filter.charts.length = 0;
                         break;
+                    case 'domain':
+                        filter.domain = undefined;
+                        break;
                     case 'messageSeries':
                         filter.messageSeries.length = 0;
                         break;
@@ -285,8 +303,8 @@ angular.module('niord.messages')
                 }
 
                 // Handle Filters
-                if ($rootScope.domain && !s.domain.enabled) {
-                    params += '&domain=false'
+                if (s.domain.enabled && s.domain.domain) {
+                    params += '&domain=' + encodeURIComponent(s.domain.domain.domainId);
                 }
                 if (s.text.enabled) {
                     params += '&query=' + encodeURIComponent(s.text.query);
@@ -412,8 +430,12 @@ angular.module('niord.messages')
                 }
 
                 // Handle filters
-                if ($rootScope.domain) {
-                    s.domain.enabled = params.domain != 'false';
+                if (params.domain) {
+                    var domains = $.grep($rootScope.domains, function (domain) {
+                        return domain.domainId == params.domain;
+                    });
+                    s.domain.enabled = domains.length == 1;
+                    s.domain.domain = domains.length == 1 ? domains[0] : undefined;
                 }
                 if (params.query) {
                     s.text.enabled = true;
@@ -506,8 +528,10 @@ angular.module('niord.messages')
                     $scope.updateTypeFilter('NW', false);
                 }
 
-                if (!$scope.state.domain.enabled) {
-                    $scope.updateStateFilter(false);
+                if (!$scope.searchCurrentDomain()) {
+                    $scope.state.status.DRAFT = false;
+                    $scope.state.status.EXPIRED = false;
+                    $scope.state.status.DELETED = false;
                 }
 
                 if (loadTimer) {

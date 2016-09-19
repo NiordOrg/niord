@@ -1,0 +1,17 @@
+<div class="input-group">
+    <ui-select ng-model="domainData.domain" >
+        <ui-select-match placeholder="Select Domain">
+            {{domainData.domain.name}}
+        </ui-select-match>
+        <ui-select-choices repeat="d in domains"
+                           refresh="refreshDomains($select.search)"
+                           refresh-delay="50">
+            <div>
+                <div ng-bind-html="d.name | highlight: $select.search"></div>
+            </div>
+
+        </ui-select-choices>
+    </ui-select>
+
+    <span class="input-group-addon clickable" style="font-size: 12px" ng-click="removeDomain()"><span class="glyphicon glyphicon-trash"></span></span>
+</div>

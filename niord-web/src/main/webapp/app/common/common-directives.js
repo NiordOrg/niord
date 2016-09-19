@@ -19,6 +19,40 @@
  */
 angular.module('niord.common')
 
+    /********************************
+     * Defines a domain field used for
+     * selecting a domain
+     ********************************/
+    .directive('domainField', [ '$rootScope', function ($rootScope) {
+        'use strict';
+
+        return {
+            restrict: 'E',
+            templateUrl: '/app/common/domain-field.html',
+            replace: false,
+            scope: {
+                domainData: "="
+            },
+            link: function(scope) {
+
+                /** Refreshes the domain selection **/
+                scope.refreshDomains = function (text) {
+                    text = text || '';
+                    scope.domains = $.grep($rootScope.domains, function (domain) {
+                        return domain.name.toLowerCase().indexOf(text.toLowerCase()) !== -1;
+                    });
+                };
+                scope.refreshDomains();
+
+
+                /** Removes the current domain selection */
+                scope.removeDomain = function () {
+                    scope.domainData.domain = null;
+                }
+            }
+        }
+    }])
+
     /****************************************************************
      * The areas-field directive supports selecting either a
      * single area or a list of areas. For single-area selection use

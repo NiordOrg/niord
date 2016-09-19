@@ -166,8 +166,8 @@ angular.module('niord.common')
     /**
      * The application domain service is used for loading and changing application domains, etc.
      */
-    .service('DomainService', ['$rootScope', '$window', 'AuthService',
-        function ($rootScope, $window, AuthService) {
+    .service('DomainService', ['$rootScope', '$window', '$location', 'AuthService',
+        function ($rootScope, $window, $location, AuthService) {
             'use strict';
 
             var that = this;
@@ -177,7 +177,6 @@ angular.module('niord.common')
                 if (domain) {
                     $rootScope.domain = domain;
                     $window.localStorage.domain = domain.domainId;
-                    $window.localStorage.lastDomain = domain.domainId;
                     if (domain.timeZone) {
                         moment.tz.setDefault(domain.timeZone);
                     }
@@ -191,12 +190,13 @@ angular.module('niord.common')
             /** Sets the initial application domain */
             this.initDomain = function () {
 
-                // Prune the list of domains to be the one the user has roles for
-                $rootScope.domains = $.grep($rootScope.domains, function (domain) {
-                    return AuthService.hasRolesFor(domain.domainId);
+                // Mark domains editable if the current user has a role associated with them
+                angular.forEach($rootScope.domains, function (domain) {
+                    domain.editable = AuthService.hasRolesFor(domain.domainId);
                 });
 
-                var domainId = $window.localStorage.domain || $window.localStorage.lastDomain;
+                var requestDomain = $location.search().domain;
+                var domainId = requestDomain || $window.localStorage.domain;
                 var matchingDomains = $.grep($rootScope.domains, function (domain) {
                     return domain.domainId == domainId;
                 });
