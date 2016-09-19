@@ -16,8 +16,6 @@
 
 /**
  * The main Niord message list app module
- *
- * @type {angular.Module}
  */
 
 angular.module('niord.auth', []);
@@ -33,8 +31,10 @@ angular.module('niord.home', []);
 
 
 var app = angular.module('niord.admin', [
-        'ngSanitize', 'ui.bootstrap', 'ui.select', 'ui.router', 'ui.tinymce', 'ui.mask', 'pascalprecht.translate', 'angular-growl', 'ng-sortable', 'angularFileUpload',
-        'niord.common', 'niord.auth', 'niord.admin', 'niord.atons', 'niord.messages', 'niord.conf', 'niord.map', 'niord.editor', 'niord.schedule', 'niord.home' ])
+        'ngSanitize', 'ui.bootstrap', 'ui.select', 'ui.router', 'ui.tinymce', 'ui.mask', 'pascalprecht.translate',
+        'angular-growl', 'ng-sortable', 'angularFileUpload','jlareau.bowser',
+        'niord.common', 'niord.auth', 'niord.admin', 'niord.atons', 'niord.messages',
+        'niord.conf', 'niord.map', 'niord.editor', 'niord.schedule', 'niord.home' ])
 
     .config(['$stateProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $urlRouterProvider, $httpProvider) {
         'use strict';
@@ -204,8 +204,11 @@ var app = angular.module('niord.admin', [
     }])
 
 
-    .run(['$rootScope', '$state', '$location', 'growl', 'AuthService',
-        function($rootScope, $state, $location, growl, AuthService) {
+    .run(['$rootScope', '$state', '$location', 'growl', 'bowser', 'AuthService',
+        function($rootScope, $state, $location, growl, bowser, AuthService) {
+
+        // Register if the user uses an IE browser - any IE version, but allow Edge for now
+        $rootScope.msie = bowser.msie; // || bowser.msedge
 
         /** TODO: Merge with role checks in AuthCtrl and AuthService **/
         function checkRoles(roles) {
