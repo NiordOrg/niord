@@ -50,6 +50,7 @@ angular.module('niord.editor')
             scope: {
                 class:              '@',
                 openEditorMessage:  "@",
+                editAsTextMessage:  "@",
                 editType:           "@",
                 drawControls:       "@",
                 featureCollection:  "=",
@@ -61,6 +62,7 @@ angular.module('niord.editor')
 
                 scope.mode = 'viewer';
                 scope.openEditorMessage = scope.openEditorMessage || 'Edit';
+                scope.editAsTextMessage = scope.editAsTextMessage || 'Edit as text';
                 scope.drawControls  =  scope.drawControls || 'point,polyline,polygon,select,remove';
                 scope.drawControl = 'select';
                 scope.editorId = attrs['id'] + '-editor';
@@ -253,22 +255,7 @@ angular.module('niord.editor')
                     scope.featureContexts.length = 0;
 
                     // Convert the GeoJson features to OpenLayers features and buffer features
-                    angular.forEach(scope.featureCollection.features, function (gjFeature) {
-                        var olFeature = MapService.gjToOlFeature(gjFeature);
-                        MapService.checkCreateId(olFeature);
-                        scope.features.push(olFeature);
-                    });
-
-                    // Build the list of feature contexts containing all non-buffer features
-                    angular.forEach(scope.features, function (olFeature) {
-                        var featureCtx = createFeatureCtxFromFeature(olFeature);
-                        scope.featureContexts.push(featureCtx);
-                    });
-
-                    // By default, display only the types of data that are filled out
-                    angular.forEach(scope.featureContexts, function (featureCtx) {
-                        initFeatureCtxShowFlags(featureCtx);
-                    });
+                    scope.importGjFeatures(scope.featureCollection.features);
 
                     // Enter editor mode
                     scope.mode = 'editor';
@@ -305,6 +292,26 @@ angular.module('niord.editor')
 
                     }
                     scope.mode = 'viewer';
+                };
+
+
+                /** Opens the plain-text editor **/
+                scope.openPlainTextEditor = function () {
+
+                    // TODO:
+                    // 1) Only make option available for simple GeoJSON geometries
+                    // 2) When editType == 'feature', the result should be merged
+
+                    var features = scope.featureCollection.features.slice();
+                    scope.openGeometryImportDialog("plain-text-editor-dialog.html", 'lg', features)
+                        .result.then(function (features) {
+                            scope.featureCollection.features = features;
+
+                            // Check if we need to call onSave callback
+                            if (scope.onSave) {
+                                scope.onSave({featureCollection: scope.featureCollection});
+                            }
+                        });
                 };
 
 
@@ -465,51 +472,71 @@ angular.module('niord.editor')
                 };
 
 
-                /** Imports geometries from various sources **/
-                scope.importGeometry = function () {
-                    // Get the user to pick an area with a geometry
-                    $uibModal.open({
-                            controller: "GeometryImportDialogCtrl",
-                            templateUrl: "/app/editor/geometry-import-dialog.html",
-                            size: 'md',
-                            resolve: {
-                                features: function () { return undefined;  }
-                            }
-                    }).result.then(function (features) {
+                /** Imports the list of GeoJSON features **/
+                scope.importGjFeatures = function (features) {
+                    var olFeatures = [];
+                    if (features && features.length > 0) {
                         angular.forEach(features, function (feature) {
-                            MapService.checkCreateId(feature);
-                            scope.features.push(feature);
-                            var featureCtx = createFeatureCtxFromFeature(feature);
+                            // Convert to an OpenLayer feature
+                            var olFeature = MapService.gjToOlFeature(feature);
+
+                            // Ensure that the feature has an ID
+                            MapService.checkCreateId(olFeature);
+
+                            olFeatures.push(olFeature);
+                            scope.features.push(olFeature);
+
+                            // Build the list of feature contexts containing all non-buffer features
+                            var featureCtx = createFeatureCtxFromFeature(olFeature);
+
+                            // By default, display only the types of data that are filled out
                             initFeatureCtxShowFlags(featureCtx);
                             scope.featureContexts.push(featureCtx);
-                            broadcast('feature-added', feature.getId());
+                        })
+                    }
+                    return olFeatures;
+                };
+
+
+                /** Opens the import dialog **/
+                scope.openGeometryImportDialog = function (templateUrl, size, features) {
+                    return $uibModal.open({
+                        controller: "GeometryImportDialogCtrl",
+                        templateUrl: '/app/editor/' + templateUrl,
+                        size: size,
+                        resolve: {
+                            features: function () { return features;  }
+                        }
+                    })
+                };
+
+
+                /** Imports geometries from various sources **/
+                scope.importGeometry = function () {
+                    scope.openGeometryImportDialog("geometry-import-dialog.html", 'md')
+                        .result.then(function (features) {
+                            var olFeatures = scope.importGjFeatures(features);
+                            angular.forEach(olFeatures, function (olFeature) {
+                                broadcast('feature-added', olFeature.getId());
+                            });
                         });
-                    });
                 };
 
 
                 /** Edits geometries as plain-text **/
                 scope.editAsPlainText = function () {
 
-                    // Get the user to pick an area with a geometry
-                    $uibModal.open({
-                        controller: "GeometryImportDialogCtrl",
-                        templateUrl: "/app/editor/plain-text-editor-dialog.html",
-                        size: 'lg',
-                        resolve: {
-                            features: function () { return scope.features.slice();  }
-                        }
-                    }).result.then(function (features) {
-                        scope.clearAll();
-                        angular.forEach(features, function (feature) {
-                            MapService.checkCreateId(feature);
-                            scope.features.push(feature);
-                            var featureCtx = createFeatureCtxFromFeature(feature);
-                            initFeatureCtxShowFlags(featureCtx);
-                            scope.featureContexts.push(featureCtx);
-                        });
-                        broadcast('refresh-all');
+                    var features = [];
+                    angular.forEach(scope.features, function (olFeature) {
+                        features.push(MapService.olToGjFeature(olFeature))
                     });
+
+                    scope.openGeometryImportDialog("plain-text-editor-dialog.html", 'lg', features)
+                        .result.then(function (features) {
+                            scope.clearAll();
+                            scope.importGjFeatures(features);
+                            broadcast('refresh-all');
+                        });
                 };
 
 
@@ -1033,7 +1060,10 @@ angular.module('niord.editor')
         function ($scope, $rootScope, $http, MapService, features) {
             'use strict';
 
-            $scope.features = features || [];
+            $scope.featureCollection = {
+                type: 'FeatureCollection',
+                features: features || []
+            };
             $scope.data = {
                 message: undefined,
                 area: undefined,
@@ -1043,19 +1073,11 @@ angular.module('niord.editor')
 
             // Initialize the editor from the features
             if (features && features.length > 0) {
-                var featureCollection = {
-                    type: 'FeatureCollection',
-                    features: []
-                };
-                angular.forEach(features, function (olFeature) {
-                    featureCollection.features.push(MapService.olToGjFeature(olFeature));
-                });
-
-                MapService.formatAsPlainText(featureCollection)
+                MapService.formatAsPlainText($scope.featureCollection)
                     .success(function (geometryText) {
                         $scope.data.geometryText = geometryText || '';
                         if (!geometryText) {
-                            $scope.features.length = 0;
+                            $scope.featureCollection.features.length = 0;
                             $scope.data.message = 'Could not parse original geometry as plain text!';
                         }
                     });
@@ -1064,21 +1086,25 @@ angular.module('niord.editor')
 
             /** Called when an area has been selected **/
             $scope.areaSelected = function () {
-                $scope.features.length = 0;
+                $scope.featureCollection.features.length = 0;
                 if ($scope.data.area) {
                     // Load the area details including geometry
                     $http.get('/rest/areas/area/' + $scope.data.area.id)
                         .success(function (area) {
                             if (area && area.geometry) {
-                                var feature = new ol.Feature();
-                                MapService.checkCreateId(feature);
-                                feature.setGeometry(MapService.gjToOlGeometry(area.geometry));
-                                feature.set('restriction', 'affected');
-                                feature.set('areaId', area.id);
+                                var feature = {
+                                    id: MapService.uuid(),
+                                    type: 'Feature',
+                                    properties: {
+                                        restriction: 'affected',
+                                        areaId: area.id
+                                    },
+                                    geometry: area.geometry
+                                };
                                 angular.forEach(area.descs, function (desc) {
-                                    feature.set('name:' + desc.lang, desc.name);
+                                    feature.properties['name:' + desc.lang] = desc.name;
                                 });
-                                $scope.features.push(feature);
+                                $scope.featureCollection.features.push(feature);
                             }
                         })
                 }
@@ -1088,20 +1114,19 @@ angular.module('niord.editor')
             /** Checks if the geometry text is valid **/
             $scope.geometryTextValid = function () {
                 return $scope.data.geometryText && $scope.data.geometryText.length > 0
-                    && $scope.features.length > 0;
+                    && $scope.featureCollection.features.length > 0;
             };
 
 
             /** Called whenever the geometry text changes **/
             $scope.geometryTextChanged = function () {
-                $scope.features.length = 0;
+                $scope.featureCollection.features.length = 0;
 
                 MapService.parsePlainText($scope.data.geometryText)
                     .success(function (fc) {
                         if (fc && fc.features && fc.features.length > 0) {
                             angular.forEach(fc.features, function (feature) {
-                                var olFeature = MapService.gjToOlFeature(feature);
-                                $scope.features.push(olFeature);
+                                $scope.featureCollection.features.push(feature);
                             });
                         }
                     });
@@ -1110,7 +1135,7 @@ angular.module('niord.editor')
 
             /** Returns the fully loaded area to the callee **/
             $scope.import = function () {
-                $scope.$close($scope.features);
+                $scope.$close($scope.featureCollection.features);
             };
         }]);
 

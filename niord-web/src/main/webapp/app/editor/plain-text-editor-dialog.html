@@ -30,13 +30,22 @@
         </div>
 
         <div class="row">
-            <div class="col-sm-12">
+            <div class="col-sm-6 col-md-6 col-lg-8">
                 <textarea ng-model="data.geometryText" class="form-control input-sm geometry-text-editor" wrap="off"
                           ng-class="{ 'geometry-text-invalid': !geometryTextValid() }"
                           ng-change="geometryTextChanged()"
                           ng-model-options="{ updateOn: 'default blur', debounce: { default: 1000, blur: 0 } }">
                 </textarea>
             </div>
+
+            <div class="col-sm-6 col-md-6 col-lg-4">
+                <ol-map class="osm-water-bg geometry-text-editor-map" readonly="true">
+                    <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
+                    <map-gj-layer name="Locations" visible="true" layer-switcher="false" feature-collection="featureCollection"
+                                  fit-extent="true" max-zoom="14"></map-gj-layer>
+                </ol-map>
+            </div>
+
         </div>
 
         <div class="row" style="margin-top: 24px;">
@@ -44,7 +53,7 @@
                 <button class="btn btn-default btn-sm" ng-click="$dismiss('aborted')">Cancel</button>
                 &nbsp;
                 <button id="printBtn" class="btn btn-primary btn-sm" ng-click="import()"
-                        ng-disabled="features.length == 0">Save Geometry</button>
+                        ng-disabled="featureCollection.features.length == 0">Save Geometry</button>
             </div>
         </div>
     </div>
