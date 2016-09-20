@@ -16,6 +16,8 @@
     <properties>
         <batik.version>1.8</batik.version>
         <swagger-ui.version>2.2.0</swagger-ui.version>
+        <timestamp>${maven.build.timestamp}</timestamp>
+        <maven.build.timestamp.format>yyyyMMddHHmm</maven.build.timestamp.format>
     </properties>
 
     <dependencies>
@@ -105,6 +107,13 @@
                         <webResource>
                             <directory>${project.build.directory}/swagger-ui-${swagger-ui.version}/dist</directory>
                             <targetPath>swagger-ui</targetPath>
+                        </webResource>
+                        <webResource>
+                            <directory>${basedir}/src/main/webapp</directory>
+                            <includes>
+                                <include>index.html</include>
+                            </includes>
+                            <filtering>true</filtering>
                         </webResource>
                     </webResources>
                 </configuration>
