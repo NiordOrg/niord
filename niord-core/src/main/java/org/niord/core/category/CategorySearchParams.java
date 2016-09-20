@@ -33,8 +33,8 @@ public class CategorySearchParams extends PagedSearchParamsVo {
     Integer parentId;
     String language;
     String name;
+    String domain;          // If defined, only include categories for the given domain
     boolean exact;          // Match the name exactly (though case insensitive) rather than a substring match
-    boolean domain;         // Only include categories for current domain
     boolean inactive;       // Include inactive categories
 
     /**
@@ -47,8 +47,8 @@ public class CategorySearchParams extends PagedSearchParamsVo {
         if (parentId != null) { desc.add(String.format("Parent: %s", parentId)); }
         if (isNotBlank(language)) { desc.add(String.format("Language: %s", language)); }
         if (isNotBlank(name)) { desc.add(String.format("Name: '%s'", name)); }
+        if (isNotBlank(domain)) { desc.add(String.format("Domain: '%s'", domain)); }
         if (exact) { desc.add("Exact: true"); }
-        if (domain) { desc.add("Domain: true"); }
         if (inactive) { desc.add("Include inactive: true"); }
 
         return desc.stream().collect(Collectors.joining(", "));
@@ -94,11 +94,11 @@ public class CategorySearchParams extends PagedSearchParamsVo {
         return this;
     }
 
-    public boolean isDomain() {
+    public String getDomain() {
         return domain;
     }
 
-    public CategorySearchParams domain(boolean domain) {
+    public CategorySearchParams domain(String domain) {
         this.domain = domain;
         return this;
     }

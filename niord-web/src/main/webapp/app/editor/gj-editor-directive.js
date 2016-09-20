@@ -1069,7 +1069,7 @@ angular.module('niord.editor')
                 area: undefined,
                 geometryText: ''
             };
-            $scope.domain = $rootScope.domain !== undefined;
+            $scope.domain = $rootScope.domain;
 
             // Initialize the editor from the features
             if (features && features.length > 0) {

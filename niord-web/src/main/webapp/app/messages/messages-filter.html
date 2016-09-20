@@ -5,7 +5,7 @@
 
 
         <!-- Domain Filter -->
-        <view-mode-filter-panel state="state" filter-name="domain" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-6 col-md-3 col-lg-2">
+        <view-mode-filter-panel state="state" filter-name="domain" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
             <div class="btn-group full-width">
                 <domain-field domain-data="state.domain"></domain-field>
             </div>
@@ -68,11 +68,11 @@
         <view-mode-filter-panel state="state" filter-name="status" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
             <div class="btn-group">
                 <label class="btn btn-default btn-sm" style="color: #559955" ng-model="state.status.PUBLISHED" uib-btn-checkbox>Published</label>
-                <label class="btn btn-default btn-sm" style="color: #5555CC" ng-if="searchCurrentDomain()" ng-model="state.status.DRAFT" uib-btn-checkbox>Draft</label>
-                <label class="btn btn-default btn-sm" style="color: #5555CC" ng-if="searchCurrentDomain()" ng-model="state.status.VERIFIED" uib-btn-checkbox>Verified</label>
+                <label class="btn btn-default btn-sm" style="color: #5555CC" ng-if="!searchPublicMessages()" ng-model="state.status.DRAFT" uib-btn-checkbox>Draft</label>
+                <label class="btn btn-default btn-sm" style="color: #5555CC" ng-if="!searchPublicMessages()" ng-model="state.status.VERIFIED" uib-btn-checkbox>Verified</label>
                 <label class="btn btn-default btn-sm" style="color: #999999" ng-model="state.status.CANCELLED" uib-btn-checkbox>Cancelled</label>
                 <label class="btn btn-default btn-sm" style="color: #999999" ng-model="state.status.EXPIRED" uib-btn-checkbox>Expired</label>
-                <label class="btn btn-default btn-sm" style="color: #333333" ng-if="searchCurrentDomain()" ng-model="state.status.DELETED" uib-btn-checkbox>Deleted</label>
+                <label class="btn btn-default btn-sm" style="color: #333333" ng-if="!searchPublicMessages()" ng-model="state.status.DELETED" uib-btn-checkbox>Deleted</label>
                 <span class="small-link">
                     <a href ng-click="updateStateFilter(true)" translate>msg.filter.all</a> /
                     <a href  ng-click="updateStateFilter(false)" translate>msg.filter.reset</a>
@@ -142,19 +142,19 @@
 
         <!-- Message Series Filter -->
         <view-mode-filter-panel state="state" filter-name="messageSeries" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
-            <message-series-field id="messageSeries" series-data="state.messageSeries" init-ids="initSeriesIds" multiple="true" domain="state.domain.enabled"></message-series-field>
+            <message-series-field id="messageSeries" series-data="state.messageSeries" init-ids="initSeriesIds" multiple="true" domain="searchDomain"></message-series-field>
         </view-mode-filter-panel>
 
 
         <!-- Area Filter -->
         <view-mode-filter-panel state="state" filter-name="area" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
-            <areas-field id="areas" area-data="state.area" init-ids="initAreaIds" multiple="true" domain="state.domain.enabled"></areas-field>
+            <areas-field id="areas" area-data="state.area" init-ids="initAreaIds" multiple="true" domain="searchDomain"></areas-field>
         </view-mode-filter-panel>
 
 
         <!-- Category Filter -->
         <view-mode-filter-panel state="state" filter-name="category" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
-            <categories-field id="categories" category-data="state.category" init-ids="initCategoryIds" multiple="true" domain="state.domain.enabled"></categories-field>
+            <categories-field id="categories" category-data="state.category" init-ids="initCategoryIds" multiple="true" domain="searchDomain"></categories-field>
         </view-mode-filter-panel>
 
 

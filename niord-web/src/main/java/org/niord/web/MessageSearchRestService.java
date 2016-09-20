@@ -109,6 +109,7 @@ public class MessageSearchRestService {
         // Enforce security rules - depends on whether the current user is in the context of a domain or not.
         if (searchDomain != null) {
 
+            /* TODO: Reconsider if we should really restrict messages by domain areas and categories
             // If no areas specified, use the ones of the search domain
             if (params.getAreaIds().isEmpty() && !searchDomain.getAreas().isEmpty()) {
                 params.areaIds(
@@ -126,6 +127,7 @@ public class MessageSearchRestService {
                                 .collect(Collectors.toSet())
                 );
             }
+            */
 
             // Validate that the specified tags are allowed for the current user
             if (!params.getTags().isEmpty()) {

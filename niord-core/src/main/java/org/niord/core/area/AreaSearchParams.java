@@ -34,8 +34,8 @@ public class AreaSearchParams extends PagedSearchParamsVo {
     String language;
     String name;
     AreaType type;
+    String domain;          // If defined, only include areas for the given domain
     boolean exact;          // Match the name exactly (though case insensitive) rather than a substring match
-    boolean domain;         // Only include areas for current domain
     boolean geometry;       // Only include areas that define a geometry
     boolean messageSorting; // Only include areas that define a message sorting type
     boolean inactive;       // Include inactive areas
@@ -51,8 +51,8 @@ public class AreaSearchParams extends PagedSearchParamsVo {
         if (isNotBlank(language)) { desc.add(String.format("Language: %s", language)); }
         if (isNotBlank(name)) { desc.add(String.format("Name: '%s'", name)); }
         if (type != null) { desc.add(String.format("Type: %s", type)); }
+        if (isNotBlank(domain)) { desc.add(String.format("Domain: '%s'", domain)); }
         if (exact) { desc.add("Exact: true"); }
-        if (domain) { desc.add("Domain: true"); }
         if (geometry) { desc.add("Geometry: true"); }
         if (messageSorting) { desc.add("Message-Sorting: true"); }
         if (inactive) { desc.add("Include inactive: true"); }
@@ -109,11 +109,11 @@ public class AreaSearchParams extends PagedSearchParamsVo {
         return this;
     }
 
-    public boolean isDomain() {
+    public String getDomain() {
         return domain;
     }
 
-    public AreaSearchParams domain(boolean domain) {
+    public AreaSearchParams domain(String domain) {
         this.domain = domain;
         return this;
     }

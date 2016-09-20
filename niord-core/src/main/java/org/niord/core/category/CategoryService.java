@@ -105,8 +105,8 @@ public class CategoryService extends BaseService {
         }
 
         // Optionally, filter by the domains associated with the current domain
-        if (params.isDomain()) {
-            Domain d = domainService.currentDomain();
+        if (StringUtils.isNotBlank(params.getDomain())) {
+            Domain d = domainService.findByDomainId(params.getDomain());
             if (d != null && d.getCategories().size() > 0) {
                 Predicate[] categoryMatch = d.getCategories().stream()
                         .map(c -> cb.like(categoryRoot.get("lineage"), c.getLineage() + "%"))

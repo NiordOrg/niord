@@ -33,6 +33,7 @@ angular.module('niord.messages')
             $scope.loggedIn = AuthService.loggedIn;
             $scope.page = 0;
             $scope.maxSize = 100;
+            $scope.searchDomain = $rootScope.domain;
             $scope.showFilter = true;
             $scope.messageList = [];
             $scope.selection = $rootScope.messageSelection;
@@ -154,18 +155,9 @@ angular.module('niord.messages')
             });
 
 
-            /** Returns the domain used for searching messages **/
-            $scope.searchDomain = function () {
-                if ($scope.state.domain.enabled && $scope.state.domain.domain) {
-                    return $scope.state.domain.domain;
-                }
-                return $rootScope.domain;
-            };
-
-
-            /** Returns if the domain used for searching messages is the current domain **/
-            $scope.searchCurrentDomain = function () {
-                return $rootScope.hasRole('editor') && $rootScope.domain == $scope.searchDomain();
+            /** Returns if the domain used for searching messages only allows for public messages **/
+            $scope.searchPublicMessages = function () {
+                return !$rootScope.hasRole('editor') || $rootScope.domain != $scope.searchDomain;
             };
 
 
@@ -528,7 +520,12 @@ angular.module('niord.messages')
                     $scope.updateTypeFilter('NW', false);
                 }
 
-                if (!$scope.searchCurrentDomain()) {
+                // Update the current search domain
+                $scope.searchDomain = $scope.state.domain.domain && $scope.state.domain.enabled
+                    ? $scope.state.domain.domain
+                    : $rootScope.domain;
+
+                if ($scope.searchPublicMessages()) {
                     $scope.state.status.DRAFT = false;
                     $scope.state.status.VERIFIED = false;
                     $scope.state.status.DELETED = false;
@@ -856,16 +853,12 @@ angular.module('niord.messages')
 
             /** Returns if the user should be allowed to select the given types for filtering */
             $scope.supportsType = function (type) {
-                var searchDomain = $scope.state.domain.domain && $scope.state.domain.enabled
-                    ? $scope.state.domain.domain
-                    : $rootScope.domain;
-
-                if (searchDomain) {
+                if ($scope.searchDomain) {
                     // When a domain is selected, check if any of the domain message series has the given type
                     var result = false;
-                    if (searchDomain.messageSeries) {
-                        for (var x = 0; x < searchDomain.messageSeries.length; x++) {
-                            result |= searchDomain.messageSeries[x].mainType == type;
+                    if ($scope.searchDomain.messageSeries) {
+                        for (var x = 0; x < $scope.searchDomain.messageSeries.length; x++) {
+                            result |= $scope.searchDomain.messageSeries[x].mainType == type;
                         }
                     }
                     return result;

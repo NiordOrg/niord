@@ -81,7 +81,6 @@ angular.module('niord.common')
 
                 // Area search parameters
                 scope.multiple = scope.multiple || false;
-                scope.domain = scope.domain || false;
                 scope.messageSorting = scope.messageSorting || false;
                 scope.geometry = scope.geometry || false;
 
@@ -129,9 +128,10 @@ angular.module('niord.common')
                     if (!name || name.length == 0) {
                         return [];
                     }
+                    var domainParam = scope.domain ? '&domain=' + encodeURIComponent(scope.domain.domainId) : '';
                     return $http.get(
                         '/rest/areas/search?name=' + encodeURIComponent(name) +
-                        '&domain=' + scope.domain +
+                        domainParam +
                         '&messageSorting=' + scope.messageSorting +
                         '&geometry=' + scope.geometry +
                         '&lang=' + $rootScope.language +
@@ -184,7 +184,6 @@ angular.module('niord.common')
 
                 // Category search parameters
                 scope.multiple = scope.multiple || false;
-                scope.domain = scope.domain || false;
 
                 if (scope.multiple && !scope.categoryData.categories) {
                     scope.categoryData.categories = [];
@@ -230,9 +229,10 @@ angular.module('niord.common')
                     if (!name || name.length == 0) {
                         return [];
                     }
+                    var domainParam = scope.domain ? '&domain=' + encodeURIComponent(scope.domain.domainId) : '';
                     return $http.get(
                         '/rest/categories/search?name=' + encodeURIComponent(name) +
-                        '&domain=' + scope.domain +
+                        domainParam +
                         '&lang=' + $rootScope.language +
                         '&limit=10'
                     ).then(function(response) {

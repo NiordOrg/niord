@@ -63,7 +63,7 @@ public class AreaRestService extends AbstractBatchableRestService {
      *
      * @param lang  the language
      * @param name  the search name
-     * @param domain  restrict the search to the current domain or not
+     * @param domain  if defined, restricts the search to the areas of the given domain
      * @param geometry  if true, only return areas with geometries
      * @param limit the maximum number of results
      * @return the search result
@@ -76,7 +76,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     public List<AreaVo> searchAreas(
             @QueryParam("lang") String lang,
             @QueryParam("name") String name,
-            @QueryParam("domain") @DefaultValue("false") boolean domain,
+            @QueryParam("domain") @DefaultValue("false") String domain,
             @QueryParam("geometry") @DefaultValue("false") boolean geometry,
             @QueryParam("messageSorting") @DefaultValue("false") boolean messageSorting,
             @QueryParam("inactive") @DefaultValue("false") boolean inactive,

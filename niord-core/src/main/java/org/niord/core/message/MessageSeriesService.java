@@ -117,15 +117,15 @@ public class MessageSeriesService extends BaseService {
      * Searches for message series matching the given term
      *
      * @param term the search term
-     * @param domain  restrict the search to the current domain or not
+     * @param domainId  if defined restrict the search to the given domain
      * @param limit the maximum number of results
      * @return the search result
      */
-    public List<MessageSeries> searchMessageSeries(String term, boolean domain, int limit) {
+    public List<MessageSeries> searchMessageSeries(String term, String domainId, int limit) {
 
         // Optionally, filter by the domains associated with the current domain
-        Domain d = (domain) ? domainService.currentDomain() : null;
-        Set<String> currentSeriesIds = d == null
+        Domain d = (domainId != null) ? domainService.findByDomainId(domainId) : null;
+        Set<String> domainSeriesIds = d == null
                 ? null
                 : d.getMessageSeries().stream()
                     .map(MessageSeries::getSeriesId)
@@ -138,7 +138,7 @@ public class MessageSeriesService extends BaseService {
                     .setMaxResults(limit)
                     .getResultList()
                     .stream()
-                    .filter(s -> currentSeriesIds == null || currentSeriesIds.contains(s.getSeriesId()))
+                    .filter(s -> domainSeriesIds == null || domainSeriesIds.contains(s.getSeriesId()))
                     .collect(Collectors.toList());
         }
         return Collections.emptyList();

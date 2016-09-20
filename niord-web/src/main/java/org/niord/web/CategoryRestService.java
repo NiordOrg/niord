@@ -74,7 +74,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
      *
      * @param lang  the language
      * @param name  the search name
-     * @param domain  restrict the search to the current domain or not
+     * @param domain  if defined, restricts the search to the categories of the given domain
      * @param limit the maximum number of results
      * @return the search result
      */
@@ -86,12 +86,9 @@ public class CategoryRestService extends AbstractBatchableRestService {
     public List<CategoryVo> searchCategories(
             @QueryParam("lang") String lang,
             @QueryParam("name") String name,
-            @QueryParam("domain") @DefaultValue("false") boolean domain,
+            @QueryParam("domain") @DefaultValue("false") String domain,
             @QueryParam("inactive") @DefaultValue("false") boolean inactive,
             @QueryParam("limit") int limit) {
-
-        log.debug(String.format("Searching for categories lang=%s, name='%s', domain=%s, inactive=%s, limit=%d",
-                lang, name, domain, inactive, limit));
 
         if (StringUtils.isBlank(name)) {
             return Collections.emptyList();
@@ -107,6 +104,8 @@ public class CategoryRestService extends AbstractBatchableRestService {
                 .domain(domain)
                 .inactive(inactive)
                 .maxSize(limit);
+
+        log.debug(String.format("Searching for categories %s", params));
 
         return categoryService.searchCategories(params).stream()
                 .map(c -> c.toVo(filter))

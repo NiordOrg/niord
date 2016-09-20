@@ -390,7 +390,7 @@ angular.module('niord.messages')
                 status: 'PUBLISHED'
             };
             $scope.messageList = [];
-            $scope.domain = $rootScope.domain !== undefined;
+            $scope.domain = $rootScope.domain;
 
 
             /** Refreshes the list of messages matching the message filter */

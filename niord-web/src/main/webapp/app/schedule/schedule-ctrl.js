@@ -38,6 +38,7 @@ angular.module('niord.schedule')
                     areas: []
                 }
             };
+            $scope.domain = $rootScope.domain;
 
 
             /** Refreshes the list of published messages **/

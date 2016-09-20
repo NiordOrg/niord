@@ -120,8 +120,8 @@ public class AreaService extends BaseService {
         }
 
         // Optionally, filter by the domains associated with the current domain
-        if (params.isDomain()) {
-            Domain d = domainService.currentDomain();
+        if (StringUtils.isNotBlank(params.getDomain())) {
+            Domain d = domainService.findByDomainId(params.getDomain());
             if (d != null && d.getAreas().size() > 0) {
                 Predicate[] areaMatch = d.getAreas().stream()
                         .map(a -> cb.like(areaRoot.get("lineage"), a.getLineage() + "%"))

@@ -419,7 +419,6 @@ angular.module('niord.messages')
 
                 // Message series search parameters
                 scope.multiple = scope.multiple || false;
-                scope.domain = scope.domain || false;
 
                 if (scope.multiple && !scope.seriesData.messageSeries) {
                     scope.seriesData.messageSeries = [];
@@ -451,9 +450,10 @@ angular.module('niord.messages')
                     if (!name || name.length == 0) {
                         return [];
                     }
+                    var domainParam = scope.domain ? '&domain=' + encodeURIComponent(scope.domain.domainId) : '';
                     return $http.get(
                         '/rest/message-series/search?name=' + encodeURIComponent(name) +
-                        '&domain=' + scope.domain +
+                        domainParam +
                         '&lang=' + $rootScope.language +
                         '&limit=10'
                     ).then(function(response) {
