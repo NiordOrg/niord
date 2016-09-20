@@ -22,16 +22,16 @@ angular.module('niord.auth')
     /**
      * Interceptor that adds a Keycloak access token to the requests as an authorization header.
      */
-    .factory('authHttpInterceptor', ['$q', '$window', 'AuthService',
-        function($q, $window, AuthService) {
+    .factory('authHttpInterceptor', ['$rootScope', '$q', 'AuthService',
+        function($rootScope, $q, AuthService) {
             return {
 
                 'request': function(config) {
                     var deferred = $q.defer();
                     config.headers = config.headers || {};
 
-                    if ($window.localStorage.domain) {
-                        config.headers['NiordDomain'] = $window.localStorage.domain;
+                    if ($rootScope.domain) {
+                        config.headers['NiordDomain'] = $rootScope.domain.domainId;
                     }
 
                     if (AuthService.keycloak.token) {
