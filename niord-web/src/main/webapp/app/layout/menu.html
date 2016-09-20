@@ -33,7 +33,7 @@
                     </a>
                     <ul ng-if="domains.length" class="dropdown-menu">
                         <li ng-repeat="d in domains">
-                            <a href ng-click="changeDomain(d)">
+                            <a href ng-click="changeDomain(d)" style="white-space: normal">
                                 <span class="glyphicon"
                                       ng-class="{ 'glyphicon-ok': d.domainId == domain.domainId, 'glyphicon-none': d.domainId != domain.domainId }"></span>
                                 {{d.name}}&nbsp;
