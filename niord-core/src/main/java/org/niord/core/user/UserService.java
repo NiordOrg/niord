@@ -19,7 +19,6 @@ package org.niord.core.user;
 import org.apache.commons.lang.StringUtils;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.representations.AccessToken;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
@@ -81,31 +80,6 @@ public class UserService extends BaseService {
                     .collect(Collectors.toSet());
         }
         return new HashSet<>();
-    }
-
-
-    /** Returns the Keycloak domain ID associated with the current user */
-    public String getCurrentKeycloakDomainId() {
-
-        // Get the current Keycloak principal
-        KeycloakPrincipal keycloakPrincipal = getCallerPrincipal();
-        if (keycloakPrincipal != null) {
-
-            // Hmmm, is this really the best way to get the current resource name
-            KeycloakSecurityContext ctx = keycloakPrincipal.getKeycloakSecurityContext();
-            if (ctx instanceof RefreshableKeycloakSecurityContext) {
-                RefreshableKeycloakSecurityContext rctx = (RefreshableKeycloakSecurityContext)ctx;
-                return rctx.getDeployment().getResourceName();
-            }
-        }
-
-        // Check if the ticket service has resolved a ticket for the current thread
-        TicketService.TicketData ticketData = ticketService.getTicketDataForCurrentThread();
-        if (ticketData != null) {
-            return ticketData.getDomain();
-        }
-
-        return null;
     }
 
 

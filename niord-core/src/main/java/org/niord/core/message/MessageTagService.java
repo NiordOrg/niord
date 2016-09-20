@@ -76,6 +76,7 @@ public class MessageTagService extends BaseService {
 
     /**
      * Returns the message tag with the given ID
+     *
      * @param tagId the tag ID
      * @return the message tag with the given tag identifier or null if not found
      */
@@ -91,12 +92,23 @@ public class MessageTagService extends BaseService {
      * @return the message tags with the given tag identifiers
      */
     public List<MessageTag> findTags(String... tagIds) {
+        Domain domain = domainService.currentDomain();
+        return findTags(domain, tagIds);
+    }
+
+
+    /**
+     * Returns the message tags with the given tag IDs
+     * @param domain the domain to check for
+     * @param tagIds the tag IDs
+     * @return the message tags with the given tag identifiers
+     */
+    public List<MessageTag> findTags(Domain domain, String... tagIds) {
         if (tagIds == null || tagIds.length == 0) {
             return Collections.emptyList();
         }
 
         User user = userService.currentUser();
-        Domain domain = domainService.currentDomain();
 
         Set<String> idSet = new HashSet<>(Arrays.asList(tagIds));
         return em.createNamedQuery("MessageTag.findTagsByTagIds", MessageTag.class)

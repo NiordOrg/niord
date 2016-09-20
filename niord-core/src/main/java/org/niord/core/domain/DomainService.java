@@ -21,9 +21,11 @@ import org.niord.core.category.Category;
 import org.niord.core.keycloak.KeycloakIntegrationService;
 import org.niord.core.message.MessageSeriesService;
 import org.niord.core.service.BaseService;
+import org.niord.core.user.TicketService;
 import org.niord.core.user.UserService;
 import org.slf4j.Logger;
 
+import javax.ejb.Stateless;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Set;
@@ -32,8 +34,11 @@ import java.util.stream.Collectors;
 /**
  * Provides an interface for managing application domains
  */
+@Stateless
 @SuppressWarnings("unused")
 public class DomainService extends BaseService {
+
+    private final static ThreadLocal<String> THREAD_LOCAL_DOMAIN = new ThreadLocal<>();
 
     @Inject
     Logger log;
@@ -47,14 +52,56 @@ public class DomainService extends BaseService {
     @Inject
     UserService userService;
 
+    @Inject
+    TicketService ticketService;
+
 
     /** Returns the current domain or null if none are set */
     public Domain currentDomain() {
-        String domainId = userService.getCurrentKeycloakDomainId();
+
+        Domain currentDomain = null;
+
+        String domainId = THREAD_LOCAL_DOMAIN.get();
         if (StringUtils.isNotBlank(domainId)) {
-            return findByDomainId(domainId);
+            currentDomain = findByDomainId(domainId);
         }
-        return null;
+
+        if (currentDomain == null) {
+            // Check if the ticket service has resolved a ticket for the current thread
+            TicketService.TicketData ticketData = ticketService.getTicketDataForCurrentThread();
+            if (ticketData != null) {
+                domainId = ticketData.getDomain();
+                currentDomain = findByDomainId(domainId);
+            }
+        }
+
+        return currentDomain;
+    }
+
+
+
+    /**
+     * May be called, e.g. from a servlet filter to set the
+     * ticket for the current thread based on a request header or DNS name.
+     * <p>
+     * Must be followed up with a call to call to removeDomainForCurrentThread()
+     * @param domainId the domain ID to set
+     */
+    public void setDomainForCurrentThread(String domainId) {
+        if (StringUtils.isNotBlank(domainId)) {
+            THREAD_LOCAL_DOMAIN.set(domainId);
+        }
+    }
+
+
+    /**
+     * May be called, e.g. from a servlet filter to remove the
+     * current domain from the current thread
+     * <p>
+     * Must be preceded by a call to call to setDomainForCurrentThread()
+     */
+    public void removeDomainForCurrentThread() {
+        THREAD_LOCAL_DOMAIN.remove();
     }
 
 

@@ -49,7 +49,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     String language;
     String query;
-    Boolean domain;
+    String domain;
     String messageId;
     Integer referenceLevels;
     Date from;
@@ -89,7 +89,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         MessageSearchParams params = new MessageSearchParams();
         params.language(req.getParameter("lang"))
                 .query(req.getParameter("query"))
-                .domain(checkNull(req.getParameter("domain"), true, Boolean::valueOf))
+                .domain(req.getParameter("domain"))
                 .statuses(toSet(req.getParameterValues("status"), Status::valueOf))
                 .mainTypes(toSet(req.getParameterValues("mainType"), MainType::valueOf))
                 .types(toSet(req.getParameterValues("type"), Type::valueOf))
@@ -173,7 +173,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         List<String> desc = new ArrayList<>();
         if (isNotBlank(language)) { desc.add(String.format("Language: %s", language)); }
         if (isNotBlank(query)) { desc.add(String.format("Query: '%s'", query)); }
-        if (domain != null) { desc.add(String.format("Domain: %b", domain)); }
+        if (domain != null) { desc.add(String.format("Domain: %s", domain)); }
         if (isNotBlank(messageId)) { desc.add(String.format("Ref. message: %s", messageId)); }
         if (referenceLevels != null) { desc.add(String.format("Ref. levels: %d", referenceLevels)); }
         if (from != null) { desc.add(String.format("From: %s", new SimpleDateFormat(DATE_FORMAT).format(from))); }
@@ -219,11 +219,11 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     }
 
 
-    public Boolean getDomain() {
+    public String getDomain() {
         return domain;
     }
 
-    public MessageSearchParams domain(Boolean domain) {
+    public MessageSearchParams domain(String domain) {
         this.domain = domain;
         return this;
     }

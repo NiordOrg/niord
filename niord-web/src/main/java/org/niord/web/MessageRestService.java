@@ -142,7 +142,8 @@ public class MessageRestService  {
      */
     private void checkMessageEditingAccess(Message message, boolean update) {
         Domain domain = domainService.currentDomain();
-        if (domain == null || message == null || !domain.containsMessageSeries(message.getMessageSeries())) {
+        if (domain == null || message == null || !domain.containsMessageSeries(message.getMessageSeries()) ||
+                !ctx.isCallerInRole("editor")) {
             throw new WebApplicationException(403);
         }
 
@@ -161,7 +162,7 @@ public class MessageRestService  {
      * Checks that the user has viewing access to the given message. The message must adhere to one of the following
      * criteria:
      * <ul>
-     *     <li>The message is published.</li>
+     *     <li>The message is published, cancelled or expired.</li>
      *     <li>The current domain of the user matches the message series of the message.</li>
      *     <li>The message is associated with a public tag.</li>
      * </ul>
@@ -170,14 +171,14 @@ public class MessageRestService  {
      * @param message the message
      */
     private void checkMessageViewingAccess(Message message) {
-        // 1) Always grant access if the message is published
-        if (message.getStatus() == Status.PUBLISHED) {
+        // 1) Always grant access if the message is published, cancelled or expired
+        if (message.getStatus().isPublic()) {
             return;
         }
 
         // 2) Grant access if the current domain of the user matches the message series of the message
         Domain domain = domainService.currentDomain();
-        if (domain != null && domain.containsMessageSeries(message.getMessageSeries())) {
+        if (domain != null && domain.containsMessageSeries(message.getMessageSeries()) && ctx.isCallerInRole("editor")) {
             return;
         }
 

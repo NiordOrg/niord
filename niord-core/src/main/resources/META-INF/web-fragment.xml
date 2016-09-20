@@ -15,4 +15,13 @@
         <url-pattern>/rest/repo/file/*</url-pattern>
     </filter-mapping>
 
+    <filter>
+        <filter-name>domain-servlet-filter</filter-name>
+        <filter-class>org.niord.core.web.DomainServletFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>domain-servlet-filter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
 </web-fragment>

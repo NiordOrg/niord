@@ -165,7 +165,7 @@ angular.module('niord.messages')
 
             /** Returns if the domain used for searching messages is the current domain **/
             $scope.searchCurrentDomain = function () {
-                return $rootScope.domain == $scope.searchDomain();
+                return $rootScope.hasRole('editor') && $rootScope.domain == $scope.searchDomain();
             };
 
 
@@ -530,7 +530,7 @@ angular.module('niord.messages')
 
                 if (!$scope.searchCurrentDomain()) {
                     $scope.state.status.DRAFT = false;
-                    $scope.state.status.EXPIRED = false;
+                    $scope.state.status.VERIFIED = false;
                     $scope.state.status.DELETED = false;
                 }
 
@@ -856,12 +856,16 @@ angular.module('niord.messages')
 
             /** Returns if the user should be allowed to select the given types for filtering */
             $scope.supportsType = function (type) {
-                if ($rootScope.domain && $scope.state.domain.enabled) {
+                var searchDomain = $scope.state.domain.domain && $scope.state.domain.enabled
+                    ? $scope.state.domain.domain
+                    : $rootScope.domain;
+
+                if (searchDomain) {
                     // When a domain is selected, check if any of the domain message series has the given type
                     var result = false;
-                    if ($rootScope.domain.messageSeries) {
-                        for (var x = 0; x < $rootScope.domain.messageSeries.length; x++) {
-                            result |= $rootScope.domain.messageSeries[x].mainType == type;
+                    if (searchDomain.messageSeries) {
+                        for (var x = 0; x < searchDomain.messageSeries.length; x++) {
+                            result |= searchDomain.messageSeries[x].mainType == type;
                         }
                     }
                     return result;

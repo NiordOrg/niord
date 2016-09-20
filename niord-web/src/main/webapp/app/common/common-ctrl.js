@@ -36,13 +36,19 @@ angular.module('niord.common')
     /**
      * Domain Controller
      */
-    .controller('DomainCtrl', ['$scope', '$window', 'DomainService',
-        function ($scope, $window, DomainService) {
+    .controller('DomainCtrl', ['$scope', '$window', '$location', '$timeout', 'DomainService',
+        function ($scope, $window, $location, $timeout, DomainService) {
             'use strict';
 
             $scope.changeDomain = function (domain) {
-                DomainService.changeDomain(domain);
-                $window.location.reload();
+                // Reset all parameters
+                $location.url($location.path());
+
+                $timeout(function () {
+                    // Change domain
+                    DomainService.changeDomain(domain);
+                    $window.location.reload();
+                });
             }
 
         }])

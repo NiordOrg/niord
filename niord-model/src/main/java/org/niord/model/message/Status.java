@@ -50,5 +50,11 @@ public enum Status {
     /**
      * The state of a draft that has been deleted
      */
-    DELETED
+    DELETED;
+
+
+    /** Returns the message status that unauthorized users can view **/
+    public boolean isPublic() {
+        return this == PUBLISHED || this == CANCELLED || this == EXPIRED;
+    }
 }
