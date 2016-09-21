@@ -108,16 +108,44 @@
                             <directory>${project.build.directory}/swagger-ui-${swagger-ui.version}/dist</directory>
                             <targetPath>swagger-ui</targetPath>
                         </webResource>
-                        <webResource>
-                            <directory>${basedir}/src/main/webapp</directory>
-                            <includes>
-                                <include>index.html</include>
-                            </includes>
-                            <filtering>true</filtering>
-                        </webResource>
                     </webResources>
                 </configuration>
             </plugin>
+
+
+            <!-- Generate a HTML5 application cache manifest -->
+            <plugin>
+                <groupId>com.github.cameroncan</groupId>
+                <artifactId>cachemanifest-maven-plugin</artifactId>
+                <version>1.0.1</version>
+                <executions>
+                    <execution>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>generate-manifest</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <manifestVersion>${timestamp}</manifestVersion>
+                    <inputDirectory>${basedir}/src/main/webapp</inputDirectory>
+                    <outputManifestFile>${project.build.directory}/${project.build.finalName}/index.manifest</outputManifestFile>
+                    <excludes>
+                        <exclude>WEB-INF/**</exclude>
+                        <exclude>META-INF/**</exclude>
+                        <exclude>**/*.manifest</exclude>
+                        <exclude>app/config/*.*</exclude>
+                        <exclude>rest/**</exclude>
+                    </excludes>
+                    <additionals>
+                    </additionals>
+                    <networkResources>
+                        <networkResource>*</networkResource>
+                    </networkResources>
+                    <fallback>/index.html /index.html</fallback>
+                </configuration>
+            </plugin>
+
 
         </plugins>
     </build>

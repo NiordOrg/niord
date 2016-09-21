@@ -34,6 +34,9 @@ public class NiordApp {
 
     private final static ThreadLocal<String> THREAD_LOCAL_SERVER_NAME = new ThreadLocal<>();
 
+    // The possible execution modes of Niord
+    public enum ExecutionMode { DEVELOPMENT, TEST, PRODUCTION }
+
     private static final Setting BASE_URI =
             new Setting("baseUri", "http://localhost:8080")
                     .description("The base application server URI")
@@ -45,6 +48,11 @@ public class NiordApp {
                     .editable(true);
 
     private static final Setting LANGUAGES = new Setting("modelLanguages");
+
+    private static final Setting EXECUTION_MODE =
+            new Setting("mode", "development")
+                    .description("The Niord execution mode, either 'development', 'test' or 'production'.")
+                    .editable(true);
 
     @Inject
     SettingsService settingsService;
@@ -113,6 +121,21 @@ public class NiordApp {
      */
     public Locale getLocale(String lang) {
         return new Locale(getLanguage(lang));
+    }
+
+
+    /**
+     * Returns the execution mode of the Niord system
+     * @return the execution mode of the Niord system
+     */
+    public ExecutionMode getExecutionMode() {
+        String mode = settingsService.getString(EXECUTION_MODE);
+        try {
+            return ExecutionMode.valueOf(mode.toUpperCase());
+        } catch (Exception ignored) {
+        }
+        // Default to least-harm mode...
+        return ExecutionMode.DEVELOPMENT;
     }
 
 
