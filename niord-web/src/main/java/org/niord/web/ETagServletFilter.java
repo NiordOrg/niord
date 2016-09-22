@@ -16,6 +16,7 @@
 
 package org.niord.web;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
@@ -53,6 +54,7 @@ import java.util.Objects;
 })
 public class ETagServletFilter implements Filter {
 
+    static final String HEADER_USER_AGENT           = "User-Agent";
     static final String HEADER_IF_MODIFIED_SINCE    = "If-Modified-Since";
     static final String HEADER_LAST_MODIFIED        = "Last-Modified";
     static final String HEADER_IF_NONE_MATCH        = "If-None-Match";
@@ -89,28 +91,39 @@ public class ETagServletFilter implements Filter {
 
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
-        String servletPath = request.getServletPath();
 
-        // Return the file associated with the servlet path
-        Path file = getFile(servletPath);
+        // Initially, we only use the ETag mechanism for Chrome, which caches aggressively
+        if (isChrome(request)) {
+            String servletPath = request.getServletPath();
 
-        if (file != null) {
-            EntityTag etag = etagForFile(file);
+            // Return the file associated with the servlet path
+            Path file = getFile(servletPath);
 
-            if (evaluatePreconditions(etag, request, response)) {
-                log.trace("ETag match for path " + servletPath);
-                return;
+            if (file != null) {
+                EntityTag etag = etagForFile(file);
 
-            } else if (request.getHeader(HEADER_IF_MODIFIED_SINCE) != null) {
-                request = new IgnoreHeaderRequestWrapper(request, HEADER_IF_MODIFIED_SINCE);
+                if (evaluatePreconditions(etag, request, response)) {
+                    log.trace("ETag match for path " + servletPath);
+                    return;
+
+                } else if (request.getHeader(HEADER_IF_MODIFIED_SINCE) != null) {
+                    request = new IgnoreHeaderRequestWrapper(request, HEADER_IF_MODIFIED_SINCE);
+                }
+
+                log.trace("No ETag match for path " + servletPath);
+                response = new IgnoreHeaderResponseWrapper(response, HEADER_LAST_MODIFIED);
             }
-
-            log.trace("No ETag match for path " + servletPath);
-            response = new IgnoreHeaderResponseWrapper(response, HEADER_LAST_MODIFIED);
         }
 
         // Proceed with the request
         chain.doFilter(request, response);
+    }
+
+
+    /** Returns if the request is issued by a chrome browser **/
+    private boolean isChrome(HttpServletRequest request) {
+        String userAgent = request.getHeader(HEADER_USER_AGENT);
+        return StringUtils.isNotBlank(userAgent) && userAgent.contains("Chrome");
     }
 
 
@@ -154,6 +167,7 @@ public class ETagServletFilter implements Filter {
 
         boolean match = Collections.list(request.getHeaders(HEADER_IF_NONE_MATCH))
                 .stream()
+                .map(this::trimEtagValue) // Strip any "-gzip" suffix added by Apache modules
                 .anyMatch(val -> val.equals(etag.toString()));
 
         if (match) {
@@ -165,6 +179,14 @@ public class ETagServletFilter implements Filter {
         return false;
     }
 
+
+    /** Some Apache modules will add an "-gzip" suffix within the quoted ETag value **/
+    private String trimEtagValue(String etag) {
+        if (etag != null && etag.contains("-gzip")) {
+            etag = etag.replace("-gzip", "");
+        }
+        return etag;
+    }
 
     /** Simple weak etag implementation **/
     @SuppressWarnings("unused")
