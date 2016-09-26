@@ -30,49 +30,26 @@ angular.module('niord.messages')
 
         return {
             restrict: 'E',
-            template: '<span class="label label-message-id" ng-style="style">{{shortId}}</span>',
+            template: '<span class="label label-message-id" ng-class="messageClass">{{shortId}}</span>',
             scope: {
                 msg:       "=",
                 showBlank: "="
             },
             link: function(scope) {
 
-                /** Assigns a color based on the status **/
-                function statusColor(status) {
-                    switch (status) {
-                        case 'PUBLISHED':
-                            return "#559955";
-                        case 'DRAFT':
-                        case 'VERIFIED':
-                            return "#5555CC";
-                        case 'DELETED':
-                            return "#333333";
-                        case 'EXPIRED':
-                        case 'CANCELLED':
-                            return "#999999";
-                        default:
-                            return "#999999"
-                    }
-
-                }
-
                 /** Updates the label based on the current status and short ID **/
                 function updateIdLabel() {
                     var msg = scope.msg;
                     var status = msg && msg.status ? msg.status : 'DRAFT';
-                    var color = statusColor(status);
-                    scope.style = {};
+                    scope.messageClass = 'status-' + status;
 
                     scope.shortId = '';
                     if (msg && msg.shortId) {
                         scope.shortId = msg.shortId;
-                        scope.style['background-color'] = color;
                     } else if (scope.showBlank) {
                         scope.shortId = msg.type ? LangService.translate('msg.type.' + msg.type) + ' ' : '';
                         scope.shortId = scope.shortId + (msg.mainType ? msg.mainType : '');
-                        scope.style['background-color'] = 'white';
-                        scope.style['color'] = color;
-                        scope.style['border'] = '1px solid ' + color;
+                        scope.messageClass += '-outline';
                     }
                 }
 
