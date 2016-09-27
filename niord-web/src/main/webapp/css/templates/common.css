@@ -38,9 +38,9 @@ td.table-item {
 .field-name {
     white-space: nowrap;
     vertical-align: top;
-    font-style: italic;
     padding-right: 10px;
-    text-align: right;
+    text-align: left;
+    color: gray;
 }
 
 .field-value {
@@ -82,6 +82,21 @@ ol.feature-coordinates li span {
 
 .message-description ol, .message-description ul {
     padding-left: 4mm;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.message-description ol li, .message-description ul li {
+    margin-bottom: 1mm;
+}
+
+.message-description p, .message-description p {
+    margin: 0 0 1mm 0;
+}
+
+.message-description ol li p:last-child, .message-description ul li p:last-child {
+    padding: 0;
+    margin: 0;
 }
 
 table.no-border {

@@ -30,6 +30,16 @@
     <form ng-if="message && message.mainType && editable()" method="post" name="editForm" id="editForm" ng-init="focusEditor()">
         <div class="editor-fields" style="margin-bottom: 40px;">
 
+            <!-- ******************************************** -->
+            <!-- ** >>>> Message Preamble Header           ** -->
+            <!-- ******************************************** -->
+            <div class="row editor-fields-group">
+                <div class="col-xs-offset-4 col-sm-offset-4 col-md-offset-2 col-xs-8 col-sm-8 col-md-10">
+                    Preamble
+                </div>
+            </div>
+
+
             <!-- ********************* -->
             <!-- ** Original Info   ** -->
             <!-- ********************* -->
@@ -230,7 +240,7 @@
                                     <div ng-repeat="desc in ref.descs">
                                         <input class="form-control input-sm" placeholder="Description" type="text"
                                                tabindex="{{504 + refIndex * 5}}"
-                                               ng-model="desc.description" bg-flag="desc.lang"/>
+                                               ng-model="desc.details" bg-flag="desc.lang"/>
                                     </div>
                                 </td>
                                 <td style="width: 50px; padding-top: 12px" nowrap>
@@ -462,55 +472,85 @@
             </editor-field>
 
 
-            <!-- ********************* -->
-            <!-- ** Subject         ** -->
-            <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="subject" field-title="msg.field.subject"
-                          tab-index="1000">
+            <div ng-sortable="messagesPartSortableCfg">
+                <div ng-repeat="part in message.parts">
 
-                <editor-field-value-viewer>
-                    <div ng-if="message.descs.length > 0">
-                        {{message.descs[0].subject}}
-                    </div>
-                </editor-field-value-viewer>
-
-                <editor-field-value-editor value-class="col-sm-12">
-                    <div class="row">
-                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
-                            <input class="form-control input-sm" placeholder="Subject" type="text"
-                                   tabindex="1001"
-                                   autocapitalize="off" autocorrect="off" autocomplete="off"
-                                   ng-model="desc.subject" bg-flag="desc.lang"
-                                   ng-change="adjustEditableMessage()"
-                                   ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"/>
+                    <!-- ******************************************** -->
+                    <!-- ** >>>> Message Parts Header              ** -->
+                    <!-- ******************************************** -->
+                    <div class="row editor-fields-group">
+                        <div class="col-xs-4 col-sm-4 col-md-2" style="white-space: nowrap">
+                            <span ng-click="addMessagePart($index)" class="glyphicon glyphicon-plus-sign pointer"></span>&nbsp;
+                            <span ng-click="removeMessagePart($index)" class="glyphicon glyphicon-minus-sign pointer"></span>&nbsp;
+                            <span class="glyphicon glyphicon-move move-btn"></span>
+                        </div>
+                        <div class="col-xs-8 col-sm-8 col-md-10">
+                            Part {{part.index + 1}}
                         </div>
                     </div>
-                </editor-field-value-editor>
 
-            </editor-field>
 
-            <!-- ********************* -->
-            <!-- ** Description     ** -->
-            <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="description" field-title="msg.field.details"
-                          tab-index="1100">
+                    <!-- ********************* -->
+                    <!-- ** Subject         ** -->
+                    <!-- ********************* -->
+                    <editor-field edit-mode="editMode" index="part.index" field-id="subject" field-title="msg.field.subject"
+                                  tab-index="1000 + part.index * 10">
+                        <editor-field-value-viewer>
+                            <div ng-if="part.descs.length > 0">
+                                {{part.descs[0].subject}}
+                            </div>
+                        </editor-field-value-viewer>
 
-                <editor-field-value-viewer>
-                    <div class="message-description" ng-if="message.descs.length > 0" ng-bind-html="message.descs[0].description | toTrusted"></div>
-                </editor-field-value-viewer>
+                        <editor-field-value-editor value-class="col-sm-12">
+                            <div class="row">
+                                <div class="col-sm-12 col-md-6" ng-repeat="desc in part.descs">
+                                    <input class="form-control input-sm" placeholder="Subject" type="text"
+                                           tabindex="{{1001 + part.index * 10}}"
+                                           autocapitalize="off" autocorrect="off" autocomplete="off"
+                                           ng-model="desc.subject" bg-flag="desc.lang"
+                                           ng-change="adjustEditableMessage()"
+                                           ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"/>
+                                </div>
+                            </div>
+                        </editor-field-value-editor>
 
-                <editor-field-value-editor value-class="col-sm-12">
-                    <div class="row">
-                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs"  id="tinymce-{{desc.lang}}">
-                            <textarea class="editor-description" ui-tinymce="tinymceOptions"
-                                      tabindex="1101"
-                                      ng-model="desc.description" bg-flag="desc.lang"></textarea>
-                            <flag lang="desc.lang" class="editor-description-flag"></flag>
-                        </div>
-                    </div>
-                </editor-field-value-editor>
+                    </editor-field>
 
-            </editor-field>
+
+                    <!-- ********************* -->
+                    <!-- ** Description     ** -->
+                    <!-- ********************* -->
+                    <editor-field edit-mode="editMode" index="part.index" field-id="description" field-title="msg.field.details"
+                                  tab-index="1002 + part.index * 10">
+
+                        <editor-field-value-viewer>
+                            <div class="message-description" ng-if="part.descs.length > 0" ng-bind-html="part.descs[0].details | toTrusted"></div>
+                        </editor-field-value-viewer>
+
+                        <editor-field-value-editor value-class="col-sm-12">
+                            <div class="row" style="margin-top: 10px">
+                                <div class="col-sm-12 col-md-6" ng-repeat="desc in part.descs"  id="tinymce-{{desc.lang}}">
+                                    <textarea class="editor-description" ui-tinymce="tinymceOptions"
+                                              tabindex="{{1003 + part.index * 5}}"
+                                              ng-model="desc.details" bg-flag="desc.lang"></textarea>
+                                    <flag lang="desc.lang" class="editor-description-flag"></flag>
+                                </div>
+                            </div>
+                        </editor-field-value-editor>
+
+                    </editor-field>
+
+                </div>
+            </div>
+
+            <!-- ******************************************** -->
+            <!-- ** >>>> Misc. Fields Header               ** -->
+            <!-- ******************************************** -->
+            <div class="row editor-fields-group">
+                <div class="col-xs-offset-4 col-sm-offset-4 col-md-offset-2 col-xs-8 col-sm-8 col-md-10">
+                    Miscellaneous
+                </div>
+            </div>
 
 
             <!-- ********************* -->

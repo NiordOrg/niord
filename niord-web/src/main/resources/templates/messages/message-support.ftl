@@ -157,6 +157,20 @@
     </ol>
 </#macro>
 
+
+<!-- ***************************************  -->
+<!-- Renders a message part                   -->
+<!-- ***************************************  -->
+<#macro renderMessagePart part>
+    <#if part.descs?has_content && part.descs[0].subject??>
+        <p><strong>${part.descs[0].subject}</strong></p>
+    </#if>
+    <#if part.descs?has_content && part.descs[0].details??>
+        <div>${part.descs[0].details}</div>
+    </#if>
+</#macro>
+
+
 <!-- ***************************************  -->
 <!-- Renders a message                        -->
 <!-- ***************************************  -->
@@ -269,11 +283,19 @@
 
 
         <!-- Details line -->
-        <#if msg.descs?has_content && msg.descs[0].description?has_content>
+        <#if msg.parts?has_content>
             <tr>
                 <td class="field-name">${text("msg.field.details")}</td>
                 <td class="field-value message-description">
-                ${msg.descs[0].description}
+                    <#if msg.parts?size == 1>
+                        <@renderMessagePart part=msg.parts[0]/>
+                    <#else>
+                        <ul>
+                           <#list msg.parts as part>
+                                <li><@renderMessagePart part=part/></li>
+                           </#list>
+                        </ul>
+                    </#if>
                 </td>
             </tr>
         </#if>
@@ -335,7 +357,7 @@
         <!-- Source line -->
         <#if msg.descs?has_content && msg.descs[0].source?has_content>
             <tr>
-                <td class="field-name" colspan="2">
+                <td class="field-value" style="text-align: right;" colspan="2">
                     (${msg.descs[0].source})
                 </td>
             </tr>

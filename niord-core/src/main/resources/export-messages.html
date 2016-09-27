@@ -205,9 +205,20 @@
         </div>
 
         <!-- Details line -->
-        <div class="row" ng-if="msg.descs && msg.descs.length > 0 && msg.descs[0].description">
+        <div class="row" ng-if="msg.parts && msg.parts.length > 0">
             <div class="col-xs-2 col-sm-1 message-details-item-field">Details</div>
-            <div class="col-xs-10 col-sm-11 message-details-item-value" ng-bind-html="msg.descs[0].description"></div>
+            <div class="col-xs-10 col-sm-11 message-details-item-value">
+                <div ng-if="msg.parts.length == 1 && msg.parts[0].descs">
+                    <p ng-if="subject && msg.parts[0].descs[0].subject"><strong>{{msg.parts[0].descs[0].subject}}</strong></p>
+                    <div ng-if="msg.parts[0].descs[0].details" ng-bind-html="msg.parts[0].descs[0].details"></div>
+                </div>
+                <ul ng-if="msg.parts.length > 1">
+                    <li ng-repeat="part in msg.parts" ng-if="part.descs">
+                        <p ng-if="subject && part.descs[0].subject"><strong>{{part.descs[0].subject}}</strong></p>
+                        <div ng-if="part.descs[0].details" ng-bind-html="part.descs[0].details"></div>
+                    </li>
+                </ul>
+            </div>
         </div>
 
         <!-- Attachments -->

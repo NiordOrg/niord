@@ -1072,6 +1072,20 @@ angular.module('niord.messages')
                 };
 
 
+                // Returns if any of the associated message parts have defined the details field
+                scope.detailsDefined = function () {
+                    if (scope.msg && scope.msg.parts) {
+                        for (var x = 0; x < scope.msg.parts.length; x++) {
+                            var part = scope.msg.parts[x];
+                            if (part.descs && part.descs.length > 0 && part.descs[0].details) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                };
+
+
                 // Returns if the given message is selected or not
                 scope.isSelected = function () {
                     return scope.selection.get(scope.msg.id) !== undefined;
@@ -1131,6 +1145,27 @@ angular.module('niord.messages')
             }
         };
     }])
+
+
+    /********************************
+     * Renders the message part
+     ********************************/
+    .directive('renderMessagePart', [
+        function () {
+            'use strict';
+
+            return {
+                restrict: 'E',
+                templateUrl: '/app/messages/render-message-part.html',
+                replace: false,
+                scope: {
+                    msg:        "=",
+                    subject:    "="
+                },
+                link: function(scope, element, attrs) {
+                }
+            };
+        }])
 
 
     /****************************************************************

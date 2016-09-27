@@ -89,9 +89,11 @@
 
 
             <!-- Details line -->
-            <tr ng-if="msg.descs[0].description">
+            <tr ng-if="detailsDefined()">
                 <th translate>msg.field.details</th>
-                <td class="message-description" ng-bind-html="msg.descs[0].description | toTrusted"></td>
+                <td class="message-description">
+                    <render-message-part msg="msg" subject="true"></render-message-part>
+                </td>
             </tr>
 
 

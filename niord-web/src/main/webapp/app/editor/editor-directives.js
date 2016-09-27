@@ -31,6 +31,7 @@ angular.module('niord.editor')
             transclude: true,
             scope: {
                 editMode:   "=",
+                index:      "=",
                 fieldId:    "@",
                 fieldTitle: "@",
                 fieldValid: '&',
@@ -41,19 +42,21 @@ angular.module('niord.editor')
 
                 /** Returns if the field is currently editable **/
                 this.fieldEditable = function () {
-                    return $scope.editMode[$scope.fieldId];
+                    return $scope.editMode[$scope.fieldId][$scope.index];
                 }
             },
 
             link: function(scope, element, attrs) {
 
+                scope.index = scope.index || 0;
                 scope.tabIndex = scope.tabIndex || -1;
 
                 var elm = $(element[0]);
 
                 // Hook up a key listener that can be used to expand or collapse the field
                 function keydownListener(evt) {
-                    var focused = elm.find('.editor-field-label').is(':focus');
+                    var editorLabel = elm.find('.editor-field-label');
+                    var focused = editorLabel.is(':focus');
                     if (!focused || evt.isDefaultPrevented()) {
                         return evt;
                     }
@@ -66,9 +69,17 @@ angular.module('niord.editor')
                         || (scope.editModeOn() && evt.which == 13 /* enter */)) {
                         scope.updateEditField(evt, false);
                     } else if (evt.which == 38 /* up arrow */) {
-                        elm.prev('.field-editor').find('.editor-field-label').focus();
+                        var prev = scope.closestLabel(editorLabel.attr('tabindex'), true);
+                        if (prev) {
+                            prev.focus();
+                            evt.preventDefault();
+                        }
                     } else if (evt.which == 40 /* down arrow */) {
-                        elm.next('.field-editor').find('.editor-field-label').focus();
+                        var next = scope.closestLabel(editorLabel.attr('tabindex'), false);
+                        if (next) {
+                            next.focus();
+                            evt.preventDefault();
+                        }
                     }
                 }
                 element.on('$destroy', function() {
@@ -82,15 +93,32 @@ angular.module('niord.editor')
                 });
 
 
+                /** The editor-fields are not siblings (because of message parts), so iterate over all fields **/
+                scope.closestLabel = function (tabindex, prev) {
+                    var index = -1;
+                    var editorLabels = $('.editor-field-label');
+                    editorLabels.each(function (i) {
+                        if ($(this).attr('tabindex') == tabindex) {
+                            index = i;
+                        }
+                    });
+                    if (prev && index > 0) {
+                        return editorLabels[index - 1];
+                    } else if (!prev && index < editorLabels.length  - 1) {
+                        return editorLabels[index + 1];
+                    }
+                    return null;
+                };
+
                 /** Toggles the edit mode of the field **/
                 scope.toggleEditField = function () {
-                    scope.editMode[scope.fieldId] = !scope.editMode[scope.fieldId];
+                    scope.editMode[scope.fieldId][scope.index] = !scope.editMode[scope.fieldId][scope.index];
                 };
 
 
                 /** Updates the edit state of the field editor from a keyboard event **/
                 scope.updateEditField = function(evt, editModeOn) {
-                    scope.editMode[scope.fieldId] = editModeOn;
+                    scope.editMode[scope.fieldId][scope.index] = editModeOn;
                     evt.preventDefault();
                     evt.stopPropagation();
                     scope.$$phase || scope.$apply();
@@ -99,7 +127,7 @@ angular.module('niord.editor')
 
                 /** Returns if the edit mode is on **/
                 scope.editModeOn = function () {
-                    return scope.editMode[scope.fieldId];
+                    return scope.editMode[scope.fieldId][scope.index];
                 };
 
 

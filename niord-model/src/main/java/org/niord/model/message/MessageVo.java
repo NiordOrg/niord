@@ -36,7 +36,7 @@ import java.util.List;
 @XmlType(propOrder = {
         "repoPath", "messageSeries", "number", "mrn", "shortId", "mainType", "type", "status",
         "areas", "categories", "charts", "horizontalDatum", "geometry", "publishDate", "dateIntervals",
-        "references", "atonUids", "originalInformation", "descs", "attachments"
+        "references", "atonUids", "originalInformation", "parts", "descs", "attachments"
 })
 @SuppressWarnings("unused")
 public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable {
@@ -63,6 +63,7 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     List<ReferenceVo> references;
     List<String> atonUids;
     Boolean originalInformation;
+    List<MessagePartVo> parts;
     List<MessageDescVo> descs;
     List<AttachmentVo> attachments;
 
@@ -100,12 +101,8 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
      * The repository paths may occur in e.g. embedded images and links.
      */
     public void rewriteDescs(String repoPath1, String repoPath2) {
-        if (getDescs() != null && StringUtils.isNotBlank(repoPath1) && StringUtils.isNotBlank(repoPath2)) {
-            getDescs().forEach(desc -> {
-                if (desc.getDescription() != null && desc.getDescription().contains(repoPath1)) {
-                    desc.setDescription(desc.getDescription().replace(repoPath1, repoPath2));
-                }
-            });
+        if (getParts() != null) {
+            getParts().forEach(mp -> mp.rewriteDescs(repoPath1, repoPath2));
         }
     }
 
@@ -113,6 +110,13 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     /*************************/
     /** Collection Handling **/
     /*************************/
+
+    public List<MessagePartVo> checkCreateParts() {
+        if (parts == null) {
+            parts = new ArrayList<>();
+        }
+        return parts;
+    }
 
     public List<AreaVo> checkCreateAreas() {
         if (areas == null) {
@@ -345,6 +349,14 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
 
     public void setOriginalInformation(Boolean originalInformation) {
         this.originalInformation = originalInformation;
+    }
+
+    public List<MessagePartVo> getParts() {
+        return parts;
+    }
+
+    public void setParts(List<MessagePartVo> parts) {
+        this.parts = parts;
     }
 
     @Override

@@ -413,6 +413,24 @@ ol.message-details-positions li span {
 
 .message-description ol, .message-description ul {
     padding-left: 20px;
+    margin-bottom: 0;
+}
+
+.message-description ol li, .message-description ul li {
+    margin-bottom: 3px;
+}
+
+.message-description ol li:last-child, .message-description ul li:last-child {
+    margin-bottom: 0;
+}
+
+.message-description p, .message-description p {
+    margin: 0 0 3px 0;
+}
+
+.message-description ol li p:last-child, .message-description ul li p:last-child {
+    padding: 0;
+    margin: 0;
 }
 
 table.no-border {

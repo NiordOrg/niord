@@ -191,6 +191,10 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
     List<MessageDesc> descs = new ArrayList<>();
 
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "message", orphanRemoval = true)
+    @OrderColumn(name = "indexNo")
+    List<MessagePart> parts = new ArrayList<>();
+
     // Indicates if the title should automatically be updated from the message area, subject and vicinity fields.
     boolean autoTitle;
 
@@ -281,6 +285,10 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         if (message.getDescs() != null) {
             message.getDescs().forEach(desc -> addDesc(new MessageDesc(desc)));
         }
+        if (message.getParts() != null) {
+            message.getParts().forEach(part -> addPart(new MessagePart(part)));
+            parts.removeIf(part -> !part.partDefined());
+        }
         if (message.getAttachments() != null) {
             message.getAttachments().forEach(att -> addAttachment(new Attachment(att)));
         }
@@ -325,6 +333,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             message.checkCreateAtonUids().addAll(atonUids);
             message.setOriginalInformation(originalInformation);
             attachments.forEach(att -> message.checkCreateAttachments().add(att.toVo(filter)));
+            parts.forEach(part -> message.checkCreateParts().add(part.toVo(compFilter)));
         }
         if (compFilter.anyOfFields(DataFilter.GEOMETRY) && geometry != null) {
             message.setGeometry(geometry.toGeoJson());
@@ -439,12 +448,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                             title.append(".");
                         }
                     }
-                    if (StringUtils.isNotBlank(desc.getSubject())) {
-                        title.append(" ").append(desc.getSubject());
-                        if (!desc.getSubject().endsWith(".")) {
-                            title.append(".");
+                    parts.forEach(part -> part.getDescs().forEach(d -> {
+                        if (StringUtils.isNotBlank(d.getSubject())) {
+                            title.append(" ").append(d.getSubject());
+                            if (!d.getSubject().endsWith(".")) {
+                                title.append(".");
+                            }
                         }
-                    }
+                    }));
                     desc.setTitle(title.toString().trim());
                 } catch (Exception ignored) {
                 }
@@ -464,11 +475,13 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         // Rewrite any links pointing to the old repository path
         if (StringUtils.isNotBlank(oldRepoPath)) {
             String prefix = "\"/rest/repo/file/";
-            getDescs().forEach(desc -> {
-                if (desc.getDescription() != null && desc.getDescription().contains(prefix + oldRepoPath)) {
-                    desc.setDescription(desc.getDescription().replace(prefix + oldRepoPath, prefix + repoPath));
-                }
-            });
+            getParts().stream()
+                    .flatMap(part -> part.getDescs().stream())
+                    .forEach(desc -> {
+                        if (desc.getDetails() != null && desc.getDetails().contains(prefix + oldRepoPath)) {
+                            desc.setDetails(desc.getDetails().replace(prefix + oldRepoPath, prefix + repoPath));
+                        }
+                    });
         }
         return uid;
     }
@@ -536,6 +549,12 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     public void addDesc(MessageDesc desc) {
         desc.setEntity(this);
         descs.add(desc);
+    }
+
+    /** Adds a message part entity to this message */
+    public void addPart(MessagePart part) {
+        part.setMessage(this);
+        parts.add(part);
     }
 
     /** Adds a reference to this message */
@@ -784,6 +803,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     @Override
     public void setDescs(List<MessageDesc> descs) {
         this.descs = descs;
+    }
+
+    public List<MessagePart> getParts() {
+        return parts;
+    }
+
+    public void setParts(List<MessagePart> parts) {
+        this.parts = parts;
     }
 
     public List<Attachment> getAttachments() {

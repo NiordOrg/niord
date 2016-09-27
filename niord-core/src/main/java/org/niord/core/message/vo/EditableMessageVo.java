@@ -42,11 +42,13 @@ public class EditableMessageVo extends MessageVo {
      * This function fixes the links to attachment resources.
      */
     private void fixDescriptionRepoPaths() {
-        if (getDescs() != null) {
-            getDescs().stream()
-                    .filter(desc -> StringUtils.isNotBlank(desc.getDescription()))
-                    .filter(desc -> desc.getDescription().contains("\"rest/repo/file"))
-                    .forEach(desc -> desc.setDescription(desc.getDescription().replace("\"rest/repo/file", "\"/rest/repo/file")));
+        if (getParts() != null) {
+            getParts().stream()
+                    .filter(p -> p.getDescs() != null)
+                    .flatMap(p -> p.getDescs().stream())
+                    .filter(desc -> StringUtils.isNotBlank(desc.getDetails()))
+                    .filter(desc -> desc.getDetails().contains("\"rest/repo/file"))
+                    .forEach(desc -> desc.setDetails(desc.getDetails().replace("\"rest/repo/file", "\"/rest/repo/file")));
         }
     }
 

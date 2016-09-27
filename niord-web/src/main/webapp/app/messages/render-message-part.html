@@ -1,0 +1,12 @@
+<div ng-if="msg.parts && msg.parts.length > 0">
+    <div ng-if="msg.parts.length == 1 && msg.parts[0].descs">
+        <p ng-if="subject && msg.parts[0].descs[0].subject"><strong>{{msg.parts[0].descs[0].subject}}</strong></p>
+        <div ng-if="msg.parts[0].descs[0].details" ng-bind-html="msg.parts[0].descs[0].details | toTrusted"></div>
+    </div>
+    <ul ng-if="msg.parts.length > 1">
+        <li ng-repeat="part in msg.parts" ng-if="part.descs">
+            <p ng-if="subject && part.descs[0].subject"><strong>{{part.descs[0].subject}}</strong></p>
+            <div ng-if="part.descs[0].details" ng-bind-html="part.descs[0].details | toTrusted"></div>
+        </li>
+    </ul>
+</div>

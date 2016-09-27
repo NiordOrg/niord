@@ -42,6 +42,11 @@ angular.module('niord.conf')
         $rootScope.wmsLayerEnabled = true;
         $rootScope.nwMrnPrefix = "urn:mrn:iho:nw:";
         $rootScope.nmMrnPrefix = "urn:mrn:iho:nm:";
+        $rootScope.editorFieldsBase = {
+            "type": true, "orig_info" : false, "id" : true, "title" : true, "references"  :true, "time" : true,
+            "areas" : true, "categories" : true, "positions" : true, "charts" : true, "subject" : true,
+            "description" : true, "attachments" : false, "note" : false, "publication" : false, "source" : false,
+            "prohibition" : false, "signals" : false };
 
         $rootScope.domains = [{
                 "domainId" : "niord-client-nw",

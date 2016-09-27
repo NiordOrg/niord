@@ -293,8 +293,6 @@ public class MessageLuceneIndex extends BaseService {
             MessageDesc msgDesc = message.getDesc(language);
             if (msgDesc != null) {
                 addPhraseSearchField(doc, searchField, msgDesc.getTitle());
-                addPhraseSearchField(doc, searchField, msgDesc.getSubject());
-                addPhraseSearchField(doc, searchField, TextUtils.html2txt(msgDesc.getDescription()));
                 addPhraseSearchField(doc, searchField, msgDesc.getNote());
                 addPhraseSearchField(doc, searchField, msgDesc.getOtherCategories());
                 addPhraseSearchField(doc, searchField, msgDesc.getVicinity());
@@ -303,6 +301,15 @@ public class MessageLuceneIndex extends BaseService {
                 addPhraseSearchField(doc, searchField, msgDesc.getProhibition());
                 addPhraseSearchField(doc, searchField, msgDesc.getSignals());
             }
+
+            // Add message parts
+            message.getParts().stream()
+                    .flatMap(part -> part.getDescs().stream())
+                    .filter(desc -> language.equals(desc.getLang()))
+                    .forEach(desc -> {
+                        addPhraseSearchField(doc, searchField, desc.getSubject());
+                        addPhraseSearchField(doc, searchField, TextUtils.html2txt(desc.getDetails()));
+                    });
 
             message.getAtonUids()
                     .forEach(a -> addPhraseSearchField(doc, searchField, a));

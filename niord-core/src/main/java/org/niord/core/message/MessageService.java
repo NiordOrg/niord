@@ -466,6 +466,13 @@ public class MessageService extends BaseService {
 
         original.setOriginalInformation(message.getOriginalInformation());
 
+        original.getParts().clear();
+        message.getParts().stream()
+                .map(this::updateMessagePart)
+                .filter(p -> p != null)
+                .forEach(original::addPart);
+        original.getParts().removeIf(part -> !part.partDefined());
+
         // Copy the localized description data
         original.copyDescsAndRemoveBlanks(message.getDescs());
         original.setAutoTitle(message.isAutoTitle());
@@ -481,6 +488,19 @@ public class MessageService extends BaseService {
         log.info("Updated message " + original);
 
         em.flush();
+        return original;
+    }
+
+
+    /** Called upon saving a message. Updates the message part **/
+    private MessagePart updateMessagePart(MessagePart part) {
+        if (part.isNew()) {
+            return part;
+        }
+        MessagePart original = getByPrimaryKey(MessagePart.class, part.getId());
+        if (original != null) {
+            original.updateMessagePart(part);
+        }
         return original;
     }
 
@@ -709,8 +729,6 @@ public class MessageService extends BaseService {
         if (ids.isEmpty()) {
             return Collections.emptyList();
         }
-
-        // TODO: Caching
 
         List<Message> messages = em.createNamedQuery("Message.findByIds", Message.class)
                 .setParameter("ids", ids)

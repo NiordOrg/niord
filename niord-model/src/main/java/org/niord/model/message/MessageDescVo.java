@@ -26,15 +26,13 @@ import javax.xml.bind.annotation.XmlType;
  * The message description VO
  */
 @ApiModel(value = "MessageDesc", description = "Translatable fields of the Message model")
-@XmlType(propOrder = { "title", "subject", "description", "otherCategories",
+@XmlType(propOrder = { "title", "otherCategories",
         "time", "vicinity", "note", "publication", "source", "prohibition", "signals" })
 @SuppressWarnings("unused")
 public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
 
     String lang;
     String title;
-    String subject;
-    String description;
     String otherCategories;
     String time;
     String vicinity;
@@ -47,7 +45,7 @@ public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(title, subject, description, otherCategories,
+        return ILocalizedDesc.fieldsDefined(title, otherCategories,
                 time, vicinity, note, publication, source, prohibition, signals);
     }
 
@@ -56,8 +54,6 @@ public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
     public void copyDesc(ILocalizedDesc localizedDesc) {
         MessageDescVo desc = (MessageDescVo)localizedDesc;
         this.title = desc.getTitle();
-        this.subject = desc.getSubject();
-        this.description = desc.getDescription();
         this.otherCategories = desc.getOtherCategories();
         this.time = desc.getTime();
         this.vicinity = desc.getVicinity();
@@ -89,22 +85,6 @@ public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public String getSubject() {
-        return subject;
-    }
-
-    public void setSubject(String subject) {
-        this.subject = subject;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public String getOtherCategories() {

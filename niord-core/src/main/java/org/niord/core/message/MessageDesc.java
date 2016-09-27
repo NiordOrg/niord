@@ -23,7 +23,6 @@ import org.niord.model.message.MessageDescVo;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.Lob;
 
 /**
  * Localized contents for the Area entity
@@ -34,12 +33,6 @@ public class MessageDesc extends DescEntity<Message> {
 
     @Column(length = 1000)
     String title;
-
-    @Column(length = 500)
-    String subject;
-
-    @Lob
-    String description;
 
     String otherCategories;
 
@@ -81,8 +74,6 @@ public class MessageDesc extends DescEntity<Message> {
         } else {
             // Copy all fields
             this.title = trunc(desc.getTitle(), 1000);
-            this.subject = trunc(desc.getSubject(), 500);
-            this.description = desc.getDescription();
             this.otherCategories = trunc(desc.getOtherCategories(), 256);
             this.time = trunc(desc.getTime(), 1000);
             this.vicinity = trunc(desc.getVicinity(), 256);
@@ -104,8 +95,6 @@ public class MessageDesc extends DescEntity<Message> {
         desc.setLang(lang);
         desc.setTitle(title);
         if (!compFilter.includeField("title")) {
-            desc.setSubject(subject);
-            desc.setDescription(description);
             desc.setOtherCategories(otherCategories);
             desc.setTime(time);
             desc.setVicinity(vicinity);
@@ -122,7 +111,7 @@ public class MessageDesc extends DescEntity<Message> {
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(title, subject, description, otherCategories,
+        return ILocalizedDesc.fieldsDefined(title, otherCategories,
                 time, vicinity, note, publication, source, prohibition, signals);
     }
 
@@ -133,8 +122,6 @@ public class MessageDesc extends DescEntity<Message> {
         MessageDesc desc = (MessageDesc)localizedDesc;
         this.lang = desc.getLang();
         this.title = desc.getTitle();
-        this.subject = desc.getSubject();
-        this.description = desc.getDescription();
         this.otherCategories = desc.getOtherCategories();
         this.time = desc.getTime();
         this.vicinity = desc.getVicinity();
@@ -155,22 +142,6 @@ public class MessageDesc extends DescEntity<Message> {
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public String getSubject() {
-        return subject;
-    }
-
-    public void setSubject(String subject) {
-        this.subject = subject;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public String getOtherCategories() {

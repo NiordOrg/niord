@@ -33,32 +33,35 @@ angular.module('niord.editor')
             $scope.initId = $stateParams.id || '';
             $scope.referenceType = $stateParams.referenceType || '';
 
+            // Records if a field is expanded or collapsed.
+            // Flags packaged in arrays in order to handle message part fields
             $scope.editMode = {
-                type: false,
-                orig_info: false,
-                id: false,
-                title: false,
-                references: false,
-                time: false,
-                areas: false,
-                categories: false,
-                positions: false,
-                charts: false,
-                subject: false,
-                description: false,
-                attachments: false,
-                note: false,
-                publication: false,
-                source: false,
-                prohibition: false,
-                signals: false
+                type:           [ false ],
+                orig_info:      [ false ],
+                id:             [ false ],
+                title:          [ false ],
+                references:     [ false ],
+                time:           [ false ],
+                areas:          [ false ],
+                categories:     [ false ],
+                positions:      [ false ],
+                charts:         [ false ],
+                subject:        [],         // indexed by message part
+                description:    [],         // indexed by message part
+                attachments:    [ false ],
+                note:           [ false ],
+                publication:    [ false ],
+                source:         [ false ],
+                prohibition:    [ false ],
+                signals:        [ false ]
             };
 
+            // From backend settings, determines which editor fields to display
             $scope.editorFields = $rootScope.editorFieldsBase;
+            // Fields not displayed by default - can be manually enabled from menu
             $scope.unusedEditorFields = {};
 
             $scope.messageSeries = [];
-
             $scope.messageTags = [];
 
             $scope.attachmentUploadUrl = undefined;
@@ -79,7 +82,11 @@ angular.module('niord.editor')
             // Used to ensure that description entities have various field
             function initMessageDescField(desc) {
                 desc.title = '';
-                desc.description = '';
+            }
+
+            // Used to ensure that message part description entities have various field
+            function initMessagePartDescField(desc) {
+                desc.details = '';
             }
 
             // Used to ensure that attachment description entities have various field
@@ -110,6 +117,10 @@ angular.module('niord.editor')
 
                 // Ensure that localized desc fields are defined for all languages
                 LangService.checkDescs(msg, initMessageDescField, undefined, $rootScope.modelLanguages);
+
+                // Ensure that the message has at lease one message part
+                $scope.initMessageParts();
+
 
                 // Instantiate the feature collection from the message geometry
                 if (!msg.geometry) {
@@ -579,7 +590,8 @@ angular.module('niord.editor')
                     autoTitle: msg.autoTitle,
                     descs: msg.descs.map(function (desc) {
                        return { lang: desc.lang, subject: desc.subject, vicinity: desc.vicinity }
-                    })
+                    }),
+                    parts: angular.copy(msg.parts)
                 };
                 MessageService.adjustEditableMessage(msgTemplate)
                     .success(function (message) {
@@ -595,6 +607,81 @@ angular.module('niord.editor')
                             })
                         }
                     })
+            };
+
+
+            /*****************************/
+            /** Message Part functions  **/
+            /*****************************/
+
+
+            /** Initialize the message parts **/
+            $scope.initMessageParts = function () {
+                if (!$scope.message.parts) {
+                    $scope.message.parts = [];
+                }
+                if ($scope.message.parts.length == 0) {
+                    $scope.addMessagePart(0);
+                }
+                angular.forEach($scope.message.parts, function (part, index) {
+                    part.index = index;
+                    LangService.checkDescs(part, initMessagePartDescField, undefined, $rootScope.modelLanguages);
+                });
+            };
+
+
+            /** Adds a new message part after the given index **/
+            $scope.addMessagePart = function (index) {
+                var parts = $scope.message.parts;
+                index = Math.min(parts.length, index + 1);
+                parts.splice(index, 0, {
+                    descs: []
+                });
+                // Keep edit mode flags in sync
+                $scope.editMode['subject'].splice(index, 0, false);
+                $scope.editMode['description'].splice(index, 0, false);
+                $scope.initMessageParts();
+                $scope.setDirty();
+            };
+
+
+            /** Removes the message part at the given index **/
+            $scope.removeMessagePart = function (index) {
+                var parts = $scope.message.parts;
+                if (index < parts.length) {
+                    parts.splice(index, 1);
+                    // Keep edit mode flags in sync
+                    $scope.editMode['subject'].splice(index, 1);
+                    $scope.editMode['description'].splice(index, 1);
+                }
+                if (parts.length == 0) {
+                    $scope.addMessagePart(0);
+                }
+                $scope.initMessageParts();
+                $scope.adjustEditableMessage();
+                $scope.setDirty();
+            };
+
+
+            /** Updates the message part sort order **/
+            $scope.updateMessagePartOrder = function (evt) {
+                if (evt.newIndex == evt.oldIndex) {
+                    return;
+                }
+
+                // Reassign part indexes
+                $scope.initMessageParts();
+                // Update message title, etc.
+                $scope.adjustEditableMessage();
+                $scope.setDirty();
+            };
+
+
+            /** Message part DnD configuration **/
+            $scope.messagesPartSortableCfg = {
+                group: 'part',
+                handle: '.move-btn',
+                onEnd: $scope.updateMessagePartOrder
             };
 
 
@@ -826,9 +913,9 @@ angular.module('niord.editor')
 
             /** Expands or collapses all field editors **/
             $scope.expandCollapseFields = function (expand) {
-                angular.forEach($scope.editMode, function (value, key) {
-                    if (value !== expand) {
-                        $scope.editMode[key] = expand;
+                angular.forEach($scope.editMode, function (value) {
+                    for (var x = 0; x < value.length; x++) {
+                        value[x] = expand;
                     }
                 });
             };
