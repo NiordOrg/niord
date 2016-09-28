@@ -22,9 +22,8 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.NiordApp;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
-import org.niord.core.fm.FmService;
-import org.niord.core.fm.FmService.ProcessFormat;
 import org.niord.core.geojson.FeatureService;
+import org.niord.core.geojson.GeometryFormatService;
 import org.niord.core.geojson.PlainTextConverter;
 import org.niord.core.message.EditorFieldsService;
 import org.niord.core.message.Message;
@@ -69,8 +68,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -83,7 +80,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.niord.core.message.vo.MessageTagVo.MessageTagType.PUBLIC;
-import static org.niord.model.message.Status.*;
+import static org.niord.model.message.Status.DRAFT;
+import static org.niord.model.message.Status.VERIFIED;
 
 /**
  * REST interface for managing messages.
@@ -123,7 +121,7 @@ public class MessageRestService  {
     FeatureService featureService;
 
     @Inject
-    FmService fmService;
+    GeometryFormatService geometryFormatService;
 
     @Inject
     EditorFieldsService editorFieldsService;
@@ -721,42 +719,17 @@ public class MessageRestService  {
     @POST
     @Path("/format-message-geometry")
     @Consumes("application/json;charset=UTF-8")
-    @Produces("text/plain;charset=UTF-8")
+    @Produces("text/html;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
-    public Response formatGeometry(
+    public String formatGeometry(
             @QueryParam("lang") @DefaultValue("en") String language,
             @QueryParam("template") @DefaultValue("list") String template,
             @QueryParam("format") @DefaultValue("dec") String format,
             FeatureCollectionVo geometry) throws Exception {
 
         try {
-            String lang = app.getLanguage(language);
-            Arrays.stream(geometry.getFeatures())
-                    .forEach(f -> f.getProperties().put("language", lang));
-
-            String templatePath = String.format("/templates/geometry/%s.ftl", template);
-            StreamingOutput stream = os -> {
-                try {
-                    fmService.newTemplateBuilder()
-                            .templatePath(templatePath)
-                            .data("geometry", geometry)
-                            .data("format", format)
-                            .dictionaryNames("web", "message")
-                            .language(lang)
-                            .process(ProcessFormat.TEXT, os);
-
-                } catch (Exception e) {
-                    throw new WebApplicationException("Error formatting geometry", e);
-                }
-            };
-
-           return Response
-                   .ok(stream)
-                   .type("text/html;charset=UTF-8")
-                   .build();
-
+            return geometryFormatService.formatGeometryAsHtml(language, template, format, geometry);
         } catch (Exception e) {
             log.error("Error formatting geometry: " + e.getMessage(), e);
             throw new WebApplicationException("Error formatting geometry", e);
@@ -774,7 +747,7 @@ public class MessageRestService  {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public FeatureCollectionVo parseGeometry(PlainTextGeometryParam param) throws Exception {
+    public FeatureCollectionVo parsePlainTextGeometry(PlainTextGeometryParam param) throws Exception {
         try {
             PlainTextConverter converter = PlainTextConverter.newInstance(app.getLanguages());
             return converter.fromPlainText(param.getGeometryText());
@@ -794,7 +767,7 @@ public class MessageRestService  {
     @Produces("plain/text;charset=UTF-8")
     @GZIP
     @NoCache
-    public String formatGeometry(
+    public String formatGeometryAsPlainText(
             @QueryParam("lang") @DefaultValue("en") String language,
             GeoJsonVo geoJson) throws Exception {
         try {
