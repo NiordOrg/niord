@@ -150,7 +150,13 @@ angular.module('niord.editor')
 
             $scope.wmsLayerEnabled = $rootScope.wmsLayerEnabled;
             $scope.openSeaMapLayerEnabled = $rootScope.openSeaMapLayerEnabled;
+
             $scope.featureCollection = angular.copy(featureCollection);
+            // Remove all buffered features
+            $scope.featureCollection.features = $scope.featureCollection.features.filter(function (feature) {
+                return feature.properties['parentFeatureIds'] === undefined;
+            });
+
             $scope.lang = lang;
             $scope.selectedFeatures = {
                 type: 'FeatureCollection',
