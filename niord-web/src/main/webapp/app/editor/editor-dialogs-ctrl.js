@@ -217,7 +217,9 @@ angular.module('niord.editor')
 
 
             // Initial selection
-            $scope.selectFeatures($scope.featureCollection.features.length == 1);
+            if ($scope.featureCollection.features.length == 1) {
+                $scope.featureCollection.features[0].selected = true;
+            }
         }])
 
 
