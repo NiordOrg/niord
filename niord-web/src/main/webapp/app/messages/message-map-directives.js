@@ -581,16 +581,16 @@ angular.module('niord.messages')
                                 textAlign: 'center',
                                 font: '9px Arial',
                                 text: '' + index,
-                                fill: new ol.style.Fill({color: 'darkmagenta'}),
+                                fill: new ol.style.Fill({color: 'white'}),
                                 offsetX: 0,
                                 offsetY: 0
                             }),
                             image: new ol.style.Circle({
                                 radius: 8,
                                 fill: new ol.style.Fill({
-                                    color: 'lightgray'
+                                    color: 'darkmagenta'
                                 }),
-                                stroke: new ol.style.Stroke({color: 'darkmagenta', width: 1.0})
+                                stroke: new ol.style.Stroke({color: 'white', width: 2.0})
                             }),
                             geometry: function() {
                                 return new ol.geom.Point(coord);
