@@ -214,55 +214,40 @@ angular.module('niord.map')
             };
 
 
-            /** Returns the number of coordinates in the given geometry **/
-            this.getCoordinateNo = function (g) {
-                var n = 0;
+            /** Serializes the coordinates of the OL geometry **/
+            this.serializeOlCoordinates = function (g, coords) {
+                coords = coords || [];
                 if (g) {
                     if (g instanceof Array) {
                         if (g.length >= 2 && $.isNumeric(g[0])) {
-                            n++;
+                            coords.push(g);
                         } else {
                             for (var x = 0; x < g.length; x++) {
-                                n += this.getCoordinateNo(g[x]);
+                                this.serializeOlCoordinates(g[x], coords);
                             }
                         }
                     } else if (g instanceof ol.Feature) {
-                        n += this.getCoordinateNo(g.getGeometry());
+                        this.serializeOlCoordinates(g.getGeometry(), coords);
                     } else if (g instanceof ol.geom.GeometryCollection) {
-                        n += this.getCoordinateNo(g.getGeometries());
+                        this.serializeOlCoordinates(g.getGeometries(), coords);
                     } else {
-                        n += this.getCoordinateNo(g.getCoordinates());
+                        this.serializeOlCoordinates(g.getCoordinates(), coords);
                     }
                 }
-                return n;
+                return coords;
+            };
+
+
+            /** Returns the number of coordinates in the given geometry **/
+            this.getCoordinateNo = function (g) {
+                return this.serializeOlCoordinates(g).length;
             };
 
 
             /** Returns the n'th coordinate, or undefined if not found **/
             this.getCoordinateAtIndex = function (g, n) {
-                var coords;
-                if (g && n >= 0) {
-                    if (g instanceof Array) {
-                        if (g.length >= 2 && $.isNumeric(g[0])) {
-                            if (n == 0) {
-                                coords = g;
-                            }
-                        } else {
-                            for (var x = 0; !coords && n >= 0 && x < g.length; x++) {
-                                coords = this.getCoordinateAtIndex(g[x], n);
-                                n -= this.getCoordinateNo(g[x]);
-                            }
-                        }
-                    } else if (g instanceof ol.Feature) {
-                        coords = this.getCoordinateAtIndex(g.getGeometry(), n);
-                    } else if (g instanceof ol.geom.GeometryCollection) {
-                        coords = this.getCoordinateAtIndex(g.getGeometries(), n);
-                    } else {
-                        coords = this.getCoordinateAtIndex(g.getCoordinates(), n);
-                    }
-
-                }
-                return coords;
+                var coords = this.serializeOlCoordinates(g);
+                return n >= 0 && n < coords.length ? coords[n] : null;
             };
 
 
@@ -350,7 +335,7 @@ angular.module('niord.map')
             /** ************************ **/
 
             /**
-             * Serializes the coordinates of a geometry
+             * Serializes the "readable" coordinates of a geometry
              * <p>
              * When serializing coordinates, adhere to a couple of rules:
              * <ul>
@@ -362,7 +347,7 @@ angular.module('niord.map')
              * This implementation should be kept in sync with the GeoJsonUtils.serializeFeatureCollection()
              * back-end function.
              */
-            this.serializeCoordinates = function (g, coords, props, index, polygonType) {
+            this.serializeReadableCoordinates = function (g, coords, props, index, polygonType) {
                 var that = this;
                 props = props || {};
                 index = index || 0;
@@ -383,33 +368,33 @@ angular.module('niord.map')
                         } else {
                             for (var x = 0; x < g.length; x++) {
                                 polygonType = (polygonType == 'Interior' && x == g.length - 1) ? 'Exterior' : polygonType;
-                                index = that.serializeCoordinates(g[x], coords, props, index, polygonType);
+                                index = that.serializeReadableCoordinates(g[x], coords, props, index, polygonType);
                             }
                         }
                     } else if (g.type == 'FeatureCollection') {
                         for (var x = 0; g.features && x < g.features.length; x++) {
-                            index = that.serializeCoordinates(g.features[x], coords);
+                            index = that.serializeReadableCoordinates(g.features[x], coords);
                         }
                     } else if (g.type == 'Feature') {
-                        index = that.serializeCoordinates(g.geometry, coords, g.properties, 0);
+                        index = that.serializeReadableCoordinates(g.geometry, coords, g.properties, 0);
                     } else if (g.type == 'GeometryCollection') {
                         for (var x = 0; g.geometries && x < g.geometries.length; x++) {
-                            index = that.serializeCoordinates(g.geometries[x], coords, props, index);
+                            index = that.serializeReadableCoordinates(g.geometries[x], coords, props, index);
                         }
                     } else if (g.type == 'MultiPolygon') {
                         for (var p = 0; p < g.coordinates.length; p++) {
                             // For polygons, do not include coordinates for interior rings
                             for (var x = 0; x < g.coordinates[p].length; x++) {
-                                index = that.serializeCoordinates(g.coordinates[p][x], coords, props, index, x == 0 ? 'Interior' : 'Exterior');
+                                index = that.serializeReadableCoordinates(g.coordinates[p][x], coords, props, index, x == 0 ? 'Interior' : 'Exterior');
                             }
                         }
                     } else if (g.type == 'Polygon') {
                         // For polygons, do not include coordinates for interior rings
                         for (var x = 0; x < g.coordinates.length; x++) {
-                            index = that.serializeCoordinates(g.coordinates[x], coords, props, index, x == 0 ? 'Interior' : 'Exterior');
+                            index = that.serializeReadableCoordinates(g.coordinates[x], coords, props, index, x == 0 ? 'Interior' : 'Exterior');
                         }
                     } else if (g.type) {
-                        index = that.serializeCoordinates(g.coordinates, coords, props, index);
+                        index = that.serializeReadableCoordinates(g.coordinates, coords, props, index);
                     }
                 }
                 return index;

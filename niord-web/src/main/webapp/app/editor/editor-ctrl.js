@@ -547,7 +547,7 @@ angular.module('niord.editor')
                     var index = 1;
                     angular.forEach(msg.geometry.features, function (feature) {
                         var coords = [];
-                        MapService.serializeCoordinates(feature, coords);
+                        MapService.serializeReadableCoordinates(feature, coords);
                         if (coords.length > 0) {
                             var name = feature.properties ? feature.properties['name:' + $rootScope.language] : undefined;
                             $scope.featureCoordinates.push({
