@@ -15,9 +15,9 @@
  */
 package org.niord.core.message;
 
+import org.niord.core.message.vo.MessageHistoryVo;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.user.User;
-import org.niord.core.message.vo.MessageHistoryVo;
 import org.niord.model.message.Status;
 
 import javax.persistence.Entity;
@@ -31,7 +31,14 @@ import javax.persistence.PrePersist;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Date;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * The {@code MessageHistory} registers the history of a {@code Message} by storing a JSON snapshot
@@ -63,7 +70,7 @@ public class MessageHistory extends BaseEntity<Integer> {
     Date created;
 
     @Lob
-    String snapshot;
+    byte[] snapshot;
 
     @PrePersist
     protected void onCreate() {
@@ -82,11 +89,52 @@ public class MessageHistory extends BaseEntity<Integer> {
         }
         history.setVersion(version);
         history.setCreated(created);
-        history.setSnapshot(snapshot);
+        history.setSnapshot(decompress(snapshot));
 
         return history;
     }
 
+
+    /** Sets and compresses the given snapshot **/
+    public void compressSnapshot(String snapshot) {
+        this.snapshot = compress(snapshot);
+    }
+
+
+    /** GZIP compresses the data **/
+    public static byte[] compress(String data) {
+        if (data != null) {
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream(data.length())) {
+                GZIPOutputStream gzip = new GZIPOutputStream(bos);
+                gzip.write(data.getBytes("UTF-8"));
+                gzip.close();
+                return bos.toByteArray();
+            } catch (IOException ignored) {
+                // For message history compression, just ignore errors
+            }
+        }
+        return null;
+    }
+
+
+    /** GZIP de-compresses the data **/
+    public static String decompress(byte[] compressed) {
+        if (compressed != null) {
+            try (ByteArrayInputStream bis = new ByteArrayInputStream(compressed);
+                GZIPInputStream gis = new GZIPInputStream(bis);
+                BufferedReader br = new BufferedReader(new InputStreamReader(gis, "UTF-8"))) {
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while((line = br.readLine()) != null) {
+                    sb.append(line);
+                }
+                return sb.toString();
+            } catch (IOException ignored) {
+                // For message history decompression, just ignore errors
+            }
+        }
+        return null;
+    }
 
     /*************************/
     /** Getters and Setters **/
@@ -116,11 +164,11 @@ public class MessageHistory extends BaseEntity<Integer> {
         this.user = user;
     }
 
-    public String getSnapshot() {
+    public byte[] getSnapshot() {
         return snapshot;
     }
 
-    public void setSnapshot(String snapshot) {
+    public void setSnapshot(byte[] snapshot) {
         this.snapshot = snapshot;
     }
 
