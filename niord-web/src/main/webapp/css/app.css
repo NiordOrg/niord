@@ -345,6 +345,13 @@ li.view-mode-menu-btn .active .badge {
     color: #ffffff;
 }
 
+.view-mode-menu .clear-selection {
+    font-size: 9px;
+    font-weight: normal;
+    padding-left: 3px;
+    border-left: 1px dotted lightgray;
+}
+
 .view-mode-menu-text {
     display: none;
 }
