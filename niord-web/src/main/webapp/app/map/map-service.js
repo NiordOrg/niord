@@ -361,6 +361,7 @@ angular.module('niord.map')
                                 coords.push({
                                     lon: g[0],
                                     lat: g[1],
+                                    index: index,
                                     name: props['name:' + index + ':' + $rootScope.language]
                                 });
                             }

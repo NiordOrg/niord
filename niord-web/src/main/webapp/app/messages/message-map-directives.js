@@ -339,23 +339,15 @@ angular.module('niord.messages')
                         })
                     });
 
-                    var nwStyle = new ol.style.Style({
+                    var messageStyle = new ol.style.Style({
                         fill: new ol.style.Fill({ color: 'rgba(255, 0, 255, 0.2)' }),
                         stroke: new ol.style.Stroke({ color: '#8B008B', width: 1 }),
-                        image: new ol.style.Icon({
-                            anchor: [0.5, 0.5],
-                            scale: 0.3,
-                            src: '/img/nw.png'
-                        })
-                    });
-
-                    var nmStyle = new ol.style.Style({
-                        fill: new ol.style.Fill({ color: 'rgba(255, 0, 255, 0.2)' }),
-                        stroke: new ol.style.Stroke({ color: '#8B008B', width: 1 }),
-                        image: new ol.style.Icon({
-                            anchor: [0.5, 0.5],
-                            scale: 0.3,
-                            src: '/img/nm.png'
+                        image: new ol.style.Circle({
+                            radius: 4,
+                            fill: new ol.style.Fill({
+                                color: 'rgba(255, 0, 255, 0.2)'
+                            }),
+                            stroke: new ol.style.Stroke({color: 'darkmagenta', width: 1})
                         })
                     });
 
@@ -385,7 +377,7 @@ angular.module('niord.messages')
                                 featureStyle = bufferedStyle;
                             } else {
                                 if (scope.message) {
-                                    featureStyle = scope.message.mainType == 'NW' ? nwStyle : nmStyle;
+                                    featureStyle = messageStyle;
                                 } else {
                                     featureStyle = outlineStyle;
                                 }
@@ -517,5 +509,186 @@ angular.module('niord.messages')
     }])
 
 
+    /****************************************************************
+     * The map-message-labels-layer directive supports drawing geometry
+     * labels on a map layer
+     ****************************************************************/
+    .directive('mapMessageLabelsLayer', ['$rootScope', 'MapService', function ($rootScope, MapService) {
+        return {
+            restrict: 'E',
+            replace: false,
+            require: '^olMap',
+            scope: {
+                name:               '@',
+                visible:            '=',
+                layerSwitcher:      '=',
+                message:            '=?',
+                featureCollection:  '=?'
+            },
+            link: function(scope, element, attrs, ctrl) {
+                var olScope = ctrl.getOpenlayersScope();
+                var olLayer;
+
+                olScope.getMap().then(function(map) {
+
+                    // Clean up when the layer is destroyed
+                    scope.$on('$destroy', function() {
+                        if (angular.isDefined(olLayer)) {
+                            map.removeLayer(olLayer);
+                        }
+                    });
+
+                    /***************************/
+                    /** Construct Layer       **/
+                    /***************************/
+
+                    // Construct the layer
+                    var features = new ol.Collection();
+                    olLayer = new ol.layer.Vector({
+                        source: new ol.source.Vector({
+                            features: features,
+                            wrapX: false
+                        })
+                    });
+                    olLayer = MapService.initLayer(olLayer, scope.name, scope.visible, scope.layerSwitcher);
+                    map.addLayer(olLayer);
+
+
+                    /** Creates a feature style that displays the feature name in the "middle" of the feature **/
+                    scope.styleForFeatureName = function (feature, name) {
+                        return new ol.style.Style({
+                            text: new ol.style.Text({
+                                textAlign: 'center',
+                                font: '11px Arial',
+                                text: name,
+                                fill: new ol.style.Fill({color: 'darkmagenta'}),
+                                stroke: new ol.style.Stroke({color: 'white', width: 2.0}),
+                                offsetX: 0,
+                                offsetY: 5
+                            }) ,
+                            geometry: function(feature) {
+                                var point = MapService.getGeometryCenter(feature.getGeometry());
+                                return (point) ? new ol.geom.Point(point) : null;
+                            }
+                        });
+                    };
+
+
+                    /** Creates a features style that displays the index of the coordinate **/
+                    scope.styleForFeatureCoordIndex = function (feature, index, coord) {
+                        return new ol.style.Style({
+                            text: new ol.style.Text({
+                                textAlign: 'center',
+                                font: '9px Arial',
+                                text: '' + index,
+                                fill: new ol.style.Fill({color: 'white'}),
+                                offsetX: 0,
+                                offsetY: 0
+                            }),
+                            image: new ol.style.Circle({
+                                radius: 8,
+                                fill: new ol.style.Fill({
+                                    color: 'darkmagenta'
+                                })
+                            }),
+                            geometry: function() {
+                                return new ol.geom.Point(coord);
+                            }
+                        });
+                    };
+
+
+                    /** Creates a features style that displays the name of a specific coordinate **/
+                    scope.styleForFeatureCoordName = function (feature, name, coord) {
+                        return new ol.style.Style({
+                            text: new ol.style.Text({
+                                textAlign: 'center',
+                                font: '11px Arial',
+                                text: name,
+                                fill: new ol.style.Fill({color: 'darkmagenta'}),
+                                stroke: new ol.style.Stroke({color: 'white', width: 2.0}),
+                                offsetX: 0,
+                                offsetY: 14
+                            }),
+                            geometry: function() {
+                                return new ol.geom.Point(coord);
+                            }
+                        });
+                    };
+
+                    /***************************/
+                    /** Message List Handling **/
+                    /***************************/
+
+                    scope.updateLayerFromMessage = function () {
+                        olLayer.getSource().clear();
+
+                        // Directive either initialized with "message" or "featureCollection"
+                        var featureCollection = undefined;
+                        if (scope.featureCollection) {
+                            featureCollection = scope.featureCollection;
+                        } else if (scope.message) {
+                            featureCollection = scope.message.geometry;
+                        }
+
+                        if (featureCollection.features.length > 0) {
+
+                            var coordIndex = 1;
+                            angular.forEach(featureCollection.features, function (gjFeature) {
+
+                                var olFeature = MapService.gjToOlFeature(gjFeature);
+                                var styles = [];
+
+                                // Create a label for the feature
+                                var name = gjFeature.properties
+                                    ? gjFeature.properties['name:' + $rootScope.language]
+                                    : undefined;
+
+                                if (name) {
+                                    styles.push(scope.styleForFeatureName(
+                                        olFeature,
+                                        name));
+                                }
+
+                                // Create labels for the "readable" coordinates
+                                var coords = [];
+                                MapService.serializeReadableCoordinates(gjFeature, coords);
+                                for (var x = 0; x < coords.length; x++) {
+
+                                    var c = MapService.fromLonLat([ coords[x].lon, coords[x].lat ]);
+
+                                    styles.push(scope.styleForFeatureCoordIndex(
+                                        olFeature,
+                                        coordIndex,
+                                        c));
+
+                                    if (coords[x].name) {
+                                        styles.push(scope.styleForFeatureCoordName(
+                                            olFeature,
+                                            coords[x].name,
+                                            c));
+                                    }
+                                    coordIndex++;
+                                }
+
+                                if (styles.length > 0) {
+                                    olFeature.setStyle(styles);
+                                    olLayer.getSource().addFeature(olFeature);
+                                }
+                            });
+                        }
+                    };
+
+                    if (scope.message) {
+                        scope.$watch("message", scope.updateLayerFromMessage, true);
+                    } else if (scope.featureCollection) {
+                        scope.$watch("featureCollection", scope.updateLayerFromMessage, true);
+                    }
+
+                });
+
+            }
+        };
+    }])
 ;
 
