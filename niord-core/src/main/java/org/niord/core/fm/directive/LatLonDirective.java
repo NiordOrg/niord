@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.niord.core.fm;
+package org.niord.core.fm.directive;
 
 import freemarker.core.Environment;
 import freemarker.template.SimpleNumber;

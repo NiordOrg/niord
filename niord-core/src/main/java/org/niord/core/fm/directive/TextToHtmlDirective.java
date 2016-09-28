@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.niord.core.fm;
+package org.niord.core.fm.directive;
 
 import freemarker.core.Environment;
 import freemarker.template.SimpleScalar;
@@ -29,12 +29,12 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * Freemarker directive. Converts HTML to plain text
+ * Freemarker directive. Converts plain text to HTML
  */
 @SuppressWarnings("unused")
-public class HtmlToTextDirective implements TemplateDirectiveModel {
+public class TextToHtmlDirective implements TemplateDirectiveModel {
 
-    private static final String PARAM_HTML = "html";
+    private static final String PARAM_TEXT = "text";
 
     /**
      * {@inheritDoc}
@@ -47,16 +47,16 @@ public class HtmlToTextDirective implements TemplateDirectiveModel {
             throws TemplateException, IOException {
 
 
-        SimpleScalar htmlModel = (SimpleScalar)params.get(PARAM_HTML);
-        if (htmlModel == null) {
-            throw new TemplateModelException("The 'html' parameter must be specified");
+        SimpleScalar txtModel = (SimpleScalar)params.get(PARAM_TEXT);
+        if (txtModel == null) {
+            throw new TemplateModelException("The 'txt' parameter must be specified");
         }
 
         try {
-            String html = htmlModel.getAsString();
+            String txt = txtModel.getAsString();
 
-            if (html != null) {
-                env.getOut().write(TextUtils.html2txt(html));
+            if (txt != null) {
+                env.getOut().write(TextUtils.txt2html(txt));
             }
         } catch (Exception e) {
             // Prefer robustness over correctness

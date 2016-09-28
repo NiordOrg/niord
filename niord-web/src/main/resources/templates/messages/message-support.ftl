@@ -1,7 +1,7 @@
 
-<#assign formatPos = "org.niord.core.fm.LatLonDirective"?new()>
-<#assign formatDateInterval = "org.niord.core.fm.DateIntervalDirective"?new()>
-<#assign txtToHtml = "org.niord.core.fm.TextToHtmlDirective"?new()>
+<#assign formatPos = "org.niord.core.fm.directive.LatLonDirective"?new()>
+<#assign formatDateInterval = "org.niord.core.fm.directive.DateIntervalDirective"?new()>
+<#assign txtToHtml = "org.niord.core.fm.directive.TextToHtmlDirective"?new()>
 
 <!-- ***************************************  -->
 <!-- Parametrized message styles             -->

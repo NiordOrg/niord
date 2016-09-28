@@ -1,5 +1,5 @@
 
-<#assign formatPos = "org.niord.core.fm.LatLonDirective"?new()>
+<#assign formatPos = "org.niord.core.fm.directive.LatLonDirective"?new()>
 
 <#if geometry?has_content>
     <table style="width: 80%">
