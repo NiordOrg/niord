@@ -742,9 +742,9 @@ angular.module('niord.editor')
             /** Allows the user to select which location should be inserted and how it should be formatted **/
             $scope.formatLocations = function (editor) {
 
-                // The ID of the parent div has the format "tinymce-<<lang>>"
+                // The ID of the parent div has the format "tinymce-<<part-index>>-<<lang>>"
                 var parentDivId = editor.getElement().parentElement.id;
-                var lang = parentDivId.split("-")[1];
+                var lang = parentDivId.split("-")[2];
 
                 $scope.$apply(function() {
                     $scope.locationsDialog(lang).result
@@ -772,9 +772,9 @@ angular.module('niord.editor')
             /** Allows the user to select which time intervals should be inserted and how they should be formatted **/
             $scope.formatTimeDialog = function (editor) {
 
-                // The ID of the parent div has the format "tinymce-<<lang>>"
+                    // The ID of the parent div has the format "tinymce-<<part-index>>-<<lang>>"
                 var parentDivId = editor.getElement().parentElement.id;
-                var lang = parentDivId.split("-")[1];
+                var lang = parentDivId.split("-")[2];
 
                 $scope.$apply(function() {
                     $scope.timeDialog(lang).result
@@ -793,7 +793,7 @@ angular.module('niord.editor')
                 var tabindex = textarea.attr('tabindex');
                 if (tabindex) {
                     textarea.attr('tabindex', null);
-                    elm.find('iframe').attr('tabindex', 1101);
+                    elm.find('iframe').attr('tabindex', tabindex);
                 }
             };
 

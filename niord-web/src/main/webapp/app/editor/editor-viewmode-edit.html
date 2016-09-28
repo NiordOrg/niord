@@ -529,9 +529,9 @@
 
                         <editor-field-value-editor value-class="col-sm-12">
                             <div class="row" style="margin-top: 10px">
-                                <div class="col-sm-12 col-md-6" ng-repeat="desc in part.descs"  id="tinymce-{{desc.lang}}">
+                                <div class="col-sm-12 col-md-6" ng-repeat="desc in part.descs"  id="tinymce-{{part.index}}-{{desc.lang}}">
                                     <textarea class="editor-description" ui-tinymce="tinymceOptions"
-                                              tabindex="{{1003 + part.index * 5}}"
+                                              tabindex="{{1003 + part.index * 10}}"
                                               ng-model="desc.details" bg-flag="desc.lang"></textarea>
                                     <flag lang="desc.lang" class="editor-description-flag"></flag>
                                 </div>
