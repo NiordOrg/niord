@@ -87,6 +87,19 @@ public class MessageTagService extends BaseService {
 
 
     /**
+     * Returns the message tag with the given ID
+     *
+     * @param domain the domain to check for
+     * @param tagId the tag ID
+     * @return the message tag with the given tag identifier or null if not found
+     */
+    public MessageTag findTag(Domain domain, String tagId) {
+        List<MessageTag> tags = findTags(domain, tagId);
+        return tags.isEmpty() ? null : tags.get(0);
+    }
+
+
+    /**
      * Returns the message tags with the given tag IDs
      * @param tagIds the tag IDs
      * @return the message tags with the given tag identifiers

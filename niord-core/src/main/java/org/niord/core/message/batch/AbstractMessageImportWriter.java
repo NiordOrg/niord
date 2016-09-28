@@ -19,14 +19,11 @@ package org.niord.core.message.batch;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.message.Message;
-import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Base class for message import writers. Adds support for adding messages to tags based on the
@@ -77,7 +74,7 @@ public abstract class AbstractMessageImportWriter extends AbstractItemHandler {
             return null;
         }
 
-        tag = messageTagService.findTag(tagId);
+        tag = messageTagService.findTag(job.getDomain(), tagId);
         return tag;
     }
 }
