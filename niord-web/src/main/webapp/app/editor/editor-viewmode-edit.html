@@ -482,7 +482,7 @@
                         <div class="col-xs-4 col-sm-4 col-md-2" style="white-space: nowrap">
                             <span ng-click="addMessagePart($index)" class="glyphicon glyphicon-plus-sign pointer"></span>&nbsp;
                             <span ng-click="removeMessagePart($index)" class="glyphicon glyphicon-minus-sign pointer"></span>&nbsp;
-                            <span class="glyphicon glyphicon-move move-btn"></span>
+                            <span class="glyphicon glyphicon-move move-btn" ng-if="message.parts.length > 1"></span>
                         </div>
                         <div class="col-xs-8 col-sm-8 col-md-10">
                             Part {{part.index + 1}}
