@@ -83,19 +83,26 @@ import java.util.List;
  *    "originalInformation" : true,
  *    "descs" : [ {
  *      "lang" : "da",
- *      "title" : "Danmark. Sundet. Københavns Havn. Prøvesten. Kaj 860 - 861. Vedligeholdelsesarbejde afsluttet.",
- *      "subject" : "Prøvesten. Kaj 860 - 861. Vedligeholdelsesarbejde afsluttet.",
  *      "vicinity" : "Københavns Havn",
  *      "publication" : "www.danskehavnelods.dk. [J.nr. 2015018606].",
  *      "source" : "Per Aarsleff A/S 1. december 2015"
  *    }, {
  *      "lang" : "en",
- *      "title" : "Denmark. The Sound. Copenhagen Harbour. Prøvesten. Quay 860 - 861. Maintenance work completed.",
- *      "subject" : "Prøvesten. Quay 860 - 861. Maintenance work completed.",
  *      "vicinity" : "Copenhagen Harbour",
  *      "publication" : "www.danskehavnelods.dk.",
  *      "source" : "Per Aarsleff A/S 1 December 2015"
- *    }
+ *    } ],
+ *    parts: [ {
+ *      "descs" : [ {
+ *        "lang" : "da",
+ *        "title" : "Danmark. Sundet. Københavns Havn. Prøvesten. Kaj 860 - 861. Vedligeholdelsesarbejde afsluttet.",
+ *        "subject" : "Prøvesten. Kaj 860 - 861. Vedligeholdelsesarbejde afsluttet.",
+ *      }, {
+ *        "lang" : "en",
+ *        "title" : "Denmark. The Sound. Copenhagen Harbour. Prøvesten. Quay 860 - 861. Maintenance work completed.",
+ *        "subject" : "Prøvesten. Quay 860 - 861. Maintenance work completed.",
+ *      } ]
+ *    } ]
  *  },
  *  ...
  * ]
