@@ -54,7 +54,7 @@ public class BatchMsgArchiveImportWriter extends AbstractMessageImportWriter {
             messageService.createMessage(message);
 
             // Add the message to the tag
-            checkAddMessageToTag(message, tag);
+            tag = checkAddMessageToTag(message, tag);
 
 
             // Since saving the message did not cause an error, copy attachments.

@@ -377,7 +377,7 @@ public class MessageService extends BaseService {
 
         // Persist the message
         message = saveMessage(message);
-        log.info("Saved message " + message);
+        log.info("Saved message " + message.getUid());
 
         em.flush();
         return message;

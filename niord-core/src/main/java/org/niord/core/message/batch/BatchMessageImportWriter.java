@@ -49,7 +49,7 @@ public class BatchMessageImportWriter extends AbstractMessageImportWriter {
             }
 
             // Add the message to the tag
-            checkAddMessageToTag(message, tag);
+            tag = checkAddMessageToTag(message, tag);
         }
 
         // Update and save the message tag
