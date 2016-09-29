@@ -145,6 +145,15 @@
     right: 5px;
 }
 
+.grid-item .message-description {
+    font-size: 11px;
+}
+
+.grid-item table.positions td:nth-child(1) {
+    color: #333;
+}
+
+
 /** View mode -> Details **/
 
 .message-list-details {
