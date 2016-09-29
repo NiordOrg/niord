@@ -448,14 +448,17 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                             title.append(".");
                         }
                     }
-                    parts.forEach(part -> part.getDescs().forEach(d -> {
-                        if (StringUtils.isNotBlank(d.getSubject())) {
-                            title.append(" ").append(d.getSubject());
-                            if (!d.getSubject().endsWith(".")) {
-                                title.append(".");
-                            }
-                        }
-                    }));
+                    parts.stream()
+                            .flatMap(p -> p.getDescs().stream())
+                            .filter(d -> desc.getLang().equals(d.getLang()))
+                            .filter(d -> StringUtils.isNotBlank(d.getSubject()))
+                            .forEach(d -> {
+                                title.append(" ").append(d.getSubject());
+                                if (!d.getSubject().endsWith(".")) {
+                                    title.append(".");
+                                }
+                            });
+
                     desc.setTitle(title.toString().trim());
                 } catch (Exception ignored) {
                 }
