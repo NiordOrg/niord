@@ -17,6 +17,8 @@ package org.niord.core.message;
 
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.io.ParseException;
+import org.apache.commons.lang.StringUtils;
+import org.niord.core.domain.Domain;
 import org.niord.core.geojson.JtsConverter;
 import org.niord.model.search.PagedSearchParamsVo;
 import org.niord.model.message.MainType;
@@ -82,10 +84,11 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     /**
      * Returns a MessageSearchParams initialized with parameter values from a request using "default" parameter names
+     * @param domain the current domain - defines defaults for sorting
      * @param req the servlet request
      * @return the MessageSearchParams initialized with parameter values
      */
-    public static MessageSearchParams instantiate(HttpServletRequest req) {
+    public static MessageSearchParams instantiate(Domain domain, HttpServletRequest req) {
         MessageSearchParams params = new MessageSearchParams();
         params.language(req.getParameter("lang"))
                 .query(req.getParameter("query"))
@@ -125,6 +128,27 @@ public class MessageSearchParams extends PagedSearchParamsVo {
                 .page(checkNull(req.getParameter("page"), 0, Integer::valueOf))
                 .sortBy(req.getParameter("sortBy"))
                 .sortOrder(checkNull(req.getParameter("sortOrder"), SortOrder::valueOf));
+
+
+        // For sorting, use the defaults of the domain
+        if (domain != null && StringUtils.isNotBlank(domain.getMessageSortOrder())) {
+            try {
+                if (params.getSortBy() == null) {
+                    params.sortBy(domain.getMessageSortOrder().split(" ")[0]);
+                }
+                if (params.getSortOrder() == null) {
+                    params.sortOrder(SortOrder.valueOf(domain.getMessageSortOrder().split(" ")[1]));
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        if (params.getSortBy() == null) {
+            params.sortBy("AREA");
+        }
+        if (params.getSortOrder() == null) {
+            params.sortOrder(SortOrder.ASC);
+        }
+
         return params;
     }
 

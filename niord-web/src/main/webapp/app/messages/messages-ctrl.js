@@ -399,6 +399,14 @@ angular.module('niord.messages')
                     }
                 }
 
+                // Add sorting
+                if ($scope.state.sortBy != MessageService.defaultSortBy()) {
+                    params += '&sortBy=' + $scope.state.sortBy;
+                }
+                if ($scope.state.sortOrder != MessageService.defaultSortOrder()) {
+                    params += '&sortOrder=' + $scope.state.sortOrder;
+                }
+
                 // Skip first '&'
                 return params.length > 0 ? params.substr(1) : '';
             };
@@ -722,9 +730,7 @@ angular.module('niord.messages')
                         if (params.length > 0) {
                             params += '&';
                         }
-                        params += 'sortBy=' + $scope.state.sortBy
-                            + '&sortOrder=' + $scope.state.sortOrder
-                            + '&lang=' + $rootScope.language
+                        params += 'lang=' + $rootScope.language
                             + '&ticket=' + encodeURIComponent(ticket);
 
                         if (printSettings && printSettings.pageOrientation) {
@@ -753,9 +759,7 @@ angular.module('niord.messages')
                 if (params.length > 0) {
                     params += '&';
                 }
-                params += 'sortBy=' + $scope.state.sortBy
-                    + '&sortOrder=' + $scope.state.sortOrder
-                    + '&lang=' + $rootScope.language;
+                params += 'lang=' + $rootScope.language;
 
                 MessageService.messageMailDialog($scope.totalMessageNo, params);
             };
@@ -800,9 +804,7 @@ angular.module('niord.messages')
                         if (params.length > 0) {
                             params += '&';
                         }
-                        params += 'sortBy=' + $scope.state.sortBy
-                            + '&sortOrder=' + $scope.state.sortOrder
-                            + '&lang=' + $rootScope.language
+                        params += 'lang=' + $rootScope.language
                             + '&ticket=' + encodeURIComponent(ticket);
 
                         $window.location = '/rest/message-io/export.zip?' + params;
@@ -930,14 +932,13 @@ angular.module('niord.messages')
             $scope.refreshMessages = function (append) {
 
                 var params = $scope.toRequestFilterParameters();
-                if (params.length > 0) {
-                    params += '&';
-                }
-                params += 'sortBy=' + $scope.state.sortBy + '&sortOrder=' + $scope.state.sortOrder;
 
                 var searchParams = params;
                 if ($scope.state.map.enabled) {
-                    searchParams += '&viewMode=map&includeGeneral=true';
+                    if (searchParams.length > 0) {
+                        searchParams += '&';
+                    }
+                    searchParams += 'viewMode=map&includeGeneral=true';
                 }
 
                 MessageService.search(searchParams, $scope.page, $scope.maxSize)
@@ -961,6 +962,9 @@ angular.module('niord.messages')
 
                 // Update the request parameters
                 $location.search(params);
+
+                // Store the last message search url to facilitate 'back-to-list' link
+                $scope.recordLastMessageUrl();
             };
 
 
@@ -1005,6 +1009,15 @@ angular.module('niord.messages')
             };
 
 
+            /** Store the last message search url to facilitate 'back-to-list' link **/
+            $scope.recordLastMessageUrl = function () {
+                var url = $location.url();
+                if (url && url.indexOf('/messages/') != -1) {
+                    $rootScope.lastMessageSearchUrl = '/#' + url;
+                }
+            };
+
+
             // Only apply the map extent as a filter if the map view mode used
             $scope.$watch(
                 function () { return $location.path(); },
@@ -1017,6 +1030,10 @@ angular.module('niord.messages')
                     if (wasMap != isMap) {
                         $scope.messageList.length = 0;
                     }
+
+                    // Update the location url with the search parameters
+                    $location.search($scope.toRequestFilterParameters());
+                    $scope.recordLastMessageUrl();
                 },
                 true);
 

@@ -67,8 +67,7 @@ angular.module('niord.editor')
             $scope.attachmentUploadUrl = undefined;
 
             // Record if the Edit page was entered from a message list URL
-            $scope.backToListUrl = ($rootScope.lastUrl && $rootScope.lastUrl.indexOf('/messages/') != -1)
-                        ? $rootScope.lastUrl : undefined;
+            $scope.backToListUrl = $rootScope.lastMessageSearchUrl;
 
             // This will be set when the "Save message" button is clicked and will
             // disable the button, to avoid double-clicks

@@ -19,6 +19,7 @@ package org.niord.web;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.domain.DomainService;
 import org.niord.core.fm.FmReport;
 import org.niord.core.fm.FmService;
 import org.niord.core.fm.FmService.ProcessFormat;
@@ -57,6 +58,9 @@ public class MessageReportRestService {
 
     @Inject
     Logger log;
+
+    @Inject
+    DomainService domainService;
 
     @Inject
     MessageRestService messageRestService;
@@ -154,7 +158,7 @@ public class MessageReportRestService {
     public Response generatePdfForSearch(@Context HttpServletRequest request) throws Exception {
 
         // Perform a search for at most 1000 messages
-        MessageSearchParams params = MessageSearchParams.instantiate(request);
+        MessageSearchParams params = MessageSearchParams.instantiate(domainService.currentDomain(), request);
         params.maxSize(1000).page(0);
 
         PagedSearchResultVo<MessageVo> result = messageSearchRestService.search(params);

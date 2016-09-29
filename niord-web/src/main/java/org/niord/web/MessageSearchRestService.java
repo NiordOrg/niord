@@ -29,7 +29,6 @@ import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
-import org.niord.core.model.BaseEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MessageVo;
 import org.niord.model.message.Status;
@@ -201,7 +200,7 @@ public class MessageSearchRestService {
     @GZIP
     @NoCache
     public PagedSearchResultVo<MessageVo> search(@Context  HttpServletRequest request) throws Exception {
-        MessageSearchParams params = MessageSearchParams.instantiate(request);
+        MessageSearchParams params = MessageSearchParams.instantiate(domainService.currentDomain(), request);
         return search(params);
     }
 

@@ -22,6 +22,7 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.NiordApp;
+import org.niord.core.domain.DomainService;
 import org.niord.core.fm.FmService;
 import org.niord.core.mail.HtmlMail;
 import org.niord.core.mail.Mail;
@@ -71,6 +72,8 @@ public class MessageMailRestService {
     @Inject
     UserService userService;
 
+    @Inject
+    DomainService domainService;
 
     /**
      * Generates and sends an e-mail for the message search result.
@@ -95,7 +98,7 @@ public class MessageMailRestService {
         mailMessage = StringEscapeUtils.escapeHtml(StringUtils.defaultIfBlank(mailMessage, "")).replace("\n", "<br>");
 
         // Perform a search for at most 1000 messages
-        MessageSearchParams params = MessageSearchParams.instantiate(request);
+        MessageSearchParams params = MessageSearchParams.instantiate(domainService.currentDomain(), request);
         params.maxSize(1000).page(0);
         PagedSearchResultVo<MessageVo> result = messageSearchRestService.search(params);
 

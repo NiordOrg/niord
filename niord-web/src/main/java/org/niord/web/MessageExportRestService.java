@@ -88,7 +88,7 @@ public class MessageExportRestService extends AbstractBatchableRestService {
     public Response generateZipArchiveForSearch(@Context HttpServletRequest request) throws Exception {
 
         // Perform a search for at most 1000 messages
-        MessageSearchParams params = MessageSearchParams.instantiate(request);
+        MessageSearchParams params = MessageSearchParams.instantiate(domainService.currentDomain(), request);
         params.language(null).maxSize(1000).page(0);
 
         PagedSearchResultVo<MessageVo> result = messageSearchRestService.search(params);
