@@ -49,6 +49,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -67,6 +68,7 @@ import java.util.List;
 @PermitAll
 public class MessageMapImageRestService {
 
+    static final int CACHE_TIMEOUT_MINUTES = 10;
     static final String IMAGE_PLACEHOLDER = "../img/map_image_placeholder.png";
     static final String UPLOADED_IMAGE_PREFIX = "data:image/png;base64,";
 
@@ -141,6 +143,7 @@ public class MessageMapImageRestService {
         // Show a placeholder image
         return Response
                 .temporaryRedirect(new URI(IMAGE_PLACEHOLDER))
+                .expires(getExpiryTime())
                 .build();
     }
 
@@ -180,6 +183,7 @@ public class MessageMapImageRestService {
         // Show a placeholder image
         return Response
                 .temporaryRedirect(new URI(IMAGE_PLACEHOLDER))
+                .expires(getExpiryTime())
                 .build();
     }
 
@@ -209,8 +213,15 @@ public class MessageMapImageRestService {
         String uri = repositoryService.getRepoUri(imagePath);
         return Response
                 .temporaryRedirect(new URI("../" + uri))
+                .expires(getExpiryTime())
                 .build();
     }
+
+    /** Returns the cache timeout **/
+    private Date getExpiryTime() {
+        return new Date(System.currentTimeMillis() + 1000L * 60L * CACHE_TIMEOUT_MINUTES);
+    }
+
 
     /**
      * Updates the map image with a custom image
