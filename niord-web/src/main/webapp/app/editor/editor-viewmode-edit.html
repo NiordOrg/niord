@@ -35,7 +35,7 @@
             <!-- ******************************************** -->
             <div class="row editor-fields-group">
                 <div class="col-xs-offset-4 col-sm-offset-4 col-md-offset-2 col-xs-8 col-sm-8 col-md-10">
-                    Preamble
+                    <span translate>editor.section.preamble</span>
                 </div>
             </div>
 
@@ -485,7 +485,7 @@
                             <span class="glyphicon glyphicon-move move-btn" ng-if="message.parts.length > 1"></span>
                         </div>
                         <div class="col-xs-8 col-sm-8 col-md-10">
-                            Part {{part.index + 1}}
+                            {{ 'editor.section.message_part' | translate : '{part : "' + (part.index + 1) + '"}' }}
                         </div>
                     </div>
 
@@ -548,7 +548,7 @@
             <!-- ******************************************** -->
             <div class="row editor-fields-group">
                 <div class="col-xs-offset-4 col-sm-offset-4 col-md-offset-2 col-xs-8 col-sm-8 col-md-10">
-                    Miscellaneous
+                    <span translate>editor.section.misc</span>
                 </div>
             </div>
 
