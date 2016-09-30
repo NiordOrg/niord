@@ -546,33 +546,9 @@ angular.module('niord.messages')
             link: function(scope, element, attrs) {
                 scope.language = $rootScope.language;
                 scope.format = scope.format || 'list';
-                scope.featureCoordinates = [];
                 scope.attachmentsAbove = [];
                 scope.attachmentsBelow = [];
-                scope.showLocations = scope.compact || false;
                 scope.showAttachments = scope.compact || false;
-
-                // Serializes the coordinates and caches the results
-                scope.serializeCoordinates = function () {
-                    // Compute on-demand
-                    if (scope.featureCoordinates.length == 0 && scope.msg.geometry && scope.msg.geometry.features) {
-                        var index = 1;
-                        angular.forEach(scope.msg.geometry.features, function (feature) {
-                            var coords = [];
-                            MapService.serializeReadableCoordinates(feature, coords);
-                            if (coords.length > 0) {
-                                var name = feature.properties ? feature.properties['name:' + $rootScope.language] : undefined;
-                                scope.featureCoordinates.push({
-                                    coords: coords,
-                                    startIndex : index,
-                                    name: name
-                                });
-                                index += coords.length;
-                            }
-                        });
-                    }
-                    return scope.featureCoordinates;
-                };
 
 
                 // Returns if any of the associated message parts have defined the details field
@@ -617,7 +593,6 @@ angular.module('niord.messages')
 
                 /** Called whenever the message changes **/
                 scope.initMessage = function () {
-                    scope.featureCoordinates.length = 0;
                     scope.attachmentsAbove.length = 0;
                     scope.attachmentsBelow.length = 0;
 
@@ -630,12 +605,6 @@ angular.module('niord.messages')
                             return att.display == 'BELOW';
                         });
                     }
-                };
-
-
-                // Sets whether to show the locations or not
-                scope.setShowLocations = function (value) {
-                    scope.showLocations = value;
                 };
 
 

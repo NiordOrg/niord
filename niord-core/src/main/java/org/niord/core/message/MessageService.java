@@ -361,9 +361,9 @@ public class MessageService extends BaseService {
         }
 
         // Remove empty geometries
-        if (message.getGeometry() != null && message.getGeometry().getFeatures().isEmpty()) {
-            message.setGeometry(null);
-        }
+        message.getParts().stream()
+                .filter(p -> p.getGeometry() != null && p.getGeometry().getFeatures().isEmpty())
+                .forEach(p -> p.setGeometry(null));
 
         // Substitute the Area with a persisted one
         message.setAreas(persistedList(Area.class, message.getAreas()));
@@ -434,7 +434,6 @@ public class MessageService extends BaseService {
         }
 
         original.setHorizontalDatum(message.getHorizontalDatum());
-        original.setGeometry(featureService.updateFeatureCollection(message.getGeometry()));
 
         // Substitute the Area with a persisted one
         original.setAreas(persistedList(Area.class, message.getAreas()));
@@ -494,6 +493,9 @@ public class MessageService extends BaseService {
 
     /** Called upon saving a message. Updates the message part **/
     private MessagePart updateMessagePart(MessagePart part) {
+
+        part.setGeometry(featureService.updateFeatureCollection(part.getGeometry()));
+
         if (part.isNew()) {
             return part;
         }
@@ -602,7 +604,6 @@ public class MessageService extends BaseService {
         message.assignNewUid(false);
         message.setMainType(mainType);
         message.setStatus(Status.DRAFT);
-        message.setGeometry(new FeatureCollection());
         message.setAutoTitle(true);
         if (mainType == MainType.NM) {
             message.setOriginalInformation(true);
@@ -852,7 +853,8 @@ public class MessageService extends BaseService {
         // Geometry
         if (param.getExtent() != null) {
             param.getExtent().setSRID(WGS84_SRID);
-            Join<Message, FeatureCollection> fcRoot = msgRoot.join("geometry", JoinType.LEFT);
+            Join<Message, MessagePart> partRoot = msgRoot.join("parts", JoinType.LEFT);
+            Join<Message, FeatureCollection> fcRoot = partRoot.join("geometry", JoinType.LEFT);
             Join<FeatureCollection, Feature> fRoot = fcRoot.join("features", JoinType.LEFT);
             Predicate geomPredicate = new SpatialIntersectsPredicate(
                     criteriaHelper.getCriteriaBuilder(),
@@ -861,7 +863,7 @@ public class MessageService extends BaseService {
 
             if (param.getIncludeGeneral() != null && param.getIncludeGeneral().booleanValue()) {
                 // search for message with no geometry in addition to messages within extent
-                criteriaHelper.add(builder.or(builder.isNull(msgRoot.get("geometry")), geomPredicate));
+                criteriaHelper.add(builder.or(builder.isNull(partRoot.get("geometry")), geomPredicate));
             } else {
                 // Only search for messages within extent
                 criteriaHelper.add(geomPredicate);

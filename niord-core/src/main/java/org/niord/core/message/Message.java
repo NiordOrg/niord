@@ -19,12 +19,11 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.category.Category;
 import org.niord.core.chart.Chart;
-import org.niord.core.geojson.FeatureCollection;
-import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.message.vo.EditableMessageVo;
 import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
+import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.message.MainType;
 import org.niord.model.message.MessageVo;
 import org.niord.model.message.Status;
@@ -42,7 +41,6 @@ import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.OrderColumn;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
@@ -154,9 +152,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     String horizontalDatum;
 
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    FeatureCollection geometry;
-
     // Computed from dateInterval
     @Temporal(TemporalType.TIMESTAMP)
     Date startDate;
@@ -262,9 +257,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             message.getCharts().forEach(c -> charts.add(new Chart(c)));
         }
         this.horizontalDatum = message.getHorizontalDatum();
-        if (message.getGeometry() != null) {
-            this.geometry = FeatureCollection.fromGeoJson(message.getGeometry());
-        }
         this.dateIntervals.clear();
         if (message.getDateIntervals() != null) {
             message.getDateIntervals().stream()
@@ -333,11 +325,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             message.checkCreateAtonUids().addAll(atonUids);
             message.setOriginalInformation(originalInformation);
             attachments.forEach(att -> message.checkCreateAttachments().add(att.toVo(filter)));
-            parts.forEach(part -> message.checkCreateParts().add(part.toVo(compFilter)));
         }
-        if (compFilter.anyOfFields(DataFilter.GEOMETRY) && geometry != null) {
-            message.setGeometry(geometry.toGeoJson());
-            GeoJsonUtils.setLanguage(message.getGeometry(), compFilter.getLang(), false);
+        if (compFilter.includeDetails() || compFilter.includeGeometry()) {
+            parts.forEach(part -> message.checkCreateParts().add(part.toVo(compFilter)));
         }
         if (compFilter.anyOfFields(DataFilter.DETAILS, "MessageDesc.title")) {
             getDescs(compFilter).forEach(desc -> message.checkCreateDescs().add(desc.toVo(compFilter)));
@@ -578,6 +568,16 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         attachments.add(attachment);
     }
 
+
+    /** Returns all container GeoJSON geometries **/
+    public FeatureCollectionVo[] toGeoJson() {
+        return parts.stream()
+                .filter(p -> p.getGeometry() != null)
+                .filter(p -> !p.getGeometry().getFeatures().isEmpty())
+                .map(p -> p.getGeometry().toGeoJson())
+                .toArray(FeatureCollectionVo[]::new);
+    }
+
     /*************************/
     /** Getters and Setters **/
     /*************************/
@@ -708,14 +708,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setHorizontalDatum(String horizontalDatum) {
         this.horizontalDatum = horizontalDatum;
-    }
-
-    public FeatureCollection getGeometry() {
-        return geometry;
-    }
-
-    public void setGeometry(FeatureCollection geometry) {
-        this.geometry = geometry;
     }
 
     public Date getStartDate() {

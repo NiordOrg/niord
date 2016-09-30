@@ -77,6 +77,49 @@ public class GeoJsonUtils {
     }
 
 
+    /** Computes the center of contained geometries **/
+    public static double[] computeCenter(GeoJsonVo[] g) {
+        if (g == null || g.length == 0) {
+            return null;
+        }
+        double[][] centers = Arrays.stream(g)
+                .map(GeoJsonVo::computeCenter)
+                .toArray(double[][]::new);
+        if (centers.length == 0) {
+            return null;
+        }
+        double[] center = new double[] { 0.0, 0.0 };
+        for (double[] c : centers) {
+            center[0] += c[0];
+            center[1] += c[1];
+        }
+        center[0] /= centers.length;
+        center[1] /= centers.length;
+        return center;
+    }
+
+    /** Computes the bounding box of the geometry **/
+    public static double[] computeBBox(GeoJsonVo[] g) {
+        if (g == null || g.length == 0) {
+            return null;
+        }
+        double[][] bboxes = Arrays.stream(g)
+                .map(GeoJsonVo::computeBBox)
+                .toArray(double[][]::new);
+        if (bboxes.length == 0) {
+            return null;
+        }
+        double[] bbox = { Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE };
+        for (double[] b : bboxes) {
+            bbox[0] = Math.min(bbox[0], b[0]);
+            bbox[1] = Math.min(bbox[1], b[1]);
+            bbox[2] = Math.max(bbox[2], b[2]);
+            bbox[3] = Math.max(bbox[3], b[3]);
+        }
+        return bbox;
+    }
+
+
     /** Sets a "language" feature property flag and optionally removes all names not of the given language */
     public static <GJ extends GeoJsonVo> GJ setLanguage(GJ g, String language, boolean removeOtherNames) {
         if (g == null || StringUtils.isBlank(language)) {
@@ -124,6 +167,7 @@ public class GeoJsonUtils {
     public static List<SerializedFeature> serializeFeatureCollection(FeatureCollectionVo fc, String language) {
         List<SerializedFeature> result = new ArrayList<>();
         if (fc != null) {
+            int startIndex = 1;
             for (FeatureVo feature : fc.getFeatures()) {
                 if (feature.getProperties().containsKey("parentFeatureIds") ||
                         "affected".equals(feature.getProperties().get("restriction"))) {
@@ -134,21 +178,21 @@ public class GeoJsonUtils {
                 String featureLang = (String)feature.getProperties().get("language");
                 String lang = StringUtils.isBlank(language) ? StringUtils.defaultIfBlank(featureLang, "en") : language;
 
+                // Check if the feature contains a "startCoordIndex" property that overrides our computed index
+                Number startCoordIndex = (Number) feature.getProperties().get("startCoordIndex");
+                startIndex = startCoordIndex != null ? startCoordIndex.intValue() : startIndex;
+
                 SerializedFeature sf = new SerializedFeature();
                 sf.setName(FeatureName.getFeatureName(feature.getProperties(), lang));
-                AtomicInteger index = new AtomicInteger(0);
                 serializeGeometry(feature.getGeometry(), sf, feature.getProperties(), lang, new AtomicInteger(0));
                 if (StringUtils.isNotBlank(sf.getName()) || !sf.getCoordinates().isEmpty()) {
                     result.add(sf);
+
+                    // Update the start indexes if the coordinates
+                    sf.setStartIndex(startIndex);
+                    startIndex += sf.getCoordinates().size();
                 }
             }
-        }
-
-        // Update the start indexes if the coordinates
-        int startIndex = 1;
-        for (SerializedFeature sf : result) {
-            sf.setStartIndex(startIndex);
-            startIndex += sf.getCoordinates().size();
         }
 
         return result;

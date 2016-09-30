@@ -7,6 +7,20 @@
         <div class="row">
 
             <div class="col-sm-12 col-md-6 col-lg-4 format-locations-selection">
+
+                <table ng-if="message.parts.length > 1" style="width: 100%; margin-right: 10px; margin-bottom: 20px">
+                    <tr>
+                        <th width="120">Message Part</th>
+                        <td>
+                            <div class="btn-group">
+                                <button class="btn btn-default btn-xs" ng-repeat="part in message.parts"
+                                        ng-model="partIndexData.partIndex" uib-btn-radio="$index"
+                                        ng-change="messagePartSelectionChanged(true)">#{{$index + 1}}</button>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
                 <table style="width: 100%; margin-right: 10px">
                     <tr style="border-bottom: 1px solid lightgray">
                         <th colspan="2">Features</th>

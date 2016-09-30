@@ -105,7 +105,7 @@ public abstract class AbstractApiService {
 
         DataFilter filter = DataFilter.get()
                 .lang(language)
-                .fields(DataFilter.DETAILS, DataFilter.GEOMETRY, "Area.parent", "Category.parent");
+                .fields("Message.geometry", "Message.details", "Area.parent", "Category.parent");
 
         return searchResult
                 .map(m -> m.toVo(filter))

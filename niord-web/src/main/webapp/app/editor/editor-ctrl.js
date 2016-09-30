@@ -44,8 +44,8 @@ angular.module('niord.editor')
                 time:           [ false ],
                 areas:          [ false ],
                 categories:     [ false ],
-                positions:      [ false ],
                 charts:         [ false ],
+                positions:      [],         // indexed by message part
                 subject:        [],         // indexed by message part
                 description:    [],         // indexed by message part
                 attachments:    [ false ],
@@ -53,7 +53,8 @@ angular.module('niord.editor')
                 publication:    [ false ],
                 source:         [ false ],
                 prohibition:    [ false ],
-                signals:        [ false ]
+                signals:        [ false ],
+                thumbnail:      [ false ]
             };
 
             // From backend settings, determines which editor fields to display
@@ -119,18 +120,6 @@ angular.module('niord.editor')
 
                 // Ensure that the message has at lease one message part
                 $scope.initMessageParts();
-
-
-                // Instantiate the feature collection from the message geometry
-                if (!msg.geometry) {
-                    msg.geometry = {
-                        type: 'FeatureCollection',
-                        features: []
-                    }
-                } else if (!msg.geometry.features) {
-                    msg.geometry.features = [];
-                }
-                $scope.serializeCoordinates();
 
                 // Determine the message series for the current domain and message mainType
                 $scope.messageSeries.length = 0;
@@ -474,8 +463,13 @@ angular.module('niord.editor')
 
             /** Computes the charts intersecting with the current message geometry **/
             $scope.computeCharts = function () {
-                if ($scope.message.geometry.features.length > 0) {
-                    MessageService.intersectingCharts($scope.message.geometry)
+                // Create a combined geometry for all message parts
+                var geometry = {
+                    type: 'FeatureCollection',
+                    features: MessageService.getMessageFeatures($scope.message)
+                };
+                if (geometry.features.length > 0) {
+                    MessageService.intersectingCharts(geometry)
                         .success(function (charts) {
                             // Prune the returned chart data
                             $scope.message.charts = charts.map(function (chart) {
@@ -530,40 +524,9 @@ angular.module('niord.editor')
             };
 
 
-            $scope.showCoordinates = false;
-            $scope.toggleShowCoordinates = function () {
-                $scope.showCoordinates = !$scope.showCoordinates;
-            };
-
-
-            /** Serializes the message coordinates **/
-            $scope.featureCoordinates = [];
-            $scope.serializeCoordinates = function () {
-                // Compute on-demand
-                var msg = $scope.message;
-                $scope.featureCoordinates.length = 0;
-                if (msg.geometry.features.length > 0) {
-                    var index = 1;
-                    angular.forEach(msg.geometry.features, function (feature) {
-                        var coords = [];
-                        MapService.serializeReadableCoordinates(feature, coords);
-                        if (coords.length > 0) {
-                            var name = feature.properties ? feature.properties['name:' + $rootScope.language] : undefined;
-                            $scope.featureCoordinates.push({
-                                coords: coords,
-                                startIndex: index,
-                                name: name
-                            });
-                            index += coords.length;
-                        }
-                    });
-                }
-                return $scope.featureCoordinates;
-            };
-
             /** called when the message geometry has been changed **/
             $scope.geometrySaved = function () {
-                $scope.serializeCoordinates();
+                $scope.initMessageParts();
                 $scope.setDirty();
             };
 
@@ -622,9 +585,21 @@ angular.module('niord.editor')
                 if ($scope.message.parts.length == 0) {
                     $scope.addMessagePart(0);
                 }
+                var startCoordIndex = 1;
                 angular.forEach($scope.message.parts, function (part, index) {
                     part.index = index;
                     LangService.checkDescs(part, initMessagePartDescField, undefined, $rootScope.modelLanguages);
+
+                    // Instantiate the message part geometry
+                    if (!part.geometry) {
+                        part.geometry = {
+                            type: 'FeatureCollection',
+                            features: []
+                        }
+                    } else if (!part.geometry.features) {
+                        part.geometry.features = [];
+                    }
+                    startCoordIndex = $scope.serializeCoordinates(part, startCoordIndex);
                 });
             };
 
@@ -637,6 +612,7 @@ angular.module('niord.editor')
                     descs: []
                 });
                 // Keep edit mode flags in sync
+                $scope.editMode['positions'].splice(index, 0, false);
                 $scope.editMode['subject'].splice(index, 0, false);
                 $scope.editMode['description'].splice(index, 0, false);
                 $scope.initMessageParts();
@@ -650,6 +626,7 @@ angular.module('niord.editor')
                 if (index < parts.length) {
                     parts.splice(index, 1);
                     // Keep edit mode flags in sync
+                    $scope.editMode['positions'].splice(index, 1);
                     $scope.editMode['subject'].splice(index, 1);
                     $scope.editMode['description'].splice(index, 1);
                 }
@@ -683,6 +660,34 @@ angular.module('niord.editor')
                 onEnd: $scope.updateMessagePartOrder
             };
 
+
+            $scope.toggleShowCoordinates = function (part) {
+                part.showCoordinates = !part.showCoordinates;
+            };
+
+
+            /** Serializes the message part coordinates **/
+            $scope.serializeCoordinates = function (part, startCoordIndex) {
+                part.showCoordinates = false;
+                part.serializedCoordinates = [];
+                if (part.geometry.features.length > 0) {
+                    angular.forEach(part.geometry.features, function (feature) {
+                        var coords = [];
+                        MapService.serializeReadableCoordinates(feature, coords);
+                        if (coords.length > 0) {
+                            feature.properties['startCoordIndex'] = startCoordIndex;
+                            var name = feature.properties ? feature.properties['name:' + $rootScope.language] : undefined;
+                            part.serializedCoordinates.push({
+                                coords: coords,
+                                startIndex: startCoordIndex,
+                                name: name
+                            });
+                            startCoordIndex += coords.length;
+                        }
+                    });
+                }
+                return startCoordIndex;
+            };
 
             /*****************************/
             /** TinyMCE functions       **/
@@ -725,13 +730,14 @@ angular.module('niord.editor')
 
 
             /** Dialog that facilitates formatting selected message features as text **/
-            $scope.locationsDialog = function (lang) {
+            $scope.locationsDialog = function (partIndex, lang) {
                 return $uibModal.open({
                     templateUrl: '/app/editor/format-locations-dialog.html',
                     controller: 'FormatMessageLocationsDialogCtrl',
                     size: 'lg',
                     resolve: {
-                        featureCollection: function () { return $scope.message.geometry; },
+                        message: function () { return $scope.message },
+                        partIndex: function () { return partIndex },
                         lang: function () { return lang; }
                     }
                 });
@@ -743,10 +749,12 @@ angular.module('niord.editor')
 
                 // The ID of the parent div has the format "tinymce-<<part-index>>-<<lang>>"
                 var parentDivId = editor.getElement().parentElement.id;
-                var lang = parentDivId.split("-")[2];
+                var id = parentDivId.split("-");
+                var partIndex = parseInt(id[1]);
+                var lang = id[2];
 
                 $scope.$apply(function() {
-                    $scope.locationsDialog(lang).result
+                    $scope.locationsDialog(partIndex, lang).result
                         .then(function (result) {
                             editor.insertContent(result);
                         });
@@ -1102,9 +1110,6 @@ angular.module('niord.editor')
                 }
                 if (!msg.messageSeries) {
                     error += '<li>Message Series</li>';
-                }
-                if (!descFieldDefined('subject')) {
-                    error += '<li>Subject</li>';
                 }
                 if (!descFieldDefined('title')) {
                     error += '<li>Title</li>';

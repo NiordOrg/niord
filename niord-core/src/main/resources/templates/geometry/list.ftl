@@ -2,8 +2,8 @@
 <#assign formatPos = "org.niord.core.fm.directive.LatLonDirective"?new()>
 
 <#if geometry?has_content>
-    <#list geometry as feature>
-        <table class="positions">
+    <table class="positions">
+        <#list geometry as feature>
             <#if feature.name?has_content>
                 <tr><th colspan="3">${feature.name}</th></tr>
             </#if>
@@ -16,6 +16,6 @@
                     </tr>
                 </#list>
             </#if>
-        </table>
-    </#list>
+        </#list>
+    </table>
 </#if>

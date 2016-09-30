@@ -16,6 +16,8 @@
 
 package org.niord.core.message;
 
+import org.niord.core.geojson.FeatureCollection;
+import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.model.IndexedEntity;
 import org.niord.model.DataFilter;
@@ -27,6 +29,7 @@ import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +47,9 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
     Message message;
 
     int indexNo;
+
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    FeatureCollection geometry;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
     List<MessagePartDesc> descs = new ArrayList<>();
@@ -68,6 +74,10 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
      */
     public MessagePart(MessagePartVo part, DataFilter filter) {
 
+        // NB: indexNo automatically assigned
+        if (part.getGeometry() != null) {
+            this.geometry = FeatureCollection.fromGeoJson(part.getGeometry());
+        }
         if (part.getDescs() != null) {
             part.getDescs().stream()
                     .filter(MessagePartDescVo::descDefined)
@@ -95,8 +105,12 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
 
         DataFilter compFilter = filter.forComponent(MessagePart.class);
 
-        if (compFilter.anyOfFields(DataFilter.DETAILS)) {
+        if (compFilter.includeDetails()) {
             getDescs(compFilter).forEach(desc -> part.checkCreateDescs().add(desc.toVo(compFilter)));
+        }
+        if (compFilter.includeGeometry() && geometry != null) {
+            part.setGeometry(geometry.toGeoJson());
+            GeoJsonUtils.setLanguage(part.getGeometry(), compFilter.getLang(), false);
         }
 
         return part;
@@ -112,7 +126,7 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
     /** Returns if the message part contains any data **/
     public boolean partDefined() {
         descs.removeIf(d -> !d.descDefined());
-        return !descs.isEmpty();
+        return !descs.isEmpty() || geometry != null;
     }
 
 
@@ -156,6 +170,14 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
     @Override
     public void setIndexNo(int indexNo) {
         this.indexNo = indexNo;
+    }
+
+    public FeatureCollection getGeometry() {
+        return geometry;
+    }
+
+    public void setGeometry(FeatureCollection geometry) {
+        this.geometry = geometry;
     }
 
     @Override

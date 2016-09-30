@@ -291,6 +291,20 @@ angular.module('niord.messages')
             },
 
 
+            /** Returns the list of message features **/
+            getMessageFeatures: function (message) {
+                var features = [];
+                if (message && message.parts && message.parts.length > 0) {
+                    angular.forEach(message.parts, function (part) {
+                        if (part.geometry && part.geometry.features.length > 0) {
+                            features = features.concat(part.geometry.features);
+                        }
+                    });
+                }
+                return features;
+            },
+
+
             /** Opens a message details dialog **/
             detailsDialog: function(messageId, messages, selection) {
                 return $uibModal.open({

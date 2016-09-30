@@ -52,7 +52,7 @@
     font-size: 12px;
 }
 
-.editor-fields .move-btn {
+.editor-fields .move-feature-btn {
     cursor: pointer;
     cursor: -webkit-grabbing;
 }
@@ -165,7 +165,6 @@ div.mce-fullscreen {
 
 .format-locations-selection {
     max-height: 200px;
-    height: 200px;
     overflow: hidden;
     overflow-y: scroll;
 }

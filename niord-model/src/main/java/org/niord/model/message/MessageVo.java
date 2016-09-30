@@ -19,7 +19,6 @@ import io.swagger.annotations.ApiModel;
 import org.apache.commons.lang.StringUtils;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
-import org.niord.model.geojson.FeatureCollectionVo;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -35,7 +34,7 @@ import java.util.List;
 @XmlRootElement(name = "message")
 @XmlType(propOrder = {
         "repoPath", "messageSeries", "number", "mrn", "shortId", "mainType", "type", "status",
-        "areas", "categories", "charts", "horizontalDatum", "geometry", "publishDate", "dateIntervals",
+        "areas", "categories", "charts", "horizontalDatum", "publishDate", "dateIntervals",
         "references", "atonUids", "originalInformation", "parts", "descs", "attachments"
 })
 @SuppressWarnings("unused")
@@ -57,7 +56,6 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     List<CategoryVo> categories;
     List<ChartVo> charts;
     String horizontalDatum;
-    FeatureCollectionVo geometry;
     Date publishDate;
     List<DateIntervalVo> dateIntervals;
     List<ReferenceVo> references;
@@ -301,14 +299,6 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
 
     public void setHorizontalDatum(String horizontalDatum) {
         this.horizontalDatum = horizontalDatum;
-    }
-
-    public FeatureCollectionVo getGeometry() {
-        return geometry;
-    }
-
-    public void setGeometry(FeatureCollectionVo geometry) {
-        this.geometry = geometry;
     }
 
     public Date getPublishDate() {

@@ -181,10 +181,12 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
             message.setCharts(charts);
 
             // Reset all geometry IDs
-            if (message.getGeometry() != null) {
-                message.getGeometry().setUid(null);
-                featureService.assignNewFeatureUids(message.getGeometry());
-            }
+            message.getParts().stream()
+                    .filter(p -> p.getGeometry() != null)
+                    .forEach(p -> {
+                        p.getGeometry().setUid(null);
+                        featureService.assignNewFeatureUids(p.getGeometry());
+                    });
 
             // Reset all attachment IDs
             message.getAttachments().forEach(att -> att.setId(null));

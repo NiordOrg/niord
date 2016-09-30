@@ -140,11 +140,15 @@ angular.module('niord.messages')
                         scope.generalMessages.length = 0;
                         if (scope.messageList && scope.messageList.length > 0) {
                             angular.forEach(scope.messageList, function (message) {
-                                if (message.geometry && message.geometry.features.length > 0) {
-
-                                    angular.forEach(message.geometry.features, function (gjFeature) {
+                                var features = MessageService.getMessageFeatures(message);
+                                if (features.length > 0) {
+                                    angular.forEach(features, function (gjFeature) {
                                         var olFeature = MapService.gjToOlFeature(gjFeature);
-                                        olFeature.set('message', message);
+                                        olFeature.set('message', {
+                                            id : message.id,
+                                            shortId : message.shortId,
+                                            descs : message.descs
+                                        });
                                         if (scope.showOutline == 'true') {
                                             var point = MapService.getGeometryCenter(olFeature.getGeometry());
                                             if (point) {
@@ -289,7 +293,8 @@ angular.module('niord.messages')
     /****************************************************************
      * The map-message-details directive supports drawing a single message on a map layer
      ****************************************************************/
-    .directive('mapMessageDetailsLayer', ['$rootScope', 'MapService', function ($rootScope, MapService) {
+    .directive('mapMessageDetailsLayer', ['$rootScope', 'MapService', 'MessageService',
+        function ($rootScope, MapService, MessageService) {
         return {
             restrict: 'E',
             replace: false,
@@ -397,16 +402,16 @@ angular.module('niord.messages')
                         olLayer.getSource().clear();
 
                         // Directive either initialized with "message" or "featureCollection"
-                        var featureCollection = undefined;
+                        var features = undefined;
                         if (scope.featureCollection) {
-                            featureCollection = scope.featureCollection;
+                            features = scope.featureCollection.features;
                         } else if (scope.message) {
-                            featureCollection = scope.message.geometry;
+                            features = MessageService.getMessageFeatures(scope.message);
                         }
 
-                        if (featureCollection.features.length > 0) {
+                        if (features && features.length > 0) {
 
-                            angular.forEach(featureCollection.features, function (gjFeature) {
+                            angular.forEach(features, function (gjFeature) {
                                 var olFeature = MapService.gjToOlFeature(gjFeature);
                                 if (scope.showOutline == 'true') {
                                     var point = MapService.getGeometryCenter(olFeature.getGeometry());
@@ -513,7 +518,8 @@ angular.module('niord.messages')
      * The map-message-labels-layer directive supports drawing geometry
      * labels on a map layer
      ****************************************************************/
-    .directive('mapMessageLabelsLayer', ['$rootScope', 'MapService', function ($rootScope, MapService) {
+    .directive('mapMessageLabelsLayer', ['$rootScope', 'MapService', 'MessageService',
+        function ($rootScope, MapService, MessageService) {
         return {
             restrict: 'E',
             replace: false,
@@ -625,17 +631,17 @@ angular.module('niord.messages')
                         olLayer.getSource().clear();
 
                         // Directive either initialized with "message" or "featureCollection"
-                        var featureCollection = undefined;
+                        var features = undefined;
                         if (scope.featureCollection) {
-                            featureCollection = scope.featureCollection;
+                            features = scope.featureCollection.features;
                         } else if (scope.message) {
-                            featureCollection = scope.message.geometry;
+                            features = MessageService.getMessageFeatures(scope.message);
                         }
 
-                        if (featureCollection.features.length > 0) {
+                        if (features && features.length > 0) {
 
                             var coordIndex = 1;
-                            angular.forEach(featureCollection.features, function (gjFeature) {
+                            angular.forEach(features, function (gjFeature) {
 
                                 var olFeature = MapService.gjToOlFeature(gjFeature);
                                 var styles = [];

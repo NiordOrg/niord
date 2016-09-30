@@ -23,6 +23,7 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
 import org.niord.core.repo.RepositoryService;
+import org.niord.model.geojson.FeatureCollectionVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
@@ -114,7 +115,8 @@ public class MessageMapImageRestService {
 
 
             // Check for a standard auto-generated message map image file
-            if (message.getGeometry() != null && !message.getGeometry().getFeatures().isEmpty()) {
+            FeatureCollectionVo[] fcs = message.toGeoJson();
+            if (fcs.length > 0) {
 
                 // Construct the image file for the message
                 String imageName = String.format("map_%d.png", messageMapImageGenerator.getMapImageSize());
@@ -127,6 +129,7 @@ public class MessageMapImageRestService {
                         message.getUpdated().getTime() > Files.getLastModifiedTime(imageRepoPath).toMillis()) {
                     imageFileExists = messageMapImageGenerator.generateMessageMapImage(
                             message,
+                            fcs,
                             imageRepoPath);
                 }
 

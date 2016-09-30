@@ -19,6 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.message.Message;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.Setting;
@@ -636,12 +637,15 @@ public class AreaService extends BaseService {
         double no = 0.0;
 
         // Sanity check
-        if (message.getAreas().isEmpty() || message.getGeometry() == null) {
+        if (message.getAreas().isEmpty()) {
             return no;
         }
 
         // Compute the message center
-        double[] center = message.getGeometry().toGeoJson().computeCenter();
+        double[] center = GeoJsonUtils.computeCenter(message.toGeoJson());
+        if (center == null) {
+            return no;
+        }
         double lat = center[1];
         double lon = center[0];
 

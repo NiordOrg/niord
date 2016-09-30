@@ -39,8 +39,8 @@ angular.module('niord.editor')
     /**
      * Defines the GeoJSON FeatureCollection Editor
      */
-    .directive('gjEditor', ['$document', '$rootScope', '$uibModal', 'growl', 'MapService', 'AtonService',
-        function ($document, $rootScope, $uibModal, growl, MapService, AtonService) {
+    .directive('gjEditor', ['$document', '$rootScope', '$timeout', '$uibModal', 'growl', 'MapService', 'AtonService',
+        function ($document, $rootScope, $timeout, $uibModal, growl, MapService, AtonService) {
 
         return {
             restrict: 'E',
@@ -93,7 +93,10 @@ angular.module('niord.editor')
                 };
 
                 if (scope.tabIndex) {
-                    element.find("#editorBtn").attr('tabindex', scope.tabIndex);
+                    $timeout(function () {
+                        element.find("#editorBtn").attr('tabindex', scope.tabIndex);
+                        element.find("#editAsTxtBtn").attr('tabindex', scope.tabIndex);
+                    });
                 }
 
                 /** ************************ **/
@@ -823,6 +826,7 @@ angular.module('niord.editor')
                     // Feature contexts have already been updated. Swap features
                     var oldIndex = evt.oldIndex;
                     var newIndex = evt.newIndex;
+                    console.log("DND MOVE " + oldIndex + " -> " + newIndex);
                     swapElements(scope.features, oldIndex, newIndex);
                     recomputeFeatureSelection();
                     broadcast('feature-order-changed', scope.featureContexts[newIndex].id);
@@ -835,7 +839,7 @@ angular.module('niord.editor')
 
                 scope.featureSortableCfg = {
                     group: 'feature',
-                    handle: '.move-btn',
+                    handle: '.move-feature-btn',
                     onEnd: scope.updateFeatureOrder
                 };
 

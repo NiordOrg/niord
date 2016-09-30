@@ -20,6 +20,7 @@ import io.swagger.annotations.ApiModel;
 import org.apache.commons.lang.StringUtils;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
+import org.niord.model.geojson.FeatureCollectionVo;
 
 import javax.xml.bind.annotation.XmlType;
 import java.util.List;
@@ -29,11 +30,13 @@ import java.util.List;
  */
 @ApiModel(value = "MessagePart", description = "Main NW and NM message part class")
 @XmlType(propOrder = {
-        "descs"
+        "indexNo", "geometry", "descs"
 })
 @SuppressWarnings("unused")
 public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSerializable {
 
+    int indexNo;
+    FeatureCollectionVo geometry;
     List<MessagePartDescVo> descs;
 
 
@@ -68,6 +71,22 @@ public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSeri
     /** Getters and Setters **/
     /*************************/
 
+    public int getIndexNo() {
+        return indexNo;
+    }
+
+    public void setIndexNo(int indexNo) {
+        this.indexNo = indexNo;
+    }
+
+    public FeatureCollectionVo getGeometry() {
+        return geometry;
+    }
+
+    public void setGeometry(FeatureCollectionVo geometry) {
+        this.geometry = geometry;
+    }
+
     @Override
     public List<MessagePartDescVo> getDescs() {
         return descs;
@@ -77,4 +96,5 @@ public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSeri
     public void setDescs(List<MessagePartDescVo> descs) {
         this.descs = descs;
     }
+
 }

@@ -162,20 +162,19 @@ public class MessageMapImageGenerator {
      * @param imageRepoPath the path of the image
      * @return if the image file was properly created
      */
-    public boolean generateMessageMapImage(Message message, Path imageRepoPath) throws IOException {
+    public boolean generateMessageMapImage(Message message, FeatureCollectionVo[] fcs, Path imageRepoPath) throws IOException {
 
         long t0 = System.currentTimeMillis();
 
-        FeatureCollectionVo fc = message.getGeometry().toGeoJson();
+        // Compute the bounds of the feature geometry and compute the center
+        double[] bbox = GeoJsonUtils.computeBBox(fcs);
+        double[] center = GeoJsonUtils.computeCenter(fcs);
 
-        if (fc.getFeatures() != null && fc.getFeatures().length > 0) {
+        if (fcs != null && bbox != null && center != null) {
 
-            boolean isSinglePoint = fc.getFeatures().length == 1 &&
-                        fc.getFeatures()[0].getGeometry() instanceof PointVo;
+            boolean isSinglePoint = fcs.length == 1 && fcs[0].getFeatures().length == 1 &&
+                        fcs[0].getFeatures()[0].getGeometry() instanceof PointVo;
 
-            // Compute the bounds of the feature geometry and compute the center
-            double[] bbox = fc.computeBBox();
-            double[] center = fc.computeCenter();
 
             // Find zoom level where polygon is at most 80% of bitmap width/height, and zoom level in
             // the range of 12 to 4. See http://wiki.openstreetmap.org/wiki/Zoom_levels
@@ -195,14 +194,17 @@ public class MessageMapImageGenerator {
             // Convert Feature coordinates from lon-lat to image-relative XY.
             int[] rxy = new int[] { -mapImageSize / 2, -mapImageSize / 2 };
             int cxy[] = mercator.LatLonToPixels(center[1], center[0], zoom);
-            fc.visitCoordinates(coordinate -> {
-                int xy[] = mercator.LatLonToPixels(coordinate[1], coordinate[0], zoom);
-                coordinate[0] = xy[0] - cxy[0] - rxy[0];
-                coordinate[1] = cxy[1] - xy[1] - rxy[1];
-            });
+            Arrays.stream(fcs)
+                    .forEach(fc -> fc.visitCoordinates(coordinate -> {
+                        int xy[] = mercator.LatLonToPixels(coordinate[1], coordinate[0], zoom);
+                        coordinate[0] = xy[0] - cxy[0] - rxy[0];
+                        coordinate[1] = cxy[1] - xy[1] - rxy[1];
+                    }));
 
             // Draw each feature
-            Arrays.asList(fc.getFeatures())
+            Arrays.stream(fcs)
+                    .filter(fc -> fc.getFeatures() != null)
+                    .flatMap(g -> Arrays.stream(g.getFeatures()))
                     .forEach(f -> drawGeometry(f, f.getGeometry(), g2, getMessageImage(message)));
 
             // Draw labels

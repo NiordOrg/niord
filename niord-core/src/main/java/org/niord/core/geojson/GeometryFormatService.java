@@ -67,12 +67,11 @@ public class GeometryFormatService {
      * @return the updated message
      */
     public MessageVo appendGeometryToDetails(MessageVo message) {
-        if (message != null && message.getGeometry() != null && message.getParts() != null) {
+        if (message != null && message.getParts() != null) {
             message.getParts().stream()
-                    .filter(p -> p.getDescs() != null)
-                    .flatMap(p -> p.getDescs().stream())
-                    .forEach(desc -> desc.setDetails(
-                            appendGeometryToDetails(desc.getLang(), desc.getDetails(), message.getGeometry())));
+                    .filter(p -> p.getDescs() != null && p.getGeometry() != null)
+                    .forEach(p -> p.getDescs().forEach(desc -> desc.setDetails(
+                            appendGeometryToDetails(desc.getLang(), desc.getDetails(), p.getGeometry()))));
         }
         return message;
     }
@@ -84,13 +83,14 @@ public class GeometryFormatService {
      * @return the updated message
      */
     public Message appendGeometryToDetails(Message message) {
-        if (message != null && message.getGeometry() != null) {
-            FeatureCollectionVo geometry = message.getGeometry().toGeoJson();
+        if (message != null) {
             message.getParts().stream()
-                    .filter(p -> p.getDescs() != null)
-                    .flatMap(p -> p.getDescs().stream())
-                    .forEach(desc -> desc.setDetails(
-                            appendGeometryToDetails(desc.getLang(), desc.getDetails(), geometry)));
+                    .filter(p -> p.getDescs() != null && p.getGeometry() != null)
+                    .forEach(p -> {
+                        FeatureCollectionVo geometry = p.getGeometry().toGeoJson();
+                        p.getDescs().forEach(desc -> desc.setDetails(
+                                appendGeometryToDetails(desc.getLang(), desc.getDetails(), geometry)));
+                    });
         }
         return message;
     }

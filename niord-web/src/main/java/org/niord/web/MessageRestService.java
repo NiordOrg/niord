@@ -49,10 +49,8 @@ import org.niord.model.message.Status;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.annotation.Resource;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
-import javax.ejb.SessionContext;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -92,9 +90,6 @@ import static org.niord.model.message.Status.VERIFIED;
 @PermitAll
 @SuppressWarnings("unused")
 public class MessageRestService  {
-
-    @Resource
-    SessionContext ctx;
 
     @Inject
     Logger log;
@@ -141,7 +136,7 @@ public class MessageRestService  {
     private void checkMessageEditingAccess(Message message, boolean update) {
         Domain domain = domainService.currentDomain();
         if (domain == null || message == null || !domain.containsMessageSeries(message.getMessageSeries()) ||
-                !ctx.isCallerInRole("editor")) {
+                !userService.isCallerInRole("editor")) {
             throw new WebApplicationException(403);
         }
 
@@ -149,7 +144,7 @@ public class MessageRestService  {
             // We know that the use is already an "editor".
             boolean draft = message.getStatus() == DRAFT
                     || message.getStatus() == VERIFIED;
-            if (!draft && !ctx.isCallerInRole("sysadmin")) {
+            if (!draft && !userService.isCallerInRole("sysadmin")) {
                 throw new WebApplicationException(403);
             }
         }
@@ -176,7 +171,7 @@ public class MessageRestService  {
 
         // 2) Grant access if the current domain of the user matches the message series of the message
         Domain domain = domainService.currentDomain();
-        if (domain != null && domain.containsMessageSeries(message.getMessageSeries()) && ctx.isCallerInRole("editor")) {
+        if (domain != null && domain.containsMessageSeries(message.getMessageSeries()) && userService.isCallerInRole("editor")) {
             return;
         }
 
@@ -407,7 +402,10 @@ public class MessageRestService  {
         editMessage.setVersion(null);
         editMessage.setNumber(null);
         editMessage.setPublishDate(null);
-        editMessage.setGeometry(featureService.copyFeatureCollection(editMessage.getGeometry()));
+        if (editMessage.getParts() != null) {
+            editMessage.getParts()
+                    .forEach(p -> p.setGeometry(featureService.copyFeatureCollection(p.getGeometry())));
+        }
 
         return editMessage;
     }

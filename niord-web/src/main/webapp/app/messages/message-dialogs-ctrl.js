@@ -37,6 +37,7 @@ angular.module('niord.messages')
             $scope.index = $.inArray(messageId, messages);
             $scope.showNavigation = $scope.index >= 0;
             $scope.showMap = true;
+            $scope.hasGeometry = false;
 
             // Attempt to improve printing
             $("body").addClass("no-print");
@@ -96,6 +97,12 @@ angular.module('niord.messages')
                             if (attachmentsAbove.length > 0) {
                                 $scope.showMap = false;
                             }
+                        }
+                        $scope.hasGeometry = false;
+                        if ($scope.msg.parts) {
+                            angular.forEach($scope.msg.parts, function (part) {
+                                $scope.hasGeometry |= (part.geometry !== undefined);
+                            })
                         }
 
                     })

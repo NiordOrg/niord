@@ -61,33 +61,6 @@
             </tr>
 
 
-            <!-- Geometry line -->
-            <tr ng-if="msg.geometry && msg.geometry.features && msg.geometry.features.length > 0">
-                <th translate>msg.field.positions</th>
-                <td>
-                    <div ng-if="!compact">
-                        <span class="glyphicon glyphicon-map-marker" style="color: darkgray"></span>
-                        <a href ng-if="showLocations" ng-click="setShowLocations(false)" class="clickable" translate>msg.hide_positions</a>
-                        <a href ng-if="!showLocations" ng-click="setShowLocations(true)" class="clickable" translate>msg.show_positions</a>
-                    </div>
-                    <div ng-if="showLocations || compact">
-                        <div ng-repeat="featureCoords in serializeCoordinates()">
-                            <table class="positions">
-                                <tr ng-if="featureCoords.name">
-                                    <th colspan="3">{{featureCoords.name}}</th>
-                                </tr>
-                                <tr ng-repeat="c in featureCoords.coords">
-                                    <td nowrap>{{featureCoords.startIndex + $index}})</td>
-                                    <td nowrap>{{c | lonlat:{ decimals : 3, pp: true } }}</td>
-                                    <td>{{c.name}}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-
-
             <!-- Details line -->
             <tr ng-if="detailsDefined()">
                 <th translate>msg.field.details</th>

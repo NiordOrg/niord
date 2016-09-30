@@ -143,21 +143,22 @@ angular.module('niord.editor')
      * Controller that allows the user to format selected features as text
      *******************************************************************/
     .controller('FormatMessageLocationsDialogCtrl', ['$scope', '$rootScope', '$window', 'growl',
-            'MessageService', 'featureCollection', 'lang',
+            'MessageService', 'message', 'partIndex', 'lang',
         function ($scope, $rootScope, $window, growl,
-              MessageService, featureCollection, lang) {
+              MessageService, message, partIndex, lang) {
             'use strict';
 
             $scope.wmsLayerEnabled = $rootScope.wmsLayerEnabled;
             $scope.openSeaMapLayerEnabled = $rootScope.openSeaMapLayerEnabled;
 
-            $scope.featureCollection = angular.copy(featureCollection);
-            // Remove all buffered features
-            $scope.featureCollection.features = $scope.featureCollection.features.filter(function (feature) {
-                return feature.properties['parentFeatureIds'] === undefined;
-            });
-
+            $scope.message = message;
+            $scope.partIndexData = { partIndex: partIndex };
             $scope.lang = lang;
+
+            $scope.featureCollection = {
+                type: 'FeatureCollection',
+                features: []
+            };
             $scope.selectedFeatures = {
                 type: 'FeatureCollection',
                 features: [ ]
@@ -184,12 +185,35 @@ angular.module('niord.editor')
                 }
             }
 
+
+            /** Called whenever the message part selection changes **/
+            $scope.messagePartSelectionChanged = function (updateSelection) {
+                var fc = message.parts[$scope.partIndexData.partIndex].geometry;
+                $scope.featureCollection.features = angular.copy(fc.features);
+
+                // Remove all buffered features
+                $scope.featureCollection.features = $scope.featureCollection.features.filter(function (feature) {
+                    return feature.properties['parentFeatureIds'] === undefined;
+                });
+
+                // Initial selection
+                if ($scope.featureCollection.features.length == 1) {
+                    $scope.featureCollection.features[0].selected = true;
+                }
+
+                // Update the current feature selection
+                if (updateSelection) {
+                    $scope.featureSelectionChanged();
+                }
+            };
+            $scope.messagePartSelectionChanged(false);
+
+
             /** Called when the feature selection changes */
             $scope.featureSelectionChanged = function () {
                 $scope.selectedFeatures.features = $.grep($scope.featureCollection.features, function (feature) {
                     return feature.selected;
                 });
-
 
                 // Compute the result
                 $scope.data.result = '';
@@ -220,12 +244,6 @@ angular.module('niord.editor')
                 $window.localStorage['formatLocationSettings'] = angular.toJson($scope.params);
                 $scope.$close($scope.data.result);
             };
-
-
-            // Initial selection
-            if ($scope.featureCollection.features.length == 1) {
-                $scope.featureCollection.features[0].selected = true;
-            }
         }])
 
 

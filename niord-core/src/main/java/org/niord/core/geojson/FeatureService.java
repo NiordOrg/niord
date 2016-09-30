@@ -134,7 +134,7 @@ public class FeatureService extends BaseService {
      * @param fc the feature collection
      * @return the updated feature collection
      */
-    public FeatureCollection updateFeatureCollection(FeatureCollection fc) throws Exception {
+    public FeatureCollection updateFeatureCollection(FeatureCollection fc) {
         if (fc == null || fc.getFeatures().isEmpty()) {
             return null;
         }
