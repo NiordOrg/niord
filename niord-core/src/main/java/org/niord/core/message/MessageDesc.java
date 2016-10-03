@@ -41,18 +41,9 @@ public class MessageDesc extends DescEntity<Message> {
 
     String vicinity;
 
-    @Column(length = 1000)
-    String note;
-
     String publication;
 
     String source;
-
-    String prohibition;
-
-    @Column(length = 2000)
-    String signals;
-
 
     /** Constructor */
     public MessageDesc() {
@@ -77,11 +68,8 @@ public class MessageDesc extends DescEntity<Message> {
             this.otherCategories = trunc(desc.getOtherCategories(), 256);
             this.time = trunc(desc.getTime(), 1000);
             this.vicinity = trunc(desc.getVicinity(), 256);
-            this.note = trunc(desc.getNote(), 1000);
             this.publication = trunc(desc.getPublication(), 256);
             this.source = trunc(desc.getSource(), 256);
-            this.prohibition = trunc(desc.getProhibition(), 256);
-            this.signals = trunc(desc.getSignals(), 2000);
         }
     }
 
@@ -98,11 +86,8 @@ public class MessageDesc extends DescEntity<Message> {
             desc.setOtherCategories(otherCategories);
             desc.setTime(time);
             desc.setVicinity(vicinity);
-            desc.setNote(note);
             desc.setPublication(publication);
             desc.setSource(source);
-            desc.setProhibition(prohibition);
-            desc.setSignals(signals);
         }
         return desc;
     }
@@ -112,7 +97,7 @@ public class MessageDesc extends DescEntity<Message> {
     @Override
     public boolean descDefined() {
         return ILocalizedDesc.fieldsDefined(title, otherCategories,
-                time, vicinity, note, publication, source, prohibition, signals);
+                time, vicinity, publication, source);
     }
 
 
@@ -125,11 +110,8 @@ public class MessageDesc extends DescEntity<Message> {
         this.otherCategories = desc.getOtherCategories();
         this.time = desc.getTime();
         this.vicinity = desc.getVicinity();
-        this.note = desc.getNote();
         this.publication = desc.getPublication();
         this.source = desc.getSource();
-        this.prohibition = desc.getProhibition();
-        this.signals = desc.getSignals();
     }
 
     /*************************/
@@ -168,14 +150,6 @@ public class MessageDesc extends DescEntity<Message> {
         this.vicinity = vicinity;
     }
 
-    public String getNote() {
-        return note;
-    }
-
-    public void setNote(String note) {
-        this.note = note;
-    }
-
     public String getPublication() {
         return publication;
     }
@@ -190,21 +164,5 @@ public class MessageDesc extends DescEntity<Message> {
 
     public void setSource(String source) {
         this.source = source;
-    }
-
-    public String getProhibition() {
-        return prohibition;
-    }
-
-    public void setProhibition(String prohibition) {
-        this.prohibition = prohibition;
-    }
-
-    public String getSignals() {
-        return signals;
-    }
-
-    public void setSignals(String signals) {
-        this.signals = signals;
     }
 }

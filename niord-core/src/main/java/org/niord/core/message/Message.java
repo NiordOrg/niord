@@ -25,6 +25,7 @@ import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.message.MainType;
+import org.niord.model.message.MessagePartType;
 import org.niord.model.message.MessageVo;
 import org.niord.model.message.Status;
 import org.niord.model.message.Type;
@@ -52,6 +53,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 
 /**
@@ -544,33 +546,45 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
 
     /** Adds a description entity to this message */
-    public void addDesc(MessageDesc desc) {
+    public MessageDesc addDesc(MessageDesc desc) {
         desc.setEntity(this);
         descs.add(desc);
+        return desc;
     }
 
     /** Adds a message part entity to this message */
-    public void addPart(MessagePart part) {
+    public MessagePart addPart(MessagePart part) {
         part.setMessage(this);
         parts.add(part);
+        return part;
+    }
+
+    /** Returns the message parts with the given type */
+    public List<MessagePart> partsByType(MessagePartType type) {
+        return parts.stream()
+                .filter(p -> type == p.getType())
+                .collect(Collectors.toList());
     }
 
     /** Adds a reference to this message */
-    public void addReference(Reference reference) {
+    public Reference addReference(Reference reference) {
         reference.setMessage(this);
         references.add(reference);
+        return reference;
     }
 
     /** Adds a date interval to this message */
-    public void addDateInterval(DateInterval dateInterval) {
+    public DateInterval addDateInterval(DateInterval dateInterval) {
         dateInterval.setMessage(this);
         dateIntervals.add(dateInterval);
+        return dateInterval;
     }
 
     /** Adds an attachment to this message */
-    public void addAttachment(Attachment attachment) {
+    public Attachment addAttachment(Attachment attachment) {
         attachment.setMessage(this);
         attachments.add(attachment);
+        return attachment;
     }
 
 

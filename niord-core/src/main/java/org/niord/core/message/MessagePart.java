@@ -23,10 +23,13 @@ import org.niord.core.model.IndexedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.message.MessagePartDescVo;
+import org.niord.model.message.MessagePartType;
 import org.niord.model.message.MessagePartVo;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
@@ -48,6 +51,10 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
 
     int indexNo;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    MessagePartType type = MessagePartType.DETAILS;
+
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     FeatureCollection geometry;
 
@@ -58,6 +65,14 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
      * Constructor
      */
     public MessagePart() {
+    }
+
+
+    /**
+     * Constructor
+     */
+    public MessagePart(MessagePartType type) {
+        this.type = type;
     }
 
 
@@ -75,6 +90,7 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
     public MessagePart(MessagePartVo part, DataFilter filter) {
 
         // NB: indexNo automatically assigned
+        this.type = part.getType();
         if (part.getGeometry() != null) {
             this.geometry = FeatureCollection.fromGeoJson(part.getGeometry());
         }
@@ -96,6 +112,7 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
     public void updateMessagePart(MessagePart part) {
 
         this.indexNo = part.getIndexNo();
+        this.type = part.getType();
         copyDescsAndRemoveBlanks(part.getDescs());
     }
 
@@ -105,6 +122,7 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
 
         DataFilter compFilter = filter.forComponent(MessagePart.class);
 
+        part.setType(type);
         if (compFilter.includeDetails()) {
             getDescs(compFilter).forEach(desc -> part.checkCreateDescs().add(desc.toVo(compFilter)));
         }
@@ -160,6 +178,14 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
 
     public void setMessage(Message message) {
         this.message = message;
+    }
+
+    public MessagePartType getType() {
+        return type;
+    }
+
+    public void setType(MessagePartType type) {
+        this.type = type;
     }
 
     @Override

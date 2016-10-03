@@ -30,12 +30,13 @@ import java.util.List;
  */
 @ApiModel(value = "MessagePart", description = "Main NW and NM message part class")
 @XmlType(propOrder = {
-        "indexNo", "geometry", "descs"
+        "indexNo", "type", "geometry", "descs"
 })
 @SuppressWarnings("unused")
 public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSerializable {
 
     int indexNo;
+    MessagePartType type;
     FeatureCollectionVo geometry;
     List<MessagePartDescVo> descs;
 
@@ -70,6 +71,14 @@ public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSeri
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public MessagePartType getType() {
+        return type;
+    }
+
+    public void setType(MessagePartType type) {
+        this.type = type;
+    }
 
     public int getIndexNo() {
         return indexNo;

@@ -62,10 +62,14 @@
 
 
             <!-- Details line -->
-            <tr ng-if="detailsDefined()">
-                <th translate>msg.field.details</th>
+            <tr ng-if="msg.parts" ng-repeat="part in msg.parts">
+                <th>
+                    <span ng-if="$index == 0 || msg.parts[$index].type != msg.parts[$index - 1].type">
+                        {{'msg.field.' + part.type.toLowerCase() | translate}}
+                    </span>
+                </th>
                 <td class="message-description">
-                    <render-message-part msg="msg" subject="true"></render-message-part>
+                    <render-message-part part="part" subject="true"></render-message-part>
                 </td>
             </tr>
 
@@ -85,27 +89,6 @@
                         </span>
                     </div>
                 </td>
-            </tr>
-
-
-            <!-- Prohibition line -->
-            <tr ng-if="msg.descs[0].prohibition">
-                <th translate>msg.field.prohibition</th>
-                <td>{{msg.descs[0].prohibition}}</td>
-            </tr>
-
-
-            <!-- Signals line -->
-            <tr ng-if="msg.descs[0].signals">
-                <th translate>msg.field.signals</th>
-                <td ng-bind-html="msg.descs[0].signals | plain2html"></td>
-            </tr>
-
-
-            <!-- Note line -->
-            <tr ng-if="msg.descs[0].note">
-                <th translate>msg.field.note</th>
-                <td ng-bind-html="msg.descs[0].note | plain2html"></td>
             </tr>
 
 

@@ -27,7 +27,7 @@ import javax.xml.bind.annotation.XmlType;
  */
 @ApiModel(value = "MessageDesc", description = "Translatable fields of the Message model")
 @XmlType(propOrder = { "title", "otherCategories",
-        "time", "vicinity", "note", "publication", "source", "prohibition", "signals" })
+        "time", "vicinity", "publication", "source" })
 @SuppressWarnings("unused")
 public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
 
@@ -36,17 +36,14 @@ public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
     String otherCategories;
     String time;
     String vicinity;
-    String note;
     String publication;
     String source;
-    String prohibition;
-    String signals;
 
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
         return ILocalizedDesc.fieldsDefined(title, otherCategories,
-                time, vicinity, note, publication, source, prohibition, signals);
+                time, vicinity, publication, source );
     }
 
     /** {@inheritDoc} */
@@ -57,11 +54,8 @@ public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
         this.otherCategories = desc.getOtherCategories();
         this.time = desc.getTime();
         this.vicinity = desc.getVicinity();
-        this.note = desc.getNote();
         this.publication = desc.getPublication();
         this.source = desc.getSource();
-        this.prohibition = desc.getProhibition();
-        this.signals = desc.getSignals();
     }
 
     /*************************/
@@ -111,14 +105,6 @@ public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
         this.vicinity = vicinity;
     }
 
-    public String getNote() {
-        return note;
-    }
-
-    public void setNote(String note) {
-        this.note = note;
-    }
-
     public String getPublication() {
         return publication;
     }
@@ -133,21 +119,5 @@ public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
 
     public void setSource(String source) {
         this.source = source;
-    }
-
-    public String getProhibition() {
-        return prohibition;
-    }
-
-    public void setProhibition(String prohibition) {
-        this.prohibition = prohibition;
-    }
-
-    public String getSignals() {
-        return signals;
-    }
-
-    public void setSignals(String signals) {
-        this.signals = signals;
     }
 }

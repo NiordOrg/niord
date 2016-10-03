@@ -45,6 +45,7 @@ angular.module('niord.editor')
                 areas:          [ false ],
                 categories:     [ false ],
                 charts:         [ false ],
+                partType:       [],         // indexed by message part
                 positions:      [],         // indexed by message part
                 subject:        [],         // indexed by message part
                 description:    [],         // indexed by message part
@@ -588,6 +589,7 @@ angular.module('niord.editor')
                 var startCoordIndex = 1;
                 angular.forEach($scope.message.parts, function (part, index) {
                     part.index = index;
+                    part.type = part.type || 'DETAILS';
                     LangService.checkDescs(part, initMessagePartDescField, undefined, $rootScope.modelLanguages);
 
                     // Instantiate the message part geometry
@@ -609,12 +611,15 @@ angular.module('niord.editor')
                 var parts = $scope.message.parts;
                 index = Math.min(parts.length, index + 1);
                 parts.splice(index, 0, {
+                    type: 'DETAILS',
                     descs: []
                 });
                 // Keep edit mode flags in sync
+                $scope.editMode['partType'].splice(index, 0, false);
                 $scope.editMode['positions'].splice(index, 0, false);
                 $scope.editMode['subject'].splice(index, 0, false);
                 $scope.editMode['description'].splice(index, 0, false);
+                $scope.editMode['partType'][index] = true;
                 $scope.initMessageParts();
                 $scope.setDirty();
             };
@@ -626,6 +631,7 @@ angular.module('niord.editor')
                 if (index < parts.length) {
                     parts.splice(index, 1);
                     // Keep edit mode flags in sync
+                    $scope.editMode['partType'].splice(index, 1);
                     $scope.editMode['positions'].splice(index, 1);
                     $scope.editMode['subject'].splice(index, 1);
                     $scope.editMode['description'].splice(index, 1);

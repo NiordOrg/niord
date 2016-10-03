@@ -427,10 +427,38 @@
 
 
                 <!-- ********************* -->
+                <!-- ** Part Type       ** -->
+                <!-- ********************* -->
+                <editor-field edit-mode="editMode" index="part.index" field-id="partType" field-title="msg.field.part_type"
+                              tab-index="1000 + part.index * 10">
+                    <editor-field-value-viewer>
+                        {{'msg.field.' + part.type.toLowerCase() | translate}}
+                    </editor-field-value-viewer>
+
+                    <editor-field-value-editor value-class="col-sm-12">
+                        <div class="row">
+                            <div class="col-sm-12 btn-group">
+                                <button class="btn btn-default btn-sm" ng-model="part.type" uib-btn-radio="'DETAILS'"
+                                        tabindex="{{1001 + part.index * 10}}" translate>msg.field.details</button>
+                                <button class="btn btn-default btn-sm" ng-model="part.type" uib-btn-radio="'NOTE'"
+                                        tabindex="{{1001 + part.index * 10}}" translate>msg.field.note</button>
+                                <button ng-if="showField('prohibition')" class="btn btn-default btn-sm" ng-model="part.type" uib-btn-radio="'PROHIBITION'"
+                                        tabindex="{{1001 + part.index * 10}}" translate>msg.field.prohibition</button>
+                                <button ng-if="showField('signals')"class="btn btn-default btn-sm" ng-model="part.type" uib-btn-radio="'SIGNALS'"
+                                        tabindex="{{1001 + part.index * 10}}" translate>msg.field.signals</button>
+                            </div>
+                        </div>
+                    </editor-field-value-editor>
+
+                </editor-field>
+
+
+                <!-- ********************* -->
                 <!-- ** Positions       ** -->
                 <!-- ********************* -->
-                <editor-field edit-mode="editMode" index="part.index" field-id="positions" field-title="msg.field.positions"
-                              tab-index="1000 + part.index * 10">
+                <editor-field ng-if="part.type == 'DETAILS' || part.type == 'SIGNALS'"
+                              edit-mode="editMode" index="part.index" field-id="positions" field-title="msg.field.positions"
+                              tab-index="1002 + part.index * 10">
 
                     <editor-field-value-viewer>
                         <div ng-if="part.serializedCoordinates.length > 0">
@@ -459,7 +487,7 @@
                             <div class="col-sm-12">
                                 <gj-editor id="position-editor"
                                            class="editor-locations"
-                                           tab-index="1001 + part.index * 10"
+                                           tab-index="1003 + part.index * 10"
                                            edit-type="message"
                                            feature-collection="part.geometry"
                                            show-wms-layer="true"
@@ -474,8 +502,9 @@
                 <!-- ********************* -->
                 <!-- ** Subject         ** -->
                 <!-- ********************* -->
-                <editor-field edit-mode="editMode" index="part.index" field-id="subject" field-title="msg.field.subject"
-                              tab-index="1002 + part.index * 10">
+                <editor-field ng-if="part.type == 'DETAILS'"
+                              edit-mode="editMode" index="part.index" field-id="subject" field-title="msg.field.subject"
+                              tab-index="1004 + part.index * 10">
                     <editor-field-value-viewer>
                         <div ng-if="part.descs.length > 0">
                             {{part.descs[0].subject}}
@@ -486,7 +515,7 @@
                         <div class="row">
                             <div class="col-sm-12 col-md-6" ng-repeat="desc in part.descs">
                                 <input class="form-control input-sm" placeholder="Subject" type="text"
-                                       tabindex="{{1003 + part.index * 10}}"
+                                       tabindex="{{1005 + part.index * 10}}"
                                        autocapitalize="off" autocorrect="off" autocomplete="off"
                                        ng-model="desc.subject" bg-flag="desc.lang"
                                        ng-change="adjustEditableMessage()"
@@ -499,10 +528,10 @@
 
 
                 <!-- ********************* -->
-                <!-- ** Description     ** -->
+                <!-- ** Details         ** -->
                 <!-- ********************* -->
-                <editor-field edit-mode="editMode" index="part.index" field-id="description" field-title="msg.field.details"
-                              tab-index="1004 + part.index * 10">
+                <editor-field edit-mode="editMode" index="part.index" field-id="description" field-title="msg.field.{{part.type | lowercase}}"
+                              tab-index="1006 + part.index * 10">
 
                     <editor-field-value-viewer>
                         <div class="message-description" ng-if="part.descs.length > 0" ng-bind-html="part.descs[0].details | toTrusted"></div>
@@ -512,7 +541,7 @@
                         <div class="row" style="margin-top: 10px">
                             <div class="col-sm-12 col-md-6" ng-repeat="desc in part.descs"  id="tinymce-{{part.index}}-{{desc.lang}}">
                                 <textarea class="editor-description" ui-tinymce="tinymceOptions"
-                                          tabindex="{{1005 + part.index * 10}}"
+                                          tabindex="{{1007 + part.index * 10}}"
                                           ng-model="desc.details" bg-flag="desc.lang"></textarea>
                                 <flag lang="desc.lang" class="editor-description-flag"></flag>
                             </div>
@@ -608,80 +637,6 @@
                                     </td>
                                 </tr>
                             </table>
-                        </div>
-                    </div>
-                </editor-field-value-editor>
-
-            </editor-field>
-
-
-            <!-- ********************* -->
-            <!-- ** Prohibition     ** -->
-            <!-- ********************* -->
-            <editor-field ng-if="showField('prohibition')" edit-mode="editMode" field-id="prohibition" field-title="msg.field.prohibition"
-                          tab-index="1300">
-
-                <editor-field-value-viewer>
-                    <div ng-if="message.descs.length > 0">
-                        {{message.descs[0].prohibition}}
-                    </div>
-                </editor-field-value-viewer>
-
-                <editor-field-value-editor value-class="col-sm-12">
-                    <div class="row">
-                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
-                            <input class="form-control input-sm" placeholder="Prohibition" type="text"
-                                   tabindex="1301"
-                                   autocapitalize="off" autocorrect="off" autocomplete="off"
-                                   ng-model="desc.prohibition" bg-flag="desc.lang"/>
-                        </div>
-                    </div>
-                </editor-field-value-editor>
-
-            </editor-field>
-
-
-            <!-- ********************* -->
-            <!-- ** Signals         ** -->
-            <!-- ********************* -->
-            <editor-field ng-if="showField('signals')" edit-mode="editMode" field-id="signals" field-title="msg.field.signals"
-                          tab-index="1400">
-
-                <editor-field-value-viewer>
-                    <div ng-if="message.descs.length > 0" ng-bind-html="message.descs[0].signals | plain2html"></div>
-                </editor-field-value-viewer>
-
-                <editor-field-value-editor value-class="col-sm-12">
-                    <div class="row">
-                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
-                            <textarea rows="3" class="form-control input-sm" placeholder="Signals" type="text"
-                                      tabindex="1401"
-                                      autocapitalize="off" autocorrect="off" autocomplete="off"
-                                      ng-model="desc.signals" bg-flag="desc.lang"></textarea>
-                        </div>
-                    </div>
-                </editor-field-value-editor>
-
-            </editor-field>
-
-
-            <!-- ********************* -->
-            <!-- ** Note            ** -->
-            <!-- ********************* -->
-            <editor-field ng-if="showField('note')" edit-mode="editMode" field-id="note" field-title="msg.field.note"
-                          tab-index="1500">
-
-                <editor-field-value-viewer>
-                    <div ng-if="message.descs.length > 0" ng-bind-html="message.descs[0].note | plain2html"></div>
-                </editor-field-value-viewer>
-
-                <editor-field-value-editor value-class="col-sm-12">
-                    <div class="row">
-                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
-                            <textarea rows="3" class="form-control input-sm" placeholder="Note" type="text"
-                                      tabindex="1501"
-                                   autocapitalize="off" autocorrect="off" autocomplete="off"
-                                   ng-model="desc.note" bg-flag="desc.lang"></textarea>
                         </div>
                     </div>
                 </editor-field-value-editor>

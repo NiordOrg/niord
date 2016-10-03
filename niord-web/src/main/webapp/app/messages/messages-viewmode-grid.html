@@ -30,7 +30,9 @@
                              ng-if="message.descs[0].time || (message.dateIntervals && message.dateIntervals.length > 0)">
                             <small><i class="glyphicon glyphicon-time"></i> <render-message-dates msg="message"/></small>
                         </div>
-                        <render-message-part class="message-description" msg="message" subject="false"></render-message-part>
+                        <div ng-if="message.parts" ng-repeat="part in message.parts">
+                            <render-message-part class="message-description" part="part" subject="false"></render-message-part>
+                        </div>
                     </div>
                 </div>
                 <span class="select-btn" ng-click="toggleSelectMessage(message)" ng-class="{'message-selected' : isSelected(message)}">

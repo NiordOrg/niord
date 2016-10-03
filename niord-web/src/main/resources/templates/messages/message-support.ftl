@@ -284,20 +284,18 @@
 
         <!-- Details line -->
         <#if msg.parts?has_content>
-            <tr>
-                <td class="field-name">${text("msg.field.details")}</td>
-                <td class="field-value message-description">
-                    <#if msg.parts?size == 1>
-                        <@renderMessagePart part=msg.parts[0]/>
-                    <#else>
-                        <ul>
-                           <#list msg.parts as part>
-                                <li><@renderMessagePart part=part/></li>
-                           </#list>
-                        </ul>
-                    </#if>
-                </td>
-            </tr>
+            <#list msg.parts as part>
+                <tr>
+                    <td class="field-name">
+                        <#if part?is_first || part.type != msg.parts[part?index - 1].type>
+                            ${text("msg.field." + part.type?lower_case)}
+                        </#if>
+                    </td>
+                    <td class="field-value message-description">
+                        <@renderMessagePart part=part/>
+                    </td>
+                </tr>
+            </#list>
         </#if>
 
         <!-- Prohibition line -->
