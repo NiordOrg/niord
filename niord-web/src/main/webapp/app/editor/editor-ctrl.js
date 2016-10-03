@@ -639,25 +639,22 @@ angular.module('niord.editor')
             };
 
 
-            /** Updates the message part sort order **/
-            $scope.updateMessagePartOrder = function (evt) {
-                if (evt.newIndex == evt.oldIndex) {
-                    return;
+            /** Moves the given message part up or down **/
+            $scope.moveMessagePart = function (index, moveUp) {
+                var parts = $scope.message.parts;
+                var toIndex = moveUp ? index - 1 : index + 1;
+                if (toIndex >= 0 && toIndex < parts.length) {
+                    // Swap message part order
+                    var tmp = parts[index];
+                    parts[index] = parts[toIndex];
+                    parts[toIndex] = tmp;
+
+                    // Reassign part indexes
+                    $scope.initMessageParts();
+                    // Update message title, etc.
+                    $scope.adjustEditableMessage();
+                    $scope.setDirty();
                 }
-
-                // Reassign part indexes
-                $scope.initMessageParts();
-                // Update message title, etc.
-                $scope.adjustEditableMessage();
-                $scope.setDirty();
-            };
-
-
-            /** Message part DnD configuration **/
-            $scope.messagesPartSortableCfg = {
-                group: 'part',
-                handle: '.move-btn',
-                onEnd: $scope.updateMessagePartOrder
             };
 
 
