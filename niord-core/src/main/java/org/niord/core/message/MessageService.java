@@ -863,7 +863,7 @@ public class MessageService extends BaseService {
 
             if (param.getIncludeGeneral() != null && param.getIncludeGeneral().booleanValue()) {
                 // search for message with no geometry in addition to messages within extent
-                criteriaHelper.add(builder.or(builder.isNull(partRoot.get("geometry")), geomPredicate));
+                criteriaHelper.add(builder.or(builder.equal(msgRoot.get("hasGeometry"), false), geomPredicate));
             } else {
                 // Only search for messages within extent
                 criteriaHelper.add(geomPredicate);

@@ -193,6 +193,8 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     // Indicates if the title should automatically be updated from the message area, subject and vicinity fields.
     boolean autoTitle;
 
+    boolean hasGeometry;
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "message", orphanRemoval = true)
     @OrderColumn(name = "indexNo")
     List<Attachment> attachments = new ArrayList<>();
@@ -396,6 +398,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
         // Update the message title
         updateMessageTitle();
+
+        // Update the has-geometry flag
+        hasGeometry = parts.stream().anyMatch(p -> p.getGeometry() != null);
     }
 
 
@@ -806,6 +811,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setParts(List<MessagePart> parts) {
         this.parts = parts;
+    }
+
+    public boolean getHasGeometry() {
+        return hasGeometry;
+    }
+
+    public void setHasGeometry(boolean hasGeometry) {
+        this.hasGeometry = hasGeometry;
     }
 
     public List<Attachment> getAttachments() {
