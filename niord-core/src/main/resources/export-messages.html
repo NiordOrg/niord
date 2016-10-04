@@ -84,14 +84,18 @@
                         var geoJsonFormat = new ol.format.GeoJSON();
 
                         angular.forEach(messageExport.messages, function (message) {
-                            if (message.geometry && message.geometry.features.length > 0) {
+                            if (message.parts && message.parts.length > 0) {
+                                angular.forEach(message.parts, function (part) {
+                                    if (part.geometry && part.geometry.features.length > 0) {
 
-                                angular.forEach(message.geometry.features, function (feature) {
-                                    var olFeature = geoJsonFormat.readFeature(feature, {
-                                        dataProjection: proj4326,
-                                        featureProjection: projMercator
-                                    });
-                                    olLayer.getSource().addFeature(olFeature);
+                                        angular.forEach(part.geometry.features, function (feature) {
+                                            var olFeature = geoJsonFormat.readFeature(feature, {
+                                                dataProjection: proj4326,
+                                                featureProjection: projMercator
+                                            });
+                                            olLayer.getSource().addFeature(olFeature);
+                                        });
+                                    }
                                 });
                             }
                             map.getView().fit(olLayer.getSource().getExtent(), map.getSize(), {
@@ -102,28 +106,6 @@
                     }
                     $timeout(generateFeatures, 100);
 
-
-                    messageExport.getTime = function (msg) {
-                        if (msg.descs && msg.descs.length > 0 && msg.descs[0].time) {
-                            return msg.descs[0].time;
-                        } else if (msg.dateIntervals) {
-                            var time = '';
-                            angular.forEach(msg.dateIntervals, function (di) {
-                                if (di.fromDate) {
-                                    time += new Date(di.fromDate);
-                                }
-                                if (di.toDate) {
-                                    if (time.length > 0) {
-                                        time += " - ";
-                                    }
-                                    time += new Date(di.toDate);
-                                }
-                            });
-                            return time;
-                        } else {
-                            return '';
-                        }
-                    }
                 });
     </script>
     <style>
@@ -196,28 +178,14 @@
             </div>
         </div>
 
-        <!-- Time line -->
-        <div class="row" ng-if="true">
-            <div class="col-xs-2 col-sm-1 message-details-item-field">Time</div>
-            <div class="col-xs-10 col-sm-11 message-details-item-value">
-                {{messageExport.getTime(msg)}}
-            </div>
-        </div>
-
         <!-- Details line -->
-        <div class="row" ng-if="msg.parts && msg.parts.length > 0">
-            <div class="col-xs-2 col-sm-1 message-details-item-field">Details</div>
+        <div class="row" ng-if="msg.parts && msg.parts.length > 0" ng-repeat="part in msg.parts">
+            <div class="col-xs-2 col-sm-1 message-details-item-field">{{part.type | lowercase}}</div>
             <div class="col-xs-10 col-sm-11 message-details-item-value">
-                <div ng-if="msg.parts.length == 1 && msg.parts[0].descs">
-                    <p ng-if="subject && msg.parts[0].descs[0].subject"><strong>{{msg.parts[0].descs[0].subject}}</strong></p>
-                    <div ng-if="msg.parts[0].descs[0].details" ng-bind-html="msg.parts[0].descs[0].details"></div>
+                <div ng-if="part.descs && part.descs[0].subject">
+                    <strong>{{part.descs[0].subject}}</strong>
                 </div>
-                <ul ng-if="msg.parts.length > 1">
-                    <li ng-repeat="part in msg.parts" ng-if="part.descs">
-                        <p ng-if="subject && part.descs[0].subject"><strong>{{part.descs[0].subject}}</strong></p>
-                        <div ng-if="part.descs[0].details" ng-bind-html="part.descs[0].details"></div>
-                    </li>
-                </ul>
+                <div ng-if="part.descs && part.descs[0].details" ng-bind-html="part.descs[0].details"></div>
             </div>
         </div>
 
@@ -231,12 +199,6 @@
             </div>
         </div>
 
-        <!-- Note line -->
-        <div class="row" ng-if="msg.descs && msg.descs.length > 0 && msg.descs[0].note">
-            <div class="col-xs-2 col-sm-1 message-details-item-field">Note</div>
-            <div class="col-xs-10 col-sm-11 message-details-item-value">{{msg.descs[0].note}}</div>
-        </div>
-
         <!-- Charts line -->
         <div class="row" ng-if="msg.charts.length > 0">
             <div class="col-xs-2 col-sm-1 message-details-item-field">Charts</div>
@@ -244,12 +206,6 @@
             <span ng-repeat="chart in msg.charts"><span ng-if="!$first">, </span>{{chart.chartNumber}}
                 <span ng-if="chart.internationalNumber">(INT {{chart.internationalNumber}})</span></span>
             </div>
-        </div>
-
-        <!-- Publication line -->
-        <div class="row" ng-if="msg.descs && msg.descs.length > 0 && msg.descs[0].publication">
-            <div class="col-xs-2 col-sm-1 message-details-item-field">Publication</div>
-            <div class="col-xs-10 col-sm-11 message-details-item-value">{{msg.descs[0].publication}}</div>
         </div>
 
         <!-- Source line -->

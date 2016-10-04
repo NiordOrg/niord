@@ -185,7 +185,7 @@ public class MessageSearchRestService {
 
         DataFilter filter = ("map".equalsIgnoreCase(params.getViewMode()))
                 ? DataFilter.get().lang(params.getLanguage()).fields("Message.geometry", "MessageDesc.title")
-                : DataFilter.get().lang(params.getLanguage()).fields("Message.details", "Area.parent", "Category.parent");
+                : DataFilter.get().lang(params.getLanguage()).fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
 
         return searchResult.map(m -> m.toVo(filter));
     }
