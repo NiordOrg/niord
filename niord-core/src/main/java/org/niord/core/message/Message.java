@@ -49,7 +49,6 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -90,10 +89,12 @@ import java.util.stream.Collectors;
                 query="select distinct msg from Message msg join msg.references ref where "
                         + " lower(ref.messageId) in (:messageIds)"),
         @NamedQuery(name="Message.findPublishableMessages",
-                query="SELECT msg FROM Message msg where msg.status = 'VERIFIED' and msg.publishDate < :now"),
+                query="SELECT msg FROM Message msg where msg.status = 'VERIFIED' and msg.publishDateFrom < :now"),
+        @NamedQuery(name="Message.findExpirableMessages",
+                query="SELECT msg FROM Message msg where msg.status = 'PUBLISHED' and msg.publishDateTo < :now"),
         @NamedQuery(name="Message.maxNumberInPeriod",
                 query="SELECT coalesce(max(msg.number), 0) FROM Message msg where msg.messageSeries = :series and "
-                        + " msg.publishDate between :fromDate and :toDate and msg.number is not null")
+                        + " msg.publishDateFrom between :fromDate and :toDate and msg.number is not null")
 })
 @SuppressWarnings("unused")
 public class Message extends VersionedEntity<Integer> implements ILocalizable<MessageDesc> {
@@ -156,21 +157,17 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     // Computed from dateInterval
     @Temporal(TemporalType.TIMESTAMP)
-    Date startDate;
+    Date eventDateFrom;
 
     // Computed from dateInterval
     @Temporal(TemporalType.TIMESTAMP)
-    Date endDate;
+    Date eventDateTo;
 
     @Temporal(TemporalType.TIMESTAMP)
-    Date publishDate;
+    Date publishDateFrom;
 
     @Temporal(TemporalType.TIMESTAMP)
-    Date unpublishDate;
-
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "message", orphanRemoval = true)
-    @OrderColumn(name = "indexNo")
-    List<DateInterval> dateIntervals = new ArrayList<>();
+    Date publishDateTo;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "message", orphanRemoval = true)
     @OrderColumn(name = "indexNo")
@@ -261,13 +258,8 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             message.getCharts().forEach(c -> charts.add(new Chart(c)));
         }
         this.horizontalDatum = message.getHorizontalDatum();
-        this.dateIntervals.clear();
-        if (message.getDateIntervals() != null) {
-            message.getDateIntervals().stream()
-                .filter(di -> di.getFromDate() != null || di.getToDate() != null)
-                .forEach(di -> addDateInterval(new DateInterval(di)));
-        }
-        this.publishDate = message.getPublishDate();
+        this.publishDateFrom = message.getPublishDateFrom();
+        this.publishDateTo = message.getPublishDateTo();
         this.references.clear();
         if (message.getReferences() != null) {
             message.getReferences().stream()
@@ -294,7 +286,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             this.autoTitle = editableMessage.isAutoTitle() != null && editableMessage.isAutoTitle();
         }
 
-        updateDateIntervals();
+        updateEventDateInterval();
     }
 
 
@@ -323,8 +315,8 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             categories.forEach(c -> message.checkCreateCategories().add(c.toVo(filter)));
             charts.forEach(c -> message.checkCreateCharts().add(c.toVo(filter)));
             message.setHorizontalDatum(horizontalDatum);
-            dateIntervals.forEach(d -> message.checkCreateDateIntervals().add(d.toVo()));
-            message.setPublishDate(publishDate);
+            message.setPublishDateFrom(publishDateFrom);
+            message.setPublishDateTo(publishDateTo);
             references.forEach(r -> message.checkCreateReferences().add(r.toVo(filter)));
             message.checkCreateAtonUids().addAll(atonUids);
             message.setOriginalInformation(originalInformation);
@@ -396,7 +388,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         references.removeIf(r -> StringUtils.isBlank(r.getMessageId()));
 
         // Updates the start and end dates from the date intervals
-        updateDateIntervals();
+        updateEventDateInterval();
 
         // Update the message title
         updateMessageTitle();
@@ -406,25 +398,19 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     }
 
 
-    /** Updates the date intervals **/
-    public void updateDateIntervals() {
-        // First, remove all date intervals without a fromDate or a toDate
-        dateIntervals.removeIf(di -> di.fromDate == null && di.toDate == null);
+    /** Compute the total event date interval **/
+    public void updateEventDateInterval() {
+        // Update event date intervals
+        eventDateFrom = eventDateTo = null;
 
-        // Check the validity of the date intervals
-        dateIntervals.forEach(DateInterval::checkDateInterval);
-
-        // Sort the date interval
-        Collections.sort(dateIntervals);
-
-        // Update start and endDate from the data intervals
-        startDate = endDate = null;
-        dateIntervals.forEach(di -> {
-            if (startDate == null || startDate.after(di.getFromDate())) {
-                startDate = di.getFromDate();
+        parts.stream()
+                .flatMap(p -> p.getEventDates().stream())
+                .forEach(di -> {
+            if (eventDateFrom == null || eventDateFrom.after(di.getFromDate())) {
+                eventDateFrom = di.getFromDate();
             }
-            if (endDate == null || (di.getToDate() != null && endDate.before(di.getToDate()))) {
-                endDate = di.getToDate();
+            if (eventDateTo == null || (di.getToDate() != null && eventDateTo.before(di.getToDate()))) {
+                eventDateTo = di.getToDate();
             }
         });
     }
@@ -571,13 +557,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         reference.setMessage(this);
         references.add(reference);
         return reference;
-    }
-
-    /** Adds a date interval to this message */
-    public DateInterval addDateInterval(DateInterval dateInterval) {
-        dateInterval.setMessage(this);
-        dateIntervals.add(dateInterval);
-        return dateInterval;
     }
 
     /** Adds an attachment to this message */
@@ -729,44 +708,36 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         this.horizontalDatum = horizontalDatum;
     }
 
-    public Date getStartDate() {
-        return startDate;
+    public Date getEventDateFrom() {
+        return eventDateFrom;
     }
 
-    public void setStartDate(Date startDate) {
-        this.startDate = startDate;
+    public void setEventDateFrom(Date eventDateFrom) {
+        this.eventDateFrom = eventDateFrom;
     }
 
-    public Date getEndDate() {
-        return endDate;
+    public Date getEventDateTo() {
+        return eventDateTo;
     }
 
-    public void setEndDate(Date endDate) {
-        this.endDate = endDate;
+    public void setEventDateTo(Date eventDateTo) {
+        this.eventDateTo = eventDateTo;
     }
 
-    public Date getPublishDate() {
-        return publishDate;
+    public Date getPublishDateFrom() {
+        return publishDateFrom;
     }
 
-    public void setPublishDate(Date publishDate) {
-        this.publishDate = publishDate;
+    public void setPublishDateFrom(Date publishDateFrom) {
+        this.publishDateFrom = publishDateFrom;
     }
 
-    public Date getUnpublishDate() {
-        return unpublishDate;
+    public Date getPublishDateTo() {
+        return publishDateTo;
     }
 
-    public void setUnpublishDate(Date unpublishDate) {
-        this.unpublishDate = unpublishDate;
-    }
-
-    public List<DateInterval> getDateIntervals() {
-        return dateIntervals;
-    }
-
-    public void setDateIntervals(List<DateInterval> dateIntervals) {
-        this.dateIntervals = dateIntervals;
+    public void setPublishDateTo(Date publishDateTo) {
+        this.publishDateTo = publishDateTo;
     }
 
     public List<Reference> getReferences() {

@@ -135,7 +135,7 @@ angular.module('niord.messages')
 
 
     /****************************************************************
-     * Prints the message date interval
+     * Prints the event dates of all message parts
      ****************************************************************/
     .directive('renderMessageDates', ['$rootScope', 'DateIntervalService', function ($rootScope, DateIntervalService) {
         return {
@@ -149,13 +149,13 @@ angular.module('niord.messages')
                 scope.updateTime = function () {
                     var lang = $rootScope.language;
                     var time = '';
-                    var desc = scope.msg && scope.msg.descs ? scope.msg.descs[0] : null;
                     // First check for a textual time description
-                    if (desc && desc.time) {
-                        time = desc.time.replace(/\n/g, "<br>");
-                    } else if (scope.msg.dateIntervals && scope.msg.dateIntervals.length > 0) {
-                        for (var x = 0; x < scope.msg.dateIntervals.length; x++) {
-                            time += DateIntervalService.translateDateInterval(lang, scope.msg.dateIntervals[x]) + "<br>";
+                    if (scope.msg.parts && scope.msg.parts.length > 0) {
+                        for (var p = 0; p < scope.msg.parts.length; p++) {
+                            var eventDates = scope.msg.parts[p].eventDates;
+                            for (var x = 0; eventDates && x < eventDates.length; x++) {
+                                time += DateIntervalService.translateDateInterval(lang, eventDates[x]) + "<br>";
+                            }
                         }
                     }
                     time = time.replace(/<br>$/g, '');
@@ -172,6 +172,35 @@ angular.module('niord.messages')
                 };
 
                 scope.$watch("msg", scope.updateTime);
+            }
+        };
+    }])
+
+
+    /****************************************************************
+     * Prints the message part event dates
+     ****************************************************************/
+    .directive('renderEventDates', ['$rootScope', 'DateIntervalService', function ($rootScope, DateIntervalService) {
+        return {
+            restrict: 'E',
+            scope: {
+                part: "="
+            },
+            link: function(scope, element) {
+
+                scope.updateTime = function () {
+                    var lang = $rootScope.language;
+                    var time = '';
+                    if (scope.part.eventDates && scope.part.eventDates.length > 0) {
+                        for (var x = 0; x < scope.part.eventDates.length; x++) {
+                            time += DateIntervalService.translateDateInterval(lang, scope.part.eventDates[x]) + "<br>";
+                        }
+                    }
+                    time = time.replace(/<br>$/g, '');
+                    element.html(time);
+                };
+
+                scope.$watch("part", scope.updateTime);
             }
         };
     }])

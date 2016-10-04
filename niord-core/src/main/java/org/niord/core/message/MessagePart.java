@@ -33,6 +33,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
+import javax.persistence.OrderColumn;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +55,10 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
     @NotNull
     @Enumerated(EnumType.STRING)
     MessagePartType type = MessagePartType.DETAILS;
+
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "messagePart", orphanRemoval = true)
+    @OrderColumn(name = "indexNo")
+    List<DateInterval> eventDates = new ArrayList<>();
 
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     FeatureCollection geometry;
@@ -91,6 +96,13 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
 
         // NB: indexNo automatically assigned
         this.type = part.getType();
+        if (part.getEventDates() != null) {
+            part.getEventDates().stream()
+                    .map(DateInterval::new)
+                    .filter(DateInterval::dateIntervalDefined)
+                    .sorted()
+                    .forEach(this::addEventDates);
+        }
         if (part.getGeometry() != null) {
             this.geometry = FeatureCollection.fromGeoJson(part.getGeometry());
         }
@@ -113,6 +125,13 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
 
         this.indexNo = part.getIndexNo();
         this.type = part.getType();
+        this.eventDates.clear();
+        if (part.getEventDates() != null) {
+            part.getEventDates().stream()
+                    .filter(DateInterval::dateIntervalDefined)
+                    .sorted()
+                    .forEach(di -> addEventDates(new DateInterval(di.toVo())));
+        }
         copyDescsAndRemoveBlanks(part.getDescs());
     }
 
@@ -124,6 +143,7 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
 
         part.setType(type);
         if (compFilter.includeDetails()) {
+            eventDates.forEach(d  -> part.checkCreateEventDates().add(d.toVo()));
             getDescs(compFilter).forEach(desc -> part.checkCreateDescs().add(desc.toVo(compFilter)));
         }
         if (compFilter.includeGeometry() && geometry != null) {
@@ -143,8 +163,9 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
 
     /** Returns if the message part contains any data **/
     public boolean partDefined() {
+        eventDates.removeIf(d -> !d.dateIntervalDefined());
         descs.removeIf(d -> !d.descDefined());
-        return !descs.isEmpty() || geometry != null;
+        return !eventDates.isEmpty() || !descs.isEmpty() || geometry != null;
     }
 
 
@@ -161,12 +182,19 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
     }
 
 
-    /** Adds a description entity to this message */
+    /** Adds a description entity to this message part */
     public void addDesc(MessagePartDesc desc) {
         desc.setEntity(this);
         descs.add(desc);
     }
 
+
+    /** Adds a date interval to the event dates */
+    public DateInterval addEventDates(DateInterval dateInterval) {
+        dateInterval.setMessagePart(this);
+        eventDates.add(dateInterval);
+        return dateInterval;
+    }
 
     /*************************/
     /** Getters and Setters **/
@@ -196,6 +224,14 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
     @Override
     public void setIndexNo(int indexNo) {
         this.indexNo = indexNo;
+    }
+
+    public List<DateInterval> getEventDates() {
+        return eventDates;
+    }
+
+    public void setEventDates(List<DateInterval> eventDates) {
+        this.eventDates = eventDates;
     }
 
     public FeatureCollection getGeometry() {

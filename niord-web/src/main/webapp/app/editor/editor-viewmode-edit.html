@@ -257,87 +257,30 @@
 
 
             <!-- ********************* -->
-            <!-- ** Time            ** -->
+            <!-- ** Publish Date    ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="time" field-title="msg.field.time" field-valid="fieldValid(fieldId)"
+            <editor-field edit-mode="editMode" field-id="publish_date" field-title="msg.field.publish_date" field-valid="fieldValid(fieldId)"
                           tab-index="600">
 
                 <editor-field-value-viewer>
-                    <div ng-if="message.publishDate && (message.status == 'DRAFT' || message.status == 'VERIFIED')">
-                        Publish: {{message.publishDate | formatDate : 'lll z'}}
+                    <div ng-if="message.publishDateFrom">
+                        <span ng-if="message.publishDateFrom">{{message.publishDateFrom | formatDate : 'lll z'}}</span>
+                        <span ng-if="message.publishDateFrom || message.publishDateTo">&nbsp;-&nbsp;</span>
+                        <span ng-if="message.publishDateTo">{{message.publishDateTo | formatDate : 'lll z'}}</span>
                     </div>
-                    <render-message-dates msg="message"></render-message-dates>
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">
-                    <div class="row" style="margin-bottom: 25px;"
-                         ng-if="message.status == 'DRAFT' || message.status == 'VERIFIED'">
-                        <div class="col-sm-4 col-md-4 col-lg-2 editor-date-label">Publish Date</div>
-                        <div class="col-sm-8 col-md-4">
-                            <date-time-picker ng-model="message.publishDate" placeholder="Publish date" format="'lll z'"
+                    <div class="row">
+                        <div class="col-xs-6 col-sm-6 col-md-4">
+                            <date-time-picker ng-model="message.publishDateFrom" placeholder="Publish From" format="'lll z'"
+                                              readonly="message.status != 'DRAFT' && message.status != 'VERIFIED'"
                                               tab-index="601"></date-time-picker>
                         </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-sm-12 editor-date-label">Active Date Intervals</div>
-                    </div>
-                    <table class="table table-condensed editor-date-interval-table">
-                        <tr>
-                            <th>All-day</th>
-                            <th>Start</th>
-                            <th>End</th>
-                            <th>
-                                <div class="pull-right">
-                                    <button ng-click="addDateInterval()" class="btn btn-default btn-xs"
-                                        tabindex="602">
-                                        <span class="glyphicon glyphicon-plus"></span> Add
-                                    </button>
-                                </div>
-                            </th>
-                        </tr>
-                        <tr ng-repeat="di in message.dateIntervals">
-                            <td width="60" style="padding-top: 10px" align="center">
-                                <input type="checkbox" ng-model="di.allDay"
-                                        tabindex="{{604 + $index * 5}}">
-                            </td>
-                            <td width="220">
-                                <date-time-picker ng-model="di.fromDate" placeholder="From date"
-                                                  tab-index="605 + $index * 5"
-                                                  time="di.allDay ? '00:00:00' : undefined" format="di.allDay ? 'll' : 'lll z'"></date-time-picker>
-                            </td>
-                            <td width="220">
-                                <date-time-picker ng-model="di.toDate" placeholder="To date"
-                                                  tab-index="606 + $index * 5"
-                                                  time="di.allDay ? '23:59:59' : undefined" format="di.allDay ? 'll' : 'lll z'"></date-time-picker>
-                            </td>
-                            <td width="*" style="padding-top: 12px" nowrap>
-                                <a href ng-click="deleteDateInterval(di);" title="Delete Interval"><span class="glyphicon glyphicon-trash"></span></a>
-                                &nbsp;
-                                <a href ng-click="copyDateInterval(di, 0);" title="Duplicate Interval"><span class="glyphicon glyphicon-duplicate"></span></a>
-                                &nbsp;
-                                <a href ng-click="copyDateInterval(di, 1);" title="Duplicate Interval + 1 day">
-                                    <span class="glyphicon glyphicon-duplicate">+</span></a>
-                            </td>
-                        </tr>
-                    </table>
-
-                    <div class="row" style="margin-top: 25px;">
-                        <div class="col-sm-12 editor-date-label">Alternative Textual Description</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-6 col-md-5" ng-repeat="desc in message.descs">
-                            <textarea class="form-control input-sm editor-time" placeholder="Time Description" rows="3"
-                                      tabindex="690"
-                                      ng-model="desc.time" bg-flag="desc.lang" ></textarea>
-                        </div>
-                        <div class="col-sm-2 col-md-1">
-                            <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown"
-                                    tabindex="691"
-                                    ng-click="generateTimeDesc()">
-                                <span class="glyphicon glyphicon-cog"></span>
-                                Generate
-                            </button>
+                        <div class="col-xs-6 col-sm-6 col-md-4">
+                            <date-time-picker ng-model="message.publishDateTo" placeholder="Publish To" format="'lll z'"
+                                              readonly="message.status != 'DRAFT' && message.status != 'VERIFIED'  && message.status != 'PUBLISHED'"
+                                              tab-index="601"></date-time-picker>
                         </div>
                     </div>
                 </editor-field-value-editor>
@@ -433,10 +376,10 @@
                             <i class="fa fa-file-text"></i>
                             <span translate>msg.field.details</span>
                         </span>
-                        <span ng-click="part.type = 'NOTE'"
-                              class="part-type-btn" ng-class="{'part-type-selected': part.type == 'NOTE'}">
-                            <i class="fa fa-sticky-note"></i>
-                            <span translate>msg.field.note</span>
+                        <span ng-click="part.type = 'TIME'"
+                              class="part-type-btn" ng-class="{'part-type-selected': part.type == 'TIME'}">
+                            <i class="fa fa-clock-o"></i>
+                            <span translate>msg.field.time</span>
                         </span>
                         <span ng-click="part.type = 'PROHIBITION'" ng-if="showPartType(part, 'prohibition')"
                               class="part-type-btn" ng-class="{'part-type-selected': part.type == 'PROHIBITION'}">
@@ -448,8 +391,76 @@
                             <i class="fa fa-flag"></i>
                             <span translate>msg.field.signals</span>
                         </span>
+                        <span ng-click="part.type = 'NOTE'"
+                              class="part-type-btn" ng-class="{'part-type-selected': part.type == 'NOTE'}">
+                            <i class="fa fa-sticky-note"></i>
+                            <span translate>msg.field.note</span>
+                        </span>
                     </div>
                 </div>
+
+
+                <!-- ********************* -->
+                <!-- ** Event dates     ** -->
+                <!-- ********************* -->
+                <editor-field ng-if="showPartEventDatesField(part)"
+                              edit-mode="editMode" index="part.index" field-id="event_dates" field-title="msg.field.event_dates" field-valid="fieldValid(fieldId)"
+                              tab-index="1002 + part.index * 20">
+
+                    <editor-field-value-viewer>
+                        <div ng-if="part.eventDates.length > 0">
+                            <span class="glyphicon glyphicon-time" style="color: darkgray"></span>
+                            <a href ng-if="part.showTime" ng-click="toggleShowTime(part)" class="clickable" translate>msg.hide_time</a>
+                            <a href ng-if="!part.showTime" ng-click="toggleShowTime(part)" class="clickable" translate>msg.show_time</a>
+                        </div>
+                        <div ng-if="part.showTime">
+                            <render-event-dates part="part"></render-event-dates>
+                        </div>
+                    </editor-field-value-viewer>
+
+                    <editor-field-value-editor value-class="col-sm-12">
+                        <table class="table table-condensed editor-date-interval-table">
+                            <tr>
+                                <th>All-day</th>
+                                <th>Start</th>
+                                <th>End</th>
+                                <th>
+                                    <div class="pull-right">
+                                        <button ng-click="addPartEventDate(part)" class="btn btn-default btn-xs"
+                                                tabindex="{{1003 + part.index * 20}}">
+                                            <span class="glyphicon glyphicon-plus"></span> Add
+                                        </button>
+                                    </div>
+                                </th>
+                            </tr>
+                            <tr ng-repeat="di in part.eventDates">
+                                <td width="60" style="padding-top: 10px" align="center">
+                                    <input type="checkbox" ng-model="di.allDay"
+                                           tabindex="{{1004 + part.index * 20}}">
+                                </td>
+                                <td width="220">
+                                    <date-time-picker ng-model="di.fromDate" placeholder="From date"
+                                                      tab-index="1004 + part.index * 20"
+                                                      time="di.allDay ? '00:00:00' : undefined" format="di.allDay ? 'll' : 'lll z'"></date-time-picker>
+                                </td>
+                                <td width="220">
+                                    <date-time-picker ng-model="di.toDate" placeholder="To date"
+                                                      tab-index="1004 + part.index * 20"
+                                                      time="di.allDay ? '23:59:59' : undefined" format="di.allDay ? 'll' : 'lll z'"></date-time-picker>
+                                </td>
+                                <td width="*" style="padding-top: 12px" nowrap>
+                                    <a href ng-click="deletePartEventDate(part, di);" title="Delete Interval"><span class="glyphicon glyphicon-trash"></span></a>
+                                    &nbsp;
+                                    <a href ng-click="copyPartEventDate(part, di, 0);" title="Duplicate Interval"><span class="glyphicon glyphicon-duplicate"></span></a>
+                                    &nbsp;
+                                    <a href ng-click="copyPartEventDate(part, di, 1);" title="Duplicate Interval + 1 day">
+                                        <span class="glyphicon glyphicon-duplicate">+</span></a>
+                                </td>
+                            </tr>
+                        </table>
+                    </editor-field-value-editor>
+
+                </editor-field>
 
 
                 <!-- ********************* -->
@@ -457,7 +468,7 @@
                 <!-- ********************* -->
                 <editor-field ng-if="showPartPositionField(part)"
                               edit-mode="editMode" index="part.index" field-id="positions" field-title="msg.field.positions"
-                              tab-index="1002 + part.index * 10">
+                              tab-index="1006 + part.index * 20">
 
                     <editor-field-value-viewer>
                         <div ng-if="part.serializedCoordinates.length > 0">
@@ -486,7 +497,7 @@
                             <div class="col-sm-12">
                                 <gj-editor id="position-editor"
                                            class="editor-locations"
-                                           tab-index="1003 + part.index * 10"
+                                           tab-index="1007 + part.index * 20"
                                            edit-type="message"
                                            feature-collection="part.geometry"
                                            show-wms-layer="true"
@@ -503,7 +514,7 @@
                 <!-- ********************* -->
                 <editor-field ng-if="part.type == 'DETAILS'"
                               edit-mode="editMode" index="part.index" field-id="subject" field-title="msg.field.subject"
-                              tab-index="1004 + part.index * 10">
+                              tab-index="1008 + part.index * 20">
                     <editor-field-value-viewer>
                         <div ng-if="part.descs.length > 0">
                             {{part.descs[0].subject}}
@@ -514,7 +525,7 @@
                         <div class="row">
                             <div class="col-sm-12 col-md-6" ng-repeat="desc in part.descs">
                                 <input class="form-control input-sm" placeholder="Subject" type="text"
-                                       tabindex="{{1005 + part.index * 10}}"
+                                       tabindex="{{1009 + part.index * 20}}"
                                        autocapitalize="off" autocorrect="off" autocomplete="off"
                                        ng-model="desc.subject" bg-flag="desc.lang"
                                        ng-change="adjustEditableMessage()"
@@ -530,7 +541,7 @@
                 <!-- ** Details         ** -->
                 <!-- ********************* -->
                 <editor-field edit-mode="editMode" index="part.index" field-id="description" field-title="msg.field.{{part.type | lowercase}}"
-                              tab-index="1006 + part.index * 10">
+                              tab-index="1010 + part.index * 20">
 
                     <editor-field-value-viewer>
                         <div class="message-description" ng-if="part.descs.length > 0" ng-bind-html="part.descs[0].details | toTrusted"></div>
@@ -540,7 +551,7 @@
                         <div class="row" style="margin-top: 10px">
                             <div class="col-sm-12 col-md-6" ng-repeat="desc in part.descs"  id="tinymce-{{part.index}}-{{desc.lang}}">
                                 <textarea class="editor-description" ui-tinymce="tinymceOptions"
-                                          tabindex="{{1007 + part.index * 10}}"
+                                          tabindex="{{1011 + part.index * 20}}"
                                           ng-model="desc.details" bg-flag="desc.lang"></textarea>
                                 <flag lang="desc.lang" class="editor-description-flag"></flag>
                             </div>

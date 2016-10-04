@@ -401,7 +401,7 @@ public class MessageRestService  {
         editMessage.setUpdated(null);
         editMessage.setVersion(null);
         editMessage.setNumber(null);
-        editMessage.setPublishDate(null);
+        editMessage.setPublishDateFrom(null);
         if (editMessage.getParts() != null) {
             editMessage.getParts()
                     .forEach(p -> p.setGeometry(featureService.copyFeatureCollection(p.getGeometry())));

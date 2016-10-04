@@ -41,10 +41,11 @@ angular.module('niord.editor')
                 id:             [ false ],
                 title:          [ false ],
                 references:     [ false ],
-                time:           [ false ],
+                publish_date:   [ false ],
                 areas:          [ false ],
                 categories:     [ false ],
                 charts:         [ false ],
+                event_dates:    [],         // indexed by message part
                 positions:      [],         // indexed by message part
                 subject:        [],         // indexed by message part
                 description:    [],         // indexed by message part
@@ -416,51 +417,6 @@ angular.module('niord.editor')
             };
 
 
-            /** Deletes the given date interval from the list of message date intervals **/
-            $scope.deleteDateInterval = function (dateInterval) {
-                if ($.inArray(dateInterval, $scope.message.dateIntervals) > -1) {
-                    $scope.message.dateIntervals.splice( $.inArray(dateInterval, $scope.message.dateIntervals), 1 );
-                    $scope.setDirty();
-                }
-            };
-
-
-            /** Adds a new date interval to the list of message date intervals */
-            $scope.addDateInterval = function () {
-                $scope.message.dateIntervals.push({ allDay: false, fromDate: undefined, toDate: undefined });
-            };
-
-
-            /** Adds a copy of the given date interval to the list with the given date offset */
-            $scope.copyDateInterval = function (dateInterval, offset) {
-                var di = angular.copy(dateInterval);
-                if (offset && offset > 0) {
-                    if (di.fromDate) {
-                        di.fromDate = moment(di.fromDate).add(1, "days").valueOf();
-                    }
-                    if (di.toDate) {
-                        di.toDate = moment(di.toDate).add(1, "days").valueOf();
-                    }
-                }
-                $scope.message.dateIntervals.push(di);
-            };
-
-
-            /** Generates textual versions of the current date intervals **/
-            $scope.generateTimeDesc = function () {
-                angular.forEach($scope.message.descs, function (desc) {
-                   desc.time = '';
-                    if ($scope.message.dateIntervals.length == 0) {
-                        desc.time = DateIntervalService.translateDateInterval(desc.lang, null);
-                    } else {
-                        angular.forEach($scope.message.dateIntervals, function (di) {
-                            desc.time += DateIntervalService.translateDateInterval(desc.lang, di) + '\n';
-                        });
-                    }
-                });
-            };
-
-
             /** Computes the charts intersecting with the current message geometry **/
             $scope.computeCharts = function () {
                 // Create a combined geometry for all message parts
@@ -590,6 +546,11 @@ angular.module('niord.editor')
                     part.index = index;
                     part.type = part.type || 'DETAILS';
                     LangService.checkDescs(part, initMessagePartDescField, undefined, $rootScope.modelLanguages);
+                    part.showTime = false;
+
+                    if (!part.eventDates) {
+                        part.eventDates = [];
+                    }
 
                     // Instantiate the message part geometry
                     if (!part.geometry) {
@@ -611,9 +572,11 @@ angular.module('niord.editor')
                 index = Math.min(parts.length, index + 1);
                 parts.splice(index, 0, {
                     type: 'DETAILS',
+                    eventDates: [],
                     descs: []
                 });
                 // Keep edit mode flags in sync
+                $scope.editMode['event_dates'].splice(index, 0, false);
                 $scope.editMode['positions'].splice(index, 0, false);
                 $scope.editMode['subject'].splice(index, 0, false);
                 $scope.editMode['description'].splice(index, 0, false);
@@ -628,6 +591,7 @@ angular.module('niord.editor')
                 if (index < parts.length) {
                     parts.splice(index, 1);
                     // Keep edit mode flags in sync
+                    $scope.editMode['event_dates'].splice(index, 1);
                     $scope.editMode['positions'].splice(index, 1);
                     $scope.editMode['subject'].splice(index, 1);
                     $scope.editMode['description'].splice(index, 1);
@@ -670,6 +634,49 @@ angular.module('niord.editor')
             $scope.showPartPositionField = function (part) {
                 return part.type == 'DETAILS' || part.type == 'SIGNALS' ||
                     (part.geometry && part.geometry.features.length > 0);
+            };
+
+
+            /** Returns if the given message part event dates field should be displayed **/
+            $scope.showPartEventDatesField = function (part) {
+                return part.type == 'DETAILS' || part.type == 'TIME' || (part.eventDates && part.eventDates.length > 0);
+            };
+
+
+            /** Adds a new date interval to the list of message date intervals */
+            $scope.addPartEventDate = function (part) {
+                part.eventDates.push({ allDay: false, fromDate: undefined, toDate: undefined });
+            };
+
+
+            /** Deletes the given date interval from the list of message date intervals **/
+            $scope.deletePartEventDate = function (part, dateInterval) {
+                if ($.inArray(dateInterval, part.eventDates) > -1) {
+                    part.eventDates.splice( $.inArray(dateInterval, part.eventDates), 1 );
+                    $scope.setDirty();
+                }
+            };
+
+
+            /** Adds a copy of the given date interval to the list with the given date offset */
+            $scope.copyPartEventDate = function (part, dateInterval, offset) {
+                var di = angular.copy(dateInterval);
+                if (offset && offset > 0) {
+                    if (di.fromDate) {
+                        di.fromDate = moment(di.fromDate).add(1, "days").valueOf();
+                    }
+                    if (di.toDate) {
+                        di.toDate = moment(di.toDate).add(1, "days").valueOf();
+                    }
+                }
+                part.eventDates.push(di);
+            };
+
+
+
+            /** Show/hide message part time **/
+            $scope.toggleShowTime = function (part) {
+                part.showTime = !part.showTime;
             };
 
 
@@ -776,13 +783,14 @@ angular.module('niord.editor')
 
 
             /** Dialog that facilitates formatting selected time intervals as text **/
-            $scope.timeDialog = function (lang) {
+            $scope.timeDialog = function (partIndex, lang) {
                 return $uibModal.open({
                     templateUrl: '/app/editor/format-time-dialog.html',
                     controller: 'FormatMessageTimeDialogCtrl',
                     size: 'md',
                     resolve: {
-                        dateIntervals: function () { return $scope.message.dateIntervals; },
+                        message: function () { return $scope.message },
+                        partIndex: function () { return partIndex },
                         lang: function () { return lang; }
                     }
                 });
@@ -794,10 +802,12 @@ angular.module('niord.editor')
 
                     // The ID of the parent div has the format "tinymce-<<part-index>>-<<lang>>"
                 var parentDivId = editor.getElement().parentElement.id;
-                var lang = parentDivId.split("-")[2];
+                var id = parentDivId.split("-");
+                var partIndex = parseInt(id[1]);
+                var lang = id[2];
 
                 $scope.$apply(function() {
-                    $scope.timeDialog(lang).result
+                    $scope.timeDialog(partIndex, lang).result
                         .then(function (result) {
                             editor.insertContent(result);
                         });

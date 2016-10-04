@@ -152,8 +152,8 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
                 // Reset various fields and flags
                 message.setMrn(null);
                 message.setShortId(null);
-                message.setPublishDate(null);
-                message.setUnpublishDate(null);
+                message.setPublishDateFrom(null);
+                message.setPublishDateTo(null);
             }
 
             // Check if we should create base data such as areas, categories and charts

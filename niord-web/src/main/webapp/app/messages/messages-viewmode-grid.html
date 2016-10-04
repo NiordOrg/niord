@@ -26,10 +26,6 @@
                         </span>
                     </div>
                     <div class="grid-map-image-details">
-                        <div class="grid-map-image-date"
-                             ng-if="message.descs[0].time || (message.dateIntervals && message.dateIntervals.length > 0)">
-                            <small><i class="glyphicon glyphicon-time"></i> <render-message-dates msg="message"/></small>
-                        </div>
                         <div ng-if="message.parts" ng-repeat="part in message.parts">
                             <render-message-part class="message-description" part="part" subject="false"></render-message-part>
                         </div>

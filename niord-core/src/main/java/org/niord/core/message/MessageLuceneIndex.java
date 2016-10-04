@@ -293,7 +293,6 @@ public class MessageLuceneIndex extends BaseService {
             MessageDesc msgDesc = message.getDesc(language);
             if (msgDesc != null) {
                 addPhraseSearchField(doc, searchField, msgDesc.getTitle());
-                addPhraseSearchField(doc, searchField, msgDesc.getOtherCategories());
                 addPhraseSearchField(doc, searchField, msgDesc.getVicinity());
                 addPhraseSearchField(doc, searchField, msgDesc.getPublication());
                 addPhraseSearchField(doc, searchField, msgDesc.getSource());

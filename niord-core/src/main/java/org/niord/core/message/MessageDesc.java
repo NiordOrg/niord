@@ -34,11 +34,6 @@ public class MessageDesc extends DescEntity<Message> {
     @Column(length = 1000)
     String title;
 
-    String otherCategories;
-
-    @Column(length = 1000)
-    String time;
-
     String vicinity;
 
     String publication;
@@ -65,8 +60,6 @@ public class MessageDesc extends DescEntity<Message> {
         } else {
             // Copy all fields
             this.title = trunc(desc.getTitle(), 1000);
-            this.otherCategories = trunc(desc.getOtherCategories(), 256);
-            this.time = trunc(desc.getTime(), 1000);
             this.vicinity = trunc(desc.getVicinity(), 256);
             this.publication = trunc(desc.getPublication(), 256);
             this.source = trunc(desc.getSource(), 256);
@@ -83,8 +76,6 @@ public class MessageDesc extends DescEntity<Message> {
         desc.setLang(lang);
         desc.setTitle(title);
         if (!compFilter.includeField("title")) {
-            desc.setOtherCategories(otherCategories);
-            desc.setTime(time);
             desc.setVicinity(vicinity);
             desc.setPublication(publication);
             desc.setSource(source);
@@ -96,8 +87,7 @@ public class MessageDesc extends DescEntity<Message> {
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(title, otherCategories,
-                time, vicinity, publication, source);
+        return ILocalizedDesc.fieldsDefined(title, vicinity, publication, source);
     }
 
 
@@ -107,8 +97,6 @@ public class MessageDesc extends DescEntity<Message> {
         MessageDesc desc = (MessageDesc)localizedDesc;
         this.lang = desc.getLang();
         this.title = desc.getTitle();
-        this.otherCategories = desc.getOtherCategories();
-        this.time = desc.getTime();
         this.vicinity = desc.getVicinity();
         this.publication = desc.getPublication();
         this.source = desc.getSource();
@@ -124,22 +112,6 @@ public class MessageDesc extends DescEntity<Message> {
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public String getOtherCategories() {
-        return otherCategories;
-    }
-
-    public void setOtherCategories(String otherCategories) {
-        this.otherCategories = otherCategories;
-    }
-
-    public String getTime() {
-        return time;
-    }
-
-    public void setTime(String time) {
-        this.time = time;
     }
 
     public String getVicinity() {

@@ -26,15 +26,12 @@ import javax.xml.bind.annotation.XmlType;
  * The message description VO
  */
 @ApiModel(value = "MessageDesc", description = "Translatable fields of the Message model")
-@XmlType(propOrder = { "title", "otherCategories",
-        "time", "vicinity", "publication", "source" })
+@XmlType(propOrder = { "title", "vicinity", "publication", "source" })
 @SuppressWarnings("unused")
 public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
 
     String lang;
     String title;
-    String otherCategories;
-    String time;
     String vicinity;
     String publication;
     String source;
@@ -42,8 +39,7 @@ public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(title, otherCategories,
-                time, vicinity, publication, source );
+        return ILocalizedDesc.fieldsDefined(title, vicinity, publication, source );
     }
 
     /** {@inheritDoc} */
@@ -51,8 +47,6 @@ public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
     public void copyDesc(ILocalizedDesc localizedDesc) {
         MessageDescVo desc = (MessageDescVo)localizedDesc;
         this.title = desc.getTitle();
-        this.otherCategories = desc.getOtherCategories();
-        this.time = desc.getTime();
         this.vicinity = desc.getVicinity();
         this.publication = desc.getPublication();
         this.source = desc.getSource();
@@ -79,22 +73,6 @@ public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public String getOtherCategories() {
-        return otherCategories;
-    }
-
-    public void setOtherCategories(String otherCategories) {
-        this.otherCategories = otherCategories;
-    }
-
-    public String getTime() {
-        return time;
-    }
-
-    public void setTime(String time) {
-        this.time = time;
     }
 
     public String getVicinity() {

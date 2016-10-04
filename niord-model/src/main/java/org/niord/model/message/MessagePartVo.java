@@ -23,6 +23,7 @@ import org.niord.model.ILocalizable;
 import org.niord.model.geojson.FeatureCollectionVo;
 
 import javax.xml.bind.annotation.XmlType;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,13 +31,14 @@ import java.util.List;
  */
 @ApiModel(value = "MessagePart", description = "Main NW and NM message part class")
 @XmlType(propOrder = {
-        "indexNo", "type", "geometry", "descs"
+        "indexNo", "type", "eventDates", "geometry", "descs"
 })
 @SuppressWarnings("unused")
 public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSerializable {
 
     int indexNo;
     MessagePartType type;
+    List<DateIntervalVo> eventDates;
     FeatureCollectionVo geometry;
     List<MessagePartDescVo> descs;
 
@@ -68,6 +70,15 @@ public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSeri
     }
 
 
+    public List<DateIntervalVo> checkCreateEventDates() {
+        if (eventDates == null) {
+            eventDates = new ArrayList<>();
+        }
+        return eventDates;
+    }
+
+
+
     /*************************/
     /** Getters and Setters **/
     /*************************/
@@ -86,6 +97,14 @@ public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSeri
 
     public void setIndexNo(int indexNo) {
         this.indexNo = indexNo;
+    }
+
+    public List<DateIntervalVo> getEventDates() {
+        return eventDates;
+    }
+
+    public void setEventDates(List<DateIntervalVo> eventDates) {
+        this.eventDates = eventDates;
     }
 
     public FeatureCollectionVo getGeometry() {

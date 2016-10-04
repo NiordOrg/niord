@@ -445,14 +445,8 @@ public class MessageService extends BaseService {
         // Substitute the Charts with the persisted ones
         original.setCharts(chartService.persistedCharts(message.getCharts()));
 
-        original.setPublishDate(message.getPublishDate());
-        original.setUnpublishDate(message.getUnpublishDate());
-
-        original.getDateIntervals().clear();
-        message.getDateIntervals().stream()
-                .map(this::updateDateInterval)
-                .filter(r -> r != null)
-                .forEach(original::addDateInterval);
+        original.setPublishDateFrom(message.getPublishDateFrom());
+        original.setPublishDateTo(message.getPublishDateTo());
 
         original.getReferences().clear();
         message.getReferences().stream()
@@ -563,10 +557,10 @@ public class MessageService extends BaseService {
 
         // When published, update the message series
         if ((currentStatus == Status.DRAFT || currentStatus == Status.VERIFIED) && status == Status.PUBLISHED) {
-            message.setPublishDate(now);
+            message.setPublishDateFrom(now);
             messageSeriesService.updateMessageSeriesIdentifiers(message, true);
         } else if (status == Status.CANCELLED || status == Status.EXPIRED) {
-            message.setUnpublishDate(now);
+            message.setPublishDateTo(now);
         }
 
         message.setStatus(status);
@@ -773,13 +767,13 @@ public class MessageService extends BaseService {
             Date to = TimeUtils.endOfDay(param.getTo());
             switch (dateType) {
                 case PUBLISH_DATE:
-                    criteriaHelper.overlaps(msgRoot.get("publishDate"), msgRoot.get("unpublishDate"), from, to);
+                    criteriaHelper.overlaps(msgRoot.get("publishDateFrom"), msgRoot.get("publishDateTo"), from, to);
                     break;
                 case CREATED_DATE:
                     criteriaHelper.between(msgRoot.get("created"), from, to);
                     break;
                 case ACTIVE_DATE:
-                    criteriaHelper.overlaps(msgRoot.get("startDate"), msgRoot.get("endDate"), from, to);
+                    criteriaHelper.overlaps(msgRoot.get("eventDateFrom"), msgRoot.get("eventDateTo"), from, to);
                     break;
             }
         }
@@ -927,9 +921,9 @@ public class MessageService extends BaseService {
         List<Selection<?>> fields = new ArrayList<>();
         fields.add(msgRoot.get("id"));
         if (param.sortByDate()) {
-            fields.add(msgRoot.get("startDate"));
+            fields.add(msgRoot.get("eventDateFrom"));
         } else if (param.sortById()) {
-            fields.add(msgRoot.get("publishDate"));
+            fields.add(msgRoot.get("publishDateFrom"));
         } else if (param.sortByArea()) {
             areaRoot = msgRoot.join("area", JoinType.LEFT);
             fields.add(areaRoot.get("treeSortOrder"));
@@ -946,21 +940,21 @@ public class MessageService extends BaseService {
         if (param.sortByDate()) {
             if (param.getSortOrder() == SortOrder.ASC) {
                 tupleQuery.orderBy(
-                        builder.asc(msgRoot.get("startDate")),
+                        builder.asc(msgRoot.get("eventDateFrom")),
                         builder.asc(msgRoot.get("id")));
             } else {
                 tupleQuery.orderBy(builder.desc(
-                        msgRoot.get("startDate")),
+                        msgRoot.get("eventDateFrom")),
                         builder.desc(msgRoot.get("id")));
             }
         } else if (param.sortById()) {
             if (param.getSortOrder() == SortOrder.ASC) {
                 tupleQuery.orderBy(
-                        builder.asc(msgRoot.get("publishDate")),
+                        builder.asc(msgRoot.get("publishDateFrom")),
                         builder.asc(msgRoot.get("id")));
             } else {
                 tupleQuery.orderBy(
-                        builder.desc(msgRoot.get("publishDate")),
+                        builder.desc(msgRoot.get("publishDateFrom")),
                         builder.desc(msgRoot.get("id")));
             }
         } else if (param.sortByArea()) {

@@ -21,8 +21,6 @@ import org.niord.model.message.DateIntervalVo;
 
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
@@ -37,7 +35,7 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity, 
 
     @NotNull
     @ManyToOne
-    Message message;
+    MessagePart messagePart;
 
     int indexNo;
 
@@ -87,14 +85,13 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity, 
     }
 
 
-    /** Check that the date interval is valid */
-    @PrePersist
-    @PreUpdate
-    public void checkDateInterval() {
+    /** Returns if the date interval is properly defined **/
+    public boolean dateIntervalDefined() {
         // To-date must not be before from-date
         if (fromDate != null && toDate != null && toDate.before(fromDate)) {
             toDate = fromDate;
         }
+        return fromDate != null || toDate != null;
     }
 
 
@@ -129,12 +126,12 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity, 
     /** Getters and Setters **/
     /*************************/
 
-    public Message getMessage() {
-        return message;
+    public MessagePart getMessagePart() {
+        return messagePart;
     }
 
-    public void setMessage(Message message) {
-        this.message = message;
+    public void setMessagePart(MessagePart messagePart) {
+        this.messagePart = messagePart;
     }
 
     @Override

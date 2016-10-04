@@ -303,7 +303,7 @@ public class MessageSeriesService extends BaseService {
      */
     public void updateMessageSeriesIdentifiers(Message message, boolean assignMessageNumber) {
         MessageSeries messageSeries = message.getMessageSeries();
-        Date publishDate = message.getPublishDate();
+        Date publishDate = message.getPublishDateFrom();
 
         if (messageSeries == null) {
             throw new IllegalArgumentException("Message series must be specified");

@@ -54,13 +54,6 @@
             </tr>
 
 
-            <!-- Time line -->
-            <tr ng-if="msg.descs[0].time || (msg.dateIntervals && msg.dateIntervals.length > 0)">
-                <th translate>msg.field.time</th>
-                <td><render-message-dates msg="msg"></render-message-dates></td>
-            </tr>
-
-
             <!-- Details line -->
             <tr ng-if="msg.parts" ng-repeat="part in msg.parts">
                 <th>

@@ -251,16 +251,38 @@ angular.module('niord.editor')
      * Controller that allows the user to format selected time intervals as text
      *******************************************************************/
     .controller('FormatMessageTimeDialogCtrl', ['$scope', '$rootScope', '$window', 'growl',
-        'DateIntervalService', 'dateIntervals', 'lang',
+        'DateIntervalService', 'message', 'partIndex', 'lang',
         function ($scope, $rootScope, $window, growl,
-                  DateIntervalService, dateIntervals, lang) {
+                  DateIntervalService, message, partIndex, lang) {
             'use strict';
 
-            $scope.dateIntervals = angular.copy(dateIntervals);
+            $scope.message = message;
+            $scope.partIndexData = { partIndex: partIndex };
+            $scope.dateIntervals = [];
             $scope.lang = lang;
             $scope.data = {
                 result: ''
             };
+
+
+            /** Called whenever the message part selection changes **/
+            $scope.messagePartSelectionChanged = function (updateSelection) {
+
+                var dateIntervals = message.parts[$scope.partIndexData.partIndex].eventDates || [];
+                $scope.dateIntervals = angular.copy(dateIntervals);
+
+                // Initial selection
+                if ($scope.dateIntervals.length == 1) {
+                    $scope.dateIntervals[0].selected = true;
+                }
+
+                // Update the current time selection
+                if (updateSelection) {
+                    $scope.timeSelectionChanged();
+                }
+            };
+            $scope.messagePartSelectionChanged(false);
+
 
             /** Called when the time selection changes */
             $scope.timeSelectionChanged = function () {

@@ -22,6 +22,7 @@ package org.niord.model.message;
 public enum MessagePartType {
 
     DETAILS,
+    TIME,
     NOTE,
     PROHIBITION,
     SIGNALS

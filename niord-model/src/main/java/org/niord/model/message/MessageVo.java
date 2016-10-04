@@ -34,7 +34,7 @@ import java.util.List;
 @XmlRootElement(name = "message")
 @XmlType(propOrder = {
         "repoPath", "messageSeries", "number", "mrn", "shortId", "mainType", "type", "status",
-        "areas", "categories", "charts", "horizontalDatum", "publishDate", "dateIntervals",
+        "areas", "categories", "charts", "horizontalDatum", "publishDateFrom", "publishDateTo",
         "references", "atonUids", "originalInformation", "parts", "descs", "attachments"
 })
 @SuppressWarnings("unused")
@@ -56,8 +56,8 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     List<CategoryVo> categories;
     List<ChartVo> charts;
     String horizontalDatum;
-    Date publishDate;
-    List<DateIntervalVo> dateIntervals;
+    Date publishDateFrom;
+    Date publishDateTo;
     List<ReferenceVo> references;
     List<String> atonUids;
     Boolean originalInformation;
@@ -135,13 +135,6 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
             charts = new ArrayList<>();
         }
         return charts;
-    }
-
-    public List<DateIntervalVo> checkCreateDateIntervals() {
-        if (dateIntervals == null) {
-            dateIntervals = new ArrayList<>();
-        }
-        return dateIntervals;
     }
 
     public List<ReferenceVo> checkCreateReferences() {
@@ -301,20 +294,20 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
         this.horizontalDatum = horizontalDatum;
     }
 
-    public Date getPublishDate() {
-        return publishDate;
+    public Date getPublishDateFrom() {
+        return publishDateFrom;
     }
 
-    public void setPublishDate(Date publishDate) {
-        this.publishDate = publishDate;
+    public void setPublishDateFrom(Date publishDateFrom) {
+        this.publishDateFrom = publishDateFrom;
     }
 
-    public List<DateIntervalVo> getDateIntervals() {
-        return dateIntervals;
+    public Date getPublishDateTo() {
+        return publishDateTo;
     }
 
-    public void setDateIntervals(List<DateIntervalVo> dateIntervals) {
-        this.dateIntervals = dateIntervals;
+    public void setPublishDateTo(Date publishDateTo) {
+        this.publishDateTo = publishDateTo;
     }
 
     public List<ReferenceVo> getReferences() {

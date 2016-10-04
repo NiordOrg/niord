@@ -235,53 +235,6 @@
         </#if>
 
 
-        <!-- Time line -->
-        <#if  (msg.descs?has_content && msg.descs[0].time?has_content) || msg.dateIntervals?has_content>
-            <tr>
-                <td class="field-name">${text("msg.field.time")}</td>
-                <td class="field-value">
-                    <#if msg.descs?has_content && msg.descs[0].time?has_content>
-                        <div><@txtToHtml text=msg.descs[0].time /></div>
-                    <#elseif msg.dateIntervals?has_content>
-                        <#list msg.dateIntervals as dateInterval>
-                            <div>
-                                <@formatDateInterval dateInterval=dateInterval />
-                            </div>
-                        </#list>
-                    <#else>
-                        <@formatDateInterval />
-                    </#if>
-                </td>
-            </tr>
-        </#if>
-
-
-        <!-- Geometry line -->
-        <#if positions && msg.geometry?has_content>
-            <tr>
-                <td class="field-name">${text("msg.field.positions")}</td>
-                <td class="field-value">
-                    <#list msg.geometry as feature>
-                        <table class="positions">
-                            <#if feature.name?has_content>
-                                <tr><th colspan="3">${feature.name}</th></tr>
-                            </#if>
-                            <#if feature.coordinates?has_content>
-                                <#list feature.coordinates as coord>
-                                    <tr>
-                                        <td nowrap>${feature.startIndex + coord?index})</td>
-                                        <td nowrap><@formatPos lat=coord.coordinates[1] lon=coord.coordinates[0] /></td>
-                                        <td><#if coord.name?has_content>${coord.name}</#if></td>
-                                    </tr>
-                                </#list>
-                            </#if>
-                        </table>
-                    </#list>
-                </td>
-            </tr>
-        </#if>
-
-
         <!-- Details line -->
         <#if msg.parts?has_content>
             <#list msg.parts as part>
