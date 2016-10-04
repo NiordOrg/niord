@@ -39,6 +39,10 @@ input.ng-invalid-messageId {
     width: 100%;
 }
 
+.margin-left-3 {
+    margin-left: 3px;
+}
+
 .clickable:hover {
     cursor: pointer;
     text-decoration: underline;

@@ -47,6 +47,13 @@
     padding-left: 7px
 }
 
+.editor-field-group-label {
+    text-align: right;
+    margin-right: 20px;
+    color: #aaa;
+    font-weight: bold;
+}
+
 .editor-fields {
     padding: 10px!important;
     font-size: 12px;
@@ -115,6 +122,21 @@
 
 .editor-field-value-table td {
     padding: 5px;
+}
+
+.part-type-btn {
+    font-size: 11px;
+    color: lightgray;
+    margin-right: 10px;
+    padding: 3px 6px;
+    cursor: pointer;
+    border: 1px solid gray;
+    border-radius: 3px;
+}
+
+.part-type-selected {
+    color: white!important;
+    background-color: #444;
 }
 
 .editor-description {
