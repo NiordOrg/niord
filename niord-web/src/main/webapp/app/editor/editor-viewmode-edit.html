@@ -438,12 +438,12 @@
                             <i class="fa fa-sticky-note"></i>
                             <span translate>msg.field.note</span>
                         </span>
-                        <span ng-click="part.type = 'PROHIBITION'" ng-if="showField('prohibition')"
+                        <span ng-click="part.type = 'PROHIBITION'" ng-if="showPartType(part, 'prohibition')"
                               class="part-type-btn" ng-class="{'part-type-selected': part.type == 'PROHIBITION'}">
                             <i class="fa fa-warning"></i>
                             <span translate>msg.field.prohibition</span>
                         </span>
-                        <span ng-click="part.type = 'SIGNALS'" ng-if="showField('signals')"
+                        <span ng-click="part.type = 'SIGNALS'" ng-if="showPartType(part, 'signals')"
                               class="part-type-btn" ng-class="{'part-type-selected': part.type == 'SIGNALS'}">
                             <i class="fa fa-flag"></i>
                             <span translate>msg.field.signals</span>
@@ -455,7 +455,7 @@
                 <!-- ********************* -->
                 <!-- ** Positions       ** -->
                 <!-- ********************* -->
-                <editor-field ng-if="part.type == 'DETAILS' || part.type == 'SIGNALS'"
+                <editor-field ng-if="showPartPositionField(part)"
                               edit-mode="editMode" index="part.index" field-id="positions" field-title="msg.field.positions"
                               tab-index="1002 + part.index * 10">
 

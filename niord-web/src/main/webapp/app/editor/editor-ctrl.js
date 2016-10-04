@@ -660,6 +660,19 @@ angular.module('niord.editor')
             };
 
 
+            /** Returns if the given message part type selector (group) should be displayed **/
+            $scope.showPartType = function (part, fieldId) {
+                return $scope.showField(fieldId) || part.type.toLowerCase() == fieldId;
+            };
+
+
+            /** Returns if the given message part positions field should be displayed **/
+            $scope.showPartPositionField = function (part) {
+                return part.type == 'DETAILS' || part.type == 'SIGNALS' ||
+                    (part.geometry && part.geometry.features.length > 0);
+            };
+
+
             /** Show/hide message part geometry coordinates **/
             $scope.toggleShowCoordinates = function (part) {
                 part.showCoordinates = !part.showCoordinates;
