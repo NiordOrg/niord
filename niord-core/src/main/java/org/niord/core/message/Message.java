@@ -19,7 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.category.Category;
 import org.niord.core.chart.Chart;
-import org.niord.core.message.vo.EditableMessageVo;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
@@ -281,9 +281,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             message.getAttachments().forEach(att -> addAttachment(new Attachment(att)));
         }
 
-        if (message instanceof EditableMessageVo) {
-            EditableMessageVo editableMessage = (EditableMessageVo) message;
-            this.autoTitle = editableMessage.isAutoTitle() != null && editableMessage.isAutoTitle();
+        if (message instanceof SystemMessageVo) {
+            SystemMessageVo sysMessage = (SystemMessageVo) message;
+            this.autoTitle = sysMessage.isAutoTitle() != null && sysMessage.isAutoTitle();
         }
 
         updateEventDateInterval();
@@ -340,9 +340,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
 
     /** Converts this entity to a value object */
-    public EditableMessageVo toEditableVo(DataFilter filter) {
+    public SystemMessageVo toSystemVo(DataFilter filter) {
 
-        EditableMessageVo message = toVo(new EditableMessageVo(), filter);
+        SystemMessageVo message = toVo(new SystemMessageVo(), filter);
 
         message.setAutoTitle(autoTitle);
 

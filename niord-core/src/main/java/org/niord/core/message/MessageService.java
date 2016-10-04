@@ -31,7 +31,7 @@ import org.niord.core.geojson.Feature;
 import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.geojson.FeatureService;
 import org.niord.core.message.MessageSearchParams.DateType;
-import org.niord.core.message.vo.EditableMessageVo;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
@@ -1074,7 +1074,7 @@ public class MessageService extends BaseService {
 
             // Create a snapshot of the message
             ObjectMapper jsonMapper = new ObjectMapper();
-            MessageVo snapshot = message.toEditableVo(DataFilter.get().fields("Message.details", "Message.geometry"));
+            MessageVo snapshot = message.toSystemVo(DataFilter.get().fields("Message.details", "Message.geometry"));
             hist.compressSnapshot(jsonMapper.writeValueAsString(snapshot));
 
             saveEntity(hist);
@@ -1106,7 +1106,7 @@ public class MessageService extends BaseService {
      * Creates a temporary repository folder for the given message
      * @param message the message
      */
-    public void createTempMessageRepoFolder(EditableMessageVo message) throws IOException {
+    public void createTempMessageRepoFolder(SystemMessageVo message) throws IOException {
 
         String editRepoPath = repositoryService.getNewTempDir().getPath();
         message.setEditRepoPath(editRepoPath);
@@ -1126,7 +1126,7 @@ public class MessageService extends BaseService {
      * Update the message repository folder from a temporary repository folder used whilst editing the message
      * @param message the message
      */
-    public void updateMessageFromTempRepoFolder(EditableMessageVo message) throws IOException {
+    public void updateMessageFromTempRepoFolder(SystemMessageVo message) throws IOException {
 
         if (message.getId() != null && StringUtils.isNotBlank(message.getEditRepoPath())) {
 

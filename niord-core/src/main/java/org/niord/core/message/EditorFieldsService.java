@@ -18,7 +18,7 @@ package org.niord.core.message;
 
 import org.niord.core.area.Area;
 import org.niord.core.category.Category;
-import org.niord.core.message.vo.EditableMessageVo;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
@@ -65,9 +65,9 @@ public class EditorFieldsService extends BaseService {
 
     /**
      * Computes and updates the editor fields of the editable message value object
-     * @param messageVo the editable message to update
+     * @param messageVo the message to update
      */
-    public void computeEditorFields(EditableMessageVo messageVo) {
+    public void computeEditorFields(SystemMessageVo messageVo) {
         Map<String, Boolean> result = computeEditorFields(new Message(messageVo));
         messageVo.setEditorFields(result);
     }

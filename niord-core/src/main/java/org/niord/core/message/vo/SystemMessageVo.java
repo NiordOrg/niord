@@ -21,11 +21,10 @@ import org.niord.model.message.MessageVo;
 import java.util.Map;
 
 /**
- * Extends the {@linkplain MessageVo} class with various message attributes only relevant
- * when editing a message.
+ * Extends the {@linkplain MessageVo} model with system-specific fields and attributes.
  */
 @SuppressWarnings("unused")
-public class EditableMessageVo extends MessageVo {
+public class SystemMessageVo extends MessageVo {
 
     Boolean autoTitle;
     String editRepoPath;

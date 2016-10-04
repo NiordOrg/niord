@@ -31,7 +31,7 @@ import org.niord.core.message.MessageHistory;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
-import org.niord.core.message.vo.EditableMessageVo;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.message.vo.MessageHistoryVo;
 import org.niord.core.repo.FileTypes;
 import org.niord.core.repo.RepositoryService;
@@ -223,18 +223,18 @@ public class MessageRestService  {
 
 
     /**
-     * Returns an editable version of the message, which has been directed to use a temporary
+     * Returns a system-model version of the message, which has been directed to use a temporary
      * repository folder.
      *
-     * @param message the message get an editable version of
-     * @return the editable version of the message
+     * @param message the message get an system-model version of
+     * @return the system-model version of the message
      */
-    private EditableMessageVo toEditableMessage(Message message) throws Exception {
+    private SystemMessageVo toSystemMessage(Message message) throws Exception {
 
         DataFilter filter = DataFilter.get()
                 .fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
 
-        EditableMessageVo messageVo =  message.toEditableVo(filter);
+        SystemMessageVo messageVo =  message.toSystemVo(filter);
 
         // Compute the default set of editor fields to display for the message
         editorFieldsService.computeEditorFields(messageVo);
@@ -249,7 +249,7 @@ public class MessageRestService  {
 
 
     /**
-     * Returns the editable message with the given message id, which may be either a UID,
+     * Returns the system-model message with the given message id, which may be either a UID,
      * or a short ID or an MRN of a message.
      *
      * If no message exists with the given ID, null is returned.
@@ -264,7 +264,7 @@ public class MessageRestService  {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public EditableMessageVo getEditableMessage(
+    public SystemMessageVo getSystemMessage(
             @PathParam("messageId") String messageId,
             @QueryParam("lang") String language) throws Exception {
 
@@ -276,8 +276,8 @@ public class MessageRestService  {
         // Validate access to the message
         checkMessageEditingAccess(message, false);
 
-        // Returns an editable version of the message
-        return toEditableMessage(message);
+        // Returns a system model version of the message
+        return toSystemMessage(message);
     }
 
 
@@ -292,7 +292,7 @@ public class MessageRestService  {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public EditableMessageVo newTemplateMessage(@QueryParam("mainType") MainType mainType) throws IOException {
+    public SystemMessageVo newTemplateMessage(@QueryParam("mainType") MainType mainType) throws IOException {
 
         log.info("Creating new message template");
 
@@ -314,7 +314,7 @@ public class MessageRestService  {
             message.setMessageSeries(messageSeries.get(0));
         }
 
-        EditableMessageVo messageVo =  message.toEditableVo(DataFilter.get().fields("Message.details"));
+        SystemMessageVo messageVo =  message.toSystemVo(DataFilter.get().fields("Message.details"));
 
         // Compute the default set of editor fields to display for the message
         editorFieldsService.computeEditorFields(messageVo);
@@ -339,7 +339,7 @@ public class MessageRestService  {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public EditableMessageVo copyMessageTemplate(
+    public SystemMessageVo copyMessageTemplate(
             @PathParam("messageId") String messageId,
             @QueryParam("referenceType") ReferenceType referenceType,
             @QueryParam("lang") String language) throws Exception {
@@ -355,8 +355,8 @@ public class MessageRestService  {
         // Validate viewing access to the message
         checkMessageViewingAccess(message);
 
-        // Create an editable version of the message
-        EditableMessageVo editMessage = toEditableMessage(message);
+        // Create a system model version of the message
+        SystemMessageVo editMessage = toSystemMessage(message);
 
         // Optionally, add a reference to the original message (before resetting IDs, etc)
         if (referenceType != null) {
@@ -424,7 +424,7 @@ public class MessageRestService  {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public MessageVo createMessage(EditableMessageVo message) throws Exception {
+    public MessageVo createMessage(SystemMessageVo message) throws Exception {
         log.info("Creating message " + message);
 
         // Point embedded links and images to the message repository folder
@@ -458,7 +458,7 @@ public class MessageRestService  {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public MessageVo updateMessage(@PathParam("messageId") String messageId, EditableMessageVo message) throws Exception {
+    public MessageVo updateMessage(@PathParam("messageId") String messageId, SystemMessageVo message) throws Exception {
         if (!Objects.equals(messageId, message.getId())) {
             throw new WebApplicationException(400);
         }
@@ -675,7 +675,7 @@ public class MessageRestService  {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public EditableMessageVo adjustEditableMessage(EditableMessageVo message) throws Exception {
+    public SystemMessageVo adjustEditableMessage(SystemMessageVo message) throws Exception {
 
         // Compute the editor fields to use for the message
         editorFieldsService.computeEditorFields(message);

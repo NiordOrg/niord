@@ -19,7 +19,7 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTag;
 import org.niord.core.message.batch.BatchMsgArchiveImportProcessor.ExtractedArchiveMessage;
-import org.niord.core.message.vo.EditableMessageVo;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.model.DataFilter;
 
 import javax.inject.Inject;
@@ -61,9 +61,9 @@ public class BatchMsgArchiveImportWriter extends AbstractMessageImportWriter {
             // NB: There may still be an exception when the transaction is committed,
             // so, to minimize the risk of inconsistency, the batch job only processes
             // one message at a time before committing.
-            EditableMessageVo editableMessageVo = message.toEditableVo(DataFilter.get().fields(DataFilter.DETAILS));
-            editableMessageVo.setEditRepoPath(extractedMsg.getEditRepoPath());
-            messageService.updateMessageFromTempRepoFolder(editableMessageVo);
+            SystemMessageVo systemMessageVo = message.toSystemVo(DataFilter.get().fields(DataFilter.DETAILS));
+            systemMessageVo.setEditRepoPath(extractedMsg.getEditRepoPath());
+            messageService.updateMessageFromTempRepoFolder(systemMessageVo);
         }
 
         // Update and save the message tag
