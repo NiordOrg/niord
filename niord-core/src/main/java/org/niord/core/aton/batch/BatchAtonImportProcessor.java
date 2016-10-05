@@ -18,8 +18,8 @@ package org.niord.core.aton.batch;
 import org.niord.core.aton.AtonNode;
 import org.niord.core.aton.AtonService;
 import org.niord.core.aton.AtonTag;
+import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.core.batch.AbstractItemHandler;
-import org.niord.model.aton.AtonNodeVo;
 
 import javax.inject.Inject;
 import javax.inject.Named;

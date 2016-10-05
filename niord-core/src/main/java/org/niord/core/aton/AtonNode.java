@@ -19,10 +19,10 @@ import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.annotations.IndexedEmbedded;
+import org.niord.core.aton.vo.AtonNodeVo;
+import org.niord.core.aton.vo.AtonTagVo;
 import org.niord.core.geojson.JtsConverter;
 import org.niord.core.model.BaseEntity;
-import org.niord.model.aton.AtonNodeVo;
-import org.niord.model.aton.AtonTagVo;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.niord.model.aton;
+package org.niord.core.aton.vo;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.model.IJsonSerializable;
@@ -76,6 +76,7 @@ public class AtonTagVo implements IJsonSerializable {
 
     /** {@inheritDoc} */
     @Override
+    @SuppressWarnings("all")
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

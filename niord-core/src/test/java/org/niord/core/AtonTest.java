@@ -13,11 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.niord.model.aton;
+
+package org.niord.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;
+import org.niord.core.aton.vo.AtonNodeVo;
+import org.niord.core.aton.vo.AtonOsmVo;
+import org.niord.core.aton.vo.AtonTagVo;
+import org.niord.core.aton.vo.Iso8601DateXmlAdapter;
 
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;

@@ -16,8 +16,8 @@
 package org.niord.core.aton;
 
 import org.hibernate.search.annotations.Field;
+import org.niord.core.aton.vo.AtonTagVo;
 import org.niord.core.model.BaseEntity;
-import org.niord.model.aton.AtonTagVo;
 
 import javax.persistence.Entity;
 import javax.persistence.Index;

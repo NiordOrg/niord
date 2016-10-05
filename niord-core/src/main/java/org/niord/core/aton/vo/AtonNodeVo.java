@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.niord.model.aton;
+package org.niord.core.aton.vo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -82,6 +82,7 @@ import java.util.Date;
  *  }
  * </pre>
  */
+@SuppressWarnings("unused")
 @XmlRootElement(name = "node")
 public class AtonNodeVo implements IJsonSerializable {
 

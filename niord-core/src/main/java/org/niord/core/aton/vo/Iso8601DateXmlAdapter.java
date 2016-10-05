@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.niord.model.aton;
+package org.niord.core.aton.vo;
 
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 import java.text.ParseException;

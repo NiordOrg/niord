@@ -12,7 +12,7 @@ package org.niord.web.aton;
 import org.apache.batik.dom.GenericDOMImplementation;
 import org.apache.batik.svggen.SVGGraphics2D;
 import org.apache.batik.svggen.SVGGraphics2DIOException;
-import org.niord.model.aton.AtonNodeVo;
+import org.niord.core.aton.vo.AtonNodeVo;
 import org.w3c.dom.Document;
 import render.ChartContext;
 import render.Renderer;
