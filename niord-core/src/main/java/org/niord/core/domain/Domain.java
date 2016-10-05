@@ -19,11 +19,12 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.category.Category;
 import org.niord.core.message.MessageSeries;
+import org.niord.core.message.vo.SystemMessageSeriesVo;
 import org.niord.core.model.BaseEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.message.AreaVo;
 import org.niord.model.message.CategoryVo;
-import org.niord.model.message.DomainVo;
+import org.niord.core.domain.vo.DomainVo;
 import org.niord.model.message.MainType;
 
 import javax.persistence.Cacheable;
@@ -159,7 +160,7 @@ public class Domain extends BaseEntity<Integer> {
 
         if (!messageSeries.isEmpty()) {
             domain.setMessageSeries(messageSeries.stream()
-                .map(MessageSeries::toVo)
+                .map(ms -> ms.toVo(SystemMessageSeriesVo.class))
                 .collect(Collectors.toList()));
         }
 

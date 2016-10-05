@@ -13,9 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.niord.model.message;
 
+package org.niord.core.domain.vo;
+
+import org.niord.core.message.vo.SystemMessageSeriesVo;
 import org.niord.model.IJsonSerializable;
+import org.niord.model.message.AreaVo;
+import org.niord.model.message.CategoryVo;
 
 import java.util.List;
 
@@ -33,7 +37,7 @@ public class DomainVo implements IJsonSerializable {
     private String messageSortOrder;
     private List<AreaVo> areas;
     private List<CategoryVo> categories;
-    private List<MessageSeriesVo> messageSeries;
+    private List<SystemMessageSeriesVo> messageSeries;
     private Boolean schedule;
     private Boolean inKeycloak;
 
@@ -113,11 +117,11 @@ public class DomainVo implements IJsonSerializable {
         this.categories = categories;
     }
 
-    public List<MessageSeriesVo> getMessageSeries() {
+    public List<SystemMessageSeriesVo> getMessageSeries() {
         return messageSeries;
     }
 
-    public void setMessageSeries(List<MessageSeriesVo> messageSeries) {
+    public void setMessageSeries(List<SystemMessageSeriesVo> messageSeries) {
         this.messageSeries = messageSeries;
     }
 

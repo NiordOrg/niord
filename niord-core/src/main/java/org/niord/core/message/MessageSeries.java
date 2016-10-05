@@ -15,11 +15,12 @@
  */
 package org.niord.core.message;
 
+import org.niord.core.message.vo.SystemMessageSeriesVo;
+import org.niord.core.message.vo.SystemMessageSeriesVo.NumberSequenceType;
 import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MainType;
 import org.niord.model.message.MessageSeriesVo;
-import org.niord.model.message.MessageSeriesVo.NumberSequenceType;
 
 import javax.persistence.Cacheable;
 import javax.persistence.Column;
@@ -75,36 +76,46 @@ public class MessageSeries extends VersionedEntity<Integer> {
     public MessageSeries(MessageSeriesVo series) {
         this.seriesId = series.getSeriesId();
         this.mainType = series.getMainType();
-        this.shortFormat = series.getShortFormat();
-        this.numberSequenceType = series.getNumberSequenceType() != null
-                ? series.getNumberSequenceType()
-                : NumberSequenceType.YEARLY;
-        if (series.getEditorFields() != null) {
-            editorFields.addAll(series.getEditorFields());
+
+        if (series instanceof SystemMessageSeriesVo) {
+            SystemMessageSeriesVo sysSeries = (SystemMessageSeriesVo)series;
+
+            this.shortFormat = sysSeries.getShortFormat();
+            this.numberSequenceType = sysSeries.getNumberSequenceType() != null
+                    ? sysSeries.getNumberSequenceType()
+                    : NumberSequenceType.YEARLY;
+            if (sysSeries.getEditorFields() != null) {
+                editorFields.addAll(sysSeries.getEditorFields());
+            }
         }
     }
 
 
     /** Converts this entity to a value object */
-    public MessageSeriesVo toVo(DataFilter filter) {
-        MessageSeriesVo series = new MessageSeriesVo();
+    public <M extends MessageSeriesVo> M toVo(Class<M> clz, DataFilter filter) {
+        M series = newInstance(clz);
+
         series.setSeriesId(seriesId);
 
         DataFilter compFilter = filter.forComponent(MessageSeries.class);
         if (compFilter.includeDetails()) {
             series.setMainType(mainType);
-            series.setShortFormat(shortFormat);
-            series.setNumberSequenceType(numberSequenceType);
-            if (!editorFields.isEmpty()) {
-                series.setEditorFields(new ArrayList<>(editorFields));
+
+            if (series instanceof SystemMessageSeriesVo) {
+                SystemMessageSeriesVo sysSeries = (SystemMessageSeriesVo)series;
+                sysSeries.setShortFormat(shortFormat);
+                sysSeries.setNumberSequenceType(numberSequenceType);
+                if (!editorFields.isEmpty()) {
+                    sysSeries.setEditorFields(new ArrayList<>(editorFields));
+                }
             }
         }
         return series;
     }
 
     /** Converts this entity to a value object */
-    public MessageSeriesVo toVo() {
-        return toVo(DataFilter.get().fields(DataFilter.ALL));
+    public <M extends MessageSeriesVo> M toVo(Class<M> clz) {
+        return toVo(clz, DataFilter.get().fields(DataFilter.ALL));
     }
 
     /*************************/

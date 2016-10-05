@@ -21,7 +21,7 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
-import org.niord.model.message.DomainVo;
+import org.niord.core.domain.vo.DomainVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;

@@ -18,7 +18,7 @@ package org.niord.core.domain.batch;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.util.JsonUtils;
-import org.niord.model.message.DomainVo;
+import org.niord.core.domain.vo.DomainVo;
 
 import javax.inject.Named;
 import java.io.Serializable;

@@ -20,7 +20,6 @@ import org.niord.model.IJsonSerializable;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-import java.util.List;
 
 /**
  * Represents a message series
@@ -28,31 +27,13 @@ import java.util.List;
 @ApiModel(value = "MessageSeries", description = "A message series")
 @XmlRootElement(name = "messageSeries")
 @XmlType(propOrder = {
-        "seriesId", "mainType", "shortFormat", "nextMessageNumber", "numberSequenceType", "editorFields"
+        "seriesId", "mainType"
 })
 @SuppressWarnings("unused")
 public class MessageSeriesVo implements IJsonSerializable {
 
-    public enum NumberSequenceType {
-        /** Associated number sequence will reset to 1 every year **/
-        YEARLY,
-
-        /** Associated number sequence will never reset **/
-        CONTINUOUS,
-
-        /** The user manually specifies the short ID **/
-        MANUAL,
-
-        /** No short ID is assigned **/
-        NONE
-    }
-
     String seriesId;
     MainType mainType;
-    String shortFormat;
-    NumberSequenceType numberSequenceType;
-    Integer nextMessageNumber;
-    List<String> editorFields;
 
     /*************************/
     /** Getters and Setters **/
@@ -72,37 +53,5 @@ public class MessageSeriesVo implements IJsonSerializable {
 
     public void setMainType(MainType mainType) {
         this.mainType = mainType;
-    }
-
-    public String getShortFormat() {
-        return shortFormat;
-    }
-
-    public void setShortFormat(String shortFormat) {
-        this.shortFormat = shortFormat;
-    }
-
-    public NumberSequenceType getNumberSequenceType() {
-        return numberSequenceType;
-    }
-
-    public void setNumberSequenceType(NumberSequenceType numberSequenceType) {
-        this.numberSequenceType = numberSequenceType;
-    }
-
-    public Integer getNextMessageNumber() {
-        return nextMessageNumber;
-    }
-
-    public void setNextMessageNumber(Integer nextMessageNumber) {
-        this.nextMessageNumber = nextMessageNumber;
-    }
-
-    public List<String> getEditorFields() {
-        return editorFields;
-    }
-
-    public void setEditorFields(List<String> editorFields) {
-        this.editorFields = editorFields;
     }
 }

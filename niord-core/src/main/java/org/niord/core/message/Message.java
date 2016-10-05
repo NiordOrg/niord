@@ -30,6 +30,7 @@ import org.niord.model.message.CategoryVo;
 import org.niord.model.message.ChartVo;
 import org.niord.model.message.MainType;
 import org.niord.model.message.MessagePartType;
+import org.niord.model.message.MessageSeriesVo;
 import org.niord.model.message.MessageVo;
 import org.niord.model.message.Status;
 import org.niord.model.message.Type;
@@ -299,7 +300,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             message.setCreated(getCreated());
             message.setUpdated(getUpdated());
             if (messageSeries != null) {
-                message.setMessageSeries(messageSeries.toVo(filter));
+                message.setMessageSeries(messageSeries.toVo(MessageSeriesVo.class, filter));
             }
             areas.forEach(a -> message.checkCreateAreas().add(a.toVo(AreaVo.class, filter)));
             categories.forEach(c -> message.checkCreateCategories().add(c.toVo(CategoryVo.class, filter)));

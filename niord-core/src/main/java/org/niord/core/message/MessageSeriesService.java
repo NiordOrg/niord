@@ -19,12 +19,12 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.message.vo.SystemMessageSeriesVo.NumberSequenceType;
 import org.niord.core.sequence.DefaultSequence;
 import org.niord.core.sequence.Sequence;
 import org.niord.core.sequence.SequenceService;
 import org.niord.core.service.BaseService;
 import org.niord.core.util.TimeUtils;
-import org.niord.model.message.MessageSeriesVo;
 import org.niord.model.message.Type;
 import org.slf4j.Logger;
 
@@ -227,7 +227,7 @@ public class MessageSeriesService extends BaseService {
         }
 
         String sequenceKey
-                = messageSeries.getNumberSequenceType() == MessageSeriesVo.NumberSequenceType.CONTINUOUS
+                = messageSeries.getNumberSequenceType() == NumberSequenceType.CONTINUOUS
                 ? String.format(NUMBER_SEQUENCE_TYPE_CONTINUOUS, seriesId)
                 : String.format(NUMBER_SEQUENCE_TYPE_YEARLY, seriesId, year);
 
@@ -309,11 +309,11 @@ public class MessageSeriesService extends BaseService {
         }
 
 
-        if (messageSeries.getNumberSequenceType() == MessageSeriesVo.NumberSequenceType.NONE) {
+        if (messageSeries.getNumberSequenceType() == NumberSequenceType.NONE) {
             // No short ID assigned
             return;
 
-        } else if (messageSeries.getNumberSequenceType() == MessageSeriesVo.NumberSequenceType.MANUAL) {
+        } else if (messageSeries.getNumberSequenceType() == NumberSequenceType.MANUAL) {
             // If the short ID is assigned manually, check validity
             if (StringUtils.isBlank(message.getShortId())) {
                 throw new IllegalArgumentException("Message must be assigned a short ID");

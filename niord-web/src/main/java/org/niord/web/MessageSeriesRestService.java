@@ -20,7 +20,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageSeriesService;
-import org.niord.model.message.MessageSeriesVo;
+import org.niord.core.message.vo.SystemMessageSeriesVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
@@ -65,10 +65,10 @@ public class MessageSeriesRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<MessageSeriesVo> getAllMessageSeries(
+    public List<SystemMessageSeriesVo> getAllMessageSeries(
             @QueryParam("messageNumbers") @DefaultValue("false") boolean messageNumbers) {
-        List<MessageSeriesVo> messageSeries = messageSeriesService.getAllMessageSeries().stream()
-                .map(MessageSeries::toVo)
+        List<SystemMessageSeriesVo> messageSeries = messageSeriesService.getAllMessageSeries().stream()
+                .map(ms -> ms.toVo(SystemMessageSeriesVo.class))
                 .collect(Collectors.toList());
 
         if (messageNumbers) {
@@ -90,13 +90,13 @@ public class MessageSeriesRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<MessageSeriesVo> getMessageSeries(
+    public List<SystemMessageSeriesVo> getMessageSeries(
             @PathParam("seriesIds") String seriesIds,
             @QueryParam("limit") @DefaultValue("100") int limit) {
 
         return messageSeriesService.findByIds(seriesIds.split(",")).stream()
                 .limit(limit)
-                .map(MessageSeries::toVo)
+                .map(ms -> ms.toVo(SystemMessageSeriesVo.class))
                 .collect(Collectors.toList());
     }
 
@@ -107,12 +107,12 @@ public class MessageSeriesRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<MessageSeriesVo> searchMessageSeries(
+    public List<SystemMessageSeriesVo> searchMessageSeries(
             @QueryParam("name") @DefaultValue("") String name,
             @QueryParam("domain") @DefaultValue("false") String domainId,
             @QueryParam("limit") @DefaultValue("100") int limit) {
         return messageSeriesService.searchMessageSeries(name, domainId, limit).stream()
-                .map(MessageSeries::toVo)
+                .map(ms -> ms.toVo(SystemMessageSeriesVo.class))
                 .collect(Collectors.toList());
     }
 
@@ -125,9 +125,9 @@ public class MessageSeriesRestService {
     @RolesAllowed({ "sysadmin" })
     @GZIP
     @NoCache
-    public MessageSeriesVo createMessageSeries(MessageSeriesVo seriesVo) throws Exception {
+    public SystemMessageSeriesVo createMessageSeries(SystemMessageSeriesVo seriesVo) throws Exception {
         log.info("Creating message series " + seriesVo);
-        return messageSeriesService.createMessageSeries(new MessageSeries(seriesVo)).toVo();
+        return messageSeriesService.createMessageSeries(new MessageSeries(seriesVo)).toVo(SystemMessageSeriesVo.class);
     }
 
 
@@ -139,13 +139,13 @@ public class MessageSeriesRestService {
     @RolesAllowed({ "sysadmin" })
     @GZIP
     @NoCache
-    public MessageSeriesVo updateMessageSeries(@PathParam("seriesId") String seriesId, MessageSeriesVo seriesVo) throws Exception {
+    public SystemMessageSeriesVo updateMessageSeries(@PathParam("seriesId") String seriesId, SystemMessageSeriesVo seriesVo) throws Exception {
         if (!Objects.equals(seriesId, seriesVo.getSeriesId())) {
             throw new WebApplicationException(400);
         }
 
         log.info("Updating message series " + seriesVo);
-        return messageSeriesService.updateMessageSeries(new MessageSeries(seriesVo)).toVo();
+        return messageSeriesService.updateMessageSeries(new MessageSeries(seriesVo)).toVo(SystemMessageSeriesVo.class);
     }
 
 
