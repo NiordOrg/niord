@@ -20,6 +20,7 @@ import org.niord.core.area.Area;
 import org.niord.core.category.Category;
 import org.niord.core.chart.Chart;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.model.DescEntity;
 import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
@@ -51,8 +52,10 @@ import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 /**
@@ -419,22 +422,33 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     /** Updates the title line of the message based on area, vicinity and subject */
     public void updateMessageTitle() {
         if (autoTitle) {
-            getDescs().forEach(desc -> {
+            // Get all involved message and message part languages
+            Set<String> langs = Stream.concat(
+                    getDescs().stream().map(DescEntity::getLang),
+                    getParts().stream().flatMap(p -> p.getDescs().stream()).map(DescEntity::getLang)
+            ).collect(Collectors.toSet());
+
+            langs.forEach(lang -> {
                 try {
+                    // First add area lineage
                     StringBuilder title = new StringBuilder();
                     if (!getAreas().isEmpty()) {
-                        title.append(Area.computeAreaTitlePrefix(getAreas(), desc.getLang()));
+                        title.append(Area.computeAreaTitlePrefix(getAreas(), lang));
                     }
-                    if (StringUtils.isNotBlank(desc.getVicinity())) {
+
+                    // If defined, add vicinity
+                    MessageDesc desc = getDesc(lang);
+                    if (desc != null && StringUtils.isNotBlank(desc.getVicinity())) {
                         title.append(" ").append(desc.getVicinity());
                         if (!desc.getVicinity().endsWith(".")) {
                             title.append(".");
                         }
                     }
+
+                    // Add the subject from each message part
                     parts.stream()
-                            .flatMap(p -> p.getDescs().stream())
-                            .filter(d -> desc.getLang().equals(d.getLang()))
-                            .filter(d -> StringUtils.isNotBlank(d.getSubject()))
+                            .map(p -> p.getDesc(lang))
+                            .filter(d -> d != null && StringUtils.isNotBlank(d.getSubject()))
                             .forEach(d -> {
                                 title.append(" ").append(d.getSubject());
                                 if (!d.getSubject().endsWith(".")) {
@@ -442,7 +456,10 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                                 }
                             });
 
-                    desc.setTitle(title.toString().trim());
+                    // Update the message title
+                    if (desc != null || StringUtils.isNotBlank(title.toString())) {
+                        checkCreateDesc(lang).setTitle(title.toString().trim());
+                    }
                 } catch (Exception ignored) {
                 }
             });
