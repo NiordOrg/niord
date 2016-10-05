@@ -59,8 +59,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.niord.model.DataFilter.Model.SYSTEM;
-
 
 /**
  * The core message entity
@@ -284,12 +282,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
 
     /** Converts this entity to a value object */
-    public MessageVo toVo(DataFilter filter) {
+    public <M extends MessageVo> M toVo(Class<M> clz, DataFilter filter) {
 
-        MessageVo message = filter.forModel(SYSTEM)
-                ? new SystemMessageVo()
-                : new MessageVo();
-
+        M message = newInstance(clz);
         DataFilter compFilter = filter.forComponent(Message.class);
 
         message.setId(uid);
@@ -323,7 +318,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             getDescs(compFilter).forEach(desc -> message.checkCreateDescs().add(desc.toVo(compFilter)));
         }
 
-        if (filter.forModel(SYSTEM)) {
+        if (message instanceof SystemMessageVo) {
             SystemMessageVo systemMessage = (SystemMessageVo)message;
             systemMessage.setAutoTitle(autoTitle);
 

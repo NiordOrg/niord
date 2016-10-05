@@ -108,7 +108,7 @@ public abstract class AbstractApiService {
                 .fields("Message.geometry", "Message.details", "Area.parent", "Category.parent");
 
         return searchResult
-                .map(m -> m.toVo(filter))
+                .map(m -> m.toVo(MessageVo.class, filter))
                 .getData();
     }
 }

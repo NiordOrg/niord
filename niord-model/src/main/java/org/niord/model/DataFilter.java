@@ -32,17 +32,13 @@ import java.util.Set;
  * <ul>
  *     <li>A language: This is assumed to be the same for an entire operation and
  *         specifies which localized description records to include. If undefined, all languages are included.</li>
- *     <li>model: Whether to return the public data model or the system model. Typically
- *         the system model represents a subset of the fields included in the public model.</li>
- *     <li>A list of fields. The fields can be specific fields, such as "parentId" or more 
+ *     <li>A list of fields. The fields can be specific fields, such as "parentId" or more
  *         abstract specifications such as "details" or "all".<br/>
  *         Also, the fields may have a component prefix, such as "Area.parent" or "*.*" </li>
  * </ul>
  */
 @SuppressWarnings("unused")
 public class DataFilter {
-
-    public enum Model { SYSTEM, PUBLIC }
 
     // Standard values for specific fields to include
     public static final String ALL          = "*";
@@ -53,7 +49,6 @@ public class DataFilter {
     public static final String DETAILS      = "details";
 
     private Set<String> fields = new HashSet<>();
-    private Model model;
     private String lang;
 
 
@@ -69,7 +64,6 @@ public class DataFilter {
      */
     private DataFilter(DataFilter other) {
         this.lang = other.lang;
-        this.model = other.model;
         this.fields.addAll(other.fields);
     }
 
@@ -113,31 +107,6 @@ public class DataFilter {
     /** Returns the current language setting of the data filter */
     public String getLang() {
         return lang;
-    }
-
-
-    /**
-     * Returns a new DataFilter instance specifying the given flavour of data model
-     *
-     * @param model the data model to filter for
-     * @return a new DataFilter instance specifying the given flavour of data model
-     */
-    public DataFilter model(Model model) {
-        DataFilter filter = new DataFilter(this);
-        filter.model = model;
-        return filter;
-    }
-
-
-    /** Returns the current data model of the data filter */
-    public Model getModel() {
-        return model;
-    }
-
-
-    /** Returns if the data filter is for the given model */
-    public boolean forModel(Model model) {
-        return model == this.model;
     }
 
 

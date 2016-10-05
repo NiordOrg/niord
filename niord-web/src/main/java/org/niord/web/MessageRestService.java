@@ -31,8 +31,8 @@ import org.niord.core.message.MessageHistory;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
-import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.message.vo.MessageHistoryVo;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.repo.FileTypes;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.user.UserService;
@@ -78,7 +78,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.niord.core.message.vo.MessageTagVo.MessageTagType.PUBLIC;
-import static org.niord.model.DataFilter.Model.SYSTEM;
 import static org.niord.model.message.Status.DRAFT;
 import static org.niord.model.message.Status.VERIFIED;
 
@@ -219,7 +218,7 @@ public class MessageRestService  {
                 .lang(language)
                 .fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
 
-        return message.toVo(filter);
+        return message.toVo(MessageVo.class, filter);
     }
 
 
@@ -233,10 +232,9 @@ public class MessageRestService  {
     private SystemMessageVo toSystemMessage(Message message) throws Exception {
 
         DataFilter filter = DataFilter.get()
-                .model(SYSTEM)
                 .fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
 
-        SystemMessageVo messageVo = (SystemMessageVo)message.toVo(filter);
+        SystemMessageVo messageVo = message.toVo(SystemMessageVo.class, filter);
 
         // Compute the default set of editor fields to display for the message
         editorFieldsService.computeEditorFields(messageVo);
@@ -317,9 +315,8 @@ public class MessageRestService  {
         }
 
         DataFilter dataFilter = DataFilter.get()
-                .model(SYSTEM)
                 .fields("Message.details");
-        SystemMessageVo messageVo = (SystemMessageVo)message.toVo(dataFilter);
+        SystemMessageVo messageVo = message.toVo(SystemMessageVo.class, dataFilter);
 
         // Compute the default set of editor fields to display for the message
         editorFieldsService.computeEditorFields(messageVo);
