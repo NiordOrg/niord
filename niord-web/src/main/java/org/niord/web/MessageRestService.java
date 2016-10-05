@@ -78,6 +78,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.niord.core.message.vo.MessageTagVo.MessageTagType.PUBLIC;
+import static org.niord.model.DataFilter.Model.SYSTEM;
 import static org.niord.model.message.Status.DRAFT;
 import static org.niord.model.message.Status.VERIFIED;
 
@@ -232,9 +233,10 @@ public class MessageRestService  {
     private SystemMessageVo toSystemMessage(Message message) throws Exception {
 
         DataFilter filter = DataFilter.get()
+                .model(SYSTEM)
                 .fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
 
-        SystemMessageVo messageVo =  message.toSystemVo(filter);
+        SystemMessageVo messageVo = (SystemMessageVo)message.toVo(filter);
 
         // Compute the default set of editor fields to display for the message
         editorFieldsService.computeEditorFields(messageVo);
@@ -314,7 +316,10 @@ public class MessageRestService  {
             message.setMessageSeries(messageSeries.get(0));
         }
 
-        SystemMessageVo messageVo =  message.toSystemVo(DataFilter.get().fields("Message.details"));
+        DataFilter dataFilter = DataFilter.get()
+                .model(SYSTEM)
+                .fields("Message.details");
+        SystemMessageVo messageVo = (SystemMessageVo)message.toVo(dataFilter);
 
         // Compute the default set of editor fields to display for the message
         editorFieldsService.computeEditorFields(messageVo);

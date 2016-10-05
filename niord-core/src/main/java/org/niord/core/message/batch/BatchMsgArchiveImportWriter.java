@@ -26,6 +26,8 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.List;
 
+import static org.niord.model.DataFilter.Model.SYSTEM;
+
 /**
  * Persists the messages to the database and updates the attachments.
  * <p>
@@ -61,7 +63,11 @@ public class BatchMsgArchiveImportWriter extends AbstractMessageImportWriter {
             // NB: There may still be an exception when the transaction is committed,
             // so, to minimize the risk of inconsistency, the batch job only processes
             // one message at a time before committing.
-            SystemMessageVo systemMessageVo = message.toSystemVo(DataFilter.get().fields(DataFilter.DETAILS));
+            DataFilter filter = DataFilter
+                    .get()
+                    .model(SYSTEM)
+                    .fields(DataFilter.DETAILS);
+            SystemMessageVo systemMessageVo = (SystemMessageVo)message.toVo(filter);
             systemMessageVo.setEditRepoPath(extractedMsg.getEditRepoPath());
             messageService.updateMessageFromTempRepoFolder(systemMessageVo);
         }

@@ -70,6 +70,7 @@ import static java.util.Arrays.asList;
 import static org.niord.core.geojson.Feature.WGS84_SRID;
 import static org.niord.core.message.MessageIdMatch.MatchType.*;
 import static org.niord.core.message.MessageSearchParams.CommentsType.*;
+import static org.niord.model.DataFilter.Model.SYSTEM;
 import static org.niord.model.search.PagedSearchParamsVo.SortOrder;
 
 /**
@@ -1027,7 +1028,10 @@ public class MessageService extends BaseService {
 
             // Create a snapshot of the message
             ObjectMapper jsonMapper = new ObjectMapper();
-            MessageVo snapshot = message.toSystemVo(DataFilter.get().fields("Message.details", "Message.geometry"));
+            DataFilter dataFilter = DataFilter.get()
+                    .model(SYSTEM)
+                    .fields("Message.details", "Message.geometry");
+            MessageVo snapshot = message.toVo(dataFilter);
             hist.compressSnapshot(jsonMapper.writeValueAsString(snapshot));
 
             saveEntity(hist);

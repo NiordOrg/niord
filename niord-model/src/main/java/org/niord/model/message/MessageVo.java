@@ -85,6 +85,9 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
             if (getReferences() != null) {
                 getReferences().forEach(ref -> ref.sortDescs(language));
             }
+            if (getParts() != null) {
+                getParts().forEach(part -> part.sortDescs(language));
+            }
         }
     }
 

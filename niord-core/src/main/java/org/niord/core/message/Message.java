@@ -56,6 +56,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.niord.model.DataFilter.Model.SYSTEM;
+
 
 /**
  * The core message entity
@@ -279,7 +281,11 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
 
     /** Converts this entity to a value object */
-    private <M extends MessageVo> M toVo(M message, DataFilter filter) {
+    public MessageVo toVo(DataFilter filter) {
+
+        MessageVo message = filter.forModel(SYSTEM)
+                ? new SystemMessageVo()
+                : new MessageVo();
 
         DataFilter compFilter = filter.forComponent(Message.class);
 
@@ -314,29 +320,17 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             getDescs(compFilter).forEach(desc -> message.checkCreateDescs().add(desc.toVo(compFilter)));
         }
 
-        return message;
-    }
+        if (filter.forModel(SYSTEM)) {
+            SystemMessageVo systemMessage = (SystemMessageVo)message;
+            systemMessage.setAutoTitle(autoTitle);
 
+            message.sort(filter.getLang());
 
-    /** Converts this entity to a value object */
-    public MessageVo toVo(DataFilter filter) {
-        return toVo(new MessageVo(), filter);
-    }
-
-
-    /** Converts this entity to a value object */
-    public SystemMessageVo toSystemVo(DataFilter filter) {
-
-        SystemMessageVo message = toVo(new SystemMessageVo(), filter);
-
-        message.setAutoTitle(autoTitle);
-
-        message.sort(filter.getLang());
-
-        long cnt = getComments().stream()
-                .filter(c -> c.getAcknowledgeDate() == null)
-                .count();
-        message.setUnackComments((int)cnt);
+            long cnt = getComments().stream()
+                    .filter(c -> c.getAcknowledgeDate() == null)
+                    .count();
+            systemMessage.setUnackComments((int)cnt);
+        }
 
         return message;
     }
