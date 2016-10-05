@@ -44,7 +44,6 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     String repoPath;
     Date created;
     Date updated;
-    Integer version;
     MessageSeriesVo messageSeries;
     Integer number;
     String shortId;
@@ -170,14 +169,6 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
         this.id = id;
     }
 
-    public String getRepoPath() {
-        return repoPath;
-    }
-
-    public void setRepoPath(String repoPath) {
-        this.repoPath = repoPath;
-    }
-
     @XmlAttribute
     public Date getCreated() {
         return created;
@@ -196,13 +187,12 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
         this.updated = updated;
     }
 
-    @XmlAttribute
-    public Integer getVersion() {
-        return version;
+    public String getRepoPath() {
+        return repoPath;
     }
 
-    public void setVersion(Integer version) {
-        this.version = version;
+    public void setRepoPath(String repoPath) {
+        this.repoPath = repoPath;
     }
 
     public MessageSeriesVo getMessageSeries() {

@@ -302,7 +302,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             message.setRepoPath(repoPath);
             message.setCreated(getCreated());
             message.setUpdated(getUpdated());
-            message.setVersion(getVersion());
             if (messageSeries != null) {
                 message.setMessageSeries(messageSeries.toVo(filter));
             }

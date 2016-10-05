@@ -398,7 +398,6 @@ public class MessageRestService  {
         editMessage.setStatus(DRAFT);
         editMessage.setCreated(null);
         editMessage.setUpdated(null);
-        editMessage.setVersion(null);
         editMessage.setNumber(null);
         editMessage.setPublishDateFrom(null);
         if (editMessage.getParts() != null) {
