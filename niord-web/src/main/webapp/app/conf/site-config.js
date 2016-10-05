@@ -40,8 +40,6 @@ angular.module('niord.conf')
         $rootScope.siteLanguages = ["da","en"];
         $rootScope.numeralLanguages = {"da":"da-dk","en":"en"};
         $rootScope.wmsLayerEnabled = true;
-        $rootScope.nwMrnPrefix = "urn:mrn:iho:nw:";
-        $rootScope.nmMrnPrefix = "urn:mrn:iho:nm:";
         $rootScope.editorFieldsBase = {
             "type": true, "orig_info" : false, "id" : true, "title" : true, "references"  :true, "time" : true,
             "areas" : true, "categories" : true, "positions" : true, "charts" : true, "subject" : true,

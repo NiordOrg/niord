@@ -80,20 +80,6 @@
     "editable"    : true
   },
   {
-    "key"         : "nwMrnPrefix",
-    "description" : "The MRN prefix to use for NW messages",
-    "value"       : "urn:mrn:iho:nw:",
-    "web"         : true,
-    "editable"    : true
-  },
-  {
-    "key"         : "nmMrnPrefix",
-    "description" : "The MRN prefix to use for NM messages",
-    "value"       : "urn:mrn:iho:nm:",
-    "web"         : true,
-    "editable"    : true
-  },
-  {
     "key"         : "adminIntegrationPageEnabled",
     "description" : "Flags if the 'Integration' admin page should be enabled",
     "value"       : false,
