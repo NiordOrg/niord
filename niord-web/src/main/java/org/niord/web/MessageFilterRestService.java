@@ -23,10 +23,9 @@ import org.niord.core.message.MessageFilter;
 import org.niord.core.message.MessageFilterService;
 import org.niord.core.user.User;
 import org.niord.core.user.UserService;
-import org.niord.model.message.MessageFilterVo;
+import org.niord.core.message.vo.MessageFilterVo;
 import org.slf4j.Logger;
 
-import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;

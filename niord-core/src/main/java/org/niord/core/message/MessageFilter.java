@@ -17,7 +17,7 @@ package org.niord.core.message;
 
 import org.niord.core.model.BaseEntity;
 import org.niord.core.user.User;
-import org.niord.model.message.MessageFilterVo;
+import org.niord.core.message.vo.MessageFilterVo;
 
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
