@@ -26,7 +26,6 @@ import org.niord.core.category.CategoryService;
 import org.niord.core.category.vo.SystemCategoryVo;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
-import org.niord.model.message.CategoryVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
@@ -84,7 +83,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<CategoryVo> searchCategories(
+    public List<SystemCategoryVo> searchCategories(
             @QueryParam("lang") String lang,
             @QueryParam("name") String name,
             @QueryParam("domain") @DefaultValue("false") String domain,
@@ -120,7 +119,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<CategoryVo> searchCategoryIds(@PathParam("categoryIds") String categoryIds,
+    public List<SystemCategoryVo> searchCategoryIds(@PathParam("categoryIds") String categoryIds,
                                       @QueryParam("lang") @DefaultValue("en") String lang,
                                       @QueryParam("limit") @DefaultValue("1000") int limit) {
 
@@ -147,7 +146,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<CategoryVo> getCategoryRoots(@QueryParam("lang") String lang) {
+    public List<SystemCategoryVo> getCategoryRoots(@QueryParam("lang") String lang) {
 
         DataFilter filter = DataFilter.get()
                 .lang(lang)
@@ -165,7 +164,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<CategoryVo> getAll() {
+    public List<SystemCategoryVo> getAll() {
 
         DataFilter filter = DataFilter.get()
                 .fields(DataFilter.CHILDREN);
@@ -182,7 +181,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public CategoryVo getCategory(@PathParam("categoryId") Integer categoryId) throws Exception {
+    public SystemCategoryVo getCategory(@PathParam("categoryId") Integer categoryId) throws Exception {
         log.debug("Getting category " + categoryId);
         Category category = categoryService.getCategoryDetails(categoryId);
         // Return the category without parent and child categories
@@ -195,7 +194,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({"admin"})
-    public CategoryVo createCategory(SystemCategoryVo categoryVo) throws Exception {
+    public SystemCategoryVo createCategory(SystemCategoryVo categoryVo) throws Exception {
         Category category = new Category(categoryVo);
         log.info("Creating category " + category);
         Integer parentId = (categoryVo.getParent() == null) ? null : categoryVo.getParent().getId();
@@ -209,7 +208,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({"admin"})
-    public CategoryVo updateCategory(@PathParam("categoryId") Integer categoryId, SystemCategoryVo categoryVo) throws Exception {
+    public SystemCategoryVo updateCategory(@PathParam("categoryId") Integer categoryId, SystemCategoryVo categoryVo) throws Exception {
         if (!Objects.equals(categoryId, categoryVo.getId())) {
             throw new WebApplicationException(400);
         }

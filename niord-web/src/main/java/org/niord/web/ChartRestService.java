@@ -24,7 +24,6 @@ import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
 import org.niord.core.chart.vo.SystemChartVo;
 import org.niord.core.geojson.JtsConverter;
-import org.niord.model.message.ChartVo;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.geojson.GeometryVo;
 import org.slf4j.Logger;
@@ -34,7 +33,17 @@ import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.Collections;
@@ -64,7 +73,7 @@ public class ChartRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<ChartVo> getCharts(@PathParam("chartNumbers") String chartIds,
+    public List<SystemChartVo> getCharts(@PathParam("chartNumbers") String chartIds,
                                    @QueryParam("limit") @DefaultValue("1000") int limit) {
         return chartService.findByChartNumbers(chartIds.split(",")).stream()
                 .limit(limit)
@@ -79,7 +88,7 @@ public class ChartRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<ChartVo> searchCharts(@QueryParam("name") @DefaultValue("") String name,
+    public List<SystemChartVo> searchCharts(@QueryParam("name") @DefaultValue("") String name,
                                       @QueryParam("inactive") @DefaultValue("false") boolean inactive,
                                       @QueryParam("limit") @DefaultValue("1000") int limit) {
         return chartService.searchCharts(name, inactive, limit).stream()
@@ -94,7 +103,7 @@ public class ChartRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<ChartVo> getAllCharts(@QueryParam("limit") @DefaultValue("1000") int limit) {
+    public List<SystemChartVo> getAllCharts(@QueryParam("limit") @DefaultValue("1000") int limit) {
         return chartService.getCharts().stream()
                 .limit(limit)
                 .map(c -> c.toVo(SystemChartVo.class))
@@ -109,7 +118,7 @@ public class ChartRestService extends AbstractBatchableRestService {
     @RolesAllowed({ "admin" })
     @GZIP
     @NoCache
-    public ChartVo createChart(SystemChartVo chartVo) throws Exception {
+    public SystemChartVo createChart(SystemChartVo chartVo) throws Exception {
         log.info("Creating chart " + chartVo);
         return chartService.createChart(new Chart(chartVo)).toVo(SystemChartVo.class);
     }
@@ -122,7 +131,7 @@ public class ChartRestService extends AbstractBatchableRestService {
     @RolesAllowed({ "admin" })
     @GZIP
     @NoCache
-    public ChartVo updateChart(@PathParam("chartNumber") String chartNumber, SystemChartVo chartVo) throws Exception {
+    public SystemChartVo updateChart(@PathParam("chartNumber") String chartNumber, SystemChartVo chartVo) throws Exception {
         if (!Objects.equals(chartNumber, chartVo.getChartNumber())) {
             throw new WebApplicationException(400);
         }
@@ -168,7 +177,7 @@ public class ChartRestService extends AbstractBatchableRestService {
     @RolesAllowed({ "editor" })
     @GZIP
     @NoCache
-    public List<ChartVo> computeIntersectingCharts(FeatureCollectionVo featureCollection) {
+    public List<SystemChartVo> computeIntersectingCharts(FeatureCollectionVo featureCollection) {
         GeometryVo geometryVo = featureCollection.toGeometry();
         if (geometryVo == null) {
             return Collections.emptyList();

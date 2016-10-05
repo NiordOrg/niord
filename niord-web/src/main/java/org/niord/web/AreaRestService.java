@@ -26,7 +26,6 @@ import org.niord.core.area.vo.SystemAreaVo;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
-import org.niord.model.message.AreaVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
@@ -34,7 +33,17 @@ import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.Arrays;
@@ -74,7 +83,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<AreaVo> searchAreas(
+    public List<SystemAreaVo> searchAreas(
             @QueryParam("lang") String lang,
             @QueryParam("name") String name,
             @QueryParam("domain") @DefaultValue("false") String domain,
@@ -115,7 +124,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<AreaVo> searchAreaIds(@PathParam("areaIds") String areaIds,
+    public List<SystemAreaVo> searchAreaIds(@PathParam("areaIds") String areaIds,
                                       @QueryParam("lang") String lang,
                                       @QueryParam("limit") @DefaultValue("1000") int limit) {
 
@@ -142,7 +151,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<AreaVo> getAreaRoots(@QueryParam("lang") String lang) {
+    public List<SystemAreaVo> getAreaRoots(@QueryParam("lang") String lang) {
 
         DataFilter filter = DataFilter.get()
                 .lang(lang)
@@ -160,7 +169,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<AreaVo> getAll() {
+    public List<SystemAreaVo> getAll() {
 
         DataFilter filter = DataFilter.get()
                 .fields(DataFilter.CHILDREN, DataFilter.GEOMETRY, DataFilter.DETAILS);
@@ -177,7 +186,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public AreaVo getArea(
+    public SystemAreaVo getArea(
             @PathParam("areaId") Integer areaId,
             @QueryParam("parent") @DefaultValue("false") boolean includeParents
     ) throws Exception {
@@ -201,7 +210,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({"admin"})
-    public AreaVo createArea(SystemAreaVo areaVo) throws Exception {
+    public SystemAreaVo createArea(SystemAreaVo areaVo) throws Exception {
         Area area = new Area(areaVo);
         log.info("Creating area " + area);
         Integer parentId = (areaVo.getParent() == null) ? null : areaVo.getParent().getId();
@@ -217,7 +226,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({"admin"})
-    public AreaVo updateArea(@PathParam("areaId") Integer areaId, SystemAreaVo areaVo) throws Exception {
+    public SystemAreaVo updateArea(@PathParam("areaId") Integer areaId, SystemAreaVo areaVo) throws Exception {
         if (!Objects.equals(areaId, areaVo.getId())) {
             throw new WebApplicationException(400);
         }
