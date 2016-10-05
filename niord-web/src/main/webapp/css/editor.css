@@ -47,6 +47,10 @@
     padding-left: 7px
 }
 
+.editor-fields-group-btn {
+    margin-left: 3px;
+}
+
 .editor-field-group-label {
     text-align: right;
     margin-right: 20px;
@@ -125,13 +129,12 @@
 }
 
 .part-type-btn {
-    font-size: 11px;
+    vertical-align: middle;
     color: lightgray;
+    height: 100%;
     margin-right: 5px;
-    padding: 3px 5px;
+    padding: 4px 10px;
     cursor: pointer;
-    border: 1px solid gray;
-    border-radius: 3px;
 }
 
 .part-type-selected {
