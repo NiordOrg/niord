@@ -79,7 +79,6 @@ import java.util.List;
  *      "messageId" : "NM-845-15",
  *      "type" : "CANCELLATION"
  *    } ],
- *    "atonUids" : [ ],
  *    "originalInformation" : true,
  *    "descs" : [ {
  *      "lang" : "da",

@@ -420,9 +420,6 @@ public class MessageService extends BaseService {
                 .filter(r -> r != null)
                 .forEach(original::addReference);
 
-        original.getAtonUids().clear();
-        original.getAtonUids().addAll(message.getAtonUids());
-
         original.setOriginalInformation(message.getOriginalInformation());
 
         original.getParts().clear();
@@ -828,13 +825,6 @@ public class MessageService extends BaseService {
                 // Only search for messages within extent
                 criteriaHelper.add(geomPredicate);
             }
-        }
-
-
-        // AtoN UIDs
-        if (!param.getAtonUids().isEmpty()) {
-            Join<Message, String> atonRoot = msgRoot.join("atonUids", JoinType.LEFT);
-            criteriaHelper.add(atonRoot.in(param.getAtonUids()));
         }
 
 

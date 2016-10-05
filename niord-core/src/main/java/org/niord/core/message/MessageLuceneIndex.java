@@ -306,9 +306,6 @@ public class MessageLuceneIndex extends BaseService {
                         addPhraseSearchField(doc, searchField, TextUtils.html2txt(desc.getDetails()));
                     });
 
-            message.getAtonUids()
-                    .forEach(a -> addPhraseSearchField(doc, searchField, a));
-
             // Attachments
             message.getAttachments().forEach(att -> {
                 AttachmentDesc desc = att.getDesc(language);

@@ -67,7 +67,6 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     Set<Integer> areaIds = new HashSet<>();
     Set<Integer> categoryIds = new HashSet<>();
     Set<String> chartNumbers = new HashSet<>();
-    Set<String> atonUids = new HashSet<>();
     Set<String> tags = new HashSet<>();
     String viewMode;
 
@@ -103,7 +102,6 @@ public class MessageSearchParams extends PagedSearchParamsVo {
                 .tags(toSet(req.getParameterValues("tag"), Function.identity()))
                 .messageId(req.getParameter("messageId"))
                 .referenceLevels(checkNull(req.getParameter("referenceLevels"), Integer::valueOf))
-                .atonUids(toSet(req.getParameterValues("aton"), Function.identity()))
                 .from((Long)checkNull(req.getParameter("fromDate"), Long::valueOf))
                 .to((Long)checkNull(req.getParameter("toDate"), Long::valueOf))
                 .dateType(checkNull(req.getParameter("dateType"), DateType::valueOf))
@@ -214,7 +212,6 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         if (categoryIds.size() > 0) { desc.add(String.format("Category ID's: %s", categoryIds)); }
         if (chartNumbers.size() > 0) { desc.add(String.format("Chart Numbers: %s", chartNumbers)); }
         if (tags.size() > 0) { desc.add(String.format("Tags: %s", tags)); }
-        if (atonUids.size() > 0) { desc.add(String.format("Aton UIDs: %s", atonUids)); }
         if (extent != null) { desc.add(String.format("Extent: '%s'", extent.toString())); }
 
         return desc.stream().collect(Collectors.joining(", "));
@@ -403,15 +400,6 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public MessageSearchParams tags(Set<String> tags) {
         this.tags = toSet(tags);
-        return this;
-    }
-
-    public Set<String> getAtonUids() {
-        return atonUids;
-    }
-
-    public MessageSearchParams atonUids(Set<String> atonUids) {
-        this.atonUids = toSet(atonUids);
         return this;
     }
 

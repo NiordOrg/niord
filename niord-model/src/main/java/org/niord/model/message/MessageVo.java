@@ -35,7 +35,7 @@ import java.util.List;
 @XmlType(propOrder = {
         "repoPath", "messageSeries", "number", "shortId", "mainType", "type", "status",
         "areas", "categories", "charts", "horizontalDatum", "publishDateFrom", "publishDateTo",
-        "references", "atonUids", "originalInformation", "parts", "descs", "attachments"
+        "references", "originalInformation", "parts", "descs", "attachments"
 })
 @SuppressWarnings("unused")
 public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable {
@@ -57,7 +57,6 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     Date publishDateFrom;
     Date publishDateTo;
     List<ReferenceVo> references;
-    List<String> atonUids;
     Boolean originalInformation;
     List<MessagePartVo> parts;
     List<MessageDescVo> descs;
@@ -140,13 +139,6 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
             references = new ArrayList<>();
         }
         return references;
-    }
-
-    public List<String> checkCreateAtonUids() {
-        if (atonUids == null) {
-            atonUids = new ArrayList<>();
-        }
-        return atonUids;
     }
 
     public List<AttachmentVo> checkCreateAttachments() {
@@ -297,14 +289,6 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
 
     public void setReferences(List<ReferenceVo> references) {
         this.references = references;
-    }
-
-    public List<String> getAtonUids() {
-        return atonUids;
-    }
-
-    public void setAtonUids(List<String> atonUids) {
-        this.atonUids = atonUids;
     }
 
     public Boolean getOriginalInformation() {

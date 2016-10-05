@@ -33,7 +33,6 @@ import org.niord.model.message.Type;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
-import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -170,10 +169,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     @OrderColumn(name = "indexNo")
     List<Reference> references = new ArrayList<>();
 
-    // As Niord does not "own" the AtoN data, use weak references to AtoNs
-    @ElementCollection
-    List<String> atonUids = new ArrayList<>();
-
     @ManyToMany(mappedBy = "messages")
     List<MessageTag> tags = new ArrayList<>();
 
@@ -262,9 +257,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                 .filter(r -> StringUtils.isNotBlank(r.getMessageId()))
                 .forEach(r -> addReference(new Reference(r)));
         }
-        if (message.getAtonUids() != null) {
-            atonUids.addAll(message.getAtonUids());
-        }
         this.originalInformation = message.getOriginalInformation();
         if (message.getDescs() != null) {
             message.getDescs().forEach(desc -> addDesc(new MessageDesc(desc)));
@@ -312,7 +304,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             message.setPublishDateFrom(publishDateFrom);
             message.setPublishDateTo(publishDateTo);
             references.forEach(r -> message.checkCreateReferences().add(r.toVo(filter)));
-            message.checkCreateAtonUids().addAll(atonUids);
             message.setOriginalInformation(originalInformation);
             attachments.forEach(att -> message.checkCreateAttachments().add(att.toVo(filter)));
         }
@@ -746,14 +737,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setReferences(List<Reference> references) {
         this.references = references;
-    }
-
-    public List<String> getAtonUids() {
-        return atonUids;
-    }
-
-    public void setAtonUids(List<String> atonUids) {
-        this.atonUids = atonUids;
     }
 
     public List<MessageTag> getTags() {
