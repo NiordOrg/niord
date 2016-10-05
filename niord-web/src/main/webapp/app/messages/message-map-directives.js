@@ -146,6 +146,7 @@ angular.module('niord.messages')
                                         var olFeature = MapService.gjToOlFeature(gjFeature);
                                         olFeature.set('message', {
                                             id : message.id,
+                                            mainType: message.mainType,
                                             shortId : message.shortId,
                                             descs : message.descs
                                         });
