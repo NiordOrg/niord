@@ -22,6 +22,7 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
+import org.niord.core.chart.vo.SystemChartVo;
 import org.niord.core.geojson.JtsConverter;
 import org.niord.model.message.ChartVo;
 import org.niord.model.geojson.FeatureCollectionVo;
@@ -67,7 +68,7 @@ public class ChartRestService extends AbstractBatchableRestService {
                                    @QueryParam("limit") @DefaultValue("1000") int limit) {
         return chartService.findByChartNumbers(chartIds.split(",")).stream()
                 .limit(limit)
-                .map(Chart::toVo)
+                .map(c -> c.toVo(SystemChartVo.class))
                 .collect(Collectors.toList());
     }
 
@@ -82,7 +83,7 @@ public class ChartRestService extends AbstractBatchableRestService {
                                       @QueryParam("inactive") @DefaultValue("false") boolean inactive,
                                       @QueryParam("limit") @DefaultValue("1000") int limit) {
         return chartService.searchCharts(name, inactive, limit).stream()
-                .map(Chart::toVo)
+                .map(c -> c.toVo(SystemChartVo.class))
                 .collect(Collectors.toList());
     }
 
@@ -96,7 +97,7 @@ public class ChartRestService extends AbstractBatchableRestService {
     public List<ChartVo> getAllCharts(@QueryParam("limit") @DefaultValue("1000") int limit) {
         return chartService.getCharts().stream()
                 .limit(limit)
-                .map(Chart::toVo)
+                .map(c -> c.toVo(SystemChartVo.class))
                 .collect(Collectors.toList());
     }
 
@@ -108,9 +109,9 @@ public class ChartRestService extends AbstractBatchableRestService {
     @RolesAllowed({ "admin" })
     @GZIP
     @NoCache
-    public ChartVo createChart(ChartVo chartVo) throws Exception {
+    public ChartVo createChart(SystemChartVo chartVo) throws Exception {
         log.info("Creating chart " + chartVo);
-        return chartService.createChart(new Chart(chartVo)).toVo();
+        return chartService.createChart(new Chart(chartVo)).toVo(SystemChartVo.class);
     }
 
     /** Updates an existing chart */
@@ -121,13 +122,13 @@ public class ChartRestService extends AbstractBatchableRestService {
     @RolesAllowed({ "admin" })
     @GZIP
     @NoCache
-    public ChartVo updateChart(@PathParam("chartNumber") String chartNumber, ChartVo chartVo) throws Exception {
+    public ChartVo updateChart(@PathParam("chartNumber") String chartNumber, SystemChartVo chartVo) throws Exception {
         if (!Objects.equals(chartNumber, chartVo.getChartNumber())) {
             throw new WebApplicationException(400);
         }
 
         log.info("Updating chart " + chartVo);
-        return chartService.updateChartData(new Chart(chartVo)).toVo();
+        return chartService.updateChartData(new Chart(chartVo)).toVo(SystemChartVo.class);
     }
 
     /** Deletes an existing chart */
@@ -175,7 +176,7 @@ public class ChartRestService extends AbstractBatchableRestService {
 
         Geometry geometry = JtsConverter.toJts(geometryVo);
         return chartService.getIntersectingCharts(geometry).stream()
-                .map(Chart::toVo)
+                .map(c -> c.toVo(SystemChartVo.class))
                 .collect(Collectors.toList());
 
     }

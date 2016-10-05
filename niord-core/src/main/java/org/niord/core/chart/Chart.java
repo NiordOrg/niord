@@ -17,6 +17,7 @@ package org.niord.core.chart;
 
 import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.chart.vo.SystemChartVo;
 import org.niord.core.geojson.JtsConverter;
 import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
@@ -119,32 +120,46 @@ public class Chart extends VersionedEntity<Integer> {
         this.chartNumber = chart.getChartNumber();
         this.internationalNumber = chart.getInternationalNumber();
         this.active = chart.isActive();
-        this.geometry = JtsConverter.toJts(chart.getGeometry());
-        this.horizontalDatum = chart.getHorizontalDatum();
         this.scale = chart.getScale();
         this.name = chart.getName();
+
+        if (chart instanceof SystemChartVo) {
+            SystemChartVo sysChart = (SystemChartVo)chart;
+            this.geometry = JtsConverter.toJts(sysChart.getGeometry());
+            this.horizontalDatum = sysChart.getHorizontalDatum();
+        }
     }
 
-    /** Converts this entity to a value object */
-    public ChartVo toVo() {
-        return toVo(DataFilter.get().fields(DataFilter.ALL));
-    }
 
     /** Converts this entity to a value object */
-    public ChartVo toVo(DataFilter filter) {
-        ChartVo chart = new ChartVo();
+    public <C extends ChartVo> C toVo(Class<C> clz) {
+        return toVo(clz, DataFilter.get().fields(DataFilter.ALL));
+    }
+
+
+    /** Converts this entity to a value object */
+    public <C extends ChartVo> C toVo(Class<C> clz, DataFilter filter) {
+
+        C chart = newInstance(clz);
         chart.setChartNumber(chartNumber);
         chart.setInternationalNumber(internationalNumber);
         chart.setActive(active);
         chart.setScale(scale);
 
         DataFilter compFilter = filter.forComponent(Chart.class);
-        if (compFilter.includeGeometry()) {
-            chart.setGeometry(JtsConverter.fromJts(geometry));
-        }
         if (compFilter.includeDetails()) {
-            chart.setHorizontalDatum(horizontalDatum);
             chart.setName(name);
+        }
+
+        if (chart instanceof SystemChartVo) {
+            SystemChartVo sysChart = (SystemChartVo)chart;
+
+            if (compFilter.includeGeometry()) {
+                sysChart.setGeometry(JtsConverter.fromJts(geometry));
+            }
+            if (compFilter.includeDetails()) {
+                sysChart.setHorizontalDatum(horizontalDatum);
+            }
         }
         return chart;
     }

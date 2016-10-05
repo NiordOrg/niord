@@ -23,6 +23,7 @@ import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.category.Category;
 import org.niord.core.category.CategorySearchParams;
 import org.niord.core.category.CategoryService;
+import org.niord.core.category.vo.SystemCategoryVo;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.message.CategoryVo;
@@ -108,7 +109,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
         log.debug(String.format("Searching for categories %s", params));
 
         return categoryService.searchCategories(params).stream()
-                .map(c -> c.toVo(filter))
+                .map(c -> c.toVo(SystemCategoryVo.class, filter))
                 .collect(Collectors.toList());
     }
 
@@ -134,7 +135,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
                 .fields(DataFilter.PARENT);
 
         return categoryService.getCategoryDetails(ids).stream()
-                .map(c -> c.toVo(filter))
+                .map(c -> c.toVo(SystemCategoryVo.class, filter))
                 .limit(limit)
                 .collect(Collectors.toList());
     }
@@ -153,7 +154,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
                 .fields(DataFilter.CHILDREN);
 
         return categoryService.getCategoryTree().stream()
-                .map(c -> c.toVo(filter))
+                .map(c -> c.toVo(SystemCategoryVo.class, filter))
                 .collect(Collectors.toList());
     }
 
@@ -170,7 +171,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
                 .fields(DataFilter.CHILDREN);
 
         return categoryService.getCategoryTree().stream()
-                .map(c -> c.toVo(filter))
+                .map(c -> c.toVo(SystemCategoryVo.class, filter))
                 .collect(Collectors.toList());
     }
 
@@ -185,7 +186,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
         log.debug("Getting category " + categoryId);
         Category category = categoryService.getCategoryDetails(categoryId);
         // Return the category without parent and child categories
-        return category == null ? null : category.toVo(DataFilter.get());
+        return category == null ? null : category.toVo(SystemCategoryVo.class, DataFilter.get());
     }
 
     /** Creates a new category */
@@ -194,11 +195,11 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({"admin"})
-    public CategoryVo createCategory(CategoryVo categoryVo) throws Exception {
+    public CategoryVo createCategory(SystemCategoryVo categoryVo) throws Exception {
         Category category = new Category(categoryVo);
         log.info("Creating category " + category);
         Integer parentId = (categoryVo.getParent() == null) ? null : categoryVo.getParent().getId();
-        return categoryService.createCategory(category, parentId).toVo(DataFilter.get());
+        return categoryService.createCategory(category, parentId).toVo(SystemCategoryVo.class, DataFilter.get());
     }
 
 
@@ -208,13 +209,13 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({"admin"})
-    public CategoryVo updateCategory(@PathParam("categoryId") Integer categoryId, CategoryVo categoryVo) throws Exception {
+    public CategoryVo updateCategory(@PathParam("categoryId") Integer categoryId, SystemCategoryVo categoryVo) throws Exception {
         if (!Objects.equals(categoryId, categoryVo.getId())) {
             throw new WebApplicationException(400);
         }
         Category category = new Category(categoryVo);
         log.info("Updating category " + category);
-        return categoryService.updateCategoryData(category).toVo(DataFilter.get());
+        return categoryService.updateCategoryData(category).toVo(SystemCategoryVo.class, DataFilter.get());
     }
 
 

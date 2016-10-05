@@ -18,7 +18,7 @@ package org.niord.core.chart.batch;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
-import org.niord.model.message.ChartVo;
+import org.niord.core.chart.vo.SystemChartVo;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -36,7 +36,7 @@ public class BatchChartImportProcessor extends AbstractItemHandler {
     @Override
     public Object processItem(Object item) throws Exception {
 
-        ChartVo chartVo = (ChartVo) item;
+        SystemChartVo chartVo = (SystemChartVo) item;
         Chart chart = new Chart(chartVo);
 
         // Look

@@ -18,13 +18,10 @@ package org.niord.model.message;
 import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
-import org.niord.model.geojson.GeometryVo;
 
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -33,48 +30,16 @@ import java.util.List;
 @ApiModel(value = "Area", description = "Hierarchical area model")
 @XmlRootElement(name = "area")
 @XmlType(propOrder = {
-        "mrn", "type", "active", "parent", "geometry", "children", "descs",
-        "messageSorting", "originLatitude", "originLongitude", "originAngle", "editorFields"
+        "mrn", "active", "parent", "descs"
 })
 @SuppressWarnings("unused")
-public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comparable<AreaVo> {
-
-    // Defines the sorting type of messages withing this area
-    public enum AreaMessageSorting { NS, SN, EW, WE, CW, CCW }
+public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable {
 
     Integer id;
     String mrn;
-    AreaType type;
     boolean active = true;
     AreaVo parent;
-    GeometryVo geometry;
-    List<AreaVo> children;
-    Double siblingSortOrder;
-    AreaMessageSorting messageSorting;
-    Float originLatitude;   // For CW and CCW message sorting
-    Float originLongitude;  // For CW and CCW message sorting
-    Integer originAngle;    // For CW and CCW message sorting
     List<AreaDescVo> descs;
-    List<String> editorFields;
-
-
-    /** {@inheritDoc} */
-    @Override
-    @SuppressWarnings("all")
-    public int compareTo(AreaVo area) {
-        return (area == null || siblingSortOrder == area.getSiblingSortOrder()) ? 0 : (siblingSortOrder < area.getSiblingSortOrder() ? -1 : 1);
-    }
-
-
-    /**
-     * Recursively sorts the children
-     */
-    public void sortChildren() {
-        if (children != null) {
-            Collections.sort(children);
-            children.forEach(AreaVo::sortChildren);
-        }
-    }
 
 
     /** {@inheritDoc} */
@@ -86,14 +51,6 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comp
         return desc;
     }
 
-
-    /** Returns the list of child areas, and creates an empty list if needed */
-    public List<AreaVo> checkCreateChildren() {
-        if (children == null) {
-            children = new ArrayList<>();
-        }
-        return children;
-    }
 
     /*************************/
     /** Getters and Setters **/
@@ -116,14 +73,6 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comp
         this.mrn = mrn;
     }
 
-    public AreaType getType() {
-        return type;
-    }
-
-    public void setType(AreaType type) {
-        this.type = type;
-    }
-
     public boolean isActive() {
         return active;
     }
@@ -140,63 +89,6 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comp
         this.parent = parent;
     }
 
-    public GeometryVo getGeometry() {
-        return geometry;
-    }
-
-    public void setGeometry(GeometryVo geometry) {
-        this.geometry = geometry;
-    }
-
-    public List<AreaVo> getChildren() {
-        return children;
-    }
-
-    public void setChildren(List<AreaVo> children) {
-        this.children = children;
-    }
-
-    @XmlAttribute
-    public Double getSiblingSortOrder() {
-        return siblingSortOrder;
-    }
-
-    public void setSiblingSortOrder(Double siblingSortOrder) {
-        this.siblingSortOrder = siblingSortOrder;
-    }
-
-    public AreaMessageSorting getMessageSorting() {
-        return messageSorting;
-    }
-
-    public void setMessageSorting(AreaMessageSorting messageSorting) {
-        this.messageSorting = messageSorting;
-    }
-
-    public Float getOriginLatitude() {
-        return originLatitude;
-    }
-
-    public void setOriginLatitude(Float originLatitude) {
-        this.originLatitude = originLatitude;
-    }
-
-    public Float getOriginLongitude() {
-        return originLongitude;
-    }
-
-    public void setOriginLongitude(Float originLongitude) {
-        this.originLongitude = originLongitude;
-    }
-
-    public Integer getOriginAngle() {
-        return originAngle;
-    }
-
-    public void setOriginAngle(Integer originAngle) {
-        this.originAngle = originAngle;
-    }
-
     @Override
     public List<AreaDescVo> getDescs() {
         return descs;
@@ -207,11 +99,4 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable, Comp
         this.descs = descs;
     }
 
-    public List<String> getEditorFields() {
-        return editorFields;
-    }
-
-    public void setEditorFields(List<String> editorFields) {
-        this.editorFields = editorFields;
-    }
 }

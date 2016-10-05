@@ -17,8 +17,8 @@ package org.niord.core.category.batch;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.niord.core.batch.AbstractItemHandler;
+import org.niord.core.category.vo.SystemCategoryVo;
 import org.niord.core.util.JsonUtils;
-import org.niord.model.message.CategoryVo;
 
 import javax.inject.Named;
 import java.io.Serializable;
@@ -69,7 +69,7 @@ import java.util.List;
 @Named
 public class BatchCategoryImportReader extends AbstractItemHandler {
 
-    List<CategoryVo> categories;
+    List<SystemCategoryVo> categories;
     int categoriesNo = 0;
 
     /** {@inheritDoc} **/
@@ -80,8 +80,8 @@ public class BatchCategoryImportReader extends AbstractItemHandler {
         Path path = batchService.getBatchJobDataFile(jobContext.getInstanceId());
 
         // Load the charts from the file
-        List<CategoryVo> categoriesRoots = JsonUtils.readJson(
-                new TypeReference<List<CategoryVo>>(){},
+        List<SystemCategoryVo> categoriesRoots = JsonUtils.readJson(
+                new TypeReference<List<SystemCategoryVo>>(){},
                 path);
 
         // Serialize the list of categories
@@ -116,7 +116,7 @@ public class BatchCategoryImportReader extends AbstractItemHandler {
 
 
     /** Serialize the siblings root hierarchy to a flat list + define the parent field + resets ID fields */
-    private void serializeCategories(CategoryVo parent, List<CategoryVo> siblings, List<CategoryVo> categories) {
+    private void serializeCategories(SystemCategoryVo parent, List<SystemCategoryVo> siblings, List<SystemCategoryVo> categories) {
         if (siblings != null) {
             siblings.forEach(a -> {
                 a.setId(null);

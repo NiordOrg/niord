@@ -22,6 +22,7 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaSearchParams;
 import org.niord.core.area.AreaService;
+import org.niord.core.area.vo.SystemAreaVo;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
@@ -103,7 +104,7 @@ public class AreaRestService extends AbstractBatchableRestService {
         DataFilter filter = (geometry) ? f.fields(DataFilter.GEOMETRY) : f;
 
         return areaService.searchAreas(params).stream()
-                .map(a -> a.toVo(filter))
+                .map(a -> a.toVo(SystemAreaVo.class, filter))
                 .collect(Collectors.toList());
     }
 
@@ -129,7 +130,7 @@ public class AreaRestService extends AbstractBatchableRestService {
                 .fields(DataFilter.PARENT, DataFilter.GEOMETRY, DataFilter.DETAILS);
 
         return areaService.getAreaDetails(ids).stream()
-                .map(a -> a.toVo(filter))
+                .map(a -> a.toVo(SystemAreaVo.class, filter))
                 .limit(limit)
                 .collect(Collectors.toList());
     }
@@ -148,7 +149,7 @@ public class AreaRestService extends AbstractBatchableRestService {
                 .fields(DataFilter.CHILDREN, DataFilter.DETAILS);
 
         return areaService.getAreaTree().stream()
-                .map(a -> a.toVo(filter))
+                .map(a -> a.toVo(SystemAreaVo.class, filter))
                 .collect(Collectors.toList());
     }
 
@@ -165,7 +166,7 @@ public class AreaRestService extends AbstractBatchableRestService {
                 .fields(DataFilter.CHILDREN, DataFilter.GEOMETRY, DataFilter.DETAILS);
 
         return areaService.getAreaTree().stream()
-                .map(a -> a.toVo(filter))
+                .map(a -> a.toVo(SystemAreaVo.class, filter))
                 .collect(Collectors.toList());
     }
 
@@ -191,7 +192,7 @@ public class AreaRestService extends AbstractBatchableRestService {
             filter = filter.fields(DataFilter.PARENT);
         }
 
-        return area == null ? null : area.toVo(filter);
+        return area == null ? null : area.toVo(SystemAreaVo.class, filter);
     }
 
     /** Creates a new area */
@@ -200,11 +201,13 @@ public class AreaRestService extends AbstractBatchableRestService {
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({"admin"})
-    public AreaVo createArea(AreaVo areaVo) throws Exception {
+    public AreaVo createArea(SystemAreaVo areaVo) throws Exception {
         Area area = new Area(areaVo);
         log.info("Creating area " + area);
         Integer parentId = (areaVo.getParent() == null) ? null : areaVo.getParent().getId();
-        return areaService.createArea(area, parentId).toVo(DataFilter.get());
+        return areaService
+                .createArea(area, parentId)
+                .toVo(SystemAreaVo.class, DataFilter.get());
     }
 
 
@@ -214,13 +217,13 @@ public class AreaRestService extends AbstractBatchableRestService {
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({"admin"})
-    public AreaVo updateArea(@PathParam("areaId") Integer areaId, AreaVo areaVo) throws Exception {
+    public AreaVo updateArea(@PathParam("areaId") Integer areaId, SystemAreaVo areaVo) throws Exception {
         if (!Objects.equals(areaId, areaVo.getId())) {
             throw new WebApplicationException(400);
         }
         Area area = new Area(areaVo);
         log.info("Updating area " + area);
-        return areaService.updateAreaData(area).toVo(DataFilter.get());
+        return areaService.updateAreaData(area).toVo(SystemAreaVo.class, DataFilter.get());
     }
 
 

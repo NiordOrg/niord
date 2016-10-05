@@ -17,9 +17,9 @@ package org.niord.core.area.batch;
 
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
+import org.niord.core.area.vo.SystemAreaVo;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.model.DataFilter;
-import org.niord.model.message.AreaVo;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -37,9 +37,10 @@ public class BatchAreaImportProcessor extends AbstractItemHandler {
     @Override
     public Object processItem(Object item) throws Exception {
 
-        AreaVo areaVo = (AreaVo) item;
+        SystemAreaVo areaVo = (SystemAreaVo) item;
 
-        DataFilter filter = DataFilter.get().fields("geometry", "parent");
+        DataFilter filter = DataFilter.get()
+                .fields("geometry", "parent");
         Area area = new Area(areaVo, filter);
 
         getLog().info("Creating or updating area " + area);

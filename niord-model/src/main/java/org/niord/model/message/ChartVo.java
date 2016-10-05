@@ -17,7 +17,6 @@ package org.niord.model.message;
 
 import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
-import org.niord.model.geojson.GeometryVo;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
@@ -28,15 +27,13 @@ import javax.xml.bind.annotation.XmlType;
 @ApiModel(value = "Chart", description = "Sea chart model")
 @XmlRootElement(name = "chart")
 @XmlType(propOrder = {
-        "chartNumber", "internationalNumber", "active", "geometry", "horizontalDatum", "scale", "name"
+        "chartNumber", "internationalNumber", "active", "scale", "name"
 })
 public class ChartVo implements IJsonSerializable {
 
     String chartNumber;
     Integer internationalNumber;
     boolean active = true;
-    GeometryVo geometry;
-    String horizontalDatum;
     Integer scale;
     String name;
 
@@ -77,22 +74,6 @@ public class ChartVo implements IJsonSerializable {
 
     public void setActive(boolean active) {
         this.active = active;
-    }
-
-    public GeometryVo getGeometry() {
-        return geometry;
-    }
-
-    public void setGeometry(GeometryVo geometry) {
-        this.geometry = geometry;
-    }
-
-    public String getHorizontalDatum() {
-        return horizontalDatum;
-    }
-
-    public void setHorizontalDatum(String horizontalDatum) {
-        this.horizontalDatum = horizontalDatum;
     }
 
     public Integer getScale() {

@@ -15,7 +15,11 @@
  */
 package org.niord.core.model;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 import java.io.Serializable;
 
 /**
@@ -28,6 +32,17 @@ public abstract class BaseEntity<ID extends Serializable> {
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(unique = true, nullable = false)
     protected ID id;
+
+
+    /** Utility method **/
+    public <C> C newInstance(Class<C> clz) {
+        try {
+            return clz.newInstance();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
 
     /*************************/
     /** Getters and Setters **/

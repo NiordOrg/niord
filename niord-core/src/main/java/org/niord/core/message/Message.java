@@ -25,6 +25,9 @@ import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.geojson.FeatureCollectionVo;
+import org.niord.model.message.AreaVo;
+import org.niord.model.message.CategoryVo;
+import org.niord.model.message.ChartVo;
 import org.niord.model.message.MainType;
 import org.niord.model.message.MessagePartType;
 import org.niord.model.message.MessageVo;
@@ -303,9 +306,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             if (messageSeries != null) {
                 message.setMessageSeries(messageSeries.toVo(filter));
             }
-            areas.forEach(a -> message.checkCreateAreas().add(a.toVo(filter)));
-            categories.forEach(c -> message.checkCreateCategories().add(c.toVo(filter)));
-            charts.forEach(c -> message.checkCreateCharts().add(c.toVo(filter)));
+            areas.forEach(a -> message.checkCreateAreas().add(a.toVo(AreaVo.class, filter)));
+            categories.forEach(c -> message.checkCreateCategories().add(c.toVo(CategoryVo.class, filter)));
+            charts.forEach(c -> message.checkCreateCharts().add(c.toVo(ChartVo.class, filter)));
             message.setHorizontalDatum(horizontalDatum);
             message.setPublishDateFrom(publishDateFrom);
             message.setPublishDateTo(publishDateTo);

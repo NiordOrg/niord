@@ -22,7 +22,6 @@ import org.niord.model.ILocalizable;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,7 +30,7 @@ import java.util.List;
 @ApiModel(value = "Category", description = "Hierarchical category model")
 @XmlRootElement(name = "category")
 @XmlType(propOrder = {
-        "mrn", "active", "parent", "children", "descs", "editorFields"
+        "mrn", "active", "parent", "descs"
 })
 @SuppressWarnings("unused")
 public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializable {
@@ -39,9 +38,7 @@ public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializab
     String mrn;
     boolean active = true;
     CategoryVo parent;
-    List<CategoryVo> children;
     List<CategoryDescVo> descs;
-    List<String> editorFields;
 
 
     /** {@inheritDoc} */
@@ -53,14 +50,6 @@ public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializab
         return desc;
     }
 
-
-    /** Returns the list of child categories, and creates an empty list if needed */
-    public List<CategoryVo> checkCreateChildren() {
-        if (children == null) {
-            children = new ArrayList<>();
-        }
-        return children;
-    }
 
     /*************************/
     /** Getters and Setters **/
@@ -99,14 +88,6 @@ public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializab
         this.parent = parent;
     }
 
-    public List<CategoryVo> getChildren() {
-        return children;
-    }
-
-    public void setChildren(List<CategoryVo> children) {
-        this.children = children;
-    }
-
     @Override
     public List<CategoryDescVo> getDescs() {
         return descs;
@@ -117,11 +98,4 @@ public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializab
         this.descs = descs;
     }
 
-    public List<String> getEditorFields() {
-        return editorFields;
-    }
-
-    public void setEditorFields(List<String> editorFields) {
-        this.editorFields = editorFields;
-    }
 }

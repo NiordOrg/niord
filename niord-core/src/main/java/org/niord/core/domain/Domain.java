@@ -21,6 +21,8 @@ import org.niord.core.category.Category;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.model.BaseEntity;
 import org.niord.model.DataFilter;
+import org.niord.model.message.AreaVo;
+import org.niord.model.message.CategoryVo;
 import org.niord.model.message.DomainVo;
 import org.niord.model.message.MainType;
 
@@ -145,13 +147,13 @@ public class Domain extends BaseEntity<Integer> {
 
         if (!areas.isEmpty()) {
             domain.setAreas(areas.stream()
-                .map(a -> a.toVo(DataFilter.get()))
+                .map(a -> a.toVo(AreaVo.class, DataFilter.get()))
                 .collect(Collectors.toList()));
         }
 
         if (!categories.isEmpty()) {
             domain.setCategories(categories.stream()
-                .map(c -> c.toVo(DataFilter.get()))
+                .map(c -> c.toVo(CategoryVo.class, DataFilter.get()))
                 .collect(Collectors.toList()));
         }
 

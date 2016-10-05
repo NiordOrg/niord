@@ -18,8 +18,8 @@ package org.niord.core.category.batch;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.category.Category;
 import org.niord.core.category.CategoryService;
+import org.niord.core.category.vo.SystemCategoryVo;
 import org.niord.model.DataFilter;
-import org.niord.model.message.CategoryVo;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -37,7 +37,7 @@ public class BatchCategoryImportProcessor extends AbstractItemHandler {
     @Override
     public Object processItem(Object item) throws Exception {
 
-        CategoryVo categoryVo = (CategoryVo) item;
+        SystemCategoryVo categoryVo = (SystemCategoryVo) item;
 
         DataFilter filter = DataFilter.get().fields("parent");
         Category category = new Category(categoryVo, filter);

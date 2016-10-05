@@ -17,8 +17,8 @@ package org.niord.core.chart.batch;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.niord.core.batch.AbstractItemHandler;
+import org.niord.core.chart.vo.SystemChartVo;
 import org.niord.core.util.JsonUtils;
-import org.niord.model.message.ChartVo;
 
 import javax.inject.Named;
 import java.io.Serializable;
@@ -63,7 +63,7 @@ import java.util.List;
 @Named
 public class BatchChartImportReader extends AbstractItemHandler {
 
-    List<ChartVo> charts;
+    List<SystemChartVo> charts;
     int chartNo = 0;
 
     /** {@inheritDoc} **/
@@ -75,7 +75,7 @@ public class BatchChartImportReader extends AbstractItemHandler {
 
         // Load the charts from the file
         charts = JsonUtils.readJson(
-                new TypeReference<List<ChartVo>>(){},
+                new TypeReference<List<SystemChartVo>>(){},
                 path);
 
         if (prevCheckpointInfo != null) {

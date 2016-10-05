@@ -16,6 +16,7 @@
 package org.niord.core.area;
 
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.area.vo.SystemAreaVo.AreaMessageSorting;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
@@ -24,7 +25,6 @@ import org.niord.core.message.Message;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
-import org.niord.model.message.AreaVo.AreaMessageSorting;
 import org.slf4j.Logger;
 
 import javax.ejb.Schedule;
@@ -44,8 +44,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static org.niord.model.message.AreaVo.AreaMessageSorting.CW;
 
 /**
  * Business interface for accessing Niord areas
@@ -712,7 +710,7 @@ public class AreaService extends BaseService {
         if (no < 0.0) {
             no += 360.0;
         }
-        return (area.getMessageSorting() == CW) ? -no : no;
+        return (area.getMessageSorting() == AreaMessageSorting.CW) ? -no : no;
     }
 
 

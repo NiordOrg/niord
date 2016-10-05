@@ -17,13 +17,14 @@ package org.niord.core.area;
 
 import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.area.vo.SystemAreaVo;
+import org.niord.core.area.vo.SystemAreaVo.AreaMessageSorting;
 import org.niord.core.geojson.JtsConverter;
 import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.message.AreaType;
 import org.niord.model.message.AreaVo;
-import org.niord.model.message.AreaVo.AreaMessageSorting;
 
 import javax.persistence.Cacheable;
 import javax.persistence.CascadeType;
@@ -131,69 +132,78 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
         DataFilter compFilter = filter.forComponent(Area.class);
 
         this.mrn = area.getMrn();
-        this.type = area.getType();
         this.active = area.isActive();
         this.id = area.getId();
-        this.siblingSortOrder = area.getSiblingSortOrder() == null ? 0 : area.getSiblingSortOrder();
-        this.messageSorting = area.getMessageSorting();
-        this.originLatitude = area.getOriginLatitude();
-        this.originLongitude = area.getOriginLongitude();
-        this.originAngle = area.getOriginAngle();
 
-        if (compFilter.includeGeometry()) {
-            this.geometry = JtsConverter.toJts(area.getGeometry());
-        }
         if (compFilter.includeParent() && area.getParent() != null) {
             parent = new Area(area.getParent(), filter);
-        }
-        if (compFilter.includeChildren() && area.getChildren() != null) {
-            area.getChildren().stream()
-                    .map(a -> new Area(a, filter))
-                    .forEach(this::addChild);
         }
         if (area.getDescs() != null) {
             area.getDescs()
                     .forEach(desc -> createDesc(desc.getLang()).setName(desc.getName()));
         }
-        if (area.getEditorFields() != null) {
-            editorFields.addAll(area.getEditorFields());
+
+        if (area instanceof SystemAreaVo) {
+            SystemAreaVo sysArea = (SystemAreaVo)area;
+            this.type = sysArea.getType();
+            this.siblingSortOrder = sysArea.getSiblingSortOrder() == null ? 0 : sysArea.getSiblingSortOrder();
+            this.messageSorting = sysArea.getMessageSorting();
+            this.originLatitude = sysArea.getOriginLatitude();
+            this.originLongitude = sysArea.getOriginLongitude();
+            this.originAngle = sysArea.getOriginAngle();
+
+            if (compFilter.includeGeometry()) {
+                this.geometry = JtsConverter.toJts(sysArea.getGeometry());
+            }
+
+            if (compFilter.includeChildren() && sysArea.getChildren() != null) {
+                sysArea.getChildren().stream()
+                        .map(a -> new Area(a, filter))
+                        .forEach(this::addChild);
+            }
+            if (sysArea.getEditorFields() != null) {
+                editorFields.addAll(sysArea.getEditorFields());
+            }
         }
     }
 
 
     /** Converts this entity to a value object */
-    public AreaVo toVo(DataFilter filter) {
+    public <A extends AreaVo> A toVo(Class<A> clz, DataFilter filter) {
 
         DataFilter compFilter = filter.forComponent(Area.class);
 
-        AreaVo area = new AreaVo();
+        A area = newInstance(clz);
         area.setId(id);
         area.setMrn(mrn);
         area.setActive(active);
 
-        if (compFilter.includeDetails()) {
-            area.setType(type);
-            area.setSiblingSortOrder(siblingSortOrder);
-            area.setMessageSorting(messageSorting);
-            area.setOriginLatitude(originLatitude);
-            area.setOriginLongitude(originLongitude);
-            area.setOriginAngle(originAngle);
+        if (area instanceof SystemAreaVo) {
+            SystemAreaVo sysArea = (SystemAreaVo)area;
+            if (compFilter.includeDetails()) {
+                sysArea.setType(type);
+                sysArea.setSiblingSortOrder(siblingSortOrder);
+                sysArea.setMessageSorting(messageSorting);
+                sysArea.setOriginLatitude(originLatitude);
+                sysArea.setOriginLongitude(originLongitude);
+                sysArea.setOriginAngle(originAngle);
 
-            if (!editorFields.isEmpty()) {
-                area.setEditorFields(new ArrayList<>(editorFields));
+                if (!editorFields.isEmpty()) {
+                    sysArea.setEditorFields(new ArrayList<>(editorFields));
+                }
+            }
+
+            if (compFilter.includeGeometry()) {
+                sysArea.setGeometry(JtsConverter.fromJts(geometry));
+            }
+
+            if (compFilter.includeChildren()) {
+                children.forEach(child -> sysArea.checkCreateChildren().add(child.toVo(SystemAreaVo.class, filter)));
             }
         }
 
-        if (compFilter.includeGeometry()) {
-            area.setGeometry(JtsConverter.fromJts(geometry));
-        }
-
-        if (compFilter.includeChildren()) {
-            children.forEach(child -> area.checkCreateChildren().add(child.toVo(filter)));
-        }
-
         if (compFilter.includeParent() && parent != null) {
-            area.setParent(parent.toVo(filter));
+            area.setParent(parent.toVo(clz, filter));
         } else if (compFilter.includeParentId() && parent != null) {
             AreaVo parent = new AreaVo();
             parent.setId(parent.getId());

@@ -15,6 +15,7 @@
  */
 package org.niord.core.category;
 
+import org.niord.core.category.vo.SystemCategoryVo;
 import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
@@ -102,40 +103,43 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
         this.id = category.getId();
         this.mrn = category.getMrn();
         this.active = category.isActive();
+
         if (compFilter.includeParent() && category.getParent() != null) {
             parent = new Category(category.getParent(), filter);
         }
-        if (compFilter.includeChildren() && category.getChildren() != null) {
-            category.getChildren().stream()
-                    .map(a -> new Category(a, filter))
-                    .forEach(this::addChild);
-        }
+
         if (category.getDescs() != null) {
             category.getDescs()
                     .forEach(desc -> createDesc(desc.getLang()).setName(desc.getName()));
         }
-        if (category.getEditorFields() != null) {
-            editorFields.addAll(category.getEditorFields());
+
+        if (category instanceof SystemCategoryVo) {
+            SystemCategoryVo sysCategory = (SystemCategoryVo)category;
+
+            if (compFilter.includeChildren() && sysCategory.getChildren() != null) {
+                sysCategory.getChildren().stream()
+                        .map(a -> new Category(a, filter))
+                        .forEach(this::addChild);
+            }
+            if (sysCategory.getEditorFields() != null) {
+                editorFields.addAll(sysCategory.getEditorFields());
+            }
         }
     }
 
 
     /** Converts this entity to a value object */
-    public CategoryVo toVo(DataFilter filter) {
+    public <C extends  CategoryVo> C toVo(Class<C> clz, DataFilter filter) {
 
         DataFilter compFilter = filter.forComponent(Category.class);
 
-        CategoryVo category = new CategoryVo();
+        C category = newInstance(clz);
         category.setId(id);
         category.setMrn(mrn);
         category.setActive(active);
 
-        if (compFilter.includeChildren()) {
-            children.forEach(child -> category.checkCreateChildren().add(child.toVo(compFilter)));
-        }
-
         if (compFilter.includeParent() && parent != null) {
-            category.setParent(parent.toVo(compFilter));
+            category.setParent(parent.toVo(clz, compFilter));
         } else if (compFilter.includeParentId() && parent != null) {
             CategoryVo parent = new CategoryVo();
             parent.setId(parent.getId());
@@ -144,13 +148,22 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
 
         if (!descs.isEmpty()) {
             category.setDescs(getDescs(filter).stream()
-                .map(CategoryDesc::toVo)
-                .collect(Collectors.toList()));
+                    .map(CategoryDesc::toVo)
+                    .collect(Collectors.toList()));
         }
 
-        if (!editorFields.isEmpty()) {
-            category.setEditorFields(new ArrayList<>(editorFields));
+        if (category instanceof SystemCategoryVo) {
+            SystemCategoryVo sysCategory = (SystemCategoryVo)category;
+
+            if (compFilter.includeChildren()) {
+                children.forEach(child -> sysCategory.checkCreateChildren().add(child.toVo(SystemCategoryVo.class, compFilter)));
+            }
+
+            if (!editorFields.isEmpty()) {
+                sysCategory.setEditorFields(new ArrayList<>(editorFields));
+            }
         }
+
         return category;
     }
 

@@ -16,9 +16,9 @@
 package org.niord.core.area.batch;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.niord.core.area.vo.SystemAreaVo;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.util.JsonUtils;
-import org.niord.model.message.AreaVo;
 
 import javax.inject.Named;
 import java.io.Serializable;
@@ -71,7 +71,7 @@ import java.util.List;
 @Named
 public class BatchAreaImportReader extends AbstractItemHandler {
 
-    List<AreaVo> areas;
+    List<SystemAreaVo> areas;
     int areasNo = 0;
 
     /** {@inheritDoc} **/
@@ -82,8 +82,8 @@ public class BatchAreaImportReader extends AbstractItemHandler {
         Path path = batchService.getBatchJobDataFile(jobContext.getInstanceId());
 
         // Load the charts from the file
-        List<AreaVo> areasRoots = JsonUtils.readJson(
-                new TypeReference<List<AreaVo>>(){},
+        List<SystemAreaVo> areasRoots = JsonUtils.readJson(
+                new TypeReference<List<SystemAreaVo>>(){},
                 path);
 
         // Serialize the list of areas
@@ -118,7 +118,7 @@ public class BatchAreaImportReader extends AbstractItemHandler {
 
 
     /** Serialize the siblings root hierarchy to a flat list + define the parent field + resets ID fields */
-    private void serializeAreas(AreaVo parent, List<AreaVo> siblings, List<AreaVo> areas) {
+    private void serializeAreas(SystemAreaVo parent, List<SystemAreaVo> siblings, List<SystemAreaVo> areas) {
         if (siblings != null) {
             siblings.forEach(a -> {
                 a.setId(null);
