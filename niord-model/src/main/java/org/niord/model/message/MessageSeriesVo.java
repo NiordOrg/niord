@@ -28,7 +28,7 @@ import java.util.List;
 @ApiModel(value = "MessageSeries", description = "A message series")
 @XmlRootElement(name = "messageSeries")
 @XmlType(propOrder = {
-        "seriesId", "mainType", "mrnFormat", "shortFormat", "nextMessageNumber", "numberSequenceType", "editorFields"
+        "seriesId", "mainType", "shortFormat", "nextMessageNumber", "numberSequenceType", "editorFields"
 })
 @SuppressWarnings("unused")
 public class MessageSeriesVo implements IJsonSerializable {
@@ -40,16 +40,15 @@ public class MessageSeriesVo implements IJsonSerializable {
         /** Associated number sequence will never reset **/
         CONTINUOUS,
 
-        /** The user manually specifies the short ID and MRN **/
+        /** The user manually specifies the short ID **/
         MANUAL,
 
-        /** No short ID or MRN is assigned **/
+        /** No short ID is assigned **/
         NONE
     }
 
     String seriesId;
     MainType mainType;
-    String mrnFormat;
     String shortFormat;
     NumberSequenceType numberSequenceType;
     Integer nextMessageNumber;
@@ -73,14 +72,6 @@ public class MessageSeriesVo implements IJsonSerializable {
 
     public void setMainType(MainType mainType) {
         this.mainType = mainType;
-    }
-
-    public String getMrnFormat() {
-        return mrnFormat;
-    }
-
-    public void setMrnFormat(String mrnFormat) {
-        this.mrnFormat = mrnFormat;
     }
 
     public String getShortFormat() {

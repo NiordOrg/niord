@@ -92,7 +92,7 @@ public class MessageReportRestService {
 
     /**
      * Generates a PDF for the message with the given message id, which may be either a UID,
-     * or a short ID or an MRN of a message.
+     * or a short ID of a message.
      *
      * If the debug flag is set to true, the HTML that is used for the PDF is returned directly.
      *

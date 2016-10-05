@@ -153,20 +153,6 @@ public class MessageService extends BaseService {
 
 
     /**
-     * Returns the messages with the given MRN. Really, there should only be at most one matching
-     * message, but message series may not have been defined properly...
-     *
-     * @param mrn the MRN of the messages
-     * @return the messages with the given MRN
-     */
-    public List<Message> findByMrn(String mrn) {
-        return em.createNamedQuery("Message.findByMrn", Message.class)
-                .setParameter("mrn", mrn)
-                .getResultList();
-    }
-
-
-    /**
      * Returns the messages with the given short ID.
      *
      * @param shortId the short ID of the messages
@@ -180,9 +166,9 @@ public class MessageService extends BaseService {
 
 
     /**
-     * Returns the messages with the given UID, short ID or MRN.
+     * Returns the messages with the given UID or short ID.
      *
-     * @param messageId the UID, short ID or MRN of the messages
+     * @param messageId the UID or short ID of the messages
      * @return the messages with the given message ID
      */
     private List<Message> findByMessageId(String messageId) {
@@ -197,7 +183,7 @@ public class MessageService extends BaseService {
 
     /**
      * Resolves the "best" message with the given message id, which may be either a UID,
-     * or a short ID or an MRN of a message.
+     * or a short ID of a message.
      * If the are multiple matching messages, priority is given to a messages of the current domain.
      *
      * @param messageId the message id to resolve
@@ -215,14 +201,8 @@ public class MessageService extends BaseService {
             return message;
         }
 
-        // Check if the message ID is an MRN
-        List<Message> messages = findByMrn(messageId);
-        if (!messages.isEmpty()) {
-            return resolveMessage(messages);
-        }
-
         // Check if the message ID is a short ID
-        messages = findByShortId(messageId);
+        List<Message> messages = findByShortId(messageId);
         if (!messages.isEmpty()) {
             return resolveMessage(messages);
         }
@@ -243,7 +223,7 @@ public class MessageService extends BaseService {
 
 
     /**
-     * Returns a list of message IDs (UID, MRN or shortId) that - possibly partially - matches
+     * Returns a list of message IDs (UID or shortId) that - possibly partially - matches
      * real text.
      *
      * @param lang the language to return the title in
@@ -282,19 +262,6 @@ public class MessageService extends BaseService {
                 .setMaxResults(maxGroupCount)
                 .getResultList()
                 .forEach(m -> result.add(new MessageIdMatch(m.getShortId(), SHORT_ID, m, lang)));
-
-        // Search MRNs
-        String searchMrnSql = "select distinct m from Message m where lower(m.mrn) like lower(:term) ";
-        if (!includeDeleted) {
-            searchMrnSql += "and m.status != 'DELETED' ";
-        }
-        searchMrnSql +=  "order by locate(lower(:sort), lower(m.mrn)) asc, m.updated desc ";
-        em.createQuery(searchMrnSql, Message.class)
-                .setParameter("term", "%" + txt + "%")
-                .setParameter("sort", txt)
-                .setMaxResults(maxGroupCount)
-                .getResultList()
-                .forEach(m -> result.add(new MessageIdMatch(m.getMrn(), MRN, m, lang)));
 
         return  result;
     }
@@ -419,7 +386,6 @@ public class MessageService extends BaseService {
 
         original.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
         original.setNumber(message.getNumber());
-        original.setMrn(message.getMrn());
         original.setShortId(message.getShortId());
         original.setType(message.getType());
         original.setMainType(message.getMainType());
@@ -1039,9 +1005,6 @@ public class MessageService extends BaseService {
             messageIds.add(message.getUid());
             if (message.getShortId() != null) {
                 messageIds.add(message.getShortId().toLowerCase());
-            }
-            if (message.getMrn() != null) {
-                messageIds.add(message.getMrn().toLowerCase());
             }
             em.createNamedQuery("Message.findByReference", Message.class)
                     .setParameter("messageIds", messageIds)

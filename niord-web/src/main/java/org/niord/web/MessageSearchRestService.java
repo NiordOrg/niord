@@ -206,7 +206,7 @@ public class MessageSearchRestService {
 
 
     /**
-     * Returns a list of message IDs (database ID, MRN or shortId) that - possibly partially - matches
+     * Returns a list of message IDs (database ID or shortId) that - possibly partially - matches
      * real text.
      *
      * @param lang the language to return the title in

@@ -64,7 +64,6 @@ import java.util.stream.Stream;
 @Entity
 @Table(indexes = {
         @Index(name = "message_uid_k", columnList="uid"),
-        @Index(name = "message_mrn_k", columnList="mrn"),
         @Index(name = "message_type_k", columnList="type"),
         @Index(name = "message_main_type_k", columnList="mainType"),
         @Index(name = "message_status_k", columnList="status"),
@@ -81,13 +80,11 @@ import java.util.stream.Stream;
                 query="SELECT msg FROM Message msg where msg.id in (:ids)"),
         @NamedQuery(name="Message.findByLegacyId",
                 query="SELECT msg FROM Message msg where msg.legacyId = :legacyId"),
-        @NamedQuery(name="Message.findByMrn",
-                query="SELECT msg FROM Message msg where msg.mrn = :mrn"),
         @NamedQuery(name="Message.findByShortId",
                 query="SELECT msg FROM Message msg where msg.shortId = :shortId"),
         @NamedQuery(name="Message.findByMessageId",
                 query="select distinct msg from Message msg where lower(msg.uid) = :msgId "
-                        + " or lower(msg.shortId) = :msgId or lower(msg.mrn) = :msgId"),
+                        + " or lower(msg.shortId) = :msgId"),
         @NamedQuery(name="Message.findByReference",
                 query="select distinct msg from Message msg join msg.references ref where "
                         + " lower(ref.messageId) in (:messageIds)"),
@@ -116,9 +113,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     String legacyId;
 
     Integer number;
-
-    // Globally unique
-    String mrn;
 
     // Unique within the current message series
     String shortId;
@@ -243,7 +237,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         this.uid = message.getId();
         this.repoPath = uidToMessageRepoPath(uid);
         this.number = message.getNumber();
-        this.mrn = message.getMrn();
         this.shortId = message.getShortId();
         this.mainType = message.getMainType();
         this.type = message.getType();
@@ -300,7 +293,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
         message.setId(uid);
         message.setNumber(number);
-        message.setMrn(mrn);
         message.setShortId(shortId);
         message.setStatus(status);
         message.setMainType(mainType);
@@ -627,14 +619,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setNumber(Integer number) {
         this.number = number;
-    }
-
-    public String getMrn() {
-        return mrn;
-    }
-
-    public void setMrn(String mrn) {
-        this.mrn = mrn;
     }
 
     public String getShortId() {

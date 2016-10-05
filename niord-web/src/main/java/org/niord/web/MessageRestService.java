@@ -188,7 +188,7 @@ public class MessageRestService  {
 
     /**
      * Returns the message with the given message id, which may be either a UID,
-     * or a short ID or an MRN of a message.
+     * or a short ID of a message.
      *
      * If no message exists with the given ID, null is returned.
      *
@@ -250,7 +250,7 @@ public class MessageRestService  {
 
     /**
      * Returns the system-model message with the given message id, which may be either a UID,
-     * or a short ID or an MRN of a message.
+     * or a short ID of a message.
      *
      * If no message exists with the given ID, null is returned.
      *
@@ -395,7 +395,6 @@ public class MessageRestService  {
 
         // Reset various fields
         editMessage.setShortId(null);
-        editMessage.setMrn(null);
         editMessage.setStatus(DRAFT);
         editMessage.setCreated(null);
         editMessage.setUpdated(null);

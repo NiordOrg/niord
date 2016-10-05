@@ -58,7 +58,6 @@ import java.util.zip.ZipFile;
  *      "seriesId": "dma-nm"
  *      },
  *      "number": 1276,
- *      "mrn": "urn:mrn:iho:nm:dk:dma:2015:1276",
  *      "shortId": "NM-1276-15",
  *      "mainType": "NM",
  *      "type": "PERMANENT_NOTICE",

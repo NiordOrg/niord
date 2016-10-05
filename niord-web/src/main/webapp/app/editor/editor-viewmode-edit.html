@@ -126,24 +126,12 @@
                         <tr ng-if="numberSequenceType() != 'NONE'">
                             <th>Short ID</th>
                             <td>
-                                <message-id-badge ng-if="!mrnAndShortIdEditable()" msg="message"></message-id-badge>
-                                <div ng-if="mrnAndShortIdEditable()">
+                                <message-id-badge ng-if="!shortIdEditable()" msg="message"></message-id-badge>
+                                <div ng-if="shortIdEditable()">
                                     <input class="form-control input-sm" placeholder="Short ID" type="text"
                                            tabindex="302"
                                            autocapitalize="off" autocorrect="off" autocomplete="off"
                                            ng-model="message.shortId"/>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr ng-if="numberSequenceType() != 'NONE'">
-                            <th>MRN</th>
-                            <td>
-                                <span ng-if="!mrnAndShortIdEditable()">{{message.mrn}}</span>
-                                <div ng-if="mrnAndShortIdEditable()">
-                                    <input class="form-control input-sm" placeholder="MRN" type="text"
-                                           tabindex="303"
-                                           autocapitalize="off" autocorrect="off" autocomplete="off"
-                                           ng-model="message.mrn"/>
                                 </div>
                             </td>
                         </tr>

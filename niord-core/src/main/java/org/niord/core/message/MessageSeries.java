@@ -45,8 +45,7 @@ import java.util.List;
         @NamedQuery(name="MessageSeries.findBySeriesIds",
                 query="SELECT ms FROM MessageSeries ms where ms.seriesId in (:seriesIds)"),
         @NamedQuery(name  = "MessageSeries.searchMessageSeries",
-                query = "select ms FROM MessageSeries ms where lower(ms.mrnFormat) like lower(:term) "
-                      + "or lower(ms.seriesId) like lower(:term)")
+                query = "select ms FROM MessageSeries ms where lower(ms.seriesId) like lower(:term)")
 })
 @SuppressWarnings("unused")
 public class MessageSeries extends VersionedEntity<Integer> {
@@ -57,8 +56,6 @@ public class MessageSeries extends VersionedEntity<Integer> {
     @NotNull
     @Enumerated(EnumType.STRING)
     MainType mainType;
-
-    String mrnFormat;
 
     String shortFormat;
 
@@ -78,7 +75,6 @@ public class MessageSeries extends VersionedEntity<Integer> {
     public MessageSeries(MessageSeriesVo series) {
         this.seriesId = series.getSeriesId();
         this.mainType = series.getMainType();
-        this.mrnFormat = series.getMrnFormat();
         this.shortFormat = series.getShortFormat();
         this.numberSequenceType = series.getNumberSequenceType() != null
                 ? series.getNumberSequenceType()
@@ -97,7 +93,6 @@ public class MessageSeries extends VersionedEntity<Integer> {
         DataFilter compFilter = filter.forComponent(MessageSeries.class);
         if (compFilter.includeDetails()) {
             series.setMainType(mainType);
-            series.setMrnFormat(mrnFormat);
             series.setShortFormat(shortFormat);
             series.setNumberSequenceType(numberSequenceType);
             if (!editorFields.isEmpty()) {
@@ -130,14 +125,6 @@ public class MessageSeries extends VersionedEntity<Integer> {
 
     public void setMainType(MainType mainType) {
         this.mainType = mainType;
-    }
-
-    public String getMrnFormat() {
-        return mrnFormat;
-    }
-
-    public void setMrnFormat(String mrnFormat) {
-        this.mrnFormat = mrnFormat;
     }
 
     public String getShortFormat() {

@@ -150,7 +150,6 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
                 message.setStatus(Status.DRAFT);
 
                 // Reset various fields and flags
-                message.setMrn(null);
                 message.setShortId(null);
                 message.setPublishDateFrom(null);
                 message.setPublishDateTo(null);

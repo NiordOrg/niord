@@ -25,11 +25,11 @@
                             <label class="col-sm-4">Message Type</label>
                             <div class="btn-group col-sm-8">
                                 <label class="btn btn-default btn-sm" ng-model="series.mainType"
-                                       ng-change="updateMrnFormat(false)" uib-btn-radio="'NW'">
+                                       ng-change="updateShortFormat()" uib-btn-radio="'NW'">
                                     Navigational Warnings
                                 </label>
                                 <label class="btn btn-default btn-sm" ng-model="series.mainType"
-                                       ng-change="updateMrnFormat(false)" uib-btn-radio="'NM'">
+                                       ng-change="updateShortFormat()" uib-btn-radio="'NM'">
                                     Notices to Mariners
                                 </label>
                             </div>
@@ -39,50 +39,21 @@
                             <label class="col-sm-4">Number Sequence Type</label>
                             <div class="btn-group col-sm-8">
                                 <label class="btn btn-default btn-sm" ng-model="series.numberSequenceType"
-                                       uib-btn-radio="'YEARLY'" ng-change="updateMrnFormat(true)">
+                                       uib-btn-radio="'YEARLY'" ng-change="updateShortFormat()">
                                     Yearly
                                 </label>
                                 <label class="btn btn-default btn-sm" ng-model="series.numberSequenceType"
-                                       uib-btn-radio="'CONTINUOUS'" ng-change="updateMrnFormat(true)">
+                                       uib-btn-radio="'CONTINUOUS'" ng-change="updateShortFormat()">
                                     Continuous
                                 </label>
                                 <label class="btn btn-default btn-sm" ng-model="series.numberSequenceType"
-                                       uib-btn-radio="'MANUAL'" ng-change="updateMrnFormat(true)">
+                                       uib-btn-radio="'MANUAL'" ng-change="updateShortFormat()">
                                     Manual
                                 </label>
                                 <label class="btn btn-default btn-sm" ng-model="series.numberSequenceType"
-                                       uib-btn-radio="'NONE'" ng-change="updateMrnFormat(true)">
+                                       uib-btn-radio="'NONE'" ng-change="updateShortFormat()">
                                     None
                                 </label>
-                            </div>
-                        </div>
-
-                        <div class="form-group" ng-if="autoAssigned(series)">
-                            <label class="col-sm-4">MRN Format</label>
-                            <div class="col-sm-8">
-                                <div class="input-group">
-                                    <div class="input-group-addon input-sm">{{series.mrnPrefix}}</div>
-                                    <input type="text" id="mrnSuffix" class="form-control input-sm"
-                                           ng-model="series.mrnSuffix" ng-change="mrnSuffixUpdated()" required
-                                           autocapitalize="off" autocorrect="off" autocomplete="off"/>
-                                    <div class="input-group-btn">
-                                        <button type="button" class="btn btn-sm btn-default dropdown-toggle"
-                                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                            insert <span class="caret"></span>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-right">
-                                            <li><a href ng-click="insertToken('mrnSuffix', '${year}')">Year</a></li>
-                                            <li><a href ng-click="insertToken('mrnSuffix', '${year-2-digits}')">Year (2 digits)</a></li>
-                                            <li><a href ng-click="insertToken('mrnSuffix', '${week}')">Week</a></li>
-                                            <li><a href ng-click="insertToken('mrnSuffix', '${week-2-digits}')">Week (2 digits)</a></li>
-                                            <li><a href ng-click="insertToken('mrnSuffix', '${number}')">Number</a></li>
-                                            <li><a href ng-click="insertToken('mrnSuffix', '${number-3-digits}')">Number (3 digits)</a></li>
-                                            <li><a href ng-click="insertToken('mrnSuffix', '${id}')">ID</a></li>
-                                            <li><a href ng-click="insertToken('mrnSuffix', '${legacy-id}')">Legacy ID</a></li>
-                                            <li ng-if="series.mainType == 'NM'"><a href ng-click="insertToken('mrnSuffix', '${t-or-p}')">T or P</a></li>
-                                        </ul>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
@@ -99,15 +70,15 @@
                                             insert <span class="caret"></span>
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-right">
-                                            <li><a href ng-click="insertToken('shortFormat', '${year}')">Year</a></li>
-                                            <li><a href ng-click="insertToken('shortFormat', '${year-2-digits}')">Year (2 digits)</a></li>
-                                            <li><a href ng-click="insertToken('shortFormat', '${week}')">Week</a></li>
-                                            <li><a href ng-click="insertToken('shortFormat', '${week-2-digits}')">Week (2 digits)</a></li>
-                                            <li><a href ng-click="insertToken('shortFormat', '${number}')">Number</a></li>
-                                            <li><a href ng-click="insertToken('shortFormat', '${number-3-digits}')">Number (3 digits)</a></li>
-                                            <li><a href ng-click="insertToken('shortFormat', '${id}')">ID</a></li>
-                                            <li><a href ng-click="insertToken('shortFormat', '${legacy-id}')">Legacy ID</a></li>
-                                            <li ng-if="series.mainType == 'NM'"><a href ng-click="insertToken('shortFormat', '${t-or-p}')">T or P</a></li>
+                                            <li><a href ng-click="insertToken('${year}')">Year</a></li>
+                                            <li><a href ng-click="insertToken('${year-2-digits}')">Year (2 digits)</a></li>
+                                            <li><a href ng-click="insertToken('${week}')">Week</a></li>
+                                            <li><a href ng-click="insertToken('${week-2-digits}')">Week (2 digits)</a></li>
+                                            <li><a href ng-click="insertToken('${number}')">Number</a></li>
+                                            <li><a href ng-click="insertToken('${number-3-digits}')">Number (3 digits)</a></li>
+                                            <li><a href ng-click="insertToken('${id}')">ID</a></li>
+                                            <li><a href ng-click="insertToken('${legacy-id}')">Legacy ID</a></li>
+                                            <li ng-if="series.mainType == 'NM'"><a href ng-click="insertToken('${t-or-p}')">T or P</a></li>
                                         </ul>
                                     </div>
                                 </div>
@@ -174,18 +145,16 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Type</th>
-                                <th>MRN Format</th>
-                                <th>Short Format</th>
                                 <th>Sequence</th>
+                                <th>Short Format</th>
                                 <th>Next Number ({{currentYear}})</th>
                                 <th></th>
                             </tr>
                             <tr ng-repeat="series in messageSeries | filter: { seriesId: search }">
                                 <td>{{series.seriesId}}</td>
                                 <td>{{series.mainType}}</td>
-                                <td>{{series.mrnFormat}}</td>
-                                <td>{{series.shortFormat}}</td>
                                 <td>{{series.numberSequenceType | lowercase}}</td>
+                                <td>{{series.shortFormat}}</td>
                                 <td><span ng-if="autoAssigned(series)">{{series.nextMessageNumber}}</span></td>
                                 <td nowrap align="right">
                                     <a href ng-click="editMessageSeries(series);" title="Edit Message Series"><i class="glyphicon glyphicon-pencil"></i></a>

@@ -50,7 +50,7 @@ public class Reference extends BaseEntity<Integer> implements ILocalizable<Refer
 
     int indexNo;
 
-    // May be either MRN (globally unique) or short ID (within same message series)
+    // Weak message ID reference, i.e. either a UID or a short ID of another message
     @NotNull
     String messageId;
 

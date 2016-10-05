@@ -99,7 +99,7 @@ public class BatchMessageImportProcessor extends AbstractItemHandler {
                 message.setMessageSeries(resolveDefaultMessageSeries());
             }
 
-            if (message.getNumber() != null && message.getMrn() == null) {
+            if (message.getNumber() != null && StringUtils.isBlank(message.getShortId())) {
                 messageSeriesService.updateMessageSeriesIdentifiers(message, false);
             }
 

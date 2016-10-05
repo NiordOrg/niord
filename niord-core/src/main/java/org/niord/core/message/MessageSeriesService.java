@@ -174,7 +174,6 @@ public class MessageSeriesService extends BaseService {
                     + series.getSeriesId());
         }
 
-        original.setMrnFormat(series.getMrnFormat());
         original.setMainType(series.getMainType());
         original.setShortFormat(series.getShortFormat());
         original.setNumberSequenceType(series.getNumberSequenceType() != null
@@ -205,7 +204,7 @@ public class MessageSeriesService extends BaseService {
     }
 
     /****************************/
-    /** Message MRN Generation **/
+    /** Message ID Generation  **/
     /****************************/
 
     /**
@@ -296,10 +295,10 @@ public class MessageSeriesService extends BaseService {
 
 
     /**
-     * Updates the message with (optionally) a new message number, an MRN and a short ID
+     * Updates the message with (optionally) a new message number and a short ID
      * according to the associated message series
      *
-     * @param message the message to (optionally) update with a new message number, MRN and short ID
+     * @param message the message to (optionally) update with a new message number and short ID
      */
     public void updateMessageSeriesIdentifiers(Message message, boolean assignMessageNumber) {
         MessageSeries messageSeries = message.getMessageSeries();
@@ -311,13 +310,13 @@ public class MessageSeriesService extends BaseService {
 
 
         if (messageSeries.getNumberSequenceType() == MessageSeriesVo.NumberSequenceType.NONE) {
-            // No MRN or short ID assigned
+            // No short ID assigned
             return;
 
         } else if (messageSeries.getNumberSequenceType() == MessageSeriesVo.NumberSequenceType.MANUAL) {
-            // If the short ID and MRN is assigned manually, check validity
-            if (StringUtils.isBlank(message.getMrn())) {
-                throw new IllegalArgumentException("Message must be assigned an MRN");
+            // If the short ID is assigned manually, check validity
+            if (StringUtils.isBlank(message.getShortId())) {
+                throw new IllegalArgumentException("Message must be assigned a short ID");
             }
             // The manual assignment is valid ... do nothing further
             return;
@@ -351,15 +350,10 @@ public class MessageSeriesService extends BaseService {
         params.put("${legacy-id}", message.getLegacyId() == null ? "" : String.valueOf(message.getLegacyId()));
         params.put("${t-or-p}", getNmTOrPToken(message));
 
-        message.setMrn(messageSeries.getMrnFormat());
         message.setShortId(messageSeries.getShortFormat());
-        params.entrySet().forEach(e -> {
-            message.setMrn(message.getMrn().replace(e.getKey(), e.getValue()).trim());
-            if (StringUtils.isNotBlank(message.getShortId())) {
-                message.setShortId(message.getShortId().replace(e.getKey(), e.getValue()).trim());
-            }
-        });
-
+        params.entrySet().forEach(e ->
+            message.setShortId(message.getShortId().replace(e.getKey(), e.getValue()).trim())
+        );
     }
 
 

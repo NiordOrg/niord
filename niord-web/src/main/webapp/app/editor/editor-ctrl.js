@@ -376,8 +376,8 @@ angular.module('niord.editor')
             };
 
 
-            /** Returns if the MRN and short ID is editable **/
-            $scope.mrnAndShortIdEditable = function () {
+            /** Returns if the short ID is editable **/
+            $scope.shortIdEditable = function () {
                 return $scope.numberSequenceType() == 'MANUAL';
             };
 

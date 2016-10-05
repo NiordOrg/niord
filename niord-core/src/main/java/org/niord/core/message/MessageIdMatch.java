@@ -24,12 +24,12 @@ import java.util.List;
 /**
  * Encapsulates a - possibly partial - message ID match.
  * <p>
- * The match may be for either the message database ID, the shortId or MRN of a message.
+ * The match may be for either the message database ID or the shortId of a message.
  */
 @SuppressWarnings("unused")
 public class MessageIdMatch implements IJsonSerializable {
 
-    public enum MatchType { UID, SHORT_ID, MRN, TEXT }
+    public enum MatchType { UID, SHORT_ID, TEXT }
 
     String messageId;
     MatchType type;
