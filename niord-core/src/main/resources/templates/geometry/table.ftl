@@ -1,19 +1,34 @@
 
 <#assign formatPos = "org.niord.core.fm.directive.LatLonDirective"?new()>
 
-<#if geometry?has_content>
+<#function nameColumn geometry>
     <#list geometry as feature>
-        <table>
+        <#list feature.coordinates as coord>
+            <#if coord.name?has_content>
+                <#return true/>
+            </#if>
+        </#list>
+    </#list>
+    <#return false/>
+</#function>
+
+
+<#if geometry?has_content>
+    <#assign hasName = nameColumn(geometry)>
+    <table>
+        <#list geometry as feature>
             <#if feature.coordinates?has_content>
                 <#list feature.coordinates as coord>
                     <tr>
                         <td nowrap align="right" style="width: 0.8cm">${feature.startIndex + coord?index})</td>
                         <td nowrap align="right" style="width: 2.3cm"><@formatPos lat=coord.coordinates[1] format=format /></td>
                         <td nowrap align="right" style="width: 2.3cm"><@formatPos lon=coord.coordinates[0] format=format /></td>
-                        <td><#if coord.name?has_content>${coord.name}</#if></td>
+                        <#if hasName>
+                            <td><#if coord.name?has_content>${coord.name}</#if></td>
+                        </#if>
                     </tr>
                 </#list>
             </#if>
-        </table>
-    </#list>
+        </#list>
+    </table>
 </#if>
