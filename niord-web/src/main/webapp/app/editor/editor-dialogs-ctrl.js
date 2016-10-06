@@ -88,7 +88,7 @@ angular.module('niord.editor')
                             // Disable all links
                             $('#message-diff').find('*').removeAttr('href ng-click');
                         });
-                    })
+                    }, 300);
                 }
             };
 
