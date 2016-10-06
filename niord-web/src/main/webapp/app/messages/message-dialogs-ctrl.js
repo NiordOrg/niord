@@ -218,13 +218,18 @@ angular.module('niord.messages')
             $scope.$watch("filter", $scope.loadTags, true);
 
             // Set focus to the tag filter input field
-            $timeout(function () { $('#tagIdFilter').focus() }, 200);
+            $timeout(function () {
+                $('#tagIdFilter').focus()
+            }, 200);
 
 
             // Adds a new tag
             $scope.addTag = function () {
                 $scope.data.editMode = 'add';
                 $scope.data.editTag = { tagId: '', name: '', type: 'PRIVATE', expiryDate: undefined };
+                $timeout(function () {
+                    $('#name').focus()
+                }, 200);
             };
 
 

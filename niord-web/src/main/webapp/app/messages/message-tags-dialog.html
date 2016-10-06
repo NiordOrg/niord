@@ -136,7 +136,8 @@
                     <button type="submit" class="btn btn-default btn-sm" ng-click="loadTags()">
                         Cancel
                     </button>
-                    <button type="submit" class="btn btn-primary btn-sm" ng-click="saveTag()">
+                    <button type="submit" class="btn btn-primary btn-sm" ng-click="saveTag()"
+                            ng-disabled="data.editTag.name.length == 0 || tagsForm.$pristine || tagsForm.$invalid">
                         <span class="glyphicon glyphicon-floppy-disk"></span>
                         Save
                     </button>
