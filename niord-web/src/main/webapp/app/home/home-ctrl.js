@@ -27,13 +27,13 @@ angular.module('niord.home')
             $scope.init = function () {
 
                 // Load the published messages
-                MessageService.publicMessages()
-                    .success(function (messages) {
+                MessageService.search('')
+                    .success(function (result) {
                         $scope.messageList.length = 0;
-                        for (var x = 0; x < messages.length; x++) {
-                            $scope.messageList.push(messages[x]);
+                        for (var x = 0; x < result.data.length; x++) {
+                            $scope.messageList.push(result.data[x]);
                         }
-                        $scope.totalMessageNo = messages.length;
+                        $scope.totalMessageNo = result.total;
                     });
 
                 // If specified in the URL, show the given message details
