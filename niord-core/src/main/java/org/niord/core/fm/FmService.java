@@ -61,6 +61,7 @@ import static org.niord.core.settings.Setting.Type.Password;
 public class FmService extends BaseService {
 
     public static final String LANGUAGE_PROPERTY    = "language";
+    public static final String LANGUAGES_PROPERTY   = "languages";
     public static final String BUNDLE_PROPERTY      = "text";
     public static final String TIME_ZONE_PROPERTY   = "timeZone";
 
@@ -101,6 +102,7 @@ public class FmService extends BaseService {
     @PostConstruct
     private void init() {
         getStandardReport();
+        getDraftReport();
     }
 
 
@@ -121,6 +123,29 @@ public class FmService extends BaseService {
                 log.info("Created standard report");
             } catch (Exception e) {
                 log.error("Failed creating standard report", e);
+            }
+        }
+        return report;
+    }
+
+    /**
+     * Returns the draft report used for generating PDFs from message lists
+     * @return the draft report used for generating PDFs from message lists
+     */
+    public FmReport getDraftReport() {
+        // Check that the standard report is defined
+        FmReport report = findByReportId("draft");
+        if (report == null) {
+            report = new FmReport();
+            report.setReportId("draft");
+            report.setName("Draft");
+            report.setTemplatePath("/templates/messages/message-list-pdf.ftl");
+            report.getProperties().put("draft", true);
+            try {
+                em.persist(report);
+                log.info("Created draft report");
+            } catch (Exception e) {
+                log.error("Failed draft standard report", e);
             }
         }
         return report;
@@ -217,16 +242,17 @@ public class FmService extends BaseService {
         // Standard data properties
         templateBuilder.getData().put("baseUri", app.getBaseUri());
         templateBuilder.getData().put("country", app.getCountry());
+        if (!templateBuilder.getData().containsKey("draft")) {
+            templateBuilder.getData().put("draft", false);
+        }
         // More...
 
         // Load the resource bundle with the given language and name, and save it in the "text" data property
         ResourceBundle bundle;
         if (templateBuilder.getDictionaryNames() != null && templateBuilder.getDictionaryNames().length > 0) {
-            String  language = templateBuilder.getLanguage();
-            if (StringUtils.isBlank(language)) {
-                language = app.getDefaultLanguage();
-            }
+            String  language = app.getLanguage(templateBuilder.getLanguage());
             templateBuilder.getData().put(LANGUAGE_PROPERTY, language);
+            templateBuilder.getData().put(LANGUAGES_PROPERTY, app.getLanguages(language));
 
             bundle = dictionaryService.getDictionariesAsResourceBundle(templateBuilder.getDictionaryNames(), language);
             if (bundle != null) {

@@ -89,6 +89,24 @@ public class NiordApp {
 
 
     /**
+     * Returns the list of languages supported by the MSI-NM application with the given language first
+     * @return the list of languages supported by the MSI-NM application the given language first
+     */
+    public String[] getLanguages(String lang) {
+        lang = getLanguage(lang);
+        String[] languages = getLanguages();
+        for (int x = 1; x < languages.length; x++) {
+            if (languages[x].equals(lang)) {
+                String temp = languages[0];
+                languages[0] = languages[x];
+                languages[x] = temp;
+            }
+        }
+        return languages;
+    }
+
+
+    /**
      * Returns the default language
      * @return the default language
      */

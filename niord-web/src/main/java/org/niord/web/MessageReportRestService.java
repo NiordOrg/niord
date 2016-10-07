@@ -124,6 +124,7 @@ public class MessageReportRestService {
                             .data("pageSize", printParams.getPageSize())
                             .data("pageOrientation", printParams.getPageOrientation())
                             .data("mapThumbnails", printParams.getMapThumbnails())
+                            .data("draft", false)
                             .dictionaryNames("web", "message", "pdf")
                             .language(language)
                             .process(format, os);
@@ -163,7 +164,11 @@ public class MessageReportRestService {
 
         MessagePrintParams printParams = MessagePrintParams.instantiate(request);
 
+        // We prefer to get all language variants and then sort the result
+        String language = params.getLanguage();
+        params.language(null);
         PagedSearchResultVo<MessageVo> result = messageSearchRestService.search(params);
+        result.getData().forEach(m -> m.sort(language));
 
         try {
             FmReport report = fmService.getReport(printParams.getReport());
@@ -182,7 +187,7 @@ public class MessageReportRestService {
                             .data("mapThumbnails", printParams.getMapThumbnails())
                             .data(report.getProperties()) // Let report override settings
                             .dictionaryNames("web", "message", "pdf")
-                            .language(params.getLanguage())
+                            .language(language)
                             .process(format, os);
                 } catch (Exception e) {
                     throw new WebApplicationException("Error generating PDF for messages", e);

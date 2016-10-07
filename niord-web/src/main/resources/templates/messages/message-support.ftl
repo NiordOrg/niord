@@ -178,8 +178,8 @@
 <!-- ***************************************  -->
 <!-- Renders a language flag if wrong lang    -->
 <!-- ***************************************  -->
-<#macro renderLangFlag desc lang=language>
-    <#if desc?? && desc.lang != lang>
+<#macro renderLangFlag desc lang=language  draft=draft!false >
+    <#if draft == true && desc?? && desc.lang != lang>
         <img src="/img/flags/${desc.lang}.png" class="lang-flag"/>
     </#if>
 </#macro>
@@ -188,12 +188,12 @@
 <!-- ***************************************  -->
 <!-- Renders a message part                   -->
 <!-- ***************************************  -->
-<#macro renderMessagePart part lang=language>
+<#macro renderMessagePart part lang=language draft=draft!false >
     <#assign desc=descForLang(part, lang)!>
     <#if desc?? && desc.subject??>
         <p>
             <strong>${desc.subject}</strong>
-            <@renderLangFlag desc=desc lang=lang />
+            <@renderLangFlag desc=desc lang=lang draft=draft/>
         </p>
     </#if>
     <#if desc?? && desc.details??>
@@ -205,7 +205,7 @@
 <!-- ***************************************  -->
 <!-- Renders a message                        -->
 <!-- ***************************************  -->
-<#macro renderMessage msg lang=language>
+<#macro renderMessage msg lang=language draft=draft!false >
 
     <#assign desc=descForLang(msg, lang)!>
 
@@ -239,6 +239,26 @@
 
 
     <table>
+
+        <!-- Type line (drafts only) -->
+        <#if draft == true>
+            <tr>
+                <td class="field-name">${text("msg.field.type")}</td>
+                <td class="field-value">
+                    ${text("msg.type." + msg.type)} ${msg.mainType}
+                </td>
+            </tr>
+        </#if>
+
+        <!-- Status (drafts only) -->
+        <#if draft == true>
+            <tr>
+                <td class="field-name">${text("msg.field.status")}</td>
+                <td class="field-value">
+                    ${msg.status?lower_case}
+                </td>
+            </tr>
+        </#if>
 
         <!-- Reference lines -->
         <#if msg.references?has_content>
@@ -280,7 +300,7 @@
                         </#if>
                     </td>
                     <td class="field-value message-description">
-                        <@renderMessagePart part=part lang=lang/>
+                        <@renderMessagePart part=part lang=lang draft=draft/>
                     </td>
                 </tr>
             </#list>
@@ -301,18 +321,18 @@
             </tr>
         </#if>
 
-        <!-- Publication line -->
-        <#if descs?? && desc.publication?has_content>
+        <!-- Publication line (drafts only) -->
+        <#if draft == true && desc?? && desc.publication?has_content>
             <tr>
                 <td class="field-name">${text("msg.field.publication")}</td>
                 <td class="field-value">
-                ${desc.publication}
+                ${desc.publication!""}
                 </td>
             </tr>
         </#if>
 
         <!-- Source line -->
-        <#if descs?? && desc.source?has_content>
+        <#if desc?? && desc.source?has_content>
             <tr>
                 <td class="field-value" style="text-align: right;" colspan="2">
                     (${desc.source})
@@ -333,7 +353,7 @@
 <!-- ***************************************  -->
 <!-- Renders a list of messages               -->
 <!-- ***************************************  -->
-<#macro renderMessageList messages areaHeadings=true prefix="">
+<#macro renderMessageList messages areaHeadings=true prefix="" draft=draft!false>
 
     <#assign areaHeadingId=-9999999 />
 
@@ -368,7 +388,14 @@
                     </td>
                 </#if>
                 <td class="table-item">
-                    <@renderMessage msg=msg/>
+                    <#if draft>
+                        <#list languages as lang>
+                            <div class="lang-header">${text('lang.' + lang)} Translation</div>
+                            <@renderMessage msg=msg lang=lang draft=draft/>
+                        </#list>
+                    <#else>
+                        <@renderMessage msg=msg lang=language draft=draft/>
+                    </#if>
                 </td>
             </tr>
         </#list>
