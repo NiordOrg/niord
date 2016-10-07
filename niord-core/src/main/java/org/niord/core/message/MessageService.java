@@ -60,6 +60,7 @@ import javax.persistence.criteria.Selection;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -1062,7 +1063,7 @@ public class MessageService extends BaseService {
      * @param maxMessageNo max number of message to return
      * @return the messages most recently edited by the current user
      */
-    public List<Message> getMostRecentlyEditedMessages(int maxMessageNo) {
+    public List<Message> getMostRecentlyEditedMessages(int maxMessageNo, Status... statuses) {
         User user = userService.currentUser();
         Domain domain = domainService.currentDomain();
         if (user == null || domain == null) {
@@ -1072,16 +1073,36 @@ public class MessageService extends BaseService {
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.MONTH, -1);
 
+        Set<Status> statusSet = new HashSet<>();
+        if (statuses != null && statuses.length > 0) {
+            statusSet.addAll(Arrays.asList(statuses));
+        } else {
+            statusSet.addAll(Arrays.asList(Status.values()));
+        }
+
         return em.createNamedQuery("MessageHistory.findRecentChangesByUser", MessageHistory.class)
                 .setParameter("user", user)
                 .setParameter("date", cal.getTime())
                 .setParameter("messageSeries", domain.getMessageSeries())
+                .setParameter("statuses", statusSet)
                 .getResultList()
                 .stream()
                 .map(MessageHistory::getMessage)
                 .distinct()
                 .limit(maxMessageNo)
                 .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Returns the draft messages most recently edited by the current user
+     * within the last month
+     *
+     * @param maxMessageNo max number of draft message to return
+     * @return the draft messages most recently edited by the current user
+     */
+    public List<Message> getMostRecentlyEditedDrafts(int maxMessageNo) {
+        return getMostRecentlyEditedMessages(maxMessageNo, Status.DRAFT, Status.VERIFIED);
     }
 
 

@@ -51,6 +51,7 @@ import java.util.zip.GZIPOutputStream;
         @NamedQuery(name = "MessageHistory.findRecentChangesByUser",
                 query = "SELECT mh FROM MessageHistory mh where mh.user = :user and mh.created > :date " +
                         " and mh.message.messageSeries in (:messageSeries)" +
+                        " and mh.message.status in (:statuses)" +
                         " order by mh.created desc")
 })
 @SuppressWarnings("unused")

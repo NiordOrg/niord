@@ -1459,7 +1459,7 @@ angular.module('niord.editor')
 
 
             // Load recently edited messages for the current user
-            MessageService.recentlyEditedMessages()
+            MessageService.recentlyEditedDrafts()
                 .success(function (messages) {
                     $scope.recentlyEditedMessages = messages;
                 });

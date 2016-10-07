@@ -184,10 +184,10 @@ angular.module('niord.messages')
             },
 
 
-            /** Returns the recently edited messages */
-            recentlyEditedMessages: function(maxMessageNo) {
+            /** Returns the recently edited draft messages */
+            recentlyEditedDrafts: function(maxMessageNo) {
                 maxMessageNo = maxMessageNo || 20;
-                return $http.get('/rest/messages/recently-edited?lang=' + $rootScope.language
+                return $http.get('/rest/messages/recently-edited-drafts?lang=' + $rootScope.language
                                     + '&maxMessageNo=' + maxMessageNo);
             },
 

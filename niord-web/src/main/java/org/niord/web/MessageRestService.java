@@ -615,7 +615,7 @@ public class MessageRestService  {
      * @return the recently edited messages for the current user
      */
     @GET
-    @Path("/recently-edited")
+    @Path("/recently-edited-drafts")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
@@ -627,7 +627,7 @@ public class MessageRestService  {
         DataFilter filter = DataFilter
                 .get().lang(lang)
                 .fields("MessageDesc.title");
-        return messageService.getMostRecentlyEditedMessages(maxMessageNo).stream()
+        return messageService.getMostRecentlyEditedDrafts(maxMessageNo).stream()
                 .map(m -> m.toVo(MessageVo.class, filter))
                 .collect(Collectors.toList());
     }
