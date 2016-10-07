@@ -218,15 +218,15 @@
                             <a href="${baseUri}/#/message/${ref.messageId?url('ASCII')}" target="_blank">${ref.messageId}</a>
 
                             <#if ref.type == 'REPETITION'>
-                                ${text("msg.reference.repetition")}
+                                - ${text("msg.reference.repetition")}
                             <#elseif ref.type == 'CANCELLATION'>
-                                ${text("msg.reference.cancelled")}
+                                - ${text("msg.reference.cancelled")}
                             <#elseif ref.type == 'UPDATE'>
-                                ${text("msg.reference.updated")}
+                                - ${text("msg.reference.updated")}
                             </#if>
 
-                            <#if ref.description?has_content>
-                                ${ref.description}
+                            <#if ref.descs?has_content && ref.descs[0].description??>
+                                - ${ref.descs[0].description}
                             </#if>
                         </div>
                     </#list>
