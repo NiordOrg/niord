@@ -610,6 +610,29 @@ public class MessageRestService  {
     }
 
 
+    /**
+     * Returns the recently edited messages for the current user
+     * @return the recently edited messages for the current user
+     */
+    @GET
+    @Path("/recently-edited")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public List<MessageVo> getRecentlyEditedMessages(
+            @QueryParam("lang") @DefaultValue("en") String lang,
+            @QueryParam("maxMessageNo") @DefaultValue("20") int maxMessageNo
+    ) {
+        DataFilter filter = DataFilter
+                .get().lang(lang)
+                .fields("MessageDesc.title");
+        return messageService.getMostRecentlyEditedMessages(maxMessageNo).stream()
+                .map(m -> m.toVo(MessageVo.class, filter))
+                .collect(Collectors.toList());
+    }
+
+
     /***************************
      * Sorting functionality
      ***************************/

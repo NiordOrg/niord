@@ -10,10 +10,14 @@
     </h3>
 
     <div ng-if="!message || !message.mainType" style="margin-top: 10px">
-        <button class="btn btn-sm btn-primary" ng-if="canCreateMessage('NW')" ng-click="createMessage('NW')"
-                ng-disabled="selection.isEmpty()">New NW</button>
-        <button class="btn btn-sm btn-primary" ng-if="canCreateMessage('NM')" ng-click="createMessage('NM')"
-                ng-disabled="selection.isEmpty()">New NM</button>
+        <div>
+            <button class="btn btn-sm btn-primary" ng-if="canCreateMessage('NW')" ng-click="createMessage('NW')"
+                    ng-disabled="selection.isEmpty()">New NW</button>
+            <button class="btn btn-sm btn-primary" ng-if="canCreateMessage('NM')" ng-click="createMessage('NM')"
+                    ng-disabled="selection.isEmpty()">New NM</button>
+        </div>
+
+        <div ng-include="'/app/editor/recently-edited-messages.html'"></div>
     </div>
 
 

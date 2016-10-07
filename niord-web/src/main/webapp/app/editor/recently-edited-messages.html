@@ -1,0 +1,24 @@
+
+<div ng-controller="RecentlyEditedMessagesCtrl">
+
+    <div ng-if="recentlyEditedMessages.length > 0" style="margin-top: 30px">
+        <div style="margin-bottom: 10px" translate>editor.recently_edited</div>
+
+        <table class='table table-condensed' style="font-size: 11px">
+            <tr ng-repeat="msg in recentlyEditedMessages">
+                <td nowrap><message-id-badge msg="msg" show-blank="true"></message-id-badge></td>
+                <td message-details-link="msg.id" message-list="recentlyEditedMessages">
+                    <span class="glyphicon glyphicon-new-window"></span>&nbsp;
+                    {{msg.descs[0].title}}
+                </td>
+                <td width="80" nowrap>
+                    <a href ng-click="edit(msg.id);">
+                        <span class="glyphicon glyphicon-pencil"></span>&nbsp;
+                        <span translate>menu.action.edit</span>
+                    </a>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+</div>

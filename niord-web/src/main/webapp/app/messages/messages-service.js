@@ -184,6 +184,14 @@ angular.module('niord.messages')
             },
 
 
+            /** Returns the recently edited messages */
+            recentlyEditedMessages: function(maxMessageNo) {
+                maxMessageNo = maxMessageNo || 20;
+                return $http.get('/rest/messages/recently-edited?lang=' + $rootScope.language
+                                    + '&maxMessageNo=' + maxMessageNo);
+            },
+
+
             /** Returns the comments for the given message */
             comments: function(id) {
                 return $http.get('/rest/messages/message/' + id + '/comments');

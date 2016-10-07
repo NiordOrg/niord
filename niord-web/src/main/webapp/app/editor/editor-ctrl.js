@@ -1444,4 +1444,31 @@ angular.module('niord.editor')
             $scope.cancel = function () {
                 $scope.comment = undefined;
             };
+        }])
+
+
+
+    /*******************************************************************
+     * EditorCtrl sub-controller that displays recently edited messages.
+     *******************************************************************/
+    .controller('RecentlyEditedMessagesCtrl', ['$scope', '$rootScope', '$state', '$timeout', 'MessageService',
+        function ($scope, $rootScope, $state, $timeout, MessageService) {
+            'use strict';
+
+            $scope.recentlyEditedMessages = [];
+
+
+            // Load recently edited messages for the current user
+            MessageService.recentlyEditedMessages()
+                .success(function (messages) {
+                    $scope.recentlyEditedMessages = messages;
+                });
+
+
+            /** Edit the given message **/
+            $scope.edit = function (msgId) {
+                $state.go('editor.edit', {id: msgId});
+                $timeout($scope.init, 100);
+            }
         }]);
+

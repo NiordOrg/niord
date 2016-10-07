@@ -26,6 +26,7 @@ import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.db.SpatialIntersectsPredicate;
+import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.geojson.Feature;
 import org.niord.core.geojson.FeatureCollection;
@@ -59,6 +60,7 @@ import javax.persistence.criteria.Selection;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -1050,6 +1052,36 @@ public class MessageService extends BaseService {
         return em.createNamedQuery("MessageHistory.findByMessageId", MessageHistory.class)
                 .setParameter("messageId", messageId)
                 .getResultList();
+    }
+
+
+    /**
+     * Returns the messages most recently edited by the current user
+     * within the last month
+     *
+     * @param maxMessageNo max number of message to return
+     * @return the messages most recently edited by the current user
+     */
+    public List<Message> getMostRecentlyEditedMessages(int maxMessageNo) {
+        User user = userService.currentUser();
+        Domain domain = domainService.currentDomain();
+        if (user == null || domain == null) {
+            return Collections.emptyList();
+        }
+        // Only check last month
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, -1);
+
+        return em.createNamedQuery("MessageHistory.findRecentChangesByUser", MessageHistory.class)
+                .setParameter("user", user)
+                .setParameter("date", cal.getTime())
+                .setParameter("messageSeries", domain.getMessageSeries())
+                .getResultList()
+                .stream()
+                .map(MessageHistory::getMessage)
+                .distinct()
+                .limit(maxMessageNo)
+                .collect(Collectors.toList());
     }
 
 

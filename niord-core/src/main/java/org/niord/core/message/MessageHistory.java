@@ -47,7 +47,11 @@ import java.util.zip.GZIPOutputStream;
 @Entity
 @NamedQueries({
     @NamedQuery(name = "MessageHistory.findByMessageId",
-                query = "SELECT mh FROM MessageHistory mh where mh.message.id = :messageId order by mh.created desc")
+                query = "SELECT mh FROM MessageHistory mh where mh.message.id = :messageId order by mh.created desc"),
+        @NamedQuery(name = "MessageHistory.findRecentChangesByUser",
+                query = "SELECT mh FROM MessageHistory mh where mh.user = :user and mh.created > :date " +
+                        " and mh.message.messageSeries in (:messageSeries)" +
+                        " order by mh.created desc")
 })
 @SuppressWarnings("unused")
 public class MessageHistory extends BaseEntity<Integer> {
