@@ -74,12 +74,6 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     // If an extent is specified, use this to fetch messages with no geometry
     Boolean includeGeneral;
 
-    // Print parameters
-    String report;
-    String pageSize;
-    String pageOrientation;
-    Boolean debug;
-
 
     /**
      * Returns a MessageSearchParams initialized with parameter values from a request using "default" parameter names
@@ -114,12 +108,6 @@ public class MessageSearchParams extends PagedSearchParamsVo {
                         checkNull(req.getParameter("maxLat"), Double::valueOf),
                         checkNull(req.getParameter("maxLon"), Double::valueOf))
                 .includeGeneral(checkNull(req.getParameter("includeGeneral"), Boolean::valueOf))
-
-                // Print parameters
-                .report(req.getParameter("report"))
-                .pageSize(checkNull(req.getParameter("pageSize"), "A4", Function.identity()))
-                .pageOrientation(checkNull(req.getParameter("pageOrientation"), "portrait", Function.identity()))
-                .debug(checkNull(req.getParameter("debug"), false, Boolean::valueOf))
 
                 // Standard paged search parameters
                 .maxSize(checkNull(req.getParameter("maxSize"), 100, Integer::valueOf))
@@ -418,42 +406,6 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public MessageSearchParams includeGeneral(Boolean includeGeneral) {
         this.includeGeneral = includeGeneral;
-        return this;
-    }
-
-    public String getReport() {
-        return report;
-    }
-
-    public MessageSearchParams report(String report) {
-        this.report = report;
-        return this;
-    }
-
-    public String getPageSize() {
-        return pageSize;
-    }
-
-    public MessageSearchParams pageSize(String pageSize) {
-        this.pageSize = pageSize;
-        return this;
-    }
-
-    public String getPageOrientation() {
-        return pageOrientation;
-    }
-
-    public MessageSearchParams pageOrientation(String pageOrientation) {
-        this.pageOrientation = pageOrientation;
-        return this;
-    }
-
-    public Boolean getDebug() {
-        return debug;
-    }
-
-    public MessageSearchParams debug(Boolean debug) {
-        this.debug = debug;
         return this;
     }
 

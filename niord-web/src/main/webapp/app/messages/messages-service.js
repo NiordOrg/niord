@@ -401,6 +401,9 @@ angular.module('niord.messages')
                                 if (printSettings && printSettings.pageSize) {
                                     params += '&pageSize=' + printSettings.pageSize;
                                 }
+                                if (printSettings && printSettings['mapThumbnails'] !== undefined) {
+                                    params += '&mapThumbnails=' + printSettings.mapThumbnails;
+                                }
 
                                 $window.location = '/rest/message-reports/message/' + messageId + '.pdf?' + params;
                             });

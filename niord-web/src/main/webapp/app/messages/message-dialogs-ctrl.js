@@ -300,11 +300,13 @@ angular.module('niord.messages')
 
             $scope.totalMessageNo = total;
             $scope.reports = undefined;
+            $scope.reportProperties = {};
 
             $scope.data = {
                 report: undefined,
                 pageSize : 'A4',
-                pageOrientation: 'portrait'
+                pageOrientation: 'portrait',
+                mapThumbnails: false
             };
 
             if ($window.localStorage.printSettings) {
@@ -314,6 +316,7 @@ angular.module('niord.messages')
                 }
             }
 
+            
             // If requested, load the message reports
             if (reports) {
                 MessageService.printReports()
@@ -324,6 +327,20 @@ angular.module('niord.messages')
                         }
                     })
             }
+
+
+            // When a new report is selected, update the report properties
+            $scope.$watch("data.report", function (reportId) {
+                $scope.reportProperties = {};
+                if ($scope.reports) {
+                    angular.forEach($scope.reports, function (report) {
+                        if (report.reportId == reportId) {
+                            $scope.reportProperties = report.properties;
+                        }
+                    })
+                }
+            });
+
 
             // Register and unregister event-handler to listen for return key
             var eventTypes = "keydown keypress";

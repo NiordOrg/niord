@@ -739,6 +739,9 @@ angular.module('niord.messages')
                         if (printSettings && printSettings.pageSize) {
                             params += '&pageSize=' + printSettings.pageSize;
                         }
+                        if (printSettings && printSettings['mapThumbnails'] !== undefined) {
+                            params += '&mapThumbnails=' + printSettings.mapThumbnails;
+                        }
                         if (printSettings && printSettings.report) {
                             params += '&report=' + encodeURIComponent(printSettings.report);
                         }

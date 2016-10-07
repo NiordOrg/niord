@@ -24,6 +24,7 @@ import org.niord.core.fm.FmReport;
 import org.niord.core.fm.FmService;
 import org.niord.core.fm.FmService.ProcessFormat;
 import org.niord.core.fm.vo.FmReportVo;
+import org.niord.core.message.MessagePrintParams;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.model.message.MessageVo;
 import org.niord.model.search.PagedSearchResultVo;
@@ -33,7 +34,6 @@ import javax.annotation.security.PermitAll;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -107,23 +107,23 @@ public class MessageReportRestService {
     public Response generatePdfForMessage(
             @PathParam("messageId") String messageId,
             @QueryParam("lang") String language,
-            @QueryParam("pageSize") @DefaultValue("A4") String pageSize,
-            @QueryParam("pageOrientation") @DefaultValue("portrait") String pageOrientation,
-            @QueryParam("debug") @DefaultValue("false") boolean debug) throws Exception {
+            @Context HttpServletRequest request) throws Exception {
 
         MessageVo message = messageRestService.getMessage(messageId, language);
 
+        MessagePrintParams printParams = MessagePrintParams.instantiate(request);
+
         try {
-            ProcessFormat format = debug ? ProcessFormat.TEXT : ProcessFormat.PDF;
+            ProcessFormat format = printParams.getDebug() ? ProcessFormat.TEXT : ProcessFormat.PDF;
 
             StreamingOutput stream = os -> {
                 try {
                     fmService.newTemplateBuilder()
                             .templatePath("/templates/messages/message-details-pdf.ftl")
                             .data("messages", Collections.singleton(message))
-                            .data("pageSize", pageSize)
-                            .data("pageOrientation", pageOrientation)
-                            .data("mapThumbnails", true)
+                            .data("pageSize", printParams.getPageSize())
+                            .data("pageOrientation", printParams.getPageOrientation())
+                            .data("mapThumbnails", printParams.getMapThumbnails())
                             .dictionaryNames("web", "message", "pdf")
                             .language(language)
                             .process(format, os);
@@ -133,7 +133,7 @@ public class MessageReportRestService {
             };
 
             Response.ResponseBuilder response = Response.ok(stream);
-            return debug
+            return printParams.getDebug()
                     ? response.type("text/html;charset=UTF-8").build()
                     : response.type("application/pdf")
                     .header("Content-Disposition", "attachment; filename=\"message-" + messageId + ".pdf\"")
@@ -161,12 +161,14 @@ public class MessageReportRestService {
         MessageSearchParams params = MessageSearchParams.instantiate(domainService.currentDomain(), request);
         params.maxSize(1000).page(0);
 
+        MessagePrintParams printParams = MessagePrintParams.instantiate(request);
+
         PagedSearchResultVo<MessageVo> result = messageSearchRestService.search(params);
 
         try {
-            FmReport report = fmService.getReport(params.getReport());
+            FmReport report = fmService.getReport(printParams.getReport());
 
-            ProcessFormat format = params.getDebug() ? ProcessFormat.TEXT : ProcessFormat.PDF;
+            ProcessFormat format = printParams.getDebug() ? ProcessFormat.TEXT : ProcessFormat.PDF;
 
             StreamingOutput stream = os -> {
                 try {
@@ -175,9 +177,9 @@ public class MessageReportRestService {
                             .data("messages", result.getData())
                             .data("areaHeadings", params.sortByArea())
                             .data("searchCriteria", result.getDescription())
-                            .data("pageSize", params.getPageSize())
-                            .data("pageOrientation", params.getPageOrientation())
-                            .data("mapThumbnails", true)
+                            .data("pageSize", printParams.getPageSize())
+                            .data("pageOrientation", printParams.getPageOrientation())
+                            .data("mapThumbnails", printParams.getMapThumbnails())
                             .data(report.getProperties()) // Let report override settings
                             .dictionaryNames("web", "message", "pdf")
                             .language(params.getLanguage())
@@ -188,7 +190,7 @@ public class MessageReportRestService {
             };
 
             Response.ResponseBuilder response = Response.ok(stream);
-            return params.getDebug()
+            return printParams.getDebug()
                     ? response.type("text/html;charset=UTF-8").build()
                     : response.type("application/pdf")
                     .header("Content-Disposition", "attachment; filename=\"messages.pdf\"")

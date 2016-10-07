@@ -44,6 +44,12 @@
                         </div>
                     </td>
                 </tr>
+                <tr ng-if="reportProperties['mapThumbnails'] === undefined">
+                    <td align="right"></td>
+                    <td>
+                        &nbsp;<input type="checkbox" ng-model="data.mapThumbnails"> include thumbnails
+                    </td>
+                </tr>
             </table>
         </div>
 
