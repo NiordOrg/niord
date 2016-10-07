@@ -1096,10 +1096,46 @@ angular.module('niord.editor')
     /*******************************************************************
      * EditorCtrl sub-controller that handles message status changes.
      *******************************************************************/
-    .controller('EditorStatusCtrl', ['$scope', '$rootScope', '$state', 'growl', 'MessageService', 'DialogService',
-        function ($scope, $rootScope, $state, growl, MessageService, DialogService) {
+    .controller('EditorStatusCtrl', ['$scope', '$rootScope', '$state', 'growl', 'MessageService', 'LangService', 'DialogService',
+        function ($scope, $rootScope, $state, growl, MessageService, LangService, DialogService) {
             'use strict';
 
+            $scope.previewLang = $rootScope.language;
+
+            /** Create a preview message, i.e. a message sorted to the currently selected language **/
+            $scope.createPreviewMessage = function () {
+                $scope.previewMessage = undefined;
+                if ($scope.message) {
+                    $scope.previewMessage = angular.copy($scope.message);
+                    LangService.sortDescs($scope.previewMessage, $scope.previewLang);
+                    if ($scope.previewMessage.parts) {
+                        angular.forEach($scope.previewMessage.parts, function (part) {
+                            LangService.sortDescs(part, $scope.previewLang);
+                        });
+                    }
+                    if ($scope.previewMessage.attachments) {
+                        angular.forEach($scope.previewMessage.attachments, function (att) {
+                            LangService.sortDescs(att, $scope.previewLang);
+                        });
+                    }
+                    if ($scope.previewMessage.references) {
+                        angular.forEach($scope.previewMessage.references, function (ref) {
+                            LangService.sortDescs(ref, $scope.previewLang);
+                        });
+                    }
+                }
+            };
+            $scope.$watch("message", $scope.createPreviewMessage, true);
+
+
+            /** Set the preview language **/
+            $scope.previewLanguage = function (lang) {
+                $scope.previewLang = lang;
+                $scope.createPreviewMessage();
+            };
+
+
+            /** Reloads the message and optionally growls the parameter */
             $scope.reloadMessage = function (msg) {
                 // Call parent controller init() method
                 $scope.init();

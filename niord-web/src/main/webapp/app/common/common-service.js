@@ -125,22 +125,23 @@ angular.module('niord.common')
              * Computes a sort value by comparing the desc language to the
              * current language or else the index in the list of available languages.
              */
-            function sortValue(desc) {
+            function sortValue(desc, lang) {
+                lang = lang || $rootScope.language;
                 if (!desc.lang){
                     return 1000;
-                } else if (desc.lang == $rootScope.language) {
+                } else if (desc.lang == lang) {
                     return -1;
                 }
-                var index = $.inArray(desc, $rootScope.languages);
+                var index = $.inArray(desc, lang);
                 return (index == -1) ? 999 : index;
             }
 
             
             /** Sort the localized description entities by language */
-            this.sortDescs = function (elm) {
+            this.sortDescs = function (elm, lang) {
                 if (elm && elm.descs) {
                     elm.descs.sort(function(d1, d2){
-                        return sortValue(d1) - sortValue(d2);
+                        return sortValue(d1, lang) - sortValue(d2, lang);
                     });
                 }
             };

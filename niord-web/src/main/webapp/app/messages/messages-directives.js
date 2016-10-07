@@ -566,6 +566,7 @@ angular.module('niord.messages')
             scope: {
                 msg:            "=",
                 messageList:    "=",
+                language:       "=",
                 selection:      "=",
                 format:         "@",
                 showDetailsMenu:"@",
@@ -573,7 +574,7 @@ angular.module('niord.messages')
                 compact:        "="
             },
             link: function(scope, element, attrs) {
-                scope.language = $rootScope.language;
+                scope.language = scope.language || $rootScope.language;
                 scope.format = scope.format || 'list';
                 scope.attachmentsAbove = [];
                 scope.attachmentsBelow = [];

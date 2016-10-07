@@ -16,8 +16,16 @@
     <div class="row" ng-if="message.created">
 
         <div class="col-sm-12 col-md-8 col-lg-9">
+            <div class="message-status-lang">
+                <span ng-repeat="lang in modelLanguages" ng-click="previewLanguage(lang)"
+                      class="message-status-lang-btn pointer" ng-class="{'preview-lang-selected' : previewLang == lang}">
+                    <img ng-src="/img/flags/{{lang}}.png" height="14"/>
+                    {{'lang.' + lang | translate}}
+                </span>
+            </div>
+
             <table ng-if="message.id" class='table table-condensed'>
-                <tr render-message-details msg="message" format="details" show-details-menu="false"></tr>
+                <tr render-message-details msg="previewMessage" language="previewLang" format="details" show-details-menu="false"></tr>
             </table>
         </div>
 

@@ -39,7 +39,7 @@
 
             <!-- Reference lines -->
             <tr ng-if="msg.references && msg.references.length > 0">
-                <th translate>msg.field.references</th>
+                <th translate-language="{{language}}" translate>msg.field.references</th>
                 <td>
                     <div ng-repeat="ref in msg.references">
                         <a href ng-click="referenceClicked(ref.messageId)">{{ref.messageId}}</a>
@@ -57,8 +57,8 @@
             <!-- Details line -->
             <tr ng-if="msg.parts" ng-repeat="part in msg.parts">
                 <th>
-                    <span ng-if="$index == 0 || msg.parts[$index].type != msg.parts[$index - 1].type">
-                        {{'msg.field.' + part.type.toLowerCase() | translate}}
+                    <span ng-if="$index == 0 || msg.parts[$index].type != msg.parts[$index - 1].type"
+                          translate-language="{{language}}" translate="{{'msg.field.' + part.type.toLowerCase()}}">
                     </span>
                 </th>
                 <td class="message-description">
@@ -69,7 +69,7 @@
 
             <!-- Attachments -->
             <tr ng-if="msg.attachments">
-                <th translate>msg.field.attachments</th>
+                <th translate-language="{{language}}" translate>msg.field.attachments</th>
                 <td>
                     <div ng-if="!compact">
                         <span class="glyphicon glyphicon-paperclip" style="color: darkgray"></span>
@@ -87,7 +87,7 @@
 
             <!-- Charts line -->
             <tr ng-if="msg.charts.length > 0">
-                <th translate>msg.field.charts</th>
+                <th translate-language="{{language}}" translate>msg.field.charts</th>
                 <td>
                     <span render-charts="msg.charts"></span>
                 </td>
