@@ -60,8 +60,9 @@ import static org.niord.core.settings.Setting.Type.Password;
 @SuppressWarnings("unused")
 public class FmService extends BaseService {
 
-    public static final String BUNDLE_PROPERTY = "text";
-    public static final String TIME_ZONE_PROPERTY = "timeZone";
+    public static final String LANGUAGE_PROPERTY    = "language";
+    public static final String BUNDLE_PROPERTY      = "text";
+    public static final String TIME_ZONE_PROPERTY   = "timeZone";
 
     public enum ProcessFormat { TEXT, PDF }
 
@@ -225,6 +226,8 @@ public class FmService extends BaseService {
             if (StringUtils.isBlank(language)) {
                 language = app.getDefaultLanguage();
             }
+            templateBuilder.getData().put(LANGUAGE_PROPERTY, language);
+
             bundle = dictionaryService.getDictionariesAsResourceBundle(templateBuilder.getDictionaryNames(), language);
             if (bundle != null) {
                 ResourceBundleModel resourceBundleModel = new ResourceBundleModel(

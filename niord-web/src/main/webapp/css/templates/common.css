@@ -140,6 +140,11 @@ table.positions td:nth-child(1) {
     color: darkgray;
 }
 
+img.lang-flag {
+    height: 2mm;
+    opacity: 0.3;
+}
+
 .attachment {
     text-align: center;
 }

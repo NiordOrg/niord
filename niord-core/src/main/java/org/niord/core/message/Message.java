@@ -264,6 +264,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         this.originalInformation = message.getOriginalInformation();
         if (message.getDescs() != null) {
             message.getDescs().forEach(desc -> addDesc(new MessageDesc(desc)));
+            message.getDescs().removeIf(d -> !d.descDefined());
         }
         if (message.getParts() != null) {
             message.getParts().forEach(part -> addPart(new MessagePart(part)));

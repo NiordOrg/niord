@@ -159,14 +159,45 @@
 
 
 <!-- ***************************************  -->
+<!-- Returns the desc for the given language  -->
+<!-- ***************************************  -->
+<#function descForLang entity lang=language >
+    <#if entity.descs?has_content>
+        <#list entity.descs as desc>
+            <#if desc.lang?? && desc.lang == lang>
+                <#return desc />
+            </#if>
+        </#list>
+    </#if>
+    <#if entity.descs?has_content>
+        <#return entity.descs[0] />
+    </#if>
+</#function>
+
+
+<!-- ***************************************  -->
+<!-- Renders a language flag if wrong lang    -->
+<!-- ***************************************  -->
+<#macro renderLangFlag desc lang=language>
+    <#if desc?? && desc.lang != lang>
+        <img src="/img/flags/${desc.lang}.png" class="lang-flag"/>
+    </#if>
+</#macro>
+
+
+<!-- ***************************************  -->
 <!-- Renders a message part                   -->
 <!-- ***************************************  -->
-<#macro renderMessagePart part>
-    <#if part.descs?has_content && part.descs[0].subject??>
-        <p><strong>${part.descs[0].subject}</strong></p>
+<#macro renderMessagePart part lang=language>
+    <#assign desc=descForLang(part, lang)!>
+    <#if desc?? && desc.subject??>
+        <p>
+            <strong>${desc.subject}</strong>
+            <@renderLangFlag desc=desc lang=lang />
+        </p>
     </#if>
-    <#if part.descs?has_content && part.descs[0].details??>
-        <div>${part.descs[0].details}</div>
+    <#if desc?? && desc.details??>
+        <div>${desc.details}</div>
     </#if>
 </#macro>
 
@@ -174,7 +205,9 @@
 <!-- ***************************************  -->
 <!-- Renders a message                        -->
 <!-- ***************************************  -->
-<#macro renderMessage msg>
+<#macro renderMessage msg lang=language>
+
+    <#assign desc=descForLang(msg, lang)!>
 
     <div style="width: 100%;">
 
@@ -193,13 +226,14 @@
         </div>
     </#if>
 
-    <#if msg.descs?has_content && msg.descs[0].title?has_content>
+    <#if desc?has_content && desc.title?has_content>
         <div>
             <strong>
                 <a href="${baseUri}/#/message/${msg.id}" target="_blank" id="msg_${msg.id}">
-                    ${msg.descs[0].title}
+                    ${desc.title}
                 </a>
             </strong>
+            <@renderLangFlag desc=desc lang=lang />
         </div>
     </#if>
 
@@ -214,6 +248,7 @@
                 </td>
                 <td class="field-value">
                     <#list msg.references as ref>
+                        <#assign refDesc=descForLang(ref, lang)!>
                         <div>
                             <a href="${baseUri}/#/message/${ref.messageId?url('ASCII')}" target="_blank">${ref.messageId}</a>
 
@@ -225,8 +260,8 @@
                                 - ${text("msg.reference.updated")}
                             </#if>
 
-                            <#if ref.descs?has_content && ref.descs[0].description??>
-                                - ${ref.descs[0].description}
+                            <#if refDesc?has_content && refDesc.description??>
+                                - ${refDesc.description}
                             </#if>
                         </div>
                     </#list>
@@ -245,7 +280,7 @@
                         </#if>
                     </td>
                     <td class="field-value message-description">
-                        <@renderMessagePart part=part/>
+                        <@renderMessagePart part=part lang=lang/>
                     </td>
                 </tr>
             </#list>
@@ -267,20 +302,20 @@
         </#if>
 
         <!-- Publication line -->
-        <#if msg.descs?has_content && msg.descs[0].publication?has_content>
+        <#if descs?? && desc.publication?has_content>
             <tr>
                 <td class="field-name">${text("msg.field.publication")}</td>
                 <td class="field-value">
-                ${msg.descs[0].publication}
+                ${desc.publication}
                 </td>
             </tr>
         </#if>
 
         <!-- Source line -->
-        <#if msg.descs?has_content && msg.descs[0].source?has_content>
+        <#if descs?? && desc.source?has_content>
             <tr>
                 <td class="field-value" style="text-align: right;" colspan="2">
-                    (${msg.descs[0].source})
+                    (${desc.source})
                 </td>
             </tr>
         </#if>

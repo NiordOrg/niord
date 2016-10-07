@@ -39,7 +39,10 @@ public class FmConfiguration {
         cfg.setClassForTemplateLoading(getClass(), "/");
         cfg.setTemplateUpdateDelayMilliseconds(0);
         cfg.setTemplateExceptionHandler(TemplateExceptionHandler.HTML_DEBUG_HANDLER);
-        cfg.setObjectWrapper(new NiordAppObjectWrapper(cfg.getIncompatibleImprovements()));
+
+        // This was used to wrap GeoJSON in a format suitable for FM reports.
+        // However, positions are no longer listed, except as part of the textual message details.
+        // cfg.setObjectWrapper(new NiordAppObjectWrapper(cfg.getIncompatibleImprovements()));
     }
 
     /**
