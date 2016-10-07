@@ -93,7 +93,7 @@ public class ETagServletFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) res;
 
         // Initially, we only use the ETag mechanism for Chrome, which caches aggressively
-        if (isChrome(request)) {
+        if (isChrome(request) && !isAppConfFile(request)) {
             String servletPath = request.getServletPath();
 
             // Return the file associated with the servlet path
@@ -117,6 +117,16 @@ public class ETagServletFilter implements Filter {
 
         // Proceed with the request
         chain.doFilter(request, response);
+    }
+
+
+    /**
+     * Check if the request is for an /app/conf/* file.
+     * These files are generated dynamically, and should not be
+     * processed with E-Tags based on file modification dates.
+     */
+    private boolean isAppConfFile(HttpServletRequest request) {
+        return request.getServletPath().startsWith("/app/conf/");
     }
 
 
