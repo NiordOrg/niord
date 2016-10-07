@@ -174,7 +174,7 @@
 <!-- ***************************************  -->
 <!-- Renders a message                        -->
 <!-- ***************************************  -->
-<#macro renderMessage msg positions=true>
+<#macro renderMessage msg>
 
     <div style="width: 100%;">
 
@@ -298,7 +298,7 @@
 <!-- ***************************************  -->
 <!-- Renders a list of messages               -->
 <!-- ***************************************  -->
-<#macro renderMessageList messages positions=true areaHeadings=true prefix="">
+<#macro renderMessageList messages areaHeadings=true prefix="">
 
     <#assign areaHeadingId=-9999999 />
 
@@ -333,7 +333,7 @@
                     </td>
                 </#if>
                 <td class="table-item">
-                    <@renderMessage msg=msg positions=positions/>
+                    <@renderMessage msg=msg/>
                 </td>
             </tr>
         </#list>

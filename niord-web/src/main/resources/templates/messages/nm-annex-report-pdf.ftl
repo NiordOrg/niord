@@ -65,7 +65,7 @@
 
 <div class="page-break">&nbsp;</div>
 
-<@renderMessageList messages=messages positions=positions areaHeadings=areaHeadings/>
+<@renderMessageList messages=messages areaHeadings=areaHeadings/>
 
 </body>
 </html>
