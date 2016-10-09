@@ -26,14 +26,11 @@ import org.niord.core.NiordApp;
 import org.niord.core.dictionary.DictionaryService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.fm.pdf.HtmlToPdfRenderer;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.annotation.Setting;
-import org.niord.core.util.TextUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.xhtmlrenderer.pdf.ITextRenderer;
-import org.xhtmlrenderer.pdf.PDFEncryption;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Stateless;
@@ -206,13 +203,13 @@ public class FmService extends BaseService {
 
 
     /**
-     * If enabled, constructs a PDF encryption to use whilst generating PDF reports.
+     * If enabled, returns the PDF encryption password to use whilst generating PDF reports.
      * Otherwise, returns null.
      * @return a PDF encryption
      */
-    private PDFEncryption getPDFEncryption() {
-        if (pdfEncryptionEnabled != null && pdfEncryptionEnabled) {
-            return new PDFEncryption(null, pdfEncryptionPassword.getBytes());
+    private String getPDFEncryptionPassword() {
+        if (pdfEncryptionEnabled != null && pdfEncryptionEnabled && StringUtils.isNotBlank(pdfEncryptionPassword)) {
+            return pdfEncryptionPassword;
         }
         return null;
     }
@@ -359,21 +356,13 @@ public class FmService extends BaseService {
 
                 } else if (format == ProcessFormat.PDF) {
 
-                    // Clean up the resulting html
-                    Document xhtmlContent = TextUtils.cleanHtml(result);
-
-                    // Generate PDF from the HTML
-                    ITextRenderer renderer = new ITextRenderer();
-
-                    // Check if we need to encrypt the PDF
-                    PDFEncryption encryption = fmService.getPDFEncryption();
-                    if (encryption != null) {
-                        renderer.setPDFEncryption(encryption);
-                    }
-
-                    renderer.setDocument(xhtmlContent, fmService.getBaseUri());
-                    renderer.layout();
-                    renderer.createPDF(out);
+                    HtmlToPdfRenderer.newBuilder()
+                            .baseUri(fmService.getBaseUri())
+                            .html(result)
+                            .encrypt(fmService.getPDFEncryptionPassword())
+                            .pdf(out)
+                            .build()
+                            .render();
 
                     log.info("Completed Freemarker PDF generation for " + getTemplatePath()
                             + " in " + (System.currentTimeMillis() - t0) + " ms");

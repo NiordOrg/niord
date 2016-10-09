@@ -21,6 +21,15 @@ import org.jsoup.examples.HtmlToPlainText;
 import org.jsoup.nodes.Document;
 import org.w3c.tidy.Tidy;
 
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 
@@ -74,5 +83,23 @@ public class TextUtils {
         return tidy.parseDOM(new StringReader(html), new StringWriter());
     }
 
+
+    /**
+     * Prints an XML document to the output stream
+     * @param doc the document to print
+     * @param out the output stream
+     */
+    public static void printDocument(org.w3c.dom.Document doc, OutputStream out) throws IOException, TransformerException {
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Transformer transformer = tf.newTransformer();
+        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+        transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+
+        transformer.transform(new DOMSource(doc),
+                new StreamResult(new OutputStreamWriter(out, "UTF-8")));
+    }
 
 }

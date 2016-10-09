@@ -14,10 +14,6 @@
     <name>Niord JOSM seachart library</name>
     <url>https://github.com/openstreetmap/josm-plugins</url>
 
-    <properties>
-        <batik.version>1.8</batik.version>
-    </properties>
-
     <dependencies>
 
         <dependency>

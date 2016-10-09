@@ -17,6 +17,7 @@
         <keycloak.version>2.2.1.Final</keycloak.version>
         <jackson.version>2.7.4</jackson.version>
         <swagger.version>1.5.10</swagger.version>
+        <batik.version>1.8</batik.version>
     </properties>
 
     <dependencyManagement>

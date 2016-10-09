@@ -1,6 +1,8 @@
 
 
-
+svg {
+    display: inline-block;
+}
 
 table.message-table {
     font-size:10px;
