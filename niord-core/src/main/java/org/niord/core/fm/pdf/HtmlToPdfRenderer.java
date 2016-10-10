@@ -97,7 +97,7 @@ public class HtmlToPdfRenderer {
     private void updateSvgElements() {
         doc.select("svg").forEach(svg -> {
             String style = svg.attr("style");
-            if (!style.contains("[^-]width")) {
+            if (!style.matches("[^-]width")) {
                 String width = svg.attr("width");
                 if (StringUtils.isNotBlank(width)) {
                     if (StringUtils.isNumeric(width)) {
