@@ -390,7 +390,15 @@
                 <td class="table-item">
                     <#if draft>
                         <#list languages as lang>
-                            <div class="lang-header">${text('lang.' + lang)} Translation</div>
+                            <#if lang?is_first>
+                                <div class="lang-header-first">
+                                    <img src="/img/flags/${lang}.png" height="12"/>&nbsp;${text('lang.' + lang)} ${text('pdf.translation')}
+                                </div>
+                            <#else>
+                                <div class="lang-header">
+                                    <img src="/img/flags/${lang}.png" height="12"/>&nbsp;${text('lang.' + lang)} ${text('pdf.translation')}
+                                </div>
+                            </#if>
                             <@renderMessage msg=msg lang=lang draft=draft/>
                         </#list>
                     <#else>
