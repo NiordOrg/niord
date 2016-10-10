@@ -227,9 +227,18 @@ div.mce-fullscreen {
     padding: 2px 10px;
 }
 
+.message-status-lang-btn img {
+    opacity: 0.5;
+    margin-bottom: 2px;
+}
+
 .preview-lang-selected {
     background-color: #444;
     color: white!important;
+}
+
+.preview-lang-selected img {
+    opacity: 0.8!important;
 }
 
 .message-status-panel {
