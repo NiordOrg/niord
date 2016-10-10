@@ -263,6 +263,18 @@ angular.module('niord.editor')
             $scope.data = {
                 result: ''
             };
+            $scope.params = {
+                tz: true
+            };
+
+
+            // Restore previous parameter settings
+            if ($window.localStorage['formatTimeSettings']) {
+                try {
+                    angular.copy(angular.fromJson($window.localStorage['formatTimeSettings']), $scope.params);
+                } catch (error) {
+                }
+            }
 
 
             /** Called whenever the message part selection changes **/
@@ -291,11 +303,12 @@ angular.module('niord.editor')
                 $scope.data.result = '';
 
                 if ($scope.dateIntervals.length == 0) {
-                    $scope.data.result = DateIntervalService.translateDateInterval($scope.lang, null);
+                    $scope.data.result = DateIntervalService.translateDateInterval($scope.lang, null, $scope.params.tz);
                 } else {
                     angular.forEach($scope.dateIntervals, function (di) {
                         if (di.selected) {
-                            $scope.data.result += DateIntervalService.translateDateInterval($scope.lang, di) + '<br>';
+                            $scope.data.result +=
+                                DateIntervalService.translateDateInterval($scope.lang, di, $scope.params.tz) + '<br>';
                         }
                     });
                 }
@@ -313,6 +326,7 @@ angular.module('niord.editor')
 
             /** Called when Insert is clicked **/
             $scope.insert = function () {
+                $window.localStorage['formatTimeSettings'] = angular.toJson($scope.params);
                 $scope.$close($scope.data.result);
             };
 

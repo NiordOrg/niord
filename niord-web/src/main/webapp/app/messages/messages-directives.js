@@ -154,7 +154,7 @@ angular.module('niord.messages')
                         for (var p = 0; p < scope.msg.parts.length; p++) {
                             var eventDates = scope.msg.parts[p].eventDates;
                             for (var x = 0; eventDates && x < eventDates.length; x++) {
-                                time += DateIntervalService.translateDateInterval(lang, eventDates[x]) + "<br>";
+                                time += DateIntervalService.translateDateInterval(lang, eventDates[x], true) + "<br>";
                             }
                         }
                     }
@@ -193,7 +193,7 @@ angular.module('niord.messages')
                     var time = '';
                     if (scope.part.eventDates && scope.part.eventDates.length > 0) {
                         for (var x = 0; x < scope.part.eventDates.length; x++) {
-                            time += DateIntervalService.translateDateInterval(lang, scope.part.eventDates[x]) + "<br>";
+                            time += DateIntervalService.translateDateInterval(lang, scope.part.eventDates[x], true) + "<br>";
                         }
                     }
                     time = time.replace(/<br>$/g, '');

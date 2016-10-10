@@ -494,7 +494,8 @@ angular.module('niord.messages')
         return {
 
             /** Translates a date interval */
-            translateDateInterval: function(lang, di) {
+            translateDateInterval: function(lang, di, tz) {
+
                 var from = di && di.fromDate ? moment(di.fromDate).locale(lang) : undefined;
                 var to = di && di.toDate ? moment(di.toDate).locale(lang) : undefined;
 
@@ -539,15 +540,20 @@ angular.module('niord.messages')
                     }
 
                     // Add time zone
-                    return time + from.format(' z');
+                    if (tz) {
+                        time = time + from.format(' z');
+                    }
+                    return time;
 
                 } else if (di && from !== undefined) {
-                    var format = di.allDay ? 'll z' : 'lll z';
+                    var format = di.allDay ? 'll' : 'lll';
+                    format += (tz) ? ' z' : '';
                     var fromTxt = from.format(format);
                     return $translate.instant('msg.time.from_date', { fromDate : fromTxt }, null, lang);
 
                 } else if (di && to !== undefined) {
-                    var format = di.allDay ? 'll z' : 'lll z';
+                    var format = di.allDay ? 'll' : 'lll';
+                    format += (tz) ? ' z' : '';
                     var toTxt = to.format(format);
                     return $translate.instant('msg.time.to_date', { toDate : toTxt }, null, lang);
 
