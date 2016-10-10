@@ -172,6 +172,12 @@ i.mce-i-time:before {
     font-family: "Glyphicons Halflings";
 }
 
+i.mce-i-aton:before {
+    content: "\f024";
+    font-family: "FontAwesome";
+}
+
+
 div.mce-fullscreen {
     z-index: 1050;
 }

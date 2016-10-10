@@ -150,8 +150,9 @@ angular.module('niord.atons')
 
 
             /** Returns an SVG representation of the AtoN */
-            getAtonSvg: function(aton) {
-                return $http.post('/rest/aton-icon/svg?width=400&height=200&scale=0.4', aton);
+            getAtonSvg: function(aton, params) {
+                params = params || 'width=400&height=200&scale=0.4';
+                return $http.post('/rest/aton-icon/svg?' + params, aton);
             },
 
 

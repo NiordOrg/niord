@@ -24,9 +24,9 @@ angular.module('niord.editor')
      * Main message editor controller
      */
     .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$http', '$timeout', '$uibModal', 'growl',
-            'MessageService', 'LangService', 'MapService', 'UploadFileService', 'DateIntervalService',
+            'MessageService', 'LangService', 'MapService', 'UploadFileService', 'AtonService',
         function ($scope, $rootScope, $stateParams, $state, $http, $timeout, $uibModal, growl,
-                  MessageService, LangService, MapService, UploadFileService, DateIntervalService) {
+                  MessageService, LangService, MapService, UploadFileService, AtonService) {
             'use strict';
 
             $scope.message = undefined;
@@ -800,7 +800,7 @@ angular.module('niord.editor')
             /** Allows the user to select which time intervals should be inserted and how they should be formatted **/
             $scope.formatTimeDialog = function (editor) {
 
-                    // The ID of the parent div has the format "tinymce-<<part-index>>-<<lang>>"
+                // The ID of the parent div has the format "tinymce-<<part-index>>-<<lang>>"
                 var parentDivId = editor.getElement().parentElement.id;
                 var id = parentDivId.split("-");
                 var partIndex = parseInt(id[1]);
@@ -812,6 +812,27 @@ angular.module('niord.editor')
                             editor.insertContent(result);
                         });
                 });
+            };
+
+
+            /** Inserts an AtoN SVG in the editor **/
+            $scope.insertAtonDialog = function (editor) {
+                var aton = {
+                    lon: undefined,
+                    lat: undefined,
+                    tags: {}
+                };
+                AtonService.atonEditorDialog(aton, angular.copy(aton)).result
+                    .then(function(editedAton) {
+                        var params = 'width=80&height=80&scale=0.20';
+                        AtonService.getAtonSvg(editedAton, params)
+                            .success(function (svg) {
+                                // The SVG is formatted in such a way that it cannot be displayed
+                                // until it is cleaned up
+                                svg = svg.replace(/(\r\n|\n|\r)\s+/gm,"");
+                                editor.insertContent(svg);
+                            });
+                    });
             };
 
 
@@ -839,7 +860,7 @@ angular.module('niord.editor')
                 plugins: "autolink lists link image anchor code fullscreen textcolor media table contextmenu paste",
                 contextmenu: "link image inserttable | cell row column deletetable",
                 toolbar: "styleselect | bold italic | forecolor backcolor | alignleft aligncenter alignright alignjustify | "
-                         + "bullist numlist  | outdent indent | link image table | code fullscreen | niordlocations niordtime",
+                         + "bullist numlist  | outdent indent | link image table | code fullscreen | niordlocations niordtime niordaton",
                 table_class_list: [
                     { title: 'None', value: ''},
                     { title: 'No border', value: 'no-border'},
@@ -866,6 +887,11 @@ angular.module('niord.editor')
                         title: 'Insert Time',
                         icon: 'time',
                         onclick : function () { $scope.formatTimeDialog(editor); }
+                    });
+                    editor.addButton( 'niordaton', {
+                        title: 'Insert AtoN (TEST TEST TEST)',
+                        icon: 'aton',
+                        onclick : function () { $scope.insertAtonDialog(editor); }
                     });
                 },
                 init_instance_callback : $scope.fixTinyMCETabIndex
