@@ -894,6 +894,8 @@ public class MessageService extends BaseService {
         if (param.sortByDate()) {
             fields.add(msgRoot.get("eventDateFrom"));
         } else if (param.sortById()) {
+            fields.add(msgRoot.get("year"));
+            fields.add(msgRoot.get("number"));
             fields.add(msgRoot.get("publishDateFrom"));
         } else if (param.sortByArea()) {
             areaRoot = msgRoot.join("area", JoinType.LEFT);
@@ -921,10 +923,14 @@ public class MessageService extends BaseService {
         } else if (param.sortById()) {
             if (param.getSortOrder() == SortOrder.ASC) {
                 tupleQuery.orderBy(
+                        builder.asc(msgRoot.get("year")),
+                        builder.asc(msgRoot.get("number")),
                         builder.asc(msgRoot.get("publishDateFrom")),
                         builder.asc(msgRoot.get("id")));
             } else {
                 tupleQuery.orderBy(
+                        builder.desc(msgRoot.get("year")),
+                        builder.desc(msgRoot.get("number")),
                         builder.desc(msgRoot.get("publishDateFrom")),
                         builder.desc(msgRoot.get("id")));
             }
