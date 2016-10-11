@@ -100,7 +100,7 @@ public class BatchMessageImportProcessor extends AbstractItemHandler {
             }
 
             if (message.getNumber() != null && StringUtils.isBlank(message.getShortId())) {
-                messageSeriesService.updateMessageSeriesIdentifiers(message, false);
+                messageSeriesService.updateMessageIdsFromMessageSeries(message, false);
             }
 
             // Make sure areas are created

@@ -41,6 +41,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.niord.core.message.vo.MessageTagVo.MessageTagType.PUBLIC;
+
 /**
  * Business interface for managing message series
  */
@@ -58,6 +60,9 @@ public class MessageSeriesService extends BaseService {
 
     @Inject
     DomainService domainService;
+
+    @Inject
+    MessageTagService messageTagService;
 
     @Inject
     NiordApp app;
@@ -178,6 +183,8 @@ public class MessageSeriesService extends BaseService {
         original.setShortFormat(series.getShortFormat());
         original.setNumberSequenceType(series.getNumberSequenceType() != null
             ? series.getNumberSequenceType() : null);
+        original.getPublishTagFormats().clear();
+        original.getPublishTagFormats().addAll(series.getPublishTagFormats());
         original.getEditorFields().clear();
         original.getEditorFields().addAll(series.getEditorFields());
 
@@ -296,75 +303,153 @@ public class MessageSeriesService extends BaseService {
 
     /**
      * Updates the message with (optionally) a new message number and a short ID
-     * according to the associated message series
+     * specified by the associated message series
      *
      * @param message the message to (optionally) update with a new message number and short ID
+     * @param assignMessageNumber whether to assign a new message number or not
      */
-    public void updateMessageSeriesIdentifiers(Message message, boolean assignMessageNumber) {
-        MessageSeries messageSeries = message.getMessageSeries();
-        Date publishDate = message.getPublishDateFrom();
+    public void updateMessageIdsFromMessageSeries(Message message, boolean assignMessageNumber) {
 
+        MessageSeries messageSeries = message.getMessageSeries();
         if (messageSeries == null) {
             throw new IllegalArgumentException("Message series must be specified");
         }
 
+        // First, update the message series number and short ID
+        NumberSequenceType type = messageSeries.getNumberSequenceType();
+        if (type == NumberSequenceType.YEARLY || type == NumberSequenceType.CONTINUOUS) {
 
-        if (messageSeries.getNumberSequenceType() == NumberSequenceType.NONE) {
-            // No short ID assigned
-            return;
+            Date publishDate = message.getPublishDateFrom();
 
-        } else if (messageSeries.getNumberSequenceType() == NumberSequenceType.MANUAL) {
+            if (publishDate == null) {
+                throw new IllegalArgumentException("Publish date must be specified");
+            }
+            int year = TimeUtils.getCalendarField(publishDate, Calendar.YEAR);
+
+            // If requested assign a new message number
+            if (assignMessageNumber && message.getNumber() == null) {
+                message.setNumber(newMessageNumber(messageSeries.getSeriesId(), year));
+            }
+
+            // Assign the short ID by resolving the short ID format of the message series
+            FormatResolver formatResolver = new FormatResolver(message, app);
+            message.setShortId(formatResolver.resolveFormat(messageSeries.getShortFormat()));
+
+        } else if (type == NumberSequenceType.MANUAL) {
             // If the short ID is assigned manually, check validity
             if (StringUtils.isBlank(message.getShortId())) {
                 throw new IllegalArgumentException("Message must be assigned a short ID");
             }
-            // The manual assignment is valid ... do nothing further
-            return;
         }
 
-        if (publishDate == null) {
-            throw new IllegalArgumentException("Publish date must be specified");
-        }
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(publishDate);
-
-        int year = cal.get(Calendar.YEAR);
-        int week = cal.get(Calendar.WEEK_OF_YEAR);
-
-        // If requested assign a new message number
-        if (assignMessageNumber) {
-            message.setNumber(newMessageNumber(messageSeries.getSeriesId(), year));
-        }
-
-        Map<String, String> params = new HashMap<>();
-        params.put("${year-2-digits}", String.valueOf(year).substring(2));
-        params.put("${year}", String.valueOf(year));
-        params.put("${week}", String.format("%02d", week));
-        params.put("${week-2-digits}", String.format("%02d", week));
-        params.put("${number}", message.getNumber() == null ? "" : String.valueOf(message.getNumber()));
-        params.put("${number-3-digits}", message.getNumber() == null ? "" : String.format("%03d", message.getNumber()));
-        params.put("${main-type}", message.getType().getMainType().toString());
-        params.put("${main-type-lower}", message.getType().getMainType().toString().toLowerCase());
-        params.put("${country}", app.getCountry());
-        params.put("${id}", message.getId() == null ? "" : String.valueOf(message.getId()));
-        params.put("${legacy-id}", message.getLegacyId() == null ? "" : String.valueOf(message.getLegacyId()));
-        params.put("${t-or-p}", getNmTOrPToken(message));
-
-        message.setShortId(messageSeries.getShortFormat());
-        params.entrySet().forEach(e ->
-            message.setShortId(message.getShortId().replace(e.getKey(), e.getValue()).trim())
-        );
     }
 
 
-    /** Returns the NM T or P token to be used in the short ID for the message */
-    private String getNmTOrPToken(Message message) {
-        if (message.getType() == Type.TEMPORARY_NOTICE) {
-            return "(T)";
-        } else if (message.getType() == Type.PRELIMINARY_NOTICE) {
-            return "(P)";
+    /**
+     * Assign the message to the message tags defined by the publishTagFormat list of the message series
+     * @param message the message to update
+     */
+    public void updateMessageTagsFromMessageSeries(Message message) {
+
+        MessageSeries messageSeries = message.getMessageSeries();
+        if (messageSeries == null) {
+            throw new IllegalArgumentException("Message series must be specified");
         }
-        return "";
+
+        // Next, if the message has been published, update the message tag association.
+        // we include cancelled and expired states in order to handle import of old messages.
+        if (message.getStatus().isPublic()) {
+            FormatResolver formatResolver = new FormatResolver(message, app);
+            message.getMessageSeries()
+                    .getPublishTagFormats().stream()
+                    .map(formatResolver::resolveFormat)
+                    .map(this::findOrCreatePublicMessageTag)
+                    .filter(tag -> !tag.getMessages().contains(message))
+                    .forEach(tag -> {
+                        tag.getMessages().add(message);
+                        log.debug("Added message to tag with name " + tag.getName());
+                        tag.updateMessageCount();
+                    });
+        }
     }
 
+
+    /**
+     * Finds or creates a public tag with the given name
+     * @param name the tag name
+     * @return the tag
+     */
+    private MessageTag findOrCreatePublicMessageTag(String name) {
+        List<MessageTag> tags = messageTagService.findTagsByTypeAndName(PUBLIC, name);
+        if (tags.isEmpty()) {
+            MessageTag tag = new MessageTag();
+            tag.checkAssignTagId();
+            tag.setName(name);
+            tag.setType(PUBLIC);
+            return saveEntity(tag);
+        } else {
+            return tags.get(0);
+        }
+    }
+
+
+    /**
+     * Utility class that will resolve a format string containing tokens such as
+     * "${year}", "${number-3-digits}", etc.
+     */
+    public static class FormatResolver {
+
+        private Map<String, String> params = new HashMap<>();
+
+        /** Constructor **/
+        public FormatResolver(Message message, NiordApp app) {
+
+            Date publishDate = message.getPublishDateFrom();
+            if (publishDate == null) {
+                throw new IllegalArgumentException("Publish date must be specified");
+            }
+            int year = TimeUtils.getCalendarField(publishDate, Calendar.YEAR);
+            int week = TimeUtils.getCalendarField(publishDate, Calendar.WEEK_OF_YEAR);
+
+            params.put("${year-2-digits}", String.valueOf(year).substring(2));
+            params.put("${year}", String.valueOf(year));
+            params.put("${week}", String.format("%02d", week));
+            params.put("${week-2-digits}", String.format("%02d", week));
+            params.put("${number}", message.getNumber() == null ? "" : String.valueOf(message.getNumber()));
+            params.put("${number-3-digits}", message.getNumber() == null ? "" : String.format("%03d", message.getNumber()));
+            params.put("${main-type}", message.getType().getMainType().toString());
+            params.put("${main-type-lower}", message.getType().getMainType().toString().toLowerCase());
+            params.put("${country}", app.getCountry());
+            params.put("${id}", message.getId() == null ? "" : String.valueOf(message.getId()));
+            params.put("${legacy-id}", message.getLegacyId() == null ? "" : String.valueOf(message.getLegacyId()));
+            params.put("${t-or-p}", getNmTOrPToken(message));
+        }
+
+        /**
+         * Resolves the format by expanding tokens such as "${year}", "${number-3-digits}", etc.
+         * @param format the format to expand
+         * @return the result
+         */
+        public String resolveFormat(String format) {
+
+            String result = format;
+            if (StringUtils.isNotBlank(format)) {
+                for (Map.Entry<String, String> e : params.entrySet()) {
+                    result = result.replace(e.getKey(), e.getValue()).trim();
+                }
+            }
+            return result;
+        }
+
+
+        /** Returns the NM T or P token to be used in the short ID for the message */
+        private String getNmTOrPToken(Message message) {
+            if (message.getType() == Type.TEMPORARY_NOTICE) {
+                return "(T)";
+            } else if (message.getType() == Type.PRELIMINARY_NOTICE) {
+                return "(P)";
+            }
+            return "";
+        }
+    }
 }

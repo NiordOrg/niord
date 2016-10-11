@@ -11,7 +11,7 @@
             <div ng-if="series !== undefined" style="margin-top: 20px">
 
                 <div class="row">
-                    <div class="form-controls col-sm-12 col-md-6 col-lg-8">
+                    <div class="form-controls col-sm-12 col-md-12 col-lg-8">
 
                         <div class="form-group">
                             <label class="col-sm-4">Message Series ID</label>
@@ -70,15 +70,15 @@
                                             insert <span class="caret"></span>
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-right">
-                                            <li><a href ng-click="insertToken('${year}')">Year</a></li>
-                                            <li><a href ng-click="insertToken('${year-2-digits}')">Year (2 digits)</a></li>
-                                            <li><a href ng-click="insertToken('${week}')">Week</a></li>
-                                            <li><a href ng-click="insertToken('${week-2-digits}')">Week (2 digits)</a></li>
-                                            <li><a href ng-click="insertToken('${number}')">Number</a></li>
-                                            <li><a href ng-click="insertToken('${number-3-digits}')">Number (3 digits)</a></li>
-                                            <li><a href ng-click="insertToken('${id}')">ID</a></li>
-                                            <li><a href ng-click="insertToken('${legacy-id}')">Legacy ID</a></li>
-                                            <li ng-if="series.mainType == 'NM'"><a href ng-click="insertToken('${t-or-p}')">T or P</a></li>
+                                            <li><a href ng-click="insertShortFormatToken('${year}')">Year</a></li>
+                                            <li><a href ng-click="insertShortFormatToken('${year-2-digits}')">Year (2 digits)</a></li>
+                                            <li><a href ng-click="insertShortFormatToken('${week}')">Week</a></li>
+                                            <li><a href ng-click="insertShortFormatToken('${week-2-digits}')">Week (2 digits)</a></li>
+                                            <li><a href ng-click="insertShortFormatToken('${number}')">Number</a></li>
+                                            <li><a href ng-click="insertShortFormatToken('${number-3-digits}')">Number (3 digits)</a></li>
+                                            <li><a href ng-click="insertShortFormatToken('${id}')">ID</a></li>
+                                            <li><a href ng-click="insertShortFormatToken('${legacy-id}')">Legacy ID</a></li>
+                                            <li ng-if="series.mainType == 'NM'"><a href ng-click="insertShortFormatToken('${t-or-p}')">T or P</a></li>
                                         </ul>
                                     </div>
                                 </div>
@@ -94,6 +94,36 @@
                                         ng-click="editNextNumber(series);" ng-disabled="seriesForm.$dirty">
                                     <i class="glyphicon glyphicon-pencil"></i>
                                 </button>
+                            </div>
+                        </div>
+
+
+                        <div class="form-group">
+                            <label class="col-sm-4">Publish tag formats</label>
+                            <div class="col-sm-8">
+                                <div class="input-group" ng-repeat="tag in series.publishTagFormats track by $index">
+                                    <input type="text" class="form-control input-sm"
+                                           ng-model="series.publishTagFormats[$index]" id="tagFormat{{$index}}"
+                                           autocapitalize="off" autocorrect="off" autocomplete="off"/>
+                                    <div class="input-group-btn">
+                                        <button ng-click="addPublishTagFormat($index)" class="btn btn-sm btn-default">
+                                            <span class="glyphicon glyphicon-plus"></span>
+                                        </button>
+                                        <button ng-click="removePublishTagFormat($index)" class="btn btn-sm btn-default">
+                                            <span class="glyphicon glyphicon-trash"></span>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-default dropdown-toggle"
+                                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            insert <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-right">
+                                            <li><a href ng-click="insertTagFormatToken($index, '${year}')">Year</a></li>
+                                            <li><a href ng-click="insertTagFormatToken($index, '${year-2-digits}')">Year (2 digits)</a></li>
+                                            <li><a href ng-click="insertTagFormatToken($index, '${week}')">Week</a></li>
+                                            <li><a href ng-click="insertTagFormatToken($index, '${week-2-digits}')">Week (2 digits)</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

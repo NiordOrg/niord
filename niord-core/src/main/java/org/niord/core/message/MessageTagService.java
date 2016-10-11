@@ -134,6 +134,27 @@ public class MessageTagService extends BaseService {
     }
 
 
+    /**
+     * Returns the message tags with the given type and names
+     * @param type the tag type
+     * @param names the tag names
+     * @return the message tags with the given type and tag names
+     */
+    public List<MessageTag> findTagsByTypeAndName(MessageTagType type, String... names) {
+        if (type == null || names == null || names.length == 0) {
+            return Collections.emptyList();
+        }
+
+        Set<String> nameSet = new HashSet<>(Arrays.asList(names));
+        return em.createNamedQuery("MessageTag.findTagsByTypeAndName", MessageTag.class)
+                .setParameter("type", type)
+                .setParameter("names", nameSet)
+                .getResultList()
+                .stream()
+                .collect(Collectors.toList());
+    }
+
+
     /** Validate that the user has access to the given tag */
     private boolean validateAccess(MessageTag tag, User user, Domain domain) {
         if (tag.getType() == PRIVATE) {
@@ -263,6 +284,10 @@ public class MessageTagService extends BaseService {
      * @return the persisted message tag
      */
     public MessageTag createMessageTag(MessageTag tag) {
+
+        // Ensure that is has a proper tag ID
+        tag.checkAssignTagId();
+
         MessageTag original = findTag(tag.getTagId());
         if (original != null) {
             throw new IllegalArgumentException("Cannot create message tag with duplicate message tag IDs"

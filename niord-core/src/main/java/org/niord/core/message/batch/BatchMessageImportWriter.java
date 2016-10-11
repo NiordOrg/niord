@@ -16,6 +16,7 @@
 package org.niord.core.message.batch;
 
 import org.niord.core.message.Message;
+import org.niord.core.message.MessageSeriesService;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTag;
 
@@ -32,6 +33,9 @@ public class BatchMessageImportWriter extends AbstractMessageImportWriter {
     @Inject
     MessageService messageService;
 
+    @Inject
+    MessageSeriesService messageSeriesService;
+
     /** {@inheritDoc} **/
     @Override
     public void writeItems(List<Object> items) throws Exception {
@@ -47,6 +51,10 @@ public class BatchMessageImportWriter extends AbstractMessageImportWriter {
             } else {
                 messageService.saveMessage(message);
             }
+
+
+            // Add the message to any tags specified by the message series
+            messageSeriesService.updateMessageTagsFromMessageSeries(message);
 
             // Add the message to the tag
             tag = checkAddMessageToTag(message, tag);

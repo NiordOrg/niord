@@ -521,15 +521,27 @@ public class MessageService extends BaseService {
             throw new Exception("Invalid status transition " + currentStatus + " -> " + status);
         }
 
+        // Update the status
+        message.setStatus(status);
+
         // When published, update the message series
         if ((currentStatus == Status.DRAFT || currentStatus == Status.VERIFIED) && status == Status.PUBLISHED) {
-            message.setPublishDateFrom(now);
-            messageSeriesService.updateMessageSeriesIdentifiers(message, true);
+            if (message.getPublishDateFrom() == null || message.getPublishDateFrom().after(now)) {
+                message.setPublishDateFrom(now);
+            }
+
+            // Assign a new message number and short ID
+            messageSeriesService.updateMessageIdsFromMessageSeries(message, true);
+
+            // Associate the message with the message tags specified by the message series
+            messageSeriesService.updateMessageTagsFromMessageSeries(message);
+
         } else if (status == Status.CANCELLED || status == Status.EXPIRED) {
-            message.setPublishDateTo(now);
+            if (message.getPublishDateTo() == null || message.getPublishDateTo().before(now)) {
+                message.setPublishDateTo(now);
+            }
         }
 
-        message.setStatus(status);
         message = saveMessage(message);
         return message;
     }

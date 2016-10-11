@@ -55,6 +55,8 @@ import java.util.UUID;
     }
 )
 @NamedQueries({
+        @NamedQuery(name="MessageTag.findTagsByTypeAndName",
+                query="SELECT t FROM MessageTag t where t.name in (:names) and t.type = :type"),
         @NamedQuery(name="MessageTag.findTagsByTagIds",
                 query="SELECT t FROM MessageTag t where t.tagId in (:tagIds)"),
         @NamedQuery(name= "MessageTag.findTagsByMessageUid",
@@ -121,13 +123,20 @@ public class MessageTag extends VersionedEntity<Integer> implements Comparable<M
     }
 
 
+    /** If no tag ID is defined, create one **/
+    public MessageTag checkAssignTagId() {
+        if (StringUtils.isBlank(tagId)) {
+            tagId = UUID.randomUUID().toString();
+        }
+        return this;
+    }
+
+
     /** Update the number of messages */
     @PrePersist
     @PreUpdate
     public void updateMessageCount() {
-        if (StringUtils.isBlank(tagId)) {
-            tagId = UUID.randomUUID().toString();
-        }
+        checkAssignTagId();
         if (StringUtils.isBlank(name)) {
             name = UUID.randomUUID().toString();
         }

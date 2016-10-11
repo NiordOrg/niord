@@ -99,6 +99,23 @@ public class TimeUtils {
         return date;
     }
 
+
+    /**
+     * Shortcut function that returns the given Calendar field for the date
+     * @param date the date
+     * @param calFieldId the Calendar field
+     * @return the result
+     */
+    public static Integer getCalendarField(Date date, int calFieldId) {
+        if (date != null) {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(date);
+            return cal.get(calFieldId);
+        }
+        return null;
+    }
+
+
     /**
      * Returns a Date for the given year, month and day.
      * Parameters left as null are ignored, so e.g. getDate(null, 0, 1) will return January 1st of the current year.
@@ -129,6 +146,7 @@ public class TimeUtils {
      * @param date2 the second date
      * @return if the two Dates is for the same date
      */
+    @SuppressWarnings("all")
     public static boolean sameDate(Date date1, Date date2) {
         if (date1 == null || date2 == null) {
             return false;
@@ -142,6 +160,7 @@ public class TimeUtils {
      * @param date2 the second date
      * @return if the two Dates is for the same date, hour and minute
      */
+    @SuppressWarnings("all")
     public static boolean sameDateHourMinute(Date date1, Date date2) {
         if (date1 == null || date2 == null) {
             return false;

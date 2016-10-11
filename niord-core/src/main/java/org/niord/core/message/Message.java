@@ -22,6 +22,7 @@ import org.niord.core.chart.Chart;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.model.DescEntity;
 import org.niord.core.model.VersionedEntity;
+import org.niord.core.util.TimeUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.geojson.FeatureCollectionVo;
@@ -53,6 +54,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -114,6 +116,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     MessageSeries messageSeries;
 
     String legacyId;
+
+    // Redundant because of publishDateFrom, but handy for sorting by ID
+    Integer year;
 
     Integer number;
 
@@ -368,6 +373,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
         // Updates the start and end dates from the date intervals
         updateEventDateInterval();
+
+        // Sync the year field from the publishDateFrom date
+        year = publishDateFrom != null ? TimeUtils.getCalendarField(publishDateFrom, Calendar.YEAR) : null;
 
         // Update the message title
         updateMessageTitle();

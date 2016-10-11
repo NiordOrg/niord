@@ -15,6 +15,7 @@
  */
 package org.niord.core.message;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.message.vo.SystemMessageSeriesVo;
 import org.niord.core.message.vo.SystemMessageSeriesVo.NumberSequenceType;
 import org.niord.core.model.VersionedEntity;
@@ -63,6 +64,8 @@ public class MessageSeries extends VersionedEntity<Integer> {
     @NotNull
     NumberSequenceType numberSequenceType = NumberSequenceType.YEARLY;
 
+    @ElementCollection
+    List<String> publishTagFormats = new ArrayList<>();
 
     @ElementCollection
     List<String> editorFields = new ArrayList<>();
@@ -84,6 +87,10 @@ public class MessageSeries extends VersionedEntity<Integer> {
             this.numberSequenceType = sysSeries.getNumberSequenceType() != null
                     ? sysSeries.getNumberSequenceType()
                     : NumberSequenceType.YEARLY;
+            if (sysSeries.getPublishTagFormats() != null) {
+                publishTagFormats.addAll(sysSeries.getPublishTagFormats());
+                publishTagFormats.removeIf(StringUtils::isBlank);
+            }
             if (sysSeries.getEditorFields() != null) {
                 editorFields.addAll(sysSeries.getEditorFields());
             }
@@ -105,6 +112,9 @@ public class MessageSeries extends VersionedEntity<Integer> {
                 SystemMessageSeriesVo sysSeries = (SystemMessageSeriesVo)series;
                 sysSeries.setShortFormat(shortFormat);
                 sysSeries.setNumberSequenceType(numberSequenceType);
+                if (!publishTagFormats.isEmpty()) {
+                    sysSeries.setPublishTagFormats(new ArrayList<>(publishTagFormats));
+                }
                 if (!editorFields.isEmpty()) {
                     sysSeries.setEditorFields(new ArrayList<>(editorFields));
                 }
@@ -112,6 +122,7 @@ public class MessageSeries extends VersionedEntity<Integer> {
         }
         return series;
     }
+
 
     /** Converts this entity to a value object */
     public <M extends MessageSeriesVo> M toVo(Class<M> clz) {
@@ -152,6 +163,14 @@ public class MessageSeries extends VersionedEntity<Integer> {
 
     public void setNumberSequenceType(NumberSequenceType numberSequenceType) {
         this.numberSequenceType = numberSequenceType;
+    }
+
+    public List<String> getPublishTagFormats() {
+        return publishTagFormats;
+    }
+
+    public void setPublishTagFormats(List<String> publishTagFormats) {
+        this.publishTagFormats = publishTagFormats;
     }
 
     public List<String> getEditorFields() {

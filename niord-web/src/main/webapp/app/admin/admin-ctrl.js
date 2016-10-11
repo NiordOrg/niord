@@ -588,10 +588,33 @@ angular.module('niord.admin')
 
 
             /** Inserts the token in the short ID format field */
-            $scope.insertToken = function (token) {
+            $scope.insertShortFormatToken = function (token) {
                 $scope.series.shortFormat += token;
                 $('#shortFormat').focus();
                 $scope.seriesForm.$setDirty();
+            };
+
+
+            /** Inserts the token in the publish tag format field */
+            $scope.insertTagFormatToken = function (index, token) {
+                $scope.series.publishTagFormats[index] += token;
+                $('#tagFormat' + index).focus();
+                $scope.seriesForm.$setDirty();
+            };
+
+
+            /** Adds a new blank publish tag format after the given index **/
+            $scope.addPublishTagFormat = function (index) {
+                $scope.series.publishTagFormats.splice(index + 1, 0, '');
+            };
+
+
+            /** Removes the publish tag format at the given index **/
+            $scope.removePublishTagFormat = function (index) {
+                $scope.series.publishTagFormats.splice(index, 1);
+                if ($scope.series.publishTagFormats.length == 0) {
+                    $scope.addPublishTagFormat(0);
+                }
             };
 
 
@@ -602,7 +625,8 @@ angular.module('niord.admin')
                     seriesId: '',
                     mainType: 'NW',
                     numberSequenceType: 'YEARLY',
-                    shortFormat: ''
+                    shortFormat: '',
+                    publishTagFormats: [ '' ]
                 };
                 $scope.updateShortFormat();
                 $scope.seriesForm.$setPristine();
@@ -611,11 +635,9 @@ angular.module('niord.admin')
 
             /** Copies a message series **/
             $scope.copyMessageSeries = function (series) {
+                $scope.editMessageSeries(series);
                 $scope.editMode = 'add';
-                $scope.series = angular.copy(series);
                 $scope.series.seriesId = undefined;
-                $scope.updateShortFormat();
-                $scope.seriesForm.$setPristine();
             };
 
 
@@ -624,6 +646,10 @@ angular.module('niord.admin')
                 $scope.editMode = 'edit';
                 $scope.series = angular.copy(series);
                 $scope.updateShortFormat();
+                if (!$scope.series.publishTagFormats) {
+                    $scope.series.publishTagFormats = [];
+                }
+                $scope.series.publishTagFormats.push('');
                 $scope.seriesForm.$setPristine();
             };
 

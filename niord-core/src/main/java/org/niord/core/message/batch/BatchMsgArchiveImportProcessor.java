@@ -35,6 +35,7 @@ import org.niord.model.message.Status;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -153,6 +154,16 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
                 message.setShortId(null);
                 message.setPublishDateFrom(null);
                 message.setPublishDateTo(null);
+
+            } else if (message.getStatus().isPublic()) {
+                if (message.getPublishDateFrom() == null) {
+                    // Published, cancelled and expired message should have a published from-date
+                    message.setPublishDateFrom(new Date());
+                }
+                if (message.getStatus() != Status.PUBLISHED && message.getPublishDateTo() == null) {
+                    // Cancelled and expired message should have a published to-date
+                    message.setPublishDateTo(new Date());
+                }
             }
 
             // Check if we should create base data such as areas, categories and charts
