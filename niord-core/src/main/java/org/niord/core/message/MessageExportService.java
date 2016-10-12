@@ -20,11 +20,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.conf.TextResource;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.repo.RepositoryService;
-import org.niord.model.search.PagedSearchResultVo;
 import org.niord.model.message.AttachmentVo;
-import org.niord.model.message.MessageVo;
+import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
@@ -62,14 +63,14 @@ public class MessageExportService {
      * @param result the search result
      * @param os the output stream
      */
-    public void export(PagedSearchResultVo<MessageVo> result, OutputStream os) {
+    public void export(PagedSearchResultVo<SystemMessageVo> result, OutputStream os) {
 
         long t0 = System.currentTimeMillis();
         try {
             ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(os));
 
             // Rewrite links in message description to remove "/rest/repo/file/" prefix
-            result.getData().forEach(m -> m.rewriteDescs("\"/rest/repo/file/" + m.getRepoPath(), "\"" + m.getRepoPath()));
+            result.getData().forEach(m -> m.rewriteRepoPath("\"/rest/repo/file/" + m.getRepoPath(), "\"" + m.getRepoPath()));
 
             // Write the messages file to the Zip file
             log.debug("Adding messages.json to zip archive");
@@ -89,11 +90,15 @@ public class MessageExportService {
             out.closeEntry();
 
 
-            // Write the message attachments to the Zip file
+            // Write the message attachments and thumbnail files to the Zip file
             Set<String> folderCache = new HashSet<>();
             result.getData().stream()
                     .filter(m -> m.getAttachments() != null && !m.getAttachments().isEmpty())
-                    .forEach(m -> exportAttachments(m, out, folderCache));
+                    .forEach(m -> {
+                        exportAttachments(m, out, folderCache);
+                        exportThumbnail(m, out, folderCache);
+                    });
+
 
             out.flush();
             out.close();
@@ -110,34 +115,89 @@ public class MessageExportService {
      * @param message the message
      * @param out the zip output stream
      */
-    private void exportAttachments(MessageVo message, ZipOutputStream out, Set<String> folderCache) {
+    private void exportAttachments(SystemMessageVo message, ZipOutputStream out, Set<String> folderCache) {
 
-        String attachmentFolderPath = message.getRepoPath() + "/attachments/";
-        Path folder = repositoryService
-                .getRepoRoot()
-                .resolve(attachmentFolderPath);
-        if (!Files.exists(folder)) {
-            return;
-        }
-        addParentFolders(out, folderCache, attachmentFolderPath);
-
+        // Attachment files are nested within revision folders in the message repo folder
         for (AttachmentVo att : message.getAttachments()) {
+            // E.g. "messages/a/68/a68f0dae-0669-4a5a-9a40-dd8d92d73b96/4/Buoy_seal.jpg"
+            String path = att.getPath();
+            if (path == null || !path.startsWith(message.getRepoPath())) {
+                log.warn("Skipping invalid attachment for message " + message.getId() + ": " + path);
+                continue;
+            }
+
+            // E.g. "messages/a/68/a68f0dae-0669-4a5a-9a40-dd8d92d73b96/4"
+            String folderPath = path.substring(0, path.lastIndexOf("/"));
+            Path folder = repositoryService
+                    .getRepoRoot()
+                    .resolve(folderPath);
+            if (!Files.isDirectory(folder)) {
+                log.warn("Skipping non-existing attachments for message " + message.getId() + ": " + att.getPath());
+                continue;
+            }
+            addParentFolders(out, folderCache, folderPath);
+
+            // E.g. "Buoy_seal.jpg"
             Path file = folder.resolve(att.getFileName());
             if (Files.exists(file)) {
-                String attachmentPath = attachmentFolderPath + att.getFileName();
+                String attachmentPath = folderPath + "/" + att.getFileName();
                 try {
-                    log.debug("Adding file " + attachmentPath + " to zip archive");
-                    out.putNextEntry(new ZipEntry(attachmentPath));
-                    FileUtils.copyFile(file.toFile(), out);
-                    out.closeEntry();
+                    addFile(out, attachmentPath, file);
                 } catch (IOException e) {
                     log.warn("Skipping attachments for message " + message.getId() + ": " + e);
-                    return;
                 }
             } else {
                 log.warn("Skipping attachment with no file " + att.getFileName() + " for message " + message.getId());
             }
         }
+    }
+
+
+    /**
+     * Exports any custom thumbnail file associated with the message
+     * @param message the message
+     * @param out the zip output stream
+     */
+    private void exportThumbnail(SystemMessageVo message, ZipOutputStream out, Set<String> folderCache) {
+
+        // Custom thumbnail files are nested within revision folders in the message repo folder
+        String thumbnailPath = message.getThumbnailPath();
+        if (StringUtils.isNotBlank(thumbnailPath) && thumbnailPath.startsWith(message.getRepoPath())) {
+            // E.g. "messages/a/68/a68f0dae-0669-4a5a-9a40-dd8d92d73b96/4/custom_thumb_256.png"
+
+            // E.g. "messages/a/68/a68f0dae-0669-4a5a-9a40-dd8d92d73b96/4"
+            String folderPath = thumbnailPath.substring(0, thumbnailPath.lastIndexOf("/"));
+            Path folder = repositoryService
+                    .getRepoRoot()
+                    .resolve(folderPath);
+            if (!Files.isDirectory(folder)) {
+                log.warn("Skipping non-existing thumbnail file for message " + message.getId() + ": " + thumbnailPath);
+                return;
+            }
+            addParentFolders(out, folderCache, folderPath);
+
+            // E.g. "custom_thumb_256.png"
+            String fileName = thumbnailPath.substring(folderPath.length() + 1);
+            Path file = folder.resolve(fileName);
+            if (Files.exists(file)) {
+                try {
+                    addFile(out, thumbnailPath, file);
+                } catch (IOException e) {
+                    log.warn("Skipping attachments for message " + message.getId() + ": " + e);
+                }
+            } else {
+                log.warn("Skipping non-existing thumbnail file " + thumbnailPath + " for message " + message.getId());
+            }
+        }
+    }
+
+
+    /** Adds the file to the zip archive **/
+    private void addFile(ZipOutputStream out, String path, Path file) throws IOException {
+        log.debug("Adding file " + path + " to zip archive");
+        out.putNextEntry(new ZipEntry(path));
+        FileUtils.copyFile(file.toFile(), out);
+        out.closeEntry();
     }
 
 

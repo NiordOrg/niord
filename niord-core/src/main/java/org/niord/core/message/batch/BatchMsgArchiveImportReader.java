@@ -20,9 +20,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.batch.AbstractItemHandler;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.repo.RepositoryService;
 import org.niord.model.search.PagedSearchResultVo;
-import org.niord.model.message.MessageVo;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -49,7 +49,7 @@ import java.util.zip.ZipFile;
  * This is because of a class-loading bug in the Wildfly implementation. See e.g.
  * https://issues.jboss.org/browse/WFLY-4988
  * <p>
- * Format of json file is defined by the PagedSearchResultVo<MessageVo> class. Example:
+ * Format of json file is defined by the PagedSearchResultVo<SystemMessageVo> class. Example:
  * <pre>
  * {
  *   "data": [{
@@ -123,12 +123,12 @@ public class BatchMsgArchiveImportReader extends AbstractItemHandler {
         }
 
         // Read the messages.json file
-        PagedSearchResultVo<MessageVo> messages;
+        PagedSearchResultVo<SystemMessageVo> messages;
         try {
             ObjectMapper mapper = new ObjectMapper();
             messages = mapper.readValue(
                     messageFilePath.toFile(),
-                    new TypeReference<PagedSearchResultVo<MessageVo>>() {});
+                    new TypeReference<PagedSearchResultVo<SystemMessageVo>>() {});
         } catch (IOException e) {
             getLog().log(Level.SEVERE, "Invalid messages.json file");
             throw new Exception("Invalid messages.json file");
@@ -187,17 +187,17 @@ public class BatchMsgArchiveImportReader extends AbstractItemHandler {
     }
 
 
-    /** Encapsulates a MessageVo and the path to the temp repo where the archive was extracted */
+    /** Encapsulates a SystemMessageVo and the path to the temp repo where the archive was extracted */
     public static class ExtractedArchiveMessageVo {
-        MessageVo message;
+        SystemMessageVo message;
         String editRepoPath;
 
-        public ExtractedArchiveMessageVo(MessageVo message, String editRepoPath) {
+        public ExtractedArchiveMessageVo(SystemMessageVo message, String editRepoPath) {
             this.message = message;
             this.editRepoPath = editRepoPath;
         }
 
-        public MessageVo getMessage() {
+        public SystemMessageVo getMessage() {
             return message;
         }
 

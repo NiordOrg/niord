@@ -373,6 +373,8 @@ public class MessageService extends BaseService {
             throw new Exception("Message not an existing message");
         }
 
+        original.setRevision(message.getRevision());
+
         // Validate various required fields
         if (message.getMessageSeries() == null) {
             throw new Exception("Message series not specified");
@@ -392,6 +394,7 @@ public class MessageService extends BaseService {
         original.setShortId(message.getShortId());
         original.setType(message.getType());
         original.setMainType(message.getMainType());
+        original.setThumbnailPath(message.getThumbnailPath());
 
         if (original.getMainType() != null && original.getMainType() != original.getMessageSeries().getMainType()) {
             throw new Exception("Invalid main-type for message " + original.getMainType());
@@ -1142,7 +1145,7 @@ public class MessageService extends BaseService {
             java.nio.file.Path srcPath = repositoryService.getRepoRoot().resolve(message.getRepoPath());
             java.nio.file.Path dstPath = repositoryService.getRepoRoot().resolve(editRepoPath);
             if (Files.exists(srcPath)) {
-                log.info("Copy message folder " + srcPath + " to temporary message folder " + dstPath);
+                log.info("Copy folder " + srcPath + " to temporary folder " + dstPath);
                 FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
             }
         }
@@ -1158,13 +1161,23 @@ public class MessageService extends BaseService {
 
             java.nio.file.Path srcPath = repositoryService.getRepoRoot().resolve(message.getEditRepoPath());
             java.nio.file.Path dstPath = repositoryService.getRepoRoot().resolve(message.getRepoPath());
+            String revision = String.valueOf(message.getRevision());
+
             if (Files.exists(srcPath)) {
-                log.info("Syncing temporary message folder " + srcPath + " with message folder " + dstPath);
-                FileUtils.deleteDirectory(dstPath.toFile());
-                FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
+
+                // Case 1: If this is a new message, copy the entire directory
+                if (!Files.exists(dstPath)) {
+                    log.info("Syncing folder " + srcPath + " with " + dstPath);
+                    FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
+
+                } else if (Files.exists(srcPath.resolve(revision))) {
+                    // Case 2: Copy the latest revision sub-folder back to the source folder
+                    log.info("Syncing revision " + revision + " of folder " + srcPath + " with folder " + dstPath);
+                    FileUtils.copyDirectory(srcPath.resolve(revision).toFile(), dstPath.resolve(revision).toFile(), true);
+                } else {
+                    log.info("No new revision files to sync");
+                }
             }
         }
     }
-
-
 }

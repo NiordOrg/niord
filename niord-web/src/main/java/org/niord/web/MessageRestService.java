@@ -36,6 +36,7 @@ import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.repo.FileTypes;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.user.UserService;
+import org.niord.core.util.WebUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.geojson.FeatureCollectionVo;
@@ -71,7 +72,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -231,10 +231,7 @@ public class MessageRestService  {
      */
     private SystemMessageVo toSystemMessage(Message message) throws Exception {
 
-        DataFilter filter = DataFilter.get()
-                .fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
-
-        SystemMessageVo messageVo = message.toVo(SystemMessageVo.class, filter);
+        SystemMessageVo messageVo = message.toVo(SystemMessageVo.class, Message.MESSAGE_DETAILS_FILTER);
 
         // Compute the default set of editor fields to display for the message
         editorFieldsService.computeEditorFields(messageVo);
@@ -242,7 +239,7 @@ public class MessageRestService  {
         // Create a temporary repository folder for the message
         messageService.createTempMessageRepoFolder(messageVo);
         // Point embedded links and images to the temporary repository folder
-        messageVo.descsToEditRepo();
+        messageVo.toEditRepo();
 
         return messageVo;
     }
@@ -324,7 +321,7 @@ public class MessageRestService  {
         // Create a temporary repository folder for the message
         messageService.createTempMessageRepoFolder(messageVo);
         // Point embedded links and images to the temporary repository folder
-        messageVo.descsToEditRepo();
+        messageVo.toEditRepo();
 
         return messageVo;
     }
@@ -428,7 +425,7 @@ public class MessageRestService  {
         log.info("Creating message " + message);
 
         // Point embedded links and images to the message repository folder
-        message.descsToMessageRepo();
+        message.toMessageRepo();
 
         Message msg = new Message(message);
 
@@ -465,7 +462,7 @@ public class MessageRestService  {
         log.info("Updating message " + message);
 
         // Point embedded links and images to the message repository folder
-        message.descsToMessageRepo();
+        message.toMessageRepo();
 
         Message msg = new Message(message);
 
@@ -567,9 +564,9 @@ public class MessageRestService  {
                     try {
                         File file = repositoryService.getRepoRoot().resolve(f).toFile();
                         AttachmentVo att = new AttachmentVo();
+                        att.setPath(path + "/" + WebUtils.encodeURIComponent(file.getName()));
                         att.setFileName(file.getName());
                         att.setFileSize(file.length());
-                        att.setFileUpdated(new Date(file.lastModified()));
                         att.setType(fileTypes.getContentType(file));
                         return att;
                     } catch (Exception ex) {

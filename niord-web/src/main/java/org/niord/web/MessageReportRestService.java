@@ -167,7 +167,7 @@ public class MessageReportRestService {
         // We prefer to get all language variants and then sort the result
         String language = params.getLanguage();
         params.language(null);
-        PagedSearchResultVo<MessageVo> result = messageSearchRestService.search(params);
+        PagedSearchResultVo<MessageVo> result = messageSearchRestService.searchMessages(params);
         result.getData().forEach(m -> m.sort(language));
 
         try {

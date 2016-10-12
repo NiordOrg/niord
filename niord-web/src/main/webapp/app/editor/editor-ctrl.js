@@ -145,7 +145,7 @@ angular.module('niord.editor')
                 });
 
                 // Update the attachment upload url
-                $scope.attachmentUploadUrl = '/rest/messages/attachments/' + msg.editRepoPath + '/attachments';
+                $scope.attachmentUploadUrl =  MessageService.attachmentUploadRepoPath(msg);
                 // Ensure that localized attachment desc fields are defined for all languages
                 angular.forEach(msg.attachments, function (att) {
                     LangService.checkDescs(att, initAttachmentDescField, undefined, $rootScope.modelLanguages);
@@ -722,8 +722,7 @@ angular.module('niord.editor')
                         .then(function (result) {
                             $("#mce-modal-block").show();
                             $(".mce-window").show();
-                            var file = "/rest/repo/file/" + $scope.message.editRepoPath + "/attachments/"
-                                + encodeURIComponent(result.attachment.fileName);
+                            var file = "/rest/repo/file/" + result.attachment.path;
                             win.document.getElementById(field_name).value = file;
                         });
                 });
@@ -998,6 +997,17 @@ angular.module('niord.editor')
             $scope.imgCacheBreaker = new Date().getTime();
 
 
+            /** Returns the URL to the thumbnail **/
+            $scope.thumbnailPath = function () {
+                var path = '/rest/message-map-image/' + $scope.message.editRepoPath
+                    + '/image.png?cb=' + $scope.imgCacheBreaker;
+                if ($scope.message.thumbnailPath) {
+                    path += '&thumbnailPath=' + encodeURIComponent($scope.message.thumbnailPath);
+                }
+                return path;
+            };
+
+
             /** Called when the thumbnail has changed **/
             $scope.thumbnailUpdated = function () {
                 $scope.imgCacheBreaker = new Date().getTime();
@@ -1015,9 +1025,11 @@ angular.module('niord.editor')
                         message: function () { return $scope.message; }
                     }
                 }).result.then(function (image) {
-                    if (image && $scope.message.editRepoPath) {
-                        MessageService.changeMessageMapImage($scope.message.editRepoPath, image)
-                            .success(function () {
+                    if (image) {
+                        var path = $scope.message.editRepoPath + '/' + $scope.message.revision;
+                        MessageService.changeMessageMapImage(path, image)
+                            .success(function (thumbnailPath) {
+                                $scope.message.thumbnailPath = thumbnailPath;
                                 $scope.thumbnailUpdated();
                                 growl.info("Updated message thumbnail", { ttl: 3000 });
                             });
@@ -1028,19 +1040,43 @@ angular.module('niord.editor')
 
             /** Opens the upload-message thumbnail dialog **/
             $scope.uploadMessageThumbnailDialog = function () {
-                if ($scope.message.editRepoPath) {
-                    UploadFileService.showUploadFileDialog(
-                        'Upload thumbnail image',
-                        '/rest/message-map-image/' + $scope.message.editRepoPath,
-                        'png,jpg,jpeg,gif').result
-                        .then($scope.thumbnailUpdated);
-                }
+                var path = $scope.message.editRepoPath + '/' + $scope.message.revision;
+                UploadFileService.showUploadFileDialog(
+                    'Upload thumbnail image',
+                    '/rest/message-map-image/' + path ,
+                    'png,jpg,jpeg,gif',
+                    true).result
+                    .then(function (thumbnailPath) {
+                        $scope.message.thumbnailPath = thumbnailPath;
+                        $scope.thumbnailUpdated();
+                        growl.info("Updated message thumbnail", { ttl: 3000 });
+                    });
             };
 
 
             /** Clears the current message thumbnail **/
             $scope.clearMessageThumbnail = function () {
-                if ($scope.message.editRepoPath) {
+
+                var thumbnailPath = $scope.message.thumbnailPath;
+                if (thumbnailPath) {
+                    delete $scope.message.thumbnailPath;
+                    $scope.thumbnailUpdated();
+                    growl.info("Deleted message thumbnail", { ttl: 3000 });
+
+                    // To preserve revision history, we only delete the actual thumbnail file from the
+                    // repository if it is the latest (unsaved) revision.
+                    if (thumbnailPath.indexOf($scope.message.editRepoPath + '/' + $scope.message.revision + '/') == 0) {
+                        MessageService.deleteAttachmentFile(thumbnailPath)
+                            .success(function () {
+                                console.log("Deleted thumbnail file " + thumbnailPath);
+                            })
+                            .error(function () {
+                                console.error("Error thumbnail file " + thumbnailPath);
+                            });
+                    }
+
+                } else {
+                    // Delete any auto-generated thumbnail
                     MessageService.deleteMessageMapImage($scope.message.editRepoPath)
                         .success(function () {
                             $scope.thumbnailUpdated();
@@ -1079,18 +1115,23 @@ angular.module('niord.editor')
 
             /** Deletes the given attachment **/
             $scope.deleteAttachment = function (attachment) {
-                if ($.inArray(attachment, $scope.message.attachments) > -1) {
-                    var filePath = MessageService.attachmentRepoPath($scope.message, attachment);
-                    MessageService.deleteAttachmentFile(filePath)
-                        .success(function () {
-                            $scope.message.attachments.splice( $.inArray(attachment, $scope.message.attachments), 1 );
-                            $scope.setDirty();
-                        })
-                        .error(function () {
-                            // NB: We allow deletion of the attachment event if the physical file did not exist
-                            $scope.message.attachments.splice( $.inArray(attachment, $scope.message.attachments), 1 );
-                            $scope.setDirty();
-                        });
+                var index = $.inArray(attachment, $scope.message.attachments);
+                if (index > -1) {
+                    $scope.message.attachments.splice( index, 1 );
+                    $scope.setDirty();
+
+                    // To preserve revision history, we only delete the attachment file from the
+                    // repository if it is the latest (unsaved) revision.
+                    if (attachment.path.indexOf($scope.message.editRepoPath + '/' + $scope.message.revision + '/') == 0) {
+                        var filePath = MessageService.attachmentEditRepoPath($scope.message, attachment);
+                        MessageService.deleteAttachmentFile(filePath)
+                            .success(function () {
+                                console.log("Deleted attachment " + filePath);
+                            })
+                            .error(function () {
+                                console.error("Error deleting attachment " + filePath);
+                            });
+                    }
                 }
             };
             

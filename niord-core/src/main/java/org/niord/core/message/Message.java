@@ -105,9 +105,20 @@ import java.util.stream.Stream;
 public class Message extends VersionedEntity<Integer> implements ILocalizable<MessageDesc> {
 
     public static String MESSAGE_REPO_FOLDER = "messages";
+    public static final DataFilter MESSAGE_DETAILS_FILTER =
+            DataFilter.get().fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
+    public static final DataFilter MESSAGE_MAP_FILTER =
+            DataFilter.get().fields("Message.geometry", "MessageDesc.title");
+
 
     @Column(nullable = false, unique = true, length = 36)
     String uid;
+
+    // Unlike Message.version, which is used to control optimistic locking, the Message.revision
+    // attribute is used define the repo-path sub-folder used for attachments when a message is edited.
+    int revision;
+
+    String thumbnailPath;
 
     @Column(nullable = false, unique = true, length = 128)
     String repoPath;
@@ -282,6 +293,8 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         if (message instanceof SystemMessageVo) {
             SystemMessageVo sysMessage = (SystemMessageVo) message;
             this.autoTitle = sysMessage.isAutoTitle() != null && sysMessage.isAutoTitle();
+            this.revision = sysMessage.getRevision();
+            this.thumbnailPath = sysMessage.getThumbnailPath();
         }
 
         updateEventDateInterval();
@@ -302,7 +315,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         message.setType(type);
 
         if (compFilter.includeDetails()) {
-            message.setRepoPath(repoPath);
             message.setCreated(getCreated());
             message.setUpdated(getUpdated());
             if (messageSeries != null) {
@@ -327,6 +339,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
         if (message instanceof SystemMessageVo) {
             SystemMessageVo systemMessage = (SystemMessageVo)message;
+            systemMessage.setRevision(revision + 1); // NB: Increase revision number
+            systemMessage.setRepoPath(repoPath);
+            systemMessage.setThumbnailPath(thumbnailPath);
             systemMessage.setAutoTitle(autoTitle);
 
             message.sort(filter.getLang());
@@ -469,6 +484,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                             desc.setDetails(desc.getDetails().replace(prefix + oldRepoPath, prefix + repoPath));
                         }
                     });
+            getAttachments().forEach(att -> {
+                if (StringUtils.isNotBlank(att.getPath())) {
+                    att.setPath(att.getPath().replace(oldRepoPath, repoPath));
+                }
+            });
+            if (StringUtils.isNotBlank(thumbnailPath)) {
+                thumbnailPath = thumbnailPath.replace(oldRepoPath, repoPath);
+            }
         }
         return uid;
     }
@@ -587,6 +610,22 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setUid(String uid) {
         this.uid = uid;
+    }
+
+    public int getRevision() {
+        return revision;
+    }
+
+    public void setRevision(int revision) {
+        this.revision = revision;
+    }
+
+    public String getThumbnailPath() {
+        return thumbnailPath;
+    }
+
+    public void setThumbnailPath(String thumbnailPath) {
+        this.thumbnailPath = thumbnailPath;
     }
 
     public String getRepoPath() {

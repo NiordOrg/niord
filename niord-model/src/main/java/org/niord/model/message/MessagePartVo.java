@@ -17,7 +17,6 @@
 package org.niord.model.message;
 
 import io.swagger.annotations.ApiModel;
-import org.apache.commons.lang.StringUtils;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 import org.niord.model.geojson.FeatureCollectionVo;
@@ -59,8 +58,8 @@ public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSeri
      * <p>
      * The repository paths may occur in e.g. embedded images and links.
      */
-    public void rewriteDescs(String repoPath1, String repoPath2) {
-        if (getDescs() != null && StringUtils.isNotBlank(repoPath1) && StringUtils.isNotBlank(repoPath2)) {
+    public void rewriteRepoPath(String repoPath1, String repoPath2) {
+        if (getDescs() != null) {
             getDescs().forEach(desc -> {
                 if (desc.getDetails() != null && desc.getDetails().contains(repoPath1)) {
                     desc.setDetails(desc.getDetails().replace(repoPath1, repoPath2));

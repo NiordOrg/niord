@@ -286,7 +286,7 @@ angular.module('niord.common')
             'use strict';
 
             /** Opens an upload file dialog **/
-            this.showUploadFileDialog = function (title, uploadUrl, fileTypes) {
+            this.showUploadFileDialog = function (title, uploadUrl, fileTypes, closeAfterUpload) {
 
                 return $uibModal.open({
                     templateUrl: '/app/common/file-upload-dialog.html',
@@ -297,8 +297,13 @@ angular.module('niord.common')
                         $scope.importResult = '';
 
                         $scope.fileUploaded = function(result) {
-                            $scope.importResult = result;
-                            $scope.$$phase || $scope.$apply();
+                            if (closeAfterUpload) {
+                                $scope.$close(result);
+                                $scope.$$phase || $scope.$apply();
+                            } else {
+                                $scope.importResult = result;
+                                $scope.$$phase || $scope.$apply();
+                            }
                         };
 
                         $scope.fileUploadError = function(status, statusText) {

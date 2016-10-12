@@ -148,10 +148,14 @@ angular.module('niord.messages')
             },
 
 
+            /** Returns the repository path for uploading an attachment file */
+            attachmentUploadRepoPath: function (message) {
+                return '/rest/messages/attachments/' + message.editRepoPath + '/' + message.revision;
+            },
+
             /** Returns the repository path to the attachment file */
-            attachmentRepoPath: function (message, attachment) {
-                var repoPath = message.editRepoPath || message.repoPath;
-                return repoPath + '/attachments/' + encodeURIComponent(attachment.fileName);
+            attachmentEditRepoPath: function (message, attachment) {
+                return message.editRepoPath + '/' + message.revision + '/' + encodeURIComponent(attachment.fileName);
             },
 
             /** Deletes the attahcment file at the given repository path */

@@ -27,9 +27,9 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageSeriesService;
 import org.niord.core.message.MessageService;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
-import org.niord.model.message.MessageVo;
 import org.niord.model.message.Status;
 
 import javax.inject.Inject;
@@ -77,7 +77,7 @@ public class BatchMessageImportProcessor extends AbstractItemHandler {
     @Override
     public Object processItem(Object item) throws Exception {
 
-        MessageVo messageVo = (MessageVo) item;
+        SystemMessageVo messageVo = (SystemMessageVo) item;
         Message message = new Message(messageVo);
 
         // Process related message base data

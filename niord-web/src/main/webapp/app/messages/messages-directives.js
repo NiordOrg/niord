@@ -209,13 +209,12 @@ angular.module('niord.messages')
     /****************************************************************
      * The message-attachment directive renders an attachment
      ****************************************************************/
-    .directive('messageAttachment', ['MessageService', function (MessageService) {
+    .directive('messageAttachment', [function () {
         return {
             restrict: 'E',
             templateUrl: '/app/messages/message-attachment.html',
             replace: true,
             scope: {
-                message : "=",
                 attachment: "=",
                 size: "@",
                 imageType: "@",
@@ -227,7 +226,7 @@ angular.module('niord.messages')
                 scope.imageType = scope.imageType || 'thumbnail';
                 scope.labelType = scope.labelType || 'file-name';
 
-                var filePath = MessageService.attachmentRepoPath(scope.message, scope.attachment);
+                var filePath = scope.attachment.path;
                 scope.thumbnailUrl = "/rest/repo/thumb/" + filePath + "?size=" + scope.size;
                 scope.fileUrl = "/rest/repo/file/" + filePath;
 

@@ -66,7 +66,7 @@ public class GeometryFormatService {
      * @param message the message to update
      * @return the updated message
      */
-    public MessageVo appendGeometryToDetails(MessageVo message) {
+    public <M extends MessageVo> M appendGeometryToDetails(M message) {
         if (message != null && message.getParts() != null) {
             message.getParts().stream()
                     .filter(p -> p.getDescs() != null && p.getGeometry() != null)

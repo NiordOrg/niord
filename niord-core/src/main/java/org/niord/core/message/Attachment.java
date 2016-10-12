@@ -31,7 +31,6 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,9 +49,9 @@ public class Attachment extends BaseEntity<Integer> implements ILocalizable<Atta
 
     String type;
 
-    String fileName;
+    String path;
 
-    Date fileUpdated;
+    String fileName;
 
     long fileSize;
 
@@ -76,8 +75,8 @@ public class Attachment extends BaseEntity<Integer> implements ILocalizable<Atta
     public Attachment(AttachmentVo attachment) {
 
         this.type = attachment.getType();
+        this.path = attachment.getPath();
         this.fileName = attachment.getFileName();
-        this.fileUpdated = attachment.getFileUpdated();
         this.fileSize = attachment.getFileSize() == null ? 0 : attachment.getFileSize();
         this.display = attachment.getDisplay();
         this.width = attachment.getWidth();
@@ -96,8 +95,8 @@ public class Attachment extends BaseEntity<Integer> implements ILocalizable<Atta
 
         AttachmentVo attachment = new AttachmentVo();
         attachment.setType(type);
+        attachment.setPath(path);
         attachment.setFileName(fileName);
-        attachment.setFileUpdated(fileUpdated);
         attachment.setFileSize(fileSize);
         attachment.setDisplay(display);
         attachment.setWidth(width);
@@ -117,7 +116,7 @@ public class Attachment extends BaseEntity<Integer> implements ILocalizable<Atta
         this.indexNo = attachment.getIndexNo();
         this.type = attachment.getType();
         this.fileName = attachment.getFileName();
-        this.fileUpdated = attachment.getFileUpdated();
+        this.path = attachment.getPath();
         this.fileSize = attachment.getFileSize();
         this.display = attachment.getDisplay();
         this.width = attachment.getWidth();
@@ -168,20 +167,20 @@ public class Attachment extends BaseEntity<Integer> implements ILocalizable<Atta
         this.type = type;
     }
 
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
     public String getFileName() {
         return fileName;
     }
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
-    }
-
-    public Date getFileUpdated() {
-        return fileUpdated;
-    }
-
-    public void setFileUpdated(Date fileUpdated) {
-        this.fileUpdated = fileUpdated;
     }
 
     public long getFileSize() {

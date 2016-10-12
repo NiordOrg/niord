@@ -100,7 +100,7 @@ public class MessageMailRestService {
         // Perform a search for at most 1000 messages
         MessageSearchParams params = MessageSearchParams.instantiate(domainService.currentDomain(), request);
         params.maxSize(1000).page(0);
-        PagedSearchResultVo<MessageVo> result = messageSearchRestService.search(params);
+        PagedSearchResultVo<MessageVo> result = messageSearchRestService.searchMessages(params);
 
         User user = userService.currentUser();
 

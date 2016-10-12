@@ -609,7 +609,7 @@
                                 </tr>
                                 <tr ng-repeat="att in message.attachments">
                                     <td width="70">
-                                        <message-attachment message="message" attachment="att" size="32"></message-attachment>
+                                        <message-attachment attachment="att" size="32"></message-attachment>
                                     </td>
                                     <td>
                                         <div ng-repeat="desc in att.descs">
@@ -752,7 +752,7 @@
                     <div class="row">
                         <div class="col-sm-12">
                             <div class="editor-map-image-thumbnail">
-                                <img ng-src="/rest/message-map-image/{{message.editRepoPath}}/image.png?{{imgCacheBreaker}}" width="256" height="256"/>
+                                <img ng-src="{{thumbnailPath()}}" width="256" height="256"/>
 
                                 <div class="editor-map-image-menu text-center">
                                     <div class="btn-group" uib-dropdown>

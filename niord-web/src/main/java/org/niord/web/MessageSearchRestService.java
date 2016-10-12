@@ -29,6 +29,7 @@ import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MessageVo;
 import org.niord.model.message.Status;
@@ -100,7 +101,7 @@ public class MessageSearchRestService {
      * @param params the search parameters
      * @return the search result
      */
-    public  PagedSearchResultVo<MessageVo> search(MessageSearchParams params) throws Exception {
+    private PagedSearchResultVo<Message> search(MessageSearchParams params) throws Exception {
 
         Domain currentDomain = domainService.currentDomain();
         Domain searchDomain = searchDomain(params);
@@ -182,12 +183,39 @@ public class MessageSearchRestService {
 
         log.info(String.format("Search [%s] returns %d of %d messages in %d ms",
                 description, searchResult.getData().size(), searchResult.getTotal(), System.currentTimeMillis() - t0));
+        return searchResult;
+    }
+
+
+    /**
+     * Main search method.
+     * Validates the message search parameters and enforces security.
+     *
+     * @param params the search parameters
+     * @return the search result
+     */
+    public PagedSearchResultVo<MessageVo> searchMessages(MessageSearchParams params) throws Exception {
 
         DataFilter filter = ("map".equalsIgnoreCase(params.getViewMode()))
-                ? DataFilter.get().lang(params.getLanguage()).fields("Message.geometry", "MessageDesc.title")
-                : DataFilter.get().lang(params.getLanguage()).fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
+                ? Message.MESSAGE_MAP_FILTER.lang(params.getLanguage())
+                : Message.MESSAGE_DETAILS_FILTER.lang(params.getLanguage());
+        return search(params).map(m -> m.toVo(MessageVo.class, filter));
+    }
 
-        return searchResult.map(m -> m.toVo(MessageVo.class, filter));
+
+    /**
+     * Main search method.
+     * Validates the message search parameters and enforces security.
+     *
+     * @param params the search parameters
+     * @return the search result
+     */
+    public PagedSearchResultVo<SystemMessageVo> searchSystemMessages(MessageSearchParams params) throws Exception {
+
+        DataFilter filter = ("map".equalsIgnoreCase(params.getViewMode()))
+                ? Message.MESSAGE_MAP_FILTER.lang(params.getLanguage())
+                : Message.MESSAGE_DETAILS_FILTER.lang(params.getLanguage());
+        return search(params).map(m -> m.toVo(SystemMessageVo.class, filter));
     }
 
 
@@ -201,7 +229,7 @@ public class MessageSearchRestService {
     @NoCache
     public PagedSearchResultVo<MessageVo> search(@Context  HttpServletRequest request) throws Exception {
         MessageSearchParams params = MessageSearchParams.instantiate(domainService.currentDomain(), request);
-        return search(params);
+        return searchMessages(params);
     }
 
 

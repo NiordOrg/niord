@@ -71,7 +71,7 @@
 <!-- ***************************************  -->
 <!-- Renders an attachment  -->
 <!-- ***************************************  -->
-<#macro renderAttachment msg att >
+<#macro renderAttachment att >
     <#assign imageStyle='max-width: 100%;' />
     <#if att.width?has_content && att.height?has_content>
         <#assign imageStyle="max-width: 100%; width: " + att.width + "; height: " + att.height />
@@ -83,7 +83,7 @@
 
     <div class="attachment">
         <div>
-            <img src="/rest/repo/file/${msg.repoPath}/attachments/${att.fileName}" style="${imageStyle}">
+            <img src="/rest/repo/file/${att.path}" style="${imageStyle}">
         </div>
         <#if att.descs?has_content && att.descs[0].caption?has_content>
             <div style="margin: 1mm; font-style: italic">${att.descs[0].caption}</div>
@@ -99,7 +99,7 @@
     <#if msg.attachments?has_content>
         <#list msg.attachments as att>
             <#if includeAttachment(att, type)>
-                <@renderAttachment msg=msg att=att />
+                <@renderAttachment att=att />
             </#if>
         </#list>
     </#if>
@@ -121,7 +121,7 @@
                 <div style="margin: 1mm">
                     <h4 style="color: #8f2f7b; font-size: 16px;" id="${messageId}">${text("pdf.attachment.title", messageId)}</h4>
                 </div>
-                <@renderAttachment msg=msg att=att />
+                <@renderAttachment att=att />
             </div>
             </#if>
         </#list>

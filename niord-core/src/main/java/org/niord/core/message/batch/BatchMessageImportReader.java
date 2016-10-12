@@ -18,8 +18,8 @@ package org.niord.core.message.batch;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.batch.AbstractItemHandler;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.util.JsonUtils;
-import org.niord.model.message.MessageVo;
 
 import javax.inject.Named;
 import java.io.Serializable;
@@ -34,7 +34,7 @@ import java.util.List;
  * This is because of a class-loading bug in the Wildfly implementation. See e.g.
  * https://issues.jboss.org/browse/WFLY-4988
  * <p>
- * Format of json file is defined by the MessageVo class. Example:
+ * Format of json file is defined by the SystemMessageVo class. Example:
  * <pre>
  * [
  *  {
@@ -110,7 +110,7 @@ import java.util.List;
 @Named
 public class BatchMessageImportReader extends AbstractItemHandler {
 
-    List<MessageVo> messages;
+    List<SystemMessageVo> messages;
     int messageNo = 0;
 
 
@@ -135,14 +135,14 @@ public class BatchMessageImportReader extends AbstractItemHandler {
 
 
     /** Reads in the batch import messages */
-    protected List<MessageVo> readMessages() throws Exception {
+    protected List<SystemMessageVo> readMessages() throws Exception {
 
         // Default implementation reads the messages from a message.json batch file
         Path path = batchService.getBatchJobDataFile(jobContext.getInstanceId());
 
         // Load the charts from the file
         return JsonUtils.readJson(
-                new TypeReference<List<MessageVo>>(){},
+                new TypeReference<List<SystemMessageVo>>(){},
                 path);
     }
 

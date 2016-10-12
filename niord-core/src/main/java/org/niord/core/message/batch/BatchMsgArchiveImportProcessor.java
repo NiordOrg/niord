@@ -82,7 +82,7 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
         // When the message archive was exported, links embedded in the message description field were
         // rewritten to point to the zip archive folder. Rewrite back to the Niord repository structure
         String repoPath = messageVo.getMessage().getRepoPath();
-        messageVo.getMessage().rewriteDescs("\"" + repoPath, "\"/rest/repo/file/" + repoPath);
+        messageVo.getMessage().rewriteRepoPath("\"" + repoPath, "\"/rest/repo/file/" + repoPath);
 
         // Process related message base data
         Message message = new Message(messageVo.getMessage());

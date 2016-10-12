@@ -33,7 +33,7 @@ import java.util.List;
 @ApiModel(value = "Message", description = "Main NW and NM message class")
 @XmlRootElement(name = "message")
 @XmlType(propOrder = {
-        "repoPath", "messageSeries", "number", "shortId", "mainType", "type", "status",
+        "messageSeries", "number", "shortId", "mainType", "type", "status",
         "areas", "categories", "charts", "horizontalDatum", "publishDateFrom", "publishDateTo",
         "references", "originalInformation", "parts", "descs", "attachments"
 })
@@ -41,7 +41,6 @@ import java.util.List;
 public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable {
 
     String id;
-    String repoPath;
     Date created;
     Date updated;
     MessageSeriesVo messageSeries;
@@ -90,20 +89,6 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
             }
         }
     }
-
-    /**
-     * Rewrites the rich text description from one repository path to another.
-     * This happens when a message is edited and its associated repository folder gets
-     * copied to a temporary folder until the message is saved.
-     * <p>
-     * The repository paths may occur in e.g. embedded images and links.
-     */
-    public void rewriteDescs(String repoPath1, String repoPath2) {
-        if (getParts() != null) {
-            getParts().forEach(mp -> mp.rewriteDescs(repoPath1, repoPath2));
-        }
-    }
-
 
     /*************************/
     /** Collection Handling **/
@@ -181,15 +166,6 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     public void setUpdated(Date updated) {
         this.updated = updated;
     }
-
-    public String getRepoPath() {
-        return repoPath;
-    }
-
-    public void setRepoPath(String repoPath) {
-        this.repoPath = repoPath;
-    }
-
     public MessageSeriesVo getMessageSeries() {
         return messageSeries;
     }

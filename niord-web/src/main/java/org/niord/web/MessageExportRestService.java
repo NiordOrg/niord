@@ -28,8 +28,8 @@ import org.niord.core.domain.DomainService;
 import org.niord.core.message.MessageExportService;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.model.IJsonSerializable;
-import org.niord.model.message.MessageVo;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
@@ -89,9 +89,11 @@ public class MessageExportRestService extends AbstractBatchableRestService {
 
         // Perform a search for at most 1000 messages
         MessageSearchParams params = MessageSearchParams.instantiate(domainService.currentDomain(), request);
-        params.language(null).maxSize(1000).page(0);
+        params.language(null)
+                .maxSize(1000)
+                .page(0);
 
-        PagedSearchResultVo<MessageVo> result = messageSearchRestService.search(params);
+        PagedSearchResultVo<SystemMessageVo> result = messageSearchRestService.searchSystemMessages(params);
         result.getData().forEach(m -> m.sort(params.getLanguage()));
 
         try {
@@ -174,9 +176,9 @@ public class MessageExportRestService extends AbstractBatchableRestService {
                 if ("messages.json".equals(entry.getName())) {
                     try {
                         ObjectMapper mapper = new ObjectMapper();
-                        PagedSearchResultVo<MessageVo> messages = mapper.readValue(
+                        PagedSearchResultVo<SystemMessageVo> messages = mapper.readValue(
                                 zipFile,
-                                new TypeReference<PagedSearchResultVo<MessageVo>>() {});
+                                new TypeReference<PagedSearchResultVo<SystemMessageVo>>() {});
                         return  messages != null;
                     } catch (Exception e) {
                         return false;

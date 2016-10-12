@@ -21,7 +21,6 @@ import org.niord.model.ILocalizable;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -30,7 +29,7 @@ import java.util.List;
 @ApiModel(value = "Attachment", description = "Message attachment model")
 @XmlRootElement(name = "attachment")
 @XmlType(propOrder = {
-        "type", "fileName", "fileUpdated", "fileSize", "display", "width", "height", "descs"
+        "type", "fileName", "path", "fileSize", "display", "width", "height", "descs"
 })
 @SuppressWarnings("unused")
 public class AttachmentVo implements ILocalizable<AttachmentDescVo>, IJsonSerializable {
@@ -38,8 +37,8 @@ public class AttachmentVo implements ILocalizable<AttachmentDescVo>, IJsonSerial
     public enum AttachmentDisplayType { ABOVE, BELOW, SEPARATE_PAGE }
 
     String type;
+    String path;
     String fileName;
-    Date fileUpdated;
     Long fileSize;
     AttachmentDisplayType display;
     String width;
@@ -56,6 +55,18 @@ public class AttachmentVo implements ILocalizable<AttachmentDescVo>, IJsonSerial
         return desc;
     }
 
+
+    /**
+     * Rewrites the attachments from one repository path to another.
+     * This happens when a message is edited and its associated repository folder gets
+     * copied to a temporary folder until the message is saved.
+     */
+    public void rewriteRepoPath(String repoPath1, String repoPath2) {
+        if (path != null) {
+            path = path.replace(repoPath1, repoPath2);
+        }
+    }
+
     /*************************/
     /** Getters and Setters **/
     /*************************/
@@ -68,20 +79,20 @@ public class AttachmentVo implements ILocalizable<AttachmentDescVo>, IJsonSerial
         this.type = type;
     }
 
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
+
     public String getFileName() {
         return fileName;
     }
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
-    }
-
-    public Date getFileUpdated() {
-        return fileUpdated;
-    }
-
-    public void setFileUpdated(Date fileUpdated) {
-        this.fileUpdated = fileUpdated;
     }
 
     public Long getFileSize() {

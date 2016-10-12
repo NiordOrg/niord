@@ -26,14 +26,39 @@ import java.util.Map;
 @SuppressWarnings("unused")
 public class SystemMessageVo extends MessageVo {
 
+    int revision;
     Boolean autoTitle;
+    String thumbnailPath;
+    String repoPath;
     String editRepoPath;
     Integer unackComments;
     Map<String, Boolean> editorFields;
 
 
     /**
-     * Annoyingly, the TinyMCE editor used for editing the rich text description, will rewrite paths
+     * Rewrites the attachments, thumbnail path and rich text description from one repository path to another.
+     * This happens when a message is edited and its associated repository folder gets
+     * copied to a temporary folder until the message is saved.
+     * <p>
+     * The repository paths may occur in e.g. embedded images and links.
+     */
+    public void rewriteRepoPath(String repoPath1, String repoPath2) {
+        if (StringUtils.isNotBlank(repoPath1) && StringUtils.isNotBlank(repoPath2)) {
+            if (getParts() != null) {
+                getParts().forEach(mp -> mp.rewriteRepoPath(repoPath1, repoPath2));
+            }
+            if (getAttachments() != null) {
+                getAttachments().forEach(att -> att.rewriteRepoPath(repoPath1, repoPath2));
+            }
+            if (thumbnailPath != null) {
+                thumbnailPath = thumbnailPath.replace(repoPath1, repoPath2);
+            }
+        }
+    }
+
+
+    /**
+     * Annoyingly, the TinyMCE editor used for editing the rich text description, will rewrite paths to
      * attachments (i.e. used in hyperlinks and embedded images), so that "/rest/repo/file/..." becomes
      * "rest/repo/file/...". This causes problems if the description html is used outside the "/" context
      * root, as is the case when you e.g. print reports.
@@ -55,8 +80,8 @@ public class SystemMessageVo extends MessageVo {
      * Should be called on a message before editing it, to point links and embedded images
      * to the temporary message repository folder used whilst editing.
      */
-    public void descsToEditRepo() {
-        rewriteDescs(getRepoPath(), getEditRepoPath());
+    public void toEditRepo() {
+        rewriteRepoPath(getRepoPath(), getEditRepoPath());
     }
 
 
@@ -64,8 +89,8 @@ public class SystemMessageVo extends MessageVo {
      * Should be called before saving an edited message, to point links and embedded images
      * back to the message repository
      */
-    public void descsToMessageRepo() {
-        rewriteDescs(getEditRepoPath(), getRepoPath());
+    public void toMessageRepo() {
+        rewriteRepoPath(getEditRepoPath(), getRepoPath());
         fixDescriptionRepoPaths();
     }
 
@@ -73,12 +98,36 @@ public class SystemMessageVo extends MessageVo {
     /** Getters and Setters **/
     /*************************/
 
+    public int getRevision() {
+        return revision;
+    }
+
+    public void setRevision(int revision) {
+        this.revision = revision;
+    }
+
     public Boolean isAutoTitle() {
         return autoTitle;
     }
 
     public void setAutoTitle(Boolean autoTitle) {
         this.autoTitle = autoTitle;
+    }
+
+    public String getThumbnailPath() {
+        return thumbnailPath;
+    }
+
+    public void setThumbnailPath(String thumbnailPath) {
+        this.thumbnailPath = thumbnailPath;
+    }
+
+    public String getRepoPath() {
+        return repoPath;
+    }
+
+    public void setRepoPath(String repoPath) {
+        this.repoPath = repoPath;
     }
 
     public String getEditRepoPath() {
