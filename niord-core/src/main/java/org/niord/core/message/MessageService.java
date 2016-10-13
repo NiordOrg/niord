@@ -310,6 +310,9 @@ public class MessageService extends BaseService {
             throw new Exception("Message already persisted");
         }
 
+        // Register who originally created the message
+        message.setCreatedBy(userService.currentUser());
+
         // Validate various required fields
         if (message.getMessageSeries() == null) {
             throw new Exception("Message series not specified");
@@ -372,6 +375,9 @@ public class MessageService extends BaseService {
         if (original == null) {
             throw new Exception("Message not an existing message");
         }
+
+        // Register who last updated he message
+        original.setLastUpdatedBy(userService.currentUser());
 
         original.setRevision(message.getRevision());
 
@@ -523,6 +529,9 @@ public class MessageService extends BaseService {
         if (!getValidStatusTransitions(currentStatus).contains(status)) {
             throw new Exception("Invalid status transition " + currentStatus + " -> " + status);
         }
+
+        // Register who last updated he message
+        message.setLastUpdatedBy(userService.currentUser());
 
         // Update the status
         message.setStatus(status);

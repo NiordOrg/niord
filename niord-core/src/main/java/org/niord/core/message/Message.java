@@ -22,6 +22,7 @@ import org.niord.core.chart.Chart;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.model.DescEntity;
 import org.niord.core.model.VersionedEntity;
+import org.niord.core.user.User;
 import org.niord.core.util.TimeUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
@@ -110,6 +111,11 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     public static final DataFilter MESSAGE_MAP_FILTER =
             DataFilter.get().fields("Message.geometry", "MessageDesc.title");
 
+    @ManyToOne
+    User createdBy;
+
+    @ManyToOne
+    User lastUpdatedBy;
 
     @Column(nullable = false, unique = true, length = 36)
     String uid;
@@ -603,6 +609,22 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public User getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(User createdBy) {
+        this.createdBy = createdBy;
+    }
+
+    public User getLastUpdatedBy() {
+        return lastUpdatedBy;
+    }
+
+    public void setLastUpdatedBy(User lastUpdatedBy) {
+        this.lastUpdatedBy = lastUpdatedBy;
+    }
 
     public String getUid() {
         return uid;
