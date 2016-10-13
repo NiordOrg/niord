@@ -21,7 +21,7 @@
             <#if feature.coordinates?has_content>
                 <#list feature.coordinates as coord>
                     <tr>
-                        <td nowrap>${feature.startIndex + coord?index})</td>
+                        <td nowrap>${coord.index})</td>
                         <td nowrap><@formatPos lat=coord.coordinates[1] lon=coord.coordinates[0] format=format/></td>
                         <#if hasName>
                             <td><#if coord.name?has_content>${coord.name}</#if></td>

@@ -190,7 +190,9 @@ public class GeoJsonUtils {
 
                     // Update the start indexes if the coordinates
                     sf.setStartIndex(startIndex);
-                    startIndex += sf.getCoordinates().size();
+                    for (SerializedCoordinates coord : sf.getCoordinates()) {
+                        coord.setIndex(startIndex++);
+                    }
                 }
             }
         }
@@ -279,6 +281,7 @@ public class GeoJsonUtils {
     public static class SerializedCoordinates {
         String name;
         double[] coordinates;
+        int index = 0;
 
         public String getName() {
             return name;
@@ -294,6 +297,14 @@ public class GeoJsonUtils {
 
         public void setCoordinates(double[] coordinates) {
             this.coordinates = coordinates;
+        }
+
+        public int getIndex() {
+            return index;
+        }
+
+        public void setIndex(int index) {
+            this.index = index;
         }
     }
 
