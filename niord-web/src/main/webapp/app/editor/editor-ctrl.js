@@ -887,11 +887,13 @@ angular.module('niord.editor')
                         icon: 'time',
                         onclick : function () { $scope.formatTimeDialog(editor); }
                     });
+                    /** Disabled for now
                     editor.addButton( 'niordaton', {
                         title: 'Insert AtoN (TEST TEST TEST)',
                         icon: 'aton',
                         onclick : function () { $scope.insertAtonDialog(editor); }
                     });
+                    **/
                 },
                 init_instance_callback : $scope.fixTinyMCETabIndex
             };
