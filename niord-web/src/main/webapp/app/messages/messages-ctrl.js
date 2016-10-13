@@ -40,7 +40,7 @@ angular.module('niord.messages')
             $scope.selectionList = []; // Flattened list of selected messages
             $scope.totalMessageNo = 0;
             $scope.filterNames = [ 'domain', 'messageSeries', 'text', 'type', 'status', 'tag',
-                'comments', 'reference', 'aton', 'chart', 'area', 'category', 'date' ];
+                'comments', 'reference', 'chart', 'area', 'category', 'date' ];
             $scope.state = {
 
                 /** Sorting **/
