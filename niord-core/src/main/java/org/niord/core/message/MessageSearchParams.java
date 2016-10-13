@@ -47,6 +47,8 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public enum DateType { PUBLISH_DATE, ACTIVE_DATE, CREATED_DATE }
 
+    public enum UserType { CREATED_BY, UPDATED_BY, LAST_UPDATED_BY }
+
     public enum CommentsType { ANY, OWN, ANY_UNACK, OWN_UNACK }
 
     String language;
@@ -59,6 +61,8 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     DateType dateType;
     Date updatedFrom;
     Date updatedTo;
+    String username;
+    UserType userType;
     CommentsType commentsType;
     Set<Status> statuses = new HashSet<>();
     Set<Type> types = new HashSet<>();
@@ -99,6 +103,8 @@ public class MessageSearchParams extends PagedSearchParamsVo {
                 .from((Long)checkNull(req.getParameter("fromDate"), Long::valueOf))
                 .to((Long)checkNull(req.getParameter("toDate"), Long::valueOf))
                 .dateType(checkNull(req.getParameter("dateType"), DateType::valueOf))
+                .username(req.getParameter("username"))
+                .userType(checkNull(req.getParameter("userType"), UserType::valueOf))
                 .commentsType(checkNull(req.getParameter("comments"), CommentsType::valueOf))
                 .viewMode(req.getParameter("viewMode"))
 
@@ -191,6 +197,8 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         if (dateType != null) { desc.add(String.format("Date Type: %s", dateType)); }
         if (updatedFrom != null) { desc.add(String.format("Updated from: %s", new SimpleDateFormat(DATE_FORMAT).format(updatedFrom))); }
         if (updatedTo != null) { desc.add(String.format("Updated to: %s", new SimpleDateFormat(DATE_FORMAT).format(updatedTo))); }
+        if (username != null) { desc.add(String.format("User: %s", username)); }
+        if (userType != null) { desc.add(String.format("User type: %s", userType)); }
         if (commentsType != null) { desc.add(String.format("Comments: %s", commentsType)); }
         if (statuses.size() > 0) { desc.add(String.format("Statuses: %s", statuses)); }
         if (types.size() > 0) { desc.add(String.format("Types: %s", types)); }
@@ -307,6 +315,24 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public MessageSearchParams updatedTo(Date updatedTo) {
         this.updatedTo = updatedTo;
+        return this;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public MessageSearchParams username(String username) {
+        this.username = username;
+        return this;
+    }
+
+    public UserType getUserType() {
+        return userType;
+    }
+
+    public MessageSearchParams userType(UserType userType) {
+        this.userType = userType;
         return this;
     }
 

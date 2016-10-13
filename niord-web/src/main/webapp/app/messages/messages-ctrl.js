@@ -40,7 +40,7 @@ angular.module('niord.messages')
             $scope.selectionList = []; // Flattened list of selected messages
             $scope.totalMessageNo = 0;
             $scope.filterNames = [ 'domain', 'messageSeries', 'text', 'type', 'status', 'tag',
-                'comments', 'reference', 'chart', 'area', 'category', 'date' ];
+                'user', 'comments', 'reference', 'chart', 'area', 'category', 'date' ];
             $scope.state = {
 
                 /** Sorting **/
@@ -86,6 +86,11 @@ angular.module('niord.messages')
                     enabled: false,
                     focusField: '#tags input.ui-select-search',
                     tags: []
+                },
+                user: {
+                    enabled: false,
+                    username: undefined,
+                    userType: undefined
                 },
                 comments: {
                     enabled: false,
@@ -232,6 +237,10 @@ angular.module('niord.messages')
                     case 'tag':
                         filter.tags.length = 0;
                         break;
+                    case 'user':
+                        filter.username = undefined;
+                        filter.userType = undefined;
+                        break;
                     case 'comments':
                         filter.comments = '';
                         break;
@@ -355,6 +364,12 @@ angular.module('niord.messages')
                         params += '&tag=' + tag.tagId;
                     })
                 }
+                if ($scope.loggedIn && s.user.enabled && s.user.username && s.user.username.length > 0) {
+                    params += '&username=' + encodeURIComponent(s.user.username);
+                    if (s.user.userType && s.user.userType.length > 0) {
+                        params += '&userType=' + s.user.userType;
+                    }
+                }
                 if (s.comments.enabled && s.comments.comments.length > 0) {
                     params += '&comments=' + s.comments.comments;
                 }
@@ -463,6 +478,11 @@ angular.module('niord.messages')
                     s.tag.enabled = true;
                     $scope.initTagIds = (typeof params.tag === 'string') ? [ params.tag ] : params.tag;
                 }
+                if ($scope.loggedIn && params.username) {
+                    s.user.enabled = true;
+                    s.user.username = params.username;
+                    s.user.userType = params.userType ? params.userType : '';
+                }
                 if (params.comments) {
                     s.comments.enabled = true;
                     s.comments.comments = params.comments;
@@ -519,6 +539,12 @@ angular.module('niord.messages')
                 // may not have been loaded yet by the respective filter fields, and thus, the state not yet updated.
                 if ($scope.pendingInitDataNo() > 0) {
                     return;
+                }
+
+                // Only allow user searches if the user is logged in
+                if (!$scope.loggedIn) {
+                    $scope.state.user.username = undefined;
+                    $scope.state.user.userType = undefined;
                 }
 
                 // Enforce validity of the filter selection
@@ -616,6 +642,8 @@ angular.module('niord.messages')
             /** Named Filters Handling  **/
             /*****************************/
 
+            $scope.namedFilters = [];
+
             /** Loads the persisted names filters **/
             $scope.loadNamedFilters = function () {
                 if ($scope.loggedIn) {
@@ -624,10 +652,6 @@ angular.module('niord.messages')
                         .success(function (filters) { $scope.namedFilters = filters; });
                 }
             };
-
-            $scope.namedFilters = [];
-            $scope.loadNamedFilters();
-
 
             /** Saves the current filter as a named filter **/
             $scope.saveNamedFilter = function () {

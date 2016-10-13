@@ -32,6 +32,7 @@ import org.niord.core.geojson.Feature;
 import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.geojson.FeatureService;
 import org.niord.core.message.MessageSearchParams.DateType;
+import org.niord.core.message.MessageSearchParams.UserType;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
@@ -863,6 +864,21 @@ public class MessageService extends BaseService {
                     .map(t -> builder.equal(tags.get("id"), t.getId()))
                     .toArray(Predicate[]::new);
             criteriaHelper.add(builder.or(tagMatch));
+        }
+
+
+        // User
+        if (StringUtils.isNotBlank(param.getUsername())) {
+            UserType userType = param.getUserType() == null ? UserType.UPDATED_BY : param.getUserType();
+            if (userType == UserType.CREATED_BY || userType == UserType.LAST_UPDATED_BY) {
+                String joinCol = userType == UserType.CREATED_BY ? "createdBy" : "lastUpdatedBy";
+                Join<Message, User> userRoot = msgRoot.join(joinCol, JoinType.LEFT);
+                criteriaHelper.equals(userRoot.get("username"), param.getUsername());
+            } else {
+                Join<Message, MessageHistory> historyRoot = msgRoot.join("history", JoinType.LEFT);
+                Join<MessageHistory, User> userRoot = historyRoot.join("user", JoinType.LEFT);
+                criteriaHelper.equals(userRoot.get("username"), param.getUsername());
+            }
         }
 
 

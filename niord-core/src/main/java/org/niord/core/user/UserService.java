@@ -28,7 +28,9 @@ import javax.ejb.SessionContext;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import java.security.Principal;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -151,5 +153,20 @@ public class UserService extends BaseService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+
+    /**
+     * Searches for users whose name or e-mail matches the given name
+     * @param name the name to match
+     * @return the matching users
+     */
+    public List<User> searchUsers(String name) {
+        if (StringUtils.isBlank(name)) {
+            return Collections.emptyList();
+        }
+        return em.createNamedQuery("User.searchUsers", User.class)
+                .setParameter("term", "%" + name.toLowerCase() + "%")
+                .getResultList();
     }
 }

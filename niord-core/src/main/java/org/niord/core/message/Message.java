@@ -198,6 +198,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     @ManyToMany(mappedBy = "messages")
     List<MessageTag> tags = new ArrayList<>();
 
+    @OneToMany(mappedBy = "message")
+    List<MessageHistory> history = new ArrayList<>();
+
     Boolean originalInformation;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
@@ -375,6 +378,10 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     @PrePersist
     //@PreUpdate
     public void onPersist() {
+
+        if (createdBy != null && lastUpdatedBy == null) {
+            lastUpdatedBy = createdBy;
+        }
 
         if (uid == null) {
             assignNewUid(false);
@@ -808,6 +815,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setTags(List<MessageTag> tags) {
         this.tags = tags;
+    }
+
+    public List<MessageHistory> getHistory() {
+        return history;
+    }
+
+    public void setHistory(List<MessageHistory> history) {
+        this.history = history;
     }
 
     public Boolean getOriginalInformation() {

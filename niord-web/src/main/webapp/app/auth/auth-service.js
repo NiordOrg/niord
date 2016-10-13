@@ -166,6 +166,23 @@ function bootstrapKeycloak(angularAppName, onLoad) {
             auth.loggedIn = false;
         };
 
+        /** Returns the users full name, if defined, and otherwise the preferred username **/
+        auth.userName = function () {
+            if (keycloak.idTokenParsed) {
+                return keycloak.idTokenParsed.name
+                    || keycloak.idTokenParsed.preferred_username;
+            }
+            return undefined;
+        };
+
+        /** Returns the preferred username **/
+        auth.preferredUsername = function () {
+            if (keycloak.idTokenParsed) {
+                return keycloak.idTokenParsed.preferred_username;
+            }
+            return undefined;
+        };
+
         // Register the Auth factory
         app.factory('AuthService', function() {
             return auth;

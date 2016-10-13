@@ -1,0 +1,24 @@
+<div class="input-group">
+
+    <ui-select ng-model="userData.username" ng-disabled="!loggedIn">
+        <ui-select-match placeholder="User Name">
+            {{userData.username}}
+        </ui-select-match>
+        <ui-select-choices repeat="user.username as user in users"
+                           refresh="refreshUsers($select.search)"
+                           refresh-delay="200">
+            <div>
+                <div ng-bind-html="user.username | highlight: $select.search"></div>
+                <div>
+                    <small ng-bind-html="user.firstName + ' ' + user.lastName | highlight: $select.search"></small>
+                </div>
+            </div>
+
+        </ui-select-choices>
+    </ui-select>
+
+    <span ng-if="currentUser" class="input-group-addon clickable" ng-click="userData.username = currentUser">me</span>
+    <span class="input-group-addon clickable" style="font-size: 12px" ng-click="removeUser()">
+        <span class="glyphicon glyphicon-trash"></span>
+    </span>
+</div>

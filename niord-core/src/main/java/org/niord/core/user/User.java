@@ -18,8 +18,16 @@ package org.niord.core.user;
 import org.apache.commons.lang.StringUtils;
 import org.keycloak.representations.AccessToken;
 import org.niord.core.model.VersionedEntity;
+import org.niord.core.user.vo.UserVo;
 
-import javax.persistence.*;
+import javax.persistence.Cacheable;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Index;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 
 /**
  * Implementation of a user entity
@@ -31,7 +39,10 @@ import javax.persistence.*;
 })
 @NamedQueries({
         @NamedQuery(name="User.findByUsername",
-                query="SELECT u FROM User u where lower(u.username) = lower(:username)")
+                query="SELECT u FROM User u where lower(u.username) = lower(:username)"),
+        @NamedQuery(name="User.searchUsers",
+                query="SELECT u FROM User u where lower(u.username) like :term or lower(u.email) like :term " +
+                      " or lower(u.firstName) like :term or lower(u.lastName) like :term")
 })
 @SuppressWarnings("unused")
 public class User extends VersionedEntity<Integer> {
@@ -51,10 +62,12 @@ public class User extends VersionedEntity<Integer> {
     public User() {
     }
 
+
     /** Constructor **/
     public User(AccessToken token) {
         copyToken(token);
     }
+
 
     /** Copies the access token user values into this entity */
     public void copyToken(AccessToken token) {
@@ -65,6 +78,7 @@ public class User extends VersionedEntity<Integer> {
         setLanguage(token.getLocale()); // TODO: Restrict
     }
 
+
     /** Returns if the user data has changed **/
     public boolean userChanged(AccessToken token) {
         return !StringUtils.equals(username, token.getPreferredUsername()) ||
@@ -73,6 +87,19 @@ public class User extends VersionedEntity<Integer> {
                 !StringUtils.equals(email, token.getEmail()) ||
                 !StringUtils.equals(language, token.getLocale());
     }
+
+
+    /** Converts this entity to a value object */
+    public UserVo toVo() {
+        UserVo user = new UserVo();
+        user.setUsername(username);
+        user.setEmail(email);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setLanguage(language);
+        return user;
+    }
+
 
     /** Composes a user name from the user details */
     @Transient
@@ -92,6 +119,7 @@ public class User extends VersionedEntity<Integer> {
         }
         return name.toString();
     }
+
 
     /** {@inheritDoc} */
     @Override

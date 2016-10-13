@@ -25,15 +25,7 @@ angular.module('niord.auth')
 
             $scope.isLoggedIn = AuthService.loggedIn;
 
-            /** Returns the user name ,**/
-            $scope.userName = function () {
-                if (AuthService.keycloak.idTokenParsed) {
-                    return AuthService.keycloak.idTokenParsed.name 
-                        || AuthService.keycloak.idTokenParsed.preferred_username;
-                }
-                return undefined;
-            };
-            $scope.userName = $scope.userName();
+            $scope.userName = AuthService.userName();
 
             /** Logs the user in via Keycloak **/
             $scope.login = function () {

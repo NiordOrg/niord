@@ -389,6 +389,49 @@ angular.module('niord.common')
     }])
 
 
+    /********************************
+     * Defines a user field used for
+     * selecting a user
+     ********************************/
+    .directive('userField', [ '$rootScope', 'UserService', 'AuthService',
+        function ($rootScope, UserService, AuthService) {
+        'use strict';
+
+        return {
+            restrict: 'E',
+            templateUrl: '/app/common/user-field.html',
+            replace: false,
+            scope: {
+                userData: "="
+            },
+            link: function(scope) {
+
+                scope.loggedIn = AuthService.loggedIn;
+                scope.currentUser = AuthService.preferredUsername();
+
+                /** Refreshes the user selection **/
+                scope.users = [];
+                scope.refreshUsers = function (text) {
+                    text = text || '';
+                    if (scope.loggedIn && text.length > 0) {
+                        UserService.search(text)
+                            .success(function (users) {
+                                scope.users.length = 0;
+                                angular.forEach(users, function (user) {
+                                    scope.users.push(user);
+                                })
+                            });
+                    }
+                };
+
+                /** Removes the current user selection */
+                scope.removeUser = function () {
+                    scope.userData.username = undefined;
+                }
+            }
+        }
+    }])
+
 
     /** Use this directive to set focus **/
     .directive('focus', ['$timeout', function ($timeout) {

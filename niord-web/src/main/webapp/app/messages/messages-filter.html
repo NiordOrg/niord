@@ -99,6 +99,23 @@
         </view-mode-filter-panel>
 
 
+        <!-- User Filter -->
+        <view-mode-filter-panel state="state" filter-name="user" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-6 col-lg-5">
+            <div class="row">
+                <div class="col-sm-6">
+                    <user-field user-data="state.user"></user-field>
+                </div>
+                <div class="col-sm-6">
+                    <div class="btn-group">
+                        <label class="btn btn-default btn-sm" ng-model="state.user.userType" uib-btn-radio="'CREATED_BY'">Created</label>
+                        <label class="btn btn-default btn-sm" ng-model="state.user.userType" uib-btn-radio="'UPDATED_BY'">Updated</label>
+                        <label class="btn btn-default btn-sm" ng-model="state.user.userType" uib-btn-radio="'LAST_UPDATED_BY'">Last updated</label>
+                    </div>
+                </div>
+            </div>
+        </view-mode-filter-panel>
+
+
         <!-- Comments Filter -->
         <view-mode-filter-panel state="state" filter-name="comments" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
             <div class="btn-group" style="margin-right: 20px">
