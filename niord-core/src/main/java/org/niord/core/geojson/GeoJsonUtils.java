@@ -313,6 +313,11 @@ public class GeoJsonUtils {
             this.name = name;
         }
 
+        public boolean getHasCoordinateName() {
+            return coordinates.stream()
+                    .anyMatch(c -> StringUtils.isNotBlank(c.getName()));
+        }
+
         public int getStartIndex() {
             return startIndex;
         }

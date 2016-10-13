@@ -3,11 +3,9 @@
 
 <#function nameColumn geometry>
     <#list geometry as feature>
-        <#list feature.coordinates as coord>
-            <#if coord.name?has_content>
-                <#return true/>
-            </#if>
-        </#list>
+        <#if feature.hasCoordinateName>
+            <#return true/>
+        </#if>
     </#list>
     <#return false/>
 </#function>
