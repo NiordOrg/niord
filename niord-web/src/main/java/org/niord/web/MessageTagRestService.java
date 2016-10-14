@@ -169,6 +169,7 @@ public class MessageTagRestService {
         if (tag.isLocked()) {
             tag.setLocked(false);
             messageTagService.updateMessageTag(tag);
+            log.info("Unlocked tag " + tagId);
         }
         return tag.toVo();
     }
