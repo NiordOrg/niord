@@ -23,11 +23,20 @@
                 <div class="col-xs-8 col-sm-6 col-md-6">
                     <div class="btn-group">
                         <button ng-if="isLoggedIn" class="btn btn-default btn-sm"
-                                tabindex="2" ng-model="filter.type.PRIVATE" uib-btn-checkbox>private</button>
+                                tabindex="2" ng-model="filter.type.PRIVATE" uib-btn-checkbox>
+                            <span ng-class="iconForType('PRIVATE')"></span>
+                            private
+                        </button>
                         <button class="btn btn-default btn-sm"
-                                tabindex="3" ng-model="filter.type.DOMAIN" uib-btn-checkbox>domain</button>
+                                tabindex="3" ng-model="filter.type.DOMAIN" uib-btn-checkbox>
+                            <span ng-class="iconForType('DOMAIN')"></span>
+                            domain
+                        </button>
                         <button class="btn btn-default btn-sm"
-                                tabindex="4" ng-model="filter.type.PUBLIC" uib-btn-checkbox>public</button>
+                                tabindex="4" ng-model="filter.type.PUBLIC" uib-btn-checkbox>
+                            <span ng-class="iconForType('PUBLIC')"></span>
+                            public
+                        </button>
                     </div>
                 </div>
                 <div ng-if="isLoggedIn" class="col-xs-4 col-sm-3 col-md-3" style="text-align: right">
@@ -72,6 +81,7 @@
                                     {{tag.name}}
                                 </td>
                                 <td class="pointer" ng-click="navigateTag(tag)">
+                                    <span ng-class="iconForType(tag.type)"></span>
                                     <span>{{tag.type | lowercase}}</span>
                                 </td>
                                 <td class="pointer" ng-click="navigateTag(tag)">

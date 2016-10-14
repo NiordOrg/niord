@@ -163,6 +163,16 @@ angular.module('niord.messages')
             };
 
 
+            /** Returns the icon class to use for the given type of tag **/
+            $scope.iconForType = function (type) {
+                switch (type) {
+                    case 'PRIVATE': return 'fa fa-user';
+                    case 'DOMAIN': return 'fa fa-users';
+                    default: return 'fa fa-globe';
+                }
+            };
+
+
             /** Displays the error message */
             $scope.displayError = function () {
                 growl.error("Error accessing tags", { ttl: 5000 });
