@@ -303,6 +303,12 @@ angular.module('niord.messages')
             },
 
 
+            /** Unlocks the given message tag */
+            unlockMessageTag: function (tag) {
+                return $http.put('/rest/tags/unlock-tag/' + encodeURIComponent(tag.tagId));
+            },
+
+
             /** Returns the list of message features **/
             getMessageFeatures: function (message) {
                 var features = [];

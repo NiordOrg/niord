@@ -157,6 +157,23 @@ public class MessageTagRestService {
     }
 
 
+    /** Unlocks the tag with the given ID */
+    @PUT
+    @Path("/unlock-tag/{tagId}")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public MessageTagVo unlockTag(@PathParam("tagId") String tagId) {
+        MessageTag tag = messageTagService.findTag(tagId);
+        if (tag.isLocked()) {
+            tag.setLocked(false);
+            messageTagService.updateMessageTag(tag);
+        }
+        return tag.toVo();
+    }
+
+
     /** Creates a new tag from the given template */
     @POST
     @Path("/temp-tag/")

@@ -386,6 +386,7 @@ public class MessageSeriesService extends BaseService {
             tag.checkAssignTagId();
             tag.setName(name);
             tag.setType(PUBLIC);
+            tag.setLocked(true);
             return saveEntity(tag);
         } else {
             return tags.get(0);

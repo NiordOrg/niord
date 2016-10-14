@@ -347,6 +347,7 @@ public class MessageTagService extends BaseService {
         original.setExpiryDate(tag.getExpiryDate());
         original.setType(tag.getType());
         original.setName(tag.getName());
+        original.setLocked(tag.isLocked());
 
         // TODO: Should we override the user and domain? Ban the user changing the type?
         //tag.setUser(userService.currentUser());

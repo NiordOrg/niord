@@ -92,15 +92,20 @@
                                 </td>
                                 <td align="right">
                                     {{tag.messageCount | numeral}}
-                                    <a ng-if="isLoggedIn && tag.messageCount > 0" href ng-click="clearTag(tag);" title="Clear Tag Messages">clear</a>
-                                    <span ng-if="isLoggedIn && tag.messageCount == 0" style="color: gray">clear</span>
+                                    <a ng-if="isLoggedIn && !tag.locked && tag.messageCount > 0" href ng-click="clearTag(tag);" title="Clear Tag Messages">clear</a>
+                                    <span ng-if="isLoggedIn && (tag.locked || tag.messageCount == 0)" style="color: gray">clear</span>
                                 </td>
                                 <td ng-if="isLoggedIn" nowrap align="right">
-                                    <a href ng-click="editTag(tag);" title="Edit Tag"><i class="glyphicon glyphicon-pencil"></i></a>
-                                    &nbsp;
-                                    <a href ng-click="copyTag(tag);" title="Copy Tag"><i class="glyphicon glyphicon-duplicate"></i></a>
-                                    &nbsp;
-                                    <a href ng-click="deleteTag(tag);" title="Delete Tag"><i class="glyphicon glyphicon-trash"></i></a>
+                                    <span ng-if="tag.locked">
+                                        <a href ng-click="unlockTag(tag);" title="Unlock Tag"><i class="glyphicon glyphicon-lock"></i></a>
+                                    </span>
+                                    <span ng-if="!tag.locked">
+                                        <a href ng-click="editTag(tag);" title="Edit Tag"><i class="glyphicon glyphicon-pencil"></i></a>
+                                        &nbsp;
+                                        <a href ng-click="copyTag(tag);" title="Copy Tag"><i class="glyphicon glyphicon-duplicate"></i></a>
+                                        &nbsp;
+                                        <a href ng-click="deleteTag(tag);" title="Delete Tag"><i class="glyphicon glyphicon-trash"></i></a>
+                                    </span>
                                 </td>
                             </tr>
                         </table>
@@ -139,6 +144,14 @@
                             <label class="btn btn-default btn-sm" ng-model="data.editTag.type" uib-btn-radio="'DOMAIN'">Domain</label>
                             <label class="btn btn-default btn-sm" ng-model="data.editTag.type" uib-btn-radio="'PUBLIC'">Public</label>
                         </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-sm-4">Locked</label>
+                    <div class="col-sm-8">
+                        <input type="checkbox" ng-model="data.editTag.locked">
+                        <span class="glyphicon glyphicon-lock"></span>
                     </div>
                 </div>
 

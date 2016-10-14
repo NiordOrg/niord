@@ -291,6 +291,17 @@ angular.module('niord.messages')
             };
 
 
+            // Unlocks the message tag
+            $scope.unlockTag = function (tag) {
+                if (confirm("Unlock locked tag \"" + tag.name + "\"?")) {
+                    MessageService
+                        .unlockMessageTag(tag)
+                        .success($scope.loadTags)
+                        .error($scope.displayError);
+                }
+            };
+
+
             // Navigate to the given link
             $scope.navigateTag = function (tag) {
                 MessageService.saveLastMessageTagSelection(tag);

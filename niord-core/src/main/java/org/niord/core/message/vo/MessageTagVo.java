@@ -32,6 +32,7 @@ public class MessageTagVo implements IJsonSerializable {
     String name;
     Date created;
     Date expiryDate;
+    boolean locked;
     int messageCount;
 
     /*************************/
@@ -76,6 +77,14 @@ public class MessageTagVo implements IJsonSerializable {
 
     public void setExpiryDate(Date expiryDate) {
         this.expiryDate = expiryDate;
+    }
+
+    public boolean isLocked() {
+        return locked;
+    }
+
+    public void setLocked(boolean locked) {
+        this.locked = locked;
     }
 
     public int getMessageCount() {

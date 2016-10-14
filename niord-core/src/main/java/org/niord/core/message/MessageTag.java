@@ -89,6 +89,9 @@ public class MessageTag extends VersionedEntity<Integer> implements Comparable<M
     @ManyToMany
     List<Message> messages = new ArrayList<>();
 
+    // Weak lock mechanism used by UI to prevent changes
+    boolean locked;
+
     // More efficient than counting related messages
     @Column(columnDefinition="INT default 0")
     int messageCount;
@@ -107,6 +110,7 @@ public class MessageTag extends VersionedEntity<Integer> implements Comparable<M
         this.name = tag.getName();
         this.type = tag.getType();
         this.expiryDate = tag.getExpiryDate();
+        this.locked = tag.isLocked();
     }
 
 
@@ -118,6 +122,7 @@ public class MessageTag extends VersionedEntity<Integer> implements Comparable<M
         tag.setCreated(getCreated());
         tag.setExpiryDate(expiryDate);
         tag.setType(type);
+        tag.setLocked(locked);
         tag.setMessageCount(messageCount);
         return tag;
     }
@@ -206,6 +211,14 @@ public class MessageTag extends VersionedEntity<Integer> implements Comparable<M
 
     public List<Message> getMessages() {
         return messages;
+    }
+
+    public boolean isLocked() {
+        return locked;
+    }
+
+    public void setLocked(boolean locked) {
+        this.locked = locked;
     }
 
     public void setMessages(List<Message> messages) {
