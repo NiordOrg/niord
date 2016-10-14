@@ -20,8 +20,10 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
+import org.niord.core.domain.DomainService;
 import org.niord.core.user.User;
 import org.niord.core.user.UserService;
+import org.niord.core.user.vo.GroupVo;
 import org.niord.core.user.vo.UserVo;
 import org.slf4j.Logger;
 
@@ -31,6 +33,7 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import java.util.List;
@@ -51,6 +54,8 @@ public class UserRestService extends AbstractBatchableRestService {
     @Inject
     UserService userService;
 
+    @Inject
+    DomainService domainService;
 
     /** Returns all users that matches the given name */
     @GET
@@ -64,4 +69,30 @@ public class UserRestService extends AbstractBatchableRestService {
                 .map(User::toVo)
                 .collect(Collectors.toList());
     }
+
+
+    /** Returns all users that matches the given name */
+    @GET
+    @Path("/groups")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed({ "admin" })
+    @GZIP
+    @NoCache
+    public List<GroupVo> groups() {
+        return userService.getGroups();
+    }
+
+
+    /** Returns the domain roles assigned to the given group */
+    @GET
+    @Path("/group/{groupId}/roles")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed({ "admin" })
+    @GZIP
+    @NoCache
+    public List<String> roles(@PathParam("groupId") String groupId) {
+        return userService.getGroupRoles(domainService.currentDomain(), groupId);
+    }
+
+
 }

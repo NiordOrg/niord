@@ -20,7 +20,10 @@ import org.apache.commons.lang.StringUtils;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.representations.AccessToken;
+import org.niord.core.domain.Domain;
+import org.niord.core.keycloak.KeycloakIntegrationService;
 import org.niord.core.service.BaseService;
+import org.niord.core.user.vo.GroupVo;
 import org.slf4j.Logger;
 
 import javax.annotation.Resource;
@@ -50,6 +53,9 @@ public class UserService extends BaseService {
 
     @Inject
     TicketService ticketService;
+
+    @Inject
+    KeycloakIntegrationService keycloakIntegrationService;
 
 
     /** Returns the current Keycloak principal */
@@ -168,5 +174,34 @@ public class UserService extends BaseService {
         return em.createNamedQuery("User.searchUsers", User.class)
                 .setParameter("term", "%" + name.toLowerCase() + "%")
                 .getResultList();
+    }
+
+
+    /**
+     * Returns the user groups from Keycloak
+     * @return the user groups
+     */
+    public List<GroupVo> getGroups() {
+        try {
+            return keycloakIntegrationService.getKeycloakGroups();
+        } catch (Exception e) {
+            log.error("Error reading Keycloak groups: " + e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Returns the domain group roles from Keycloak
+     * @param domain the current domain
+     * @param groupId the group ID
+     * @return the domain group roles
+     */
+    public List<String> getGroupRoles(Domain domain, String groupId) {
+        try {
+            return keycloakIntegrationService.getKeycloakRoles(domain, groupId);
+        } catch (Exception e) {
+            log.error("Error reading Keycloak roles: " + e.getMessage());
+            return Collections.emptyList();
+        }
     }
 }

@@ -148,6 +148,27 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
+     * AdminUserService
+     * ********************************************************************************
+     * Interface for calling user and group-related functions at the application server
+     */
+    .factory('AdminUserService', [ '$http', function($http) {
+        'use strict';
+
+        return {
+            getGroups: function() {
+                return $http.get('/rest/users/groups');
+            },
+
+            getGroupsRoles: function(group) {
+                return $http.get('/rest/users/group/' + encodeURIComponent(group.id) + '/roles');
+            }
+        };
+    }])
+
+
+    /**
+     * ********************************************************************************
      * AdminMessageSeriesService
      * ********************************************************************************
      * Interface for calling message series related functions at the application server

@@ -1,0 +1,106 @@
+
+<admin-page admin-page-title="Users &amp Groups">
+
+    <p>Manage users and groups.</p>
+
+    <uib-tabset class="framed-tabs">
+
+        <!-- Groups -->
+        <uib-tab>
+            <tab-heading>
+                Groups
+            </tab-heading>
+            <div ng-controller="GroupAdminCtrl" ng-init="loadGroups()" style="padding: 10px">
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <button href class="btn btn-primary btn-sm" ng-click="loadGroups()">
+                            <span class="glyphicon glyphicon-refresh"></span> Reload
+                        </button>
+                        <button href class="btn btn-primary btn-sm" ng-click="newGroup()">
+                            <span class="glyphicon glyphicon-plus"></span> Add
+                        </button>
+                        <button href class="btn btn-primary btn-sm" ng-click="deleteGroup()" ng-disabled="group == undefined">
+                            <span class="glyphicon glyphicon-trash"></span> Delete...
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Group tree -->
+                    <div class="col-md-4 panel panel-default user-group-panel">
+                        <div class="form-group">
+                            <div style="position: relative;">
+                                <input type="text" class="form-control input-sm" placeholder="Filter Groups" ng-model="groupFilter" />
+                                <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
+                                      ng-click="groupFilter = ''" ng-show="groupFilter != ''"></span>
+                            </div>
+                            <div entity-tree entities="groups"
+                                 filter="groupFilter"
+                                 flag-inactive="false"
+                                 entity-selected="selectGroup(entity)"
+                                 entity-moved="moveGroup(entity, parent)"
+                                 class="user-group-tree"></div>
+                        </div>
+                    </div>
+
+                    <!-- Group editor -->
+                    <form name="groupForm" id="groupForm" class="col-md-5 panel panel-default user-group-panel" role="form">
+                        <fieldset ng-if="editGroup">
+
+                            <div class="form-group" ng-if="action == 'add'">
+                                <label class="control-label" for="parent">Parent Group</label>
+                                <div class="input-group input-group-sm">
+                                    <input class="form-control" type="text" id="parent" ng-model="group.descs[0].name" disabled>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="control-label">Name</label>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <input class="form-control input-sm" placeholder="Name" type="text"
+                                               ng-model="editGroup.descs[0].name" ng-required="true">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="control-label">Domain roles</label>
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        {{editGroup.roles}}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <button href class="btn btn-primary btn-sm" ng-click="saveGroup()"
+                                        ng-disabled="groupForm.$pristine || groupForm.$invalid">
+                                    <span class="glyphicon glyphicon-floppy-disk"></span> Save
+                                </button>
+                            </div>
+                        </fieldset>
+                    </form>
+
+                </div>
+
+            </div>
+        </uib-tab>
+
+        <!-- Users -->
+        <uib-tab>
+            <tab-heading>
+                Users
+            </tab-heading>
+            <div ng-controller="UserAdminCtrl" ng-init="loadUsers()">
+
+                users
+
+            </div>
+        </uib-tab>
+
+    </uib-tabset>
+
+</admin-page>
+

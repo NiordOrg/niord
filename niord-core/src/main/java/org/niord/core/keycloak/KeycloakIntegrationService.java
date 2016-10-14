@@ -33,6 +33,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.niord.core.NiordApp;
@@ -40,6 +41,7 @@ import org.niord.core.domain.Domain;
 import org.niord.core.settings.SettingsService;
 import org.niord.core.settings.annotation.Setting;
 import org.niord.core.user.UserService;
+import org.niord.core.user.vo.GroupVo;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
@@ -206,10 +208,25 @@ public class KeycloakIntegrationService {
                 new HttpGet(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/clients"),
                 true, // Add auth header
                 is -> {
-                    List<ClientRepresentation> result = new ObjectMapper().readValue(is, new TypeReference<List<ClientRepresentation>>(){});
+                    List<ClientRepresentation> result = new ObjectMapper()
+                            .readValue(is, new TypeReference<List<ClientRepresentation>>(){});
                     log.debug("Read clients from Keycloak");
                     return result;
                 });
+    }
+
+
+    /**
+     * Returns the keycloak client for the given domain
+     * @param domainId the domain
+     * @return the keycloak client for the given domain, or null if not found
+     */
+    private ClientRepresentation getKeycloakDomainClient(String domainId) throws Exception {
+        // Get hold of the newly created client (with a proper ID)
+        return getKeycloakDomainClients().stream()
+                .filter(c -> c.getClientId().equals(domainId))
+                .findFirst()
+                .orElse(null);
     }
 
 
@@ -264,10 +281,7 @@ public class KeycloakIntegrationService {
         log.info("Created Keycloak domain client " + domain.getDomainId());
 
         // Get hold of the newly created client (with a proper ID)
-        client = getKeycloakDomainClients().stream()
-                .filter(c -> c.getClientId().equals(domain.getDomainId()))
-                .findFirst()
-                .orElse(null);
+        client = getKeycloakDomainClient(domain.getDomainId());
         String clientsUri = resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/clients/" + client.getId();
 
 
@@ -315,6 +329,60 @@ public class KeycloakIntegrationService {
 
 
     /**
+     * Loads the group tree from Keycloak
+     * @return the group tree from Keycloak
+     */
+    public List<GroupVo> getKeycloakGroups() throws Exception {
+        return executeAdminRequest(
+                new HttpGet(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/groups"),
+                true, // Add auth header
+                is -> {
+                    List<GroupRepresentation> result = new ObjectMapper()
+                            .readValue(is, new TypeReference<List<GroupRepresentation>>(){});
+                    log.debug("Read groups from Keycloak");
+                    return result.stream()
+                            .map(this::readGroup)
+                            .collect(Collectors.toList());
+                });
+    }
+
+
+    /** Converts a Keycloak GroupRepresentation to a GroupVo **/
+    private GroupVo readGroup(GroupRepresentation g) {
+        GroupVo group = new GroupVo();
+        group.setId(g.getId());
+        group.checkCreateDesc("en").setName(g.getName());
+        group.setPath(g.getPath());
+        if (g.getSubGroups() != null && !g.getSubGroups().isEmpty()) {
+            group.setChildren(g.getSubGroups().stream()
+                .map(this::readGroup)
+                .collect(Collectors.toList()));
+        }
+        return group;
+    }
+
+
+    /** Returns the Keycloak client (domain) roles for the given group */
+    public List<String> getKeycloakRoles(Domain domain, String groupId) throws Exception {
+
+        ClientRepresentation client = getKeycloakDomainClient(domain.getDomainId());
+
+        return executeAdminRequest(
+                new HttpGet(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/groups/"
+                            + groupId + "/role-mappings/clients/" + client.getId()),
+                true, // Add auth header
+                is -> {
+                    List<RoleRepresentation> result = new ObjectMapper()
+                            .readValue(is, new TypeReference<List<RoleRepresentation>>(){});
+                    log.debug("Read roles from Keycloak");
+                    return result.stream()
+                            .map(RoleRepresentation::getName)
+                            .collect(Collectors.toList());
+                });
+    }
+
+
+    /**
      * Executes a Keycloak admin request and returns the result.
      *
      * @param request the Keycloak request to execute
@@ -355,7 +423,6 @@ public class KeycloakIntegrationService {
             return responseHandler.execute(is);
         }
     }
-
 
     /**
      * Interface that is passed along to the executeAdminRequest() function and handles the response
