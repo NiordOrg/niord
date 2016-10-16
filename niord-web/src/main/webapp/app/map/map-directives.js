@@ -39,7 +39,7 @@ angular.module('niord.map')
             restrict: 'EA',
             replace: true,
             transclude: true,
-            template: '<div class="map {{class}}" ng-transclude></div>',
+            template: '<div class="map" ng-transclude></div>',
             scope: {
                 mapState: '=',
                 readonly: '='

@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  *
  * The translations consists of all the dictionary entries of the "web" dictionary.
  */
-@WebFilter(urlPatterns={"/app/conf/site-texts.js"})
+@WebFilter(urlPatterns={"/conf/site-texts.js"})
 public class SiteTextsServletFilter extends AbstractTextResourceServletFilter {
 
     final static int CACHE_SECONDS = 0; // No caching

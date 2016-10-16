@@ -1301,7 +1301,7 @@ angular.module('niord.editor')
 
 
             /** Delete the draft message **/
-            $scope.delete = function () {
+            $scope.deleteDraft = function () {
                 if ($scope.message.status != 'DRAFT' && $scope.message.status != 'VERIFIED') {
                     growl.error("Only draft and verified messages can be deleted", {ttl: 5000});
                     return;

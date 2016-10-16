@@ -16,27 +16,6 @@
  * limitations under the License.
  */
 
-function nm2km(nm) {
-    if (!nm) {
-        return undefined;
-    }
-    return Math.round(nm * 1852 / 1000);
-}
-
-function km2nm(km) {
-    if (!km) {
-        return undefined;
-    }
-    return Math.round(km * 1000 / 1852);
-}
-
-function m2nm(m) {
-    if (!m) {
-        return undefined;
-    }
-    return Math.round(m / 1852);
-}
-
 function round(value, decimals) {
     if (value) {
         decimals = decimals || 2;
@@ -253,22 +232,22 @@ function positionDirective(directive, formatter1, parser) {
 
 angular.module('niord.map')
 
-    .directive('latitude', function() {
+    .directive('latitude', [ function() {
         return positionDirective('latitude', formatLatitude, parseLatitude);
-    })
+    }])
 
-    .directive('longitude', function() {
+    .directive('longitude', [ function() {
         return positionDirective('longitude', formatLongitude, parseLongitude);
-    })
+    }])
 
-    .filter('lonlat', ['$rootScope', function($rootScope) {
+    .filter('lonlat', [ function() {
         return function(input, args) {
             args = args || {};
             return input && input.lat && input.lon ? formatLatLon(input, args.decimals, args.pp).trim() : '';
         };
     }])
 
-    .directive('radius', function() {
+    .directive('radius', [ function() {
         return {
             require : '^ngModel',
             restrict : 'A',
@@ -313,5 +292,5 @@ angular.module('niord.map')
 
             }
         }
-    });
+    }]);
 

@@ -28,7 +28,7 @@ import java.util.Map;
 /**
  * Loads the keycloak.json file and updates it with one constructed by the KeycloakIntegrationService
  */
-@WebFilter(urlPatterns={"/app/conf/keycloak.json"})
+@WebFilter(urlPatterns={"/conf/keycloak.json"})
 public class KeycloakJsonServletFilter extends AbstractTextResourceServletFilter {
 
     final static int CACHE_SECONDS = 0; // Do not cache

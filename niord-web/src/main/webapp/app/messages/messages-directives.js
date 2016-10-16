@@ -523,8 +523,7 @@ angular.module('niord.messages')
                     loadMoreMessages:    "=",
                     totalMessageNo: "=",
                     maxSize:        "=",
-                    loadMore:       "&",
-                    class:          "@"
+                    loadMore:       "&"
                 },
                 link: function(scope) {
 

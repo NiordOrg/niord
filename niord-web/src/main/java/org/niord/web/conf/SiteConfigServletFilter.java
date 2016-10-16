@@ -31,7 +31,7 @@ import java.util.List;
 /**
  * Loads the site-config.js file and injects relevant system configuration and domains
  */
-@WebFilter(urlPatterns={"/app/conf/site-config.js"})
+@WebFilter(urlPatterns={"/conf/site-config.js"})
 public class SiteConfigServletFilter extends AbstractTextResourceServletFilter {
 
     final static int CACHE_SECONDS = 0; // Do not cache

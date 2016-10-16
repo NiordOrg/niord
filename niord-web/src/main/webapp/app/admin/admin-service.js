@@ -51,7 +51,7 @@ angular.module('niord.admin')
 
             /** Deletes the given chart **/
             deleteChart: function(chart) {
-                return $http.delete('/rest/charts/chart/' + encodeURIComponent(chart.chartNumber));
+                return $http['delete']('/rest/charts/chart/' + encodeURIComponent(chart.chartNumber));
             }
 
         };
@@ -86,7 +86,7 @@ angular.module('niord.admin')
             },
 
             deleteArea: function(area) {
-                return $http.delete('/rest/areas/area/' + area.id);
+                return $http['delete']('/rest/areas/area/' + area.id);
             },
 
             moveArea: function(areaId, parentId) {
@@ -136,7 +136,7 @@ angular.module('niord.admin')
             },
 
             deleteCategory: function(category) {
-                return $http.delete('/rest/categories/category/' + category.id);
+                return $http['delete']('/rest/categories/category/' + category.id);
             },
 
             moveCategory: function(categoryId, parentId) {
@@ -198,7 +198,7 @@ angular.module('niord.admin')
 
             /** Deletes the given message series **/
             deleteMessageSeries: function(series) {
-                return $http.delete('/rest/message-series/series/' + encodeURIComponent(series.seriesId));
+                return $http['delete']('/rest/message-series/series/' + encodeURIComponent(series.seriesId));
             },
 
 
@@ -253,7 +253,7 @@ angular.module('niord.admin')
 
             /** Deletes the given domain **/
             deleteDomain: function(domain) {
-                return $http.delete('/rest/domains/domain/' + encodeURIComponent(domain.domainId));
+                return $http['delete']('/rest/domains/domain/' + encodeURIComponent(domain.domainId));
             },
 
 
@@ -350,7 +350,7 @@ angular.module('niord.admin')
             },
 
             deleteEntry: function(name, entry) {
-                return $http.delete('/rest/dictionaries/dictionary/' + encodeURIComponent(name) + '/'
+                return $http['delete']('/rest/dictionaries/dictionary/' + encodeURIComponent(name) + '/'
                     + encodeURIComponent(entry.key));
             }
         };

@@ -96,6 +96,8 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Assemble war -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
@@ -112,42 +114,153 @@
                 </configuration>
             </plugin>
 
-
-            <!-- Generate a HTML5 application cache manifest -->
-            <plugin>
-                <groupId>com.github.cameroncan</groupId>
-                <artifactId>cachemanifest-maven-plugin</artifactId>
-                <version>1.0.1</version>
-                <executions>
-                    <execution>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>generate-manifest</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <manifestVersion>${timestamp}</manifestVersion>
-                    <inputDirectory>${basedir}/src/main/webapp</inputDirectory>
-                    <outputManifestFile>${project.build.directory}/${project.build.finalName}/index.manifest</outputManifestFile>
-                    <excludes>
-                        <exclude>WEB-INF/**</exclude>
-                        <exclude>META-INF/**</exclude>
-                        <exclude>**/*.manifest</exclude>
-                        <exclude>app/config/*.*</exclude>
-                        <exclude>rest/**</exclude>
-                    </excludes>
-                    <additionals>
-                    </additionals>
-                    <networkResources>
-                        <networkResource>*</networkResource>
-                    </networkResources>
-                    <fallback>/index.html /index.html</fallback>
-                </configuration>
-            </plugin>
-
-
         </plugins>
     </build>
 
+
+    <!-- ********************************************************************** -->
+    <!-- ** The "dist" profile will create a war where CSS and JavaScript files -->
+    <!-- ** have been merged, and include an HTML5 app cache file as well       -->
+    <!-- ********************************************************************** -->
+    <profiles>
+        <profile>
+            <id>dist</id>
+            <build>
+                <plugins>
+
+                    <!-- Compress jS and CSS files -->
+                    <plugin>
+                        <groupId>com.samaxes.maven</groupId>
+                        <artifactId>minify-maven-plugin</artifactId>
+                        <version>1.7.4</version>
+                        <executions>
+                            <execution>
+                                <id>default-minify</id>
+                                <configuration>
+
+                                    <webappSourceDir>${project.build.directory}/${project.build.finalName}</webappSourceDir>
+                                    <webappTargetDir>${project.build.directory}/${project.build.finalName}</webappTargetDir>
+
+                                    <!-- CSS files: NB site.css must be last to facilitate war project overlays -->
+                                    <cssSourceFiles>
+                                        <cssSourceFile>app.css</cssSourceFile>
+                                        <cssSourceFile>home.css</cssSourceFile>
+                                        <cssSourceFile>editor.css</cssSourceFile>
+                                        <cssSourceFile>schedule.css</cssSourceFile>
+                                        <cssSourceFile>admin.css</cssSourceFile>
+                                        <cssSourceFile>atons.css</cssSourceFile>
+                                        <cssSourceFile>messages.css</cssSourceFile>
+                                        <cssSourceFile>site.css</cssSourceFile>
+                                    </cssSourceFiles>
+                                    <cssFinalFile>niord-all.css</cssFinalFile>
+
+                                    <!-- JavaScript files: NB niord-app.js first -->
+                                    <jsSourceDir>app</jsSourceDir>
+                                    <jsEngine>CLOSURE</jsEngine>
+                                    <jsSourceFiles>
+                                        <jsSourceFile>niord-app.js</jsSourceFile>
+                                    </jsSourceFiles>
+                                    <jsSourceIncludes>
+                                        <jsSourceInclude>**/*.js</jsSourceInclude>
+                                    </jsSourceIncludes>
+                                    <jsFinalFile>niord-all.js</jsFinalFile>
+
+                                </configuration>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>minify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+
+                    <!-- Move index-prod.html to index.html -->
+                    <plugin>
+                        <groupId>com.coderplus.maven.plugins</groupId>
+                        <artifactId>copy-rename-maven-plugin</artifactId>
+                        <version>1.0.1</version>
+                        <executions>
+                            <execution>
+                                <id>rename-file</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>rename</goal>
+                                </goals>
+                                <configuration>
+                                    <sourceFile>${project.build.directory}/${project.build.finalName}/index-dist.html</sourceFile>
+                                    <destinationFile>${project.build.directory}/${project.build.finalName}/index.html</destinationFile>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+
+                    <!-- Generate a HTML5 application cache manifest -->
+                    <plugin>
+                        <groupId>com.github.cameroncan</groupId>
+                        <artifactId>cachemanifest-maven-plugin</artifactId>
+                        <version>1.0.1</version>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>generate-manifest</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <manifestVersion>${timestamp}</manifestVersion>
+                            <inputDirectory>${project.build.directory}/${project.build.finalName}</inputDirectory>
+                            <outputManifestFile>${project.build.directory}/${project.build.finalName}/index.manifest</outputManifestFile>
+                            <includes>
+                                <include>app/niord-all.js</include>
+                                <include>app/niord-all.min.js</include>
+                                <include>css/niord-all.css</include>
+                                <include>css/niord-all.min.css</include>
+                                <include>css/templates/*.css</include>
+                                <include>ext/**</include>
+                                <include>img/**</include>
+                                <include>*.html</include>
+                            </includes>
+                            <additionals>
+                            </additionals>
+                            <networkResources>
+                                <networkResource>*</networkResource>
+                            </networkResources>
+                            <fallback>/index.html /index.html</fallback>
+                        </configuration>
+                    </plugin>
+
+
+                    <!-- Update war with changed files -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>1.8</version>
+                        <executions>
+                            <execution>
+                                <id>package</id>
+                                <phase>package</phase>
+                                <configuration>
+                                    <target>
+                                        <zip basedir="${project.build.directory}/${project.build.finalName}"
+                                             destfile="${project.build.directory}/${project.build.finalName}.war"
+                                             update="true">
+                                        </zip>
+                                    </target>
+                                </configuration>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
+

@@ -48,7 +48,6 @@ angular.module('niord.editor')
             replace: true,
             transclude: true,
             scope: {
-                class:              '@',
                 openEditorMessage:  "@",
                 editAsTextMessage:  "@",
                 editType:           "@",
@@ -1138,7 +1137,7 @@ angular.module('niord.editor')
 
 
             /** Returns the fully loaded area to the callee **/
-            $scope.import = function () {
+            $scope.importGeometry = function () {
                 $scope.$close($scope.featureCollection.features);
             };
         }]);

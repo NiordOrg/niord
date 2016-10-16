@@ -764,7 +764,6 @@ angular.module('niord.common')
             replace: true,
             transclude: true,
             scope: {
-                class: '@',
                 state: "=",
                 filterName: "@",
                 closable: '@',

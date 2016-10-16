@@ -160,7 +160,7 @@ angular.module('niord.messages')
 
             /** Deletes the attahcment file at the given repository path */
             deleteAttachmentFile: function (repoPath) {
-                return $http.delete('/rest/repo/file/' + repoPath);
+                return $http['delete']('/rest/repo/file/' + repoPath);
             },
 
 
@@ -228,7 +228,7 @@ angular.module('niord.messages')
 
             /** Deletes the the message map image */
             deleteMessageMapImage: function (repoPath) {
-                return $http.delete('/rest/message-map-image/' + repoPath);
+                return $http['delete']('/rest/message-map-image/' + repoPath);
             },
 
 
@@ -287,7 +287,7 @@ angular.module('niord.messages')
 
             /** Adds a new message tag */
             clearMessageTag: function (tag) {
-                return $http.delete('/rest/tags/tag/' + encodeURIComponent(tag.tagId) + "/messages");
+                return $http['delete']('/rest/tags/tag/' + encodeURIComponent(tag.tagId) + "/messages");
             },
 
 
@@ -299,7 +299,7 @@ angular.module('niord.messages')
 
             /** Deletes a message tag */
             deleteMessageTag: function (tag) {
-                return $http.delete('/rest/tags/tag/' + encodeURIComponent(tag.tagId));
+                return $http['delete']('/rest/tags/tag/' + encodeURIComponent(tag.tagId));
             },
 
 
@@ -615,7 +615,7 @@ angular.module('niord.messages')
 
             /** Removes hte message filter with the given ID */
             removeFilter: function(filterId) {
-                return $http.delete('/rest/filters/filter/' + filterId);
+                return $http['delete']('/rest/filters/filter/' + filterId);
             }
 
         };

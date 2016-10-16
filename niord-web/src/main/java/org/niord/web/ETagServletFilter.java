@@ -121,12 +121,12 @@ public class ETagServletFilter implements Filter {
 
 
     /**
-     * Check if the request is for an /app/conf/* file.
+     * Check if the request is for an /conf/* file.
      * These files are generated dynamically, and should not be
      * processed with E-Tags based on file modification dates.
      */
     private boolean isAppConfFile(HttpServletRequest request) {
-        return request.getServletPath().startsWith("/app/conf/");
+        return request.getServletPath().startsWith("/conf/");
     }
 
 
