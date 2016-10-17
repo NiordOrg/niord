@@ -27,8 +27,8 @@ angular.module('niord.admin')
      * Users Admin Controller
      * Controller for the Admin users page
      */
-    .controller('UserAdminCtrl', ['$scope', 'growl', 'AdminUserService', 'AuthService',
-        function ($scope, growl, AdminUserService, AuthService) {
+    .controller('UserAdminCtrl', ['$scope', 'growl', 'AdminUserService', 'AuthService', 'DialogService',
+        function ($scope, growl, AdminUserService, AuthService, DialogService) {
             'use strict';
 
             $scope.groups = [];
@@ -109,7 +109,18 @@ angular.module('niord.admin')
             /** Creates a new user */
             $scope.addUser = function() {
                 $scope.action = "add";
-                $scope.user = { keycloakId: '', username: '', email: '', firstName: '', lastName: '' };
+                $scope.user = {
+                    keycloakId: '',
+                    username: '',
+                    email: '',
+                    firstName: '',
+                    lastName: '',
+                    action: {
+                        'UPDATE_PROFILE': false,
+                        'UPDATE_PASSWORD': false,
+                        'VERIFY_EMAIL': false
+                    }
+                };
                 $scope.group = undefined;
                 $scope.setPristine();
             };
@@ -140,8 +151,15 @@ angular.module('niord.admin')
             /** Saves the currently edited user **/
             $scope.saveUser = function () {
                 if ($scope.user && $scope.action == 'add') {
+                    $scope.user.keycloakActions = [];
+                    angular.forEach($scope.user.action, function (value, key) {
+                        if (value) {
+                            $scope.user.keycloakActions.push(key);
+                        }
+                    });
+
                     AdminUserService.addUser($scope.user)
-                        .success(function (user) {
+                        .success(function () {
                             growl.info("User added", { ttl: 3000 });
                             $scope.cancelEdit();
                         })
@@ -154,6 +172,21 @@ angular.module('niord.admin')
                         })
                         .error($scope.displayError);
                 }
+            };
+
+
+            /** Deletes the given user in Keycloak **/
+            $scope.deleteUser = function (user) {
+                DialogService.showConfirmDialog(
+                    "Delete user?", "Delete user \"" + user.username + "\" in Keycloak?\n")
+                    .then(function() {
+                        AdminUserService.deleteUser(user.keycloakId)
+                            .success(function () {
+                                growl.info("User deleted", { ttl: 3000 });
+                                $scope.loadUsers();
+                            })
+                            .error($scope.displayError);
+                    });
             };
 
 

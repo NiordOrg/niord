@@ -178,6 +178,12 @@ angular.module('niord.admin')
             },
 
 
+            /** Deletes the given user in Keycloak  **/
+            deleteUser: function(userId) {
+                return $http['delete']('/rest/users/kc-user/' + encodeURIComponent(userId));
+            },
+
+
             /** Returns the Keycloak groups **/
             getGroups: function() {
                 return $http.get('/rest/users/kc-groups');

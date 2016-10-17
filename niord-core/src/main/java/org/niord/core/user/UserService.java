@@ -217,6 +217,15 @@ public class UserService extends BaseService {
 
 
     /**
+     * Deletes the user from Keycloak
+     * @param userId the user to delete
+     */
+    public void deleteKeycloakUser(String userId) throws Exception {
+        keycloakIntegrationService.deleteKeycloakUser(userId);
+    }
+
+
+    /**
      * Searches for users whose name or e-mail matches the given name
      * @param name the name to match
      * @return the matching users

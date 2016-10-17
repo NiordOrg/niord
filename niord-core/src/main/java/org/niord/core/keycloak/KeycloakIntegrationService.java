@@ -35,6 +35,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -55,6 +56,7 @@ import java.io.InputStream;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -351,11 +353,18 @@ public class KeycloakIntegrationService {
         userRep.setEmail(user.getEmail());
         userRep.setFirstName(user.getFirstName());
         userRep.setLastName(user.getLastName());
+        userRep.setEnabled(true);
+        if (user.getKeycloakActions() != null) {
+            userRep.setRequiredActions(user.getKeycloakActions());
+        }
 
         HttpPost post = new HttpPost(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/users");
         post.setEntity(new StringEntity(new ObjectMapper().writeValueAsString(userRep), ContentType.APPLICATION_JSON));
 
         executeAdminRequest(post, true, is -> true);
+
+        // Check if we need to reset the use password
+        resetKeycloakPassword(user);
     }
 
 
@@ -379,10 +388,55 @@ public class KeycloakIntegrationService {
         origUser.setEmail(user.getEmail());
         origUser.setFirstName(user.getFirstName());
         origUser.setLastName(user.getLastName());
+        origUser.setEnabled(true);
+        if (user.getKeycloakActions() != null) {
+            origUser.setRequiredActions(user.getKeycloakActions());
+        }
 
         HttpPut put = new HttpPut(userUrl);
         put.setEntity(new StringEntity(new ObjectMapper().writeValueAsString(origUser), ContentType.APPLICATION_JSON));
         executeAdminRequest(put, true, is -> true);
+
+        // Check if we need to reset the use password
+        resetKeycloakPassword(user);
+    }
+
+
+    /** Resets the user password **/
+    private void resetKeycloakPassword(UserVo user) throws Exception {
+
+        if (StringUtils.isNotBlank(user.getKeycloakPassword())) {
+
+            String userId = user.getKeycloakId();
+            if (StringUtils.isBlank(userId)) {
+                List<UserVo> users = searchKeycloakUsers(Collections.singletonMap("username", user.getUsername()), 0, 1);
+                if (users.isEmpty()) {
+                    throw new Exception("No user with username " + user.getUsername());
+                }
+                userId = users.get(0).getKeycloakId();
+            }
+
+            CredentialRepresentation credential = new CredentialRepresentation();
+            credential.setType(CredentialRepresentation.PASSWORD);
+            credential.setValue(user.getKeycloakPassword());
+            credential.setTemporary(false);
+
+            HttpPut put = new HttpPut(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM
+                    + "/users/" + userId + "/reset-password");
+            put.setEntity(new StringEntity(new ObjectMapper().writeValueAsString(credential), ContentType.APPLICATION_JSON));
+            executeAdminRequest(put, true, is -> true);
+        }
+    }
+
+    /**
+     * Deletes the user from Keycloak
+     * @param userId the user to delete
+     */
+    public void deleteKeycloakUser(String userId) throws Exception {
+        executeAdminRequest(new HttpDelete(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM
+                    + "/users/" + WebUtils.encodeURIComponent(userId)),
+                true,
+                is -> true);
     }
 
 
@@ -391,9 +445,22 @@ public class KeycloakIntegrationService {
      * @return the users from Keycloak
      */
     public List<UserVo> searchKeycloakUsers(String search, int first, int max) throws Exception {
-        String params = "?search=" + WebUtils.encodeURIComponent(search) + "&first=" + first + "&max=" + max;
+        return searchKeycloakUsers(Collections.singletonMap("search", search), first, max);
+    }
+
+
+    /**
+     * Searches the users from Keycloak matching the given search criteria
+     * @return the users from Keycloak
+     */
+    private List<UserVo> searchKeycloakUsers(Map<String, String> paramMap, int first, int max) throws Exception {
+
+        String params = paramMap.entrySet().stream()
+                .map(e -> e.getKey() + "=" + WebUtils.encodeURIComponent(e.getValue()))
+                .collect(Collectors.joining("&")) + "&first=" + first + "&max=" + max;
+
         return executeAdminRequest(
-                new HttpGet(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/users" + params),
+                new HttpGet(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/users?" + params),
                 true, // Add auth header
                 is -> {
                     List<UserRepresentation> result = new ObjectMapper()

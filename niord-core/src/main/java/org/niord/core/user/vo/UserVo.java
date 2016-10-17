@@ -18,13 +18,19 @@ package org.niord.core.user.vo;
 
 import org.niord.model.IJsonSerializable;
 
+import java.util.List;
+
 /**
  * A value object for the User entity
  */
 @SuppressWarnings("unused")
 public class UserVo implements IJsonSerializable {
 
+    // The Keycloak fields are used when creating new users in Keycloak from the Users Admin page
     String keycloakId;
+    List<String> keycloakActions;
+    String keycloakPassword;
+
     String username;
     String email;
     String firstName;
@@ -41,6 +47,22 @@ public class UserVo implements IJsonSerializable {
 
     public void setKeycloakId(String keycloakId) {
         this.keycloakId = keycloakId;
+    }
+
+    public List<String> getKeycloakActions() {
+        return keycloakActions;
+    }
+
+    public void setKeycloakActions(List<String> keycloakActions) {
+        this.keycloakActions = keycloakActions;
+    }
+
+    public String getKeycloakPassword() {
+        return keycloakPassword;
+    }
+
+    public void setKeycloakPassword(String keycloakPassword) {
+        this.keycloakPassword = keycloakPassword;
     }
 
     public String getUsername() {

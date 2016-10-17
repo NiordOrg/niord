@@ -108,6 +108,27 @@
                                 </div>
 
                                 <div class="form-group">
+                                    <label class="control-label">Password</label>
+                                    <div class="row">
+                                        <div class="col-sm-6">
+                                            <input class="form-control input-sm" placeholder="Password" type="password"
+                                                   ng-model="user.keycloakPassword" ng-required="true">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="control-label">Actions</label>
+                                    <div class="row">
+                                        <div class="col-sm-12">
+                                            <input type="checkbox" ng-model="user.action.UPDATE_PROFILE"> Update Profile<br>
+                                            <input type="checkbox" ng-model="user.action.UPDATE_PASSWORD"> Update Password<br>
+                                            <input type="checkbox" ng-model="user.action.VERIFY_EMAIL"> Update E-mail<br>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
                                     <button type="submit" class="btn btn-default btn-sm" ng-click="cancelEdit()">
                                         Cancel
                                     </button>

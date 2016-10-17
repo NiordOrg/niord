@@ -124,7 +124,6 @@ public class UserRestService extends AbstractBatchableRestService {
     @PUT
     @Path("/kc-user/{userId}/kc-groups/{groupId}")
     @RolesAllowed({ "admin" })
-    @GZIP
     @NoCache
     public void joinKeycloakGroup(@PathParam("userId") String userId, @PathParam("groupId") String groupId) {
         log.info("Joining Keycloak user " + userId + " to group " + groupId);
@@ -140,7 +139,6 @@ public class UserRestService extends AbstractBatchableRestService {
     @DELETE
     @Path("/kc-user/{userId}/kc-groups/{groupId}")
     @RolesAllowed({ "admin" })
-    @GZIP
     @NoCache
     public void leaveKeycloakGroup(@PathParam("userId") String userId, @PathParam("groupId") String groupId) {
         log.info("Removing Keycloak user " + userId + " from group " + groupId);
@@ -179,6 +177,19 @@ public class UserRestService extends AbstractBatchableRestService {
         }
         log.info("Updating Keycloak user " + user.getUsername());
         return userService.updateKeycloakUser(user);
+    }
+
+    /**
+     * Deletes the user from Keycloak
+     * @param userId the user to delete
+     */
+    @DELETE
+    @Path("/kc-user/{userId}")
+    @RolesAllowed({ "admin" })
+    @NoCache
+    public void deleteKeycloakUser(@PathParam("userId") String userId) throws Exception {
+        log.info("Deleting Keycloak user " + userId);
+        userService.deleteKeycloakUser(userId);
     }
 
 }
