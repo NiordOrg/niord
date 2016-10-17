@@ -31,15 +31,19 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -109,7 +113,7 @@ public class UserRestService extends AbstractBatchableRestService {
     @GZIP
     @NoCache
     public List<GroupVo> getKeycloakUserGroups(@PathParam("userId") String userId) {
-        return userService.getKeycloakUserGroups(userId);
+        return userService.getKeycloakUserGroups(domainService.currentDomain(), userId);
     }
 
     /**
@@ -143,5 +147,38 @@ public class UserRestService extends AbstractBatchableRestService {
         userService.leaveKeycloakGroup(userId, groupId);
     }
 
+    /**
+     * Adds the user to Keycloak and the local Niord DB
+     * @param user the template user to add
+     */
+    @POST
+    @Path("/kc-user/")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed({ "admin" })
+    @NoCache
+    public UserVo addKeycloakUser(UserVo user) throws Exception {
+        log.info("Creating Keycloak user " + user.getUsername());
+        return userService.addKeycloakUser(user);
+    }
+
+
+    /**
+     * Updates the user in Keycloak and the local Niord DB
+     * @param user the template user to update
+     */
+    @PUT
+    @Path("/kc-user/{userId}")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed({ "admin" })
+    @NoCache
+    public UserVo updateKeycloakUser(@PathParam("userId") String userId, UserVo user) throws Exception {
+        if (!Objects.equals(userId, user.getKeycloakId())) {
+            throw new WebApplicationException(400);
+        }
+        log.info("Updating Keycloak user " + user.getUsername());
+        return userService.updateKeycloakUser(user);
+    }
 
 }

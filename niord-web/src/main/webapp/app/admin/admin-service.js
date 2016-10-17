@@ -165,6 +165,19 @@ angular.module('niord.admin')
                             + '&first=' + first + '&max=' + max);
             },
 
+
+            /** Adds the given user to Keycloak  **/
+            addUser: function(user) {
+                return $http.post('/rest/users/kc-user/', user);
+            },
+
+
+            /** Updates the given user in Keycloak  **/
+            updateUser: function(user) {
+                return $http.put('/rest/users/kc-user/' + encodeURIComponent(user.keycloakId), user);
+            },
+
+
             /** Returns the Keycloak groups **/
             getGroups: function() {
                 return $http.get('/rest/users/kc-groups');
@@ -172,22 +185,22 @@ angular.module('niord.admin')
 
 
             /** Returns the roles  **/
-            getUserGroups: function(user) {
-                return $http.get('/rest/users/kc-user/' + encodeURIComponent(user) + '/kc-groups');
+            getUserGroups: function(userId) {
+                return $http.get('/rest/users/kc-user/' + encodeURIComponent(userId) + '/kc-groups');
             },
 
 
             /** Let the user join the given group  **/
-            joinUserGroup: function(user, group) {
-                return $http.put('/rest/users/kc-user/' + encodeURIComponent(user)
-                                + '/kc-groups/'+ encodeURIComponent(group));
+            joinUserGroup: function(userId, groupId) {
+                return $http.put('/rest/users/kc-user/' + encodeURIComponent(userId)
+                                + '/kc-groups/'+ encodeURIComponent(groupId));
             },
 
 
             /** Let the user leave the given group  **/
-            leaveUserGroup: function(user, group) {
-                return $http['delete']('/rest/users/kc-user/' + encodeURIComponent(user)
-                    + '/kc-groups/'+ encodeURIComponent(group));
+            leaveUserGroup: function(userId, groupId) {
+                return $http['delete']('/rest/users/kc-user/' + encodeURIComponent(userId)
+                    + '/kc-groups/'+ encodeURIComponent(groupId));
             }
         };
     }])

@@ -133,6 +133,27 @@ angular.module('niord.admin')
             $scope.cancelEdit = function () {
                 $scope.user = undefined;
                 $scope.group = undefined;
+                $scope.loadUsers();
+            };
+
+
+            /** Saves the currently edited user **/
+            $scope.saveUser = function () {
+                if ($scope.user && $scope.action == 'add') {
+                    AdminUserService.addUser($scope.user)
+                        .success(function (user) {
+                            growl.info("User added", { ttl: 3000 });
+                            $scope.cancelEdit();
+                        })
+                        .error($scope.displayError);
+                } else if ($scope.user) {
+                    AdminUserService.updateUser($scope.user)
+                        .success(function (user) {
+                            growl.info("User updated", { ttl: 3000 });
+                            $scope.cancelEdit();
+                        })
+                        .error($scope.displayError);
+                }
             };
 
 

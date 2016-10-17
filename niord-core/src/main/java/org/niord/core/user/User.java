@@ -69,6 +69,12 @@ public class User extends VersionedEntity<Integer> {
     }
 
 
+    /** Constructor **/
+    public User(UserVo user) {
+        copyUser(user);
+    }
+
+
     /** Copies the access token user values into this entity */
     public void copyToken(AccessToken token) {
         setUsername(token.getPreferredUsername());
@@ -86,6 +92,16 @@ public class User extends VersionedEntity<Integer> {
                 !StringUtils.equals(lastName, token.getFamilyName()) ||
                 !StringUtils.equals(email, token.getEmail()) ||
                 !StringUtils.equals(language, token.getLocale());
+    }
+
+
+    /** Copies the user values to this entity **/
+    public void copyUser(UserVo user) {
+        setUsername(user.getUsername());
+        setEmail(user.getEmail());
+        setFirstName(user.getFirstName());
+        setLastName(user.getLastName());
+        setLanguage(user.getLanguage());
     }
 
 

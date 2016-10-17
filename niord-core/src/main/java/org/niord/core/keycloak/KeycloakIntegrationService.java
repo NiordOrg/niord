@@ -341,6 +341,52 @@ public class KeycloakIntegrationService {
     /******************************/
 
     /**
+     * Adds the user to Keycloak and the local Niord DB
+     * @param user the template user to add
+     */
+    public void addKeycloakUser(UserVo user) throws Exception {
+
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setUsername(user.getUsername());
+        userRep.setEmail(user.getEmail());
+        userRep.setFirstName(user.getFirstName());
+        userRep.setLastName(user.getLastName());
+
+        HttpPost post = new HttpPost(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/users");
+        post.setEntity(new StringEntity(new ObjectMapper().writeValueAsString(userRep), ContentType.APPLICATION_JSON));
+
+        executeAdminRequest(post, true, is -> true);
+    }
+
+
+    /**
+     * Updates the user in Keycloak and the local Niord DB
+     * @param user the template user to update
+     */
+    public void updateKeycloakUser(UserVo user) throws Exception {
+
+        String userUrl = resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM
+                + "/users/" + user.getKeycloakId();
+
+        // Look up the original user
+        UserRepresentation origUser = executeAdminRequest(
+                new HttpGet(userUrl),
+                true,
+                is -> new ObjectMapper().readValue(is, UserRepresentation.class));
+
+        // Update the user
+        origUser.setUsername(user.getUsername());
+        origUser.setEmail(user.getEmail());
+        origUser.setFirstName(user.getFirstName());
+        origUser.setLastName(user.getLastName());
+
+        HttpPut put = new HttpPut(userUrl);
+        put.setEntity(new StringEntity(new ObjectMapper().writeValueAsString(origUser), ContentType.APPLICATION_JSON));
+        executeAdminRequest(put, true, is -> true);
+    }
+
+
+    /**
      * Searches the users from Keycloak matching the given search criteria
      * @return the users from Keycloak
      */

@@ -140,7 +140,7 @@
                                         <tr ng-repeat="group in user.groups">
                                             <td>{{group.path}}</td>
                                             <td nowrap align="right">
-                                                <a href ng-click="leaveGroup(group);" title="Leave group">
+                                                <a ng-if="group.active" href ng-click="leaveGroup(group);" title="Leave group">
                                                     <i class="glyphicon glyphicon-trash"></i>
                                                 </a>
                                             </td>

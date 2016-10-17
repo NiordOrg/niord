@@ -59,7 +59,9 @@ public class UserService extends BaseService {
     KeycloakIntegrationService keycloakIntegrationService;
 
 
-    /** Returns the current Keycloak principal */
+    /**
+     * Returns the current Keycloak principal
+     */
     public KeycloakPrincipal getCallerPrincipal() {
         Principal principal = ctx.getCallerPrincipal();
 
@@ -74,6 +76,7 @@ public class UserService extends BaseService {
 
     /**
      * Returns all the Keycloak domain IDs where the current user has the given role
+     *
      * @param role the role to check for
      * @return all the Keycloak domain IDs where the current user has the given role
      */
@@ -95,6 +98,7 @@ public class UserService extends BaseService {
     /**
      * Returns the currently authenticated user.
      * If necessary the user is created and updated in the database
+     *
      * @return the currently authenticated user
      */
     public User currentUser() {
@@ -137,11 +141,10 @@ public class UserService extends BaseService {
      * Test if the caller has a given security role.
      *
      * @param role The name of the security role.
-     *
      * @return True if the caller has the specified role.
      */
     public boolean isCallerInRole(String role) {
-        return  ctx.isCallerInRole(role) ||
+        return ctx.isCallerInRole(role) ||
                 ticketService.validateRolesForCurrentThread(role);
     }
 
@@ -165,6 +168,53 @@ public class UserService extends BaseService {
     /*************************/
     /** Keycloak methods    **/
     /*************************/
+
+
+    /**
+     * Adds the user to Keycloak and the local Niord DB
+     * @param user the template user to add
+     */
+    public UserVo addKeycloakUser(UserVo user) throws Exception {
+        keycloakIntegrationService.addKeycloakUser(user);
+        return syncKeycloakUserWithNiord(user).toVo();
+    }
+
+
+    /**
+     * Updates the user in Keycloak and the local Niord DB
+     * @param user the template user to update
+     */
+    public UserVo updateKeycloakUser(UserVo user) throws Exception {
+        keycloakIntegrationService.updateKeycloakUser(user);
+        return syncKeycloakUserWithNiord(user).toVo();
+    }
+
+
+    /**
+     * Synchronize the Keycloak user to the local Niord DB
+     * @param userVo the Keycloak user
+     * @return the updated user
+     */
+    private User syncKeycloakUserWithNiord(UserVo userVo) {
+
+        User user = findByUsername(userVo.getUsername());
+
+        if (user == null) {
+            // New user
+            user = new User(userVo);
+            user = saveEntity(user);
+            log.info("Created new user from Keycloak " + user.getUsername());
+
+        } else {
+            // User data updated
+            user.copyUser(userVo);
+            user = saveEntity(user);
+            log.info("Updated user from Keycloak " + user.getUsername());
+        }
+
+        return user;
+    }
+
 
     /**
      * Searches for users whose name or e-mail matches the given name
@@ -230,9 +280,11 @@ public class UserService extends BaseService {
      * Returns the user groups from Keycloak
      * @return the user groups
      */
-    public List<GroupVo> getKeycloakUserGroups(String userId) {
+    public List<GroupVo> getKeycloakUserGroups(Domain domain, String userId) {
         try {
-            return keycloakIntegrationService.getKeycloakUserGroups(userId);
+            List<GroupVo> groups =  keycloakIntegrationService.getKeycloakUserGroups(userId);
+            groups.forEach(g -> resolveKeycloakGroupAccess(domain, g));
+            return groups;
         } catch (Exception e) {
             log.debug("Error reading Keycloak user groups: " + e.getMessage());
             return Collections.emptyList();
