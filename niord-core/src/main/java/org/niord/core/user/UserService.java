@@ -24,6 +24,7 @@ import org.niord.core.domain.Domain;
 import org.niord.core.keycloak.KeycloakIntegrationService;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.vo.GroupVo;
+import org.niord.core.user.vo.UserVo;
 import org.slf4j.Logger;
 
 import javax.annotation.Resource;
@@ -161,6 +162,9 @@ public class UserService extends BaseService {
         }
     }
 
+    /*************************/
+    /** Keycloak methods    **/
+    /*************************/
 
     /**
      * Searches for users whose name or e-mail matches the given name
@@ -178,30 +182,88 @@ public class UserService extends BaseService {
 
 
     /**
-     * Returns the user groups from Keycloak
-     * @return the user groups
+     * Returns the users from Keycloak
+     * @return the users from Keycloak
      */
-    public List<GroupVo> getGroups() {
+    public List<UserVo> searchKeycloakUsers(String search, int first, int max) {
         try {
-            return keycloakIntegrationService.getKeycloakGroups();
+            return keycloakIntegrationService.searchKeycloakUsers(search, first, max);
         } catch (Exception e) {
-            log.error("Error reading Keycloak groups: " + e.getMessage());
+            log.error("Error reading Keycloak users: " + e.getMessage());
             return Collections.emptyList();
         }
     }
 
+
     /**
-     * Returns the domain group roles from Keycloak
-     * @param domain the current domain
-     * @param groupId the group ID
-     * @return the domain group roles
+     * Returns the domain groups from Keycloak
+     * @return the domain groups
      */
-    public List<String> getGroupRoles(Domain domain, String groupId) {
+    public List<GroupVo> getKeycloakGroups(Domain domain) {
         try {
-            return keycloakIntegrationService.getKeycloakRoles(domain, groupId);
+            List<GroupVo> groups = keycloakIntegrationService.getKeycloakGroups();
+            groups.forEach(g -> resolveKeycloakGroupAccess(domain, g));
+            return groups;
         } catch (Exception e) {
-            log.error("Error reading Keycloak roles: " + e.getMessage());
+            log.error("Error reading Keycloak groups: " + e.getMessage(), e);
             return Collections.emptyList();
+        }
+    }
+
+
+    /** Determine which of the groups (and sub-groups) the user has access to **/
+    private void resolveKeycloakGroupAccess(Domain domain, GroupVo group) {
+        try {
+            List<String> roles = keycloakIntegrationService.getKeycloakRoles(domain, group.getId());
+            group.setActive(roles.stream().anyMatch(this::isCallerInRole));
+        } catch (Exception e) {
+            group.setActive(false);
+            log.debug("Error reading Keycloak group access : " + e.getMessage());
+        }
+        if (group.getChildren() != null) {
+            group.getChildren().forEach(g -> resolveKeycloakGroupAccess(domain, g));
+        }
+    }
+
+
+    /**
+     * Returns the user groups from Keycloak
+     * @return the user groups
+     */
+    public List<GroupVo> getKeycloakUserGroups(String userId) {
+        try {
+            return keycloakIntegrationService.getKeycloakUserGroups(userId);
+        } catch (Exception e) {
+            log.debug("Error reading Keycloak user groups: " + e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+
+    /**
+     * Assign the user to the given group
+     * @param userId the Keycloak user ID
+     * @param groupId the Keycloak group ID
+     */
+    public void joinKeycloakGroup(String userId, String groupId) {
+        try {
+            keycloakIntegrationService.joinKeycloakGroup(userId, groupId);
+        } catch (Exception e) {
+            log.error("Error joining Keycloak groups: " + e.getMessage());
+        }
+    }
+
+
+    /**
+     * Removes the user from the given group
+     * @param userId the Keycloak user ID
+     * @param groupId the Keycloak group ID
+     */
+    public void leaveKeycloakGroup(String userId, String groupId) {
+        try {
+            keycloakIntegrationService.leaveKeycloakGroup(userId, groupId);
+        } catch (Exception e) {
+            log.error("Error leaving Keycloak groups: " + e.getMessage());
         }
     }
 }

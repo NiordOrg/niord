@@ -29,6 +29,7 @@ public class GroupVo implements ILocalizable<GroupDescVo>, IJsonSerializable {
 
     String id;
     String path;
+    boolean active;
     GroupVo parent;
     List<GroupVo> children;
 
@@ -64,6 +65,14 @@ public class GroupVo implements ILocalizable<GroupDescVo>, IJsonSerializable {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public GroupVo getParent() {

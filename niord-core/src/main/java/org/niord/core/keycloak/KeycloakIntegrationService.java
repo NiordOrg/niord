@@ -21,8 +21,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.entity.ContentType;
@@ -36,12 +38,15 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.niord.core.NiordApp;
 import org.niord.core.domain.Domain;
 import org.niord.core.settings.SettingsService;
 import org.niord.core.settings.annotation.Setting;
 import org.niord.core.user.UserService;
 import org.niord.core.user.vo.GroupVo;
+import org.niord.core.user.vo.UserVo;
+import org.niord.core.util.WebUtils;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
@@ -87,6 +92,10 @@ public class KeycloakIntegrationService {
     @Inject
     private Logger log;
 
+
+    /******************************/
+    /** Keycloak configuration   **/
+    /******************************/
 
     /** Computes the fully-qualified URL to the Keycloak server */
     private String resolveAuthServerUrl() {
@@ -197,6 +206,10 @@ public class KeycloakIntegrationService {
         return cfg;
     }
 
+
+    /********************************/
+    /** Keycloak clients (domains) **/
+    /********************************/
 
     /**
      * Returns the list of Keycloak clients
@@ -323,6 +336,41 @@ public class KeycloakIntegrationService {
         return success;
     }
 
+    /******************************/
+    /** Keycloak users & groups  **/
+    /******************************/
+
+    /**
+     * Searches the users from Keycloak matching the given search criteria
+     * @return the users from Keycloak
+     */
+    public List<UserVo> searchKeycloakUsers(String search, int first, int max) throws Exception {
+        String params = "?search=" + WebUtils.encodeURIComponent(search) + "&first=" + first + "&max=" + max;
+        return executeAdminRequest(
+                new HttpGet(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/users" + params),
+                true, // Add auth header
+                is -> {
+                    List<UserRepresentation> result = new ObjectMapper()
+                            .readValue(is, new TypeReference<List<UserRepresentation>>(){});
+                    log.debug("Read users from Keycloak");
+                    return result.stream()
+                            .map(this::readUser)
+                            .collect(Collectors.toList());
+                });
+    }
+
+
+    /** Converts a Keycloak GroupRepresentation to a UserVo **/
+    private UserVo readUser(UserRepresentation u) {
+        UserVo user = new UserVo();
+        user.setKeycloakId(u.getId());
+        user.setUsername(u.getUsername());
+        user.setEmail(u.getEmail());
+        user.setFirstName(u.getFirstName());
+        user.setLastName(u.getLastName());
+        return user;
+    }
+
 
     /**
      * Loads the group tree from Keycloak
@@ -343,6 +391,26 @@ public class KeycloakIntegrationService {
     }
 
 
+    /**
+     * Returns the groups associated with the given user from Keycloak
+     * @return the groups associated with the given user from Keycloak
+     */
+    public List<GroupVo> getKeycloakUserGroups(String userId) throws Exception {
+        return executeAdminRequest(
+                new HttpGet(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM
+                        + "/users/" + WebUtils.encodeURIComponent(userId) + "/groups"),
+                true, // Add auth header
+                is -> {
+                    List<GroupRepresentation> result = new ObjectMapper()
+                            .readValue(is, new TypeReference<List<GroupRepresentation>>(){});
+                    log.debug("Read user groups from Keycloak");
+                    return result.stream()
+                            .map(this::readGroup)
+                            .collect(Collectors.toList());
+                });
+    }
+
+
     /** Converts a Keycloak GroupRepresentation to a GroupVo **/
     private GroupVo readGroup(GroupRepresentation g) {
         GroupVo group = new GroupVo();
@@ -355,6 +423,32 @@ public class KeycloakIntegrationService {
                 .collect(Collectors.toList()));
         }
         return group;
+    }
+
+
+    /**
+     * Assign the user to the given group
+     * @param userId the Keycloak user ID
+     * @param groupId the Keycloak group ID
+     */
+    public void joinKeycloakGroup(String userId, String groupId) throws Exception {
+        HttpPut put = new HttpPut(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM
+                + "/users/" + WebUtils.encodeURIComponent(userId)
+                + "/groups/" + WebUtils.encodeURIComponent(groupId));
+        executeAdminRequest(put, true, is -> true);
+    }
+
+
+    /**
+     * Remove the user from the given group
+     * @param userId the Keycloak user ID
+     * @param groupId the Keycloak group ID
+     */
+    public void leaveKeycloakGroup(String userId, String groupId) throws Exception {
+        HttpDelete del = new HttpDelete(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM
+                + "/users/" + WebUtils.encodeURIComponent(userId)
+                + "/groups/" + WebUtils.encodeURIComponent(groupId));
+        executeAdminRequest(del, true, is -> true);
     }
 
 

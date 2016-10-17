@@ -31,7 +31,10 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -73,25 +76,71 @@ public class UserRestService extends AbstractBatchableRestService {
 
     /** Returns all users that matches the given name */
     @GET
-    @Path("/groups")
+    @Path("/kc-users")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({ "admin" })
     @GZIP
     @NoCache
-    public List<GroupVo> groups() {
-        return userService.getGroups();
+    public List<UserVo> searchKeycloakUsers(
+            @QueryParam("search") @DefaultValue("") String search,
+            @QueryParam("first")  @DefaultValue("0") int first,
+            @QueryParam("max")    @DefaultValue("20") int max) {
+        return userService.searchKeycloakUsers(search, first, max);
+    }
+
+
+    /** Returns all users that matches the given name */
+    @GET
+    @Path("/kc-groups")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed({ "admin" })
+    @GZIP
+    @NoCache
+    public List<GroupVo> getKeycloakGroups() {
+        return userService.getKeycloakGroups(domainService.currentDomain());
     }
 
 
     /** Returns the domain roles assigned to the given group */
     @GET
-    @Path("/group/{groupId}/roles")
+    @Path("/kc-user/{userId}/kc-groups")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({ "admin" })
     @GZIP
     @NoCache
-    public List<String> roles(@PathParam("groupId") String groupId) {
-        return userService.getGroupRoles(domainService.currentDomain(), groupId);
+    public List<GroupVo> getKeycloakUserGroups(@PathParam("userId") String userId) {
+        return userService.getKeycloakUserGroups(userId);
+    }
+
+    /**
+     * Assign the user to the given group
+     * @param userId the Keycloak user ID
+     * @param groupId the Keycloak group ID
+     */
+    @PUT
+    @Path("/kc-user/{userId}/kc-groups/{groupId}")
+    @RolesAllowed({ "admin" })
+    @GZIP
+    @NoCache
+    public void joinKeycloakGroup(@PathParam("userId") String userId, @PathParam("groupId") String groupId) {
+        log.info("Joining Keycloak user " + userId + " to group " + groupId);
+        userService.joinKeycloakGroup(userId, groupId);
+    }
+
+
+    /**
+     * Removes the user from the given group
+     * @param userId the Keycloak user ID
+     * @param groupId the Keycloak group ID
+     */
+    @DELETE
+    @Path("/kc-user/{userId}/kc-groups/{groupId}")
+    @RolesAllowed({ "admin" })
+    @GZIP
+    @NoCache
+    public void leaveKeycloakGroup(@PathParam("userId") String userId, @PathParam("groupId") String groupId) {
+        log.info("Removing Keycloak user " + userId + " from group " + groupId);
+        userService.leaveKeycloakGroup(userId, groupId);
     }
 
 

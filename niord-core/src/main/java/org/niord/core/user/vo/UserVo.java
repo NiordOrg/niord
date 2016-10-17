@@ -24,6 +24,7 @@ import org.niord.model.IJsonSerializable;
 @SuppressWarnings("unused")
 public class UserVo implements IJsonSerializable {
 
+    String keycloakId;
     String username;
     String email;
     String firstName;
@@ -33,6 +34,14 @@ public class UserVo implements IJsonSerializable {
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public String getKeycloakId() {
+        return keycloakId;
+    }
+
+    public void setKeycloakId(String keycloakId) {
+        this.keycloakId = keycloakId;
+    }
 
     public String getUsername() {
         return username;
