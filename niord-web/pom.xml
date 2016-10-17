@@ -216,6 +216,7 @@
                             <includes>
                                 <include>app/niord-all.js</include>
                                 <include>app/niord-all.min.js</include>
+                                <include>app/**/*.html</include>
                                 <include>css/niord-all.css</include>
                                 <include>css/niord-all.min.css</include>
                                 <include>css/templates/*.css</include>
