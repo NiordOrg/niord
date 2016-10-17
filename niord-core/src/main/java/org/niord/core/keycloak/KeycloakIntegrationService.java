@@ -48,7 +48,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.PublicKey;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -293,8 +293,9 @@ public class KeycloakIntegrationService {
         };
 
 
-        // Create the roles in Keycloak
-        RoleRepresentation prevRole = null;
+        // Create the roles in Keycloak.
+        // All roles, bar the first, are composite roles that include all previously defined roles
+        List<RoleRepresentation> prevRoles = new ArrayList<>();
         for (RoleRepresentation role : roleReps) {
             // Post the new role
             post = new HttpPost(clientsUri + "/roles");
@@ -302,29 +303,24 @@ public class KeycloakIntegrationService {
             success &= executeAdminRequest(post, true, is -> true);
             log.info("Created role " + role.getName() + " for client " + domain.getDomainId());
 
+            // Fetch the newly created role, in order to retrieve its ID
+            role = executeAdminRequest(
+                    new HttpGet(clientsUri + "/roles/" + role.getName()),
+                    true, // Add auth header
+                    is -> new ObjectMapper().readValue(is, RoleRepresentation.class)
+            );
+
             // The roles are ordered, so that a roles is a composite of its previous roles
-            if (prevRole != null) {
-                updateCompositeRole(client.getClientId(), role, prevRole.getName());
+            if (!prevRoles.isEmpty()) {
                 post = new HttpPost(clientsUri + "/roles/" + role.getName() + "/composites");
-                post.setEntity(new StringEntity(mapper.writeValueAsString(role), ContentType.APPLICATION_JSON));
-                // Arghh - does not work
-                //success &= executeAdminRequest(post, true, is -> true);
+                post.setEntity(new StringEntity(mapper.writeValueAsString(prevRoles), ContentType.APPLICATION_JSON));
+                success &= executeAdminRequest(post, true, is -> true);
             }
-            prevRole = role;
+            prevRoles.add(role);
 
         }
 
         return success;
-    }
-
-
-    /** Updates the composite relation of the role */
-    private void updateCompositeRole(String clientId, RoleRepresentation role, String... nestedRoles) {
-        Map<String, List<String>> clientRoles = new HashMap<>();
-        clientRoles.put(clientId, Arrays.asList(nestedRoles));
-        RoleRepresentation.Composites composites = new RoleRepresentation.Composites();
-        composites.setClient(clientRoles);
-        role.setComposites(composites);
     }
 
 
@@ -406,17 +402,17 @@ public class KeycloakIntegrationService {
         HttpResponse response = client.execute(request);
 
         int status = response.getStatusLine().getStatusCode();
-        if (status != 200 && status != 201) {
+        if (status < 200 || status > 299) {
             try {
                 response.getEntity().getContent().close();
-            } catch (IOException ignored) {
+            } catch (Exception ignored) {
             }
             throw new Exception("Unable to execute request " + request.getURI() + ", status = " + status);
         }
 
         HttpEntity entity = response.getEntity();
         if (entity == null) {
-            throw new Exception("Unable to execute request " + request.getURI() + ".  There was no entity.");
+            return responseHandler.execute(null);
         }
 
         try (InputStream is = entity.getContent()) {
