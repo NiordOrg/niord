@@ -1384,6 +1384,7 @@ angular.module('niord.editor')
 
             $scope.messageHistory = [];
             $scope.selectedHistory = [];
+            $scope.historyAttachments = undefined;
 
             /** Loads the message history **/
             $scope.loadHistory = function () {
@@ -1411,6 +1412,16 @@ angular.module('niord.editor')
                         $scope.selectedHistory.unshift(hist);
                     }
                 });
+
+                // If one message history is selected, extract its attachments
+                $scope.historyAttachments = undefined;
+                if ($scope.selectedHistory.length == 1) {
+                    try {
+                        var hist1 = JSON.parse($scope.selectedHistory[0].snapshot);
+                        $scope.historyAttachments = hist1.attachments;
+                    } catch (e) {
+                    }
+                }
             }
 
         }])

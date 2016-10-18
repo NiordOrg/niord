@@ -70,6 +70,12 @@
                 </div>
 
                 <div class="message-history-json json-diff" history-json-diff="selectedHistory"></div>
+
+                <div ng-if="historyAttachments" class="message-history-attachments">
+                    <span class="attachment-list" ng-repeat="att in historyAttachments">
+                        <message-attachment attachment="att" size="32"></message-attachment>
+                    </span>
+                </div>
             </div>
 
         </div>

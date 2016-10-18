@@ -302,6 +302,13 @@ div.mce-fullscreen {
     padding: 5px 10px;
 }
 
+.message-history-attachments {
+    border-bottom: 1px solid lightgray;
+    border-left: 1px solid lightgray;
+    border-right: 1px solid lightgray;
+}
+
+
 /** Editor -> Comments **/
 
 .message-comments-table {
