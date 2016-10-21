@@ -214,10 +214,7 @@ public class MessageRestService  {
         // Validate access to the message
         checkMessageViewingAccess(message);
 
-        DataFilter filter = DataFilter.get()
-                .lang(language)
-                .fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
-
+        DataFilter filter = Message.MESSAGE_DETAILS_FILTER.lang(language);
         return message.toVo(MessageVo.class, filter);
     }
 

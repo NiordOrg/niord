@@ -189,15 +189,15 @@
 <!-- Renders a message part                   -->
 <!-- ***************************************  -->
 <#macro renderMessagePart part lang=language draft=draft!false >
-    <#assign desc=descForLang(part, lang)!>
-    <#if desc?? && desc.subject??>
+    <#assign partDesc=descForLang(part, lang)!>
+    <#if partDesc?? && partDesc.subject??>
         <p>
-            <strong>${desc.subject}</strong>
-            <@renderLangFlag desc=desc lang=lang draft=draft/>
+            <strong>${partDesc.subject}</strong>
+            <@renderLangFlag desc=partDesc lang=lang draft=draft/>
         </p>
     </#if>
-    <#if desc?? && desc.details??>
-        <div>${desc.details}</div>
+    <#if partDesc?? && partDesc.details??>
+        <div>${partDesc.details}</div>
     </#if>
 </#macro>
 
@@ -207,7 +207,7 @@
 <!-- ***************************************  -->
 <#macro renderMessage msg lang=language draft=draft!false >
 
-    <#assign desc=descForLang(msg, lang)!>
+    <#assign msgDesc=descForLang(msg, lang)!>
 
     <div style="width: 100%;">
 
@@ -226,14 +226,14 @@
         </div>
     </#if>
 
-    <#if desc?has_content && desc.title?has_content>
+    <#if msgDesc?has_content && msgDesc.title?has_content>
         <div>
             <strong>
                 <a href="${baseUri}/#/message/${msg.id}" target="_blank" id="msg_${msg.id}">
-                    ${desc.title}
+                    ${msgDesc.title}
                 </a>
             </strong>
-            <@renderLangFlag desc=desc lang=lang />
+            <@renderLangFlag desc=msgDesc lang=lang />
         </div>
     </#if>
 
@@ -322,20 +322,20 @@
         </#if>
 
         <!-- Publication line (drafts only) -->
-        <#if draft == true && desc?? && desc.publication?has_content>
+        <#if draft == true && msgDesc?has_content && msgDesc.publication?has_content>
             <tr>
                 <td class="field-name">${text("msg.field.publication")}</td>
                 <td class="field-value">
-                ${desc.publication!""}
+                ${msgDesc.publication!""}
                 </td>
             </tr>
         </#if>
 
         <!-- Source line -->
-        <#if desc?? && desc.source?has_content>
+        <#if msgDesc?has_content && msgDesc.source?has_content>
             <tr>
-                <td class="field-value" style="text-align: right;" colspan="2">
-                    (${desc.source})
+                <td class="field-value" align="right" colspan="2">
+                    (${msgDesc.source!""})
                 </td>
             </tr>
         </#if>
