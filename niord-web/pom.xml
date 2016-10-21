@@ -245,9 +245,11 @@
                                 <phase>package</phase>
                                 <configuration>
                                     <target>
+                                        <delete>
+                                            <dirset dir="${project.build.directory}" includes="${project.build.finalName}.war" />
+                                        </delete>
                                         <zip basedir="${project.build.directory}/${project.build.finalName}"
-                                             destfile="${project.build.directory}/${project.build.finalName}.war"
-                                             update="true">
+                                             destfile="${project.build.directory}/${project.build.finalName}.war">
                                         </zip>
                                     </target>
                                 </configuration>
