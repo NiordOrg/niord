@@ -46,7 +46,7 @@
                     <td nowrap align="right" style="width: 2.3cm"><#if toCoord?has_content><@formatPos lat=toCoord.coordinates[1] format=format /></#if></td>
                     <td nowrap align="right" style="width: 2.3cm"><#if toCoord?has_content><@formatPos lon=toCoord.coordinates[0] format=format /></#if></td>
                     <#if toName>
-                        <td><#if toCoord?has_content && toCoord.name?has_content>${fromCoord.name}</#if></td>
+                        <td><#if toCoord?has_content && toCoord.name?has_content>${toCoord.name}</#if></td>
                     </#if>
                 </tr>
             </#list>
