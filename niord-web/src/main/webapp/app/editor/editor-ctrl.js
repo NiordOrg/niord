@@ -866,11 +866,14 @@ angular.module('niord.editor')
                     { title: 'No border', value: 'no-border'},
                     { title: 'Condensed', value: 'condensed'},
                     { title: 'No border + condensed', value: 'no-border condensed'},
-                    { title: 'Positions', value: 'positions'}
+                    { title: 'Positions', value: 'positions'},
+                    { title: 'Position Table', value: 'positions-table'}
                 ],
                 table_cell_class_list: [
                     {title: 'None', value: ''},
-                    {title: 'Underline', value: 'underline'}
+                    {title: 'Underline', value: 'underline'},
+                    {title: 'Position', value: 'pos-col'},
+                    {title: 'Pos. Index', value: 'pos-index'}
                 ],
                 table_row_class_list: [
                     {title: 'None', value: ''},

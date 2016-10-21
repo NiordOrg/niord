@@ -142,6 +142,18 @@ table.positions td:nth-child(1) {
     color: darkgray;
 }
 
+table.position-table td.pos-col {
+    width: 3.7cm;
+    text-align: right;
+    white-space: nowrap;
+}
+
+table.position-table td.pos-index {
+    width: 0.6cm;
+    text-align: right;
+    white-space: nowrap;
+}
+
 img.lang-flag {
     height: 2mm;
     opacity: 0.3;
