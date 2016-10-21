@@ -35,24 +35,13 @@ public class SystemMessageVo extends MessageVo {
     Map<String, Boolean> editorFields;
 
 
-    /**
-     * Rewrites the attachments, thumbnail path and rich text description from one repository path to another.
-     * This happens when a message is edited and its associated repository folder gets
-     * copied to a temporary folder until the message is saved.
-     * <p>
-     * The repository paths may occur in e.g. embedded images and links.
-     */
+    /** {@inheritDoc} **/
+    @Override
     public void rewriteRepoPath(String repoPath1, String repoPath2) {
-        if (StringUtils.isNotBlank(repoPath1) && StringUtils.isNotBlank(repoPath2)) {
-            if (getParts() != null) {
-                getParts().forEach(mp -> mp.rewriteRepoPath(repoPath1, repoPath2));
-            }
-            if (getAttachments() != null) {
-                getAttachments().forEach(att -> att.rewriteRepoPath(repoPath1, repoPath2));
-            }
-            if (thumbnailPath != null) {
-                thumbnailPath = thumbnailPath.replace(repoPath1, repoPath2);
-            }
+        super.rewriteRepoPath(repoPath1, repoPath2);
+
+        if (StringUtils.isNotBlank(repoPath1) && StringUtils.isNotBlank(repoPath2) && thumbnailPath != null) {
+            thumbnailPath = thumbnailPath.replace(repoPath1, repoPath2);
         }
     }
 

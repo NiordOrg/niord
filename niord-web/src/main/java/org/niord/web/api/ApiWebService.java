@@ -35,7 +35,13 @@ public class ApiWebService extends AbstractApiService {
     /** {@inheritDoc} */
     @WebMethod
     @Override
-    public List<MessageVo> search(String language, String domain, Set<String> messageSeries, Set<MainType> mainTypes, String wkt) throws Exception {
-        return super.search(language, domain, messageSeries, mainTypes, wkt);
+    public List<MessageVo> search(
+            String language,
+            Set<String> domainIds,
+            Set<String> messageSeries,
+            Set<MainType> mainTypes,
+            String wkt,
+            boolean externalize) throws Exception {
+        return super.search(language, domainIds, messageSeries, mainTypes, wkt, externalize);
     }
 }

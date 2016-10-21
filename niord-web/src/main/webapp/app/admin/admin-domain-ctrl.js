@@ -89,6 +89,7 @@ angular.module('niord.admin')
                     name: undefined,
                     timeZone: moment.tz.guess(),
                     messageSortOrder: 'AREA ASC',
+                    publish: false,
                     schedule: false
                 };
             };

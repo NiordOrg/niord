@@ -52,7 +52,9 @@ import java.util.stream.Collectors;
 })
 @NamedQueries({
         @NamedQuery(name="Domain.findByDomainId",
-                query="SELECT d FROM Domain d where d.domainId = :domainId")
+                query="SELECT d FROM Domain d where d.domainId = :domainId"),
+        @NamedQuery(name="Domain.getPublishedDomains",
+                query="SELECT d FROM Domain d where d.publish = true")
 })
 @SuppressWarnings("unused")
 public class Domain extends BaseEntity<Integer> {
@@ -82,6 +84,8 @@ public class Domain extends BaseEntity<Integer> {
     @ManyToMany
     List<MessageSeries> messageSeries = new ArrayList<>();
 
+    Boolean publish;
+
     Boolean schedule;
 
     @Transient
@@ -107,6 +111,8 @@ public class Domain extends BaseEntity<Integer> {
         this.longitude = domain.getLon();
         this.zoomLevel = domain.getZoomLevel();
         this.messageSortOrder = StringUtils.isBlank(domain.getMessageSortOrder()) ? null : domain.getMessageSortOrder();
+        this.publish = domain.getSchedule();
+        this.publish = domain.getPublish();
         this.schedule = domain.getSchedule();
         this.inKeycloak = domain.getInKeycloak();
 
@@ -143,6 +149,7 @@ public class Domain extends BaseEntity<Integer> {
         domain.setLon(longitude);
         domain.setZoomLevel(zoomLevel);
         domain.setMessageSortOrder(messageSortOrder);
+        domain.setPublish(publish);
         domain.setSchedule(schedule);
         domain.setInKeycloak(inKeycloak);
 
@@ -185,6 +192,7 @@ public class Domain extends BaseEntity<Integer> {
                 !Objects.equals(longitude, template.getLongitude()) ||
                 !Objects.equals(zoomLevel, template.getZoomLevel()) ||
                 !Objects.equals(messageSortOrder, template.getMessageSortOrder()) ||
+                !Objects.equals(publish, template.getPublish()) ||
                 !Objects.equals(schedule, template.getSchedule()) ||
                 hasChanged(areas, template.getAreas()) ||
                 hasChanged(categories, template.getCategories()) ||
@@ -308,6 +316,14 @@ public class Domain extends BaseEntity<Integer> {
 
     public void setMessageSeries(List<MessageSeries> messageSeries) {
         this.messageSeries = messageSeries;
+    }
+
+    public Boolean getPublish() {
+        return publish;
+    }
+
+    public void setPublish(Boolean publish) {
+        this.publish = publish;
     }
 
     public Boolean getSchedule() {

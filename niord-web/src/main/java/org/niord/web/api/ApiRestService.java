@@ -26,6 +26,7 @@ import org.niord.model.message.MessageVo;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -74,8 +75,8 @@ public class ApiRestService extends AbstractApiService {
             @ApiParam(value = "Two-letter ISO 639-1 language code", example="en")
             @QueryParam("lang") String language,
 
-            @ApiParam(value = "The ID of the domain to select messages from", example="niord-client-nw")
-            @QueryParam("domain") String domain,
+            @ApiParam(value = "The IDs of the domains to select messages from", example="niord-client-nw")
+            @QueryParam("domain") Set<String> domainIds,
 
             @ApiParam(value = "Specific message series to select messages from", example="dma-nw")
             @QueryParam("messageSeries") Set<String> messageSeries,
@@ -84,10 +85,12 @@ public class ApiRestService extends AbstractApiService {
             @QueryParam("mainType") Set<MainType> mainTypes,
 
             @ApiParam(value = "Well-Known Text for geographical extent", example="POLYGON((7 54, 7 57, 13 56, 13 57, 7 54))")
-            @QueryParam("wkt") String wkt
+            @QueryParam("wkt") String wkt,
 
+            @ApiParam(value = "Whether to rewrite all embedded links and paths to be absolute URL's", example="true")
+            @QueryParam("externalize") @DefaultValue("true") boolean externalize
     ) throws Exception {
-        return super.search(language, domain, messageSeries, mainTypes, wkt);
+        return super.search(language, domainIds, messageSeries, mainTypes, wkt, externalize);
     }
 
 

@@ -152,6 +152,17 @@ public class DomainService extends BaseService {
 
 
     /**
+     * Returns the domains where the "publish" flag has been set. These are the domains
+     * that would by default be returned by default in public API's for fetching messages
+     * @return the published domains
+     */
+    public List<Domain> getPublishedDomains() {
+        return em.createNamedQuery("Domain.getPublishedDomains", Domain.class)
+                .getResultList();
+    }
+
+
+    /**
      * Returns all domains for which the current user has the given role
      * @param role the role that the current user must have
      * @return all domains for which the current user has the given role
@@ -183,6 +194,7 @@ public class DomainService extends BaseService {
         original.setLongitude(domain.getLongitude());
         original.setZoomLevel(domain.getZoomLevel());
         original.setMessageSortOrder(domain.getMessageSortOrder());
+        original.setPublish(domain.getPublish());
         original.setSchedule(domain.getSchedule());
 
         // Substitute the areas with the persisted ones
