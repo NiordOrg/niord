@@ -5,10 +5,10 @@ svg {
 }
 
 table.message-table {
-    font-size:10px;
     table-layout: fixed;
     width: 100%;
     max-width: 100%;
+    overflow : hidden;
 }
 
 table.message-table tr, table.message-table tr td {
@@ -143,7 +143,7 @@ table.positions td:nth-child(1) {
 }
 
 table.position-table td.pos-col {
-    width: 3.7cm;
+    width: 4.0cm;
     text-align: right;
     white-space: nowrap;
 }

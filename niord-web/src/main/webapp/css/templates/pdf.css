@@ -1,7 +1,7 @@
 
 /** General page rules **/
 @page {
-    margin: 2cm 1.5cm 3cm 1.5cm;
+    margin: 1.5cm 1.0cm 2.0cm 1.0cm;
     padding: 0;
 
     @top-center {
@@ -17,7 +17,7 @@
 
 /** First page rules **/
 @page :first {
-    margin: 1.5cm;
+    margin: 1.5cm 1.0cm;
     @top-center {
         content: element(first-page-header);
     }
@@ -35,7 +35,7 @@ div.header {
 }
 
 div.footer {
-    margin-top: 0.5cm;
+    margin-top: 0;
     text-align: center;
     display: block;
     position: running(footer);
@@ -62,7 +62,7 @@ div.first-page-footer {
 }
 
 body{
-    font-size:10px;
+    font-size:11px;
     font-family: Helvetica;
     margin: 0;
     padding:0;
