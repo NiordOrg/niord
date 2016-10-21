@@ -851,6 +851,7 @@ angular.module('niord.editor')
             // Configuration of the TinyMCE editors
             $scope.tinymceOptions = {
                 resize: false,
+                object_resizing : ":not(table)", // NB: Prevent TinyMCE from constantly updating cell/table sizes
                 valid_elements : '*[*]', // NB: This allows insertion of all html elements, including javascript
                 statusbar : false,
                 menubar: false,
