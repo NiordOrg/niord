@@ -16,6 +16,7 @@
 package org.niord.model.message;
 
 import io.swagger.annotations.ApiModel;
+import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -34,6 +35,21 @@ public class MessageSeriesVo implements IJsonSerializable {
 
     String seriesId;
     MainType mainType;
+
+
+    /** Returns a filtered copy of this entity **/
+    public MessageSeriesVo copy(DataFilter filter) {
+
+        DataFilter compFilter = filter.forComponent("MessageSeries");
+
+        MessageSeriesVo series = new MessageSeriesVo();
+        series.setSeriesId(seriesId);
+        if (compFilter.includeDetails()) {
+            series.setMainType(mainType);
+        }
+        return series;
+    }
+
 
     /*************************/
     /** Getters and Setters **/

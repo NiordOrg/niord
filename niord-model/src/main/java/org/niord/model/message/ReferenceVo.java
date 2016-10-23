@@ -16,6 +16,7 @@
 package org.niord.model.message;
 
 import io.swagger.annotations.ApiModel;
+import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
@@ -34,6 +35,17 @@ public class ReferenceVo implements ILocalizable<ReferenceDescVo>, IJsonSerializ
     String messageId;
     ReferenceType type;
     List<ReferenceDescVo> descs;
+
+
+    /** Returns a filtered copy of this entity **/
+    public ReferenceVo copy(DataFilter filter) {
+        ReferenceVo reference = new ReferenceVo();
+        reference.setMessageId(messageId);
+        reference.setType(type);
+        reference.setDescs(getDescs(filter));
+        return reference;
+    }
+
 
     /** {@inheritDoc} */
     @Override

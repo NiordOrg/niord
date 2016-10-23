@@ -34,6 +34,17 @@ public class DateIntervalVo implements IJsonSerializable {
     Date fromDate;
     Date toDate;
 
+    /** Returns a filtered copy of this entity **/
+    @SuppressWarnings("all")
+    public DateIntervalVo copy() {
+        DateIntervalVo dateInterval = new DateIntervalVo();
+        dateInterval.setAllDay(allDay);
+        dateInterval.setFromDate(fromDate);
+        dateInterval.setToDate(toDate);
+        return dateInterval;
+    }
+
+
     /*************************/
     /** Getters and Setters **/
     /*************************/

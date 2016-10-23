@@ -16,6 +16,7 @@
 package org.niord.model.message;
 
 import io.swagger.annotations.ApiModel;
+import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
@@ -34,7 +35,7 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class AttachmentVo implements ILocalizable<AttachmentDescVo>, IJsonSerializable {
 
-    public enum AttachmentDisplayType { ABOVE, BELOW, SEPARATE_PAGE }
+    public enum AttachmentDisplayType {ABOVE, BELOW, SEPARATE_PAGE}
 
     String type;
     String path;
@@ -44,6 +45,24 @@ public class AttachmentVo implements ILocalizable<AttachmentDescVo>, IJsonSerial
     String width;
     String height;
     List<AttachmentDescVo> descs;
+
+
+    /** Returns a filtered copy of this entity **/
+    public AttachmentVo copy(DataFilter filter) {
+
+        DataFilter compFilter = filter.forComponent("Attachment");
+
+        AttachmentVo attachment = new AttachmentVo();
+        attachment.setType(type);
+        attachment.setPath(path);
+        attachment.setFileName(fileName);
+        attachment.setFileSize(fileSize);
+        attachment.setDisplay(display);
+        attachment.setWidth(width);
+        attachment.setHeight(height);
+        attachment.copyDescs(getDescs(compFilter));
+        return attachment;
+    }
 
 
     /** {@inheritDoc} */

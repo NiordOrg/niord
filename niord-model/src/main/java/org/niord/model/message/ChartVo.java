@@ -16,6 +16,7 @@
 package org.niord.model.message;
 
 import io.swagger.annotations.ApiModel;
+import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 
 import javax.xml.bind.annotation.XmlRootElement;
@@ -36,6 +37,24 @@ public class ChartVo implements IJsonSerializable {
     boolean active = true;
     Integer scale;
     String name;
+
+
+    /** Returns a filtered copy of this entity **/
+    public ChartVo copy(DataFilter filter) {
+
+        DataFilter compFilter = filter.forComponent("Chart");
+
+        ChartVo chart = new ChartVo();
+        chart.setChartNumber(chartNumber);
+        chart.setInternationalNumber(internationalNumber);
+        chart.setActive(active);
+        chart.setScale(scale);
+        if (compFilter.includeDetails()) {
+            chart.setName(name);
+        }
+        return chart;
+    }
+
 
     /**
      * Returns a string representation of the chart including chart number and international number

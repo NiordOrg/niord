@@ -16,6 +16,7 @@
 package org.niord.model.message;
 
 import io.swagger.annotations.ApiModel;
+import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
@@ -39,6 +40,25 @@ public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializab
     boolean active = true;
     CategoryVo parent;
     List<CategoryDescVo> descs;
+
+
+    /** Returns a filtered copy of this entity **/
+    public CategoryVo copy(DataFilter filter) {
+
+        DataFilter compFilter = filter.forComponent("Category");
+
+        CategoryVo category = new CategoryVo();
+        category.setId(id);
+        category.setMrn(mrn);
+        category.setActive(active);
+        category.copyDescs(getDescs(compFilter));
+
+        if (compFilter.includeParent() && parent != null) {
+            category.setParent(parent.copy(compFilter));
+        }
+
+        return category;
+    }
 
 
     /** {@inheritDoc} */

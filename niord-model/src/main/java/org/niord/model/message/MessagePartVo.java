@@ -17,6 +17,7 @@
 package org.niord.model.message;
 
 import io.swagger.annotations.ApiModel;
+import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 import org.niord.model.geojson.FeatureCollectionVo;
@@ -40,6 +41,27 @@ public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSeri
     List<DateIntervalVo> eventDates;
     FeatureCollectionVo geometry;
     List<MessagePartDescVo> descs;
+
+
+    /** Returns a filtered copy of this entity **/
+    public MessagePartVo copy(DataFilter filter) {
+
+        DataFilter compFilter = filter.forComponent("MessagePart");
+
+        MessagePartVo part = new MessagePartVo();
+        part.setType(type);
+        if (compFilter.includeDetails()) {
+            if (eventDates != null) {
+                eventDates.forEach(d  -> part.checkCreateEventDates().add(d.copy()));
+            }
+            part.setDescs(getDescs(compFilter));
+        }
+        if (compFilter.includeGeometry() && geometry != null) {
+            // TODO: Deep-copy the Geometry
+            part.setGeometry(geometry);
+        }
+        return part;
+    }
 
 
     /** {@inheritDoc} */

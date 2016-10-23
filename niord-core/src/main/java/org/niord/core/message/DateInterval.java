@@ -76,6 +76,7 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity, 
 
 
     /** Converts this entity to a value object */
+    @SuppressWarnings("all")
     public DateIntervalVo toVo() {
         DateIntervalVo dateInterval = new DateIntervalVo();
         dateInterval.setAllDay(allDay);

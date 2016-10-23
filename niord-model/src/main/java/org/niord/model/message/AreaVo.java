@@ -16,6 +16,7 @@
 package org.niord.model.message;
 
 import io.swagger.annotations.ApiModel;
+import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
@@ -40,6 +41,24 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable {
     boolean active = true;
     AreaVo parent;
     List<AreaDescVo> descs;
+
+
+    /** Returns a filtered copy of this entity **/
+    public AreaVo copy(DataFilter filter) {
+        DataFilter compFilter = filter.forComponent("Area");
+
+        AreaVo area = new AreaVo();
+        area.setId(id);
+        area.setMrn(mrn);
+        area.setActive(active);
+        area.copyDescs(getDescs(compFilter));
+
+        if (compFilter.includeParent() && parent != null) {
+            area.setParent(parent.copy(filter));
+        }
+
+        return area;
+    }
 
 
     /** {@inheritDoc} */

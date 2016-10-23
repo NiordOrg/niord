@@ -17,6 +17,7 @@ package org.niord.model.message;
 
 import io.swagger.annotations.ApiModel;
 import org.apache.commons.lang.StringUtils;
+import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
@@ -60,6 +61,55 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     List<MessagePartVo> parts;
     List<MessageDescVo> descs;
     List<AttachmentVo> attachments;
+
+
+    /** Returns a filtered copy of this entity **/
+    public MessageVo copy(DataFilter filter) {
+
+        DataFilter compFilter = filter.forComponent("Message");
+
+        MessageVo message = new MessageVo();
+        message.setId(id);
+        message.setNumber(number);
+        message.setShortId(shortId);
+        message.setStatus(status);
+        message.setMainType(mainType);
+        message.setType(type);
+
+        if (compFilter.includeDetails()) {
+            message.setCreated(created);
+            message.setUpdated(updated);
+            if (messageSeries != null) {
+                message.setMessageSeries(messageSeries.copy(filter));
+            }
+            if (areas != null) {
+                areas.forEach(a -> message.checkCreateAreas().add(a.copy(filter)));
+            }
+            if (categories != null) {
+                categories.forEach(c -> message.checkCreateCategories().add(c.copy(filter)));
+            }
+            if (charts != null) {
+                charts.forEach(c -> message.checkCreateCharts().add(c.copy(filter)));
+            }
+            message.setHorizontalDatum(horizontalDatum);
+            message.setPublishDateFrom(publishDateFrom);
+            message.setPublishDateTo(publishDateTo);
+            if (references != null) {
+                references.forEach(r -> message.checkCreateReferences().add(r.copy(filter)));
+            }
+            message.setOriginalInformation(originalInformation);
+            if (attachments != null) {
+                attachments.forEach(att -> message.checkCreateAttachments().add(att.copy(filter)));
+            }
+        }
+        if (compFilter.includeDetails() || compFilter.includeGeometry()) {
+            parts.forEach(part -> message.checkCreateParts().add(part.copy(compFilter)));
+        }
+        if (compFilter.anyOfFields(DataFilter.DETAILS, "MessageDesc.title")) {
+            message.copyDescs(getDescs(compFilter));
+        }
+        return message;
+    }
 
 
     /** {@inheritDoc} */
