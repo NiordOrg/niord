@@ -15,6 +15,8 @@
  */
 package org.niord.web.api;
 
+import org.niord.core.message.Message;
+import org.niord.model.DataFilter;
 import org.niord.model.message.MainType;
 import org.niord.model.message.MessageVo;
 
@@ -34,14 +36,17 @@ public class ApiWebService extends AbstractApiService {
 
     /** {@inheritDoc} */
     @WebMethod
-    @Override
     public List<MessageVo> search(
             String language,
             Set<String> domainIds,
             Set<String> messageSeries,
             Set<MainType> mainTypes,
-            String wkt,
-            boolean externalize) throws Exception {
-        return super.search(language, domainIds, messageSeries, mainTypes, wkt, externalize);
+            String wkt) throws Exception {
+
+        DataFilter filter = Message.MESSAGE_DETAILS_FILTER.lang(language);
+
+        return searchMessages(language, domainIds, messageSeries, mainTypes, wkt)
+                .map(m -> m.toVo(MessageVo.class, filter))
+                .getData();
     }
 }

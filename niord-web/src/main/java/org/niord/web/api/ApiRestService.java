@@ -15,14 +15,20 @@
  */
 package org.niord.web.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.niord.core.NiordApp;
+import org.niord.core.message.Message;
+import org.niord.model.DataFilter;
 import org.niord.model.message.MainType;
 import org.niord.model.message.MessageVo;
+import org.niord.model.search.PagedSearchResultVo;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -32,12 +38,18 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.SchemaOutputResolver;
 import javax.xml.transform.Result;
 import javax.xml.transform.stream.StreamResult;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +58,12 @@ import java.util.Set;
 /**
  * A public REST API for accessing Niord data.
  * <p>
- * Also, defined the Swagger API using annotations.
+ * Also, defines the Swagger API using annotations.
+ * <p>
+ * NB: Swagger codegen-generated model classes cannot handle UNIX Epoch timestamps, which is the date format
+ * used in JSON throughout Niord. Instead, these classes expects dates to be encoded as ISO-8601 strings
+ * (e.g. "2016-10-12T13:21:22.000+0000").<br>
+ * To facilitate both formats, use the "dateFormat" parameter.
  */
 @Api(value = "/public/v1",
      description = "Public API for accessing the Niord NW-NM system",
@@ -55,6 +72,9 @@ import java.util.Set;
 @Stateless
 @SuppressWarnings("unused")
 public class ApiRestService extends AbstractApiService {
+
+    /** The format to use for dates in generated JSON **/
+    public enum JsonDateFormat { UNIX_EPOCH, ISO_8601 }
 
     @Inject
     NiordApp app;
@@ -67,11 +87,9 @@ public class ApiRestService extends AbstractApiService {
     )
     @GET
     @Path("/messages")
-    @Produces({"application/json;charset=UTF-8", "application/xml;charset=UTF-8"})
+    @Produces({"application/json;charset=UTF-8"})
     @GZIP
-    @NoCache
-    @Override
-    public List<MessageVo> search(
+    public Response search(
             @ApiParam(value = "Two-letter ISO 639-1 language code", example="en")
             @QueryParam("lang") String language,
 
@@ -88,9 +106,36 @@ public class ApiRestService extends AbstractApiService {
             @QueryParam("wkt") String wkt,
 
             @ApiParam(value = "Whether to rewrite all embedded links and paths to be absolute URL's", example="true")
-            @QueryParam("externalize") @DefaultValue("true") boolean externalize
+            @QueryParam("externalize") @DefaultValue("true") boolean externalize,
+
+            @ApiParam(value = "The date format to use for JSON date-time encoding. Either 'UNIX_EPOCH' or 'ISO_8601'", example="UNIX_EPOCH")
+            @QueryParam("dateFormat") @DefaultValue("UNIX_EPOCH") JsonDateFormat dateFormat,
+
+            @Context Request request
+
     ) throws Exception {
-        return super.search(language, domainIds, messageSeries, mainTypes, wkt, externalize);
+
+        // Perform the search
+        PagedSearchResultVo<Message> searchResult = super.searchMessages(language, domainIds, messageSeries, mainTypes, wkt);
+
+
+        // Convert messages to value objects and externalize message links, if requested
+        List<MessageVo> messages = searchResult
+                .map(m -> toMessageVo(m, language, externalize))
+                .getData();
+
+        // Depending on the dateFormat param, either use UNIX epoch or ISO-8601
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(
+                SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
+                dateFormat == JsonDateFormat.UNIX_EPOCH);
+
+        StreamingOutput stream = os -> mapper.writeValue(os, messages);
+
+        return Response
+                .ok(stream, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
+                .build();
+
     }
 
 
@@ -137,4 +182,56 @@ public class ApiRestService extends AbstractApiService {
 
         return result.get(schemaFile).toString();
     }
+
+
+    /**
+     * Convert the message to a value object representation.
+     * If requested, rewrite all links to make them external URLs.
+     * @param msg the message to convert to a vlaue object
+     * @param externalize whether to rewrite all links to make them external URLs
+     * @return the message value object representation
+     **/
+    private MessageVo toMessageVo(Message msg, String language, boolean externalize) {
+
+        // Convert the message to a value object
+        DataFilter filter = Message.MESSAGE_DETAILS_FILTER.lang(language);
+        MessageVo message = msg.toVo(MessageVo.class, filter);
+
+        // If "externalize" is set, rewrite all links to make them external
+        if (externalize) {
+            String baseUri = app.getBaseUri();
+
+            if (message.getParts() != null) {
+                String from = concat("/rest/repo/file", msg.getRepoPath());
+                String to = concat(baseUri, from);
+                message.getParts().forEach(mp -> mp.rewriteRepoPath(from, to));
+            }
+            if (message.getAttachments() != null) {
+                String to = concat(baseUri, "rest/repo/file",  msg.getRepoPath());
+                message.getAttachments().forEach(att -> att.rewriteRepoPath( msg.getRepoPath(), to));
+            }
+        }
+
+        return message;
+    }
+
+
+    /** Concatenates the URI components **/
+    private String concat(String... paths) {
+        StringBuilder result = new StringBuilder();
+        if (paths != null) {
+            Arrays.stream(paths)
+                    .filter(StringUtils::isNotBlank)
+                    .forEach(p -> {
+                        if (result.length() > 0 && !result.toString().endsWith("/") && !p.startsWith("/")) {
+                            result.append("/");
+                        } else if (result.toString().endsWith("/") && p.startsWith("/")) {
+                            p = p.substring(1);
+                        }
+                        result.append(p);
+                    });
+        }
+        return result.toString();
+    }
+
 }

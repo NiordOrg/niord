@@ -15,7 +15,6 @@
  */
 package org.niord.web.api;
 
-import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
@@ -24,18 +23,14 @@ import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
 import org.niord.core.model.BaseEntity;
-import org.niord.model.DataFilter;
 import org.niord.model.message.MainType;
-import org.niord.model.message.MessageVo;
 import org.niord.model.message.Status;
 import org.niord.model.search.PagedSearchParamsVo;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -60,13 +55,12 @@ public abstract class AbstractApiService {
      * Returns all published messages.
      * Optionally, filter by a geometry defined by the WKT (well-known text) parameter.
      */
-    public List<MessageVo> search(
+    public PagedSearchResultVo<Message> searchMessages(
             String language,
             Set<String> domainIds,
             Set<String> messageSeries,
             Set<MainType> mainTypes,
-            String wkt,
-            boolean externalize) throws Exception {
+            String wkt) throws Exception {
 
         MessageSearchParams params = new MessageSearchParams();
         params.language(language)
@@ -125,7 +119,7 @@ public abstract class AbstractApiService {
 
         // If no message series (and thus, no domains) have been specified, return nothing
         if (params.getSeriesIds().isEmpty()) {
-            return Collections.emptyList();
+            return new PagedSearchResultVo<>();
         }
 
 
@@ -135,55 +129,6 @@ public abstract class AbstractApiService {
         log.info(String.format("Public search [%s] returns %d of %d messages in %d ms",
                 params.toString(), searchResult.getData().size(), searchResult.getTotal(), System.currentTimeMillis() - t0));
 
-        DataFilter filter = Message.MESSAGE_DETAILS_FILTER.lang(language);
-        String baseUri = app.getBaseUri();
-
-        return searchResult
-                .map(m -> {
-                    MessageVo message = m.toVo(MessageVo.class, filter);
-
-                    // If "externalize" is set, rewrite all links to make them external
-                    if (externalize) {
-                        externalizeMessage(message, m.getRepoPath(), baseUri);
-                    }
-
-                    return message;
-                })
-                .getData();
+        return searchResult;
     }
-
-
-    /** rewrite all links to make them external URLs **/
-    private void externalizeMessage(MessageVo message, String repoPath, String baseUri) {
-        if (message.getParts() != null) {
-            String from = concat("/rest/repo/file", repoPath);
-            String to = concat(baseUri, from);
-            message.getParts().forEach(mp -> mp.rewriteRepoPath(from, to));
-        }
-        if (message.getAttachments() != null) {
-            String to = concat(baseUri, "rest/repo/file", repoPath);
-            message.getAttachments().forEach(att -> att.rewriteRepoPath(repoPath, to));
-        }
-
-    }
-
-
-    /** Concatenates the URI components **/
-    private String concat(String... paths) {
-        StringBuilder result = new StringBuilder();
-        if (paths != null) {
-            Arrays.stream(paths)
-                    .filter(StringUtils::isNotBlank)
-                    .forEach(p -> {
-                        if (result.length() > 0 && !result.toString().endsWith("/") && !p.startsWith("/")) {
-                            result.append("/");
-                        } else if (result.toString().endsWith("/") && p.startsWith("/")) {
-                            p = p.substring(1);
-                        }
-                        result.append(p);
-                    });
-        }
-        return result.toString();
-    }
-
 }
