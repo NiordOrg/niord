@@ -28,6 +28,7 @@ import java.util.Date;
 @XmlType(propOrder = {
         "allDay", "fromDate", "toDate"
 })
+@SuppressWarnings("unused")
 public class DateIntervalVo implements IJsonSerializable {
 
     Boolean allDay;
@@ -44,6 +45,17 @@ public class DateIntervalVo implements IJsonSerializable {
         return dateInterval;
     }
 
+    /** Returns if the given date is within this interval **/
+    public boolean containsDate(Date date) {
+        if (fromDate != null && toDate != null) {
+            return date.after(fromDate) && date.before(toDate);
+        } else if (fromDate != null) {
+            return date.after(fromDate);
+        } else if (toDate != null) {
+            return date.before(toDate);
+        }
+        return false;
+    }
 
     /*************************/
     /** Getters and Setters **/
