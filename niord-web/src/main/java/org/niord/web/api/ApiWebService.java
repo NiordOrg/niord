@@ -23,6 +23,7 @@ import org.niord.model.message.MessageVo;
 import javax.ejb.Stateless;
 import javax.jws.WebMethod;
 import javax.jws.WebService;
+import javax.ws.rs.NotFoundException;
 import java.util.List;
 import java.util.Set;
 
@@ -34,7 +35,6 @@ import java.util.Set;
 @SuppressWarnings("unused")
 public class ApiWebService extends AbstractApiService {
 
-    /** {@inheritDoc} */
     @WebMethod
     public List<MessageVo> search(
             String language,
@@ -48,5 +48,21 @@ public class ApiWebService extends AbstractApiService {
         return searchMessages(language, domainIds, messageSeries, mainTypes, wkt)
                 .map(m -> m.toVo(MessageVo.class, filter))
                 .getData();
+    }
+
+
+    @WebMethod
+    public MessageVo details(
+            String language,
+            String messageId) throws Exception {
+
+        Message message = getMessage(messageId);
+
+        if (message == null) {
+            throw new NotFoundException("No message found with id: " + messageId);
+        } else {
+            DataFilter filter = Message.MESSAGE_DETAILS_FILTER.lang(language);
+            return  message.toVo(MessageVo.class, filter);
+        }
     }
 }

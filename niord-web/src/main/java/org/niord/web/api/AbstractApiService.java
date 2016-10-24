@@ -51,6 +51,21 @@ public abstract class AbstractApiService {
     @Inject
     NiordApp app;
 
+
+    /**
+     * Returns the message with the given ID if it is public
+     *
+     * @param messageId the message ID
+     * @return the message with the given ID if it is public
+     */
+    public Message getMessage(String messageId) {
+        Message message = messageService.resolveMessage(messageId);
+        return message != null && message.getStatus().isPublic()
+                ? message
+                : null;
+    }
+
+
     /**
      * Returns all published messages.
      * Optionally, filter by a geometry defined by the WKT (well-known text) parameter.
@@ -131,4 +146,5 @@ public abstract class AbstractApiService {
 
         return searchResult;
     }
+
 }

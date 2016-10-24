@@ -38,9 +38,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import javax.xml.bind.JAXBContext;
@@ -81,7 +79,7 @@ public class ApiRestService extends AbstractApiService {
 
     /** {@inheritDoc} */
     @ApiOperation(
-            value = "Returns the public NW and NM messages",
+            value = "Returns the published NW and NM messages",
             response = MessageVo.class,
             responseContainer = "List"
     )
@@ -109,9 +107,7 @@ public class ApiRestService extends AbstractApiService {
             @QueryParam("externalize") @DefaultValue("true") boolean externalize,
 
             @ApiParam(value = "The date format to use for JSON date-time encoding. Either 'UNIX_EPOCH' or 'ISO_8601'", example="UNIX_EPOCH")
-            @QueryParam("dateFormat") @DefaultValue("UNIX_EPOCH") JsonDateFormat dateFormat,
-
-            @Context Request request
+            @QueryParam("dateFormat") @DefaultValue("UNIX_EPOCH") JsonDateFormat dateFormat
 
     ) throws Exception {
 
@@ -137,6 +133,59 @@ public class ApiRestService extends AbstractApiService {
                 .build();
 
     }
+
+
+    /** {@inheritDoc} */
+    @ApiOperation(
+            value = "Returns the public (published, cancelled or expired) NW or NM message details",
+            response = MessageVo.class
+    )
+    @GET
+    @Path("/message/{messageId}")
+    @Produces({"application/json;charset=UTF-8"})
+    @GZIP
+    public Response details(
+            @ApiParam(value = "Two-letter ISO 639-1 language code", example="en")
+            @QueryParam("lang") String language,
+
+            @ApiParam(value = "The IDs of the domains to select messages from", example="niord-client-nw")
+            @PathParam("messageId") String messageId,
+
+            @ApiParam(value = "Whether to rewrite all embedded links and paths to be absolute URL's", example="true")
+            @QueryParam("externalize") @DefaultValue("true") boolean externalize,
+
+            @ApiParam(value = "The date format to use for JSON date-time encoding. Either 'UNIX_EPOCH' or 'ISO_8601'", example="UNIX_EPOCH")
+            @QueryParam("dateFormat") @DefaultValue("UNIX_EPOCH") JsonDateFormat dateFormat
+
+        ) throws Exception {
+
+        // Perform the search
+        Message message = super.getMessage(messageId);
+
+        if (message == null) {
+            return Response
+                    .status(Response.Status.NOT_FOUND)
+                    .entity("No message found with ID: " + messageId)
+                    .build();
+        } else {
+
+            // Convert message to value objects and externalize message links, if requested
+            MessageVo result = toMessageVo(message, language, externalize);
+
+            // Depending on the dateFormat param, either use UNIX epoch or ISO-8601
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(
+                    SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
+                    dateFormat == JsonDateFormat.UNIX_EPOCH);
+
+            StreamingOutput stream = os -> mapper.writeValue(os, message);
+
+            return Response
+                    .ok(stream, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
+                    .build();
+        }
+    }
+
 
 
     /**
@@ -192,6 +241,11 @@ public class ApiRestService extends AbstractApiService {
      * @return the message value object representation
      **/
     private MessageVo toMessageVo(Message msg, String language, boolean externalize) {
+
+        // Sanity check
+        if (msg == null) {
+            return null;
+        }
 
         // Convert the message to a value object
         DataFilter filter = Message.MESSAGE_DETAILS_FILTER.lang(language);
