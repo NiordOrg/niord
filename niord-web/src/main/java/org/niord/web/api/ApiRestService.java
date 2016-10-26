@@ -148,7 +148,7 @@ public class ApiRestService extends AbstractApiService {
             @ApiParam(value = "Two-letter ISO 639-1 language code", example="en")
             @QueryParam("lang") String language,
 
-            @ApiParam(value = "The IDs of the domains to select messages from", example="niord-client-nw")
+            @ApiParam(value = "The message UID or short ID", example="NM-1275-16")
             @PathParam("messageId") String messageId,
 
             @ApiParam(value = "Whether to rewrite all embedded links and paths to be absolute URL's", example="true")
