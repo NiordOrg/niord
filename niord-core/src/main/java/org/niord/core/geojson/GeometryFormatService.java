@@ -97,7 +97,7 @@ public class GeometryFormatService {
 
 
     /** Appends the geometry to the details */
-    private String appendGeometryToDetails(String language, String details, FeatureCollectionVo geometry) {
+    public String appendGeometryToDetails(String language, String details, FeatureCollectionVo geometry) {
         try {
             String positions = formatGeometryAsHtml(language, "list", "dec", geometry);
             StringBuilder result = new StringBuilder();
