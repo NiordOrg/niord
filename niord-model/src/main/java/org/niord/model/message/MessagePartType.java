@@ -23,6 +23,7 @@ public enum MessagePartType {
 
     DETAILS,
     TIME,
+    POSITIONS,
     NOTE,
     PROHIBITION,
     SIGNALS

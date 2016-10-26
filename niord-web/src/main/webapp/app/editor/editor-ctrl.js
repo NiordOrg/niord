@@ -632,7 +632,7 @@ angular.module('niord.editor')
 
             /** Returns if the given message part positions field should be displayed **/
             $scope.showPartPositionField = function (part) {
-                return part.type == 'DETAILS' || part.type == 'SIGNALS' ||
+                return part.type == 'DETAILS' || part.type == 'POSITIONS' || part.type == 'SIGNALS' ||
                     (part.geometry && part.geometry.features.length > 0);
             };
 

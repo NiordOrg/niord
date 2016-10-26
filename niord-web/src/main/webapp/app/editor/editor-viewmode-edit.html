@@ -375,6 +375,11 @@
                                     <i class="fa fa-clock-o"></i>
                                     <span translate>msg.field.time</span>
                                 </td>
+                                <td ng-click="part.type = 'POSITIONS'"
+                                    class="part-type-btn" ng-class="{'part-type-selected': part.type == 'POSITIONS'}">
+                                    <i class="fa fa-clock-o"></i>
+                                    <span translate>msg.field.positions</span>
+                                </td>
                                 <td ng-click="part.type = 'PROHIBITION'" ng-if="showPartType(part, 'prohibition')"
                                               class="part-type-btn" ng-class="{'part-type-selected': part.type == 'PROHIBITION'}">
                                     <i class="fa fa-warning"></i>
@@ -536,7 +541,7 @@
                 <!-- ********************* -->
                 <!-- ** Details         ** -->
                 <!-- ********************* -->
-                <editor-field edit-mode="editMode" index="part.index" field-id="description" field-title="msg.field.{{part.type | lowercase}}"
+                <editor-field edit-mode="editMode" index="part.index" field-id="description" field-title="msg.field.details"
                               tab-index="1010 + part.index * 20">
 
                     <editor-field-value-viewer>
