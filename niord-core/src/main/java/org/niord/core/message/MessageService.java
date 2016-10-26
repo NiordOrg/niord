@@ -67,6 +67,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -807,7 +808,9 @@ public class MessageService extends BaseService {
         if (!param.getAreaIds().isEmpty()) {
             Join<Message, Area> areas = msgRoot.join("areas", JoinType.LEFT);
             if (!param.getAreaIds().isEmpty()) {
-                Predicate[] areaMatch = areaService.getAreaDetails(param.getAreaIds()).stream()
+                Predicate[] areaMatch = param.getAreaIds().stream()
+                        .map(aid -> areaService.findByAreaId(aid))
+                        .filter(Objects::nonNull)
                         .map(a -> builder.like(areas.get("lineage"), a.getLineage() + "%"))
                         .toArray(Predicate[]::new);
                 criteriaHelper.add(builder.or(areaMatch));
@@ -818,7 +821,9 @@ public class MessageService extends BaseService {
         // Filter on categories
         if (!param.getCategoryIds().isEmpty()) {
             Join<Message, Category> categories = msgRoot.join("categories", JoinType.LEFT);
-            Predicate[] categoryMatch = categoryService.getCategoryDetails(param.getCategoryIds()).stream()
+            Predicate[] categoryMatch = param.getCategoryIds().stream()
+                    .map(cid -> categoryService.findByCategoryId(cid))
+                    .filter(Objects::nonNull)
                     .map(c -> builder.like(categories.get("lineage"), c.getLineage() + "%"))
                     .toArray(Predicate[]::new);
             criteriaHelper.add(builder.or(categoryMatch));

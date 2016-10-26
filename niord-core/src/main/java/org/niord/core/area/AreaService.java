@@ -469,6 +469,21 @@ public class AreaService extends BaseService {
         }
     }
 
+
+    /**
+     * Returns the area with the given ID or MRN. Returns null if the area is not found.
+     *
+     * @param areaId the area ID or MRN
+     * @return the area with the given ID or MRN or null if not found
+     */
+    public Area findByAreaId(String areaId) {
+        if (StringUtils.isNumeric(areaId)) {
+            return getAreaDetails(Integer.valueOf(areaId));
+        }
+        return findByMrn(areaId);
+    }
+
+
     /**
      * Ensures that the template area and it's parents exists.
      *

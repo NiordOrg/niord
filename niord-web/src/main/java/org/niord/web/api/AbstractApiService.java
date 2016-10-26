@@ -22,7 +22,6 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
-import org.niord.core.model.BaseEntity;
 import org.niord.model.message.MainType;
 import org.niord.model.message.Status;
 import org.niord.model.search.PagedSearchParamsVo;
@@ -74,6 +73,7 @@ public abstract class AbstractApiService {
             String language,
             Set<String> domainIds,
             Set<String> messageSeries,
+            Set<String> areaIds,
             Set<MainType> mainTypes,
             String wkt) throws Exception {
 
@@ -81,6 +81,7 @@ public abstract class AbstractApiService {
         params.language(language)
                 .statuses(Collections.singleton(Status.PUBLISHED))
                 .mainTypes(mainTypes)
+                .areaIds(areaIds)
                 .extent(wkt)
                 .includeGeneral(Boolean.TRUE) // Messages without a geometry may be included if WKT specified
                 .sortBy("AREA")
@@ -113,14 +114,14 @@ public abstract class AbstractApiService {
                     // Set the areas to be the ones defined by the domain
                     params.getAreaIds().addAll(
                             domain.getAreas().stream()
-                                    .map(BaseEntity::getId)
+                                    .map(a -> a.getId().toString())
                                     .collect(Collectors.toSet())
                     );
 
                     // Set the categories to be the ones defined by the domain
                     params.getCategoryIds().addAll(
                             domain.getCategories().stream()
-                                    .map(BaseEntity::getId)
+                                    .map(c -> c.getId().toString())
                                     .collect(Collectors.toSet())
                     );
                 }

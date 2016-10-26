@@ -68,8 +68,8 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     Set<Type> types = new HashSet<>();
     Set<MainType> mainTypes = new HashSet<>();
     Set<String> seriesIds = new HashSet<>();
-    Set<Integer> areaIds = new HashSet<>();
-    Set<Integer> categoryIds = new HashSet<>();
+    Set<String> areaIds = new HashSet<>();
+    Set<String> categoryIds = new HashSet<>();
     Set<String> chartNumbers = new HashSet<>();
     Set<String> tags = new HashSet<>();
     String viewMode;
@@ -94,8 +94,8 @@ public class MessageSearchParams extends PagedSearchParamsVo {
                 .mainTypes(toSet(req.getParameterValues("mainType"), MainType::valueOf))
                 .types(toSet(req.getParameterValues("type"), Type::valueOf))
                 .seriesIds(toSet(req.getParameterValues("messageSeries"), Function.identity()))
-                .areaIds(toSet(req.getParameterValues("area"), Integer::valueOf))
-                .categoryIds(toSet(req.getParameterValues("category"), Integer::valueOf))
+                .areaIds(toSet(req.getParameterValues("area"), Function.identity()))
+                .categoryIds(toSet(req.getParameterValues("category"), Function.identity()))
                 .chartNumbers(toSet(req.getParameterValues("chart"), Function.identity()))
                 .tags(toSet(req.getParameterValues("tag"), Function.identity()))
                 .messageId(req.getParameter("messageId"))
@@ -381,20 +381,20 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         return this;
     }
 
-    public Set<Integer> getAreaIds() {
+    public Set<String> getAreaIds() {
         return areaIds;
     }
 
-    public MessageSearchParams areaIds(Set<Integer> areaIds) {
+    public MessageSearchParams areaIds(Set<String> areaIds) {
         this.areaIds = toSet(areaIds);
         return this;
     }
 
-    public Set<Integer> getCategoryIds() {
+    public Set<String> getCategoryIds() {
         return categoryIds;
     }
 
-    public MessageSearchParams categoryIds(Set<Integer> categoryIds) {
+    public MessageSearchParams categoryIds(Set<String> categoryIds) {
         this.categoryIds = toSet(categoryIds);
         return this;
     }

@@ -365,6 +365,20 @@ public class CategoryService extends BaseService {
 
 
     /**
+     * Returns the category with the given ID or MRN. Returns null if the category is not found.
+     *
+     * @param categoryId the ID or MRN of the category
+     * @return the category with the given ID or MRN or null if not found
+     */
+    public Category findByCategoryId(String categoryId) {
+        if (StringUtils.isNumeric(categoryId)) {
+            return getCategoryDetails(Integer.valueOf(categoryId));
+        }
+        return findByMrn(categoryId);
+    }
+
+
+    /**
      * Ensures that the template category and it's parents exists
      *
      * @param templateCategory the template category

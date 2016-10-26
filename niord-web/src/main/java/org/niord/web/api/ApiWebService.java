@@ -40,12 +40,13 @@ public class ApiWebService extends AbstractApiService {
             String language,
             Set<String> domainIds,
             Set<String> messageSeries,
+            Set<String> areaIds,
             Set<MainType> mainTypes,
             String wkt) throws Exception {
 
         DataFilter filter = Message.MESSAGE_DETAILS_FILTER.lang(language);
 
-        return searchMessages(language, domainIds, messageSeries, mainTypes, wkt)
+        return searchMessages(language, domainIds, messageSeries, areaIds, mainTypes, wkt)
                 .map(m -> m.toVo(MessageVo.class, filter))
                 .getData();
     }
