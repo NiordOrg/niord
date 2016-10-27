@@ -15,17 +15,6 @@
     }
 }
 
-/** First page rules **/
-@page :first {
-    margin: 1.5cm 1.0cm;
-    @top-center {
-        content: element(first-page-header);
-    }
-    @bottom-center {
-        content: element(first-page-footer);
-    }
-}
-
 div.header {
     display: block;
     position: running(header);

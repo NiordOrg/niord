@@ -315,12 +315,12 @@ angular.module('niord.messages')
     /*******************************************************************
      * Controller that handles the message Print dialog
      *******************************************************************/
-    .controller('MessagePrintDialogCtrl', ['$scope', '$document', '$window', 'MessageService', 'total', 'reports',
-        function ($scope, $document, $window, MessageService, total, reports) {
+    .controller('MessagePrintDialogCtrl', ['$scope', '$document', '$window', 'MessageService', 'total', 'list',
+        function ($scope, $document, $window, MessageService, total, list) {
             'use strict';
 
             $scope.totalMessageNo = total;
-            $scope.reports = undefined;
+            $scope.reports = [];
             $scope.reportProperties = {};
 
             $scope.data = {
@@ -337,17 +337,14 @@ angular.module('niord.messages')
                 }
             }
 
-            
-            // If requested, load the message reports
-            if (reports) {
-                MessageService.printReports()
-                    .success(function (reports) {
-                        $scope.reports = reports;
-                        if (reports.length > 0) {
-                            $scope.data.report = reports[0].reportId;
-                        }
-                    })
-            }
+            // Load the message reports
+            MessageService.printReports(list)
+                .success(function (reports) {
+                    $scope.reports = reports;
+                    if (reports.length > 0) {
+                        $scope.data.report = reports[0].reportId;
+                    }
+                });
 
 
             // When a new report is selected, update the report properties

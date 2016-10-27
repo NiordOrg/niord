@@ -42,6 +42,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -91,6 +92,22 @@ public class MessageReportRestService {
 
 
     /**
+     * Returns the reports available for printing message details
+     * @return the reports available for printing message details
+     */
+    @GET
+    @Path("/detail-reports")
+    @GZIP
+    @NoCache
+    public List<FmReportVo> getDetailReports() {
+        return Arrays.asList(
+                fmService.getStandardReport().toVo(),
+                fmService.getDraftReport().toVo()
+        );
+    }
+
+
+    /**
      * Generates a PDF for the message with the given message id, which may be either a UID,
      * or a short ID of a message.
      *
@@ -114,17 +131,21 @@ public class MessageReportRestService {
         MessagePrintParams printParams = MessagePrintParams.instantiate(request);
 
         try {
+            FmReport report = fmService.getReport(printParams.getReport());
+
             ProcessFormat format = printParams.getDebug() ? ProcessFormat.TEXT : ProcessFormat.PDF;
 
             StreamingOutput stream = os -> {
                 try {
                     fmService.newTemplateBuilder()
-                            .templatePath("/templates/messages/message-details-pdf.ftl")
+                            .templatePath(report.getTemplatePath())
                             .data("messages", Collections.singleton(message))
+                            .data("areaHeadings", false)
                             .data("pageSize", printParams.getPageSize())
                             .data("pageOrientation", printParams.getPageOrientation())
                             .data("mapThumbnails", printParams.getMapThumbnails())
-                            .data("draft", false)
+                            .data("frontPage", false)
+                            .data(report.getProperties()) // Let report override settings
                             .dictionaryNames("web", "message", "pdf")
                             .language(language)
                             .process(format, os);
@@ -185,6 +206,7 @@ public class MessageReportRestService {
                             .data("pageSize", printParams.getPageSize())
                             .data("pageOrientation", printParams.getPageOrientation())
                             .data("mapThumbnails", printParams.getMapThumbnails())
+                            .data("frontPage", true)
                             .data(report.getProperties()) // Let report override settings
                             .dictionaryNames("web", "message", "pdf")
                             .language(language)

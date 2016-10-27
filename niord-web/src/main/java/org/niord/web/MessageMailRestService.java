@@ -114,7 +114,9 @@ public class MessageMailRestService {
                             .data("mailTo", mailTo)
                             .data("mailMessage", mailMessage)
                             .data("mailSender", user.getName())
-                            .dictionaryNames("web", "message", "mail")
+                            .data("mapThumbnails", false)
+                            .data("frontPage", false)
+                            .dictionaryNames("web", "message", "mail", "pdf")
                             .language(params.getLanguage())
                             .process();
 

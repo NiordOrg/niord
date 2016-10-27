@@ -377,20 +377,21 @@ angular.module('niord.messages')
 
 
             /** Returns the message print reports */
-            printReports: function () {
-                return $http.get('/rest/message-reports/reports');
+            printReports: function (list) {
+                var endpoint = (list) ? 'reports' : 'detail-reports';
+                return $http.get('/rest/message-reports/' + endpoint);
             },
 
 
             /** Opens the message print dialog */
-            messagePrintDialog: function (total, reports) {
+            messagePrintDialog: function (total, list) {
                 return $uibModal.open({
                     controller: "MessagePrintDialogCtrl",
                     templateUrl: "/app/messages/message-print-dialog.html",
                     size: 'sm',
                     resolve: {
                         total: function () { return total; },
-                        reports: function () { return reports; }
+                        list: function () { return list; }
                     }
                 });
             },
@@ -398,7 +399,7 @@ angular.module('niord.messages')
             /** Opens the message print dialog */
             printMessage: function (messageId) {
                 var that = this;
-                that.messagePrintDialog(1).result
+                that.messagePrintDialog(1, false).result
                     .then(function (printSettings) {
                         that.authTicket()
                             .success(function (ticket) {
@@ -413,6 +414,9 @@ angular.module('niord.messages')
                                 }
                                 if (printSettings && printSettings['mapThumbnails'] !== undefined) {
                                     params += '&mapThumbnails=' + printSettings.mapThumbnails;
+                                }
+                                if (printSettings && printSettings.report) {
+                                    params += '&report=' + encodeURIComponent(printSettings.report);
                                 }
 
                                 $window.location = '/rest/message-reports/message/' + messageId + '.pdf?' + params;

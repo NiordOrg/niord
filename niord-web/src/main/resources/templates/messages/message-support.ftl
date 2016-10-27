@@ -6,12 +6,25 @@
 <!-- ***************************************  -->
 <!-- Parametrized message styles             -->
 <!-- ***************************************  -->
-<#macro pageSizeStyle>
+<#macro pageSizeStyle frontPage=true>
     <style type="text/css" media="all">
 
         @page {
             size: ${pageSize!"A4"} ${pageOrientation!"portrait"};
         }
+
+    <#if frontPage>
+        /** First page rules **/
+        @page :first {
+            margin: 1.5cm 1.0cm;
+            @top-center {
+                content: element(first-page-header);
+            }
+            @bottom-center {
+                content: element(first-page-footer);
+            }
+        }
+    </#if>
 
     </style>
 </#macro>
@@ -20,9 +33,11 @@
 <!-- ***************************************  -->
 <!-- Renders the default headers and footers  -->
 <!-- ***************************************  -->
-<#macro renderDefaultHeaderAndFooter headerText>
-    <div class="first-page-header">
-    </div>
+<#macro renderDefaultHeaderAndFooter headerText frontPage=true>
+    <#if frontPage>
+        <div class="first-page-header">
+        </div>
+    </#if>
     <div class="header">
         <span style="float: left">${headerText}</span>
         <span style="float: right">${text("pdf.page")} <span id="pagenumber"></span></span>
