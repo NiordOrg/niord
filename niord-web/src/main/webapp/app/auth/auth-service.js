@@ -90,6 +90,12 @@ angular.module('niord.auth')
             };
 
 
+            /** Returns if the user has the given resource role in Keycloak **/
+            $rootScope.hasResourceRole = function (role, resourceId) {
+                return AuthService.keycloak.hasResourceRole(role, resourceId);
+            };
+
+
             /** Returns if the user supports the given message mainType in the current domain **/
             $rootScope.supportsMainType = function(mainType) {
                 if ($rootScope.domain && $rootScope.domain.messageSeries) {

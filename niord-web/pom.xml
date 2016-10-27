@@ -219,6 +219,7 @@
                                 <include>app/**/*.html</include>
                                 <include>css/niord-all.css</include>
                                 <include>css/niord-all.min.css</include>
+                                <include>css/messages.css</include> <!-- loaded by TinyMCS -->
                                 <include>css/templates/*.css</include>
                                 <include>ext/**</include>
                                 <include>img/**</include>
