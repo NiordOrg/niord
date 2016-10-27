@@ -142,7 +142,7 @@ public abstract class AbstractApiService {
         // Perform the search
         long t0 = System.currentTimeMillis();
         PagedSearchResultVo<Message> searchResult = messageService.search(params);
-        log.info(String.format("Public search [%s] returns %d of %d messages in %d ms",
+        log.debug(String.format("Public search [%s] returns %d of %d messages in %d ms",
                 params.toString(), searchResult.getData().size(), searchResult.getTotal(), System.currentTimeMillis() - t0));
 
         return searchResult;
