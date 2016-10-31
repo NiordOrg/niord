@@ -336,8 +336,8 @@
             </tr>
         </#if>
 
-        <!-- Publication line (drafts only) -->
-        <#if draft == true && msgDesc?has_content && msgDesc.publication?has_content>
+        <!-- Publication line -->
+        <#if msgDesc?has_content && msgDesc.publication?has_content>
             <tr>
                 <td class="field-name">${text("msg.field.publication")}</td>
                 <td class="field-value">
