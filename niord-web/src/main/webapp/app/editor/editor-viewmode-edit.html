@@ -1,5 +1,4 @@
-
-<div class="editor-contents container">
+<div class="editor-contents container" xmlns="http://java.sun.com/jsf/facelets" xmlns="http://www.w3.org/1999/html">
     <h3 class="page-header">
         Editor
 
@@ -157,17 +156,16 @@
                         <span ng-if="message.descs[0].lang != language" style="color: darkgray;">
                             <img ng-src="/img/flags/{{message.descs[0].lang}}.png" style="height: 12px; opacity: 0.5;"/>
                         </span>
+                        <span ng-if="message.autoTitle" class="glyphicon glyphicon-lock" style="color: lightgray"></span>
                     </div>
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">
                     <div class="row" style="margin-top: 10px">
                         <div class="col-sm-12">
-                            <button type="button" class="btn btn-sm btn-default" ng-model="message.autoTitle"
-                                    tabindex="401"
-                                    uib-btn-checkbox uib-btn-checkbox-true="true" uib-btn-checkbox-false="false">
-                                <span class="glyphicon glyphicon-lock"></span> Auto-generate
-                            </button>
+                            <input type="checkbox" ng-model="message.autoTitle"
+                                    tabindex="401"> Auto-generate
+                            </input>
                         </div>
                     </div>
                     <div class="row" style="margin-top: 10px">
