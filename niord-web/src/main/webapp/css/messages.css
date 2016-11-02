@@ -496,6 +496,15 @@ table.position-table td.pos-index {
     white-space: nowrap;
 }
 
+.message-publication a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.message-publication a:hover {
+    text-decoration: underline;
+}
+
 /**
  * Message selection styles
  */

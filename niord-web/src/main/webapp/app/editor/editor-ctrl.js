@@ -144,6 +144,11 @@ angular.module('niord.editor')
                     LangService.checkDescs(ref, initReferenceDescField, undefined, $rootScope.modelLanguages);
                 });
 
+                // Ensure that the message publications list is defined
+                if (!msg.publications) {
+                    msg.publications = [];
+                }
+
                 // Update the attachment upload url
                 $scope.attachmentUploadUrl =  MessageService.attachmentUploadRepoPath(msg);
                 // Ensure that localized attachment desc fields are defined for all languages
@@ -237,6 +242,19 @@ angular.module('niord.editor')
                 $timeout(function () {
                     $('.editor-field-label').first().focus();
                 });
+            };
+
+
+            /** The TinyMCE editor actually hides the textarea and constructs an iframe. Fix tab-indexing **/
+            $scope.fixTinyMCETabIndex = function (editor) {
+                var id = editor.getElement().parentElement.id;
+                var elm = $('#' + id);
+                var textarea = elm.find('textarea');
+                var tabindex = textarea.attr('tabindex');
+                if (tabindex) {
+                    textarea.attr('tabindex', null);
+                    elm.find('iframe').attr('tabindex', tabindex);
+                }
             };
 
 
@@ -417,6 +435,50 @@ angular.module('niord.editor')
             };
 
 
+            /** Publication DnD configuration **/
+            $scope.publicationsSortableCfg = {
+                group: 'publication',
+                handle: '.move-btn',
+                onEnd: function() {
+                    $scope.adjustEditableMessage();
+                    $scope.setDirty
+                }
+            };
+
+
+            // Configuration of the Publication TinyMCE editors
+            $scope.publicationTinymceOptions = {
+                resize: false,
+                valid_elements : '*[*]', // NB: This allows insertion of all html elements, including javascript
+                statusbar : false,
+                menubar: false,
+                content_css : '/css/messages.css',
+                body_class : 'message-publication',
+                plugins: "link anchor code fullscreen",
+                toolbar: " link image table | code fullscreen",
+                init_instance_callback : $scope.fixTinyMCETabIndex
+            };
+
+            /** Adds the new publication to the list of message publications **/
+            $scope.addPublication = function () {
+                var pub = {
+                    publication: undefined,
+                    parameters: ''
+                };
+                $scope.message.publications.push(pub);
+            };
+
+
+            /** Deletes the given publication from the list of message publications **/
+            $scope.deletePublication = function (pub) {
+                if ($.inArray(pub, $scope.message.publications) > -1) {
+                    $scope.message.publications.splice( $.inArray(pub, $scope.message.publications), 1 );
+                    $scope.adjustEditableMessage();
+                    $scope.setDirty();
+                }
+            };
+
+
             /** Computes the charts intersecting with the current message geometry **/
             $scope.computeCharts = function () {
                 // Create a combined geometry for all message parts
@@ -494,8 +556,7 @@ angular.module('niord.editor')
 
 
             /**
-             * Called when relevant attributes have been changed that may affect the auto-generated title lines
-             * and the editor fields
+             * Called when relevant attributes have been changed that may affect the auto-generated message fields
              */
             $scope.adjustEditableMessage = function () {
                 var msg = $scope.message;
@@ -509,18 +570,30 @@ angular.module('niord.editor')
                     descs: msg.descs.map(function (desc) {
                        return { lang: desc.lang, subject: desc.subject, vicinity: desc.vicinity }
                     }),
-                    parts: angular.copy(msg.parts)
+                    autoPublication: msg.autoPublication,
+                    publications: msg.publications,
+                    parts: msg.parts.map(function (part) {
+                        return {
+                            descs: part.descs.map(function (desc) {
+                                return { lang: desc.lang, subject: desc.subject, vicinity: desc.vicinity }
+                            })
+                        }
+                    })
+
                 };
                 MessageService.adjustEditableMessage(msgTemplate)
                     .success(function (message) {
 
                         $scope.setEditorFields(message.editorFields);
 
-                        if (msg.autoTitle) {
+                        if (msg.autoTitle || msg.autoPublication) {
                             angular.forEach(message.descs, function (desc) {
                                 var d = LangService.descForLanguage($scope.message, desc.lang);
-                                if (d) {
+                                if (d && msg.autoTitle) {
                                     d.title = desc.title;
+                                }
+                                if (d && msg.autoPublication) {
+                                    d.publication = desc.publication;
                                 }
                             })
                         }
@@ -709,9 +782,10 @@ angular.module('niord.editor')
                 return startCoordIndex;
             };
 
-            /*****************************/
-            /** TinyMCE functions       **/
-            /*****************************/
+
+            /*********************************************/
+            /** Message Details TinyMCE functions       **/
+            /*********************************************/
 
             /** File callback function - called from the TinyMCE image and link dialogs **/
             $scope.fileBrowserCallback = function(field_name, url, type, win) {
@@ -832,19 +906,6 @@ angular.module('niord.editor')
                                 editor.insertContent(svg);
                             });
                     });
-            };
-
-
-            /** The TinyMCE editor actually hides the textarea and constructs an iframe. Fix tab-indexing **/
-            $scope.fixTinyMCETabIndex = function (editor) {
-                var id = editor.getElement().parentElement.id;
-                var elm = $('#' + id);
-                var textarea = elm.find('textarea');
-                var tabindex = textarea.attr('tabindex');
-                if (tabindex) {
-                    textarea.attr('tabindex', null);
-                    elm.find('iframe').attr('tabindex', tabindex);
-                }
             };
 
 

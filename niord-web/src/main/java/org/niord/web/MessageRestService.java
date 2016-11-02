@@ -697,14 +697,22 @@ public class MessageRestService  {
         // Compute the editor fields to use for the message
         editorFieldsService.computeEditorFields(message);
 
-        // If auto-title is on, compute the title line from area + vicinity + subject
-        if (message.isAutoTitle() != null && message.isAutoTitle()) {
+
+        boolean autoTitle = message.isAutoTitle() != null && message.isAutoTitle();
+        boolean autoPublication = message.isAutoPublication() != null && message.isAutoPublication();
+
+        // If auto-title or -publication is on, compute the composite fields
+        if (autoTitle || autoPublication) {
             Message msg = new Message(message);
-            messageService.computeTitleLine(msg);
+
+            // Ensure that description records are generated for all model languages
+            Arrays.stream(app.getLanguages()).forEach(msg::checkCreateDesc);
+
+            messageService.updateAutoMessageFields(msg);
 
             // Replace the value object with title line descriptors.
             message.setDescs(null);
-            DataFilter filter = DataFilter.get().fields("MessageDesc.title");
+            DataFilter filter = DataFilter.get().fields(DataFilter.DETAILS);
             msg.getDescs().forEach(desc -> message.checkCreateDescs().add(desc.toVo(filter)));
 
         } else {
@@ -714,6 +722,7 @@ public class MessageRestService  {
         // Prune irrelevant fields
         message.setMainType(null);
         message.setAutoTitle(null);
+        message.setAutoPublication(null);
         message.setAreas(null);
         message.setCategories(null);
         message.setMessageSeries(null);

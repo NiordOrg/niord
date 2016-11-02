@@ -696,20 +696,73 @@
                           tab-index="1700">
 
                 <editor-field-value-viewer>
-                    <div ng-if="message.descs.length > 0">
-                        {{message.descs[0].publication}}
-                    </div>
+                    <span ng-if="message.descs.length > 0 && message.descs[0].publication"
+                         ng-bind-html="message.descs[0].publication | toTrusted"
+                         class="message-publication">
+                    </span>
+                    <span class="glyphicon glyphicon-lock" style="color: lightgray"></span>
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">
+
                     <div class="row">
-                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
-                            <input class="form-control input-sm" placeholder="Publication" type="text"
-                                   tabindex="1701"
-                                   autocapitalize="off" autocorrect="off" autocomplete="off"
-                                   ng-model="desc.publication" bg-flag="desc.lang"/>
+                        <div class="col-sm-12">
+                            <input type="checkbox" ng-model="message.autoPublication"
+                                   tabindex="1701"> Auto-generate
+                            </input>
                         </div>
                     </div>
+
+                    <div ng-if="!message.autoPublication" class="row" style="margin-top: 10px">
+                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs"  id="publication-{{desc.lang}}">
+                                <textarea class="editor-publication" ui-tinymce="publicationTinymceOptions"
+                                          tabindex="1702"
+                                          ng-model="desc.publication" bg-flag="desc.lang"></textarea>
+                            <flag lang="desc.lang" class="editor-description-flag"></flag>
+                        </div>
+                    </div>
+
+                    <div ng-if="message.autoPublication" class="row" style="margin-top: 10px">
+                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
+                            <div class="editor-view-publication message-publication"
+                                 ng-bind-html="desc.publication | toTrusted" bg-flag="desc.lang" ></div>
+                        </div>
+                    </div>
+
+                    <table class="table table-condensed editor-publication-table">
+                        <tr>
+                            <th>Publications</th>
+                            <th>Parameters</th>
+                            <th>
+                                <div class="pull-right">
+                                    <button ng-click="addPublication()" class="btn btn-default btn-xs" tabindex="1703">
+                                        <span class="glyphicon glyphicon-plus"></span> Add
+                                    </button>
+                                </div>
+                            </th>
+                        </tr>
+                        <tbody ng-sortable="publicationsSortableCfg">
+                        <tr ng-repeat="pub in message.publications" ng-init="pubIndex = $index">
+                            <td width="240">
+                                <publication-field publication-data="pub" tab-index="1704 + pubIndex * 3"
+                                            publication-changed="adjustEditableMessage()"></publication-field>
+                            </td>
+                            <td width="*">
+                                <input class="form-control input-sm" placeholder="Comma-separated parameters" type="text"
+                                       tabindex="{{1705 + pubIndex * 3}}"
+                                       ng-model="pub.parameters"
+                                       ng-change="adjustEditableMessage()"
+                                       ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"/>
+                            </td>
+                            <td style="width: 50px; padding-top: 12px" nowrap>
+                                <a href ng-click="deletePublication(pub);" title="Delete Publication"><i class="glyphicon glyphicon-trash"></i></a>
+                                &nbsp;
+                                <a href><span class="glyphicon glyphicon-move move-btn"></span></a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+
                 </editor-field-value-editor>
 
             </editor-field>

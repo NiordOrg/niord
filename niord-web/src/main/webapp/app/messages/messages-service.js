@@ -188,6 +188,13 @@ angular.module('niord.messages')
             },
 
 
+            /** Returns all publications */
+            searchPublications: function(name) {
+                return $http.get('/rest/publications/search?lang=' + $rootScope.language
+                                + '&name=' + encodeURIComponent(name), false);
+            },
+
+
             /** Returns the recently edited draft messages */
             recentlyEditedDrafts: function(maxMessageNo) {
                 maxMessageNo = maxMessageNo || 20;

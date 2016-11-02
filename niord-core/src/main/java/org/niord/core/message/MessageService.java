@@ -34,6 +34,7 @@ import org.niord.core.geojson.FeatureService;
 import org.niord.core.message.MessageSearchParams.DateType;
 import org.niord.core.message.MessageSearchParams.UserType;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.publication.Publication;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
@@ -350,6 +351,10 @@ public class MessageService extends BaseService {
         // Substitute the Charts with the persisted ones
         message.setCharts(chartService.persistedCharts(message.getCharts()));
 
+        // Substitute the publication references with the persisted ones
+        message.getPublications().forEach(pub
+                -> pub.setPublication(getByPrimaryKey(Publication.class, pub.getPublication().getId())));
+
         // Persist the message
         message = saveMessage(message);
         log.info("Saved message " + message.getUid());
@@ -456,6 +461,11 @@ public class MessageService extends BaseService {
                 .filter(a -> a != null)
                 .forEach(original::addAttachment);
 
+        original.getPublications().clear();
+        message.getPublications().stream()
+                .map(this::updatePublication)
+                .forEach(original::addPublication);
+
         // Persist the message
         saveMessage(original);
         log.info("Updated message " + original);
@@ -514,6 +524,22 @@ public class MessageService extends BaseService {
         DateInterval original = getByPrimaryKey(DateInterval.class, dateInterval.getId());
         if (original != null) {
             original.updateDateInterval(dateInterval);
+        }
+        return original;
+    }
+
+    /** Called upon saving a message. Updates the message publication **/
+    private MessagePublication updatePublication(MessagePublication publication) {
+
+        // Update the reference publication with the persisted ibe
+        publication.setPublication(getByPrimaryKey(Publication.class, publication.getPublication().getId()));
+
+        if (publication.isNew()) {
+            return publication;
+        }
+        MessagePublication original = getByPrimaryKey(MessagePublication.class, publication.getId());
+        if (original != null) {
+            original.updatePublication(publication);
         }
         return original;
     }
@@ -620,15 +646,21 @@ public class MessageService extends BaseService {
 
 
     /**
-     * Computes the title lines for the given message template
+     * Computes the auto-generated message fields for the given message template
      *
-     * @param message the message template to compute the title line for
+     * @param message the message template to compute auto-generated message fields for
      * @return the updated message template
      */
-    public Message computeTitleLine(Message message) {
-        message.setAreas(persistedList(Area.class, message.getAreas()));
-        message.setAutoTitle(true);
-        message.updateMessageTitle();
+    public Message updateAutoMessageFields(Message message) {
+        if (message.isAutoTitle()) {
+            message.setAreas(persistedList(Area.class, message.getAreas()));
+        }
+        if (message.isAutoPublication()) {
+            message.getPublications().forEach(pub -> {
+                pub.setPublication(getByPrimaryKey(Publication.class, pub.getPublication().getId()));
+            });
+        }
+        message.updateAutoMessageFields();
         return message;
     }
 

@@ -18,6 +18,8 @@ package org.niord.core.message.vo;
 import org.apache.commons.lang.StringUtils;
 import org.niord.model.message.MessageVo;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,6 +32,7 @@ public class SystemMessageVo extends MessageVo {
     Boolean autoTitle;
     Boolean autoPublication;
     Boolean autoSource;
+    List<MessagePublicationVo> publications;
     String thumbnailPath;
     String repoPath;
     String editRepoPath;
@@ -85,6 +88,13 @@ public class SystemMessageVo extends MessageVo {
         fixDescriptionRepoPaths();
     }
 
+    public List<MessagePublicationVo> checkCreatePublications() {
+        if (publications == null) {
+            publications = new ArrayList<>();
+        }
+        return publications;
+    }
+
     /*************************/
     /** Getters and Setters **/
     /*************************/
@@ -119,6 +129,14 @@ public class SystemMessageVo extends MessageVo {
 
     public void setAutoSource(Boolean autoSource) {
         this.autoSource = autoSource;
+    }
+
+    public List<MessagePublicationVo> getPublications() {
+        return publications;
+    }
+
+    public void setPublications(List<MessagePublicationVo> publications) {
+        this.publications = publications;
     }
 
     public String getThumbnailPath() {

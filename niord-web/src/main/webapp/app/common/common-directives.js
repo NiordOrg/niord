@@ -433,6 +433,59 @@ angular.module('niord.common')
     }])
 
 
+
+    /********************************
+     * Defines a publication field used for
+     * selecting a publication
+     ********************************/
+    .directive('publicationField', [ '$rootScope', 'MessageService', function ($rootScope, MessageService) {
+        'use strict';
+
+        return {
+            restrict: 'E',
+            templateUrl: '/app/common/publication-field.html',
+            replace: false,
+            scope: {
+                publicationData: "=",
+                tabIndex:   "=",
+                publicationChanged: "&"
+            },
+            link: function(scope, element, attrs) {
+
+                if (scope.tabIndex) {
+                    var input = element.find("input");
+                    input.attr('tabindex', scope.tabIndex);
+                }
+
+
+                /** Called whenever the publication has been updated **/
+                scope.publicationUpdated = function () {
+                    if (attrs.publicationChanged) {
+                        scope.publicationChanged();
+                    }
+                };
+
+
+                /** Refreshes the publication selection **/
+                scope.publications = [];
+                scope.refreshPublications = function (text) {
+                    text = text || '';
+                    MessageService.searchPublications(text)
+                        .success(function (publications) {
+                            scope.publications = publications;
+                        });
+                };
+
+                /** Removes the current publication selection */
+                scope.removePublication = function () {
+                    scope.publicationData.publication = null;
+                    scope.publicationUpdated();
+                }
+            }
+        }
+    }])
+
+
     /** Use this directive to set focus **/
     .directive('focus', ['$timeout', function ($timeout) {
         'use strict';

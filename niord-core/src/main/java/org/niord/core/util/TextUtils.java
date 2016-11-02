@@ -45,13 +45,15 @@ public class TextUtils {
      * @return the plain text version
      */
     public static String html2txt(String html) {
-        try {
-            Document doc = Jsoup.parse(html);
-            return new HtmlToPlainText().getPlainText(doc.body());
-        } catch (Exception e) {
-            // If any error occurs, return the original html
-            return html;
+        if (StringUtils.isNotBlank(html)) {
+            try {
+                Document doc = Jsoup.parse(html);
+                return new HtmlToPlainText().getPlainText(doc.body());
+            } catch (Exception ignored) {
+            }
         }
+        // If blank, or if any error occurs, return the original html
+        return html;
     }
 
 

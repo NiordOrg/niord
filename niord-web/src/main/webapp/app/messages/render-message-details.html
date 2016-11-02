@@ -97,7 +97,7 @@
             <!-- Publication -->
             <tr ng-if="msg.descs[0].publication">
                 <th translate-language="{{language}}" translate>msg.field.publication</th>
-                <td>{{msg.descs[0].publication}}</td>
+                <td class="message-publication" ng-bind-html="msg.descs[0].publication | toTrusted"></td>
             </tr>
 
 

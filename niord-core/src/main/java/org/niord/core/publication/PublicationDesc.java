@@ -13,42 +13,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.niord.core.message;
+
+package org.niord.core.publication;
 
 import org.niord.core.model.DescEntity;
+import org.niord.core.publication.vo.PublicationDescVo;
 import org.niord.model.ILocalizedDesc;
-import org.niord.model.message.ReferenceDescVo;
 
-import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.validation.constraints.NotNull;
 
 /**
- * Localized contents for the Reference entity
+ * Localized contents for the Publication entity
  */
 @Entity
 @SuppressWarnings("unused")
-public class ReferenceDesc extends DescEntity<Reference> {
+public class PublicationDesc extends DescEntity<Publication> {
 
-    @Column(length = 512)
-    String description;
+    @NotNull
+    String name;
+
+    /**
+     * The format can be used to format a message publication
+     */
+    String format;
 
     /** Constructor */
-    public ReferenceDesc() {
+    public PublicationDesc() {
     }
 
 
     /** Constructor */
-    public ReferenceDesc(ReferenceDescVo desc) {
+    public PublicationDesc(PublicationDescVo desc) {
         super(desc);
-        this.description = desc.getDescription();
+        this.name = desc.getName();
+        this.format = desc.getFormat();
     }
 
 
     /** Converts this entity to a value object */
-    public ReferenceDescVo toVo() {
-        ReferenceDescVo desc = new ReferenceDescVo();
+    public PublicationDescVo toVo() {
+        PublicationDescVo desc = new PublicationDescVo();
         desc.setLang(lang);
-        desc.setDescription(description);
+        desc.setName(name);
+        desc.setFormat(format);
         return desc;
     }
 
@@ -56,29 +64,36 @@ public class ReferenceDesc extends DescEntity<Reference> {
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(description);
+        return ILocalizedDesc.fieldsDefined(name, format);
     }
 
 
     /** {@inheritDoc} */
     @Override
     public void copyDesc(ILocalizedDesc localizedDesc) {
-        ReferenceDesc desc = (ReferenceDesc)localizedDesc;
-        this.lang = desc.getLang();
-        this.description = desc.getDescription();
+        PublicationDesc desc = (PublicationDesc)localizedDesc;
+        this.name = desc.getName();
+        this.format = desc.getFormat();
     }
+
 
     /*************************/
     /** Getters and Setters **/
     /*************************/
 
-    public String getDescription() {
-        return description;
+    public String getName() {
+        return name;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setName(String name) {
+        this.name = name;
     }
 
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
+    }
 }
-

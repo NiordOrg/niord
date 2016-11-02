@@ -58,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -216,6 +217,11 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     // Indicates if the publication should updated automatically.
     boolean autoPublication;
 
+    // List of message publications
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "message", orphanRemoval = true)
+    @OrderColumn(name = "indexNo")
+    List<MessagePublication> publications = new ArrayList<>();
+
     // Indicates if the source should updated automatically.
     boolean autoSource;
 
@@ -313,6 +319,10 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             this.autoSource = sysMessage.isAutoSource() != null && sysMessage.isAutoSource();
             this.revision = sysMessage.getRevision();
             this.thumbnailPath = sysMessage.getThumbnailPath();
+
+            if (sysMessage.getPublications() != null) {
+                sysMessage.getPublications().forEach(pub -> addPublication(new MessagePublication(pub)));
+            }
         }
 
         updateEventDateInterval();
@@ -363,6 +373,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             systemMessage.setAutoTitle(autoTitle);
             systemMessage.setAutoPublication(autoPublication);
             systemMessage.setAutoSource(autoSource);
+            publications.forEach(p -> systemMessage.checkCreatePublications().add(p.toVo(filter)));
 
             message.sort(filter.getLang());
 
@@ -416,8 +427,8 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         // Sync the year field from the publishDateFrom date
         year = publishDateFrom != null ? TimeUtils.getCalendarField(publishDateFrom, Calendar.YEAR) : null;
 
-        // Update the message title
-        updateMessageTitle();
+        // Update the auto-generated message fields
+        updateAutoMessageFields();
 
         // Update the has-geometry flag
         hasGeometry = parts.stream().anyMatch(p -> p.getGeometry() != null);
@@ -439,6 +450,13 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                 eventDateTo = di.getToDate();
             }
         });
+    }
+
+
+    /** Updates all auto-generated fields **/
+    public void updateAutoMessageFields() {
+        updateMessageTitle();
+        updateMessagePublication();
     }
 
 
@@ -487,6 +505,24 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                 }
             });
 
+        }
+    }
+
+
+    /** Updates the publication line of the message based nested publications */
+    public void updateMessagePublication() {
+        if (autoPublication) {
+            // Process all languages
+            getDescs().forEach(desc -> {
+                String publication = publications.stream()
+                        .map(pub -> pub.computeMessagePublication(desc.getLang()))
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.joining(". "));
+                if (StringUtils.isNotBlank(publication) && !publication.trim().endsWith(".")) {
+                    publication = publication.trim() + ".";
+                }
+                desc.setPublication(StringUtils.trimToNull(publication));
+            });
         }
     }
 
@@ -612,6 +648,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         attachment.setMessage(this);
         attachments.add(attachment);
         return attachment;
+    }
+
+
+    /** Adds a message publication to this message */
+    public MessagePublication addPublication(MessagePublication publication) {
+        publication.setMessage(this);
+        publications.add(publication);
+        return publication;
     }
 
 
@@ -858,6 +902,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setAutoPublication(boolean autoPublication) {
         this.autoPublication = autoPublication;
+    }
+
+    public List<MessagePublication> getPublications() {
+        return publications;
+    }
+
+    public void setPublications(List<MessagePublication> publications) {
+        this.publications = publications;
     }
 
     public boolean isAutoSource() {

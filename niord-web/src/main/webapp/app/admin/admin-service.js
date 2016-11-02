@@ -148,6 +148,50 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
+     * AdminPublicationService
+     * ********************************************************************************
+     * Interface for calling publication related functions at the application server
+     */
+    .factory('AdminPublicationService', [ '$http', '$rootScope', function($http, $rootScope) {
+        'use strict';
+
+        return {
+
+            /** Returns all publications **/
+            getPublications: function () {
+                return $http.get('/rest/publications/all?lang=' + $rootScope.language);
+            },
+
+
+            /** Returns the details for the given publication **/
+            getPublicationDetails: function (publication) {
+                return $http.get('/rest/publications/publication/' + publication.id);
+            },
+
+
+            /** Creates a new publication **/
+            createPublication: function(publication) {
+                return $http.post('/rest/publications/publication/', publication);
+            },
+
+
+            /** Updates the given publication **/
+            updatePublication: function(publication) {
+                return $http.put('/rest/publications/publication/' + publication.id, publication);
+            },
+
+
+            /** Deletes the given publication **/
+            deletePublication: function(publication) {
+                return $http['delete']('/rest/publications/publication/' + publication.id);
+            }
+
+        };
+    }])
+
+
+    /**
+     * ********************************************************************************
      * AdminUserService
      * ********************************************************************************
      * Interface for calling user and group-membership functions at the application server
