@@ -28,6 +28,8 @@ public class SystemMessageVo extends MessageVo {
 
     int revision;
     Boolean autoTitle;
+    Boolean autoPublication;
+    Boolean autoSource;
     String thumbnailPath;
     String repoPath;
     String editRepoPath;
@@ -101,6 +103,22 @@ public class SystemMessageVo extends MessageVo {
 
     public void setAutoTitle(Boolean autoTitle) {
         this.autoTitle = autoTitle;
+    }
+
+    public Boolean isAutoPublication() {
+        return autoPublication;
+    }
+
+    public void setAutoPublication(Boolean autoPublication) {
+        this.autoPublication = autoPublication;
+    }
+
+    public Boolean isAutoSource() {
+        return autoSource;
+    }
+
+    public void setAutoSource(Boolean autoSource) {
+        this.autoSource = autoSource;
     }
 
     public String getThumbnailPath() {

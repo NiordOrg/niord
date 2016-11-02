@@ -213,6 +213,13 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     // Indicates if the title should automatically be updated from the message area, subject and vicinity fields.
     boolean autoTitle;
 
+    // Indicates if the publication should updated automatically.
+    boolean autoPublication;
+
+    // Indicates if the source should updated automatically.
+    boolean autoSource;
+
+    // Not very normalized, but makes it easier to perform searches
     boolean hasGeometry;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "message", orphanRemoval = true)
@@ -302,6 +309,8 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         if (message instanceof SystemMessageVo) {
             SystemMessageVo sysMessage = (SystemMessageVo) message;
             this.autoTitle = sysMessage.isAutoTitle() != null && sysMessage.isAutoTitle();
+            this.autoPublication = sysMessage.isAutoPublication() != null && sysMessage.isAutoPublication();
+            this.autoSource = sysMessage.isAutoSource() != null && sysMessage.isAutoSource();
             this.revision = sysMessage.getRevision();
             this.thumbnailPath = sysMessage.getThumbnailPath();
         }
@@ -352,6 +361,8 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             systemMessage.setRepoPath(repoPath);
             systemMessage.setThumbnailPath(thumbnailPath);
             systemMessage.setAutoTitle(autoTitle);
+            systemMessage.setAutoPublication(autoPublication);
+            systemMessage.setAutoSource(autoSource);
 
             message.sort(filter.getLang());
 
@@ -839,6 +850,22 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setAutoTitle(boolean autoTitle) {
         this.autoTitle = autoTitle;
+    }
+
+    public boolean isAutoPublication() {
+        return autoPublication;
+    }
+
+    public void setAutoPublication(boolean autoPublication) {
+        this.autoPublication = autoPublication;
+    }
+
+    public boolean isAutoSource() {
+        return autoSource;
+    }
+
+    public void setAutoSource(boolean autoSource) {
+        this.autoSource = autoSource;
     }
 
     @Override
