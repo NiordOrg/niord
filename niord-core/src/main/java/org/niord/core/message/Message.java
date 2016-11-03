@@ -19,6 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.category.Category;
 import org.niord.core.chart.Chart;
+import org.niord.core.message.vo.MessagePublicationVo;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.model.DescEntity;
 import org.niord.core.model.VersionedEntity;
@@ -321,7 +322,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             this.thumbnailPath = sysMessage.getThumbnailPath();
 
             if (sysMessage.getPublications() != null) {
-                sysMessage.getPublications().forEach(pub -> addPublication(new MessagePublication(pub)));
+                sysMessage.getPublications().stream()
+                        .filter(MessagePublicationVo::publicationDefined)
+                        .forEach(pub -> addPublication(new MessagePublication(pub)));
             }
         }
 
