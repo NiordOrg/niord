@@ -444,7 +444,7 @@ angular.module('niord.editor')
                 handle: '.move-btn',
                 onEnd: function() {
                     $scope.adjustEditableMessage();
-                    $scope.setDirty
+                    $scope.setDirty();
                 }
             };
 
