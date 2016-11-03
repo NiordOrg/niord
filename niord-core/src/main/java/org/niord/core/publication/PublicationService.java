@@ -103,6 +103,36 @@ public class PublicationService extends BaseService {
 
 
     /**
+     * Ensures that the template publication exists.
+     *
+     * @param templatePublication the template publication
+     * @param create whether to create a missing area or just find it
+     * @return the area
+     */
+    public Publication findOrCreatePublication(Publication templatePublication, Boolean create) {
+
+        if (templatePublication == null) {
+            return null;
+        }
+
+        // Search for the publication by name
+        for (PublicationDesc desc : templatePublication.getDescs()) {
+            Publication publication = findByName(desc.getLang(), desc.getName());
+            if (publication != null) {
+                return publication;
+            }
+        }
+
+        // If not found, and requested, create the publication
+        if (create) {
+            templatePublication.setId(null);
+            return createPublication(templatePublication);
+        }
+
+        return null;
+    }
+
+    /**
      * Returns the list of publications
      * @return the list of publications
      */
