@@ -95,10 +95,10 @@
 
 
             <!-- Publication -->
-            <tr ng-if="msg.descs[0].publication || format == 'details'">
+            <tr ng-if="msg.descs[0].publication || internalPublications">
                 <th translate-language="{{language}}" translate>msg.field.publication</th>
                 <td>
-                    <render-message-publication msg="msg" lang="language" include-internal="format == 'details'"></render-message-publication>
+                    <render-message-publication msg="msg" lang="language" include-internal="internalPublications"></render-message-publication>
                 </td>
             </tr>
 

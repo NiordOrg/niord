@@ -223,6 +223,7 @@ angular.module('niord.messages')
             },
             link: function(scope) {
 
+                scope.includeInternalPublications = scope.includeInternal && $rootScope.isLoggedIn;
                 scope.lang = scope.lang || $rootScope.language;
                 scope.publication = '';
                 scope.internalPublication = '';
@@ -628,6 +629,7 @@ angular.module('niord.messages')
                 scope.attachmentsAbove = [];
                 scope.attachmentsBelow = [];
                 scope.showAttachments = scope.compact || false;
+                scope.internalPublications = $rootScope.isLoggedIn && scope.format == 'details';
 
 
                 // Returns if the given message is selected or not

@@ -746,12 +746,16 @@ public class MessageRestService  {
     @Produces("text/plain;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
     public String formatMessagePublication(
             @QueryParam("lang") @DefaultValue("en") String lang,
             @QueryParam("includeExternal") boolean includeExternal,
             @QueryParam("includeInternal") boolean includeInternal,
             SystemMessageVo message) throws Exception {
+
+        // Only authenticated user may see internal message publications
+        if (includeInternal && userService.currentUser() == null) {
+            throw new WebApplicationException(403);
+        }
 
         // May either be called within the editor with an unsaved list of message publications,
         // or from the details dialog, and thus be a trimmed message version without publications.
