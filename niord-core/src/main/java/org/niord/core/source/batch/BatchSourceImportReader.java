@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.niord.core.publication.batch;
+package org.niord.core.source.batch;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.niord.core.batch.AbstractItemHandler;
-import org.niord.core.publication.vo.PublicationVo;
+import org.niord.core.source.vo.SourceVo;
 import org.niord.core.util.JsonUtils;
 
 import javax.inject.Named;
@@ -27,28 +27,27 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Reads publications from a publication.json file.
+ * Reads sources from a source.json file.
  * <p>
- * Please note, the actual publication-import.xml job file is not placed in the META-INF/batch-jobs of this project,
+ * Please note, the actual source-import.xml job file is not placed in the META-INF/batch-jobs of this project,
  * but rather, in the META-INF/batch-jobs folder of the niord-web project.<br>
  * This is because of a class-loading bug in the Wildfly implementation. See e.g.
  * https://issues.jboss.org/browse/WFLY-4988
  * <p>
- * Format of json file is defined by the PublicationVo class (with ID's being ignored). Example:
+ * Format of json file is defined by the SourceVo class (with ID's being ignored). Example:
  * <pre>
  * [
  *   {
  *     "active": true,
- *     "internal": false,
  *     "descs": [
  *       {
- *         "name": "Den danske Havnelods",
- *         "format": "<a href=\"www.danskehavnelods.dk\" target=\"_blank\">www.danskehavnelods.dk</a>",
+ *         "name": "Arktisk Kommando",
+ *         "abbreviation": "AKO",
  *         "lang": "da"
  *       },
  *       {
- *         "name": "The Danish Habour Pilot",
- *         "format": "<a href=\"www.danskehavnelods.dk\" target=\"_blank\">www.danskehavnelods.dk</a>",
+ *         "name": "Joint Arctic Command",
+ *         "abbreviation": "JACMD",
  *         "lang": "en"
  *       }
  *     ]
@@ -60,10 +59,10 @@ import java.util.List;
  * </pre>
  */
 @Named
-public class BatchPublicationImportReader extends AbstractItemHandler {
+public class BatchSourceImportReader extends AbstractItemHandler {
 
-    List<PublicationVo> publications;
-    int publicationNo = 0;
+    List<SourceVo> sources;
+    int sourceNo = 0;
 
     /** {@inheritDoc} **/
     @Override
@@ -72,24 +71,24 @@ public class BatchPublicationImportReader extends AbstractItemHandler {
         // Get hold of the data file
         Path path = batchService.getBatchJobDataFile(jobContext.getInstanceId());
 
-        // Load the publications from the file
-        publications = JsonUtils.readJson(
-                new TypeReference<List<PublicationVo>>(){},
+        // Load the sources from the file
+        sources = JsonUtils.readJson(
+                new TypeReference<List<SourceVo>>(){},
                 path);
 
         if (prevCheckpointInfo != null) {
-            publicationNo = (Integer) prevCheckpointInfo;
+            sourceNo = (Integer) prevCheckpointInfo;
         }
 
-        getLog().info("Start processing " + publications.size() + " publications from index " + publicationNo);
+        getLog().info("Start processing " + sources.size() + " sources from index " + sourceNo);
     }
 
     /** {@inheritDoc} **/
     @Override
     public Object readItem() throws Exception {
-        if (publicationNo < publications.size()) {
-            getLog().info("Reading publication no " + publicationNo);
-            return publications.get(publicationNo++);
+        if (sourceNo < sources.size()) {
+            getLog().info("Reading source no " + sourceNo);
+            return sources.get(sourceNo++);
         }
         return null;
     }
@@ -97,6 +96,6 @@ public class BatchPublicationImportReader extends AbstractItemHandler {
     /** {@inheritDoc} **/
     @Override
     public Serializable checkpointInfo() throws Exception {
-        return publicationNo;
+        return sourceNo;
     }
 }

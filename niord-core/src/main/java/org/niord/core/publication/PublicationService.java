@@ -106,8 +106,8 @@ public class PublicationService extends BaseService {
      * Ensures that the template publication exists.
      *
      * @param templatePublication the template publication
-     * @param create whether to create a missing area or just find it
-     * @return the area
+     * @param create whether to create a missing publication or just find it
+     * @return the publication
      */
     public Publication findOrCreatePublication(Publication templatePublication, Boolean create) {
 

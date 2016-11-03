@@ -14,36 +14,34 @@
  * limitations under the License.
  */
 
-package org.niord.core.publication.vo;
+package org.niord.core.source.vo;
 
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizedDesc;
 
 /**
- * The entity description VO
+ * The source entity description VO
  */
-public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
+public class SourceDescVo implements ILocalizedDesc, IJsonSerializable {
 
     String lang;
     String name;
-    String format;
-    String link;
+    String abbreviation;
 
 
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(name, format, link);
+        return ILocalizedDesc.fieldsDefined(name, abbreviation);
     }
 
 
     /** {@inheritDoc} */
     @Override
     public void copyDesc(ILocalizedDesc localizedDesc) {
-        PublicationDescVo desc = (PublicationDescVo)localizedDesc;
+        SourceDescVo desc = (SourceDescVo)localizedDesc;
         this.name = desc.getName();
-        this.format = desc.getFormat();
-        this.link = desc.getFormat();
+        this.abbreviation = desc.getAbbreviation();
     }
 
     /*************************/
@@ -68,19 +66,11 @@ public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
         this.name = name;
     }
 
-    public String getFormat() {
-        return format;
+    public String getAbbreviation() {
+        return abbreviation;
     }
 
-    public void setFormat(String format) {
-        this.format = format;
-    }
-
-    public String getLink() {
-        return link;
-    }
-
-    public void setLink(String link) {
-        this.link = link;
+    public void setAbbreviation(String abbreviation) {
+        this.abbreviation = abbreviation;
     }
 }
