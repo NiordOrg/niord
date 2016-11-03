@@ -656,12 +656,26 @@ public class MessageService extends BaseService {
             message.setAreas(persistedList(Area.class, message.getAreas()));
         }
         if (message.isAutoPublication()) {
-            message.getPublications().forEach(pub -> {
-                pub.setPublication(getByPrimaryKey(Publication.class, pub.getPublication().getId()));
-            });
+            message.getPublications().forEach(
+                    pub -> pub.setPublication(getByPrimaryKey(Publication.class, pub.getPublication().getId())));
         }
         message.updateAutoMessageFields();
         return message;
+    }
+
+
+    /**
+     * Computes the message publication text
+     * @param message the message template to compute publication for fields for
+     * @param lang the language
+     * @param includeExternal whether to include external publications or not
+     * @param includeInternal whether to include internal publications or not
+     * @return the message publication text
+     */
+    public String computeMessagePublication(Message message, String lang, boolean includeExternal, boolean includeInternal) {
+        message.getPublications().forEach(
+                pub -> pub.setPublication(getByPrimaryKey(Publication.class, pub.getPublication().getId())));
+        return message.computeMessagePublication(lang, includeExternal, includeInternal);
     }
 
 

@@ -170,6 +170,15 @@ angular.module('niord.messages')
             },
 
 
+            /** Computes the message publication field for the given message */
+            computeMessagePublication: function (msg, includeExternal, includeInternal, lang) {
+                lang = lang || $rootScope.language;
+                var params = 'lang=' + lang + '&includeExternal=' + includeExternal
+                            + '&includeInternal=' + includeInternal;
+                return $http.post('/rest/messages/compute-publication?' + params, msg);
+            },
+
+
             /** Formats the message geometry according to given template */
             formatMessageGeometry: function (geometry, lang, template, format) {
                 var params = 'lang=' + lang + '&template=' + template + '&format=' + format;

@@ -696,11 +696,8 @@
                           tab-index="1700">
 
                 <editor-field-value-viewer>
-                    <span ng-if="message.descs.length > 0 && message.descs[0].publication"
-                         ng-bind-html="message.descs[0].publication | toTrusted"
-                         class="message-publication">
-                    </span>
-                    <span class="glyphicon glyphicon-lock" style="color: lightgray"></span>
+                    <render-message-publication msg="message" include-internal="true"></render-message-publication>
+                    <span ng-if="message.autoPublication" class="glyphicon glyphicon-lock" style="color: lightgray"></span>
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">
@@ -749,7 +746,8 @@
                             </td>
                             <td width="*">
                                 <div>
-                                    <input class="form-control input-sm" placeholder="Comma-separated parameters" type="text"
+                                    <input ng-if="hasPublicationParams(pub)"
+                                           class="form-control input-sm" placeholder="Comma-separated parameters" type="text"
                                            tabindex="{{1705 + pubIndex * 3}}"
                                            ng-model="pub.parameters"
                                            ng-change="adjustEditableMessage()"

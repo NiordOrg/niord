@@ -462,6 +462,21 @@ angular.module('niord.editor')
                 init_instance_callback : $scope.fixTinyMCETabIndex
             };
 
+
+            /** Returns whether or not to display a parameter field for the message publication **/
+            $scope.hasPublicationParams = function (pub) {
+                if (pub && pub.publication && pub.publication.descs) {
+                    for (var x = 0; x < pub.publication.descs.length; x++) {
+                        var desc = pub.publication.descs[x];
+                        if (desc && desc.format && desc.format.indexOf('${parameters}') !== -1) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            };
+
+
             /** Adds the new publication to the list of message publications **/
             $scope.addPublication = function () {
                 var pub = {

@@ -513,14 +513,29 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     public void updateMessagePublication() {
         if (autoPublication) {
             // Process all languages
-            getDescs().forEach(desc -> {
-                String publication = publications.stream()
-                        .map(pub -> pub.computeMessagePublication(desc.getLang()))
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.joining(" "));
-                desc.setPublication(StringUtils.trimToNull(publication));
-            });
+            getDescs().forEach(desc -> desc.setPublication(computeMessagePublication(desc.getLang(), true, false)));
         }
+    }
+
+
+    /**
+     * Computes the message publication text
+     * @param lang the language
+     * @param includeExternal whether to include external publications or not
+     * @param includeInternal whether to include internal publications or not
+     * @return the message publication text
+     */
+    public String computeMessagePublication(String lang, boolean includeExternal, boolean includeInternal) {
+        MessageDesc desc = getDesc(lang);
+        if (desc != null) {
+            String publication = publications.stream()
+                    .map(pub -> pub.computeMessagePublication(desc.getLang(), includeExternal, includeInternal))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.joining(" "));
+
+            return StringUtils.trimToNull(publication);
+        }
+        return null;
     }
 
 

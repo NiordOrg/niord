@@ -732,6 +732,38 @@ public class MessageRestService  {
 
 
     /**
+     * Formats the message publications for the given language and includes
+     * external and/or internal publications as specified
+     *
+     * @param message the message template to adjust
+     * @param includeExternal whether to include external publications or not
+     * @param includeInternal whether to include internal publications or not
+     * @return the updated message template
+     */
+    @POST
+    @Path("/compute-publication")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("text/plain;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public String formatMessagePublication(
+            @QueryParam("lang") @DefaultValue("en") String lang,
+            @QueryParam("includeExternal") boolean includeExternal,
+            @QueryParam("includeInternal") boolean includeInternal,
+            SystemMessageVo message) throws Exception {
+
+        // May either be called within the editor with an unsaved list of message publications,
+        // or from the details dialog, and thus be a trimmed message version without publications.
+        Message msg = message.getPublications() == null && StringUtils.isNotBlank(message.getId())
+                ? messageService.resolveMessage(message.getId())
+                : new Message(message);
+
+        return messageService.computeMessagePublication(msg, lang, includeExternal, includeInternal);
+    }
+
+
+    /**
      * Formats the feature collection according to the given template
      *
      * @param geometry the feature collection to format

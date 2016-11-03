@@ -96,12 +96,16 @@ public class MessagePublication extends BaseEntity<Integer> implements IndexedEn
     /**
      * Computes the message publication text
      * @param lang the language
+     * @param includeExternal whether to include external publications or not
+     * @param includeInternal whether to include internal publications or not
      * @return the message publication text
      */
-    public String computeMessagePublication(String lang) {
+    public String computeMessagePublication(String lang, boolean includeExternal, boolean includeInternal) {
 
         // Only return a text if the publication is external
-        if (publication == null || publication.isInternal()) {
+        if (publication == null ||
+                (publication.isInternal() && !includeInternal) ||
+                (!publication.isInternal() && !includeExternal)) {
             return null;
         }
 
@@ -110,11 +114,12 @@ public class MessagePublication extends BaseEntity<Integer> implements IndexedEn
         if (desc != null && StringUtils.isNotBlank(desc.getFormat())) {
             String params = StringUtils.defaultIfBlank(parameters, "");
             result = desc.getFormat().replace("${parameters}", params);
+            if (publication.isInternal()) {
+                result = "[" + result + "]";
+            }
             result = TextUtils.trailingDot(result);
 
-            String link = publication.isMessagePublicationLink()
-                    ? getLink()
-                    : desc.getLink();
+            String link = StringUtils.defaultIfBlank(getLink(), desc.getLink());
 
             if (StringUtils.isNotBlank(link)) {
                 result = String.format("<a href=\"%s\" target=\"_blank\">%s</a>", link, result);

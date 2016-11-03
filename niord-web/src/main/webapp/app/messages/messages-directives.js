@@ -207,6 +207,57 @@ angular.module('niord.messages')
 
 
     /****************************************************************
+     * Renders the message publication and, optionally, allows the
+     * user to see the internal publication links as well
+     ****************************************************************/
+    .directive('renderMessagePublication', ['$rootScope', 'LangService', 'MessageService',
+        function ($rootScope, LangService, MessageService) {
+
+        return {
+            restrict: 'E',
+            templateUrl: '/app/messages/render-message-publication.html',
+            scope: {
+                msg: "=",
+                lang: "=",
+                includeInternal: "="
+            },
+            link: function(scope) {
+
+                scope.lang = scope.lang || $rootScope.language;
+                scope.publication = '';
+                scope.internalPublication = '';
+                scope.showInternal = false;
+
+                scope.updatePublication = function () {
+                    scope.publication = '';
+                    scope.internalPublication = '';
+                    scope.showInternal = false;
+
+                    if (scope.msg) {
+                        var desc = LangService.desc(scope.msg, scope.lang);
+                        if (desc.publication) {
+                            scope.publication = desc.publication;
+                        }
+                    }
+                };
+
+                scope.toggleShowInternal = function () {
+                    scope.showInternal = !scope.showInternal;
+                    if (scope.showInternal) {
+                        MessageService.computeMessagePublication(scope.msg, false, true, scope.lang)
+                            .success(function (internalPublication) {
+                                scope.internalPublication = internalPublication;
+                            })
+                    }
+                };
+
+                scope.$watch("msg", scope.updatePublication);
+            }
+        };
+    }])
+
+
+    /****************************************************************
      * The message-attachment directive renders an attachment
      ****************************************************************/
     .directive('messageAttachment', [function () {
