@@ -215,7 +215,7 @@
                         <tbody ng-sortable="referencesSortableCfg">
                             <tr ng-repeat="ref in message.references" ng-init="refIndex = $index">
                                 <td width="30%">
-                                    <message-id-field tab-index="502 + refIndex * 5" reference="ref"></message-id-field>
+                                    <message-id-field class="ref-field" tab-index="502 + refIndex * 5" reference="ref"></message-id-field>
                                 </td>
                                 <td width="120">
                                     <select class="form-control input-sm" ng-model="ref.type"
@@ -432,7 +432,7 @@
                                     </div>
                                 </th>
                             </tr>
-                            <tr ng-repeat="di in part.eventDates">
+                            <tr ng-repeat="di in part.eventDates" class="evt-date" >
                                 <td width="60" style="padding-top: 10px" align="center">
                                     <input type="checkbox" ng-model="di.allDay"
                                            tabindex="{{1004 + part.index * 20}}">
@@ -744,15 +744,24 @@
                         <tbody ng-sortable="publicationsSortableCfg">
                         <tr ng-repeat="pub in message.publications" ng-init="pubIndex = $index">
                             <td width="240">
-                                <publication-field publication-data="pub" tab-index="1704 + pubIndex * 3"
+                                <publication-field class="pub-field" publication-data="pub" tab-index="1704 + pubIndex * 3"
                                             publication-changed="adjustEditableMessage()"></publication-field>
                             </td>
                             <td width="*">
-                                <input class="form-control input-sm" placeholder="Comma-separated parameters" type="text"
-                                       tabindex="{{1705 + pubIndex * 3}}"
-                                       ng-model="pub.parameters"
-                                       ng-change="adjustEditableMessage()"
-                                       ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"/>
+                                <div>
+                                    <input class="form-control input-sm" placeholder="Comma-separated parameters" type="text"
+                                           tabindex="{{1705 + pubIndex * 3}}"
+                                           ng-model="pub.parameters"
+                                           ng-change="adjustEditableMessage()"
+                                           ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"/>
+                                </div>
+                                <div ng-if="pub.publication.messagePublicationLink">
+                                    <input class="form-control input-sm" placeholder="Publication link" type="text"
+                                           tabindex="{{1706 + pubIndex * 3}}"
+                                           ng-model="pub.link"
+                                           ng-change="adjustEditableMessage()"
+                                           ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"/>
+                                </div>
                             </td>
                             <td style="width: 50px; padding-top: 12px" nowrap>
                                 <a href ng-click="deletePublication(pub);" title="Delete Publication"><i class="glyphicon glyphicon-trash"></i></a>

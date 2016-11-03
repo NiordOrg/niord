@@ -38,6 +38,11 @@ public class PublicationDesc extends DescEntity<Publication> {
      */
     String format;
 
+    /**
+     * If defined, will be used as a link for all message publications
+     */
+    String link;
+
     /** Constructor */
     public PublicationDesc() {
     }
@@ -48,6 +53,7 @@ public class PublicationDesc extends DescEntity<Publication> {
         super(desc);
         this.name = desc.getName();
         this.format = desc.getFormat();
+        this.link = desc.getLink();
     }
 
 
@@ -57,6 +63,7 @@ public class PublicationDesc extends DescEntity<Publication> {
         desc.setLang(lang);
         desc.setName(name);
         desc.setFormat(format);
+        desc.setLink(link);
         return desc;
     }
 
@@ -64,7 +71,7 @@ public class PublicationDesc extends DescEntity<Publication> {
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(name, format);
+        return ILocalizedDesc.fieldsDefined(name, format, link);
     }
 
 
@@ -74,6 +81,7 @@ public class PublicationDesc extends DescEntity<Publication> {
         PublicationDesc desc = (PublicationDesc)localizedDesc;
         this.name = desc.getName();
         this.format = desc.getFormat();
+        this.link = desc.getLink();
     }
 
 
@@ -95,5 +103,13 @@ public class PublicationDesc extends DescEntity<Publication> {
 
     public void setFormat(String format) {
         this.format = format;
+    }
+
+    public String getLink() {
+        return link;
+    }
+
+    public void setLink(String link) {
+        this.link = link;
     }
 }

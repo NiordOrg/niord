@@ -87,6 +87,22 @@ public class TextUtils {
 
 
     /**
+     * Ensures that the string ends with a trailing dot character
+     * @param text the text to add a trailing dot to
+     * @return the updated text
+     **/
+    public static String trailingDot(String text) {
+        if (StringUtils.isNotBlank(text)) {
+            text = text.trim();
+            if (!text.endsWith(".")) {
+                text = text + ".";
+            }
+        }
+        return text;
+    }
+
+
+    /**
      * Prints an XML document to the output stream
      * @param doc the document to print
      * @param out the output stream

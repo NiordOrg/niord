@@ -31,13 +31,15 @@ import javax.persistence.Entity;
 @SuppressWarnings("unused")
 public class MessageDesc extends DescEntity<Message> {
 
-    @Column(length = 1000)
+    @Column(length = 1024)
     String title;
 
     String vicinity;
 
+    @Column(length = 2048)
     String publication;
 
+    @Column(length = 1024)
     String source;
 
     /** Constructor */
@@ -59,10 +61,10 @@ public class MessageDesc extends DescEntity<Message> {
             this.title = desc.getTitle();
         } else {
             // Copy all fields
-            this.title = trunc(desc.getTitle(), 1000);
+            this.title = trunc(desc.getTitle(), 1024);
             this.vicinity = trunc(desc.getVicinity(), 256);
-            this.publication = trunc(desc.getPublication(), 256);
-            this.source = trunc(desc.getSource(), 256);
+            this.publication = trunc(desc.getPublication(), 2048);
+            this.source = trunc(desc.getSource(), 1024);
         }
     }
 

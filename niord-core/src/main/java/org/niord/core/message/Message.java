@@ -517,10 +517,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                 String publication = publications.stream()
                         .map(pub -> pub.computeMessagePublication(desc.getLang()))
                         .filter(Objects::nonNull)
-                        .collect(Collectors.joining(". "));
-                if (StringUtils.isNotBlank(publication) && !publication.trim().endsWith(".")) {
-                    publication = publication.trim() + ".";
-                }
+                        .collect(Collectors.joining(" "));
                 desc.setPublication(StringUtils.trimToNull(publication));
             });
         }

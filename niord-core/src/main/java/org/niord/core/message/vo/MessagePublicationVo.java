@@ -30,6 +30,7 @@ public class MessagePublicationVo implements IJsonSerializable {
 
     PublicationVo publication;
     String parameters;
+    String link;
 
     /*************************/
     /** Getters and Setters **/
@@ -49,5 +50,13 @@ public class MessagePublicationVo implements IJsonSerializable {
 
     public void setParameters(String parameters) {
         this.parameters = parameters;
+    }
+
+    public String getLink() {
+        return link;
+    }
+
+    public void setLink(String link) {
+        this.link = link;
     }
 }

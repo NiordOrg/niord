@@ -27,7 +27,16 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
+                   <div class="form-group">
+                       <label for="messagePublicationLink" class="col-sm-4 col-md-2">Per-message link</label>
+                       <div class="col-sm-8 col-md-10">
+                           <input id="messagePublicationLink" type="checkbox" ng-model="publication.messagePublicationLink"
+                                ng-change="messagePublicationLinkUpdated()">
+                           &nbsp;&nbsp;Specify a link for each message
+                       </div>
+                   </div>
+
+                   <div class="form-group">
                         <label class="col-sm-4 col-md-2">Name</label>
                         <div class="col-sm-6 col-md-10">
                             <div class="row">
@@ -45,6 +54,18 @@
                            <div class="row">
                                <div class="col-sm-12" ng-repeat="desc in publication.descs">
                                    <input class="form-control input-sm" placeholder="Format" type="text" ng-model="desc.format"
+                                          bg-flag="desc.lang">
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+
+                   <div class="form-group" ng-if="!publication.messagePublicationLink">
+                       <label class="col-sm-4 col-md-2">Link</label>
+                       <div class="col-sm-6 col-md-10">
+                           <div class="row">
+                               <div class="col-sm-12" ng-repeat="desc in publication.descs">
+                                   <input class="form-control input-sm" placeholder="Link" type="text" ng-model="desc.link"
                                           bg-flag="desc.lang">
                                </div>
                            </div>

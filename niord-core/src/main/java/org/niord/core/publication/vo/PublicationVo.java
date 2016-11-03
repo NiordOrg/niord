@@ -29,6 +29,7 @@ public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSeri
     Integer id;
     boolean active;
     boolean internal;
+    boolean messagePublicationLink;
     List<PublicationDescVo> descs;
 
 
@@ -67,6 +68,14 @@ public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSeri
 
     public void setInternal(boolean internal) {
         this.internal = internal;
+    }
+
+    public boolean isMessagePublicationLink() {
+        return messagePublicationLink;
+    }
+
+    public void setMessagePublicationLink(boolean messagePublicationLink) {
+        this.messagePublicationLink = messagePublicationLink;
     }
 
     @Override

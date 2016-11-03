@@ -126,6 +126,7 @@ public class PublicationService extends BaseService {
         // Copy the publication data
         original.setActive(publication.isActive());
         original.setInternal(publication.isInternal());
+        original.setMessagePublicationLink(publication.isMessagePublicationLink());
         original.getDescs().clear();
         original.copyDescsAndRemoveBlanks(publication.getDescs());
 

@@ -22,6 +22,7 @@ import org.niord.core.model.BaseEntity;
 import org.niord.core.model.IndexedEntity;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationDesc;
+import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 
 import javax.persistence.Entity;
@@ -53,6 +54,10 @@ public class MessagePublication extends BaseEntity<Integer> implements IndexedEn
      */
     String parameters;
 
+    /**
+     * Optionally contains a message specific link
+     */
+    String link;
 
     /** Constructor */
     public MessagePublication() {
@@ -62,6 +67,8 @@ public class MessagePublication extends BaseEntity<Integer> implements IndexedEn
     /** Constructor */
     public MessagePublication(MessagePublicationVo msgPub) {
         this.parameters = msgPub.getParameters();
+        this.link = msgPub.getLink();
+
         // Initially, set a template publication
         this.publication = new Publication(msgPub.getPublication());
     }
@@ -71,6 +78,7 @@ public class MessagePublication extends BaseEntity<Integer> implements IndexedEn
     public void updatePublication(MessagePublication msgPub) {
         this.indexNo = msgPub.getIndexNo();
         this.parameters = msgPub.getParameters();
+        this.link = msgPub.getLink();
         this.publication = msgPub.getPublication();
     }
 
@@ -80,6 +88,7 @@ public class MessagePublication extends BaseEntity<Integer> implements IndexedEn
         MessagePublicationVo msgPub = new MessagePublicationVo();
         msgPub.setPublication(publication.toVo(filter));
         msgPub.setParameters(parameters);
+        msgPub.setLink(link);
         return msgPub;
     }
 
@@ -100,7 +109,16 @@ public class MessagePublication extends BaseEntity<Integer> implements IndexedEn
         PublicationDesc desc = publication.getDesc(lang);
         if (desc != null && StringUtils.isNotBlank(desc.getFormat())) {
             String params = StringUtils.defaultIfBlank(parameters, "");
-            result = desc.getFormat().replace("$parameters", params);
+            result = desc.getFormat().replace("${parameters}", params);
+            result = TextUtils.trailingDot(result);
+
+            String link = publication.isMessagePublicationLink()
+                    ? getLink()
+                    : desc.getLink();
+
+            if (StringUtils.isNotBlank(link)) {
+                result = String.format("<a href=\"%s\" target=\"_blank\">%s</a>", link, result);
+            }
         }
 
         return result;
@@ -142,5 +160,13 @@ public class MessagePublication extends BaseEntity<Integer> implements IndexedEn
 
     public void setParameters(String parameters) {
         this.parameters = parameters;
+    }
+
+    public String getLink() {
+        return link;
+    }
+
+    public void setLink(String link) {
+        this.link = link;
     }
 }

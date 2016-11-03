@@ -55,6 +55,10 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
      */
     boolean internal;
 
+    /** If the messagePublicationLink is set, each message publication will have its own link **/
+    boolean messagePublicationLink;
+
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
     List<PublicationDesc> descs = new ArrayList<>();
 
@@ -69,6 +73,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
         this.id = publication.getId();
         this.active = publication.isActive();
         this.internal = publication.isInternal();
+        this.messagePublicationLink = publication.isMessagePublicationLink();
 
         if (publication.getDescs() != null) {
             publication.getDescs().stream()
@@ -82,6 +87,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     public void updatePublication(Publication publication) {
         this.internal = publication.isInternal();
         this.active = publication.isActive();
+        this.messagePublicationLink = publication.isMessagePublicationLink();
         copyDescsAndRemoveBlanks(publication.getDescs());
     }
 
@@ -92,6 +98,8 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
         publication.setId(id);
         publication.setInternal(internal);
         publication.setActive(active);
+        publication.setMessagePublicationLink(messagePublicationLink);
+
         if (!descs.isEmpty()) {
             publication.setDescs(getDescs(dataFilter).stream()
                     .map(PublicationDesc::toVo)
@@ -138,6 +146,14 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
     public void setInternal(boolean internal) {
         this.internal = internal;
+    }
+
+    public boolean isMessagePublicationLink() {
+        return messagePublicationLink;
+    }
+
+    public void setMessagePublicationLink(boolean messagePublicationLink) {
+        this.messagePublicationLink = messagePublicationLink;
     }
 
     @Override

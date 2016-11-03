@@ -432,6 +432,9 @@ angular.module('niord.editor')
                 };
                 LangService.checkDescs(ref, initReferenceDescField, undefined, $rootScope.modelLanguages);
                 $scope.message.references.push(ref);
+                $timeout(function () {
+                    $('.ref-field:last').find('input').focus();
+                }, 100)
             };
 
 
@@ -466,6 +469,9 @@ angular.module('niord.editor')
                     parameters: ''
                 };
                 $scope.message.publications.push(pub);
+                $timeout(function () {
+                    $('.pub-field:last').find('input').focus();
+                }, 100)
             };
 
 
@@ -719,6 +725,10 @@ angular.module('niord.editor')
             /** Adds a new date interval to the list of message date intervals */
             $scope.addPartEventDate = function (part) {
                 part.eventDates.push({ allDay: false, fromDate: undefined, toDate: undefined });
+                $timeout(function () {
+                    $('.evt-date:last').find('input:first').focus();
+                }, 100)
+
             };
 
 

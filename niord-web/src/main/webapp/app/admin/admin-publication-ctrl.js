@@ -67,6 +67,7 @@ angular.module('niord.admin')
                     id: undefined,
                     internal: false,
                     active: true,
+                    messagePublicationLink: false,
                     descs: []
                 };
                 LangService.checkDescs($scope.publication, ensureNameField);
@@ -82,6 +83,16 @@ angular.module('niord.admin')
                         LangService.sortDescs($scope.publication)
                     })
                     .error($scope.displayError);
+            };
+
+
+            /** Called when the messagePublicationLink flag has been changed **/
+            $scope.messagePublicationLinkUpdated = function () {
+                if ($scope.publication && $scope.publication.messagePublicationLink) {
+                    $scope.publication.descs.forEach(function (desc) {
+                        delete desc.link;
+                    })
+                }
             };
 
 

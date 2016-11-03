@@ -29,12 +29,13 @@ public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
     String lang;
     String name;
     String format;
+    String link;
 
 
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(name, format);
+        return ILocalizedDesc.fieldsDefined(name, format, link);
     }
 
 
@@ -44,6 +45,7 @@ public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
         PublicationDescVo desc = (PublicationDescVo)localizedDesc;
         this.name = desc.getName();
         this.format = desc.getFormat();
+        this.link = desc.getFormat();
     }
 
     /*************************/
@@ -75,5 +77,13 @@ public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
 
     public void setFormat(String format) {
         this.format = format;
+    }
+
+    public String getLink() {
+        return link;
+    }
+
+    public void setLink(String link) {
+        this.link = link;
     }
 }
