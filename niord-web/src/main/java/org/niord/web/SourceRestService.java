@@ -22,8 +22,8 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.source.Source;
 import org.niord.core.source.SourceService;
-import org.niord.core.source.vo.SourceDescVo;
 import org.niord.core.source.vo.SourceVo;
+import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 import org.slf4j.Logger;
 
@@ -187,17 +187,10 @@ public class SourceRestService extends AbstractBatchableRestService {
     /** Returns a source name comparator **/
     private Comparator<SourceVo> sourceNameComparator(String lang) {
         return (s1, s2) -> {
-            SourceDescVo d1 = s1.getDesc(lang);
-            SourceDescVo d2 = s2.getDesc(lang);
-                    if (d1.getName() == null && d2.getName() == null) {
-                        return 0;
-                    } else if (d1.getName() == null) {
-                        return 1;
-                    } else if (d2.getName() == null) {
-                        return -1;
-                    }
-                    return d1.getName().toLowerCase().compareTo(d2.getName().toLowerCase());
-                };
+            String n1 = s1.getDesc(lang) != null ? s1.getDesc(lang).getName() : null;
+            String n2 = s2.getDesc(lang) != null ? s2.getDesc(lang).getName() : null;
+            return TextUtils.compareIgnoreCase(n1, n2);
+        };
     }
 
 }

@@ -22,10 +22,8 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationService;
-import org.niord.core.publication.vo.PublicationDescVo;
 import org.niord.core.publication.vo.PublicationVo;
-import org.niord.core.source.vo.SourceDescVo;
-import org.niord.core.source.vo.SourceVo;
+import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 import org.slf4j.Logger;
 
@@ -188,16 +186,9 @@ public class PublicationRestService extends AbstractBatchableRestService {
     /** Returns a publication name comparator **/
     private Comparator<PublicationVo> publicationNameComparator(String lang) {
         return (p1, p2) -> {
-            PublicationDescVo d1 = p1.getDesc(lang);
-            PublicationDescVo d2 = p2.getDesc(lang);
-            if (d1.getName() == null && d2.getName() == null) {
-                return 0;
-            } else if (d1.getName() == null) {
-                return 1;
-            } else if (d2.getName() == null) {
-                return -1;
-            }
-            return d1.getName().toLowerCase().compareTo(d2.getName().toLowerCase());
+            String n1 = p1.getDesc(lang) != null ? p1.getDesc(lang).getName() : null;
+            String n2 = p2.getDesc(lang) != null ? p2.getDesc(lang).getName() : null;
+            return TextUtils.compareIgnoreCase(n1, n2);
         };
     }
 

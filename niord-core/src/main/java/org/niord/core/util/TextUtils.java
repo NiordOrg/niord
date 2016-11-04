@@ -102,6 +102,18 @@ public class TextUtils {
     }
 
 
+    /** Simple case-insensitive comparison between two strings **/
+    public static int compareIgnoreCase(String s1, String s2) {
+        if (s1 == null && s2 == null) {
+            return 0;
+        } else if (s1 == null) {
+            return 1;
+        } else if (s2 == null) {
+            return -1;
+        }
+        return s1.toLowerCase().compareTo(s2.toLowerCase());
+    }
+
     /**
      * Prints an XML document to the output stream
      * @param doc the document to print
