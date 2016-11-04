@@ -38,18 +38,33 @@ public class DictionaryVo implements IJsonSerializable {
      */
     public Properties toProperties(String lang) {
         Properties props = new Properties();
-        getEntries().values().stream()
-                .forEach(entry -> {
-                    DictionaryEntryDescVo desc = entry.getDesc(lang);
-                    // If the value descriptor does not exist for the given language - select the default instead
-                    if (desc == null && !entry.getDescs().isEmpty()) {
-                        desc = entry.getDescs().get(0);
-                    }
-                    if (desc != null && desc.getValue() != null) {
-                        props.setProperty(entry.getKey(), desc.getValue());
-                    }
-                });
+        getEntries().values().forEach(entry -> {
+            DictionaryEntryDescVo desc = entry.getDesc(lang);
+            // If the value descriptor does not exist for the given language - select the default instead
+            if (desc == null && !entry.getDescs().isEmpty()) {
+                desc = entry.getDescs().get(0);
+            }
+            if (desc != null && desc.getValue() != null) {
+                props.setProperty(entry.getKey(), desc.getValue());
+            }
+        });
         return props;
+    }
+
+
+    /**
+     * Shortcut for getting a dictionary value
+     *
+     * @param lang the language of the dictionary
+     * @param key the key
+     */
+    public String value(String lang, String key) {
+        DictionaryEntryVo entry = entries.get(key);
+        if (entry != null) {
+            DictionaryEntryDescVo desc = entry.getDesc(lang);
+            return desc != null ? desc.getValue() : null;
+        }
+        return null;
     }
 
 

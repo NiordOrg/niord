@@ -20,6 +20,7 @@ import org.niord.core.area.Area;
 import org.niord.core.category.Category;
 import org.niord.core.chart.Chart;
 import org.niord.core.message.vo.MessagePublicationVo;
+import org.niord.core.message.vo.MessageSourceVo;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.model.DescEntity;
 import org.niord.core.model.VersionedEntity;
@@ -226,6 +227,11 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     // Indicates if the source should updated automatically.
     boolean autoSource;
 
+    // List of message sources
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "message", orphanRemoval = true)
+    @OrderColumn(name = "indexNo")
+    List<MessageSource> sources = new ArrayList<>();
+
     // Not very normalized, but makes it easier to perform searches
     boolean hasGeometry;
 
@@ -326,6 +332,12 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                         .filter(MessagePublicationVo::publicationDefined)
                         .forEach(pub -> addPublication(new MessagePublication(pub)));
             }
+
+            if (sysMessage.getSources() != null) {
+                sysMessage.getSources().stream()
+                        .filter(MessageSourceVo::sourceDefined)
+                        .forEach(source -> addSource(new MessageSource(source)));
+            }
         }
 
         updateEventDateInterval();
@@ -377,6 +389,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             systemMessage.setAutoPublication(autoPublication);
             systemMessage.setAutoSource(autoSource);
             publications.forEach(p -> systemMessage.checkCreatePublications().add(p.toVo(filter)));
+            sources.forEach(s -> systemMessage.checkCreateSources().add(s.toVo(filter)));
 
             message.sort(filter.getLang());
 
@@ -460,6 +473,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     public void updateAutoMessageFields() {
         updateMessageTitle();
         updateMessagePublication();
+        updateMessageSource();
     }
 
 
@@ -512,7 +526,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     }
 
 
-    /** Updates the publication line of the message based nested publications */
+    /** Updates the external publications text from the nested publications */
     public void updateMessagePublication() {
         if (autoPublication) {
             // Process all languages
@@ -537,6 +551,36 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                     .collect(Collectors.joining(" "));
 
             return StringUtils.trimToNull(publication);
+        }
+        return null;
+    }
+
+
+    /** Updates the source text from the message source */
+    public void updateMessageSource() {
+        if (autoSource) {
+            // Process all languages
+            getDescs().forEach(desc -> desc.setSource(computeMessageSource(desc.getLang())));
+        }
+    }
+
+
+    /**
+     * Computes the message source text. Takes the format:
+     * Danish: "(ENS 31. august, SFS 28. september og JD-Contractor A/S 3. december 2015)"
+     * English: "(ENS 31 August, DMA 28 September and JD-Contractor A/S 3 December 2015)"
+     * @param lang the language
+     * @return the message source text
+     */
+    public String computeMessageSource(String lang) {
+        MessageDesc desc = getDesc(lang);
+        if (desc != null) {
+            String source = sources.stream()
+                    .map(s -> s.computeMessageSource(desc.getLang()))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.joining(", "));
+
+            return StringUtils.trimToNull(source);
         }
         return null;
     }
@@ -671,6 +715,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         publication.setMessage(this);
         publications.add(publication);
         return publication;
+    }
+
+
+    /** Adds a message source to this message */
+    public MessageSource addSource(MessageSource source) {
+        source.setMessage(this);
+        sources.add(source);
+        return source;
     }
 
 
@@ -933,6 +985,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setAutoSource(boolean autoSource) {
         this.autoSource = autoSource;
+    }
+
+    public List<MessageSource> getSources() {
+        return sources;
+    }
+
+    public void setSources(List<MessageSource> sources) {
+        this.sources = sources;
     }
 
     @Override

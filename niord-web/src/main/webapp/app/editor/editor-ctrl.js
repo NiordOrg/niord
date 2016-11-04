@@ -149,6 +149,11 @@ angular.module('niord.editor')
                     msg.publications = [];
                 }
 
+                // Ensure that the message sources list is defined
+                if (!msg.sources) {
+                    msg.sources = [];
+                }
+
                 // Update the attachment upload url
                 $scope.attachmentUploadUrl =  MessageService.attachmentUploadRepoPath(msg);
                 // Ensure that localized attachment desc fields are defined for all languages
@@ -500,6 +505,86 @@ angular.module('niord.editor')
             };
 
 
+            /** Publication DnD configuration **/
+            $scope.sourceSortableCfg = {
+                group: 'source',
+                handle: '.move-btn',
+                onEnd: function() {
+                    $scope.adjustEditableMessage();
+                    $scope.setDirty();
+                }
+            };
+
+
+            // Used to ensure that description entities have various field
+            function initSourceDescField(desc) {
+                desc.name = '';
+            }
+
+
+            /** Adds the new source to the list of message sources **/
+            $scope.addSource = function () {
+                var source = LangService.checkDescs({ active: true }, initSourceDescField, undefined, $rootScope.modelLanguages);
+                $scope.message.sources.push(source);
+                $timeout(function () {
+                    $('.source-field:last').find('input:first').focus();
+                }, 100)
+            };
+
+
+            /** Deletes the given source from the list of message sources **/
+            $scope.deleteSource = function (source) {
+                if ($.inArray(source, $scope.message.sources) > -1) {
+                    $scope.message.sources.splice( $.inArray(source, $scope.message.sources), 1 );
+                    $scope.adjustEditableMessage();
+                    $scope.setDirty();
+                }
+            };
+
+
+            /** Returns the sources matching the give text sub-string **/
+            $scope.getSources = function (txt, lang, sourceIndex) {
+                lang = lang || $rootScope.language;
+                return $http.get('/rest/sources/search?name=' + encodeURIComponent(txt) + '&lang=' + lang)
+                    .then(function(response) {
+                        var sources = response.data;
+                        angular.forEach(sources, function (source) {
+                            // Stamp source index and language on the source
+                            source.sourceIndex = sourceIndex;
+                            source.lang = lang;
+                        });
+                        return sources;
+                    });
+            };
+
+
+            /** Formats the source with name and abbreviation **/
+            $scope.formatSource = function (source) {
+                var txt = '';
+                if (source && source.descs != null) {
+                    txt = source.descs[0].name;
+                    if (source.descs[0].abbreviation) {
+                        txt += ' (' + source.descs[0].abbreviation + ')';
+                    }
+                }
+                return txt;
+            };
+
+            $scope.sourceSelected = function ($item, $model, $label) {
+                $http.get('/rest/sources/source/' + $item.id)
+                    .success(function (result) {
+                        var source = $scope.message.sources[$item.sourceIndex];
+                        angular.forEach(source.descs, function (desc) {
+                            var copyDesc = LangService.descForLanguage(result, desc.lang);
+                            if (copyDesc && copyDesc.abbreviation) {
+                                desc.name = copyDesc.abbreviation || copyDesc.name;
+                            }
+                        });
+                        $scope.adjustEditableMessage();
+                        $scope.setDirty();
+                    })
+            };
+            
             /** Computes the charts intersecting with the current message geometry **/
             $scope.computeCharts = function () {
                 // Create a combined geometry for all message parts
@@ -593,6 +678,8 @@ angular.module('niord.editor')
                     }),
                     autoPublication: msg.autoPublication,
                     publications: msg.publications,
+                    autoSource: msg.autoSource,
+                    sources: msg.sources,
                     parts: msg.parts.map(function (part) {
                         return {
                             descs: part.descs.map(function (desc) {
@@ -615,6 +702,9 @@ angular.module('niord.editor')
                                 }
                                 if (d && msg.autoPublication) {
                                     d.publication = desc.publication;
+                                }
+                                if (d && msg.autoSource) {
+                                    d.source = desc.source;
                                 }
                             })
                         }

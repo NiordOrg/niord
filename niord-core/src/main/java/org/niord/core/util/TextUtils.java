@@ -32,6 +32,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.List;
+import java.util.function.Function;
 
 /**
  * Text utility methods
@@ -113,6 +115,35 @@ public class TextUtils {
         }
         return s1.toLowerCase().compareTo(s2.toLowerCase());
     }
+
+
+    /**
+     * Used for joining strings with a different last delimiter.
+     * Credits: http://stackoverflow.com/questions/34936771/join-strings-with-different-last-delimiter
+     * <p>
+     * Usage:
+     * <pre>
+     *  list.stream()
+     *    .collect(
+     *      Collectors.collectingAndThen(Collectors.toList(), joiningLastDelimiter(", ", " and "))
+     *    );
+     * </pre>
+     *
+     * @param delimiter the delimiter
+     * @param lastDelimiter the last delimiter
+     * @return the joining function
+     */
+    public static Function<List<String>, String> joiningLastDelimiter(
+            String delimiter, String lastDelimiter) {
+        return list -> {
+            int last = list.size() - 1;
+            if (last < 1) return String.join(delimiter, list);
+            return String.join(lastDelimiter,
+                    String.join(delimiter, list.subList(0, last)),
+                    list.get(last));
+        };
+    }
+
 
     /**
      * Prints an XML document to the output stream

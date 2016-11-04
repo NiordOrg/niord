@@ -701,7 +701,7 @@ public class MessageRestService  {
         boolean autoTitle = message.isAutoTitle() != null && message.isAutoTitle();
         boolean autoPublication = message.isAutoPublication() != null && message.isAutoPublication();
 
-        // If auto-title or -publication is on, compute the composite fields
+        // If auto-title, auto-publication or auto-source is on, compute the resulting fields
         if (autoTitle || autoPublication) {
             Message msg = new Message(message);
 
@@ -723,6 +723,9 @@ public class MessageRestService  {
         message.setMainType(null);
         message.setAutoTitle(null);
         message.setAutoPublication(null);
+        message.setPublications(null);
+        message.setAutoSource(null);
+        message.setSources(null);
         message.setAreas(null);
         message.setCategories(null);
         message.setMessageSeries(null);

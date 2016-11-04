@@ -33,6 +33,7 @@ public class SystemMessageVo extends MessageVo {
     Boolean autoPublication;
     Boolean autoSource;
     List<MessagePublicationVo> publications;
+    List<MessageSourceVo> sources;
     String thumbnailPath;
     String repoPath;
     String editRepoPath;
@@ -88,11 +89,36 @@ public class SystemMessageVo extends MessageVo {
         fixDescriptionRepoPaths();
     }
 
+
+    /** {@inheritDoc} **/
+    @Override
+    public void sort(String language) {
+        super.sort(language);
+        if (StringUtils.isNotBlank(language)) {
+            if (publications != null) {
+                publications.stream()
+                    .filter(p -> p.getPublication() != null)
+                    .forEach(p -> p.getPublication().sortDescs(language));
+            }
+            if (sources != null) {
+                sources.forEach(s -> s.sortDescs(language));
+            }
+        }
+    }
+
+
     public List<MessagePublicationVo> checkCreatePublications() {
         if (publications == null) {
             publications = new ArrayList<>();
         }
         return publications;
+    }
+
+    public List<MessageSourceVo> checkCreateSources() {
+        if (sources == null) {
+            sources = new ArrayList<>();
+        }
+        return sources;
     }
 
     /*************************/
@@ -137,6 +163,14 @@ public class SystemMessageVo extends MessageVo {
 
     public void setPublications(List<MessagePublicationVo> publications) {
         this.publications = publications;
+    }
+
+    public List<MessageSourceVo> getSources() {
+        return sources;
+    }
+
+    public void setSources(List<MessageSourceVo> sources) {
+        this.sources = sources;
     }
 
     public String getThumbnailPath() {

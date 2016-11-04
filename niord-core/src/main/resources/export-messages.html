@@ -208,6 +208,14 @@
             </div>
         </div>
 
+        <!-- Publication line -->
+        <div class="row" ng-if="msg.descs && msg.descs.length > 0 && msg.descs[0].publication">
+            <div class="col-xs-2 col-sm-1 message-details-item-field">Publication</div>
+            <div class="col-xs-10 col-sm-11 message-details-item-value">
+                <span ng-bind-html="msg.descs[0].publication"></span>
+            </div>
+        </div>
+
         <!-- Source line -->
         <div class="row" ng-if="msg.descs && msg.descs.length > 0 && msg.descs[0].source">
             <div class="col-sm-12 message-details-item-value text-right">({{msg.descs[0].source}})</div>

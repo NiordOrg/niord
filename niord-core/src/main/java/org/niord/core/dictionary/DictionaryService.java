@@ -224,6 +224,19 @@ public class DictionaryService extends BaseService {
 
 
     /**
+     * Shortcut for getting a dictionary value
+     *
+     * @param name the name of the dictionary
+     * @param lang the language of the dictionary
+     * @param key the key
+     */
+    public String value(String name, String lang, String key) {
+        DictionaryVo dict = getCachedDictionary(name);
+        return dict != null ? dict.value(lang, key) : null;
+    }
+
+
+    /**
      * Returns the given dictionaries as a Properties object for the given language.
      * Returns null if undefined.
      * @param names the dictionary names
