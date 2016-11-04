@@ -22,6 +22,7 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.source.Source;
 import org.niord.core.source.SourceService;
+import org.niord.core.source.vo.SourceDescVo;
 import org.niord.core.source.vo.SourceVo;
 import org.niord.model.DataFilter;
 import org.slf4j.Logger;
@@ -44,6 +45,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -81,6 +83,7 @@ public class SourceRestService extends AbstractBatchableRestService {
 
         return sourceService.searchSources(lang, name, inactive, limit).stream()
                 .map(p -> p.toVo(dataFilter))
+                .sorted(sourceNameComparator(lang))
                 .collect(Collectors.toList());
     }
 
@@ -98,6 +101,7 @@ public class SourceRestService extends AbstractBatchableRestService {
         return sourceService.getSources().stream()
                 .limit(limit)
                 .map(p -> p.toVo(dataFilter))
+                .sorted(sourceNameComparator(lang))
                 .collect(Collectors.toList());
     }
 
@@ -177,6 +181,23 @@ public class SourceRestService extends AbstractBatchableRestService {
     @RolesAllowed("admin")
     public String importSources(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "source-import");
+    }
+
+
+    /** Returns a source name comparator **/
+    private Comparator<SourceVo> sourceNameComparator(String lang) {
+        return (s1, s2) -> {
+            SourceDescVo d1 = s1.getDesc(lang);
+            SourceDescVo d2 = s2.getDesc(lang);
+                    if (d1.getName() == null && d2.getName() == null) {
+                        return 0;
+                    } else if (d1.getName() == null) {
+                        return 1;
+                    } else if (d2.getName() == null) {
+                        return -1;
+                    }
+                    return d1.getName().toLowerCase().compareTo(d2.getName().toLowerCase());
+                };
     }
 
 }

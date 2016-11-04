@@ -22,7 +22,10 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationService;
+import org.niord.core.publication.vo.PublicationDescVo;
 import org.niord.core.publication.vo.PublicationVo;
+import org.niord.core.source.vo.SourceDescVo;
+import org.niord.core.source.vo.SourceVo;
 import org.niord.model.DataFilter;
 import org.slf4j.Logger;
 
@@ -44,6 +47,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -81,6 +85,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
 
         return publicationService.searchPublications(lang, name, inactive, limit).stream()
                 .map(p -> p.toVo(dataFilter))
+                .sorted(publicationNameComparator(lang))
                 .collect(Collectors.toList());
     }
 
@@ -98,6 +103,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
         return publicationService.getPublications().stream()
                 .limit(limit)
                 .map(p -> p.toVo(dataFilter))
+                .sorted(publicationNameComparator(lang))
                 .collect(Collectors.toList());
     }
 
@@ -177,6 +183,22 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @RolesAllowed("admin")
     public String importPublications(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "publication-import");
+    }
+
+    /** Returns a publication name comparator **/
+    private Comparator<PublicationVo> publicationNameComparator(String lang) {
+        return (p1, p2) -> {
+            PublicationDescVo d1 = p1.getDesc(lang);
+            PublicationDescVo d2 = p2.getDesc(lang);
+            if (d1.getName() == null && d2.getName() == null) {
+                return 0;
+            } else if (d1.getName() == null) {
+                return 1;
+            } else if (d2.getName() == null) {
+                return -1;
+            }
+            return d1.getName().toLowerCase().compareTo(d2.getName().toLowerCase());
+        };
     }
 
 }

@@ -192,6 +192,50 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
+     * AdminSourceService
+     * ********************************************************************************
+     * Interface for calling source related functions at the application server
+     */
+    .factory('AdminSourceService', [ '$http', '$rootScope', function($http, $rootScope) {
+        'use strict';
+
+        return {
+
+            /** Returns all sources **/
+            getSources: function () {
+                return $http.get('/rest/sources/all?lang=' + $rootScope.language);
+            },
+
+
+            /** Returns the details for the given source **/
+            getSourceDetails: function (source) {
+                return $http.get('/rest/sources/source/' + source.id);
+            },
+
+
+            /** Creates a new source **/
+            createSource: function(source) {
+                return $http.post('/rest/sources/source/', source);
+            },
+
+
+            /** Updates the given source **/
+            updateSource: function(source) {
+                return $http.put('/rest/sources/source/' + source.id, source);
+            },
+
+
+            /** Deletes the given source **/
+            deleteSource: function(source) {
+                return $http['delete']('/rest/sources/source/' + source.id);
+            }
+
+        };
+    }])
+
+
+    /**
+     * ********************************************************************************
      * AdminUserService
      * ********************************************************************************
      * Interface for calling user and group-membership functions at the application server
