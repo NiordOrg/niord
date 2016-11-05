@@ -191,6 +191,7 @@ angular.module('niord.messages')
                 return $http.post('/rest/charts/intersecting-charts', featureCollection);
             },
 
+
             /** Returns the history of the given message */
             messageHistory: function(id) {
                 return $http.get('/rest/messages/message/' + id + '/history');
@@ -201,6 +202,18 @@ angular.module('niord.messages')
             searchPublications: function(name) {
                 return $http.get('/rest/publications/search?lang=' + $rootScope.language
                                 + '&name=' + encodeURIComponent(name), false);
+            },
+
+
+            /** Returns all sources **/
+            getSources: function () {
+                return $http.get('/rest/sources/search?inactive=false&lang=' + $rootScope.language);
+            },
+
+
+            /** Returns the details for the given source **/
+            getSourceDetails: function (source) {
+                return $http.get('/rest/sources/source/' + source.id);
             },
 
 
@@ -365,6 +378,16 @@ angular.module('niord.messages')
                 return $uibModal.open({
                     controller: "MessageTagsDialogCtrl",
                     templateUrl: "/app/messages/message-tags-dialog.html",
+                    size: 'md'
+                });
+            },
+
+
+            /** Opens the message source dialog */
+            messageSourceDialog: function () {
+                return $uibModal.open({
+                    controller: "MessageSourceDialogCtrl",
+                    templateUrl: "/app/editor/message-source-dialog.html",
                     size: 'md'
                 });
             },

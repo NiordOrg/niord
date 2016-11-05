@@ -724,8 +724,6 @@ public class MessageRestService  {
         message.setAutoTitle(null);
         message.setAutoPublication(null);
         message.setPublications(null);
-        message.setAutoSource(null);
-        message.setSources(null);
         message.setAreas(null);
         message.setCategories(null);
         message.setMessageSeries(null);

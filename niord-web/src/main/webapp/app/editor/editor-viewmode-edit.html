@@ -784,77 +784,25 @@
                 <editor-field-value-viewer>
                     <div ng-if="message.descs.length > 0">
                         {{message.descs[0].source}}
-                        <span ng-if="message.autoSource" class="glyphicon glyphicon-lock" style="color: lightgray"></span>
                     </div>
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12">
 
                     <div class="row">
-                        <div class="col-sm-12">
-                            <input type="checkbox" ng-model="message.autoSource"
-                                   tabindex="1801"> Auto-generate source text
-                            </input>
-                        </div>
-                    </div>
-
-                    <div ng-if="!message.autoSource" class="row" style="margin-top: 10px">
-                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
+                        <div class="col-xs-12 col-md-sm-8 col-md-9 col-lg-10" ng-repeat="desc in message.descs">
                             <input class="form-control input-sm" placeholder="Source" type="text"
                                    tabindex="1802"
                                    autocapitalize="off" autocorrect="off" autocomplete="off"
                                    ng-model="desc.source" bg-flag="desc.lang"/>
                         </div>
-                    </div>
-
-                    <div ng-if="message.autoSource" class="row" style="margin-top: 10px">
-                        <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs">
-                            <div class="editor-view-source" bg-flag="desc.lang" >
-                                {{desc.source}}
-                            </div>
+                        <div class="col-sm-4 col-md-3 col-lg-2">
+                            <button href class="btn btn-default btn-sm"
+                                    tabindex="1803"
+                                    ng-click="addSource()">Add source...</button>
                         </div>
                     </div>
 
-                    <table class="table table-condensed editor-source-table">
-                        <tr>
-                            <th width="180">Date</th>
-                            <th width="*">Source</th>
-                            <th>
-                                <div class="pull-right">
-                                    <button ng-click="addSource()" class="btn btn-default btn-xs" tabindex="1803">
-                                        <span class="glyphicon glyphicon-plus"></span> Add
-                                    </button>
-                                </div>
-                            </th>
-                        </tr>
-                        <tbody ng-sortable="sourceSortableCfg">
-                        <tr ng-repeat="source in message.sources" ng-init="sourceIndex = $index" class="source-field">
-                            <td>
-                                <date-time-picker ng-model="source.date" placeholder="Date" time="'00:00:00'" format="'l'"
-                                                  tab-index="1705 + sourceIndex * 4"></date-time-picker>
-
-                            </td>
-                            <td>
-                                <div ng-repeat="desc in source.descs">
-                                    <input class="form-control input-sm" placeholder="Source" type="text"
-                                           tabindex="{{1706 + sourceIndex * 4}}"
-                                           ng-model="desc.name"
-                                           bg-flag="desc.lang"
-                                           uib-typeahead="formatSource(src) as formatSource(src) for src in getSources($viewValue, desc.lang, sourceIndex)"
-                                           typeahead-focus-first="false" typeahead-focus-on-select="false"
-                                           typeahead-on-select="sourceSelected($item, $model, $label)"
-                                           ng-change="adjustEditableMessage()"
-                                           ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"/>
-                                </div>
-                            </td>
-                            <td style="width: 50px; padding-top: 12px" nowrap>
-                                <a href ng-click="deleteSource(source);" title="Delete Source"><i class="glyphicon glyphicon-trash"></i></a>
-                                &nbsp;
-                                <a href><span class="glyphicon glyphicon-move move-btn"></span></a>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
                 </editor-field-value-editor>
 
             </editor-field>

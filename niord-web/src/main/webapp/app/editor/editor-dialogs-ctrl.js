@@ -21,6 +21,47 @@
 angular.module('niord.editor')
 
     /*******************************************************************
+     * Controller that handles the message source dialog
+     *******************************************************************/
+    .controller('MessageSourceDialogCtrl', ['$scope', '$timeout', 'MessageService',
+        function ($scope, $timeout, MessageService) {
+            'use strict';
+
+            $scope.sources = [];
+            $scope.search = '';
+
+            $timeout(function () {
+                $('#filter').focus();
+            }, 100);
+
+
+            /** Filters messages by name **/
+            $scope.searchFilter = function (source) {
+                return source.descs[0].name.toLowerCase().indexOf($scope.search.toLowerCase()) !== -1 ||
+                    source.descs[0].abbreviation.toLowerCase().indexOf($scope.search.toLowerCase()) !== -1;
+            };
+
+
+            // Load all sources
+            MessageService.getSources()
+                .success(function (sources) {
+                    $scope.sources = sources;
+                });
+
+
+            /** Called when the source should be added to the message **/
+            $scope.addSource = function (source) {
+
+                // Get the details of the selected source
+                MessageService.getSourceDetails(source)
+                    .success(function (sourceDetails) {
+                        $scope.$close(sourceDetails);
+                    });
+            };
+        }])
+
+
+    /*******************************************************************
      * Controller that handles the message Thumbnail dialog
      *******************************************************************/
     .controller('MessageThumbnailDialogCtrl', ['$scope', '$rootScope', 'message',

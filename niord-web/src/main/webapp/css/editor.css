@@ -609,6 +609,18 @@ div.mce-fullscreen {
     }
 }
 
+/** Editor -> Add source dialog **/
+
+.message-source-list {
+    font-size: 12px;
+    max-height: 200px;
+    height: 200px;
+    overflow: hidden;
+    overflow-y: scroll;
+    border: 1px solid lightgray;
+}
+
+
 /** Editor -> Thumbnail editor **/
 
 .message-thumbnail-map {

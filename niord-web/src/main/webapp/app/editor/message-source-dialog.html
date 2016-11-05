@@ -1,0 +1,45 @@
+<div>
+
+    <div class="modal-header" style="text-align: center; padding: 5px 15px">
+        <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
+        <h4>Add message source</h4>
+    </div>
+
+    <div class="modal-body print" style="padding-bottom: 0">
+
+        <div class="row">
+            <div class="col-xs-8 col-sm-6 col-md-4" style="padding: 0 20px">
+                <input id="filter" class="form-control input-sm" ng-model="search" type="text" placeholder="Filter">
+                <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
+                      ng-click="search = ''" ng-show="search != ''"></span>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-12" style="padding: 10px 20px;">
+                <div class="message-source-list">
+                    <table class='table table-condensed table-hover' style="margin-bottom: 0;">
+                        <tr>
+                            <th>Name</th>
+                            <th>Abbreviation</th>
+                            <th width="60"></th>
+                        </tr>
+                        <tr ng-repeat="source in sources | filter:searchFilter">
+                            <td>{{source.descs[0].name}}</td>
+                            <td>{{source.descs[0].abbreviation}}</td>
+                            <td align="right">
+                                <button class="btn btn-xs btn-default" ng-click="addSource(source);" title="Add Source">Add</button>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" style="margin-top: 10px;">
+            <div class="form-group col-xs-12" style="text-align: right">
+                <button class="btn btn-default btn-sm" ng-click="$dismiss('aborted')">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>

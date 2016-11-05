@@ -453,7 +453,6 @@ public class MessageService extends BaseService {
         original.setAutoTitle(message.isAutoTitle());
 
         original.setAutoPublication(message.isAutoPublication());
-        original.setAutoSource(message.isAutoSource());
 
         original.getAttachments().clear();
         message.getAttachments().stream()
@@ -621,7 +620,6 @@ public class MessageService extends BaseService {
         message.setStatus(Status.DRAFT);
         message.setAutoTitle(true);
         message.setAutoPublication(true);
-        message.setAutoSource(true);
         if (mainType == MainType.NM) {
             message.setOriginalInformation(true);
         }
