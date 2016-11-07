@@ -508,7 +508,7 @@ angular.module('niord.editor')
                             var srcDesc = LangService.descForLanguage(source, desc.lang);
                             if (srcDesc) {
                                 var result = desc.source || '';
-                                result += ', ';
+                                result += result.length > 0 ? ', ' : '';
                                 result += srcDesc.abbreviation || srcDesc.name;
                                 desc.source = result;
                             }
