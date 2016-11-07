@@ -39,6 +39,8 @@ import java.util.stream.Collectors;
         @NamedQuery(name  = "Source.searchSources",
                 query = "select distinct c from Source c join c.descs d where c.active in (:active) and "
                         + " d.lang = :lang and (lower(d.name) like :term or lower(d.abbreviation) like :term)"),
+        @NamedQuery(name  = "Source.findByIds",
+                query = "select distinct c from Source c where c.id in (:ids)"),
         @NamedQuery(name  = "Source.findByName",
                 query = "select distinct c from Source c join c.descs d where "
                         + " d.lang = :lang and lower(d.name) = :name")

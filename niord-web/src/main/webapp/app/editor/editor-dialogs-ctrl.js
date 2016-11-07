@@ -23,11 +23,12 @@ angular.module('niord.editor')
     /*******************************************************************
      * Controller that handles the message source dialog
      *******************************************************************/
-    .controller('MessageSourceDialogCtrl', ['$scope', '$timeout', 'MessageService',
-        function ($scope, $timeout, MessageService) {
+    .controller('MessageSourceDialogCtrl', ['$scope', '$rootScope', '$timeout', 'MessageService', 'LangService',
+        function ($scope, $rootScope, $timeout, MessageService, LangService) {
             'use strict';
 
             $scope.sources = [];
+            $scope.selection = [];
             $scope.search = '';
 
             $timeout(function () {
@@ -49,13 +50,84 @@ angular.module('niord.editor')
                 });
 
 
-            /** Called when the source should be added to the message **/
-            $scope.addSource = function (source) {
+            /** Called when the selection has been updated **/
+            $scope.selectionUpdated = function () {
+                $scope.selection.length = 0;
+                angular.forEach($scope.sources, function (source) {
+                    if (source.selected) {
+                        $scope.selection.push(source);
+                    }
+                });
+            };
+            $scope.$watch("sources", $scope.selectionUpdated, true);
 
-                // Get the details of the selected source
-                MessageService.getSourceDetails(source)
-                    .success(function (sourceDetails) {
-                        $scope.$close(sourceDetails);
+
+            /** If all sources of the selection share the same year, return this, return null otherwise **/
+            $scope.getCommonYear = function () {
+                var commonYear = null;
+                for (var x = 0; x < $scope.selection.length; x++) {
+                    if (!$scope.selection[x].date) {
+                        return null;
+                    }
+                    var date = moment($scope.selection[x].date);
+                    var year = date.format('YYYY');
+                    if (commonYear != null && year != commonYear) {
+                        return null;
+                    }
+                    commonYear = year;
+                }
+                return commonYear;
+            };
+
+
+            /** Composes the source text from the current selection **/
+            $scope.composeSourceText = function () {
+                var result = {};
+                angular.forEach($rootScope.modelLanguages, function (lang) {
+                    var text = '';
+                    var commonYear = $scope.getCommonYear();
+                    var dateFormat = (commonYear) ? 'Do MMMM' : 'Do MMMM YYYY';
+                    for (var x = 0; x < $scope.selection.length; x++) {
+                        var source = $scope.selection[x];
+                        var desc = LangService.descForLanguage(source, lang);
+                        if (desc) {
+                            var delim = ($scope.selection.length > 1 && x == $scope.selection.length - 1)
+                                ? ' ' + LangService.translate('term.and', null, lang) + ' '
+                                : ', ';
+                            text += (text.length > 0) ? delim : '';
+                            text += desc.abbreviation || desc.name;
+                            if (source.date) {
+                                var date = moment(source.date).locale(lang);
+                                text += ' ' + date.format(dateFormat);
+                            }
+                        }
+                    }
+                    if (commonYear) {
+                        text += ' ' + commonYear;
+                    }
+                    result[lang] = text;
+                });
+                $scope.$close(result);
+            };
+
+
+            /** Called when the source selection should be added to the message **/
+            $scope.addSelection = function () {
+
+                // Get the details of the selected sources to get all language variants
+                MessageService.getSourceDetails($scope.selection)
+                    .success(function (sources) {
+                        var detailsMap = {};
+                        angular.forEach(sources, function (s) {
+                           detailsMap[s.id] = s;
+                        });
+                        angular.forEach($scope.selection, function (source) {
+                           if (detailsMap[source.id]) {
+                               source.descs = detailsMap[source.id].descs;
+                           }
+                        });
+
+                        $scope.composeSourceText();
                     });
             };
         }])

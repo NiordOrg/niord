@@ -2,14 +2,15 @@
 
     <div class="modal-header" style="text-align: center; padding: 5px 15px">
         <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
-        <h4>Add message source</h4>
+        <h4>Add message sources</h4>
     </div>
 
     <div class="modal-body print" style="padding-bottom: 0">
 
         <div class="row">
             <div class="col-xs-8 col-sm-6 col-md-4" style="padding: 0 20px">
-                <input id="filter" class="form-control input-sm" ng-model="search" type="text" placeholder="Filter">
+                <input id="filter" class="form-control input-sm" ng-model="search" type="text" placeholder="Filter"
+                       autocapitalize="off" autocorrect="off" autocomplete="off">
                 <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
                       ng-click="search = ''" ng-show="search != ''"></span>
             </div>
@@ -18,17 +19,37 @@
         <div class="row">
             <div class="col-sm-12" style="padding: 10px 20px;">
                 <div class="message-source-list">
-                    <table class='table table-condensed table-hover' style="margin-bottom: 0;">
+                    <table class='table table-condensed' style="margin-bottom: 0;">
                         <tr>
                             <th>Name</th>
                             <th>Abbreviation</th>
-                            <th width="60"></th>
                         </tr>
-                        <tr ng-repeat="source in sources | filter:searchFilter">
+                        <tr ng-repeat="source in sources | filter:searchFilter" class="clickable"
+                            ng-class="{ 'selected' :  source.selected == true }"
+                            ng-click="source.selected = !source.selected">
                             <td>{{source.descs[0].name}}</td>
                             <td>{{source.descs[0].abbreviation}}</td>
-                            <td align="right">
-                                <button class="btn btn-xs btn-default" ng-click="addSource(source);" title="Add Source">Add</button>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div ng-if="selection.length > 0" class="row" style="padding: 5px 0; border-bottom: 1px solid lightgray">
+            <div class="col-sm-12" style="padding: 10px 20px;">
+                <div>Selection:</div>
+                <div class="message-source-selection">
+                    <table class='table table-condensed' style="margin-bottom: 0;">
+                        <tr ng-repeat="source in selection" >
+                            <td valign="middle">
+                                {{source.descs[0].name}}
+                            </td>
+                            <td valign="middle" width="160px">
+                                <date-time-picker ng-model="source.date" placeholder="Date" size="sm"
+                                                  time="'00:00:00'" format="'l'"></date-time-picker>
+                            </td>
+                            <td valign="middle" width="20px">
+                                <a href ng-click="source.selected = false"><i class="glyphicon glyphicon-trash"></i></a>
                             </td>
                         </tr>
                     </table>
@@ -36,9 +57,12 @@
             </div>
         </div>
 
+
         <div class="row" style="margin-top: 10px;">
             <div class="form-group col-xs-12" style="text-align: right">
                 <button class="btn btn-default btn-sm" ng-click="$dismiss('aborted')">Cancel</button>
+                <button class="btn btn-primary btn-sm"
+                        ng-disabled="selection.length == 0" ng-click="addSelection()">Add selection</button>
             </div>
         </div>
     </div>

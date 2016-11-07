@@ -503,16 +503,17 @@ angular.module('niord.editor')
             /** Called in order to add a source to the message **/
             $scope.addSource = function () {
                 MessageService.messageSourceDialog()
-                    .result.then(function (source) {
-                        angular.forEach($scope.message.descs, function (desc) {
-                            var srcDesc = LangService.descForLanguage(source, desc.lang);
-                            if (srcDesc) {
+                    .result.then(function (result) {
+                        angular.forEach(result, function (sourceText, lang) {
+                            var desc = LangService.descForLanguage($scope.message, lang);
+                            if (desc && sourceText.length > 0) {
                                 var result = desc.source || '';
+                                result = result.trim();
                                 result += result.length > 0 ? ', ' : '';
-                                result += srcDesc.abbreviation || srcDesc.name;
+                                result += sourceText;
                                 desc.source = result;
                             }
-                        })
+                        });
                     });
             };
 

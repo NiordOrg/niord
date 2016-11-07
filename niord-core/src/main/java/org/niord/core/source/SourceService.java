@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -76,6 +77,23 @@ public class SourceService extends BaseService {
                 .stream()
                 .limit(limit)
                 .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Returns the source with the given IDs
+     *
+     * @param ids the ID's of the sources to fetch
+     * @return the source with the given IDs
+     */
+    public List<Source> findByIds(Set<Integer> ids) {
+        if (ids != null && !ids.isEmpty()) {
+            return em
+                    .createNamedQuery("Source.findByIds", Source.class)
+                    .setParameter("ids", ids)
+                    .getResultList();
+        }
+        return Collections.emptyList();
     }
 
 

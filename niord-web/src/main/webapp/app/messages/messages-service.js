@@ -211,9 +211,12 @@ angular.module('niord.messages')
             },
 
 
-            /** Returns the details for the given source **/
-            getSourceDetails: function (source) {
-                return $http.get('/rest/sources/source/' + source.id);
+            /** Returns the details for the given sources **/
+            getSourceDetails: function (sources) {
+                var ids = [];
+                angular.forEach(sources, function (s) { ids.push(s.id); });
+
+                return $http.get('/rest/sources/search/' + ids.join(','));
             },
 
 

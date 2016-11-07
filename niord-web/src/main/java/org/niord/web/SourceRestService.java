@@ -45,9 +45,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 
@@ -84,6 +86,25 @@ public class SourceRestService extends AbstractBatchableRestService {
         return sourceService.searchSources(lang, name, inactive, limit).stream()
                 .map(p -> p.toVo(dataFilter))
                 .sorted(sourceNameComparator(lang))
+                .collect(Collectors.toList());
+    }
+
+
+    /** Searches sources based on comma-separated ID's */
+    @GET
+    @Path("/search/{ids}")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public List<SourceVo> searchSourcesById(
+            @PathParam("ids") String ids) {
+
+        Set<Integer> idSet = Arrays.stream(ids.split(","))
+                .map(Integer::valueOf)
+                .collect(Collectors.toSet());
+
+        return sourceService.findByIds(idSet).stream()
+                .map(p -> p.toVo(DataFilter.get()))
                 .collect(Collectors.toList());
     }
 

@@ -613,10 +613,20 @@ div.mce-fullscreen {
 
 .message-source-list {
     font-size: 12px;
-    max-height: 200px;
-    height: 200px;
+    max-height: 150px;
+    height: 150px;
     overflow: hidden;
     overflow-y: scroll;
+    border: 1px solid lightgray;
+}
+
+.message-source-list .selected {
+    background-color: darkgray;
+    color: white;
+}
+
+.message-source-selection {
+    font-size: 12px;
     border: 1px solid lightgray;
 }
 
