@@ -696,7 +696,7 @@
                           tab-index="1700">
 
                 <editor-field-value-viewer>
-                    <render-message-publication msg="message" include-internal="true"></render-message-publication>
+                    <render-message-publication msg="message" include-internal="message.publications.length > 0"></render-message-publication>
                     <span ng-if="message.autoPublication" class="glyphicon glyphicon-lock" style="color: lightgray"></span>
                 </editor-field-value-viewer>
 
