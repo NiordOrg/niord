@@ -15,6 +15,10 @@ table.message-table tr, table.message-table tr td {
     page-break-inside: avoid;
 }
 
+tr.table-header-row {
+    page-break-after: avoid;
+}
+
 td.table-header {
     border-bottom: 0.05em solid #8f2f7b;
 }
