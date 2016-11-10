@@ -10,6 +10,8 @@
             </button>
             <a class="navbar-brand" href ui-sref="home">
                 <img src="/img/niord_white.png" height="40" style="margin-top: -10px;position: absolute;">
+                <span class="mode-flag" ng-if="mode == 'development'">DEV</span>
+                <span class="mode-flag" ng-if="mode == 'test'">TEST</span>
                 <span style="padding-left: 60px;"></span>
             </a>
         </div>

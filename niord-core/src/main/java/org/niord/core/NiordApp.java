@@ -52,7 +52,8 @@ public class NiordApp {
     private static final Setting EXECUTION_MODE =
             new Setting("mode", "development")
                     .description("The Niord execution mode, either 'development', 'test' or 'production'.")
-                    .editable(true);
+                    .editable(true)
+                    .web(true);
 
     @Inject
     SettingsService settingsService;
