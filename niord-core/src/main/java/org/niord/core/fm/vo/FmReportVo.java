@@ -15,9 +15,11 @@
  */
 package org.niord.core.fm.vo;
 
+import org.niord.core.domain.vo.DomainVo;
 import org.niord.model.IJsonSerializable;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,6 +31,7 @@ public class FmReportVo implements IJsonSerializable {
     String reportId;
     String name;
     String templatePath;
+    List<DomainVo> domains;
     Map<String, Object> properties = new HashMap<>();
 
     /*************************/
@@ -57,6 +60,14 @@ public class FmReportVo implements IJsonSerializable {
 
     public void setTemplatePath(String templatePath) {
         this.templatePath = templatePath;
+    }
+
+    public List<DomainVo> getDomains() {
+        return domains;
+    }
+
+    public void setDomains(List<DomainVo> domains) {
+        this.domains = domains;
     }
 
     public Map<String, Object> getProperties() {

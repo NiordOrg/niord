@@ -1,0 +1,12 @@
+<job id="report-import" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
+    <listeners>
+        <listener ref="batchJobListener"/>
+    </listeners>
+    <step id="importReportStep">
+        <chunk item-count="10">
+            <reader ref="batchReportImportReader" />
+            <processor ref="batchReportImportProcessor"/>
+            <writer ref="batchReportImportWriter" />
+        </chunk>
+    </step>
+</job>

@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Defines a freemarker report that generates PDF for a list of messages
@@ -68,6 +69,29 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
      */
     public FmReport() {
     }
+
+
+    /**
+     * Constructor
+     */
+    public FmReport(FmReportVo report) {
+        updateReport(report);
+    }
+
+
+    /** Updates this report from the value object **/
+    public void updateReport(FmReportVo report) {
+        this.reportId = report.getReportId();
+        this.name = report.getName();
+        this.templatePath = report.getTemplatePath();
+        this.properties.putAll(report.getProperties());
+        if (report.getDomains() != null) {
+            this.domains = report.getDomains().stream()
+                    .map(Domain::new)
+                    .collect(Collectors.toList());
+        }
+    }
+
 
     /** Converts this entity to a value object */
     public FmReportVo toVo() {
