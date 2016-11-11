@@ -15,14 +15,19 @@
  */
 package org.niord.web;
 
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.BatchService;
+import org.niord.core.batch.BatchSetService;
 import org.niord.core.batch.vo.BatchInstanceVo;
 import org.niord.core.batch.vo.BatchStatusVo;
 import org.niord.core.repo.FileTypes;
 import org.niord.core.repo.IconSize;
+import org.niord.core.repo.RepositoryService;
 import org.niord.core.user.UserService;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
@@ -31,15 +36,21 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
@@ -58,8 +69,14 @@ public class BatchRestService {
     @Inject
     Logger log;
 
+    @Context
+    ServletContext servletContext;
+
     @Inject
     BatchService batchService;
+
+    @Inject
+    BatchSetService batchSetService;
 
     @Inject
     FileTypes fileTypes;
@@ -274,4 +291,45 @@ public class BatchRestService {
     }
 
 
+    /**
+     * Imports an uploaded messages zip archive
+     *
+     * @param request the servlet request
+     * @return a status
+     */
+    @POST
+    @Path("/execute-batch-set")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("text/plain")
+    @RolesAllowed("sysadmin")
+    public String executeBatchSet(@Context HttpServletRequest request) throws Exception {
+
+        FileItemFactory factory = RepositoryService.newDiskFileItemFactory(servletContext);
+        ServletFileUpload upload = new ServletFileUpload(factory);
+
+        StringBuilder txt = new StringBuilder();
+
+        List<FileItem> items = upload.parseRequest(request);
+
+        // Start the batch job for each file item
+        items.stream()
+                .filter(item -> !item.isFormField())
+                .forEach(item -> {
+                    try {
+                        txt.append("Processing batch-set zip-file: ")
+                                .append(item.getName())
+                                .append("\n");
+                        batchSetService.extractAndExecuteBatchSetArchive(item.getInputStream(), txt);
+                    } catch (Exception e) {
+                        String errorMsg = "Error processing batch-set zip-file "
+                                + item.getName() + ": " + e.getMessage();
+                        log.error(errorMsg, e);
+                        txt.append(errorMsg);
+                    }
+                });
+
+        return txt.toString();
+
+
+    }
 }

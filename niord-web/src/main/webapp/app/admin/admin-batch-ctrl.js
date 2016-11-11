@@ -68,8 +68,8 @@ angular.module('niord.admin')
      * ********************************************************************************
      * Batch Admin Controller
      */
-    .controller('BatchAdminCtrl', ['$scope', '$interval', '$stateParams', '$uibModal', 'AdminBatchService',
-        function ($scope, $interval, $stateParams, $uibModal, AdminBatchService) {
+    .controller('BatchAdminCtrl', ['$scope', '$interval', '$stateParams', '$uibModal', 'AdminBatchService', 'UploadFileService',
+        function ($scope, $interval, $stateParams, $uibModal, AdminBatchService, UploadFileService) {
             'use strict';
 
             $scope.batchStatus = {
@@ -222,7 +222,16 @@ angular.module('niord.admin')
                         }
                     }
                 });
-            }
+            };
+
+
+            /** Opens the upload-batch-set dialog **/
+            $scope.uploadBatchSet = function () {
+                UploadFileService.showUploadFileDialog(
+                    'Upload batch-set zip archive',
+                    '/rest/batch/execute-batch-set',
+                    'zip');
+            };
 
         }])
 

@@ -26,7 +26,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Reads domains from a domains.json file.
+ * Reads domains from a domains.json file. Only new domains are created, existing domains are ignored.
  * <p>
  * Please note, the actual domain-import.xml job file is not placed in the META-INF/batch-jobs of this project,
  * but rather, in the META-INF/batch-jobs folder of the niord-web project.<br>

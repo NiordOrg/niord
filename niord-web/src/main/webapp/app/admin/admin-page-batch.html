@@ -2,7 +2,10 @@
 <admin-page admin-page-title="Batch Jobs">
 
     <div ng-controller="BatchAdminCtrl" ng-init="loadBatchStatus()">
-        <p>Manage and monitoring of batch jobs</p>
+        <p style="margin-bottom: 20px">
+            Manage and monitoring of batch jobs
+            <button class="pull-right btn btn-sm btn-default" ng-click="uploadBatchSet()">Upload batch set...</button>
+        </p>
 
         <div class="row">
 

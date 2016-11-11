@@ -15,21 +15,13 @@
  */
 package org.niord.core.domain.batch;
 
-import org.niord.core.area.Area;
-import org.niord.core.area.AreaService;
 import org.niord.core.batch.AbstractItemHandler;
-import org.niord.core.category.Category;
-import org.niord.core.category.CategoryService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
-import org.niord.core.message.MessageSeries;
-import org.niord.core.message.MessageSeriesService;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * Persists the domains to the database
@@ -40,14 +32,6 @@ public class BatchDomainImportWriter extends AbstractItemHandler {
     @Inject
     DomainService domainService;
 
-    @Inject
-    AreaService areaService;
-
-    @Inject
-    CategoryService categoryService;
-
-    @Inject
-    MessageSeriesService messageSeriesService;
 
     /** {@inheritDoc} **/
     @Override
@@ -55,28 +39,6 @@ public class BatchDomainImportWriter extends AbstractItemHandler {
         long t0 = System.currentTimeMillis();
         for (Object i : items) {
             Domain domain = (Domain) i;
-
-            // Make sure areas are resolved and/or created
-            List<Area> areas = domain.getAreas().stream()
-                    .map(a -> areaService.findOrCreateArea(a, true))
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-            domain.setAreas(areas);
-
-            // Make sure categories are resolved and/or created
-            List<Category> categories = domain.getCategories().stream()
-                    .map(c -> categoryService.findOrCreateCategory(c, true))
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-            domain.setCategories(categories);
-
-
-            // Make sure message series are resolved and/or created
-            List<MessageSeries> series = domain.getMessageSeries().stream()
-                    .map(s -> messageSeriesService.findOrCreateMessageSeries(s))
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-            domain.setMessageSeries(series);
 
             domainService.saveEntity(domain);
         }

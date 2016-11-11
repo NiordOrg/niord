@@ -15,13 +15,22 @@
  */
 package org.niord.core.domain.batch;
 
+import org.niord.core.area.Area;
+import org.niord.core.area.AreaService;
 import org.niord.core.batch.AbstractItemHandler;
+import org.niord.core.category.Category;
+import org.niord.core.category.CategoryService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.domain.vo.DomainVo;
+import org.niord.core.message.MessageSeries;
+import org.niord.core.message.MessageSeriesService;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Filters domains that need to be a added or updated
@@ -31,6 +40,15 @@ public class BatchDomainImportProcessor extends AbstractItemHandler {
 
     @Inject
     DomainService domainService;
+
+    @Inject
+    AreaService areaService;
+
+    @Inject
+    CategoryService categoryService;
+
+    @Inject
+    MessageSeriesService messageSeriesService;
 
     /** {@inheritDoc} **/
     @Override
@@ -43,19 +61,38 @@ public class BatchDomainImportProcessor extends AbstractItemHandler {
         Domain orig = domainService.findByDomainId(domain.getDomainId());
 
         if (orig == null) {
+            // Make sure areas are resolved and/or created
+            List<Area> areas = domain.getAreas().stream()
+                    .map(a -> areaService.findOrCreateArea(a, true))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            domain.setAreas(areas);
+
+            // Make sure categories are resolved and/or created
+            List<Category> categories = domain.getCategories().stream()
+                    .map(c -> categoryService.findOrCreateCategory(c, true))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            domain.setCategories(categories);
+
+
+            // Make sure message series are resolved and/or created
+            List<MessageSeries> series = domain.getMessageSeries().stream()
+                    .map(s -> messageSeriesService.findOrCreateMessageSeries(s))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            domain.setMessageSeries(series);
+
+
             // Persist new domain
             getLog().info("Persisting new domain " + domain);
             return domain;
 
-        } else if (orig.hasChanged(domain)) {
-            // Update original
-            getLog().info("Updating domain " + orig.getDomainId());
-            orig.updateDomain(domainVo);
-            return orig;
-        }
+        } else {
 
-        // No change, ignore...
-        getLog().info("Ignoring unchanged domain " + orig.getDomainId());
-        return null;
+            // Update original
+            getLog().info("Ignoring existing domain " + orig.getDomainId());
+            return null;
+        }
     }
 }
