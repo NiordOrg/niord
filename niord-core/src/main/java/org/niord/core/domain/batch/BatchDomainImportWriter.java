@@ -16,15 +16,20 @@
 package org.niord.core.domain.batch;
 
 import org.niord.core.area.Area;
+import org.niord.core.area.AreaService;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.category.Category;
+import org.niord.core.category.CategoryService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageSeriesService;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Persists the domains to the database
@@ -36,6 +41,12 @@ public class BatchDomainImportWriter extends AbstractItemHandler {
     DomainService domainService;
 
     @Inject
+    AreaService areaService;
+
+    @Inject
+    CategoryService categoryService;
+
+    @Inject
     MessageSeriesService messageSeriesService;
 
     /** {@inheritDoc} **/
@@ -45,14 +56,27 @@ public class BatchDomainImportWriter extends AbstractItemHandler {
         for (Object i : items) {
             Domain domain = (Domain) i;
 
-            // Replace areas with the persisted versions
-            domain.setAreas(domainService.persistedList(Area.class, domain.getAreas()));
+            // Make sure areas are resolved and/or created
+            List<Area> areas = domain.getAreas().stream()
+                    .map(a -> areaService.findOrCreateArea(a, true))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            domain.setAreas(areas);
 
-            // Substitute the categories with the persisted ones
-            domain.setCategories(domainService.persistedList(Category.class, domain.getCategories()));
+            // Make sure categories are resolved and/or created
+            List<Category> categories = domain.getCategories().stream()
+                    .map(c -> categoryService.findOrCreateCategory(c, true))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            domain.setCategories(categories);
 
-            // Substitute the message series with the persisted ones
-            domain.setMessageSeries(messageSeriesService.persistedMessageSeries(domain.getMessageSeries()));
+
+            // Make sure message series are resolved and/or created
+            List<MessageSeries> series = domain.getMessageSeries().stream()
+                    .map(s -> messageSeriesService.findOrCreateMessageSeries(s))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            domain.setMessageSeries(series);
 
             domainService.saveEntity(domain);
         }

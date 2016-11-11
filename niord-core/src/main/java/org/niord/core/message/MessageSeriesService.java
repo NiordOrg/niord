@@ -119,6 +119,27 @@ public class MessageSeriesService extends BaseService {
 
 
     /**
+     * Returns the persisted message series matching the given template series id.
+     * If the message series does not exist, create it.
+     * @param templateSeries the message series
+     * @return the persisted message series matching the given template series id or a newly created series
+     */
+    public MessageSeries findOrCreateMessageSeries(MessageSeries templateSeries) {
+        // Sanity checks
+        if (templateSeries == null || StringUtils.isBlank(templateSeries.getSeriesId())) {
+            return null;
+        }
+
+        MessageSeries series = findBySeriesId(templateSeries.getSeriesId());
+        if (series == null) {
+            series = createMessageSeries(templateSeries);
+        }
+
+        return series;
+    }
+
+
+    /**
      * Searches for message series matching the given term
      *
      * @param term the search term
