@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import javax.ejb.Schedule;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.ejb.Timeout;
@@ -36,9 +37,11 @@ import javax.inject.Inject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -65,6 +68,8 @@ import java.util.zip.ZipInputStream;
 @SuppressWarnings("unused")
 public class BatchSetService {
 
+    public static final String BATCH_SETS_FOLDER = "batch-sets";
+
     @Inject
     Logger log;
 
@@ -85,11 +90,11 @@ public class BatchSetService {
     public void init() {
         if (StringUtils.isNotBlank(System.getProperty("niord.batch-set"))) {
 
-            Path folder = Paths.get(System.getProperty("niord.batch-set"));
+            Path path = Paths.get(System.getProperty("niord.batch-set"));
             try {
-                executeBatchSetFromArchiveOrFolder(folder);
+                executeBatchSetFromArchiveOrFolder(path);
             } catch (Exception e) {
-                log.error("Error reading batch set from folder " + folder, e);
+                log.error("Error reading batch set from folder " + path, e);
             }
         }
     }
@@ -229,6 +234,44 @@ public class BatchSetService {
         }
     }
 
+
+    /*****************************************/
+    /** Batch "batch-set" folder monitoring **/
+    /*****************************************/
+
+
+    /**
+     * Called every minute to monitor the "batch-sets" folder. If a batch-set zip file has been
+     * placed in this folder, the batch-set gets executed.
+     */
+    @Schedule(persistent=false, second="24", minute="*/1", hour="*/1")
+    protected void monitorBatchJobInFolderInitiation() {
+
+        Path batchSetsFolder = batchService.getBatchJobRoot().resolve(BATCH_SETS_FOLDER);
+
+        if (Files.isDirectory(batchSetsFolder)) {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(batchSetsFolder)) {
+                for (Path p : stream) {
+                    if (Files.isReadable(p) && Files.isRegularFile(p)) {
+                        try {
+                            executeBatchSetFromArchiveOrFolder(p);
+                        } catch (Exception e) {
+                            log.error("Error executing batch set " + p, e);
+                        } finally {
+                            // Delete the file
+                            try { Files.delete(p); } catch (IOException ignored) {}
+                        }
+                    }
+                }
+            } catch (IOException ignored) {
+            }
+        }
+    }
+
+
+    /***************************************/
+    /** Helper classes                    **/
+    /***************************************/
 
     /** Defines the batch set to execute **/
     public static class BatchSetSpecification implements Serializable {

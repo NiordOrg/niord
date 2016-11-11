@@ -704,6 +704,12 @@ public class BatchService extends BaseService {
     }
 
 
+    /** Returns the batch job root **/
+    public Path getBatchJobRoot() {
+        return batchJobRoot;
+    }
+
+
     /** Returns the named sub-folders **/
     private List<Path> getBatchJobSubFolders(String subFolderName) {
         List<Path> subFolders = new ArrayList<>();
