@@ -1166,7 +1166,7 @@ public class MessageService extends BaseService {
     public List<Message> getMostRecentlyEditedMessages(int maxMessageNo, Status... statuses) {
         User user = userService.currentUser();
         Domain domain = domainService.currentDomain();
-        if (user == null || domain == null) {
+        if (user == null || domain == null || domain.getMessageSeries().isEmpty()) {
             return Collections.emptyList();
         }
         // Only check last month
