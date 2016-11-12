@@ -33,7 +33,7 @@ public class KeycloakJsonServletFilter extends AbstractTextResourceServletFilter
 
     final static int CACHE_SECONDS = 0; // Do not cache
 
-    Map<String, String> keycloakDeployment;
+    Map<String, Object> keycloakDeployment;
 
     @Inject
     Logger log;

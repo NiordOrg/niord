@@ -196,15 +196,15 @@ public class KeycloakIntegrationService {
      *
      * @return the Keycloak deployment
      */
-    public Map<String, String> createKeycloakDeploymentForWebApp() throws Exception {
-        Map<String, String> cfg = new HashMap<>();
+    public Map<String, Object> createKeycloakDeploymentForWebApp() throws Exception {
+        Map<String, Object> cfg = new HashMap<>();
         cfg.put("realm", KEYCLOAK_REALM);
         cfg.put("realm-public-key", getKeycloakPublicRealmKey());
-        cfg.put("public-client", "true");
+        cfg.put("public-client", true);
         cfg.put("auth-server-url", authServerUrl);
         cfg.put("ssl-required", "external");
         cfg.put("resource", KEYCLOAK_WEB_CLIENT);
-        cfg.put("use-resource-role-mappings", "true");
+        cfg.put("use-resource-role-mappings", true);
         return cfg;
     }
 
