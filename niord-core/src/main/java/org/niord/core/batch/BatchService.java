@@ -721,7 +721,7 @@ public class BatchService extends BaseService {
                 }
             });
         } catch (IOException e) {
-            log.error("Failed finding '" + subFolderName + "' batch job folders" + e);
+            log.debug("Failed finding '" + subFolderName + "' batch job folders: " + e);
         }
         return subFolders;
     }
