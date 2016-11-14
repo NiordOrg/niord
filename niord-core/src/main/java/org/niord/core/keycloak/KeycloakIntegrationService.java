@@ -50,6 +50,7 @@ import org.niord.core.user.vo.UserVo;
 import org.niord.core.util.WebUtils;
 import org.slf4j.Logger;
 
+import javax.ejb.Stateless;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
@@ -69,6 +70,7 @@ import java.util.stream.Collectors;
  * <p>
  * "Domains" in Niord are mapped to Keycloak bearer-only clients.
  */
+@Stateless
 public class KeycloakIntegrationService {
 
     public static final String KEYCLOAK_REALM       = "niord";
