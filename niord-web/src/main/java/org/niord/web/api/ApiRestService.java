@@ -148,11 +148,11 @@ public class ApiRestService extends AbstractApiService {
     @Produces({"application/json;charset=UTF-8"})
     @GZIP
     public Response details(
-            @ApiParam(value = "Two-letter ISO 639-1 language code", example="en")
-            @QueryParam("lang") String language,
-
             @ApiParam(value = "The message UID or short ID", example="NM-1275-16")
             @PathParam("messageId") String messageId,
+
+            @ApiParam(value = "Two-letter ISO 639-1 language code", example="en")
+            @QueryParam("lang") String language,
 
             @ApiParam(value = "Whether to rewrite all embedded links and paths to be absolute URL's", example="true")
             @QueryParam("externalize") @DefaultValue("true") boolean externalize,
@@ -181,7 +181,7 @@ public class ApiRestService extends AbstractApiService {
                     SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
                     dateFormat == JsonDateFormat.UNIX_EPOCH);
 
-            StreamingOutput stream = os -> mapper.writeValue(os, message);
+            StreamingOutput stream = os -> mapper.writeValue(os, result);
 
             return Response
                     .ok(stream, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
