@@ -27,8 +27,10 @@ import org.niord.core.dictionary.DictionaryService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.fm.pdf.HtmlToPdfRenderer;
+import org.niord.core.fm.vo.FmReportVo;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.annotation.Setting;
+import org.niord.core.util.TimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +41,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -46,6 +50,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 import static org.niord.core.settings.Setting.Type.Boolean;
 import static org.niord.core.settings.Setting.Type.Password;
@@ -199,6 +204,46 @@ public class FmService extends BaseService {
         }
 
         return reports;
+    }
+
+
+    /**
+     * Expand report parameter values with the format ${week}, ${year}, etc.
+     * @param report the report to expand parameter values for
+     * @return the updated report
+     */
+    public FmReportVo expandReportParams(FmReportVo report) {
+        if (report.getProperties() != null && !report.getProperties().isEmpty()) {
+            Date today = new Date();
+            int year = TimeUtils.getCalendarField(today, Calendar.YEAR);
+            int week = TimeUtils.getCalendarField(today, Calendar.WEEK_OF_YEAR);
+
+            Map<String, String> replacementValues = new HashMap<>();
+            replacementValues.put("${year-2-digits}", String.valueOf(year).substring(2));
+            replacementValues.put("${year}", String.valueOf(year));
+            replacementValues.put("${week}", String.format("%02d", week));
+            replacementValues.put("${week-2-digits}", String.format("%02d", week));
+
+            report.setParams(report.getParams().entrySet().stream()
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            e -> expandReportParamValue(e.getValue(), replacementValues)
+                    )));
+        }
+        return report;
+    }
+
+
+    /** Expands the given parameter value if it has the format ${week}, ${year}, etc. **/
+    private Object expandReportParamValue(Object value, Map<String, String> replacementValues) {
+        if (value != null && value instanceof String) {
+            String str = (String)value;
+            for (Map.Entry<String, String> e : replacementValues.entrySet()) {
+                str = str.replace(e.getKey(), e.getValue()).trim();
+            }
+            return str;
+        }
+        return value;
     }
 
 

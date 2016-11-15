@@ -21,7 +21,9 @@ import org.niord.model.search.PagedSearchParamsVo;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -37,6 +39,7 @@ public class MessagePrintParams extends PagedSearchParamsVo {
     String pageOrientation = "portrait";
     Boolean mapThumbnails = Boolean.FALSE;
     Boolean debug = Boolean.FALSE;
+    Map<String, Object> params = new HashMap<>();
 
 
     /**
@@ -50,7 +53,8 @@ public class MessagePrintParams extends PagedSearchParamsVo {
                 .pageSize(checkNull(req.getParameter("pageSize"), "A4", Function.identity()))
                 .pageOrientation(checkNull(req.getParameter("pageOrientation"), "portrait", Function.identity()))
                 .debug(checkNull(req.getParameter("debug"), false, Boolean::valueOf))
-                .mapThumbnails(checkNull(req.getParameter("mapThumbnails"), false, Boolean::valueOf));
+                .mapThumbnails(checkNull(req.getParameter("mapThumbnails"), false, Boolean::valueOf))
+                .readReportParams(req);
 
         return params;
     }
@@ -120,4 +124,24 @@ public class MessagePrintParams extends PagedSearchParamsVo {
         this.mapThumbnails = mapThumbnails;
         return this;
     }
+
+    public Map<String, Object> getParams() {
+        return params;
+    }
+
+    private MessagePrintParams readReportParams(HttpServletRequest request) {
+        request.getParameterMap().entrySet().stream()
+                .filter(e -> e.getKey().startsWith("param:"))
+                .forEach(e -> {
+                    String key = e.getKey().substring("param:".length());
+                    if (e.getValue() != null && e.getValue().length == 1) {
+                        params.put(key, e.getValue()[0]);
+                    } else if (e.getValue().length > 0) {
+                        params.put(key, e.getValue());
+                    }
+                });
+        return this;
+    }
+
+
 }

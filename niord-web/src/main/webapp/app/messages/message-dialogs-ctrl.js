@@ -315,13 +315,15 @@ angular.module('niord.messages')
     /*******************************************************************
      * Controller that handles the message Print dialog
      *******************************************************************/
-    .controller('MessagePrintDialogCtrl', ['$scope', '$document', '$window', 'MessageService', 'total', 'list',
-        function ($scope, $document, $window, MessageService, total, list) {
+    .controller('MessagePrintDialogCtrl', ['$scope', '$rootScope', '$document', '$window', 'MessageService', 'total', 'list',
+        function ($scope, $rootScope, $document, $window, MessageService, total, list) {
             'use strict';
 
             $scope.totalMessageNo = total;
             $scope.reports = [];
             $scope.reportProperties = {};
+            $scope.reportParams = {};
+            $scope.showMapThumbnails = true;
 
             $scope.data = {
                 report: undefined,
@@ -353,7 +355,9 @@ angular.module('niord.messages')
                 if ($scope.reports) {
                     angular.forEach($scope.reports, function (report) {
                         if (report.reportId == reportId) {
+                            $scope.showMapThumbnails = report.properties.mapThumbnails === undefined;
                             $scope.reportProperties = report.properties;
+                            $scope.reportParams = report.params;
                         }
                     })
                 }
@@ -372,10 +376,41 @@ angular.module('niord.messages')
                 $document.unbind(eventTypes, eventHandler);
             });
 
+
+            function concatParam(param, k, v) {
+                param = param || '';
+                if (k && v) {
+                    if (param.length > 0) {
+                        param += '&';
+                    }
+                    param += encodeURIComponent(k) + '=' + encodeURIComponent(v);
+                }
+                return param;
+            }
+
+
             // Close the print dialog and return the print settings to the callee
             $scope.print = function () {
+                // Persist settings
                 $window.localStorage.printSettings = angular.toJson($scope.data);
-                $scope.$close($scope.data);
+
+                var printParam = '';
+                angular.forEach($scope.data, function (v, k) {
+                    printParam = concatParam(printParam, k, v);
+                });
+                angular.forEach($scope.reportProperties, function (v, k) {
+                    printParam = concatParam(printParam, k, v);
+                });
+                angular.forEach($scope.reportParams, function (v, k) {
+                    printParam = concatParam(printParam, 'param:' + k, v);
+                });
+
+                MessageService.authTicket()
+                    .success(function (ticket) {
+                        printParam = concatParam(printParam, 'ticket', ticket);
+                        printParam = concatParam(printParam, 'lang', $rootScope.language);
+                        $scope.$close(printParam);
+                    });
             };
 
         }])

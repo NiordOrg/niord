@@ -60,9 +60,15 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
     @ManyToMany
     List<Domain> domains = new ArrayList<>();
 
+    /** Fixed report-specific properties **/
     @Column(name="properties", columnDefinition = "TEXT")
     @Convert(converter = JpaPropertiesAttributeConverter.class)
     Map<String, Object> properties = new HashMap<>();
+
+    /** User input parameters **/
+    @Column(name="params", columnDefinition = "TEXT")
+    @Convert(converter = JpaPropertiesAttributeConverter.class)
+    Map<String, Object> params = new HashMap<>();
 
     /**
      * Constructor
@@ -85,6 +91,7 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
         this.name = report.getName();
         this.templatePath = report.getTemplatePath();
         this.properties.putAll(report.getProperties());
+        this.params.putAll(report.getParams());
         if (report.getDomains() != null) {
             this.domains = report.getDomains().stream()
                     .map(Domain::new)
@@ -99,7 +106,8 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
         report.setReportId(reportId);
         report.setName(name);
         report.setTemplatePath(templatePath);
-        report.setProperties(properties);
+        report.getProperties().putAll(properties);
+        report.getParams().putAll(params);
         return report;
     }
 
@@ -154,5 +162,13 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
 
     public void setProperties(Map<String, Object> properties) {
         this.properties = properties;
+    }
+
+    public Map<String, Object> getParams() {
+        return params;
+    }
+
+    public void setParams(Map<String, Object> params) {
+        this.params = params;
     }
 }

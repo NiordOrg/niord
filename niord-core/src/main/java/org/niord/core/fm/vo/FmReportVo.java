@@ -33,6 +33,7 @@ public class FmReportVo implements IJsonSerializable {
     String templatePath;
     List<DomainVo> domains;
     Map<String, Object> properties = new HashMap<>();
+    Map<String, Object> params = new HashMap<>();
 
     /*************************/
     /** Getters and Setters **/
@@ -78,4 +79,11 @@ public class FmReportVo implements IJsonSerializable {
         this.properties = properties;
     }
 
+    public Map<String, Object> getParams() {
+        return params;
+    }
+
+    public void setParams(Map<String, Object> params) {
+        this.params = params;
+    }
 }

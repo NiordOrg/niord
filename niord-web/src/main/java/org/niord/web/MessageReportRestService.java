@@ -87,6 +87,7 @@ public class MessageReportRestService {
     public List<FmReportVo> getReports() {
         return fmService.getReports().stream()
                 .map(FmReport::toVo)
+                .map(r -> fmService.expandReportParams(r))
                 .collect(Collectors.toList());
     }
 
@@ -145,7 +146,8 @@ public class MessageReportRestService {
                             .data("pageOrientation", printParams.getPageOrientation())
                             .data("mapThumbnails", printParams.getMapThumbnails())
                             .data("frontPage", false)
-                            .data(report.getProperties()) // Let report override settings
+                            .data(report.getProperties())   // Let report override settings
+                            .data(printParams.getParams())  // Custom user-defined params
                             .dictionaryNames("web", "message", "pdf")
                             .language(language)
                             .process(format, os);
@@ -207,7 +209,8 @@ public class MessageReportRestService {
                             .data("pageOrientation", printParams.getPageOrientation())
                             .data("mapThumbnails", printParams.getMapThumbnails())
                             .data("frontPage", true)
-                            .data(report.getProperties()) // Let report override settings
+                            .data(report.getProperties())  // Let report override settings
+                            .data(printParams.getParams()) // Custom user-defined params
                             .dictionaryNames("web", "message", "pdf")
                             .language(language)
                             .process(format, os);

@@ -44,10 +44,18 @@
                         </div>
                     </td>
                 </tr>
-                <tr ng-if="reportProperties['mapThumbnails'] === undefined">
+                <tr ng-if="showMapThumbnails">
                     <td align="right"></td>
                     <td>
                         &nbsp;<input type="checkbox" ng-model="data.mapThumbnails"> include thumbnails
+                    </td>
+                </tr>
+                <tr ng-repeat="(k, v) in reportParams">
+                    <td align="right" valign="middle">{{k}}</td>
+                    <td>
+                        <div class="form-group" style="margin: 5px">
+                            <input type="text" class="form-control input-sm" ng-model="v">
+                        </div>
                     </td>
                 </tr>
             </table>

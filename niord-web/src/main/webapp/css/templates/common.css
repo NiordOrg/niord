@@ -1,5 +1,19 @@
 
 
+.avoid-break-before {
+    page-break-before: avoid!important;
+}
+
+.avoid-break-after {
+    page-break-after: avoid!important;
+}
+
+.avoid-break-before-after {
+    page-break-before: avoid!important;
+    page-break-after: avoid!important;
+}
+
+
 svg {
     display: inline-block;
 }
@@ -40,6 +54,12 @@ td.table-item {
     padding: 10px;
     border-bottom: 0.05em dotted gray;
 }
+
+table.field-table {
+    page-break-before: avoid!important;
+    page-break-inside: auto;
+}
+
 
 .field-name {
     white-space: nowrap;

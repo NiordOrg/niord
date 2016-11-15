@@ -732,46 +732,21 @@ angular.module('niord.messages')
             /** Opens the message print dialog for the current selection */
             $scope.pdfForSelection = function () {
                 MessageService.messagePrintDialog($scope.selection.size(), true).result
-                    .then(function (printSettings) {
+                    .then(function (printParams) {
                         // Generate a temporary, short-lived message tag for the selection
                         MessageService.createTempMessageTag($scope.selection.keys)
                             .success(function (tag) {
-                                var params = 'tag=' + encodeURIComponent(tag.tagId);
-                                $scope.generatePdf(printSettings, params);
+                                printParams += '&tag=' + encodeURIComponent(tag.tagId);
+                                $scope.generatePdf(printParams);
                             })
                     });
             };
 
 
             /** Download the PDF for the current search result */
-            $scope.generatePdf = function (printSettings, params) {
-
-                MessageService.authTicket()
-                    .success(function (ticket) {
-                        if (!params) {
-                            params = $scope.toRequestFilterParameters();
-                        }
-                        if (params.length > 0) {
-                            params += '&';
-                        }
-                        params += 'lang=' + $rootScope.language
-                            + '&ticket=' + encodeURIComponent(ticket);
-
-                        if (printSettings && printSettings.pageOrientation) {
-                            params += '&pageOrientation=' + printSettings.pageOrientation;
-                        }
-                        if (printSettings && printSettings.pageSize) {
-                            params += '&pageSize=' + printSettings.pageSize;
-                        }
-                        if (printSettings && printSettings['mapThumbnails'] !== undefined) {
-                            params += '&mapThumbnails=' + printSettings.mapThumbnails;
-                        }
-                        if (printSettings && printSettings.report) {
-                            params += '&report=' + encodeURIComponent(printSettings.report);
-                        }
-
-                        $window.location = '/rest/message-reports/report.pdf?' + params;
-                    });
+            $scope.generatePdf = function (printParams) {
+                printParams += '&' + $scope.toRequestFilterParameters();
+                $window.location = '/rest/message-reports/report.pdf?' + printParams;
             };
 
 

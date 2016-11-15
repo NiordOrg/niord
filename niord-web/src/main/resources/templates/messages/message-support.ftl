@@ -232,17 +232,17 @@
 
     <!-- Title line -->
     <#if msg.originalInformation?has_content && msg.originalInformation>
-        <div>*</div>
+        <div class="avoid-break-after">*</div>
     </#if>
 
     <#if msg.shortId?has_content>
-        <div>
+        <div class="avoid-break-before-after">
             <span class="label-message-id">${msg.shortId}</span>
         </div>
     </#if>
 
     <#if msgDesc?has_content && msgDesc.title?has_content>
-        <div>
+        <div class="avoid-break-before-after">
             <strong>
                 <a href="${baseUri}/#/message/${msg.id}" target="_blank" id="msg_${msg.id}">
                     ${msgDesc.title}
@@ -253,7 +253,7 @@
     </#if>
 
 
-    <table>
+    <table class="field-table">
 
         <!-- Type line (drafts only) -->
         <#if draft == true>

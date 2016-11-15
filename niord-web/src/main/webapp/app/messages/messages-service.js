@@ -442,27 +442,8 @@ angular.module('niord.messages')
             printMessage: function (messageId) {
                 var that = this;
                 that.messagePrintDialog(1, false).result
-                    .then(function (printSettings) {
-                        that.authTicket()
-                            .success(function (ticket) {
-
-                                var params = 'lang=' + $rootScope.language + '&ticket=' + ticket;
-
-                                if (printSettings && printSettings.pageOrientation) {
-                                    params += '&pageOrientation=' + printSettings.pageOrientation;
-                                }
-                                if (printSettings && printSettings.pageSize) {
-                                    params += '&pageSize=' + printSettings.pageSize;
-                                }
-                                if (printSettings && printSettings['mapThumbnails'] !== undefined) {
-                                    params += '&mapThumbnails=' + printSettings.mapThumbnails;
-                                }
-                                if (printSettings && printSettings.report) {
-                                    params += '&report=' + encodeURIComponent(printSettings.report);
-                                }
-
-                                $window.location = '/rest/message-reports/message/' + messageId + '.pdf?' + params;
-                            });
+                    .then(function (printParams) {
+                        $window.location = '/rest/message-reports/message/' + messageId + '.pdf?' + printParams;
                     });
             },
 

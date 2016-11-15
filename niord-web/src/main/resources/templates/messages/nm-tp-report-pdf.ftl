@@ -24,6 +24,12 @@
             width: 100%;
             padding: 5px 0;
         }
+        h1 {
+            margin-top: 2cm;
+            text-align: center;
+            font-size: 36px;
+            color: #334;
+        }
         h4 {
             color: #8f2f7b;
             font-size: 16px;
@@ -38,6 +44,19 @@
 
 <!-- First page -->
 <h1>${text("pdf.nm_tp")}</h1>
+
+<div style="font-size: 24px; text-align: right; margin-top: 1cm; margin-bottom: 1mm">
+    ${text("pdf.week")} ${week!""}, ${year!""}
+</div>
+<table style="background-color: #334; color: white; width: 100%">
+    <tr>
+        <td width="50%" align="left">${.now?string["dd. MMMM yyyy"]}</td>
+        <td width="50%" align="right">
+            ${text("pdf.nm_abbrev")}  ${week!""} ${year!""}
+        </td>
+    </tr>
+</table>
+
 
 <!-- T&P messages -->
 <#if tpMessages?has_content>

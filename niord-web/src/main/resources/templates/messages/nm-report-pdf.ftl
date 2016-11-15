@@ -3,6 +3,8 @@
 <#assign permMessages = [] />
 <#assign tpMessages = [] />
 <#assign miscMessages = [] />
+<#assign minMessageNo = 9999999 />
+<#assign maxMessageNo = -9999999 />
 <#list messages as msg>
     <#if msg.type == 'PRELIMINARY_NOTICE' || msg.type == 'TEMPORARY_NOTICE'>
         <#assign tpMessages = tpMessages + [msg] />
@@ -10,6 +12,12 @@
         <#assign permMessages = permMessages + [msg] />
     <#elseif msg.type == 'MISCELLANEOUS_NOTICE'>
         <#assign miscMessages = miscMessages + [msg] />
+    </#if>
+
+    <#if msg.number?? && msg.number lt minMessageNo >
+        <#assign minMessageNo = msg.number />
+    <#elseif msg.number?? && msg.number gt maxMessageNo >
+        <#assign maxMessageNo = msg.number />
     </#if>
 </#list>
 
@@ -32,6 +40,7 @@
             margin-top: 2cm;
             text-align: center;
             font-size: 36px;
+            color: #334;
         }
         /** TODO: The string-set does not work - Flying Saucer problem? **/
         h3 {
@@ -41,7 +50,7 @@
             content: string(sectiontitle);
         }
         .nm-toc {
-            margin-top: 2cm;
+            margin-top: 1cm;
         }
         .toc {
             font-size: 12px;
@@ -77,6 +86,21 @@
 
 <!-- First page -->
 <h1>${text("pdf.nm")}</h1>
+
+<div style="font-size: 24px; text-align: right; margin-top: 1cm; margin-bottom: 1mm">
+    ${text("pdf.week")} ${week!""}, ${year!""}
+</div>
+<table style="background-color: #334; color: white; width: 100%">
+    <tr>
+        <td width="30%" align="left">${.now?string["dd. MMMM yyyy"]}</td>
+        <td width="40%" align="center">ISSN ${ISSN!""}</td>
+        <td width="30%" align="right">
+            <#if minMessageNo != 9999999 && maxMessageNo != -9999999>
+                ${minMessageNo?c} - ${maxMessageNo?c}
+            </#if>
+        </td>
+    </tr>
+</table>
 
 <div class="nm-toc">
     <h2>${text("pdf.toc")}</h2>
