@@ -36,6 +36,7 @@ public class SystemMessageVo extends MessageVo {
     String repoPath;
     String editRepoPath;
     Integer unackComments;
+    Boolean separatePage;
     Map<String, Boolean> editorFields;
 
 
@@ -176,6 +177,14 @@ public class SystemMessageVo extends MessageVo {
 
     public void setUnackComments(Integer unackComments) {
         this.unackComments = unackComments;
+    }
+
+    public Boolean getSeparatePage() {
+        return separatePage;
+    }
+
+    public void setSeparatePage(Boolean separatePage) {
+        this.separatePage = separatePage;
     }
 
     public Map<String, Boolean> getEditorFields() {

@@ -465,6 +465,8 @@ public class MessageService extends BaseService {
                 .map(this::updatePublication)
                 .forEach(original::addPublication);
 
+        original.setSeparatePage(message.getSeparatePage());
+
         // Persist the message
         saveMessage(original);
         log.info("Updated message " + original);
@@ -1107,6 +1109,19 @@ public class MessageService extends BaseService {
         return result;
     }
 
+
+    /**
+     * From the given list of Message UIDs, return the UIDs of the message with the separatePage flag set.
+     * Used when printing messages (generating PDFs)
+     * @param uids the UIDs of the messages to search
+     * @return the UIDs of the message with the separatePage flag set
+     */
+    public Set<String> getSeparatePageUids(Set<String> uids) {
+        return em.createNamedQuery("Message.separatePageUids", String.class)
+                .setParameter("uids", uids)
+                .getResultList().stream()
+                .collect(Collectors.toSet());
+    }
 
     /***************************************/
     /** Message History                   **/

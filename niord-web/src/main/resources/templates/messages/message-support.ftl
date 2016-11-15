@@ -308,13 +308,13 @@
         <!-- Details line -->
         <#if msg.parts?has_content>
             <#list msg.parts as part>
-                <tr>
+                <tr style="page-break-inside: auto;">
                     <td class="field-name">
                         <#if part?is_first || part.type != msg.parts[part?index - 1].type>
                             ${text("msg.field." + part.type?lower_case)}
                         </#if>
                     </td>
-                    <td class="field-value message-description">
+                    <td class="field-value message-description" style="page-break-inside: auto;">
                         <@renderMessagePart part=part lang=lang draft=draft/>
                     </td>
                 </tr>
@@ -396,7 +396,12 @@
                     </tr>
                 </#if>
             </#if>
-            <tr>
+            <#if separatePageIds?? && separatePageIds?seq_contains(msg.id)>
+                <#assign msgClass="break-before" />
+            <#else>
+                <#assign msgClass="" />
+            </#if>
+            <tr class="${msgClass}">
                 <#if mapThumbnails!true>
                     <td class="table-image">
                         <img src="/rest/message-map-image/${msg.id}.png" width="120" height="120"/>

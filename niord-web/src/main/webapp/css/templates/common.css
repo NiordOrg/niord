@@ -1,5 +1,9 @@
 
 
+.break-before {
+    page-break-before: always!important;
+}
+
 .avoid-break-before {
     page-break-before: avoid!important;
 }
@@ -96,6 +100,7 @@ ol.feature-coordinates li span {
 
 /** For tables in the message rich text description field **/
 .message-description table {
+    page-break-inside: auto;
     border-collapse: collapse;
     border: 0.05em solid #333;
 }

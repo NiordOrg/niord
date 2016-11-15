@@ -102,7 +102,9 @@ import java.util.stream.Stream;
                 query="SELECT msg FROM Message msg where msg.status = 'PUBLISHED' and msg.publishDateTo < :now"),
         @NamedQuery(name="Message.maxNumberInPeriod",
                 query="SELECT coalesce(max(msg.number), 0) FROM Message msg where msg.messageSeries = :series and "
-                        + " msg.publishDateFrom between :fromDate and :toDate and msg.number is not null")
+                        + " msg.publishDateFrom between :fromDate and :toDate and msg.number is not null"),
+        @NamedQuery(name="Message.separatePageUids",
+                query="SELECT msg.uid FROM Message msg where msg.separatePage = true and msg.uid in (:uids)"),
 })
 @SuppressWarnings("unused")
 public class Message extends VersionedEntity<Integer> implements ILocalizable<MessageDesc> {
@@ -233,6 +235,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     @OneToMany(mappedBy = "message")
     List<Comment> comments = new ArrayList<>();
 
+    // Whether to start the message on a new PDF page (for large messages)
+    Boolean separatePage;
+
 
     /**
      * Constructor
@@ -316,6 +321,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             this.autoPublication = sysMessage.isAutoPublication() != null && sysMessage.isAutoPublication();
             this.revision = sysMessage.getRevision();
             this.thumbnailPath = sysMessage.getThumbnailPath();
+            this.separatePage = sysMessage.getSeparatePage();
 
             if (sysMessage.getPublications() != null) {
                 sysMessage.getPublications().stream()
@@ -371,6 +377,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             systemMessage.setThumbnailPath(thumbnailPath);
             systemMessage.setAutoTitle(autoTitle);
             systemMessage.setAutoPublication(autoPublication);
+            systemMessage.setSeparatePage(separatePage);
             publications.forEach(p -> systemMessage.checkCreatePublications().add(p.toVo(filter)));
 
             message.sort(filter.getLang());
@@ -962,5 +969,13 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setComments(List<Comment> comments) {
         this.comments = comments;
+    }
+
+    public Boolean getSeparatePage() {
+        return separatePage;
+    }
+
+    public void setSeparatePage(Boolean separatePage) {
+        this.separatePage = separatePage;
     }
 }

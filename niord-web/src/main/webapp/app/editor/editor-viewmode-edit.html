@@ -811,7 +811,7 @@
             <!-- ********************* -->
             <!-- ** Thumbnail          ** -->
             <!-- ********************* -->
-            <editor-field ng-if="showField('thumbnail')" edit-mode="editMode" field-id="thumbnail" field-title="msg.field.thumbnail"
+            <editor-field ng-if="showField('thumbnail')" edit-mode="editMode" field-id="thumbnail" field-title="msg.field.layout"
                           tab-index="1900">
 
                 <editor-field-value-viewer>
@@ -826,7 +826,7 @@
 
                                 <div class="editor-map-image-menu text-center">
                                     <div class="btn-group" uib-dropdown>
-                                        <button type="button" class="btn btn-sm btn-default" uib-dropdown-toggle>
+                                        <button tabindex="1901" type="button" class="btn btn-sm btn-default" uib-dropdown-toggle>
                                             <span class="glyphicon glyphicon-camera"></span>
                                             Thumbnail
                                             <span class="caret"></span>
@@ -839,6 +839,12 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <input type="checkbox" ng-model="message.separatePage" tabindex="1902">
+                            Start message on new page in PDF reports
                         </div>
                     </div>
                 </editor-field-value-editor>

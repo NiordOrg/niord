@@ -26,6 +26,7 @@ import org.niord.core.fm.FmService.ProcessFormat;
 import org.niord.core.fm.vo.FmReportVo;
 import org.niord.core.message.MessagePrintParams;
 import org.niord.core.message.MessageSearchParams;
+import org.niord.core.message.MessageService;
 import org.niord.model.message.MessageVo;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
@@ -45,6 +46,7 @@ import javax.ws.rs.core.StreamingOutput;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -62,6 +64,9 @@ public class MessageReportRestService {
 
     @Inject
     DomainService domainService;
+
+    @Inject
+    MessageService messageService;
 
     @Inject
     MessageRestService messageRestService;
@@ -193,6 +198,10 @@ public class MessageReportRestService {
         PagedSearchResultVo<MessageVo> result = messageSearchRestService.searchMessages(params);
         result.getData().forEach(m -> m.sort(language));
 
+        // Get the UIDs of the messages that should start on a new page
+        Set<String> separatePageIds = messageService.getSeparatePageUids(
+                result.getData().stream().map(MessageVo::getId).collect(Collectors.toSet()));
+
         try {
             FmReport report = fmService.getReport(printParams.getReport());
 
@@ -208,6 +217,7 @@ public class MessageReportRestService {
                             .data("pageSize", printParams.getPageSize())
                             .data("pageOrientation", printParams.getPageOrientation())
                             .data("mapThumbnails", printParams.getMapThumbnails())
+                            .data("separatePageIds", separatePageIds)
                             .data("frontPage", true)
                             .data(report.getProperties())  // Let report override settings
                             .data(printParams.getParams()) // Custom user-defined params
