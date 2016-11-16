@@ -50,7 +50,7 @@
     "value"       : { "type": true, "orig_info": false, "id": true, "title": true, "references": true, "publish_date": true,
                       "areas": true, "categories": true, "positions": true, "charts": true, "event_dates": true, "subject": true,
                       "description": true, "attachments": false, "note": false, "publication": true, "source": false,
-                      "prohibition": false, "signals": false, "thumbnail" : true },
+                      "prohibition": false, "signals": false, "layout" : true },
     "type"        : "json",
     "web"         : true,
     "editable"    : true

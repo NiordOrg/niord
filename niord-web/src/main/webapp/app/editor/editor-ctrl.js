@@ -55,7 +55,7 @@ angular.module('niord.editor')
                 source:         [ false ],
                 prohibition:    [ false ],
                 signals:        [ false ],
-                thumbnail:      [ false ]
+                layout:         [ false ]
             };
 
             // From backend settings, determines which editor fields to display
