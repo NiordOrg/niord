@@ -232,7 +232,7 @@
 
     <!-- Title line -->
     <#if msg.originalInformation?has_content && msg.originalInformation>
-        <div class="avoid-break-after">*</div>
+        <div class="avoid-break-after original-information">*</div>
     </#if>
 
     <#if msg.shortId?has_content>

@@ -225,3 +225,9 @@ img.lang-flag {
     vertical-align: baseline;
     border-radius: .25em;
 }
+
+.original-information {
+    font-size: 200%;
+    line-height: 20px;
+    margin-bottom: -3px;
+}
