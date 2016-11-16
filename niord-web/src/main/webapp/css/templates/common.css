@@ -172,13 +172,14 @@ table.positions td:nth-child(1) {
 }
 
 table.position-table td.pos-col {
-    width: 4.0cm;
+    padding-left: 1mm;
+    padding-right: 1mm;
     text-align: right;
     white-space: nowrap;
 }
 
 table.position-table td.pos-index {
-    width: 0.6cm;
+    min-width: 4mm;
     text-align: right;
     white-space: nowrap;
 }

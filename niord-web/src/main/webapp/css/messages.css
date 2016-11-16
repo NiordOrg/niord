@@ -485,13 +485,14 @@ table.positions td:nth-child(1) {
 }
 
 table.position-table td.pos-col {
-    width: 4.8cm;
+    padding-left: 5px;
+    padding-right: 5px;
     text-align: right;
     white-space: nowrap;
 }
 
 table.position-table td.pos-index {
-    width: 0.8cm;
+    min-width: 25px;
     text-align: right;
     white-space: nowrap;
 }
