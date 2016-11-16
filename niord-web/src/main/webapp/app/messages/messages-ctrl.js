@@ -30,6 +30,7 @@ angular.module('niord.messages')
 
             var loadTimer;
 
+            $scope.isEditor = $rootScope.hasRole('editor');
             $scope.loggedIn = AuthService.loggedIn;
             $scope.page = 0;
             $scope.maxSize = 100;
@@ -991,9 +992,19 @@ angular.module('niord.messages')
 
 
             /** Sorts the messages withing an area **/
-            $scope.sortAreaMessages = function () {
+            $scope.sortAreaMessages = function (area) {
+                var status = 'PUBLISHED';
+                var s = $scope.state.status;
+                if (s.enabled) {
+                    if (!s.PUBLISHED && s.DRAFT) {
+                        status = 'DRAFT';
+                    } else if (!s.PUBLISHED && s.VERIFIED) {
+                        status = 'VERIFIED';
+                    }
+                }
+
                 // Get the user to pick an area with a geometry
-                MessageService.sortAreaMessagesDialog()
+                MessageService.sortAreaMessagesDialog(area, status)
                     .result.then(function () {
                         $scope.refreshMessages();
                     });

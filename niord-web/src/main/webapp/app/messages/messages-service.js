@@ -483,12 +483,16 @@ angular.module('niord.messages')
 
 
             /** Sorts the messages withing an area **/
-            sortAreaMessagesDialog: function () {
+            sortAreaMessagesDialog: function (area, status) {
                 // Get the user to pick an area with a geometry
                 return $uibModal.open({
                     controller: "SortAreaDialogCtrl",
                     templateUrl: "/app/messages/sort-area-dialog.html",
-                    size: 'lg'
+                    size: 'lg',
+                    resolve: {
+                        area: function () { return area; },
+                        status: function () { return status; }
+                    }
                 });
             },
 

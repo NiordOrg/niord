@@ -29,7 +29,12 @@
             <th><span class="glyphicon glyphicon-star" ng-click="toggleSelectAll()"></span></th>
         </tr>
         <tr ng-repeat-start="message in messageList" ng-if="message.areaHeading">
-            <td colspan="6"><h4 class="message-list-area-heading" render-areas="[message.areaHeading]"></h4></td>
+            <td colspan="6">
+                <h4 class="message-list-area-heading">
+                    <span render-areas="[message.areaHeading]"></span>
+                    <span ng-if="isEditor" class="sort-by-area" ng-click="sortAreaMessages(message.areaHeading)">sort...</span>
+                </h4>
+            </td>
         </tr>
         <tr ng-repeat-end ng-class="{ 'message-row-selected' : isSelected(message) }">
             <td nowrap><message-id-badge msg="message" show-blank="true"></message-id-badge></td>

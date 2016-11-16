@@ -14,7 +14,10 @@
             <table class="table table-condensed">
                 <tr ng-repeat-start="message in messageList"  ng-if="message.areaHeading">
                     <td colspan="2" style="border: none">
-                        <h4 class="message-list-area-heading" style="margin-bottom: 5px;" render-areas="[message.areaHeading]"></h4>
+                        <h4 class="message-list-area-heading">
+                            <span render-areas="[message.areaHeading]"></span>
+                            <span ng-if="isEditor" class="sort-by-area" ng-click="sortAreaMessages(message.areaHeading)">sort...</span>
+                        </h4>
                     </td>
                 </tr>
                 <tr class="message-list-details-border" ng-repeat-end

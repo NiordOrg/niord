@@ -463,13 +463,13 @@ angular.module('niord.messages')
     /*******************************************************************
      * Controller that handles sorting of messages withing an area
      *******************************************************************/
-    .controller('SortAreaDialogCtrl', ['$scope', '$rootScope', '$timeout', 'MessageService',
-        function ($scope, $rootScope, $timeout, MessageService) {
+    .controller('SortAreaDialogCtrl', ['$scope', '$rootScope', '$timeout', 'MessageService', 'area', 'status',
+        function ($scope, $rootScope, $timeout, MessageService, area, status) {
             'use strict';
 
             $scope.data = {
-                area: undefined,
-                status: 'PUBLISHED'
+                area: area,
+                status: status || 'PUBLISHED'
             };
             $scope.messageList = [];
             $scope.domain = $rootScope.domain;
@@ -518,9 +518,11 @@ angular.module('niord.messages')
 
 
             // Initially, give focus to the area field
-            $timeout(function () {
-                $('#area').find('div').controller('uiSelect').activate(false, true);
-            }, 100);
+            if (!area) {
+                $timeout(function () {
+                    $('#area').find('div').controller('uiSelect').activate(false, true);
+                }, 100);
+            }
 
         }])
 
