@@ -379,24 +379,41 @@ angular.module('niord.editor')
             };
 
 
-            /** Returns the number sequence type of the message series **/
-            $scope.numberSequenceType = function () {
+            /** Returns the current message series associated with the message **/
+            $scope.currentMessageSeries = function () {
                 var msg = $scope.message;
+                // The message series associated with the message is a pruned version containing only the ID.
+                // Look up the full message series data from the current domain
                 if (msg.messageSeries && $rootScope.domain.messageSeries) {
                     var series = $.grep($rootScope.domain.messageSeries, function (ms) {
                         return ms.seriesId == msg.messageSeries.seriesId;
                     });
                     if (series != null && series.length == 1) {
-                        return series[0].numberSequenceType;
+                        return series[0];
                     }
                 }
                 return null;
             };
 
 
+            /** Returns the number sequence type of the message series **/
+            $scope.numberSequenceType = function () {
+                var series = $scope.currentMessageSeries();
+                return (series) ? series.numberSequenceType : null;
+            };
+
+
             /** Returns if the short ID is editable **/
             $scope.shortIdEditable = function () {
-                return $scope.numberSequenceType() == 'MANUAL';
+                var series = $scope.currentMessageSeries();
+                return series && series.numberSequenceType == 'MANUAL' && !series.shortFormat;
+            };
+
+
+            /** Returns if the message number is editable **/
+            $scope.messageNumberEditable = function () {
+                var series = $scope.currentMessageSeries();
+                return series && series.numberSequenceType == 'MANUAL' && series.shortFormat;
             };
 
 
@@ -603,6 +620,8 @@ angular.module('niord.editor')
                 var msgTemplate = {
                     mainType: msg.mainType,
                     messageSeries: msg.messageSeries,
+                    number: msg.number,
+                    publishDateFrom: msg.publishDateFrom,
                     areas: msg.areas,
                     categories: msg.categories,
                     autoTitle: msg.autoTitle,
@@ -640,6 +659,9 @@ angular.module('niord.editor')
                                     d.source = desc.source;
                                 }
                             })
+                        }
+                        if ($scope.messageNumberEditable()) {
+                            msg.shortId = message.shortId;
                         }
                     })
             };

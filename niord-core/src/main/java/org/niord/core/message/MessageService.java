@@ -76,6 +76,7 @@ import static java.util.Arrays.asList;
 import static org.niord.core.geojson.Feature.WGS84_SRID;
 import static org.niord.core.message.MessageIdMatch.MatchType.*;
 import static org.niord.core.message.MessageSearchParams.CommentsType.*;
+import static org.niord.core.message.vo.SystemMessageSeriesVo.NumberSequenceType.MANUAL;
 import static org.niord.model.search.PagedSearchParamsVo.SortOrder;
 
 /**
@@ -676,6 +677,28 @@ public class MessageService extends BaseService {
         message.getPublications().forEach(
                 pub -> pub.setPublication(getByPrimaryKey(Publication.class, pub.getPublication().getId())));
         return message.computeMessagePublication(lang, includeExternal, includeInternal);
+    }
+
+
+    /**
+     * If the associated message series is of type MANUEL with a defined shortFormat and the message
+     * has an associated number, then the shortId of the message is updated.
+     * @param message the message to update shortId for
+     * @return the update message
+     */
+    public Message checkUpdateShortId(Message message) {
+        if (message.getMessageSeries() != null) {
+            message.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
+            if (message.getNumber() != null &&
+                    message.getMessageSeries().getNumberSequenceType() == MANUAL &&
+                    StringUtils.isNotBlank(message.getMessageSeries().getShortFormat())) {
+                if (message.getPublishDateFrom() == null) {
+                    message.setPublishDateFrom(new Date());
+                }
+                messageSeriesService.updateMessageIdsFromMessageSeries(message, false);
+            }
+        }
+        return message;
     }
 
 

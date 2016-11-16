@@ -25,6 +25,7 @@ import org.niord.core.sequence.Sequence;
 import org.niord.core.sequence.SequenceService;
 import org.niord.core.service.BaseService;
 import org.niord.core.util.TimeUtils;
+import org.niord.model.message.MainType;
 import org.niord.model.message.Type;
 import org.slf4j.Logger;
 
@@ -357,6 +358,13 @@ public class MessageSeriesService extends BaseService {
             message.setShortId(formatResolver.resolveFormat(messageSeries.getShortFormat()));
 
         } else if (type == NumberSequenceType.MANUAL) {
+
+            // If the message number is defined and a shortFormat is defined, generate a shortId
+            if (message.getNumber() != null && StringUtils.isNotBlank(messageSeries.getShortFormat())) {
+                FormatResolver formatResolver = new FormatResolver(message, app);
+                message.setShortId(formatResolver.resolveFormat(messageSeries.getShortFormat()));
+            }
+
             // If the short ID is assigned manually, check validity
             if (StringUtils.isBlank(message.getShortId())) {
                 throw new IllegalArgumentException("Message must be assigned a short ID");
@@ -432,6 +440,7 @@ public class MessageSeriesService extends BaseService {
             }
             int year = TimeUtils.getCalendarField(publishDate, Calendar.YEAR);
             int week = TimeUtils.getCalendarField(publishDate, Calendar.WEEK_OF_YEAR);
+            MainType mainType = message.getMainType() != null ? message.getMainType() : message.getType().getMainType();
 
             params.put("${year-2-digits}", String.valueOf(year).substring(2));
             params.put("${year}", String.valueOf(year));
@@ -439,8 +448,8 @@ public class MessageSeriesService extends BaseService {
             params.put("${week-2-digits}", String.format("%02d", week));
             params.put("${number}", message.getNumber() == null ? "" : String.valueOf(message.getNumber()));
             params.put("${number-3-digits}", message.getNumber() == null ? "" : String.format("%03d", message.getNumber()));
-            params.put("${main-type}", message.getType().getMainType().toString());
-            params.put("${main-type-lower}", message.getType().getMainType().toString().toLowerCase());
+            params.put("${main-type}", mainType.toString());
+            params.put("${main-type-lower}", mainType.toString().toLowerCase());
             params.put("${country}", app.getCountry());
             params.put("${id}", message.getId() == null ? "" : String.valueOf(message.getId()));
             params.put("${legacy-id}", message.getLegacyId() == null ? "" : String.valueOf(message.getLegacyId()));

@@ -50,15 +50,22 @@ angular.module('niord.admin')
 
 
             /** Returns if the message series automatically assigns a number **/
-            $scope.autoAssigned = function (series) {
+            $scope.numberAssigned = function (series) {
                 return  series && series.numberSequenceType &&
                     series.numberSequenceType != 'MANUAL' && series.numberSequenceType != 'NONE';
             };
 
 
+            /** Returns if the message series can define a short ID format **/
+            $scope.definesShortFormat = function (series) {
+                return  series && series.numberSequenceType &&
+                    series.numberSequenceType != 'NONE';
+            };
+
+
             /** Update the short ID format of the message series being edited */
             $scope.updateShortFormat = function () {
-                if (!$scope.autoAssigned($scope.series)) {
+                if (!$scope.definesShortFormat($scope.series)) {
                     delete $scope.series.shortFormat;
                 } else {
                     $scope.series.shortFormat = $scope.series.shortFormat || '';

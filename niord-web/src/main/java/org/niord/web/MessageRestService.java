@@ -697,13 +697,13 @@ public class MessageRestService  {
         // Compute the editor fields to use for the message
         editorFieldsService.computeEditorFields(message);
 
-
+        Message msg = null;
         boolean autoTitle = message.isAutoTitle() != null && message.isAutoTitle();
         boolean autoPublication = message.isAutoPublication() != null && message.isAutoPublication();
 
         // If auto-title, auto-publication or auto-source is on, compute the resulting fields
         if (autoTitle || autoPublication) {
-            Message msg = new Message(message);
+            msg = new Message(message);
 
             // Ensure that description records are generated for all model languages
             Arrays.stream(app.getLanguages()).forEach(msg::checkCreateDesc);
@@ -719,7 +719,19 @@ public class MessageRestService  {
             message.setDescs(null);
         }
 
+
+        // Check if we need to update the short ID from the message number
+        if (message.getNumber() != null && message.getMessageSeries() != null) {
+            if (msg == null) {
+                msg = new Message(message);
+            }
+            messageService.checkUpdateShortId(msg);
+            message.setShortId(msg.getShortId());
+        }
+
         // Prune irrelevant fields
+        message.setNumber(null);
+        message.setPublishDateFrom(null);
         message.setMainType(null);
         message.setAutoTitle(null);
         message.setAutoPublication(null);
