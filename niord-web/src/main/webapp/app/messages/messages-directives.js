@@ -30,15 +30,24 @@ angular.module('niord.messages')
 
         return {
             restrict: 'E',
-            template: '<span class="label label-message-id" ng-class="messageClass">{{shortId}}</span>',
+            template: '<span class="label label-message-id" ng-class="messageClass">{{shortId}}</span>{{suffix}}',
             scope: {
                 msg:       "=",
                 showBlank: "="
             },
             link: function(scope) {
 
+                function updateSuffix() {
+                    var msg = scope.msg;
+                    if (msg && msg.mainType == 'NM' &&
+                        (msg.type == 'TEMPORARY_NOTICE' || msg.type == 'PRELIMINARY_NOTICE')) {
+                        scope.suffix = msg.type == 'TEMPORARY_NOTICE' ? ' (T)' : ' (P)';
+                    }
+                }
+
                 /** Updates the label based on the current status and short ID **/
                 function updateIdLabel() {
+                    scope.suffix = '';
                     var msg = scope.msg;
                     var status = msg && msg.status ? msg.status : 'DRAFT';
                     scope.messageClass = 'status-' + status;
@@ -46,6 +55,7 @@ angular.module('niord.messages')
                     scope.shortId = '';
                     if (msg && msg.shortId) {
                         scope.shortId = msg.shortId;
+                        updateSuffix();
                     } else if (scope.showBlank) {
                         scope.shortId = msg.type ? LangService.translate('msg.type.' + msg.type) + ' ' : '';
                         scope.shortId = scope.shortId + (msg.mainType ? msg.mainType : '');

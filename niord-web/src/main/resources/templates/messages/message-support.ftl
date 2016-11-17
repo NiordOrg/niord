@@ -238,6 +238,12 @@
     <#if msg.shortId?has_content>
         <div class="avoid-break-before-after">
             <span class="label-message-id">${msg.shortId}</span>
+            <#if msg.mainType == 'NM' && msg.type??>
+                <#switch msg.type>
+                    <#case 'TEMPORARY_NOTICE'>(T)<#break>
+                    <#case 'PRELIMINARY_NOTICE'>(P)<#break>
+                </#switch>
+            </#if>
         </div>
     </#if>
 
