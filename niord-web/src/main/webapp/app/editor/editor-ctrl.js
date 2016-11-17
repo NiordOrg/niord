@@ -1136,12 +1136,9 @@ angular.module('niord.editor')
 
             /** Returns the URL to the thumbnail **/
             $scope.thumbnailPath = function () {
-                var path = '/rest/message-map-image/' + $scope.message.editRepoPath
-                    + '/image.png?cb=' + $scope.imgCacheBreaker;
-                if ($scope.message.thumbnailPath) {
-                    path += '&thumbnailPath=' + encodeURIComponent($scope.message.thumbnailPath);
-                }
-                return path;
+                return ($scope.message.thumbnailPath)
+                    ? '/rest/repo/file/' + $scope.message.thumbnailPath + '?cb=' + $scope.imgCacheBreaker
+                    : '/img/map_image_placeholder.png';
             };
 
 
@@ -1191,7 +1188,7 @@ angular.module('niord.editor')
             };
 
 
-            /** Clears the current message thumbnail **/
+            /** Clears the current custom message thumbnail **/
             $scope.clearMessageThumbnail = function () {
 
                 var thumbnailPath = $scope.message.thumbnailPath;
@@ -1211,14 +1208,6 @@ angular.module('niord.editor')
                                 console.error("Error thumbnail file " + thumbnailPath);
                             });
                     }
-
-                } else {
-                    // Delete any auto-generated thumbnail
-                    MessageService.deleteMessageMapImage($scope.message.editRepoPath)
-                        .success(function () {
-                            $scope.thumbnailUpdated();
-                            growl.info("Deleted message thumbnail", { ttl: 3000 })
-                        });
                 }
             };
 

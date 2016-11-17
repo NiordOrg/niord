@@ -35,13 +35,11 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -155,51 +153,6 @@ public class MessageMapImageRestService {
 
 
     /**
-     * Returns the map thumbnail image associated with the message that has the given repository path.
-     * This method is used while editing a message, where the message repo folder is copied to a temporary folder.
-     * @param path the repository path
-     * @return the map thumbnail image
-     */
-    @GET
-    @javax.ws.rs.Path("/{folder:.+}/image.png")
-    @Produces("application/json;charset=UTF-8")
-    public Response getTempMessageMapImage(
-            @PathParam("folder") String path,
-            @QueryParam("thumbnailPath") String thumbnailPath) throws IOException, URISyntaxException {
-        try {
-
-            // Check if a custom map image is defined
-            if (StringUtils.isNotBlank(thumbnailPath)) {
-                // Validate that the path is a temporary repository folder path
-                Path thumbnail = validateTempMessageRepoPath(thumbnailPath);
-                if (Files.exists(thumbnail)) {
-                    return redirect(thumbnail);
-                }
-            }
-
-            // Validate that the path is a temporary repository folder path
-            Path folder = validateTempMessageRepoPath(path);
-
-            // Check if a standard map image is defined
-            String imageName = String.format("map_%d.png", messageMapImageGenerator.getMapImageSize());
-            Path imageRepoPath = folder.resolve(imageName);
-            if (Files.exists(imageRepoPath)) {
-                return redirect(imageRepoPath);
-            }
-
-        } catch (Exception ex) {
-            log.warn("Error fetching map image for message: " + ex);
-        }
-
-        // Show a placeholder image
-        return Response
-                .temporaryRedirect(new URI(IMAGE_PLACEHOLDER))
-                .expires(getExpiryTime())
-                .build();
-    }
-
-
-    /**
      * Resolves the relative repository path as a temporary repository path (used whilst editing messages)
      * and returns the full path to it.
      * @param path the path to resolve and validate as a temporary repository path
@@ -227,6 +180,7 @@ public class MessageMapImageRestService {
                 .expires(getExpiryTime())
                 .build();
     }
+
 
     /** Returns the cache timeout **/
     private Date getExpiryTime() {
@@ -312,30 +266,5 @@ public class MessageMapImageRestService {
         }
 
         return path + "/" + imageName;
-    }
-
-
-    /** Deletes the message map image associated with the given message */
-    @DELETE
-    @javax.ws.rs.Path("/{folder:.+}")
-    @RolesAllowed({"editor"})
-    public boolean deleteMessageMapImage(@PathParam("folder") String path, String image) throws Exception {
-
-        // Validate that the path is a temporary repository folder path
-        Path folder = validateTempMessageRepoPath(path);
-
-        boolean success = false;
-
-        // Delete any standard auto-generated map image thumbnail
-        String imageName = String.format("map_%d.png", messageMapImageGenerator.getMapImageSize());
-        Path imageRepoPath = folder.resolve(imageName);
-        if (Files.exists(imageRepoPath)) {
-            Files.delete(imageRepoPath);
-            success = true;
-        }
-
-        log.info("Deleted message map image from folder " + path + " with success: " + success);
-
-        return success;
     }
 }

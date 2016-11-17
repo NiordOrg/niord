@@ -68,7 +68,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -220,13 +219,14 @@ public class MessageRestService  {
 
 
     /**
-     * Returns a system-model version of the message, which has been directed to use a temporary
-     * repository folder.
+     * Returns a system-model version of the message, which has been associated with a temporary
+     * repository folder for new changes.
      *
      * @param message the message get an system-model version of
+     * @param copyToTemp whether to copy all message resources to the associated temporary directory or not
      * @return the system-model version of the message
      */
-    private SystemMessageVo toSystemMessage(Message message) throws Exception {
+    private SystemMessageVo toSystemMessage(Message message, boolean copyToTemp) throws Exception {
 
         SystemMessageVo messageVo = message.toVo(SystemMessageVo.class, Message.MESSAGE_DETAILS_FILTER);
 
@@ -234,9 +234,7 @@ public class MessageRestService  {
         editorFieldsService.computeEditorFields(messageVo);
 
         // Create a temporary repository folder for the message
-        messageService.createTempMessageRepoFolder(messageVo);
-        // Point embedded links and images to the temporary repository folder
-        messageVo.toEditRepo();
+        messageService.createTempMessageRepoFolder(messageVo, copyToTemp);
 
         return messageVo;
     }
@@ -271,7 +269,7 @@ public class MessageRestService  {
         checkMessageEditingAccess(message, false);
 
         // Returns a system model version of the message
-        return toSystemMessage(message);
+        return toSystemMessage(message, false);
     }
 
 
@@ -286,7 +284,7 @@ public class MessageRestService  {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public SystemMessageVo newTemplateMessage(@QueryParam("mainType") MainType mainType) throws IOException {
+    public SystemMessageVo newTemplateMessage(@QueryParam("mainType") MainType mainType) throws Exception {
 
         log.info("Creating new message template");
 
@@ -308,19 +306,7 @@ public class MessageRestService  {
             message.setMessageSeries(messageSeries.get(0));
         }
 
-        DataFilter dataFilter = DataFilter.get()
-                .fields("Message.details");
-        SystemMessageVo messageVo = message.toVo(SystemMessageVo.class, dataFilter);
-
-        // Compute the default set of editor fields to display for the message
-        editorFieldsService.computeEditorFields(messageVo);
-
-        // Create a temporary repository folder for the message
-        messageService.createTempMessageRepoFolder(messageVo);
-        // Point embedded links and images to the temporary repository folder
-        messageVo.toEditRepo();
-
-        return messageVo;
+        return toSystemMessage(message, false);
     }
 
 
@@ -351,8 +337,8 @@ public class MessageRestService  {
         // Validate viewing access to the message
         checkMessageViewingAccess(message);
 
-        // Create a system model version of the message
-        SystemMessageVo editMessage = toSystemMessage(message);
+        // Create a system model version of the message - copy all repository resource to new temp folder
+        SystemMessageVo editMessage = toSystemMessage(message, true);
 
         // Optionally, add a reference to the original message (before resetting IDs, etc)
         if (referenceType != null) {
@@ -365,11 +351,8 @@ public class MessageRestService  {
             editMessage.getReferences().add(ref);
         }
 
-        // Create a new template message to get hold of a UID and repoPath
-        Message tmp = messageService.newTemplateMessage(editMessage.getMainType());
-        editMessage.setId(tmp.getUid());
-        editMessage.setRepoPath(tmp.getRepoPath());
-        editMessage.setUnackComments(0);
+        // Assign a new ID and repoPath
+        editMessage.assignNewId();
 
         // Reset mainType, if not part of the current domain
         if (editMessage.getMainType() != null && !domain.supportsMainType(editMessage.getMainType())) {
@@ -396,6 +379,7 @@ public class MessageRestService  {
         editMessage.setUpdated(null);
         editMessage.setNumber(null);
         editMessage.setPublishDateFrom(null);
+        editMessage.setUnackComments(0);
         if (editMessage.getParts() != null) {
             editMessage.getParts()
                     .forEach(p -> p.setGeometry(featureService.copyFeatureCollection(p.getGeometry())));

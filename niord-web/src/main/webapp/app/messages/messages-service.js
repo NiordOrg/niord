@@ -252,15 +252,9 @@ angular.module('niord.messages')
             },
 
 
-            /** Changes the the message map image to be the base-64 encoded png */
+            /** Changes the custom message map image to be the base-64 encoded png */
             changeMessageMapImage: function (repoPath, image) {
                 return $http.put('/rest/message-map-image/' + repoPath, image);
-            },
-
-
-            /** Deletes the the message map image */
-            deleteMessageMapImage: function (repoPath) {
-                return $http['delete']('/rest/message-map-image/' + repoPath);
             },
 
 

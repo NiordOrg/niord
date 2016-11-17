@@ -1250,21 +1250,28 @@ public class MessageService extends BaseService {
 
     /**
      * Creates a temporary repository folder for the given message
+     * @param copyToTemp whether to copy all message resources to the associated temporary directory or not
      * @param message the message
      */
-    public void createTempMessageRepoFolder(SystemMessageVo message) throws IOException {
+    public void createTempMessageRepoFolder(SystemMessageVo message, boolean copyToTemp) throws IOException {
 
         String editRepoPath = repositoryService.getNewTempDir().getPath();
         message.setEditRepoPath(editRepoPath);
 
-        // For existing messages, copy the existing message repo to the new repository
-        if (message.getId() != null) {
-            java.nio.file.Path srcPath = repositoryService.getRepoRoot().resolve(message.getRepoPath());
-            java.nio.file.Path dstPath = repositoryService.getRepoRoot().resolve(editRepoPath);
-            if (Files.exists(srcPath)) {
-                log.info("Copy folder " + srcPath + " to temporary folder " + dstPath);
-                FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
+        if (copyToTemp) {
+
+            // For existing messages, copy the existing message repo to the new repository
+            if (message.getId() != null) {
+                java.nio.file.Path srcPath = repositoryService.getRepoRoot().resolve(message.getRepoPath());
+                java.nio.file.Path dstPath = repositoryService.getRepoRoot().resolve(editRepoPath);
+                if (Files.exists(srcPath)) {
+                    log.info("Copy folder " + srcPath + " to temporary folder " + dstPath);
+                    FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
+                }
             }
+
+            // Point embedded links and images to the temporary repository folder
+            message.toEditRepo();
         }
     }
 
@@ -1287,8 +1294,8 @@ public class MessageService extends BaseService {
                     log.info("Syncing folder " + srcPath + " with " + dstPath);
                     FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
 
+                // Case 2: Copy the latest revision sub-folder back to the source folder
                 } else if (Files.exists(srcPath.resolve(revision))) {
-                    // Case 2: Copy the latest revision sub-folder back to the source folder
                     log.info("Syncing revision " + revision + " of folder " + srcPath + " with folder " + dstPath);
                     FileUtils.copyDirectory(srcPath.resolve(revision).toFile(), dstPath.resolve(revision).toFile(), true);
                 } else {
