@@ -194,6 +194,10 @@ i.mce-i-aton:before {
     font-family: "FontAwesome";
 }
 
+i.mce-i-publication:before {
+    content: "\e043";
+    font-family: "Glyphicons Halflings";
+}
 
 div.mce-fullscreen {
     z-index: 1050;
@@ -608,6 +612,28 @@ div.mce-fullscreen {
         height: 300px;
     }
 }
+
+/** Editor -> Add publication dialog **/
+
+.message-publication-list {
+    font-size: 12px;
+    max-height: 150px;
+    height: 150px;
+    overflow: hidden;
+    overflow-y: scroll;
+    border: 1px solid lightgray;
+}
+
+.message-publication-list .selected {
+    background-color: darkgray;
+    color: white;
+}
+
+.message-publication-selection {
+    font-size: 12px;
+    border: 1px solid lightgray;
+}
+
 
 /** Editor -> Add source dialog **/
 

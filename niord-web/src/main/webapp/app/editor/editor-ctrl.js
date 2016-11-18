@@ -466,6 +466,36 @@ angular.module('niord.editor')
             };
 
 
+            /** Allows the user to edit or insert publications **/
+            $scope.editPublications = function (editor) {
+                // The ID of the parent div has the format "publication-<<lang>>"
+                var parentDivId = editor.getElement().parentElement.id;
+                var id = parentDivId.split("-");
+                var lang = id[1];
+
+                // Check if the cursor is within a publication span
+                var publicationId = null;
+                var selNode = editor.selection.getNode();
+                while (selNode != null  && selNode.getAttribute && !publicationId) {
+                    publicationId = selNode.getAttribute('publication');
+                    selNode = selNode.parentNode;
+                }
+
+                $scope.$apply(function() {
+                    return $uibModal.open({
+                        templateUrl: '/app/editor/format-publications-dialog.html',
+                        controller: 'FormatMessagePublicationsDialogCtrl',
+                        size: 'lg',
+                        resolve: {
+                            message: function () { return $scope.message },
+                            publicationId: function () { return publicationId },
+                            lang: function () { return lang; }
+                        }
+                    });
+                });
+            };
+
+
             // Configuration of the Publication TinyMCE editors
             $scope.publicationTinymceOptions = {
                 resize: false,
@@ -475,7 +505,14 @@ angular.module('niord.editor')
                 content_css : '/css/messages.css',
                 body_class : 'message-publication',
                 plugins: "link anchor code fullscreen",
-                toolbar: " link image table | code fullscreen",
+                toolbar: " link image table | code fullscreen | niordpublications",
+                setup : function ( editor ) {
+                    editor.addButton( 'niordpublications', {
+                        title: 'Insert Publications',
+                        icon: 'publication',
+                        onclick : function () { $scope.editPublications(editor); }
+                    });
+                },
                 init_instance_callback : $scope.fixTinyMCETabIndex
             };
 
