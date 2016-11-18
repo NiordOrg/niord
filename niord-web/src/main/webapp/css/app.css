@@ -363,6 +363,7 @@ li.view-mode-menu-btn .active .badge {
 
 .view-mode-menu .active {
     color: #ffffff;
+    font-weight: bold;
 }
 
 .view-mode-menu .clear-selection {
