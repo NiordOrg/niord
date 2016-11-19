@@ -179,6 +179,27 @@ angular.module('niord.messages')
             },
 
 
+            /** Extracts the message publication from the message */
+            extractMessagePublication: function (msg, publicationId, lang) {
+                lang = lang || $rootScope.language;
+                var params = 'lang=' + lang + '&publicationId=' + publicationId;
+                return $http.post('/rest/messages/extract-message-publication?' + params, msg);
+            },
+
+
+            /** Updates the message publications with the given parameters and link */
+            updateMessagePublications: function (msg, publicationId, parameters, link) {
+                var params = 'publicationId=' + publicationId;
+                if (parameters) {
+                    params += '&parameters=' + encodeURIComponent(parameters);
+                }
+                if (link) {
+                    params += '&link=' + encodeURIComponent(link);
+                }
+                return $http.post('/rest/messages/update-message-publications?' + params, msg);
+            },
+
+
             /** Formats the message geometry according to given template */
             formatMessageGeometry: function (geometry, lang, template, format) {
                 var params = 'lang=' + lang + '&template=' + template + '&format=' + format;
@@ -202,6 +223,12 @@ angular.module('niord.messages')
             searchPublications: function(name) {
                 return $http.get('/rest/publications/search?lang=' + $rootScope.language
                                 + '&name=' + encodeURIComponent(name), false);
+            },
+
+
+            /** Returns the details for the given publication **/
+            getPublicationDetails: function (publicationId) {
+                return $http.get('/rest/publications/publication/' + publicationId);
             },
 
 
@@ -376,6 +403,21 @@ angular.module('niord.messages')
                     controller: "MessageTagsDialogCtrl",
                     templateUrl: "/app/messages/message-tags-dialog.html",
                     size: 'md'
+                });
+            },
+
+
+            /** Opens the message source dialog */
+            messagePublicationsDialog: function (message, publicationId, lang) {
+                return $uibModal.open({
+                    templateUrl: '/app/editor/format-publications-dialog.html',
+                    controller: 'MessagePublicationsDialogCtrl',
+                    size: 'md',
+                    resolve: {
+                        message: function () { return message },
+                        publicationId: function () { return publicationId },
+                        lang: function () { return lang; }
+                    }
                 });
             },
 

@@ -21,6 +21,82 @@
 angular.module('niord.editor')
 
     /*******************************************************************
+     * Controller that handles the message publications dialog
+     *******************************************************************/
+    .controller('MessagePublicationsDialogCtrl', ['$scope', '$rootScope', '$timeout', 'MessageService', 'LangService',
+                'message', 'publicationId', 'lang',
+        function ($scope, $rootScope, $timeout, MessageService, LangService,
+                message, publicationId, lang) {
+            'use strict';
+
+            $scope.message = message;
+            // Create pruned version of the message
+            $scope.messageTemplate = {
+                descs: message.descs.map(function (desc) {
+                    return { lang: desc.lang, publication: desc.publication }
+                })
+            };
+            $scope.publicationId = publicationId;
+            $scope.pub = {
+                parameters: undefined,
+                link: undefined,
+                publication: undefined
+            };
+
+
+            /** Returns whether or not to display a parameter field for the message publication **/
+            $scope.hasPublicationParams = function (pub) {
+                if (pub && pub.publication && pub.publication.descs) {
+                    for (var x = 0; x < pub.publication.descs.length; x++) {
+                        var desc = pub.publication.descs[x];
+                        if (desc && desc.format && desc.format.indexOf('${parameters}') !== -1) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            };
+
+
+            // Called when the publication selection changes
+            $scope.$watch("pub.publication", function () {
+                delete $scope.pub.parameters;
+                delete $scope.pub.link;
+                if ($scope.pub.publication) {
+                    MessageService.extractMessagePublication($scope.messageTemplate, $scope.pub.publication.id, lang)
+                        .success(function (msgPub) {
+                           if (msgPub) {
+                               $scope.pub.parameters = msgPub.parameters;
+                               $scope.pub.link = msgPub.link;
+                           }
+                        });
+                }
+            });
+
+
+            /** Called when the publication should be updated for the message **/
+            $scope.updatePublication = function () {
+                if ($scope.pub.publication) {
+                    MessageService.updateMessagePublications($scope.messageTemplate, $scope.pub.publication.id, $scope.pub.parameters, $scope.pub.link)
+                        .success(function (msg) {
+                            if (msg) {
+                                angular.forEach(msg.descs, function (desc) {
+                                    var origDesc = LangService.descForLanguage($scope.message, desc.lang);
+                                    if (origDesc) {
+                                        origDesc.publication = desc.publication;
+                                    }
+                                })
+                            }
+                            $scope.$close("Updated");
+                        });
+                } else {
+                    $scope.$close("Not updated");
+                }
+            };
+        }])
+
+
+    /*******************************************************************
      * Controller that handles the message source dialog
      *******************************************************************/
     .controller('MessageSourceDialogCtrl', ['$scope', '$rootScope', '$timeout', 'MessageService', 'LangService',

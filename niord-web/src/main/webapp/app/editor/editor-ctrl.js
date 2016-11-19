@@ -482,16 +482,7 @@ angular.module('niord.editor')
                 }
 
                 $scope.$apply(function() {
-                    return $uibModal.open({
-                        templateUrl: '/app/editor/format-publications-dialog.html',
-                        controller: 'FormatMessagePublicationsDialogCtrl',
-                        size: 'lg',
-                        resolve: {
-                            message: function () { return $scope.message },
-                            publicationId: function () { return publicationId },
-                            lang: function () { return lang; }
-                        }
-                    });
+                    MessageService.messagePublicationsDialog($scope.message, publicationId, lang);
                 });
             };
 

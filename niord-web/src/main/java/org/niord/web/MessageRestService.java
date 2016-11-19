@@ -32,7 +32,11 @@ import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.vo.MessageHistoryVo;
+import org.niord.core.message.vo.MessagePublicationVo;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.publication.Publication;
+import org.niord.core.publication.PublicationService;
+import org.niord.core.publication.PublicationUtils;
 import org.niord.core.repo.FileTypes;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.user.UserService;
@@ -120,6 +124,8 @@ public class MessageRestService  {
     @Inject
     EditorFieldsService editorFieldsService;
 
+    @Inject
+    PublicationService publicationService;
 
     /***************************
      * Message access functions
@@ -761,6 +767,46 @@ public class MessageRestService  {
                 : new Message(message);
 
         return messageService.computeMessagePublication(msg, lang, includeExternal, includeInternal);
+    }
+
+    /** Extracts the message publication from the message */
+    @POST
+    @Path("/extract-message-publication")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed({ "editor" })
+    @GZIP
+    @NoCache
+    public MessagePublicationVo extractMessagePublication(
+            @QueryParam("lang") @DefaultValue("en") String lang,
+            @QueryParam("publicationId") Integer publicationId,
+            MessageVo message) throws Exception {
+        Publication publication = publicationService.findById(publicationId);
+        if (publication != null) {
+            return PublicationUtils.extractMessagePublication(message, publication.toVo(DataFilter.get()), lang);
+        }
+        return null;
+    }
+
+
+    /** Updates the message publications with the given parameters and link */
+    @POST
+    @Path("/update-message-publications")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed({ "editor" })
+    @GZIP
+    @NoCache
+    public MessageVo updateMessagePublications(
+            @QueryParam("publicationId") Integer publicationId,
+            @QueryParam("parameters") String parameters,
+            @QueryParam("link") String link,
+            MessageVo message) throws Exception {
+        Publication publication = publicationService.findById(publicationId);
+        if (publication != null) {
+            return PublicationUtils.updateMessagePublications(message, publication.toVo(DataFilter.get()), parameters, link);
+        }
+        return message;
     }
 
 

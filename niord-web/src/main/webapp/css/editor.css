@@ -613,27 +613,6 @@ div.mce-fullscreen {
     }
 }
 
-/** Editor -> Add publication dialog **/
-
-.message-publication-list {
-    font-size: 12px;
-    max-height: 150px;
-    height: 150px;
-    overflow: hidden;
-    overflow-y: scroll;
-    border: 1px solid lightgray;
-}
-
-.message-publication-list .selected {
-    background-color: darkgray;
-    color: white;
-}
-
-.message-publication-selection {
-    font-size: 12px;
-    border: 1px solid lightgray;
-}
-
 
 /** Editor -> Add source dialog **/
 

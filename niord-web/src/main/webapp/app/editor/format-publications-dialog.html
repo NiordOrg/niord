@@ -2,47 +2,33 @@
 
     <div class="modal-header" style="text-align: center; padding: 5px 15px">
         <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
-        <h4>Add message publications</h4>
+        <h4>Update Message Publication</h4>
     </div>
 
     <div class="modal-body print" style="padding-bottom: 0">
 
         <div class="row">
             <div class="col-sm-12" style="padding: 10px 20px;">
-                <div class="message-publication-list">
-                    <table class='table table-condensed' style="margin-bottom: 0;">
-                        <tr>
-                            <th>Name</th>
-                        </tr>
-                        <tr ng-repeat="publication in publications" class="clickable"
-                            ng-class="{ 'selected' :  publication.selected == true }"
-                            ng-click="publication.selected = !publication.selected">
-                            <td>{{publication.descs[0].name}}</td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-        </div>
 
-        <div ng-if="selection.length > 0" class="row" style="padding: 5px 0; border-bottom: 1px solid lightgray">
-            <div class="col-sm-12" style="padding: 10px 20px;">
-                <div>Selection:</div>
-                <div class="message-publication-selection">
-                    <table class='table table-condensed' style="margin-bottom: 0;">
-                        <tr ng-repeat="publication in selection" >
-                            <td valign="middle">
-                                {{publication.descs[0].name}}
-                            </td>
-                            <td valign="middle" width="160px">
-                                <date-time-picker ng-model="publication.date" placeholder="Date" size="sm"
-                                                  time="'00:00:00'" format="'l'"></date-time-picker>
-                            </td>
-                            <td valign="middle" width="20px">
-                                <a href ng-click="publication.selected = false"><i class="glyphicon glyphicon-trash"></i></a>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
+                <table class="table table-condensed editor-publication-table">
+                    <tr>
+                        <td width="240">
+                            <publication-field class="pub-field" publication-data="pub" init-id="publicationId"></publication-field>
+                        </td>
+                        <td width="*">
+                            <div>
+                                <input ng-if="hasPublicationParams(pub)"
+                                       class="form-control input-sm" placeholder="Comma-separated parameters" type="text"
+                                       ng-model="pub.parameters"/>
+                            </div>
+                            <div ng-if="pub.publication.messagePublicationLink">
+                                <input class="form-control input-sm" placeholder="Publication link" type="text"
+                                       ng-model="pub.link"/>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
             </div>
         </div>
 
@@ -51,7 +37,7 @@
             <div class="form-group col-xs-12" style="text-align: right">
                 <button class="btn btn-default btn-sm" ng-click="$dismiss('aborted')">Cancel</button>
                 <button class="btn btn-primary btn-sm"
-                        ng-disabled="selection.length == 0" ng-click="addSelection()">Add selection</button>
+                        ng-disabled="!pub.publication" ng-click="updatePublication()">Update Publication</button>
             </div>
         </div>
     </div>

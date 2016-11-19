@@ -438,7 +438,8 @@ angular.module('niord.common')
      * Defines a publication field used for
      * selecting a publication
      ********************************/
-    .directive('publicationField', [ '$rootScope', 'MessageService', function ($rootScope, MessageService) {
+    .directive('publicationField', [ '$rootScope', 'MessageService', 'LangService',
+        function ($rootScope, MessageService, LangService) {
         'use strict';
 
         return {
@@ -447,6 +448,7 @@ angular.module('niord.common')
             replace: false,
             scope: {
                 publicationData: "=",
+                initId: "=",
                 tabIndex:   "=",
                 publicationChanged: "&"
             },
@@ -466,6 +468,13 @@ angular.module('niord.common')
                 };
 
 
+                if (scope.initId) {
+                    MessageService.getPublicationDetails(scope.initId)
+                        .success(function (publication) {
+                            scope.publicationData['publication'] = LangService.sortDescs(publication);
+                        })
+                }
+
                 /** Refreshes the publication selection **/
                 scope.publications = [];
                 scope.refreshPublications = function (text) {
@@ -478,7 +487,7 @@ angular.module('niord.common')
 
                 /** Removes the current publication selection */
                 scope.removePublication = function () {
-                    scope.publicationData.publication = null;
+                    delete scope.publicationData['publication'];
                     scope.publicationUpdated();
                 }
             }

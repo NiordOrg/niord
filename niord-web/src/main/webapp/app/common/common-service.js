@@ -144,6 +144,7 @@ angular.module('niord.common')
                         return sortValue(d1, lang) - sortValue(d2, lang);
                     });
                 }
+                return elm;
             };
 
 
