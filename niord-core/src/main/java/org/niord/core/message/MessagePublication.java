@@ -16,13 +16,11 @@
 
 package org.niord.core.message;
 
-import org.apache.commons.lang.StringUtils;
 import org.niord.core.message.vo.MessagePublicationVo;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.model.IndexedEntity;
 import org.niord.core.publication.Publication;
-import org.niord.core.publication.PublicationDesc;
-import org.niord.core.util.TextUtils;
+import org.niord.core.publication.PublicationUtils;
 import org.niord.model.DataFilter;
 
 import javax.persistence.Entity;
@@ -109,24 +107,11 @@ public class MessagePublication extends BaseEntity<Integer> implements IndexedEn
             return null;
         }
 
-        String result = null;
-        PublicationDesc desc = publication.getDesc(lang);
-        if (desc != null && StringUtils.isNotBlank(desc.getFormat())) {
-            String params = StringUtils.defaultIfBlank(parameters, "");
-            result = desc.getFormat().replace("${parameters}", params);
-            if (publication.isInternal()) {
-                result = "[" + result + "]";
-            }
-            result = TextUtils.trailingDot(result);
-
-            String link = StringUtils.defaultIfBlank(getLink(), desc.getLink());
-
-            if (StringUtils.isNotBlank(link)) {
-                result = String.format("<a href=\"%s\" target=\"_blank\">%s</a>", link, result);
-            }
-        }
-
-        return result;
+        return PublicationUtils.computeMessagePublication(
+                publication.toVo(DataFilter.get().lang(lang)),
+                parameters,
+                link,
+                lang);
     }
 
     /*************************/

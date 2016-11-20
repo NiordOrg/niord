@@ -104,6 +104,22 @@ public class TextUtils {
     }
 
 
+    /**
+     * Removes any trailing dot character
+     * @param text the text to remove a trailing dot from
+     * @return the updated text
+     **/
+    public static String removeTrailingDot(String text) {
+        if (StringUtils.isNotBlank(text)) {
+            text = text.trim();
+            while (text.endsWith(".")) {
+                text = text.substring(0, text.length() - 1).trim();
+            }
+        }
+        return text;
+    }
+
+
     /** Simple case-insensitive comparison between two strings **/
     public static int compareIgnoreCase(String s1, String s2) {
         if (s1 == null && s2 == null) {

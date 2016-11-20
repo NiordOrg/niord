@@ -23,9 +23,9 @@ angular.module('niord.editor')
     /*******************************************************************
      * Controller that handles the message publications dialog
      *******************************************************************/
-    .controller('MessagePublicationsDialogCtrl', ['$scope', '$rootScope', '$timeout', 'MessageService', 'LangService',
+    .controller('MessagePublicationsDialogCtrl', ['$scope', 'MessageService', 'LangService',
                 'message', 'publicationId', 'lang',
-        function ($scope, $rootScope, $timeout, MessageService, LangService,
+        function ($scope, MessageService, LangService,
                 message, publicationId, lang) {
             'use strict';
 
