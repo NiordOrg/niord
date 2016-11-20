@@ -28,7 +28,6 @@ import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageSeriesService;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.vo.SystemMessageVo;
-import org.niord.core.publication.PublicationService;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
 import org.niord.model.message.Status;
@@ -70,9 +69,6 @@ public class BatchMessageImportProcessor extends AbstractItemHandler {
 
     @Inject
     ChartService chartService;
-
-    @Inject
-    PublicationService publicationService;
 
     MessageSeries defaultMessageSeries;
 
@@ -136,11 +132,6 @@ public class BatchMessageImportProcessor extends AbstractItemHandler {
                 }
             }
             message.setCharts(charts);
-
-            // Make sure publications area resolved
-            message.getPublications().forEach(
-                    mp -> mp.setPublication(publicationService.findOrCreatePublication(mp.getPublication(), true)));
-            message.getPublications().removeIf(mp -> mp.getPublication() == null);
 
             getLog().info("Processed message " + message);
             return message;

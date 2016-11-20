@@ -19,8 +19,6 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.message.Message;
 import org.niord.model.message.MessageVo;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -32,8 +30,6 @@ public class SystemMessageVo extends MessageVo {
 
     int revision;
     Boolean autoTitle;
-    Boolean autoPublication;
-    List<MessagePublicationVo> publications;
     String thumbnailPath;
     String repoPath;
     String editRepoPath;
@@ -98,28 +94,6 @@ public class SystemMessageVo extends MessageVo {
     }
 
 
-    /** {@inheritDoc} **/
-    @Override
-    public void sort(String language) {
-        super.sort(language);
-        if (StringUtils.isNotBlank(language)) {
-            if (publications != null) {
-                publications.stream()
-                    .filter(p -> p.getPublication() != null)
-                    .forEach(p -> p.getPublication().sortDescs(language));
-            }
-        }
-    }
-
-
-    public List<MessagePublicationVo> checkCreatePublications() {
-        if (publications == null) {
-            publications = new ArrayList<>();
-        }
-        return publications;
-    }
-
-
     /*************************/
     /** Getters and Setters **/
     /*************************/
@@ -138,22 +112,6 @@ public class SystemMessageVo extends MessageVo {
 
     public void setAutoTitle(Boolean autoTitle) {
         this.autoTitle = autoTitle;
-    }
-
-    public Boolean isAutoPublication() {
-        return autoPublication;
-    }
-
-    public void setAutoPublication(Boolean autoPublication) {
-        this.autoPublication = autoPublication;
-    }
-
-    public List<MessagePublicationVo> getPublications() {
-        return publications;
-    }
-
-    public void setPublications(List<MessagePublicationVo> publications) {
-        this.publications = publications;
     }
 
     public String getThumbnailPath() {

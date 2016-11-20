@@ -27,8 +27,8 @@ angular.module('niord.admin')
      * Controller for the Admin Publications page
      */
     .controller('PublicationsAdminCtrl', [
-                 '$scope', 'growl', 'AdminPublicationService', 'DialogService', 'LangService', 'UploadFileService',
-        function ($scope, growl, AdminPublicationService, DialogService, LangService, UploadFileService) {
+                 '$scope', '$rootScope', 'growl', 'AdminPublicationService', 'DialogService', 'LangService', 'UploadFileService',
+        function ($scope, $rootScope, growl, AdminPublicationService, DialogService, LangService, UploadFileService) {
             'use strict';
 
             $scope.publications = [];
@@ -39,7 +39,7 @@ angular.module('niord.admin')
 
             /** Filters messages by name **/
             $scope.searchFilter = function (pub) {
-                return pub.descs[0].name.toLowerCase().indexOf($scope.search.toLowerCase()) !== -1;
+                return pub.descs[0].title.toLowerCase().indexOf($scope.search.toLowerCase()) !== -1;
             };
 
 
@@ -54,9 +54,9 @@ angular.module('niord.admin')
             };
 
 
-            // Used to ensure that description entities have a "name" field
+            // Used to ensure that description entities have a "title" field
             function ensureNameField(desc) {
-                desc.name = '';
+                desc.title = '';
             }
 
 
@@ -64,10 +64,10 @@ angular.module('niord.admin')
             $scope.addPublication = function () {
                 $scope.editMode = 'add';
                 $scope.publication = {
-                    id: undefined,
-                    internal: false,
+                    publicationId: undefined,
+                    type: 'EXTERNAL',
                     active: true,
-                    messagePublicationLink: false,
+                    languageSpecific: true,
                     descs: []
                 };
                 LangService.checkDescs($scope.publication, ensureNameField);
@@ -86,12 +86,16 @@ angular.module('niord.admin')
             };
 
 
-            /** Called when the messagePublicationLink flag has been changed **/
-            $scope.messagePublicationLinkUpdated = function () {
-                if ($scope.publication && $scope.publication.messagePublicationLink) {
-                    $scope.publication.descs.forEach(function (desc) {
-                        delete desc.link;
-                    })
+            /** Called when the languageSpecific flag has been changed **/
+            $scope.languageSpecificUpdate = function () {
+                if ($scope.publication) {
+                    if ($scope.publication.languageSpecific) {
+                        $scope.publication.descs[0].lang = $rootScope.language;
+                        LangService.checkDescs($scope.publication, ensureNameField);
+                    } else {
+                        $scope.publication.descs.length = 1;
+                        delete $scope.publication.descs[0].lang;
+                    }
                 }
             };
 

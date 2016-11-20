@@ -23,7 +23,6 @@ import org.niord.core.publication.vo.PublicationVo;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.util.Objects;
 
 /**
  * Filters publications that need to be a added or updated
@@ -39,17 +38,11 @@ public class BatchPublicationImportProcessor extends AbstractItemHandler {
     public Object processItem(Object item) throws Exception {
 
         PublicationVo publicationVo = (PublicationVo) item;
-        // Reset the ID of the publication
-        publicationVo.setId(null);
 
         Publication publication = new Publication(publicationVo);
 
         // Look for an existing publication with the same name
-        Publication orig = publication.getDescs().stream()
-                .map(d -> publicationService.findByName(d.getLang(), d.getName()))
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
+        Publication orig = publicationService.findByPublicationId(publication.getPublicationId());
 
         if (orig == null) {
             // Persist new publication

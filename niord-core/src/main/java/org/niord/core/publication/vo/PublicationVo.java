@@ -26,10 +26,10 @@ import java.util.List;
  */
 public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSerializable {
 
-    Integer id;
+    String publicationId;
+    PublicationType type;
     boolean active;
-    boolean internal;
-    boolean messagePublicationLink;
+    boolean languageSpecific;
     List<PublicationDescVo> descs;
 
 
@@ -46,12 +46,21 @@ public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSeri
     /** Getters and Setters **/
     /*************************/
 
-    public Integer getId() {
-        return id;
+
+    public String getPublicationId() {
+        return publicationId;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
+    public void setPublicationId(String publicationId) {
+        this.publicationId = publicationId;
+    }
+
+    public PublicationType getType() {
+        return type;
+    }
+
+    public void setType(PublicationType type) {
+        this.type = type;
     }
 
     public boolean isActive() {
@@ -62,20 +71,12 @@ public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSeri
         this.active = active;
     }
 
-    public boolean isInternal() {
-        return internal;
+    public boolean isLanguageSpecific() {
+        return languageSpecific;
     }
 
-    public void setInternal(boolean internal) {
-        this.internal = internal;
-    }
-
-    public boolean isMessagePublicationLink() {
-        return messagePublicationLink;
-    }
-
-    public void setMessagePublicationLink(boolean messagePublicationLink) {
-        this.messagePublicationLink = messagePublicationLink;
+    public void setLanguageSpecific(boolean languageSpecific) {
+        this.languageSpecific = languageSpecific;
     }
 
     @Override

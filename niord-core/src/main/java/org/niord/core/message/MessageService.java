@@ -34,7 +34,6 @@ import org.niord.core.geojson.FeatureService;
 import org.niord.core.message.MessageSearchParams.DateType;
 import org.niord.core.message.MessageSearchParams.UserType;
 import org.niord.core.message.vo.SystemMessageVo;
-import org.niord.core.publication.Publication;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
@@ -74,8 +73,13 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.niord.core.geojson.Feature.WGS84_SRID;
-import static org.niord.core.message.MessageIdMatch.MatchType.*;
-import static org.niord.core.message.MessageSearchParams.CommentsType.*;
+import static org.niord.core.message.MessageIdMatch.MatchType.SHORT_ID;
+import static org.niord.core.message.MessageIdMatch.MatchType.TEXT;
+import static org.niord.core.message.MessageIdMatch.MatchType.UID;
+import static org.niord.core.message.MessageSearchParams.CommentsType.ANY;
+import static org.niord.core.message.MessageSearchParams.CommentsType.ANY_UNACK;
+import static org.niord.core.message.MessageSearchParams.CommentsType.OWN;
+import static org.niord.core.message.MessageSearchParams.CommentsType.OWN_UNACK;
 import static org.niord.core.message.vo.SystemMessageSeriesVo.NumberSequenceType.MANUAL;
 import static org.niord.model.search.PagedSearchParamsVo.SortOrder;
 
@@ -352,10 +356,6 @@ public class MessageService extends BaseService {
         // Substitute the Charts with the persisted ones
         message.setCharts(chartService.persistedCharts(message.getCharts()));
 
-        // Substitute the publication references with the persisted ones
-        message.getPublications().forEach(pub
-                -> pub.setPublication(getByPrimaryKey(Publication.class, pub.getPublication().getId())));
-
         // Persist the message
         message = saveMessage(message);
         log.info("Saved message " + message.getUid());
@@ -453,18 +453,11 @@ public class MessageService extends BaseService {
         original.copyDescsAndRemoveBlanks(message.getDescs());
         original.setAutoTitle(message.isAutoTitle());
 
-        original.setAutoPublication(message.isAutoPublication());
-
         original.getAttachments().clear();
         message.getAttachments().stream()
                 .map(this::updateAttachment)
                 .filter(a -> a != null)
                 .forEach(original::addAttachment);
-
-        original.getPublications().clear();
-        message.getPublications().stream()
-                .map(this::updatePublication)
-                .forEach(original::addPublication);
 
         original.setSeparatePage(message.getSeparatePage());
 
@@ -530,21 +523,6 @@ public class MessageService extends BaseService {
         return original;
     }
 
-    /** Called upon saving a message. Updates the message publication **/
-    private MessagePublication updatePublication(MessagePublication publication) {
-
-        // Update the reference publication with the persisted ibe
-        publication.setPublication(getByPrimaryKey(Publication.class, publication.getPublication().getId()));
-
-        if (publication.isNew()) {
-            return publication;
-        }
-        MessagePublication original = getByPrimaryKey(MessagePublication.class, publication.getId());
-        if (original != null) {
-            original.updatePublication(publication);
-        }
-        return original;
-    }
 
     /**
      * Updates the status of the given message
@@ -622,7 +600,6 @@ public class MessageService extends BaseService {
         message.setMainType(mainType);
         message.setStatus(Status.DRAFT);
         message.setAutoTitle(true);
-        message.setAutoPublication(true);
         if (mainType == MainType.NM) {
             message.setOriginalInformation(true);
         }
@@ -656,27 +633,8 @@ public class MessageService extends BaseService {
         if (message.isAutoTitle()) {
             message.setAreas(persistedList(Area.class, message.getAreas()));
         }
-        if (message.isAutoPublication()) {
-            message.getPublications().forEach(
-                    pub -> pub.setPublication(getByPrimaryKey(Publication.class, pub.getPublication().getId())));
-        }
         message.updateAutoMessageFields();
         return message;
-    }
-
-
-    /**
-     * Computes the message publication text
-     * @param message the message template to compute publication for fields for
-     * @param lang the language
-     * @param includeExternal whether to include external publications or not
-     * @param includeInternal whether to include internal publications or not
-     * @return the message publication text
-     */
-    public String computeMessagePublication(Message message, String lang, boolean includeExternal, boolean includeInternal) {
-        message.getPublications().forEach(
-                pub -> pub.setPublication(getByPrimaryKey(Publication.class, pub.getPublication().getId())));
-        return message.computeMessagePublication(lang, includeExternal, includeInternal);
     }
 
 

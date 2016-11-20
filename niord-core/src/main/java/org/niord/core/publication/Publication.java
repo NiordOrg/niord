@@ -18,6 +18,7 @@ package org.niord.core.publication;
 
 import org.niord.core.model.BaseEntity;
 import org.niord.core.publication.vo.PublicationDescVo;
+import org.niord.core.publication.vo.PublicationType;
 import org.niord.core.publication.vo.PublicationVo;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
@@ -27,6 +28,7 @@ import javax.persistence.Entity;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,28 +38,24 @@ import java.util.stream.Collectors;
  */
 @Entity
 @NamedQueries({
+        @NamedQuery(name="Publication.findByPublicationId",
+                query="SELECT p FROM Publication p where p.publicationId = :publicationId"),
         @NamedQuery(name  = "Publication.searchPublications",
-                query = "select distinct p from Publication p join p.descs d where p.active in (:active) and "
-                        + " d.lang = :lang and lower(d.name) like :term"),
-        @NamedQuery(name  = "Publication.findByName",
-                query = "select distinct p from Publication p join p.descs d where "
-                        + " d.lang = :lang and lower(d.name) = :name")
+                query = "select distinct p from Publication p join p.descs d where p.active in (:active) "
+                        + " and p.type in (:types) and (d.lang = :lang or d.lang = '*') and lower(d.title) like :term")
 })
 @SuppressWarnings("unused")
 public class Publication extends BaseEntity<Integer> implements ILocalizable<PublicationDesc> {
 
+    @NotNull
+    String publicationId;
+
+    PublicationType type;
+
     /** If the publication is currently active or not **/
     boolean active = true;
 
-    /**
-     * If Message.autoPublication is true, the MessageDesc.publication will automatically be computed from
-     * all associated MessagePublication's where the publication internal flag is not set.
-     */
-    boolean internal;
-
-    /** If the messagePublicationLink is set, each message publication will have its own link **/
-    boolean messagePublicationLink;
-
+    boolean languageSpecific;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
     List<PublicationDesc> descs = new ArrayList<>();
@@ -70,10 +68,10 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
     /** Constructor */
     public Publication(PublicationVo publication) {
-        this.id = publication.getId();
+        this.publicationId = publication.getPublicationId();
+        this.type = publication.getType();
         this.active = publication.isActive();
-        this.internal = publication.isInternal();
-        this.messagePublicationLink = publication.isMessagePublicationLink();
+        this.languageSpecific = publication.isLanguageSpecific();
 
         if (publication.getDescs() != null) {
             publication.getDescs().stream()
@@ -85,9 +83,10 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
     /** Updates this publication from another publication */
     public void updatePublication(Publication publication) {
-        this.internal = publication.isInternal();
+        this.publicationId = publication.getPublicationId();
+        this.type = publication.getType();
         this.active = publication.isActive();
-        this.messagePublicationLink = publication.isMessagePublicationLink();
+        this.languageSpecific = publication.isLanguageSpecific();
         copyDescsAndRemoveBlanks(publication.getDescs());
     }
 
@@ -95,10 +94,10 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     /** Converts this entity to a value object */
     public PublicationVo toVo(DataFilter dataFilter) {
         PublicationVo publication = new PublicationVo();
-        publication.setId(id);
-        publication.setInternal(internal);
+        publication.setPublicationId(publicationId);
+        publication.setType(type);
         publication.setActive(active);
-        publication.setMessagePublicationLink(messagePublicationLink);
+        publication.setLanguageSpecific(languageSpecific);
 
         if (!descs.isEmpty()) {
             publication.setDescs(getDescs(dataFilter).stream()
@@ -115,7 +114,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     @Override
     public PublicationDesc createDesc(String lang) {
         PublicationDesc desc = new PublicationDesc();
-        desc.setLang(lang);
+        desc.setLang(lang == null ? "*" : lang);
         desc.setEntity(this);
         getDescs().add(desc);
         return desc;
@@ -132,6 +131,22 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     /** Getters and Setters **/
     /*************************/
 
+    public String getPublicationId() {
+        return publicationId;
+    }
+
+    public void setPublicationId(String publicationId) {
+        this.publicationId = publicationId;
+    }
+
+    public PublicationType getType() {
+        return type;
+    }
+
+    public void setType(PublicationType type) {
+        this.type = type;
+    }
+
     public boolean isActive() {
         return active;
     }
@@ -140,20 +155,12 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
         this.active = active;
     }
 
-    public boolean isInternal() {
-        return internal;
+    public boolean isLanguageSpecific() {
+        return languageSpecific;
     }
 
-    public void setInternal(boolean internal) {
-        this.internal = internal;
-    }
-
-    public boolean isMessagePublicationLink() {
-        return messagePublicationLink;
-    }
-
-    public void setMessagePublicationLink(boolean messagePublicationLink) {
-        this.messagePublicationLink = messagePublicationLink;
+    public void setLanguageSpecific(boolean languageSpecific) {
+        this.languageSpecific = languageSpecific;
     }
 
     @Override
@@ -165,5 +172,4 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     public void setDescs(List<PublicationDesc> descs) {
         this.descs = descs;
     }
-
 }

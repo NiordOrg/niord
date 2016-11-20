@@ -32,11 +32,6 @@ public class MessagePublicationVo implements IJsonSerializable {
     String parameters;
     String link;
 
-    /** Returns if the message publication is valid **/
-    public boolean publicationDefined() {
-        return publication != null && publication.getId() != null;
-    }
-
     /*************************/
     /** Getters and Setters **/
     /*************************/

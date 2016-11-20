@@ -31,7 +31,7 @@ import javax.validation.constraints.NotNull;
 public class PublicationDesc extends DescEntity<Publication> {
 
     @NotNull
-    String name;
+    String title;
 
     /**
      * The format can be used to format a message publication
@@ -51,7 +51,10 @@ public class PublicationDesc extends DescEntity<Publication> {
     /** Constructor */
     public PublicationDesc(PublicationDescVo desc) {
         super(desc);
-        this.name = desc.getName();
+        if (desc.getLang() == null) {
+            this.lang = "*";
+        }
+        this.title = desc.getTitle();
         this.format = desc.getFormat();
         this.link = desc.getLink();
     }
@@ -60,8 +63,8 @@ public class PublicationDesc extends DescEntity<Publication> {
     /** Converts this entity to a value object */
     public PublicationDescVo toVo() {
         PublicationDescVo desc = new PublicationDescVo();
-        desc.setLang(lang);
-        desc.setName(name);
+        desc.setLang(lang.equals("*") ? null : lang);
+        desc.setTitle(title);
         desc.setFormat(format);
         desc.setLink(link);
         return desc;
@@ -71,7 +74,7 @@ public class PublicationDesc extends DescEntity<Publication> {
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(name, format, link);
+        return ILocalizedDesc.fieldsDefined(title, format, link);
     }
 
 
@@ -79,7 +82,7 @@ public class PublicationDesc extends DescEntity<Publication> {
     @Override
     public void copyDesc(ILocalizedDesc localizedDesc) {
         PublicationDesc desc = (PublicationDesc)localizedDesc;
-        this.name = desc.getName();
+        this.title = desc.getTitle();
         this.format = desc.getFormat();
         this.link = desc.getLink();
     }
@@ -89,12 +92,12 @@ public class PublicationDesc extends DescEntity<Publication> {
     /** Getters and Setters **/
     /*************************/
 
-    public String getName() {
-        return name;
+    public String getTitle() {
+        return title;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getFormat() {

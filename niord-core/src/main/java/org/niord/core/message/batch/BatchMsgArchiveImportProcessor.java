@@ -29,7 +29,6 @@ import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageSeriesService;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.batch.BatchMsgArchiveImportReader.ExtractedArchiveMessageVo;
-import org.niord.core.publication.PublicationService;
 import org.niord.core.settings.SettingsService;
 import org.niord.model.message.Status;
 
@@ -71,9 +70,6 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
 
     @Inject
     FeatureService featureService;
-
-    @Inject
-    PublicationService publicationService;
 
     MessageSeries defaultMessageSeries;
 
@@ -193,12 +189,6 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
                     .filter(c -> c != null)
                     .collect(Collectors.toList());
             message.setCharts(charts);
-
-            // Make sure publications area resolved
-            message.getPublications().forEach(
-                    mp -> mp.setPublication(publicationService.findOrCreatePublication(mp.getPublication(), createBaseData)));
-            message.getPublications().removeIf(mp -> mp.getPublication() == null);
-
 
             // Reset all geometry IDs
             message.getParts().stream()

@@ -22,6 +22,7 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationService;
+import org.niord.core.publication.vo.PublicationType;
 import org.niord.core.publication.vo.PublicationVo;
 import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
@@ -75,15 +76,16 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @NoCache
     public List<PublicationVo> searchPublications(
             @QueryParam("lang") String lang,
-            @QueryParam("name") @DefaultValue("") String name,
+            @QueryParam("type")PublicationType type,
+            @QueryParam("title") @DefaultValue("") String title,
             @QueryParam("inactive") @DefaultValue("false") boolean inactive,
             @QueryParam("limit") @DefaultValue("1000") int limit) {
 
         DataFilter dataFilter = DataFilter.get().lang(lang);
 
-        return publicationService.searchPublications(lang, name, inactive, limit).stream()
+        return publicationService.searchPublications(lang, type, title, inactive, limit).stream()
                 .map(p -> p.toVo(dataFilter))
-                .sorted(publicationNameComparator(lang))
+                .sorted(publicationTitleComparator(lang))
                 .collect(Collectors.toList());
     }
 
@@ -101,19 +103,19 @@ public class PublicationRestService extends AbstractBatchableRestService {
         return publicationService.getPublications().stream()
                 .limit(limit)
                 .map(p -> p.toVo(dataFilter))
-                .sorted(publicationNameComparator(lang))
+                .sorted(publicationTitleComparator(lang))
                 .collect(Collectors.toList());
     }
 
 
     /** Returns the publication with the given ID */
     @GET
-    @Path("/publication/{id}")
+    @Path("/publication/{publicationId}")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public PublicationVo getPublication(@PathParam("id") Integer id) throws Exception {
-        return publicationService.findById(id)
+    public PublicationVo getPublication(@PathParam("publicationId") String publicationId) throws Exception {
+        return publicationService.findByPublicationId(publicationId)
                 .toVo(DataFilter.get());
     }
 
@@ -135,21 +137,21 @@ public class PublicationRestService extends AbstractBatchableRestService {
 
     /** Updates an existing publication */
     @PUT
-    @Path("/publication/{id}")
+    @Path("/publication/{publicationId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({ "admin" })
     @GZIP
     @NoCache
     public PublicationVo updatePublication(
-            @PathParam("id") Integer id,
+            @PathParam("publicationId") String publicationId,
             PublicationVo publication) throws Exception {
 
-        if (!Objects.equals(id, publication.getId())) {
+        if (!Objects.equals(publicationId, publication.getPublicationId())) {
             throw new WebApplicationException(400);
         }
 
-        log.info("Updating publication " + publication);
+        log.info("Updating publication " + publicationId);
         return publicationService.updatePublication(new Publication(publication))
                 .toVo(DataFilter.get());
     }
@@ -157,14 +159,14 @@ public class PublicationRestService extends AbstractBatchableRestService {
 
     /** Deletes an existing publication */
     @DELETE
-    @Path("/publication/{id}")
+    @Path("/publication/{publicationId}")
     @Consumes("application/json;charset=UTF-8")
     @RolesAllowed({ "admin" })
     @GZIP
     @NoCache
-    public void deletePublication(@PathParam("id") Integer id) throws Exception {
-        log.info("Deleting publication " + id);
-        publicationService.deletePublication(id);
+    public void deletePublication(@PathParam("publicationId") String publicationId) throws Exception {
+        log.info("Deleting publication " + publicationId);
+        publicationService.deletePublication(publicationId);
     }
 
 
@@ -184,10 +186,10 @@ public class PublicationRestService extends AbstractBatchableRestService {
     }
 
     /** Returns a publication name comparator **/
-    private Comparator<PublicationVo> publicationNameComparator(String lang) {
+    private Comparator<PublicationVo> publicationTitleComparator(String lang) {
         return (p1, p2) -> {
-            String n1 = p1.getDesc(lang) != null ? p1.getDesc(lang).getName() : null;
-            String n2 = p2.getDesc(lang) != null ? p2.getDesc(lang).getName() : null;
+            String n1 = p1.getDesc(lang) != null ? p1.getDesc(lang).getTitle() : null;
+            String n2 = p2.getDesc(lang) != null ? p2.getDesc(lang).getTitle() : null;
             return TextUtils.compareIgnoreCase(n1, n2);
         };
     }

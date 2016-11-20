@@ -448,6 +448,7 @@ angular.module('niord.common')
             replace: false,
             scope: {
                 publicationData: "=",
+                type: "=",
                 initId: "=",
                 tabIndex:   "=",
                 publicationChanged: "&"
@@ -473,13 +474,16 @@ angular.module('niord.common')
                         .success(function (publication) {
                             scope.publicationData['publication'] = LangService.sortDescs(publication);
                         })
+                        .error(function () {
+                            console.error("Error looking up publication " + scope.initId);
+                        })
                 }
 
                 /** Refreshes the publication selection **/
                 scope.publications = [];
                 scope.refreshPublications = function (text) {
                     text = text || '';
-                    MessageService.searchPublications(text)
+                    MessageService.searchPublications(text, scope.type)
                         .success(function (publications) {
                             scope.publications = publications;
                         });
@@ -587,11 +591,13 @@ angular.module('niord.common')
                 bgFlag: "="
             },
             link: function(scope, element) {
-                element.addClass("localized");
-                element.css({
-                    background: "white url('/img/flags/" + scope.bgFlag + ".png') no-repeat 99% 0%",
-                    backgroundSize: "auto 14px"
-                });
+                if (scope.bgFlag) {
+                    element.addClass("localized");
+                    element.css({
+                        background: "white url('/img/flags/" + scope.bgFlag + ".png') no-repeat 99% 0%",
+                        backgroundSize: "auto 14px"
+                    });
+                }
             }
         };
     }])

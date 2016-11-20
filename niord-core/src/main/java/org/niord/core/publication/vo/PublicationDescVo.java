@@ -25,7 +25,7 @@ import org.niord.model.ILocalizedDesc;
 public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
 
     String lang;
-    String name;
+    String title;
     String format;
     String link;
 
@@ -33,7 +33,7 @@ public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(name, format, link);
+        return ILocalizedDesc.fieldsDefined(title, format, link);
     }
 
 
@@ -41,9 +41,9 @@ public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
     @Override
     public void copyDesc(ILocalizedDesc localizedDesc) {
         PublicationDescVo desc = (PublicationDescVo)localizedDesc;
-        this.name = desc.getName();
+        this.title = desc.getTitle();
         this.format = desc.getFormat();
-        this.link = desc.getFormat();
+        this.link = desc.getLink();
     }
 
     /*************************/
@@ -60,12 +60,12 @@ public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
         this.lang = lang;
     }
 
-    public String getName() {
-        return name;
+    public String getTitle() {
+        return title;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getFormat() {

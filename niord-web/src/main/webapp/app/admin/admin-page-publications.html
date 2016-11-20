@@ -7,11 +7,24 @@
 
         <!-- Add/edit publication -->
         <div ng-if="publication !== undefined" style="margin-top: 20px">
-            <form name="edit_form" class="form-horizontal">
+            <form name="publicationForm" class="form-horizontal">
 
                <div class="form-controls">
 
-                    <div class="form-group">
+                   <div class="form-group">
+                       <label class="col-sm-4 col-md-2">ID</label>
+                       <div class="col-sm-6 col-md-4 col-lg-2">
+                           <div class="row">
+                               <div class="col-sm-12">
+                                   <input class="form-control input-sm" placeholder="ID" type="text"
+                                          ng-model="publication.publicationId" ng-disabled="editMode == 'edit'"
+                                          autocapitalize="off" autocorrect="off" autocomplete="off" required>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+
+                   <div class="form-group">
                         <label for="active" class="col-sm-4 col-md-2">Active</label>
                         <div class="col-sm-8 col-md-10">
                             <input id="active" type="checkbox" ng-model="publication.active">
@@ -20,28 +33,30 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="internal" class="col-sm-4 col-md-2">Internal</label>
+                        <label class="col-sm-4 col-md-2">Type</label>
                         <div class="col-sm-8 col-md-10">
-                            <input id="internal" type="checkbox" ng-model="publication.internal">
-                            &nbsp;&nbsp;For internal use only
+                            <div class="btn-group" style="margin-right: 20px">
+                                <label class="btn btn-default btn-sm" ng-model="publication.type" uib-btn-radio="'INTERNAL'">Internal</label>
+                                <label class="btn btn-default btn-sm" ng-model="publication.type" uib-btn-radio="'EXTERNAL'">External</label>
+                            </div>
                         </div>
                     </div>
 
                    <div class="form-group">
-                       <label for="messagePublicationLink" class="col-sm-4 col-md-2">Per-message link</label>
+                       <label class="col-sm-4 col-md-2">Localization</label>
                        <div class="col-sm-8 col-md-10">
-                           <input id="messagePublicationLink" type="checkbox" ng-model="publication.messagePublicationLink"
-                                ng-change="messagePublicationLinkUpdated()">
-                           &nbsp;&nbsp;Specify a link for each message
+                           <input type="checkbox" ng-model="publication.languageSpecific"
+                                ng-change="languageSpecificUpdate()">
+                           &nbsp;&nbsp;Language specific
                        </div>
                    </div>
 
                    <div class="form-group">
-                        <label class="col-sm-4 col-md-2">Name</label>
+                        <label class="col-sm-4 col-md-2">Title</label>
                         <div class="col-sm-6 col-md-10">
                             <div class="row">
                                 <div class="col-xs-12 col-sm-6" ng-repeat="desc in publication.descs">
-                                    <input class="form-control input-sm" placeholder="Name" type="text" ng-model="desc.name" ng-required="true"
+                                    <input class="form-control input-sm" placeholder="Title" type="text" ng-model="desc.title" ng-required="true"
                                            bg-flag="desc.lang">
                                 </div>
                             </div>
@@ -52,7 +67,7 @@
                        <label class="col-sm-4 col-md-2">Format</label>
                        <div class="col-sm-6 col-md-10">
                            <div class="row">
-                               <div class="col-sm-12" ng-repeat="desc in publication.descs">
+                               <div class="col-sm-12 col-md-6" ng-repeat="desc in publication.descs">
                                    <input class="form-control input-sm" placeholder="Format" type="text" ng-model="desc.format"
                                           bg-flag="desc.lang">
                                </div>
@@ -60,11 +75,11 @@
                        </div>
                    </div>
 
-                   <div class="form-group" ng-if="!publication.messagePublicationLink">
+                   <div class="form-group">
                        <label class="col-sm-4 col-md-2">Link</label>
                        <div class="col-sm-6 col-md-10">
                            <div class="row">
-                               <div class="col-sm-12" ng-repeat="desc in publication.descs">
+                               <div class="col-sm-12 col-md-6" ng-repeat="desc in publication.descs">
                                    <input class="form-control input-sm" placeholder="Link" type="text" ng-model="desc.link"
                                           bg-flag="desc.lang">
                                </div>
@@ -79,7 +94,8 @@
                         <button type="submit" class="btn btn-default btn-sm" ng-click="loadPublications()">
                             Cancel
                         </button>
-                        <button type="submit" class="btn btn-primary btn-sm" ng-click="savePublication(publication)">
+                        <button type="submit" class="btn btn-primary btn-sm" ng-click="savePublication(publication)"
+                                ng-disabled="publicationForm.$pristine || publicationForm.$invalid">
                             <span class="glyphicon glyphicon-floppy-disk"></span>
                             Save Publication
                         </button>
@@ -126,8 +142,8 @@
                         </tr>
                         <tr ng-repeat="publication in publications | filter:searchFilter">
                             <td><input type="checkbox" ng-model="publication.active" readonly disabled></td>
-                            <td><input type="checkbox" ng-model="publication.internal" readonly disabled></td>
-                            <td>{{publication.descs[0].name}}</td>
+                            <td>{{publication.type | lowercase}}</td>
+                            <td>{{publication.descs[0].title}}</td>
                             <td nowrap>
                                 <a href ng-click="editPublication(publication);" title="Edit Publication"><i class="glyphicon glyphicon-pencil"></i></a>
                                 &nbsp;

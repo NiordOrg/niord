@@ -38,18 +38,15 @@ import java.util.List;
  * <pre>
  * [
  *   {
+ *     "publicationId": "dk-harbour-pilot",
+ *     "type": "EXTERNAL",
  *     "active": true,
- *     "internal": false,
+ *     "languageSpecific": false,
  *     "descs": [
  *       {
  *         "name": "Den danske Havnelods",
- *         "format": "<a href=\"www.danskehavnelods.dk\" target=\"_blank\">www.danskehavnelods.dk</a>",
- *         "lang": "da"
- *       },
- *       {
- *         "name": "The Danish Habour Pilot",
- *         "format": "<a href=\"www.danskehavnelods.dk\" target=\"_blank\">www.danskehavnelods.dk</a>",
- *         "lang": "en"
+ *         "link": "http://www.danskehavnelods.dk",
+ *         "format": "www.danskehavnelods.dk",
  *       }
  *     ]
  *   },

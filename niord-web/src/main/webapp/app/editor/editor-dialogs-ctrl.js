@@ -24,18 +24,20 @@ angular.module('niord.editor')
      * Controller that handles the message publications dialog
      *******************************************************************/
     .controller('MessagePublicationsDialogCtrl', ['$scope', 'MessageService', 'LangService',
-                'message', 'publicationId', 'lang',
+                'message', 'type', 'publicationId', 'lang',
         function ($scope, MessageService, LangService,
-                message, publicationId, lang) {
+                message, type, publicationId, lang) {
             'use strict';
 
             $scope.message = message;
             // Create pruned version of the message
             $scope.messageTemplate = {
                 descs: message.descs.map(function (desc) {
-                    return { lang: desc.lang, publication: desc.publication }
+                    return { lang: desc.lang, publication: desc.publication, internalPublication: desc.internalPublication }
                 })
             };
+
+            $scope.type = type;
             $scope.publicationId = publicationId;
             $scope.pub = {
                 parameters: undefined,
@@ -63,7 +65,7 @@ angular.module('niord.editor')
                 delete $scope.pub.parameters;
                 delete $scope.pub.link;
                 if ($scope.pub.publication) {
-                    MessageService.extractMessagePublication($scope.messageTemplate, $scope.pub.publication.id, lang)
+                    MessageService.extractMessagePublication($scope.messageTemplate, $scope.pub.publication.publicationId, lang)
                         .success(function (msgPub) {
                            if (msgPub) {
                                $scope.pub.parameters = msgPub.parameters;
@@ -77,13 +79,14 @@ angular.module('niord.editor')
             /** Called when the publication should be updated for the message **/
             $scope.updatePublication = function () {
                 if ($scope.pub.publication) {
-                    MessageService.updateMessagePublications($scope.messageTemplate, $scope.pub.publication.id, $scope.pub.parameters, $scope.pub.link)
+                    MessageService.updateMessagePublications($scope.messageTemplate, $scope.pub.publication.publicationId, $scope.pub.parameters, $scope.pub.link)
                         .success(function (msg) {
                             if (msg) {
                                 angular.forEach(msg.descs, function (desc) {
                                     var origDesc = LangService.descForLanguage($scope.message, desc.lang);
                                     if (origDesc) {
                                         origDesc.publication = desc.publication;
+                                        origDesc.internalPublication = desc.internalPublication;
                                     }
                                 })
                             }

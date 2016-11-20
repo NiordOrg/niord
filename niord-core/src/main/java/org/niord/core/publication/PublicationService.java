@@ -17,11 +17,13 @@
 package org.niord.core.publication;
 
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.publication.vo.PublicationType;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,12 +41,18 @@ public class PublicationService extends BaseService {
 
 
     /**
-     * Returns the publication with the given ID
-     * @param id the ID
-     * @return the publication with the given ID or null if not found
+     * Returns the publication with the given publication ID
+     * @param publication the publication ID
+     * @return the publication with the given publication ID or null if not found
      */
-    public Publication findById(Integer id) {
-        return getByPrimaryKey(Publication.class, id);
+    public Publication findByPublicationId(String publication) {
+        try {
+            return em.createNamedQuery("Publication.findByPublicationId", Publication.class)
+                    .setParameter("publicationId", publication)
+                    .getSingleResult();
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 
 
@@ -57,7 +65,7 @@ public class PublicationService extends BaseService {
      * @param limit the maximum number of results
      * @return the search result
      */
-    public List<Publication> searchPublications(String lang, String term, boolean inactive, int limit) {
+    public List<Publication> searchPublications(String lang, PublicationType type, String term, boolean inactive, int limit) {
 
         term = StringUtils.defaultIfBlank(term, "");
 
@@ -67,9 +75,17 @@ public class PublicationService extends BaseService {
             activeFlag.add(Boolean.FALSE);
         }
 
+        Set<PublicationType> types = new HashSet<>();
+        if (type != null) {
+            types.add(type);
+        } else {
+            types.addAll(Arrays.asList(PublicationType.values()));
+        }
+
         return em
                 .createNamedQuery("Publication.searchPublications", Publication.class)
                 .setParameter("active", activeFlag)
+                .setParameter("types", types)
                 .setParameter("lang", lang)
                 .setParameter("term", "%" + term.toLowerCase() + "%")
                 .getResultList()
@@ -78,59 +94,6 @@ public class PublicationService extends BaseService {
                 .collect(Collectors.toList());
     }
 
-
-    /**
-     * Returns the publication with the given name or null if not found
-     *
-     * @param lang the search language
-     * @param name the search name
-     * @return the publication with the given name or null if not found
-     */
-    public Publication findByName(String lang, String name) {
-
-        if (StringUtils.isNotBlank(name)) {
-            try {
-                return em
-                        .createNamedQuery("Publication.findByName", Publication.class)
-                        .setParameter("lang", lang)
-                        .setParameter("name", name.toLowerCase())
-                        .getSingleResult();
-            } catch (Exception ignored) {
-            }
-        }
-        return null;
-    }
-
-
-    /**
-     * Ensures that the template publication exists.
-     *
-     * @param templatePublication the template publication
-     * @param create whether to create a missing publication or just find it
-     * @return the publication
-     */
-    public Publication findOrCreatePublication(Publication templatePublication, Boolean create) {
-
-        if (templatePublication == null) {
-            return null;
-        }
-
-        // Search for the publication by name
-        for (PublicationDesc desc : templatePublication.getDescs()) {
-            Publication publication = findByName(desc.getLang(), desc.getName());
-            if (publication != null) {
-                return publication;
-            }
-        }
-
-        // If not found, and requested, create the publication
-        if (create) {
-            templatePublication.setId(null);
-            return createPublication(templatePublication);
-        }
-
-        return null;
-    }
 
     /**
      * Returns the list of publications
@@ -147,7 +110,7 @@ public class PublicationService extends BaseService {
      * @return the updated publication
      */
     public Publication updatePublication(Publication publication) {
-        Publication original = findById(publication.getId());
+        Publication original = findByPublicationId(publication.getPublicationId());
         if (original == null) {
             throw new IllegalArgumentException("Cannot update non-existing publication "
                     + publication.getId());
@@ -155,8 +118,8 @@ public class PublicationService extends BaseService {
 
         // Copy the publication data
         original.setActive(publication.isActive());
-        original.setInternal(publication.isInternal());
-        original.setMessagePublicationLink(publication.isMessagePublicationLink());
+        original.setType(publication.getType());
+        original.setLanguageSpecific(publication.isLanguageSpecific());
         original.getDescs().clear();
         original.copyDescsAndRemoveBlanks(publication.getDescs());
 
@@ -181,11 +144,11 @@ public class PublicationService extends BaseService {
 
     /**
      * Deletes the publication with the given ID
-     * @param id the id of the publication to delete
+     * @param publicationId the id of the publication to delete
      */
-    public boolean deletePublication(Integer id) {
+    public boolean deletePublication(String publicationId) {
 
-        Publication publication = findById(id);
+        Publication publication = findByPublicationId(publicationId);
         if (publication != null) {
             remove(publication);
             return true;

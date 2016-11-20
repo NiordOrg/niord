@@ -144,11 +144,6 @@ angular.module('niord.editor')
                     LangService.checkDescs(ref, initReferenceDescField, undefined, $rootScope.modelLanguages);
                 });
 
-                // Ensure that the message publications list is defined
-                if (!msg.publications) {
-                    msg.publications = [];
-                }
-
                 // Update the attachment upload url
                 $scope.attachmentUploadUrl =  MessageService.attachmentUploadRepoPath(msg);
                 // Ensure that localized attachment desc fields are defined for all languages
@@ -455,23 +450,13 @@ angular.module('niord.editor')
             };
 
 
-            /** Publication DnD configuration **/
-            $scope.publicationsSortableCfg = {
-                group: 'publication',
-                handle: '.move-btn',
-                onEnd: function() {
-                    $scope.adjustEditableMessage();
-                    $scope.setDirty();
-                }
-            };
-
-
             /** Allows the user to edit or insert publications **/
             $scope.editPublications = function (editor) {
-                // The ID of the parent div has the format "publication-<<lang>>"
+                // The ID of the parent div has the format "internal/external-publication-<<lang>>"
                 var parentDivId = editor.getElement().parentElement.id;
                 var id = parentDivId.split("-");
-                var lang = id[1];
+                var type = id[0].toUpperCase();
+                var lang = id[2];
 
                 // Check if the cursor is within a publication span
                 var publicationId = null;
@@ -482,7 +467,7 @@ angular.module('niord.editor')
                 }
 
                 $scope.$apply(function() {
-                    MessageService.messagePublicationsDialog($scope.message, publicationId, lang);
+                    MessageService.messagePublicationsDialog($scope.message, type, publicationId, lang);
                 });
             };
 
@@ -505,43 +490,6 @@ angular.module('niord.editor')
                     });
                 },
                 init_instance_callback : $scope.fixTinyMCETabIndex
-            };
-
-
-            /** Returns whether or not to display a parameter field for the message publication **/
-            $scope.hasPublicationParams = function (pub) {
-                if (pub && pub.publication && pub.publication.descs) {
-                    for (var x = 0; x < pub.publication.descs.length; x++) {
-                        var desc = pub.publication.descs[x];
-                        if (desc && desc.format && desc.format.indexOf('${parameters}') !== -1) {
-                            return true;
-                        }
-                    }
-                }
-                return false;
-            };
-
-
-            /** Adds the new publication to the list of message publications **/
-            $scope.addPublication = function () {
-                var pub = {
-                    publication: undefined,
-                    parameters: ''
-                };
-                $scope.message.publications.push(pub);
-                $timeout(function () {
-                    $('.pub-field:last').find('input').focus();
-                }, 100)
-            };
-
-
-            /** Deletes the given publication from the list of message publications **/
-            $scope.deletePublication = function (pub) {
-                if ($.inArray(pub, $scope.message.publications) > -1) {
-                    $scope.message.publications.splice( $.inArray(pub, $scope.message.publications), 1 );
-                    $scope.adjustEditableMessage();
-                    $scope.setDirty();
-                }
             };
 
 
@@ -656,8 +604,6 @@ angular.module('niord.editor')
                     descs: msg.descs.map(function (desc) {
                        return { lang: desc.lang, subject: desc.subject, vicinity: desc.vicinity }
                     }),
-                    autoPublication: msg.autoPublication,
-                    publications: msg.publications,
                     autoSource: msg.autoSource,
                     sources: msg.sources,
                     parts: msg.parts.map(function (part) {
@@ -674,14 +620,11 @@ angular.module('niord.editor')
 
                         $scope.setEditorFields(message.editorFields);
 
-                        if (msg.autoTitle || msg.autoPublication) {
+                        if (msg.autoTitle) {
                             angular.forEach(message.descs, function (desc) {
                                 var d = LangService.descForLanguage($scope.message, desc.lang);
                                 if (d && msg.autoTitle) {
                                     d.title = desc.title;
-                                }
-                                if (d && msg.autoPublication) {
-                                    d.publication = desc.publication;
                                 }
                                 if (d && msg.autoSource) {
                                     d.source = desc.source;

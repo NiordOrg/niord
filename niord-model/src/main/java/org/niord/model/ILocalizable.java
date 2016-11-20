@@ -86,7 +86,7 @@ public interface ILocalizable<D extends ILocalizedDesc> {
     default D getDesc(String lang) {
         if (getDescs() != null) {
             return getDescs().stream()
-                    .filter(desc -> desc.getLang().equalsIgnoreCase(lang))
+                    .filter(desc -> desc.getLang() == null || desc.getLang().equalsIgnoreCase(lang))
                     .findFirst()
                     .orElse(null);
         }

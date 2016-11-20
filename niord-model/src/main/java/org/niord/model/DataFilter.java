@@ -152,7 +152,7 @@ public class DataFilter {
      * @return if the given language should be include
      */
     public boolean includeLang(String lang) {
-        return this.lang == null || Objects.equals(this.lang, lang);
+        return this.lang == null || lang == null || Objects.equals(this.lang, lang);
     }
 
 

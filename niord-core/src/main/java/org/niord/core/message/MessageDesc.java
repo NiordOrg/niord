@@ -39,6 +39,9 @@ public class MessageDesc extends DescEntity<Message> {
     @Column(length = 2048)
     String publication;
 
+    @Column(length = 2048)
+    String internalPublication;
+
     @Column(length = 1024)
     String source;
 
@@ -64,6 +67,7 @@ public class MessageDesc extends DescEntity<Message> {
             this.title = trunc(desc.getTitle(), 1024);
             this.vicinity = trunc(desc.getVicinity(), 256);
             this.publication = trunc(desc.getPublication(), 2048);
+            this.internalPublication = trunc(desc.getInternalPublication(), 2048);
             this.source = trunc(desc.getSource(), 1024);
         }
     }
@@ -80,6 +84,7 @@ public class MessageDesc extends DescEntity<Message> {
         if (!compFilter.includeField("title")) {
             desc.setVicinity(vicinity);
             desc.setPublication(publication);
+            desc.setInternalPublication(internalPublication);
             desc.setSource(source);
         }
         return desc;
@@ -89,7 +94,7 @@ public class MessageDesc extends DescEntity<Message> {
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(title, vicinity, publication, source);
+        return ILocalizedDesc.fieldsDefined(title, vicinity, publication, internalPublication, source);
     }
 
 
@@ -101,6 +106,7 @@ public class MessageDesc extends DescEntity<Message> {
         this.title = desc.getTitle();
         this.vicinity = desc.getVicinity();
         this.publication = desc.getPublication();
+        this.internalPublication = desc.getInternalPublication();
         this.source = desc.getSource();
     }
 
@@ -130,6 +136,14 @@ public class MessageDesc extends DescEntity<Message> {
 
     public void setPublication(String publication) {
         this.publication = publication;
+    }
+
+    public String getInternalPublication() {
+        return internalPublication;
+    }
+
+    public void setInternalPublication(String internalPublication) {
+        this.internalPublication = internalPublication;
     }
 
     public String getSource() {

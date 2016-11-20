@@ -19,7 +19,6 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.category.Category;
 import org.niord.core.chart.Chart;
-import org.niord.core.message.vo.MessagePublicationVo;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.model.DescEntity;
 import org.niord.core.model.VersionedEntity;
@@ -59,7 +58,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -217,14 +215,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     // Indicates if the title should automatically be updated from the message area, subject and vicinity fields.
     boolean autoTitle;
 
-    // Indicates if the publication should updated automatically.
-    boolean autoPublication;
-
-    // List of message publications
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "message", orphanRemoval = true)
-    @OrderColumn(name = "indexNo")
-    List<MessagePublication> publications = new ArrayList<>();
-
     // Not very normalized, but makes it easier to perform searches
     boolean hasGeometry;
 
@@ -318,16 +308,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         if (message instanceof SystemMessageVo) {
             SystemMessageVo sysMessage = (SystemMessageVo) message;
             this.autoTitle = sysMessage.isAutoTitle() != null && sysMessage.isAutoTitle();
-            this.autoPublication = sysMessage.isAutoPublication() != null && sysMessage.isAutoPublication();
             this.revision = sysMessage.getRevision();
             this.thumbnailPath = sysMessage.getThumbnailPath();
             this.separatePage = sysMessage.getSeparatePage();
-
-            if (sysMessage.getPublications() != null) {
-                sysMessage.getPublications().stream()
-                        .filter(MessagePublicationVo::publicationDefined)
-                        .forEach(pub -> addPublication(new MessagePublication(pub)));
-            }
         }
 
         updateEventDateInterval();
@@ -376,9 +359,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             systemMessage.setRepoPath(repoPath);
             systemMessage.setThumbnailPath(thumbnailPath);
             systemMessage.setAutoTitle(autoTitle);
-            systemMessage.setAutoPublication(autoPublication);
             systemMessage.setSeparatePage(separatePage);
-            publications.forEach(p -> systemMessage.checkCreatePublications().add(p.toVo(filter)));
 
             message.sort(filter.getLang());
 
@@ -461,7 +442,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     /** Updates all auto-generated fields **/
     public void updateAutoMessageFields() {
         updateMessageTitle();
-        updateMessagePublication();
     }
 
 
@@ -511,36 +491,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             });
 
         }
-    }
-
-
-    /** Updates the external publications text from the nested publications */
-    public void updateMessagePublication() {
-        if (autoPublication) {
-            // Process all languages
-            getDescs().forEach(desc -> desc.setPublication(computeMessagePublication(desc.getLang(), true, false)));
-        }
-    }
-
-
-    /**
-     * Computes the message publication text
-     * @param lang the language
-     * @param includeExternal whether to include external publications or not
-     * @param includeInternal whether to include internal publications or not
-     * @return the message publication text
-     */
-    public String computeMessagePublication(String lang, boolean includeExternal, boolean includeInternal) {
-        MessageDesc desc = getDesc(lang);
-        if (desc != null) {
-            String publication = publications.stream()
-                    .map(pub -> pub.computeMessagePublication(desc.getLang(), includeExternal, includeInternal))
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.joining(" "));
-
-            return StringUtils.trimToNull(publication);
-        }
-        return null;
     }
 
 
@@ -665,14 +615,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         attachment.setMessage(this);
         attachments.add(attachment);
         return attachment;
-    }
-
-
-    /** Adds a message publication to this message */
-    public MessagePublication addPublication(MessagePublication publication) {
-        publication.setMessage(this);
-        publications.add(publication);
-        return publication;
     }
 
 
@@ -911,22 +853,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setAutoTitle(boolean autoTitle) {
         this.autoTitle = autoTitle;
-    }
-
-    public boolean isAutoPublication() {
-        return autoPublication;
-    }
-
-    public void setAutoPublication(boolean autoPublication) {
-        this.autoPublication = autoPublication;
-    }
-
-    public List<MessagePublication> getPublications() {
-        return publications;
-    }
-
-    public void setPublications(List<MessagePublication> publications) {
-        this.publications = publications;
     }
 
     @Override

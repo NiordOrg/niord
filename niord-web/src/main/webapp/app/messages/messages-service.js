@@ -170,26 +170,17 @@ angular.module('niord.messages')
             },
 
 
-            /** Computes the message publication field for the given message */
-            computeMessagePublication: function (msg, includeExternal, includeInternal, lang) {
-                lang = lang || $rootScope.language;
-                var params = 'lang=' + lang + '&includeExternal=' + includeExternal
-                            + '&includeInternal=' + includeInternal;
-                return $http.post('/rest/messages/compute-publication?' + params, msg);
-            },
-
-
             /** Extracts the message publication from the message */
             extractMessagePublication: function (msg, publicationId, lang) {
                 lang = lang || $rootScope.language;
-                var params = 'lang=' + lang + '&publicationId=' + publicationId;
+                var params = 'lang=' + lang + '&publicationId=' + encodeURIComponent(publicationId);
                 return $http.post('/rest/messages/extract-message-publication?' + params, msg);
             },
 
 
             /** Updates the message publications with the given parameters and link */
             updateMessagePublications: function (msg, publicationId, parameters, link) {
-                var params = 'publicationId=' + publicationId;
+                var params = 'publicationId=' + encodeURIComponent(publicationId);
                 if (parameters) {
                     params += '&parameters=' + encodeURIComponent(parameters);
                 }
@@ -220,9 +211,15 @@ angular.module('niord.messages')
 
 
             /** Returns all publications */
-            searchPublications: function(name) {
-                return $http.get('/rest/publications/search?lang=' + $rootScope.language
-                                + '&name=' + encodeURIComponent(name), false);
+            searchPublications: function(title, type) {
+                var params = 'lang=' + $rootScope.language;
+                if (title) {
+                    params += '&title=' + encodeURIComponent(title);
+                }
+                if (type) {
+                    params += '&type=' + type;
+                }
+                return $http.get('/rest/publications/search?' + params);
             },
 
 
@@ -408,13 +405,14 @@ angular.module('niord.messages')
 
 
             /** Opens the message source dialog */
-            messagePublicationsDialog: function (message, publicationId, lang) {
+            messagePublicationsDialog: function (message, type, publicationId, lang) {
                 return $uibModal.open({
                     templateUrl: '/app/editor/format-publications-dialog.html',
                     controller: 'MessagePublicationsDialogCtrl',
                     size: 'md',
                     resolve: {
                         message: function () { return message },
+                        type: function () { return type },
                         publicationId: function () { return publicationId },
                         lang: function () { return lang; }
                     }

@@ -26,7 +26,7 @@ import javax.xml.bind.annotation.XmlType;
  * The message description VO
  */
 @ApiModel(value = "MessageDesc", description = "Translatable fields of the Message model")
-@XmlType(propOrder = { "title", "vicinity", "publication", "source" })
+@XmlType(propOrder = { "title", "vicinity", "publication", "internalPublication", "source" })
 @SuppressWarnings("unused")
 public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
 
@@ -34,12 +34,13 @@ public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
     String title;
     String vicinity;
     String publication;
+    String internalPublication;
     String source;
 
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(title, vicinity, publication, source );
+        return ILocalizedDesc.fieldsDefined(title, vicinity, publication, internalPublication, source );
     }
 
     /** {@inheritDoc} */
@@ -49,6 +50,7 @@ public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
         this.title = desc.getTitle();
         this.vicinity = desc.getVicinity();
         this.publication = desc.getPublication();
+        this.internalPublication = desc.getInternalPublication();
         this.source = desc.getSource();
     }
 
@@ -89,6 +91,14 @@ public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
 
     public void setPublication(String publication) {
         this.publication = publication;
+    }
+
+    public String getInternalPublication() {
+        return internalPublication;
+    }
+
+    public void setInternalPublication(String internalPublication) {
+        this.internalPublication = internalPublication;
     }
 
     public String getSource() {

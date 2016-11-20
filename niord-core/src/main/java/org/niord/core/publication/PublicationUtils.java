@@ -21,9 +21,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.niord.core.message.vo.MessagePublicationVo;
 import org.niord.core.publication.vo.PublicationDescVo;
+import org.niord.core.publication.vo.PublicationType;
 import org.niord.core.publication.vo.PublicationVo;
 import org.niord.core.util.TextUtils;
-import org.niord.model.message.MessageDescVo;
 import org.niord.model.message.MessageVo;
 
 import java.util.Objects;
@@ -43,17 +43,21 @@ public class PublicationUtils {
      */
     public static MessagePublicationVo extractMessagePublication(MessageVo message, PublicationVo publication, String lang) {
         // Sanity check
-        if (message == null || publication == null || publication.getDesc(lang) == null ||
-                message.getDesc(lang) == null || StringUtils.isBlank(message.getDesc(lang).getPublication())) {
+        if (message == null || publication == null || publication.getDesc(lang) == null || message.getDesc(lang) == null) {
             return null;
         }
 
-        String pubHtml = message.getDesc(lang).getPublication();
+        boolean internal = publication.getType() == PublicationType.INTERNAL;
+        String pubHtml = internal ? message.getDesc(lang).getInternalPublication() : message.getDesc(lang).getPublication();
+        if (StringUtils.isBlank(pubHtml)) {
+            return null;
+        }
+
         PublicationDescVo pubDesc = publication.getDesc(lang);
 
         Document doc = Jsoup.parseBodyFragment(pubHtml);
 
-        String pubAttr = "[publication=" + publication.getId() + "]";
+        String pubAttr = "[publication=" + publication.getPublicationId() + "]";
         Element e = doc.select("a" + pubAttr + ",span" + pubAttr).first();
         if (e != null) {
             MessagePublicationVo msgPub = new MessagePublicationVo();
@@ -63,6 +67,11 @@ public class PublicationUtils {
                 msgPub.setLink(link);
             }
             String text = TextUtils.removeTrailingDot(e.html());
+
+            // Internal publications have brackets around them
+            if (internal && text.startsWith("[") && text.endsWith("]")) {
+                text = text.substring(1, text.length() - 1);
+            }
 
             String format = pubDesc.getFormat();
             if (StringUtils.isNotBlank(text) && StringUtils.isNotBlank(format) && format.contains("${parameters}")) {
@@ -95,28 +104,37 @@ public class PublicationUtils {
             return null;
         }
 
-        publication.getDescs().forEach(pubDesc -> {
+        boolean internal = publication.getType() == PublicationType.INTERNAL;
+
+        message.getDescs().forEach(msgDesc -> {
+
+            PublicationDescVo pubDesc = publication.getDesc(msgDesc.getLang());
 
             String updatedPubHtml = computeMessagePublication(publication, parameters, link, pubDesc.getLang());
 
-            MessageDescVo msgDesc = message.checkCreateDesc(pubDesc.getLang());
-            String pubHtml = msgDesc.getPublication();
+            String pubHtml = internal
+                    ? msgDesc.getInternalPublication()
+                    : msgDesc.getPublication();
             pubHtml = StringUtils.defaultIfBlank(pubHtml, "");
 
             Document doc = Jsoup.parseBodyFragment(pubHtml);
-            String pubAttr = "[publication=" + publication.getId() + "]";
+            String pubAttr = "[publication=" + publication.getPublicationId() + "]";
             Element e = doc.select("a" + pubAttr + ",span" + pubAttr).first();
             if (e != null) {
                 // TODO: Is there a better way to replace an element?
                 e.replaceWith(Jsoup.parse(updatedPubHtml).body().child(0));
-                msgDesc.setPublication(doc.body().html());
+                pubHtml = doc.body().html();
             } else {
                 pubHtml += " " + updatedPubHtml;
-                msgDesc.setPublication(pubHtml.trim());
             }
             // Lastly, clean up html for artifacts often added by TinyMCE
-            if (StringUtils.isNotBlank(msgDesc.getPublication())) {
-                msgDesc.setPublication(msgDesc.getPublication().replace("<p>", "").replace("</p>", ""));
+            if (StringUtils.isNotBlank(pubHtml)) {
+                pubHtml = pubHtml.replace("<p>", "").replace("</p>", "").trim();
+                if (internal) {
+                    msgDesc.setInternalPublication(pubHtml);
+                } else {
+                    msgDesc.setPublication(pubHtml);
+                }
             }
         });
 
@@ -137,7 +155,7 @@ public class PublicationUtils {
         if (desc != null && StringUtils.isNotBlank(desc.getFormat())) {
             String params = StringUtils.defaultIfBlank(parameters, "");
             result = desc.getFormat().replace("${parameters}", params);
-            if (publication.isInternal()) {
+            if (publication.getType() == PublicationType.INTERNAL) {
                 result = "[" + result + "]";
             }
             result = TextUtils.trailingDot(result);
@@ -147,52 +165,17 @@ public class PublicationUtils {
             if (StringUtils.isNotBlank(href)) {
                 result = String.format(
                         "<a publication=\"%s\" href=\"%s\" target=\"_blank\">%s</a>",
-                        publication.getId(),
+                        publication.getPublicationId(),
                         href,
                         result);
             } else {
                 result = String.format(
                         "<span publication=\"%s\">%s</span>",
-                        publication.getId(),
+                        publication.getPublicationId(),
                         result);
             }
         }
 
         return result;
-    }
-
-
-    /** Testing **/
-    public static void main(String[] args) {
-        MessageVo msg = new MessageVo();
-        msg.checkCreateDesc("da").setPublication("<a publication=\"475\" href=\"http://www.danskehavnelods.dk\" target=\"_blank\">www.danskehavnelods.dk.</a> <a publication=\"499\" href=\"http://www.soefartsstyrelsen.dk/SikkerhedTilSoes/Sejladsinformation/EfS/ThisYear2/Skydebilag%202016%20DK.pdf\" target=\"_blank\">Oversigt over forsvarets skydepladser 2016, punkt 17, 18.</a>");
-        msg.checkCreateDesc("en").setPublication("<a publication=\"475\" href=\"http://www.danskehavnelods.dk\" target=\"_blank\">www.danskehavnelods.dk.</a> <a publication=\"499\" href=\"http://www.soefartsstyrelsen.dk/SikkerhedTilSoes/Sejladsinformation/EfS/ThisYear2/Skydebilag%202016%20UK.pdf\" target=\"_blank\">Danish List of Firing Practice Areas, section 17, 18.</a>");
-
-        PublicationVo pub = new PublicationVo();
-        pub.setId(475);
-        pub.checkCreateDesc("da").setLink("http://www.danskehavnelods.dk");
-        pub.getDesc("da").setFormat("www.danskehavnelods.dk");
-        pub.checkCreateDesc("en").setLink("http://www.danskehavnelods.dk");
-        pub.getDesc("en").setFormat("www.danskehavnelods.dk");
-        System.out.println("Msg Pub: " + extractMessagePublication(msg, pub, "da"));
-
-        pub = new PublicationVo();
-        pub.setId(499);
-        pub.checkCreateDesc("da").setLink("http://www.soefartsstyrelsen.dk/SikkerhedTilSoes/Sejladsinformation/EfS/ThisYear2/Skydebilag%202016%20DK.pdf");
-        pub.getDesc("da").setFormat("Oversigt over forsvarets skydepladser 2016, punkt ${parameters}");
-        pub.checkCreateDesc("en").setLink("http://www.soefartsstyrelsen.dk/SikkerhedTilSoes/Sejladsinformation/EfS/ThisYear2/Skydebilag%202016%20UK.pdf");
-        pub.getDesc("en").setFormat("Danish List of Firing Practice Areas, section ${parameters}");
-        System.out.println("Msg Pub: " + extractMessagePublication(msg, pub, "da"));
-
-
-        updateMessagePublications(msg, pub, "17, 18, 19", null);
-        msg.getDescs().forEach(d -> System.out.println("MsgPub[" + d.getLang() + "]: " + d.getPublication()));
-
-        pub = new PublicationVo();
-        pub.setId(480);
-        pub.checkCreateDesc("da").setFormat("J.nr. ${parameters}");
-        pub.checkCreateDesc("en").setFormat("J.no ${parameters}");
-        updateMessagePublications(msg, pub, "235434242", "http://www.google.dk");
-        msg.getDescs().forEach(d -> System.out.println("MsgPub[" + d.getLang() + "]: " + d.getPublication()));
     }
 }

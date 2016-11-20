@@ -220,45 +220,32 @@ angular.module('niord.messages')
      * Renders the message publication and, optionally, allows the
      * user to see the internal publication links as well
      ****************************************************************/
-    .directive('renderMessagePublication', ['$rootScope', 'LangService', 'MessageService',
-        function ($rootScope, LangService, MessageService) {
+    .directive('renderMessagePublication', ['$rootScope', 'LangService',
+        function ($rootScope, LangService) {
 
         return {
             restrict: 'E',
-            templateUrl: '/app/messages/render-message-publication.html',
+            template: '<span class="message-publication" ng-bind-html="publication | toTrusted"></span>',
             scope: {
                 msg: "=",
-                lang: "=",
-                includeInternal: "="
+                lang: "="
             },
             link: function(scope) {
 
-                scope.includeInternalPublications = scope.includeInternal && $rootScope.isLoggedIn;
                 scope.lang = scope.lang || $rootScope.language;
                 scope.publication = '';
-                scope.internalPublication = '';
-                scope.showInternal = false;
 
                 scope.updatePublication = function () {
                     scope.publication = '';
-                    scope.internalPublication = '';
-                    scope.showInternal = false;
 
                     if (scope.msg) {
                         var desc = LangService.desc(scope.msg, scope.lang);
-                        if (desc.publication) {
+                        if (desc && desc.publication) {
                             scope.publication = desc.publication;
                         }
-                    }
-                };
-
-                scope.toggleShowInternal = function () {
-                    scope.showInternal = !scope.showInternal;
-                    if (scope.showInternal) {
-                        MessageService.computeMessagePublication(scope.msg, false, true, scope.lang)
-                            .success(function (internalPublication) {
-                                scope.internalPublication = internalPublication;
-                            })
+                        if (desc && desc.internalPublication && $rootScope.isLoggedIn) {
+                            scope.publication += ' ' + desc.internalPublication;
+                        }
                     }
                 };
 

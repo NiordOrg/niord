@@ -165,7 +165,7 @@ angular.module('niord.admin')
 
             /** Returns the details for the given publication **/
             getPublicationDetails: function (publication) {
-                return $http.get('/rest/publications/publication/' + publication.id);
+                return $http.get('/rest/publications/publication/' + publication.publicationId);
             },
 
 
@@ -177,13 +177,13 @@ angular.module('niord.admin')
 
             /** Updates the given publication **/
             updatePublication: function(publication) {
-                return $http.put('/rest/publications/publication/' + publication.id, publication);
+                return $http.put('/rest/publications/publication/' + publication.publicationId, publication);
             },
 
 
             /** Deletes the given publication **/
             deletePublication: function(publication) {
-                return $http['delete']('/rest/publications/publication/' + publication.id);
+                return $http['delete']('/rest/publications/publication/' + publication.publicationId);
             }
 
         };
