@@ -626,7 +626,6 @@ angular.module('niord.messages')
                 scope.attachmentsAbove = [];
                 scope.attachmentsBelow = [];
                 scope.showAttachments = scope.compact || false;
-                scope.internalPublications = $rootScope.isLoggedIn && scope.format == 'details';
 
 
                 // Returns if the given message is selected or not
