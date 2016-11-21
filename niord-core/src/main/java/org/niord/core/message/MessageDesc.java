@@ -84,8 +84,10 @@ public class MessageDesc extends DescEntity<Message> {
         if (!compFilter.includeField("title")) {
             desc.setVicinity(vicinity);
             desc.setPublication(publication);
-            desc.setInternalPublication(internalPublication);
             desc.setSource(source);
+            if (filter.userInRole("editor")) {
+                desc.setInternalPublication(internalPublication);
+            }
         }
         return desc;
     }

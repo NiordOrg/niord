@@ -25,6 +25,7 @@ import org.niord.core.keycloak.KeycloakIntegrationService;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.vo.GroupVo;
 import org.niord.core.user.vo.UserVo;
+import org.niord.model.DataFilter.UserResolver;
 import org.slf4j.Logger;
 
 import javax.annotation.Resource;
@@ -136,6 +137,15 @@ public class UserService extends BaseService {
         return user;
     }
 
+
+    /**
+     * Returns a user resolver that, for the duration of the current transaction only,
+     * may be used by a DataFilter to check the current user.
+     * @return a user resolver
+     */
+    public UserResolver userResolver() {
+        return new CurrentTransactionUserResolver(this);
+    }
 
     /**
      * Test if the caller has a given security role.

@@ -15,6 +15,7 @@
  */
 package org.niord.model;
 
+import java.security.Principal;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
@@ -48,6 +49,7 @@ public class DataFilter {
     public static final String GEOMETRY     = "geometry";
     public static final String DETAILS      = "details";
 
+    private UserResolver user;
     private Set<String> fields = new HashSet<>();
     private String lang;
 
@@ -65,6 +67,7 @@ public class DataFilter {
     private DataFilter(DataFilter other) {
         this.lang = other.lang;
         this.fields.addAll(other.fields);
+        this.user = other.user;
     }
 
 
@@ -104,6 +107,19 @@ public class DataFilter {
     }
 
 
+    /**
+     * Returns a new DataFilter instance specifying a specific user
+     *
+     * @param user the current user resolver
+     * @return a new DataFilter instance specifying a specific user
+     */
+    public DataFilter user(UserResolver user) {
+        DataFilter filter = new DataFilter(this);
+        filter.user = user;
+        return filter;
+    }
+
+
     /** Returns the current language setting of the data filter */
     public String getLang() {
         return lang;
@@ -121,7 +137,7 @@ public class DataFilter {
         if (component == null) {
             return this;
         }
-        DataFilter filter = get().lang(lang);
+        DataFilter filter = get().lang(lang).user(user);
         fields.forEach(field -> {
             if (!field.contains(".") || !field.startsWith(component + ".")) {
                 filter.fields.add(field);
@@ -142,6 +158,27 @@ public class DataFilter {
      */
     public DataFilter forComponent(Class<?> componentClass) {
         return forComponent(componentClass.getSimpleName());
+    }
+
+
+    /**
+     * If a user resolver has been associated with the filter, returns the current user principal.
+     *
+     * @return the current user principal
+     */
+    public Principal principal() {
+        return user != null ? user.getPrincipal() : null;
+    }
+
+
+    /**
+     * If a user resolver has been associated with the filter, returns if the user has the given role.
+     *
+     * @param role the role to check
+     * @return if the user has the given rol
+     */
+    public boolean userInRole(String role) {
+        return user != null && user.isUserInRole(role);
     }
 
 
@@ -273,5 +310,15 @@ public class DataFilter {
      */
     public boolean includeDetails() {
         return includeField(DETAILS);
+    }
+
+
+    /**
+     * If an implementation of this Interface is associated with the
+     * DataFilter, checks can be made on the current user and roles.
+     */
+    public interface UserResolver {
+        Principal getPrincipal();
+        boolean isUserInRole(String role);
     }
 }

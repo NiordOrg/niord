@@ -30,6 +30,7 @@ import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MessageVo;
 import org.niord.model.message.Status;
@@ -74,6 +75,9 @@ public class MessageSearchRestService {
 
     @Inject
     DomainService domainService;
+
+    @Inject
+    UserService userService;
 
 
     /** Returns the domain used for searching messages **/
@@ -198,7 +202,7 @@ public class MessageSearchRestService {
 
         DataFilter filter = ("map".equalsIgnoreCase(params.getViewMode()))
                 ? Message.MESSAGE_MAP_FILTER.lang(params.getLanguage())
-                : Message.MESSAGE_DETAILS_FILTER.lang(params.getLanguage());
+                : Message.MESSAGE_DETAILS_FILTER.lang(params.getLanguage()).user(userService.userResolver());
         return search(params).map(m -> m.toVo(MessageVo.class, filter));
     }
 
@@ -214,7 +218,7 @@ public class MessageSearchRestService {
 
         DataFilter filter = ("map".equalsIgnoreCase(params.getViewMode()))
                 ? Message.MESSAGE_MAP_FILTER.lang(params.getLanguage())
-                : Message.MESSAGE_DETAILS_FILTER.lang(params.getLanguage());
+                : Message.MESSAGE_DETAILS_FILTER.lang(params.getLanguage()).user(userService.userResolver());
         return search(params).map(m -> m.toVo(SystemMessageVo.class, filter));
     }
 

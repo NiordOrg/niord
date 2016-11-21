@@ -219,7 +219,9 @@ public class MessageRestService  {
         // Validate access to the message
         checkMessageViewingAccess(message);
 
-        DataFilter filter = Message.MESSAGE_DETAILS_FILTER.lang(language);
+        DataFilter filter = Message.MESSAGE_DETAILS_FILTER
+                .lang(language)
+                .user(userService.userResolver());
         return message.toVo(MessageVo.class, filter);
     }
 
@@ -234,7 +236,10 @@ public class MessageRestService  {
      */
     private SystemMessageVo toSystemMessage(Message message, boolean copyToTemp) throws Exception {
 
-        SystemMessageVo messageVo = message.toVo(SystemMessageVo.class, Message.MESSAGE_DETAILS_FILTER);
+        DataFilter filter = Message.MESSAGE_DETAILS_FILTER
+                .user(userService.userResolver());
+
+        SystemMessageVo messageVo = message.toVo(SystemMessageVo.class, filter);
 
         // Compute the default set of editor fields to display for the message
         editorFieldsService.computeEditorFields(messageVo);
