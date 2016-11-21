@@ -23,9 +23,9 @@ angular.module('niord.editor')
     /*******************************************************************
      * Controller that handles the message publications dialog
      *******************************************************************/
-    .controller('MessagePublicationsDialogCtrl', ['$scope', 'MessageService', 'LangService',
+    .controller('MessagePublicationsDialogCtrl', ['$scope', '$timeout', 'MessageService', 'LangService',
                 'message', 'type', 'publicationId', 'lang',
-        function ($scope, MessageService, LangService,
+        function ($scope, $timeout, MessageService, LangService,
                 message, type, publicationId, lang) {
             'use strict';
 
@@ -45,6 +45,9 @@ angular.module('niord.editor')
                 publication: undefined
             };
 
+            $timeout(function () {
+                $('.pub-field').find('input').focus();
+            }, 100)
 
             /** Returns whether or not to display a parameter field for the message publication **/
             $scope.hasPublicationParams = function (pub) {
@@ -72,6 +75,12 @@ angular.module('niord.editor')
                                $scope.pub.link = msgPub.link;
                            }
                         });
+
+                    if ($scope.hasPublicationParams($scope.pub)) {
+                        $timeout(function () {
+                            $('#pub-param').focus();
+                        }, 100)
+                    }
                 }
             });
 

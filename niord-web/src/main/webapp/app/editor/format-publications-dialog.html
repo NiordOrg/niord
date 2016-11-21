@@ -10,14 +10,14 @@
         <div class="row">
             <div class="col-sm-12" style="padding: 10px 20px;">
 
-                <table class="table table-condensed editor-publication-table">
+                <table class="table borderless-table">
                     <tr>
                         <td width="240">
                             <publication-field class="pub-field" publication-data="pub" type="type" init-id="publicationId"></publication-field>
                         </td>
                         <td width="*">
                             <div>
-                                <input ng-if="hasPublicationParams(pub)"
+                                <input ng-if="hasPublicationParams(pub)" id="pub-param"
                                        class="form-control input-sm" placeholder="Comma-separated parameters" type="text"
                                        ng-model="pub.parameters"/>
                             </div>

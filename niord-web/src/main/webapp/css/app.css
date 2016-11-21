@@ -162,6 +162,10 @@ input.no-spinner[type=number]::-webkit-outer-spin-button {
     border-bottom: 1px solid #ddd;
 }
 
+table.borderless-table tr td, table.borderless-table tr th {
+    border: none!important;
+}
+
 .padding-5 {
     padding: 5px;
 }

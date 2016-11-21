@@ -467,7 +467,8 @@ angular.module('niord.editor')
                 }
 
                 $scope.$apply(function() {
-                    MessageService.messagePublicationsDialog($scope.message, type, publicationId, lang);
+                    MessageService.messagePublicationsDialog($scope.message, type, publicationId, lang)
+                        .result.then($scope.setDirty);
                 });
             };
 
