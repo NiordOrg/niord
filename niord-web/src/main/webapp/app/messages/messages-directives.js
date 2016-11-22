@@ -852,7 +852,7 @@ angular.module('niord.messages')
                     printSettings:  "=",
                     reportParams:   "="
                 },
-                link: function(scope, element, attrs) {
+                link: function(scope) {
 
                     scope.reports = [];
                     scope.showMapThumbnails = true;
