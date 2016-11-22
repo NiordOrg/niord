@@ -37,7 +37,11 @@
             <div class="form-group col-xs-12" style="text-align: right">
                 <button class="btn btn-default btn-sm" ng-click="$dismiss('aborted')">Cancel</button>
                 <button class="btn btn-primary btn-sm"
-                        ng-disabled="!pub.publication" ng-click="updatePublication()">Update Publication</button>
+                        ng-disabled="!pub.publication" ng-click="updatePublications(true)">Update Publications</button>
+                <button class="btn btn-primary btn-sm"
+                        ng-disabled="!pub.publication" ng-click="updatePublications(false)">
+                        Update {{'lang.' +  language | translate}} Only
+                </button>
             </div>
         </div>
     </div>

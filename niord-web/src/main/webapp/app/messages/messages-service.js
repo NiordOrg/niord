@@ -179,13 +179,16 @@ angular.module('niord.messages')
 
 
             /** Updates the message publications with the given parameters and link */
-            updateMessagePublications: function (msg, publicationId, parameters, link) {
+            updateMessagePublications: function (msg, publicationId, parameters, link, lang) {
                 var params = 'publicationId=' + encodeURIComponent(publicationId);
                 if (parameters) {
                     params += '&parameters=' + encodeURIComponent(parameters);
                 }
                 if (link) {
                     params += '&link=' + encodeURIComponent(link);
+                }
+                if (lang) {
+                    params += '&lang=' + encodeURIComponent(lang);
                 }
                 return $http.post('/rest/messages/update-message-publications?' + params, msg);
             },

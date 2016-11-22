@@ -56,14 +56,14 @@ public class PublicationTest {
         System.out.println("Msg Pub: " + msgPub);
 
 
-        PublicationUtils.updateMessagePublications(msg, pub, "17, 18, 19", null);
+        PublicationUtils.updateMessagePublications(msg, pub, "17, 18, 19", null, null);
         msg.getDescs().forEach(d -> System.out.println("MsgPub[" + d.getLang() + "]: " + d.getPublication()));
 
         pub = new PublicationVo();
         pub.setPublicationId("dk-journal-no");
         pub.checkCreateDesc("da").setFormat("J.nr. ${parameters}");
         pub.checkCreateDesc("en").setFormat("J.no ${parameters}");
-        PublicationUtils.updateMessagePublications(msg, pub, "235434242", "http://www.google.dk");
+        PublicationUtils.updateMessagePublications(msg, pub, "235434242", "http://www.google.dk", null);
         msg.getDescs().forEach(d -> System.out.println("MsgPub[" + d.getLang() + "]: " + d.getPublication()));
 
     }

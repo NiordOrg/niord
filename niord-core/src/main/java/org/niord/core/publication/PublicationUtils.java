@@ -96,9 +96,10 @@ public class PublicationUtils {
      * @param publication the publication to extract
      * @param parameters the optional parameters
      * @param link the optional link
+     * @param lang either a specific language or null for all languages
      * @return the message publication or null if not found
      */
-    public static MessageVo updateMessagePublications(MessageVo message, PublicationVo publication, String parameters, String link) {
+    public static MessageVo updateMessagePublications(MessageVo message, PublicationVo publication, String parameters, String link, String lang) {
         // Sanity check
         if (message == null || publication == null) {
             return null;
@@ -106,7 +107,10 @@ public class PublicationUtils {
 
         boolean internal = publication.getType() == PublicationType.INTERNAL;
 
-        message.getDescs().forEach(msgDesc -> {
+        message.getDescs()
+                .stream()
+                .filter(msgDesc -> lang == null || lang.equals(msgDesc.getLang()))
+                .forEach(msgDesc -> {
 
             PublicationDescVo pubDesc = publication.getDesc(msgDesc.getLang());
 

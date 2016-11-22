@@ -750,7 +750,10 @@ public class MessageRestService  {
             MessageVo message) throws Exception {
         Publication publication = publicationService.findByPublicationId(publicationId);
         if (publication != null) {
-            return PublicationUtils.extractMessagePublication(message, publication.toVo(DataFilter.get()), lang);
+            return PublicationUtils.extractMessagePublication(
+                    message,
+                    publication.toVo(DataFilter.get()),
+                    lang);
         }
         return null;
     }
@@ -768,10 +771,16 @@ public class MessageRestService  {
             @QueryParam("publicationId") String publicationId,
             @QueryParam("parameters") String parameters,
             @QueryParam("link") String link,
+            @QueryParam("lang") String lang,
             MessageVo message) throws Exception {
         Publication publication = publicationService.findByPublicationId(publicationId);
         if (publication != null) {
-            return PublicationUtils.updateMessagePublications(message, publication.toVo(DataFilter.get()), parameters, link);
+            return PublicationUtils.updateMessagePublications(
+                    message,
+                    publication.toVo(DataFilter.get()),
+                    parameters,
+                    link,
+                    lang);
         }
         return message;
     }

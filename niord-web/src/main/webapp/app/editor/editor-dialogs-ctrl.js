@@ -29,6 +29,7 @@ angular.module('niord.editor')
                 message, type, publicationId, lang) {
             'use strict';
 
+            $scope.language = lang;
             $scope.message = message;
             // Create pruned version of the message
             $scope.messageTemplate = {
@@ -86,9 +87,14 @@ angular.module('niord.editor')
 
 
             /** Called when the publication should be updated for the message **/
-            $scope.updatePublication = function () {
+            $scope.updatePublications = function (allLangs) {
                 if ($scope.pub.publication) {
-                    MessageService.updateMessagePublications($scope.messageTemplate, $scope.pub.publication.publicationId, $scope.pub.parameters, $scope.pub.link)
+                    MessageService.updateMessagePublications(
+                        $scope.messageTemplate,
+                        $scope.pub.publication.publicationId,
+                        $scope.pub.parameters,
+                        $scope.pub.link,
+                        allLangs ? null : lang)
                         .success(function (msg) {
                             if (msg) {
                                 angular.forEach(msg.descs, function (desc) {
