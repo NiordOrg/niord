@@ -48,7 +48,8 @@ angular.module('niord.editor')
 
             $timeout(function () {
                 $('.pub-field').find('input').focus();
-            }, 100)
+            }, 100);
+
 
             /** Returns whether or not to display a parameter field for the message publication **/
             $scope.hasPublicationParams = function (pub) {
@@ -61,6 +62,12 @@ angular.module('niord.editor')
                     }
                 }
                 return false;
+            };
+
+
+            /** Check if the link should be editable **/
+            $scope.showLink = function (pub) {
+                return pub && pub.publication && !pub.publication.languageSpecific;
             };
 
 

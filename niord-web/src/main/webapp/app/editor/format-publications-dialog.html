@@ -21,8 +21,11 @@
                                        class="form-control input-sm" placeholder="Comma-separated parameters" type="text"
                                        ng-model="pub.parameters"/>
                             </div>
-                            <div ng-if="pub.publication.messagePublicationLink">
-                                <input class="form-control input-sm" placeholder="Publication link" type="text"
+                            <div ng-if="showLink(pub)" class="input-group" style="margin-top: 10px">
+                                <span class="input-group-addon input-sm">
+                                    <i class="glyphicon glyphicon-link"></i> Link
+                                </span>
+                                <input class="form-control input-sm" type="text"
                                        ng-model="pub.link"/>
                             </div>
                         </td>
