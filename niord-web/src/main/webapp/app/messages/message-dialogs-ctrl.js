@@ -320,49 +320,16 @@ angular.module('niord.messages')
             'use strict';
 
             $scope.totalMessageNo = total;
-            $scope.reports = [];
-            $scope.reportProperties = {};
+            $scope.list = list;
+            $scope.printSettings = {};
             $scope.reportParams = {};
-            $scope.showMapThumbnails = true;
-
-            $scope.data = {
-                report: undefined,
-                pageSize : 'A4',
-                pageOrientation: 'portrait',
-                mapThumbnails: false
-            };
 
             if ($window.localStorage.printSettings) {
                 try {
-                    angular.copy(angular.fromJson($window.localStorage.printSettings), $scope.data);
+                    angular.copy(angular.fromJson($window.localStorage.printSettings), $scope.printSettings);
                 } catch (error) {
                 }
             }
-
-            // Load the message reports
-            MessageService.printReports(list)
-                .success(function (reports) {
-                    $scope.reports = reports;
-                    if (reports.length > 0) {
-                        $scope.data.report = reports[0].reportId;
-                    }
-                });
-
-
-            // When a new report is selected, update the report properties
-            $scope.$watch("data.report", function (reportId) {
-                $scope.reportProperties = {};
-                if ($scope.reports) {
-                    angular.forEach($scope.reports, function (report) {
-                        if (report.reportId == reportId) {
-                            $scope.showMapThumbnails = report.properties.mapThumbnails === undefined;
-                            $scope.reportProperties = report.properties;
-                            $scope.reportParams = report.params;
-                        }
-                    })
-                }
-            });
-
 
             // Register and unregister event-handler to listen for return key
             var eventTypes = "keydown keypress";
@@ -391,14 +358,18 @@ angular.module('niord.messages')
 
             // Close the print dialog and return the print settings to the callee
             $scope.print = function () {
+                var data = {
+                    report: $scope.printSettings.report,
+                    pageSize : $scope.printSettings.pageSize,
+                    pageOrientation: $scope.printSettings.pageOrientation,
+                    mapThumbnails: $scope.printSettings.mapThumbnails
+                };
+
                 // Persist settings
-                $window.localStorage.printSettings = angular.toJson($scope.data);
+                $window.localStorage.printSettings = angular.toJson(data);
 
                 var printParam = '';
-                angular.forEach($scope.data, function (v, k) {
-                    printParam = concatParam(printParam, k, v);
-                });
-                angular.forEach($scope.reportProperties, function (v, k) {
+                angular.forEach($scope.printSettings, function (v, k) {
                     printParam = concatParam(printParam, k, v);
                 });
                 angular.forEach($scope.reportParams, function (v, k) {

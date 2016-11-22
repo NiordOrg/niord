@@ -1,0 +1,53 @@
+
+<table cellspacing="5">
+    <tr ng-if="reports">
+        <td align="right">Report </td>
+        <td>
+            <div class="btn-group" style="margin: 5px">
+                <select class="form-control input-sm" ng-model="printSettings.report"
+                        ng-options="report.reportId as report.name for report in reports">
+                </select>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td align="right">Layout </td>
+        <td>
+            <div class="btn-group" style="margin: 5px">
+                <label class="btn btn-default btn-sm" ng-model="printSettings.pageOrientation" uib-btn-radio="'portrait'">portrait</label>
+                <label class="btn btn-default btn-sm" ng-model="printSettings.pageOrientation" uib-btn-radio="'landscape'">landscape</label>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td align="right">Paper size </td>
+        <td>
+            <div class="btn-group" style="margin: 5px">
+                <select class="form-control input-sm" ng-model="printSettings.pageSize">
+                    <option value="A3">A3</option>
+                    <option value="A4">A4</option>
+                    <option value="A5">A5</option>
+                    <option value="B4">B4</option>
+                    <option value="B5">B5</option>
+                    <option value="letter">Letter</option>
+                    <option value="legal">Legal</option>
+                    <option value="ledger">Ledger</option>
+                </select>
+            </div>
+        </td>
+    </tr>
+    <tr ng-if="showMapThumbnails">
+        <td align="right"></td>
+        <td>
+            &nbsp;<input type="checkbox" ng-model="printSettings.mapThumbnails"> include thumbnails
+        </td>
+    </tr>
+    <tr ng-repeat="(k, v) in reportParams">
+        <td align="right" valign="middle">{{k}}</td>
+        <td>
+            <div class="form-group" style="margin: 5px">
+                <input type="text" class="form-control input-sm" ng-model="v">
+            </div>
+        </td>
+    </tr>
+</table>

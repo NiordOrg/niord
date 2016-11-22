@@ -833,5 +833,63 @@ angular.module('niord.messages')
                     };
                 }
             }
+        }])
+
+
+    /********************************
+     * Directive for selecting a report
+     ********************************/
+    .directive('messagePrintSettings', ['MessageService',
+        function (MessageService) {
+            'use strict';
+
+            return {
+                restrict: 'E',
+                templateUrl: '/app/messages/message-print-settings.html',
+                replace: false,
+                scope: {
+                    list:           "=",
+                    printSettings:  "=",
+                    reportParams:   "="
+                },
+                link: function(scope, element, attrs) {
+
+                    scope.reports = [];
+                    scope.showMapThumbnails = true;
+                    scope.reportParams = {};
+
+                    scope.printSettings = scope.printSettings || {};
+                    scope.printSettings.report = undefined;
+                    scope.printSettings.pageSize = scope.printSettings.pageSize || 'A4';
+                    scope.printSettings.pageOrientation = scope.printSettings.pageOrientation || 'portrait';
+                    scope.printSettings.mapThumbnails = scope.printSettings.mapThumbnails || false;
+
+                    // Load the message reports
+                    MessageService.printReports(scope.list)
+                        .success(function (reports) {
+                            scope.reports = reports;
+                            if (reports.length > 0) {
+                                scope.printSettings.report = reports[0].reportId;
+                            }
+                        });
+
+
+                    // When a new report is selected, update the report properties
+                    scope.$watch("printSettings.report", function (reportId) {
+                        scope.reportProperties = {};
+                        if (scope.reports) {
+                            angular.forEach(scope.reports, function (report) {
+                                if (report.reportId == reportId) {
+                                    scope.showMapThumbnails = report.properties.mapThumbnails === undefined;
+                                    scope.reportParams = report.params;
+                                }
+                            })
+                        }
+                    });
+
+                }
+            };
         }]);
+
+
 
