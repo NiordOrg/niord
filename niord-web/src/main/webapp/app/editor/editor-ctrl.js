@@ -476,6 +476,7 @@ angular.module('niord.editor')
             // Configuration of the Publication TinyMCE editors
             $scope.publicationTinymceOptions = {
                 resize: false,
+                forced_root_block : '',  // Avoid content placed in <p> tag
                 valid_elements : '*[*]', // NB: This allows insertion of all html elements, including javascript
                 statusbar : false,
                 menubar: false,
