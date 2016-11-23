@@ -13,14 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.niord.core.publication.vo;
+
+package org.niord.model.publication;
 
 /**
- * Publication type
+ * Defines the type of publication file that the publications links to.
  */
-public enum PublicationType {
+public enum PublicationFileType {
 
-    EXTERNAL,
-    INTERNAL,
-    REPORT
+    /** No link or file is specified directly **/
+    NONE,
+
+    /** The publication file is defined via a link **/
+    LINK,
+
+    /** The publication file is uploaded to the Niord repository **/
+    REPOSITORY,
+
+    /** The publication file is defined via a message report and possibly uploaded to the Niord repository **/
+    MESSAGE_REPORT
+
 }

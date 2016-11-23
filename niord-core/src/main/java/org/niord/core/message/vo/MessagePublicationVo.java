@@ -16,7 +16,7 @@
 
 package org.niord.core.message.vo;
 
-import org.niord.core.publication.vo.PublicationVo;
+import org.niord.model.publication.PublicationVo;
 import org.niord.model.IJsonSerializable;
 
 /**

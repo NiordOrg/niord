@@ -14,61 +14,26 @@
  * limitations under the License.
  */
 
-package org.niord.core.publication;
+package org.niord.model.publication;
 
-import org.niord.core.model.DescEntity;
-import org.niord.model.publication.PublicationDescVo;
+import io.swagger.annotations.ApiModel;
+import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizedDesc;
 
-import javax.persistence.Entity;
-import javax.validation.constraints.NotNull;
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlType;
 
 /**
- * Localized contents for the Publication entity
+ * The entity description VO
  */
-@Entity
-@SuppressWarnings("unused")
-public class PublicationDesc extends DescEntity<Publication> {
+@ApiModel(value = "PublicationDesc", description = "Translatable fields of the Publication model")
+@XmlType(propOrder = { "title", "format", "link" })
+public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
 
-    @NotNull
+    String lang;
     String title;
-
-    /**
-     * The format can be used to format a message publication
-     */
     String format;
-
-    /**
-     * If defined, will be used as a link for all message publications
-     */
     String link;
-
-    /** Constructor */
-    public PublicationDesc() {
-    }
-
-
-    /** Constructor */
-    public PublicationDesc(PublicationDescVo desc) {
-        super(desc);
-        if (desc.getLang() == null) {
-            this.lang = "*";
-        }
-        this.title = desc.getTitle();
-        this.format = desc.getFormat();
-        this.link = desc.getLink();
-    }
-
-
-    /** Converts this entity to a value object */
-    public PublicationDescVo toVo() {
-        PublicationDescVo desc = new PublicationDescVo();
-        desc.setLang(lang.equals("*") ? null : lang);
-        desc.setTitle(title);
-        desc.setFormat(format);
-        desc.setLink(link);
-        return desc;
-    }
 
 
     /** {@inheritDoc} */
@@ -81,16 +46,26 @@ public class PublicationDesc extends DescEntity<Publication> {
     /** {@inheritDoc} */
     @Override
     public void copyDesc(ILocalizedDesc localizedDesc) {
-        PublicationDesc desc = (PublicationDesc)localizedDesc;
+        PublicationDescVo desc = (PublicationDescVo)localizedDesc;
         this.title = desc.getTitle();
         this.format = desc.getFormat();
         this.link = desc.getLink();
     }
 
-
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    @XmlAttribute
+    @Override
+    public String getLang() {
+        return lang;
+    }
+
+    @Override
+    public void setLang(String lang) {
+        this.lang = lang;
+    }
 
     public String getTitle() {
         return title;

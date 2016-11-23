@@ -158,8 +158,15 @@ angular.module('niord.admin')
         return {
 
             /** Returns all publications **/
-            getPublications: function () {
-                return $http.get('/rest/publications/all?lang=' + $rootScope.language);
+            searchPublications: function (title) {
+                var params = 'lang=' + $rootScope.language;
+                if ($rootScope.domain) {
+                    params += '&domain=' + encodeURIComponent($rootScope.domain.domainId);
+                }
+                if (title) {
+                    params += '&title=' + encodeURIComponent(title);
+                }
+                return $http.get('/rest/publications/search?' + params);
             },
 
 
@@ -184,6 +191,42 @@ angular.module('niord.admin')
             /** Deletes the given publication **/
             deletePublication: function(publication) {
                 return $http['delete']('/rest/publications/publication/' + publication.publicationId);
+            },
+
+
+            /** Returns the ticket that can be used to generate an export file that requires the amdin role */
+            publicationExportTicket: function () {
+                return $http.get('/rest/tickets/ticket?role=admin');
+            },
+
+
+            /** Returns all publication types **/
+            getPublicationTypes: function () {
+                return $http.get('/rest/publication-types/all?lang=' + $rootScope.language);
+            },
+
+
+            /** Returns the details for the given publication type **/
+            getPublicationTypeDetails: function (publicationType) {
+                return $http.get('/rest/publication-types/publication-type/' + publicationType.typeId);
+            },
+
+
+            /** Creates a new publication type **/
+            createPublicationType: function(publicationType) {
+                return $http.post('/rest/publication-types/publication-type/', publicationType);
+            },
+
+
+            /** Updates the given publication type **/
+            updatePublicationType: function(publicationType) {
+                return $http.put('/rest/publication-types/publication-type/' + publicationType.typeId, publicationType);
+            },
+
+
+            /** Deletes the given publication type **/
+            deletePublicationType: function(publicationType) {
+                return $http['delete']('/rest/publication-types/publication-type/' + publicationType.typeId);
             }
 
         };

@@ -359,7 +359,6 @@ angular.module('niord.messages')
             // Close the print dialog and return the print settings to the callee
             $scope.print = function () {
                 var data = {
-                    report: $scope.printSettings.report,
                     pageSize : $scope.printSettings.pageSize,
                     pageOrientation: $scope.printSettings.pageOrientation,
                     mapThumbnails: $scope.printSettings.mapThumbnails

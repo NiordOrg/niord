@@ -37,6 +37,7 @@ import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationService;
 import org.niord.core.publication.PublicationUtils;
+import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.repo.FileTypes;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.user.UserService;
@@ -565,7 +566,7 @@ public class MessageRestService  {
                         return null;
                     }
                 })
-                .filter(att -> att != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
@@ -752,7 +753,7 @@ public class MessageRestService  {
         if (publication != null) {
             return PublicationUtils.extractMessagePublication(
                     message,
-                    publication.toVo(DataFilter.get()),
+                    publication.toVo(SystemPublicationVo.class, DataFilter.get()),
                     lang);
         }
         return null;
@@ -777,7 +778,7 @@ public class MessageRestService  {
         if (publication != null) {
             return PublicationUtils.updateMessagePublications(
                     message,
-                    publication.toVo(DataFilter.get()),
+                    publication.toVo(SystemPublicationVo.class, DataFilter.get()),
                     parameters,
                     link,
                     lang);

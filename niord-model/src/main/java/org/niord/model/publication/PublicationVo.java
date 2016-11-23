@@ -14,22 +14,29 @@
  * limitations under the License.
  */
 
-package org.niord.core.publication.vo;
+package org.niord.model.publication;
 
+import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 import java.util.List;
 
 /**
- * Defines a publication that may be associated with a message.
+ * Value object for the {@code Publication} model entity
  */
+@ApiModel(value = "Publication", description = "Publication model")
+@XmlRootElement(name = "publication")
+@XmlType(propOrder = {
+        "publicationId", "type", "fileType", "descs"
+})
 public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSerializable {
 
     String publicationId;
-    PublicationType type;
-    boolean active;
-    boolean languageSpecific;
+    PublicationTypeVo type;
+    PublicationFileType fileType;
     List<PublicationDescVo> descs;
 
 
@@ -55,28 +62,20 @@ public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSeri
         this.publicationId = publicationId;
     }
 
-    public PublicationType getType() {
+    public PublicationTypeVo getType() {
         return type;
     }
 
-    public void setType(PublicationType type) {
+    public void setType(PublicationTypeVo type) {
         this.type = type;
     }
 
-    public boolean isActive() {
-        return active;
+    public PublicationFileType getFileType() {
+        return fileType;
     }
 
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    public boolean isLanguageSpecific() {
-        return languageSpecific;
-    }
-
-    public void setLanguageSpecific(boolean languageSpecific) {
-        this.languageSpecific = languageSpecific;
+    public void setFileType(PublicationFileType fileType) {
+        this.fileType = fileType;
     }
 
     @Override

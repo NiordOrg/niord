@@ -18,7 +18,7 @@ package org.niord.core.publication.batch;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.niord.core.batch.AbstractItemHandler;
-import org.niord.core.publication.vo.SystemPublicationVo;
+import org.niord.model.publication.PublicationTypeVo;
 import org.niord.core.util.JsonUtils;
 
 import javax.inject.Named;
@@ -27,29 +27,30 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Reads publications from a publication.json file.
+ * Reads publications from a publication-type.json file.
  * <p>
- * Please note, the actual publication-import.xml job file is not placed in the META-INF/batch-jobs of this project,
+ * Please note, the actual publication-type-import.xml job file is not placed in the META-INF/batch-jobs of this project,
  * but rather, in the META-INF/batch-jobs folder of the niord-web project.<br>
  * This is because of a class-loading bug in the Wildfly implementation. See e.g.
  * https://issues.jboss.org/browse/WFLY-4988
  * <p>
- * Format of json file is defined by the PublicationVo class (with ID's being ignored). Example:
+ * Format of json file is defined by the PublicationTypeVo class. Example:
  * <pre>
  * [
  *   {
- *     "publicationId": "dk-harbour-pilot",
- *     "type: { "typeId": "dk-dma-publications" },
- *     "messagePublication": "EXTERNAL",
- *     "active": true,
- *     "languageSpecific": false,
- *     "descs": [
- *       {
- *         "name": "Den danske Havnelods",
- *         "link": "http://www.danskehavnelods.dk",
- *         "format": "www.danskehavnelods.dk",
- *       }
- *     ]
+ *      "typeId": "dk-dma-publications",
+ *      "priority": 50,
+ *      "publish": true,
+ *      "descs": [
+ *         {
+ *            "lang": "da",
+ *            "name": "Søfartsstyrelsens publikationer"
+ *         },
+ *         {
+ *            "lang": "en",
+ *            "name": "Danish Maritime Authority publications"
+ *         }
+ *      ]
  *   },
  *   {
  *       etc, etc
@@ -58,10 +59,10 @@ import java.util.List;
  * </pre>
  */
 @Named
-public class BatchPublicationImportReader extends AbstractItemHandler {
+public class BatchPublicationTypeImportReader extends AbstractItemHandler {
 
-    List<SystemPublicationVo> publications;
-    int publicationNo = 0;
+    List<PublicationTypeVo> publicationTypes;
+    int publicationTypeNo = 0;
 
     /** {@inheritDoc} **/
     @Override
@@ -71,23 +72,23 @@ public class BatchPublicationImportReader extends AbstractItemHandler {
         Path path = batchService.getBatchJobDataFile(jobContext.getInstanceId());
 
         // Load the publications from the file
-        publications = JsonUtils.readJson(
-                new TypeReference<List<SystemPublicationVo>>(){},
+        publicationTypes = JsonUtils.readJson(
+                new TypeReference<List<PublicationTypeVo>>(){},
                 path);
 
         if (prevCheckpointInfo != null) {
-            publicationNo = (Integer) prevCheckpointInfo;
+            publicationTypeNo = (Integer) prevCheckpointInfo;
         }
 
-        getLog().info("Start processing " + publications.size() + " publications from index " + publicationNo);
+        getLog().info("Start processing " + publicationTypes.size() + " publication  types from index " + publicationTypeNo);
     }
 
     /** {@inheritDoc} **/
     @Override
     public Object readItem() throws Exception {
-        if (publicationNo < publications.size()) {
-            getLog().info("Reading publication no " + publicationNo);
-            return publications.get(publicationNo++);
+        if (publicationTypeNo < publicationTypes.size()) {
+            getLog().info("Reading publication type no " + publicationTypeNo);
+            return publicationTypes.get(publicationTypeNo++);
         }
         return null;
     }
@@ -95,6 +96,6 @@ public class BatchPublicationImportReader extends AbstractItemHandler {
     /** {@inheritDoc} **/
     @Override
     public Serializable checkpointInfo() throws Exception {
-        return publicationNo;
+        return publicationTypeNo;
     }
 }

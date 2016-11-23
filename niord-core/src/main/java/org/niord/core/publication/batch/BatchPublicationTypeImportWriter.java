@@ -17,34 +17,34 @@
 package org.niord.core.publication.batch;
 
 import org.niord.core.batch.AbstractItemHandler;
-import org.niord.core.publication.Publication;
-import org.niord.core.publication.PublicationService;
+import org.niord.core.publication.PublicationType;
+import org.niord.core.publication.PublicationTypeService;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.List;
 
 /**
- * Persists the publications to the database
+ * Persists the publication types to the database
  */
 @Named
-public class BatchPublicationImportWriter extends AbstractItemHandler {
+public class BatchPublicationTypeImportWriter extends AbstractItemHandler {
 
     @Inject
-    PublicationService publicationService;
+    PublicationTypeService publicationTypeService;
 
     /** {@inheritDoc} **/
     @Override
     public void writeItems(List<Object> items) throws Exception {
         long t0 = System.currentTimeMillis();
         for (Object i : items) {
-            Publication publication = (Publication) i;
-            if (publication.isNew()) {
-                publicationService.createPublication(publication);
+            PublicationType publicationType = (PublicationType) i;
+            if (publicationType.isNew()) {
+                publicationTypeService.createPublicationType(publicationType);
             } else {
-                publicationService.saveEntity(publication);
+                publicationTypeService.saveEntity(publicationType);
             }
         }
-        getLog().info(String.format("Persisted %d publications in %d ms", items.size(), System.currentTimeMillis() - t0));
+        getLog().info(String.format("Persisted %d publication types in %d ms", items.size(), System.currentTimeMillis() - t0));
     }
 }

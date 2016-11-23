@@ -17,9 +17,11 @@
 package org.niord.core.publication.batch;
 
 import org.niord.core.batch.AbstractItemHandler;
+import org.niord.core.domain.DomainService;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationService;
-import org.niord.core.publication.vo.PublicationVo;
+import org.niord.core.publication.PublicationTypeService;
+import org.niord.core.publication.vo.SystemPublicationVo;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -33,13 +35,27 @@ public class BatchPublicationImportProcessor extends AbstractItemHandler {
     @Inject
     PublicationService publicationService;
 
+    @Inject
+    PublicationTypeService publicationTypeService;
+
+    @Inject
+    DomainService domainService;
+
     /** {@inheritDoc} **/
     @Override
     public Object processItem(Object item) throws Exception {
 
-        PublicationVo publicationVo = (PublicationVo) item;
+        SystemPublicationVo publicationVo = (SystemPublicationVo) item;
 
         Publication publication = new Publication(publicationVo);
+
+        // Find or create the associated publication type
+        publication.setType(publicationTypeService.findOrCreatePublicationType(publication.getType()));
+
+        // Substitute the domain with the persisted on
+        if (publication.getDomain() != null) {
+            publication.setDomain(domainService.findByDomainId(publication.getDomain().getDomainId()));
+        }
 
         // Look for an existing publication with the same name
         Publication orig = publicationService.findByPublicationId(publication.getPublicationId());

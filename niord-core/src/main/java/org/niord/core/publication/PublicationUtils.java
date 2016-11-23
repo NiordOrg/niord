@@ -20,11 +20,11 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.niord.core.message.vo.MessagePublicationVo;
-import org.niord.core.publication.vo.PublicationDescVo;
-import org.niord.core.publication.vo.PublicationType;
-import org.niord.core.publication.vo.PublicationVo;
+import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.util.TextUtils;
 import org.niord.model.message.MessageVo;
+import org.niord.core.publication.vo.MessagePublication;
+import org.niord.model.publication.PublicationDescVo;
 
 import java.util.Objects;
 
@@ -41,13 +41,13 @@ public class PublicationUtils {
      * @param lang the language
      * @return the message publication or null if not found
      */
-    public static MessagePublicationVo extractMessagePublication(MessageVo message, PublicationVo publication, String lang) {
+    public static MessagePublicationVo extractMessagePublication(MessageVo message, SystemPublicationVo publication, String lang) {
         // Sanity check
         if (message == null || publication == null || publication.getDesc(lang) == null || message.getDesc(lang) == null) {
             return null;
         }
 
-        boolean internal = publication.getType() == PublicationType.INTERNAL;
+        boolean internal = publication.getMessagePublication() == MessagePublication.INTERNAL;
         String pubHtml = internal ? message.getDesc(lang).getInternalPublication() : message.getDesc(lang).getPublication();
         if (StringUtils.isBlank(pubHtml)) {
             return null;
@@ -99,13 +99,13 @@ public class PublicationUtils {
      * @param lang either a specific language or null for all languages
      * @return the message publication or null if not found
      */
-    public static MessageVo updateMessagePublications(MessageVo message, PublicationVo publication, String parameters, String link, String lang) {
+    public static MessageVo updateMessagePublications(MessageVo message, SystemPublicationVo publication, String parameters, String link, String lang) {
         // Sanity check
         if (message == null || publication == null) {
             return null;
         }
 
-        boolean internal = publication.getType() == PublicationType.INTERNAL;
+        boolean internal = publication.getMessagePublication() == MessagePublication.INTERNAL;
 
         message.getDescs()
                 .stream()
@@ -152,14 +152,14 @@ public class PublicationUtils {
      * @param lang the language
      * @return the message publication text
      */
-    public static String computeMessagePublication(PublicationVo publication, String parameters, String link, String lang) {
+    public static String computeMessagePublication(SystemPublicationVo publication, String parameters, String link, String lang) {
 
         String result = null;
         PublicationDescVo desc = publication.getDesc(lang);
         if (desc != null && StringUtils.isNotBlank(desc.getFormat())) {
             String params = StringUtils.defaultIfBlank(parameters, "");
             result = desc.getFormat().replace("${parameters}", params);
-            if (publication.getType() == PublicationType.INTERNAL) {
+            if (publication.getMessagePublication() == MessagePublication.INTERNAL) {
                 result = "[" + result + "]";
             }
             result = TextUtils.trailingDot(result);

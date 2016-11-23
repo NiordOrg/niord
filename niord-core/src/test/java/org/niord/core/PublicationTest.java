@@ -18,7 +18,7 @@ package org.niord.core;
 import org.junit.Test;
 import org.niord.core.message.vo.MessagePublicationVo;
 import org.niord.core.publication.PublicationUtils;
-import org.niord.core.publication.vo.PublicationVo;
+import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.model.message.MessageVo;
 
 import static org.junit.Assert.assertNotNull;
@@ -35,7 +35,7 @@ public class PublicationTest {
         msg.checkCreateDesc("da").setPublication("<a publication=\"dk-harbour-pilot\" href=\"http://www.danskehavnelods.dk\" target=\"_blank\">www.danskehavnelods.dk.</a> <a publication=\"dk-firing-areas-2016\" href=\"http://www.soefartsstyrelsen.dk/SikkerhedTilSoes/Sejladsinformation/EfS/ThisYear2/Skydebilag%202016%20DK.pdf\" target=\"_blank\">Oversigt over forsvarets skydepladser 2016, punkt 17, 18.</a>");
         msg.checkCreateDesc("en").setPublication("<a publication=\"dk-harbour-pilot\" href=\"http://www.danskehavnelods.dk\" target=\"_blank\">www.danskehavnelods.dk.</a> <a publication=\"dk-firing-areas-2016\" href=\"http://www.soefartsstyrelsen.dk/SikkerhedTilSoes/Sejladsinformation/EfS/ThisYear2/Skydebilag%202016%20UK.pdf\" target=\"_blank\">Danish List of Firing Practice Areas, section 17, 18.</a>");
 
-        PublicationVo pub = new PublicationVo();
+        SystemPublicationVo pub = new SystemPublicationVo();
         pub.setPublicationId("dk-harbour-pilot");
         pub.checkCreateDesc("da").setLink("http://www.danskehavnelods.dk");
         pub.getDesc("da").setFormat("www.danskehavnelods.dk");
@@ -45,7 +45,7 @@ public class PublicationTest {
         assertNotNull(msgPub);
         System.out.println("Msg Pub: " + msgPub);
 
-        pub = new PublicationVo();
+        pub = new SystemPublicationVo();
         pub.setPublicationId("dk-firing-areas-2016");
         pub.checkCreateDesc("da").setLink("http://www.soefartsstyrelsen.dk/SikkerhedTilSoes/Sejladsinformation/EfS/ThisYear2/Skydebilag%202016%20DK.pdf");
         pub.getDesc("da").setFormat("Oversigt over forsvarets skydepladser 2016, punkt ${parameters}");
@@ -59,7 +59,7 @@ public class PublicationTest {
         PublicationUtils.updateMessagePublications(msg, pub, "17, 18, 19", null, null);
         msg.getDescs().forEach(d -> System.out.println("MsgPub[" + d.getLang() + "]: " + d.getPublication()));
 
-        pub = new PublicationVo();
+        pub = new SystemPublicationVo();
         pub.setPublicationId("dk-journal-no");
         pub.checkCreateDesc("da").setFormat("J.nr. ${parameters}");
         pub.checkCreateDesc("en").setFormat("J.no ${parameters}");

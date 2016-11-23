@@ -16,21 +16,32 @@
 
 package org.niord.core.publication;
 
+import org.niord.core.db.JpaPropertiesAttributeConverter;
+import org.niord.core.domain.Domain;
 import org.niord.core.model.BaseEntity;
-import org.niord.core.publication.vo.PublicationDescVo;
-import org.niord.core.publication.vo.PublicationType;
-import org.niord.core.publication.vo.PublicationVo;
+import org.niord.model.publication.PublicationFileType;
+import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
+import org.niord.core.publication.vo.MessagePublication;
+import org.niord.model.publication.PublicationDescVo;
+import org.niord.model.publication.PublicationVo;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -41,8 +52,9 @@ import java.util.stream.Collectors;
         @NamedQuery(name="Publication.findByPublicationId",
                 query="SELECT p FROM Publication p where p.publicationId = :publicationId"),
         @NamedQuery(name  = "Publication.searchPublications",
-                query = "select distinct p from Publication p join p.descs d where p.active in (:active) "
-                        + " and p.type in (:types) and (d.lang = :lang or d.lang = '*') and lower(d.title) like :term")
+                query = "select distinct p from Publication p join p.descs d where  "
+                        + " p.messagePublication in (:messagePublications) and d.lang = :lang "
+                        + " and lower(d.title) like :term")
 })
 @SuppressWarnings("unused")
 public class Publication extends BaseEntity<Integer> implements ILocalizable<PublicationDesc> {
@@ -50,12 +62,32 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     @NotNull
     String publicationId;
 
+    @NotNull
+    @ManyToOne
     PublicationType type;
 
-    /** If the publication is currently active or not **/
-    boolean active = true;
+    @ManyToOne
+    Domain domain;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    MessagePublication messagePublication = MessagePublication.NONE;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    PublicationFileType fileType = PublicationFileType.LINK;
 
     boolean languageSpecific;
+
+    /** Selected report and print settings (page size, etc) **/
+    @Column(name="printSettings", columnDefinition = "TEXT")
+    @Convert(converter = JpaPropertiesAttributeConverter.class)
+    Map<String, Object> printSettings = new HashMap<>();
+
+    /** User input parameters for the selected report **/
+    @Column(name="reportParams", columnDefinition = "TEXT")
+    @Convert(converter = JpaPropertiesAttributeConverter.class)
+    Map<String, Object> reportParams = new HashMap<>();
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
     List<PublicationDesc> descs = new ArrayList<>();
@@ -69,14 +101,26 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     /** Constructor */
     public Publication(PublicationVo publication) {
         this.publicationId = publication.getPublicationId();
-        this.type = publication.getType();
-        this.active = publication.isActive();
-        this.languageSpecific = publication.isLanguageSpecific();
+        this.type = new PublicationType(publication.getType());
+        this.fileType = publication.getFileType();
 
         if (publication.getDescs() != null) {
             publication.getDescs().stream()
                     .filter(PublicationDescVo::descDefined)
                     .forEach(desc -> addDesc(new PublicationDesc(desc)));
+        }
+
+        if (publication instanceof SystemPublicationVo) {
+            SystemPublicationVo sysPub = (SystemPublicationVo) publication;
+            this.domain = sysPub.getDomain() != null ? new Domain(sysPub.getDomain()) : null;
+            this.messagePublication = sysPub.getMessagePublication();
+            this.languageSpecific = sysPub.isLanguageSpecific();
+            if (sysPub.getPrintSettings() != null) {
+                this.printSettings.putAll(sysPub.getPrintSettings());
+            }
+            if (sysPub.getReportParams() != null) {
+                this.reportParams.putAll(sysPub.getReportParams());
+            }
         }
     }
 
@@ -85,25 +129,49 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     public void updatePublication(Publication publication) {
         this.publicationId = publication.getPublicationId();
         this.type = publication.getType();
-        this.active = publication.isActive();
+        this.domain = publication.getDomain();
+        this.messagePublication = publication.getMessagePublication();
+        this.fileType = publication.getFileType();
         this.languageSpecific = publication.isLanguageSpecific();
+        this.printSettings.clear();
+        this.printSettings.putAll(publication.getPrintSettings());
+        this.reportParams.clear();
+        this.reportParams.putAll(publication.getReportParams());
+        descs.clear();
         copyDescsAndRemoveBlanks(publication.getDescs());
     }
 
 
     /** Converts this entity to a value object */
-    public PublicationVo toVo(DataFilter dataFilter) {
-        PublicationVo publication = new PublicationVo();
+    public <P extends PublicationVo> P toVo(Class<P> clz, DataFilter dataFilter) {
+
+        DataFilter compFilter = dataFilter.forComponent(Publication.class);
+
+        P publication = newInstance(clz);
         publication.setPublicationId(publicationId);
-        publication.setType(type);
-        publication.setActive(active);
-        publication.setLanguageSpecific(languageSpecific);
+        publication.setType(type.toVo(dataFilter));
+        publication.setFileType(fileType);
 
         if (!descs.isEmpty()) {
-            publication.setDescs(getDescs(dataFilter).stream()
+            publication.setDescs(getDescs(compFilter).stream()
                     .map(PublicationDesc::toVo)
                     .collect(Collectors.toList()));
         }
+
+        if (publication instanceof SystemPublicationVo) {
+            SystemPublicationVo sysPub = (SystemPublicationVo) publication;
+            sysPub.setDomain((domain != null) ? domain.toVo()  : null);
+            sysPub.setMessagePublication(messagePublication);
+            sysPub.setLanguageSpecific(languageSpecific);
+
+            if (!printSettings.isEmpty()) {
+                sysPub.setPrintSettings(new HashMap<>(printSettings));
+            }
+            if (!reportParams.isEmpty()) {
+                sysPub.setReportParams(new HashMap<>(reportParams));
+            }
+        }
+
         return publication;
     }
 
@@ -114,7 +182,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     @Override
     public PublicationDesc createDesc(String lang) {
         PublicationDesc desc = new PublicationDesc();
-        desc.setLang(lang == null ? "*" : lang);
+        desc.setLang(lang);
         desc.setEntity(this);
         getDescs().add(desc);
         return desc;
@@ -147,12 +215,28 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
         this.type = type;
     }
 
-    public boolean isActive() {
-        return active;
+    public Domain getDomain() {
+        return domain;
     }
 
-    public void setActive(boolean active) {
-        this.active = active;
+    public void setDomain(Domain domain) {
+        this.domain = domain;
+    }
+
+    public MessagePublication getMessagePublication() {
+        return messagePublication;
+    }
+
+    public void setMessagePublication(MessagePublication messagePublication) {
+        this.messagePublication = messagePublication;
+    }
+
+    public PublicationFileType getFileType() {
+        return fileType;
+    }
+
+    public void setFileType(PublicationFileType fileType) {
+        this.fileType = fileType;
     }
 
     public boolean isLanguageSpecific() {
@@ -161,6 +245,22 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
     public void setLanguageSpecific(boolean languageSpecific) {
         this.languageSpecific = languageSpecific;
+    }
+
+    public Map<String, Object> getPrintSettings() {
+        return printSettings;
+    }
+
+    public void setPrintSettings(Map<String, Object> printSettings) {
+        this.printSettings = printSettings;
+    }
+
+    public Map<String, Object> getReportParams() {
+        return reportParams;
+    }
+
+    public void setReportParams(Map<String, Object> reportParams) {
+        this.reportParams = reportParams;
     }
 
     @Override

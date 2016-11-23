@@ -856,10 +856,14 @@ angular.module('niord.messages')
 
                     scope.reports = [];
                     scope.showMapThumbnails = true;
-                    scope.reportParams = {};
+                    if (!scope.reportParams) {
+                        scope.reportParams = {};
+                    }
+                    if (!scope.printSettings) {
+                        scope.printSettings = {};
+                    }
 
-                    scope.printSettings = scope.printSettings || {};
-                    scope.printSettings.report = undefined;
+                    // Set default print settings
                     scope.printSettings.pageSize = scope.printSettings.pageSize || 'A4';
                     scope.printSettings.pageOrientation = scope.printSettings.pageOrientation || 'portrait';
                     scope.printSettings.mapThumbnails = scope.printSettings.mapThumbnails || false;
@@ -868,7 +872,7 @@ angular.module('niord.messages')
                     MessageService.printReports(scope.list)
                         .success(function (reports) {
                             scope.reports = reports;
-                            if (reports.length > 0) {
+                            if (reports.length > 0 && !scope.printSettings.report) {
                                 scope.printSettings.report = reports[0].reportId;
                             }
                         });

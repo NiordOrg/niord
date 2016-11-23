@@ -21,9 +21,13 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.publication.Publication;
+import org.niord.core.publication.PublicationSearchParams;
 import org.niord.core.publication.PublicationService;
-import org.niord.core.publication.vo.PublicationType;
-import org.niord.core.publication.vo.PublicationVo;
+import org.niord.model.publication.PublicationFileType;
+import org.niord.core.publication.vo.SystemPublicationVo;
+import org.niord.core.user.UserService;
+import org.niord.core.publication.vo.MessagePublication;
+import org.niord.model.publication.PublicationVo;
 import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 import org.slf4j.Logger;
@@ -67,6 +71,9 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @Inject
     PublicationService publicationService;
 
+    @Inject
+    UserService userService;
+
 
     /** Searches publications based on the given search parameters */
     @GET
@@ -76,15 +83,26 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @NoCache
     public List<PublicationVo> searchPublications(
             @QueryParam("lang") String lang,
-            @QueryParam("type")PublicationType type,
+            @QueryParam("domain") String domain,
+            @QueryParam("type") String type,
+            @QueryParam("messagePublication") MessagePublication messagePublication,
+            @QueryParam("fileType") PublicationFileType fileType,
             @QueryParam("title") @DefaultValue("") String title,
-            @QueryParam("inactive") @DefaultValue("false") boolean inactive,
-            @QueryParam("limit") @DefaultValue("1000") int limit) {
+            @QueryParam("limit") @DefaultValue("100") int limit) {
+
+        PublicationSearchParams params = new PublicationSearchParams()
+                .language(lang)
+                .domain(domain)
+                .type(type)
+                .messagePublication(messagePublication)
+                .fileType(fileType)
+                .title(title);
+        params.maxSize(limit);
 
         DataFilter dataFilter = DataFilter.get().lang(lang);
 
-        return publicationService.searchPublications(lang, type, title, inactive, limit).stream()
-                .map(p -> p.toVo(dataFilter))
+        return publicationService.searchPublications(params).stream()
+                .map(p -> p.toVo(PublicationVo.class, dataFilter))
                 .sorted(publicationTitleComparator(lang))
                 .collect(Collectors.toList());
     }
@@ -102,7 +120,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
         DataFilter dataFilter = DataFilter.get().lang(lang);
         return publicationService.getPublications().stream()
                 .limit(limit)
-                .map(p -> p.toVo(dataFilter))
+                .map(p -> p.toVo(PublicationVo.class, dataFilter))
                 .sorted(publicationTitleComparator(lang))
                 .collect(Collectors.toList());
     }
@@ -114,9 +132,9 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public PublicationVo getPublication(@PathParam("publicationId") String publicationId) throws Exception {
+    public SystemPublicationVo getPublication(@PathParam("publicationId") String publicationId) throws Exception {
         return publicationService.findByPublicationId(publicationId)
-                .toVo(DataFilter.get());
+                .toVo(SystemPublicationVo.class, DataFilter.get());
     }
 
 
@@ -128,10 +146,10 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @RolesAllowed({ "admin" })
     @GZIP
     @NoCache
-    public PublicationVo createPublication(PublicationVo publication) throws Exception {
+    public SystemPublicationVo createPublication(SystemPublicationVo publication) throws Exception {
         log.info("Creating publication " + publication);
         return publicationService.createPublication(new Publication(publication))
-                .toVo(DataFilter.get());
+                .toVo(SystemPublicationVo.class, DataFilter.get());
     }
 
 
@@ -143,9 +161,9 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @RolesAllowed({ "admin" })
     @GZIP
     @NoCache
-    public PublicationVo updatePublication(
+    public SystemPublicationVo updatePublication(
             @PathParam("publicationId") String publicationId,
-            PublicationVo publication) throws Exception {
+            SystemPublicationVo publication) throws Exception {
 
         if (!Objects.equals(publicationId, publication.getPublicationId())) {
             throw new WebApplicationException(400);
@@ -153,7 +171,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
 
         log.info("Updating publication " + publicationId);
         return publicationService.updatePublication(new Publication(publication))
-                .toVo(DataFilter.get());
+                .toVo(SystemPublicationVo.class, DataFilter.get());
     }
 
 
@@ -167,6 +185,33 @@ public class PublicationRestService extends AbstractBatchableRestService {
     public void deletePublication(@PathParam("publicationId") String publicationId) throws Exception {
         log.info("Deleting publication " + publicationId);
         publicationService.deletePublication(publicationId);
+    }
+
+
+    /**
+     * Returns all publications for export purposes
+     *
+     * If not called via Ajax, pass a ticket request parameter along, which
+     * can be requested via Ajax call to /rest/tickets/ticket?role=admin
+     */
+    @GET
+    @Path("/export")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public List<PublicationVo> exportPublications(
+            @QueryParam("lang") String lang) {
+
+        // If a ticket is defined, check if programmatically
+        if (!userService.isCallerInRole("admin")) {
+            throw new WebApplicationException(403);
+        }
+
+        DataFilter dataFilter = DataFilter.get().lang(lang);
+        return publicationService.getPublications().stream()
+                .map(p -> p.toVo(SystemPublicationVo.class, dataFilter))
+                .sorted(publicationTitleComparator(lang))
+                .collect(Collectors.toList());
     }
 
 

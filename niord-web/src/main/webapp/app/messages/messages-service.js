@@ -214,13 +214,13 @@ angular.module('niord.messages')
 
 
             /** Returns all publications */
-            searchPublications: function(title, type) {
+            searchPublications: function(title, messagePublication) {
                 var params = 'lang=' + $rootScope.language;
                 if (title) {
                     params += '&title=' + encodeURIComponent(title);
                 }
-                if (type) {
-                    params += '&type=' + type;
+                if (messagePublication) {
+                    params += '&messagePublication=' + messagePublication;
                 }
                 return $http.get('/rest/publications/search?' + params);
             },
@@ -408,14 +408,14 @@ angular.module('niord.messages')
 
 
             /** Opens the message source dialog */
-            messagePublicationsDialog: function (message, type, publicationId, lang) {
+            messagePublicationsDialog: function (message, messagePublication, publicationId, lang) {
                 return $uibModal.open({
                     templateUrl: '/app/editor/format-publications-dialog.html',
                     controller: 'MessagePublicationsDialogCtrl',
                     size: 'md',
                     resolve: {
                         message: function () { return message },
-                        type: function () { return type },
+                        messagePublication: function () { return messagePublication },
                         publicationId: function () { return publicationId },
                         lang: function () { return lang; }
                     }

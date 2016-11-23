@@ -14,42 +14,46 @@
  * limitations under the License.
  */
 
-package org.niord.core.publication.vo;
+package org.niord.model.publication;
 
+import io.swagger.annotations.ApiModel;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizedDesc;
 
+import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlType;
+
 /**
- * The entity description VO
+ * Publication Type description VO
  */
-public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
+@ApiModel(value = "PublicationTypeDesc", description = "Translatable fields of the PublicationType model")
+@XmlType(propOrder = { "name", "description" })
+public class PublicationTypeDescVo implements ILocalizedDesc, IJsonSerializable {
 
     String lang;
-    String title;
-    String format;
-    String link;
-
+    String name;
+    String description;
 
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(title, format, link);
+        return ILocalizedDesc.fieldsDefined(name, description);
     }
 
 
     /** {@inheritDoc} */
     @Override
     public void copyDesc(ILocalizedDesc localizedDesc) {
-        PublicationDescVo desc = (PublicationDescVo)localizedDesc;
-        this.title = desc.getTitle();
-        this.format = desc.getFormat();
-        this.link = desc.getLink();
+        PublicationTypeDescVo desc = (PublicationTypeDescVo)localizedDesc;
+        this.name = desc.getName();
+        this.description = desc.getDescription();
     }
 
     /*************************/
     /** Getters and Setters **/
     /*************************/
 
+    @XmlAttribute
     @Override
     public String getLang() {
         return lang;
@@ -60,27 +64,19 @@ public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
         this.lang = lang;
     }
 
-    public String getTitle() {
-        return title;
+    public String getName() {
+        return name;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public String getFormat() {
-        return format;
+    public String getDescription() {
+        return description;
     }
 
-    public void setFormat(String format) {
-        this.format = format;
-    }
-
-    public String getLink() {
-        return link;
-    }
-
-    public void setLink(String link) {
-        this.link = link;
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

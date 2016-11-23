@@ -455,7 +455,7 @@ angular.module('niord.editor')
                 // The ID of the parent div has the format "internal/external-publication-<<lang>>"
                 var parentDivId = editor.getElement().parentElement.id;
                 var id = parentDivId.split("-");
-                var type = id[0].toUpperCase();
+                var messagePublication = id[0].toUpperCase();
                 var lang = id[2];
 
                 // Check if the cursor is within a publication span
@@ -467,7 +467,7 @@ angular.module('niord.editor')
                 }
 
                 $scope.$apply(function() {
-                    MessageService.messagePublicationsDialog($scope.message, type, publicationId, lang)
+                    MessageService.messagePublicationsDialog($scope.message, messagePublication, publicationId, lang)
                         .result.then($scope.setDirty);
                 });
             };

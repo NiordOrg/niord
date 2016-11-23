@@ -2,14 +2,12 @@
     <ui-select ng-model="publicationData.publication" ng-change="publicationUpdated()">
         <ui-select-match placeholder="Select Publication">
             {{publicationData.publication.descs[0].title}}
-            <span class="base-data-inactive" ng-if="!publicationData.publication.active">(inactive)</span>
         </ui-select-match>
         <ui-select-choices repeat="p in publications"
                            refresh="refreshPublications($select.search)"
                            refresh-delay="200">
             <div>
                 <span ng-bind-html="p.descs[0].title | highlight: $select.search"></span>
-                <span class="base-data-inactive" ng-if="!p.active">(inactive)</span>
             </div>
 
         </ui-select-choices>

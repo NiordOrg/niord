@@ -244,6 +244,18 @@ tr.batch-execution-row td div.progress {
     margin-bottom: 0;
 }
 
+/** Publications admin page **/
+
+.publication-report {
+    display: block;
+    padding: 10px;
+    border: 1px solid lightgray;
+}
+
+.publication-table {
+    font-size: 12px;
+}
+
 /** Dictionary admin page **/
 
 .dictionary-table tr td {

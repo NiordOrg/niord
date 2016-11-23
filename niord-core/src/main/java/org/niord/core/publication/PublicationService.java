@@ -17,17 +17,20 @@
 package org.niord.core.publication;
 
 import org.apache.commons.lang.StringUtils;
-import org.niord.core.publication.vo.PublicationType;
+import org.niord.core.db.CriteriaHelper;
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import java.util.Arrays;
-import java.util.HashSet;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Root;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Business interface for accessing publications
@@ -39,6 +42,11 @@ public class PublicationService extends BaseService {
     @Inject
     private Logger log;
 
+    @Inject
+    PublicationTypeService publicationTypeService;
+
+    @Inject
+    DomainService domainService;
 
     /**
      * Returns the publication with the given publication ID
@@ -57,41 +65,64 @@ public class PublicationService extends BaseService {
 
 
     /**
-     * Searches for publications matching the given term
+     * Searches for publications matching the given search parameters
      *
-     * @param term the search term
-     * @param lang the search language
-     * @param inactive whether to include inactive publications as well as active
-     * @param limit the maximum number of results
+     * @param params the search parameters
      * @return the search result
      */
-    public List<Publication> searchPublications(String lang, PublicationType type, String term, boolean inactive, int limit) {
+    @SuppressWarnings("all")
+    public List<Publication> searchPublications(PublicationSearchParams params) {
 
-        term = StringUtils.defaultIfBlank(term, "");
 
-        Set<Boolean> activeFlag = new HashSet<>();
-        activeFlag.add(Boolean.TRUE);
-        if (inactive) {
-            activeFlag.add(Boolean.FALSE);
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Publication> publicationQuery = cb.createQuery(Publication.class);
+
+        Root<Publication> publicationRoot = publicationQuery.from(Publication.class);
+
+        // Build the predicate
+        CriteriaHelper<Publication> criteriaHelper = new CriteriaHelper<>(cb, publicationQuery);
+
+        // Match the title
+        if (StringUtils.isNotBlank(params.getTitle())) {
+            Join<Publication, PublicationDesc> descs = publicationRoot.join("descs", JoinType.LEFT);
+            criteriaHelper.like(descs.get("title"), params.getTitle());
+
+            // Optionally, match the language
+            if (StringUtils.isNotBlank(params.getLanguage())) {
+                criteriaHelper.equals(descs.get("lang"), params.getLanguage());
+            }
         }
 
-        Set<PublicationType> types = new HashSet<>();
-        if (type != null) {
-            types.add(type);
-        } else {
-            types.addAll(Arrays.asList(PublicationType.values()));
+        // Match the type
+        if (StringUtils.isNotBlank(params.getType())) {
+            Join<Publication, PublicationType> typeJoin = publicationRoot.join("type", JoinType.LEFT);
+            criteriaHelper.equals(typeJoin.get("typeId"), params.getType());
         }
 
-        return em
-                .createNamedQuery("Publication.searchPublications", Publication.class)
-                .setParameter("active", activeFlag)
-                .setParameter("types", types)
-                .setParameter("lang", lang)
-                .setParameter("term", "%" + term.toLowerCase() + "%")
-                .getResultList()
-                .stream()
-                .limit(limit)
-                .collect(Collectors.toList());
+        // Match the domain
+        if (StringUtils.isNotBlank(params.getDomain())) {
+            Join<Publication, Domain> domainJoin = publicationRoot.join("domain", JoinType.LEFT);
+            criteriaHelper.add(cb.or(
+                    cb.isNull(publicationRoot.get("domain")),
+                    cb.equal(domainJoin.get("domainId"), params.getDomain()))
+            );
+        }
+
+        // Match the message publication type
+        criteriaHelper.equals(publicationRoot.get("messagePublication"), params.getMessagePublication());
+
+        // Match the file type
+        criteriaHelper.equals(publicationRoot.get("fileType"), params.getFileType());
+
+        // Complete the query
+        publicationQuery.select(publicationRoot)
+                .distinct(true)
+                .where(criteriaHelper.where());
+
+        // Execute the query and update the search result
+        return em.createQuery(publicationQuery)
+                .setMaxResults(params.getMaxSize())
+                .getResultList();
     }
 
 
@@ -117,11 +148,15 @@ public class PublicationService extends BaseService {
         }
 
         // Copy the publication data
-        original.setActive(publication.isActive());
-        original.setType(publication.getType());
-        original.setLanguageSpecific(publication.isLanguageSpecific());
-        original.getDescs().clear();
-        original.copyDescsAndRemoveBlanks(publication.getDescs());
+        original.updatePublication(publication);
+
+        // Substitute the publication type with the persisted on
+        original.setType(publicationTypeService.findByTypeId(original.getType().getTypeId()));
+
+        // Substitute the domain with the persisted on
+        if (original.getDomain() != null) {
+            original.setDomain(domainService.findByDomainId(original.getDomain().getDomainId()));
+        }
 
         return saveEntity(original);
     }
@@ -136,6 +171,14 @@ public class PublicationService extends BaseService {
         if (!publication.isNew()) {
             throw new IllegalArgumentException("Cannot create publication with existing ID "
                     + publication.getId());
+        }
+
+        // Substitute the publication type with the persisted on
+        publication.setType(publicationTypeService.findByTypeId(publication.getType().getTypeId()));
+
+        // Substitute the domain with the persisted on
+        if (publication.getDomain() != null) {
+            publication.setDomain(domainService.findByDomainId(publication.getDomain().getDomainId()));
         }
 
         return saveEntity(publication);
