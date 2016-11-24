@@ -214,13 +214,16 @@ angular.module('niord.messages')
 
 
             /** Returns all publications */
-            searchPublications: function(title, messagePublication) {
+            searchPublications: function(title, messagePublication, mainType) {
                 var params = 'lang=' + $rootScope.language;
                 if (title) {
                     params += '&title=' + encodeURIComponent(title);
                 }
                 if (messagePublication) {
                     params += '&messagePublication=' + messagePublication;
+                }
+                if (mainType) {
+                    params += '&mainType=' + mainType;
                 }
                 return $http.get('/rest/publications/search?' + params);
             },
@@ -456,9 +459,10 @@ angular.module('niord.messages')
 
 
             /** Returns the message print reports */
-            printReports: function (list) {
+            printReports: function (list, expandParams) {
                 var endpoint = (list) ? 'reports' : 'detail-reports';
-                return $http.get('/rest/message-reports/' + endpoint);
+                var params = (expandParams !== undefined) ? '?expandParams=' + expandParams : '';
+                return $http.get('/rest/message-reports/' + endpoint + params);
             },
 
 

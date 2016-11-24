@@ -111,6 +111,42 @@ public class PublicationRestService extends AbstractBatchableRestService {
     }
 
 
+    /** Searches publications based on the given search parameters - returns details information for each publication */
+    @GET
+    @Path("/search-details")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed({ "admin" })
+    @GZIP
+    @NoCache
+    public List<SystemPublicationVo> searchSystemPublications(
+            @QueryParam("lang") String lang,
+            @QueryParam("domain") String domain,
+            @QueryParam("category") String category,
+            @QueryParam("messagePublication") MessagePublication messagePublication,
+            @QueryParam("mainType") @DefaultValue("PUBLICATION") PublicationMainType mainType,
+            @QueryParam("type") PublicationType type,
+            @QueryParam("title") @DefaultValue("") String title,
+            @QueryParam("limit") @DefaultValue("100") int limit) {
+
+        PublicationSearchParams params = new PublicationSearchParams()
+                .language(lang)
+                .mainType(mainType)
+                .type(type)
+                .domain(domain)
+                .category(category)
+                .messagePublication(messagePublication)
+                .title(title);
+        params.maxSize(limit);
+
+        DataFilter dataFilter = DataFilter.get().lang(lang);
+
+        return publicationService.searchPublications(params).stream()
+                .map(p -> p.toVo(SystemPublicationVo.class, dataFilter))
+                .sorted(publicationTitleComparator(lang))
+                .collect(Collectors.toList());
+    }
+
+
     /** Returns all publications up to the given limit */
     @GET
     @Path("/all")

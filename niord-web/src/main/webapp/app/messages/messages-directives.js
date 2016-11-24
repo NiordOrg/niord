@@ -850,7 +850,8 @@ angular.module('niord.messages')
                 scope: {
                     list:           "=",
                     printSettings:  "=",
-                    reportParams:   "="
+                    reportParams:   "=",
+                    expandParams:   "="
                 },
                 link: function(scope) {
 
@@ -869,7 +870,7 @@ angular.module('niord.messages')
                     scope.printSettings.mapThumbnails = scope.printSettings.mapThumbnails || false;
 
                     // Load the message reports
-                    MessageService.printReports(scope.list)
+                    MessageService.printReports(scope.list, scope.expandParams)
                         .success(function (reports) {
                             scope.reports = reports;
                             if (reports.length > 0 && !scope.printSettings.report) {

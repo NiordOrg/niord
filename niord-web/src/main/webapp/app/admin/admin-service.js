@@ -175,7 +175,7 @@ angular.module('niord.admin')
                 if (category && category.length > 0) {
                     params += '&category=' + encodeURIComponent(category);
                 }
-                return $http.get('/rest/publications/search?' + params);
+                return $http.get('/rest/publications/search-details?' + params);
             },
 
 

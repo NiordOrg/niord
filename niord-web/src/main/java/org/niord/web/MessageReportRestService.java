@@ -35,6 +35,7 @@ import javax.annotation.security.PermitAll;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -89,10 +90,12 @@ public class MessageReportRestService {
     @Path("/reports")
     @GZIP
     @NoCache
-    public List<FmReportVo> getReports() {
+    public List<FmReportVo> getReports(
+            @QueryParam("expandParams") @DefaultValue("true") boolean expandParams
+    ) {
         return fmService.getReports().stream()
                 .map(FmReport::toVo)
-                .map(r -> fmService.expandReportParams(r))
+                .map(r -> expandParams ? fmService.expandReportParams(r) : r)
                 .collect(Collectors.toList());
     }
 

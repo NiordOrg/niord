@@ -61,12 +61,46 @@ angular.module('niord.admin')
             $scope.$watch("filter", $scope.loadPublications, true);
 
 
+            // Sync up $scope.publication.publication with $scope.publication.template
+            $scope.$watch("publication.publication", function (pub) {
+                if ($scope.publication) {
+                    $scope.publication.template = pub;
+                }
+            });
+
+
             // Load categories
             AdminPublicationService
                 .getPublicationCategories()
                 .success(function (publicationCategories) {
                     $scope.publicationCategories = publicationCategories;
                 });
+
+
+            /** Returns if the given editor field should be displayed **/
+            $scope.showEditorField = function (field) {
+                var pub = $scope.publication;
+                var hasTemplate = pub.template !== undefined;
+                switch (field) {
+                    case 'template':
+                        return pub.mainType == 'PUBLICATION';
+                    case 'category':
+                        return !hasTemplate || pub.template.category === undefined;
+                    case 'title':
+                        return !hasTemplate || pub.template.descs[0].title === undefined;
+                    case 'dates':
+                        return pub.mainType == 'PUBLICATION';
+                    case 'type':
+                        return !hasTemplate || pub.template.type === undefined;
+                    case 'link':
+                        return (!hasTemplate || pub.template.link === undefined) && pub.type == 'LINK';
+                    case 'report':
+                        return !hasTemplate && pub.type == 'MESSAGE_REPORT';
+                    case 'messagePublication':
+                        return !hasTemplate || pub.template.messagePublication === undefined;
+                }
+                return true;
+            };
 
 
             // Used to ensure that description entities have a "title" field
@@ -80,7 +114,12 @@ angular.module('niord.admin')
                 $scope.editMode = 'add';
                 $scope.publication = {
                     publicationId: undefined,
-                    fileType: 'LINK',
+                    template: undefined,
+                    category: { categoryId: undefined },
+                    mainType: $scope.mainType,
+                    type: 'LINK',
+                    publishDateFrom: undefined,
+                    publishDateTo: undefined,
                     messagePublication: 'NONE',
                     languageSpecific: true,
                     descs: []
@@ -95,7 +134,27 @@ angular.module('niord.admin')
                     .success(function (pub) {
                         $scope.editMode = 'edit';
                         $scope.publication = pub;
+                        $scope.publication.publication = pub.template;
                         LangService.sortDescs($scope.publication)
+                    })
+                    .error($scope.displayError);
+            };
+
+
+            /** Copies a publication **/
+            $scope.copyPublication = function (publication, nextIssue) {
+                AdminPublicationService.getPublicationDetails(publication)
+                    .success(function (pub) {
+                        $scope.editMode = 'add';
+                        $scope.publication = pub;
+                        $scope.publication.publication = pub.template;
+                        delete $scope.publication.publicationId;
+                        if (nextIssue && pub.publishDateFrom && pub.publishDateTo) {
+                            var duration = pub.publishDateTo - pub.publishDateFrom;
+                            $scope.publication.publishDateFrom = pub.publishDateTo;
+                            $scope.publication.publishDateTo = pub.publishDateTo + duration;
+                        }
+                        LangService.sortDescs($scope.publication);
                     })
                     .error($scope.displayError);
             };
@@ -123,7 +182,9 @@ angular.module('niord.admin')
 
             /** Saves the current publication being edited */
             $scope.savePublication = function () {
-
+                if ($scope.publication.messagePublication == '') {
+                    delete $scope.publication.messagePublication;
+                }
                 if ($scope.publication && $scope.editMode == 'add') {
                     AdminPublicationService
                         .createPublication($scope.publication)
