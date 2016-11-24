@@ -20,7 +20,7 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.domain.DomainService;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationService;
-import org.niord.core.publication.PublicationTypeService;
+import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.vo.SystemPublicationVo;
 
 import javax.inject.Inject;
@@ -36,7 +36,7 @@ public class BatchPublicationImportProcessor extends AbstractItemHandler {
     PublicationService publicationService;
 
     @Inject
-    PublicationTypeService publicationTypeService;
+    PublicationCategoryService publicationCategoryService;
 
     @Inject
     DomainService domainService;
@@ -49,8 +49,8 @@ public class BatchPublicationImportProcessor extends AbstractItemHandler {
 
         Publication publication = new Publication(publicationVo);
 
-        // Find or create the associated publication type
-        publication.setType(publicationTypeService.findOrCreatePublicationType(publication.getType()));
+        // Find or create the associated publication category
+        publication.setCategory(publicationCategoryService.findOrCreatePublicationCategory(publication.getCategory()));
 
         // Substitute the domain with the persisted on
         if (publication.getDomain() != null) {

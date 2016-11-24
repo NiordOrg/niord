@@ -17,43 +17,43 @@
 package org.niord.core.publication.batch;
 
 import org.niord.core.batch.AbstractItemHandler;
-import org.niord.core.publication.PublicationType;
-import org.niord.core.publication.PublicationTypeService;
-import org.niord.model.publication.PublicationTypeVo;
+import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.PublicationCategoryService;
+import org.niord.model.publication.PublicationCategoryVo;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 
 /**
- * Filters publication types that need to be a added or updated
+ * Filters publication categories that need to be a added or updated
  */
 @Named
-public class BatchPublicationTypeImportProcessor extends AbstractItemHandler {
+public class BatchPublicationCategoryImportProcessor extends AbstractItemHandler {
 
     @Inject
-    PublicationTypeService publicationTypeService;
+    PublicationCategoryService publicationCategoryService;
 
 
     /** {@inheritDoc} **/
     @Override
     public Object processItem(Object item) throws Exception {
 
-        PublicationTypeVo publicationTypeVo = (PublicationTypeVo) item;
+        PublicationCategoryVo publicationCategoryVo = (PublicationCategoryVo) item;
 
-        PublicationType publicationType = new PublicationType(publicationTypeVo);
+        PublicationCategory publicationCategory = new PublicationCategory(publicationCategoryVo);
 
         // Look for an existing publication with the same name
-        PublicationType orig = publicationTypeService.findByTypeId(publicationType.getTypeId());
+        PublicationCategory orig = publicationCategoryService.findByCategoryId(publicationCategory.getCategoryId());
 
         if (orig == null) {
             // Persist new publication
-            getLog().info("Persisting new publication type " + publicationType);
-            return publicationType;
+            getLog().info("Persisting new publication category " + publicationCategory);
+            return publicationCategory;
 
         } else {
             // Update original publication
-            getLog().info("Updating publication type " + orig.getId());
-            orig.updatePublicationType(publicationType);
+            getLog().info("Updating publication category " + orig.getId());
+            orig.updatePublicationCategory(publicationCategory);
             return orig;
         }
     }

@@ -17,18 +17,18 @@
 package org.niord.core.publication;
 
 import org.niord.core.model.DescEntity;
-import org.niord.model.publication.PublicationTypeDescVo;
+import org.niord.model.publication.PublicationCategoryDescVo;
 import org.niord.model.ILocalizedDesc;
 
 import javax.persistence.Entity;
 import javax.validation.constraints.NotNull;
 
 /**
- * Localized contents for the PublicationType entity
+ * Localized contents for the PublicationCategory entity
  */
 @Entity
 @SuppressWarnings("unused")
-public class PublicationTypeDesc extends DescEntity<PublicationType> {
+public class PublicationCategoryDesc extends DescEntity<PublicationCategory> {
 
     @NotNull
     String name;
@@ -37,12 +37,12 @@ public class PublicationTypeDesc extends DescEntity<PublicationType> {
 
 
     /** Constructor */
-    public PublicationTypeDesc() {
+    public PublicationCategoryDesc() {
     }
 
 
     /** Constructor */
-    public PublicationTypeDesc(PublicationTypeDescVo desc) {
+    public PublicationCategoryDesc(PublicationCategoryDescVo desc) {
         super(desc);
         this.name = desc.getName();
         this.description = desc.getDescription();
@@ -50,8 +50,8 @@ public class PublicationTypeDesc extends DescEntity<PublicationType> {
 
 
     /** Converts this entity to a value object */
-    public PublicationTypeDescVo toVo() {
-        PublicationTypeDescVo desc = new PublicationTypeDescVo();
+    public PublicationCategoryDescVo toVo() {
+        PublicationCategoryDescVo desc = new PublicationCategoryDescVo();
         desc.setLang(lang);
         desc.setName(name);
         desc.setDescription(description);
@@ -69,7 +69,7 @@ public class PublicationTypeDesc extends DescEntity<PublicationType> {
     /** {@inheritDoc} */
     @Override
     public void copyDesc(ILocalizedDesc localizedDesc) {
-        PublicationTypeDesc desc = (PublicationTypeDesc)localizedDesc;
+        PublicationCategoryDesc desc = (PublicationCategoryDesc)localizedDesc;
         this.name = desc.getName();
         this.description = desc.getDescription();
     }

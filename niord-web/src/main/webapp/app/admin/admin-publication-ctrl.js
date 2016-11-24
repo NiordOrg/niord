@@ -158,19 +158,19 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
-     * PublicationTypesAdminCtrl
+     * PublicationCategoriesAdminCtrl
      * ********************************************************************************
-     * Publication Types Admin Controller
-     * Controller for the Admin Publications -> Types page
+     * Publication Categories Admin Controller
+     * Controller for the Admin Publications -> Categories page
      */
-    .controller('PublicationTypesAdminCtrl', [
+    .controller('PublicationCategoriesAdminCtrl', [
         '$scope', '$rootScope', 'growl', 'AdminPublicationService', 'DialogService', 'LangService', 'UploadFileService',
         function ($scope, $rootScope, growl, AdminPublicationService, DialogService, LangService, UploadFileService) {
             'use strict';
 
-            $scope.publicationTypes = [];
-            $scope.filteredPublicationTypes = [];
-            $scope.publicationType = undefined; // The publicationType being edited
+            $scope.publicationCategories = [];
+            $scope.filteredPublicationCategories = [];
+            $scope.publicationCategory = undefined; // The publicationCategory being edited
             $scope.editMode = 'add';
             $scope.filter = {
                 search: ''
@@ -178,25 +178,25 @@ angular.module('niord.admin')
 
 
             /** Filters messages by name **/
-            $scope.updateFilteredPublicationTypes = function () {
-                $scope.filteredPublicationTypes = $.grep($scope.publicationTypes, function (pubType) {
-                    return pubType.descs[0].name.toLowerCase().indexOf($scope.filter.search.toLowerCase()) !== -1;
+            $scope.updateFilteredPublicationCategories = function () {
+                $scope.filteredPublicationCategories = $.grep($scope.publicationCategories, function (pubCat) {
+                    return pubCat.descs[0].name.toLowerCase().indexOf($scope.filter.search.toLowerCase()) !== -1;
                 });
             };
-            $scope.$watch("filter.search", $scope.updateFilteredPublicationTypes, true);
+            $scope.$watch("filter.search", $scope.updateFilteredPublicationCategories, true);
 
 
-            /** Loads the publication types from the back-end */
-            $scope.loadPublicationTypes = function() {
-                $scope.publicationType = undefined;
+            /** Loads the publication categories from the back-end */
+            $scope.loadPublicationCategories = function() {
+                $scope.publicationCategory = undefined;
                 AdminPublicationService
-                    .getPublicationTypes()
-                    .success(function (publicationTypes) {
-                        $scope.publicationTypes = publicationTypes;
-                        $scope.updateFilteredPublicationTypes();
+                    .getPublicationCategories()
+                    .success(function (publicationCategories) {
+                        $scope.publicationCategories = publicationCategories;
+                        $scope.updateFilteredPublicationCategories();
                     });
             };
-            $scope.loadPublicationTypes();
+            $scope.loadPublicationCategories();
 
 
             // Used to ensure that description entities have a "name" field
@@ -205,25 +205,25 @@ angular.module('niord.admin')
             }
 
 
-            /** Adds a new publication type **/
-            $scope.addPublicationType = function () {
+            /** Adds a new publication categories **/
+            $scope.addPublicationCategory = function () {
                 $scope.editMode = 'add';
-                $scope.publicationType = {
+                $scope.publicationCategory = {
                     priority: 100,
                     publish: false,
                     descs: []
                 };
-                LangService.checkDescs($scope.publicationType, ensureNameField);
+                LangService.checkDescs($scope.publicationCategory, ensureNameField);
             };
 
 
-            /** Edits a publication type **/
-            $scope.editPublicationType = function (publicationType) {
-                AdminPublicationService.getPublicationTypeDetails(publicationType)
+            /** Edits a publication category **/
+            $scope.editPublicationCategory = function (publicationCategory) {
+                AdminPublicationService.getPublicationCategoryDetails(publicationCategory)
                     .success(function (pub) {
                         $scope.editMode = 'edit';
-                        $scope.publicationType = pub;
-                        LangService.sortDescs($scope.publicationType)
+                        $scope.publicationCategory = pub;
+                        LangService.sortDescs($scope.publicationCategory)
                     })
                     .error($scope.displayError);
             };
@@ -231,45 +231,45 @@ angular.module('niord.admin')
 
             /** Displays the error message */
             $scope.displayError = function () {
-                growl.error("Error saving publication type", { ttl: 5000 });
+                growl.error("Error saving publication category", { ttl: 5000 });
             };
 
 
-            /** Saves the current publication type being edited */
-            $scope.savePublicationType = function () {
+            /** Saves the current publication category being edited */
+            $scope.savePublicationCategory = function () {
 
-                if ($scope.publicationType && $scope.editMode == 'add') {
+                if ($scope.publicationCategory && $scope.editMode == 'add') {
                     AdminPublicationService
-                        .createPublicationType($scope.publicationType)
-                        .success($scope.loadPublicationTypes)
+                        .createPublicationCategory($scope.publicationCategory)
+                        .success($scope.loadPublicationCategories)
                         .error($scope.displayError);
-                } else if ($scope.publicationType && $scope.editMode == 'edit') {
+                } else if ($scope.publicationCategory && $scope.editMode == 'edit') {
                     AdminPublicationService
-                        .updatePublicationType($scope.publicationType)
-                        .success($scope.loadPublicationTypes)
+                        .updatePublicationCategory($scope.publicationCategory)
+                        .success($scope.loadPublicationCategories)
                         .error($scope.displayError);
                 }
             };
 
 
-            /** Deletes the given publication type */
-            $scope.deletePublicationType = function (publicationType) {
+            /** Deletes the given publication category */
+            $scope.deletePublicationCategory = function (publicationCategory) {
                 DialogService.showConfirmDialog(
-                    "Delete Publication type?", "Delete publication type '" + publicationType.descs[0].name + "'?")
+                    "Delete Publication category?", "Delete publication category '" + publicationCategory.descs[0].name + "'?")
                     .then(function() {
                         AdminPublicationService
-                            .deletePublicationType(publicationType)
-                            .success($scope.loadPublicationTypes)
+                            .deletePublicationCategory(publicationCategory)
+                            .success($scope.loadPublicationCategories)
                             .error($scope.displayError);
                     });
             };
 
 
-            /** Opens the upload-publication-types dialog **/
-            $scope.uploadPublicationTypesDialog = function () {
+            /** Opens the upload-publication-categories dialog **/
+            $scope.uploadPublicationCategoriesDialog = function () {
                 UploadFileService.showUploadFileDialog(
-                    'Upload Publications Types File',
-                    '/rest/publication-types/upload-publication-types',
+                    'Upload Publications Categories File',
+                    '/rest/publication-categories/upload-publication-categories',
                     'json');
             };
 

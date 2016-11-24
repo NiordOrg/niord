@@ -43,7 +43,7 @@ public class PublicationService extends BaseService {
     private Logger log;
 
     @Inject
-    PublicationTypeService publicationTypeService;
+    PublicationCategoryService publicationCategoryService;
 
     @Inject
     DomainService domainService;
@@ -95,7 +95,7 @@ public class PublicationService extends BaseService {
 
         // Match the type
         if (StringUtils.isNotBlank(params.getType())) {
-            Join<Publication, PublicationType> typeJoin = publicationRoot.join("type", JoinType.LEFT);
+            Join<Publication, PublicationCategory> typeJoin = publicationRoot.join("type", JoinType.LEFT);
             criteriaHelper.equals(typeJoin.get("typeId"), params.getType());
         }
 
@@ -108,7 +108,7 @@ public class PublicationService extends BaseService {
             );
         }
 
-        // Match the message publication type
+        // Match the message publication category
         criteriaHelper.equals(publicationRoot.get("messagePublication"), params.getMessagePublication());
 
         // Match the file type
@@ -150,8 +150,8 @@ public class PublicationService extends BaseService {
         // Copy the publication data
         original.updatePublication(publication);
 
-        // Substitute the publication type with the persisted on
-        original.setType(publicationTypeService.findByTypeId(original.getType().getTypeId()));
+        // Substitute the publication category with the persisted on
+        original.setCategory(publicationCategoryService.findByCategoryId(original.getCategory().getCategoryId()));
 
         // Substitute the domain with the persisted on
         if (original.getDomain() != null) {
@@ -173,8 +173,8 @@ public class PublicationService extends BaseService {
                     + publication.getId());
         }
 
-        // Substitute the publication type with the persisted on
-        publication.setType(publicationTypeService.findByTypeId(publication.getType().getTypeId()));
+        // Substitute the publication category with the persisted on
+        publication.setCategory(publicationCategoryService.findByCategoryId(publication.getCategory().getCategoryId()));
 
         // Substitute the domain with the persisted on
         if (publication.getDomain() != null) {

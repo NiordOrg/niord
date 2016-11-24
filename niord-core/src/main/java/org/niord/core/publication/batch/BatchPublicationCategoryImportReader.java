@@ -18,7 +18,7 @@ package org.niord.core.publication.batch;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.niord.core.batch.AbstractItemHandler;
-import org.niord.model.publication.PublicationTypeVo;
+import org.niord.model.publication.PublicationCategoryVo;
 import org.niord.core.util.JsonUtils;
 
 import javax.inject.Named;
@@ -27,18 +27,18 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Reads publications from a publication-type.json file.
+ * Reads publications from a publication-category.json file.
  * <p>
- * Please note, the actual publication-type-import.xml job file is not placed in the META-INF/batch-jobs of this project,
+ * Please note, the actual publication-category-import.xml job file is not placed in the META-INF/batch-jobs of this project,
  * but rather, in the META-INF/batch-jobs folder of the niord-web project.<br>
  * This is because of a class-loading bug in the Wildfly implementation. See e.g.
  * https://issues.jboss.org/browse/WFLY-4988
  * <p>
- * Format of json file is defined by the PublicationTypeVo class. Example:
+ * Format of json file is defined by the PublicationCategoryVo class. Example:
  * <pre>
  * [
  *   {
- *      "typeId": "dk-dma-publications",
+ *      "categoryId": "dk-dma-publications",
  *      "priority": 50,
  *      "publish": true,
  *      "descs": [
@@ -59,10 +59,10 @@ import java.util.List;
  * </pre>
  */
 @Named
-public class BatchPublicationTypeImportReader extends AbstractItemHandler {
+public class BatchPublicationCategoryImportReader extends AbstractItemHandler {
 
-    List<PublicationTypeVo> publicationTypes;
-    int publicationTypeNo = 0;
+    List<PublicationCategoryVo> publicationCategories;
+    int publicationCategoryNo = 0;
 
     /** {@inheritDoc} **/
     @Override
@@ -72,23 +72,23 @@ public class BatchPublicationTypeImportReader extends AbstractItemHandler {
         Path path = batchService.getBatchJobDataFile(jobContext.getInstanceId());
 
         // Load the publications from the file
-        publicationTypes = JsonUtils.readJson(
-                new TypeReference<List<PublicationTypeVo>>(){},
+        publicationCategories = JsonUtils.readJson(
+                new TypeReference<List<PublicationCategoryVo>>(){},
                 path);
 
         if (prevCheckpointInfo != null) {
-            publicationTypeNo = (Integer) prevCheckpointInfo;
+            publicationCategoryNo = (Integer) prevCheckpointInfo;
         }
 
-        getLog().info("Start processing " + publicationTypes.size() + " publication  types from index " + publicationTypeNo);
+        getLog().info("Start processing " + publicationCategories.size() + " publication  categories from index " + publicationCategoryNo);
     }
 
     /** {@inheritDoc} **/
     @Override
     public Object readItem() throws Exception {
-        if (publicationTypeNo < publicationTypes.size()) {
-            getLog().info("Reading publication type no " + publicationTypeNo);
-            return publicationTypes.get(publicationTypeNo++);
+        if (publicationCategoryNo < publicationCategories.size()) {
+            getLog().info("Reading publication category no " + publicationCategoryNo);
+            return publicationCategories.get(publicationCategoryNo++);
         }
         return null;
     }
@@ -96,6 +96,6 @@ public class BatchPublicationTypeImportReader extends AbstractItemHandler {
     /** {@inheritDoc} **/
     @Override
     public Serializable checkpointInfo() throws Exception {
-        return publicationTypeNo;
+        return publicationCategoryNo;
     }
 }

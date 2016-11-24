@@ -1,7 +1,7 @@
 
 <admin-page admin-page-title="Publications">
 
-    <p>Add, modify and manage publications, publications templates and publication types.</p>
+    <p>Add, modify and manage publications, publications templates and publication categories.</p>
 
     <uib-tabset class="framed-tabs">
 
@@ -23,13 +23,13 @@
                  ng-controller="PublicationsAdminCtrl"></div>
         </uib-tab>
 
-        <!-- Types -->
+        <!-- Categories -->
         <uib-tab>
             <tab-heading>
-                Publication Types
+                Publication Categories
             </tab-heading>
-            <div ng-include="'/app/admin/admin-page-publication-types.html'"
-                 ng-controller="PublicationTypesAdminCtrl"></div>
+            <div ng-include="'/app/admin/admin-page-publication-categories.html'"
+                 ng-controller="PublicationCategoriesAdminCtrl"></div>
         </uib-tab>
 
     </uib-tabset>

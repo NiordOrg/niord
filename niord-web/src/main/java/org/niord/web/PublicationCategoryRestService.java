@@ -20,9 +20,9 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
-import org.niord.core.publication.PublicationType;
-import org.niord.core.publication.PublicationTypeService;
-import org.niord.model.publication.PublicationTypeVo;
+import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.PublicationCategoryService;
+import org.niord.model.publication.PublicationCategoryVo;
 import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 import org.slf4j.Logger;
@@ -52,98 +52,98 @@ import java.util.stream.Collectors;
 
 
 /**
- * REST interface for accessing publication types.
+ * REST interface for accessing publication categories.
  */
-@Path("/publication-types")
+@Path("/publication-categories")
 @Stateless
 @SecurityDomain("keycloak")
 @PermitAll
-public class PublicationTypeRestService extends AbstractBatchableRestService {
+public class PublicationCategoryRestService extends AbstractBatchableRestService {
 
     @Inject
     Logger log;
 
     @Inject
-    PublicationTypeService publicationTypeService;
+    PublicationCategoryService publicationCategoryService;
 
 
-    /** Returns all publication types up to the given limit */
+    /** Returns all publication categories up to the given limit */
     @GET
     @Path("/all")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<PublicationTypeVo> getAllPublicationTypes(
+    public List<PublicationCategoryVo> getAllPublicationCategories(
             @QueryParam("lang") String lang,
             @QueryParam("limit") @DefaultValue("1000") int limit) {
         DataFilter dataFilter = DataFilter.get().lang(lang);
-        return publicationTypeService.getPublicationTypes().stream()
+        return publicationCategoryService.getPublicationCategories().stream()
                 .limit(limit)
                 .map(p -> p.toVo(dataFilter))
-                .sorted(publicationTypeNameComparator(lang))
+                .sorted(publicationCategoryNameComparator(lang))
                 .collect(Collectors.toList());
     }
 
 
-    /** Returns the publication type with the given ID */
+    /** Returns the publication category with the given ID */
     @GET
-    @Path("/publication-type/{typeId}")
+    @Path("/publication-category/{categoryId}")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public PublicationTypeVo getPublicationType(@PathParam("typeId") String typeId) throws Exception {
-        return publicationTypeService.findByTypeId(typeId)
+    public PublicationCategoryVo getPublicationCategory(@PathParam("categoryId") String categoryId) throws Exception {
+        return publicationCategoryService.findByCategoryId(categoryId)
                 .toVo(DataFilter.get());
     }
 
 
-    /** Creates a new publication type */
+    /** Creates a new publication category */
     @POST
-    @Path("/publication-type/")
+    @Path("/publication-category/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({ "admin" })
     @GZIP
     @NoCache
-    public PublicationTypeVo createPublicationType(PublicationTypeVo publicationType) throws Exception {
-        log.info("Creating publication type " + publicationType);
-        return publicationTypeService.createPublicationType(new PublicationType(publicationType))
+    public PublicationCategoryVo createPublicationCategory(PublicationCategoryVo publicationCategory) throws Exception {
+        log.info("Creating publication category " + publicationCategory);
+        return publicationCategoryService.createPublicationCategory(new PublicationCategory(publicationCategory))
                 .toVo(DataFilter.get());
     }
 
 
-    /** Updates an existing publication type */
+    /** Updates an existing publication category */
     @PUT
-    @Path("/publication-type/{typeId}")
+    @Path("/publication-category/{categoryId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed({ "admin" })
     @GZIP
     @NoCache
-    public PublicationTypeVo updatePublicationType(
-            @PathParam("typeId") String typeId,
-            PublicationTypeVo type) throws Exception {
+    public PublicationCategoryVo updatePublicationCategory(
+            @PathParam("categoryId") String categoryId,
+            PublicationCategoryVo category) throws Exception {
 
-        if (!Objects.equals(typeId, type.getTypeId())) {
+        if (!Objects.equals(categoryId, category.getCategoryId())) {
             throw new WebApplicationException(400);
         }
 
-        log.info("Updating publication type " + typeId);
-        return publicationTypeService.updatePublicationType(new PublicationType(type))
+        log.info("Updating publication category " + categoryId);
+        return publicationCategoryService.updatePublicationCategory(new PublicationCategory(category))
                 .toVo(DataFilter.get());
     }
 
 
-    /** Deletes an existing publication type */
+    /** Deletes an existing publication category */
     @DELETE
-    @Path("/publication-type/{typeId}")
+    @Path("/publication-category/{categoryId}")
     @Consumes("application/json;charset=UTF-8")
     @RolesAllowed({ "admin" })
     @GZIP
     @NoCache
-    public void deletePublicationType(@PathParam("typeId") String typeId) throws Exception {
-        log.info("Deleting publication type " + typeId);
-        publicationTypeService.deletePublicationType(typeId);
+    public void deletePublicationCategory(@PathParam("categoryId") String categoryId) throws Exception {
+        log.info("Deleting publication category " + categoryId);
+        publicationCategoryService.deletePublicationCategory(categoryId);
     }
 
 
@@ -154,16 +154,16 @@ public class PublicationTypeRestService extends AbstractBatchableRestService {
      * @return a status
      */
     @POST
-    @Path("/upload-publication-types")
+    @Path("/upload-publication-categories")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
     @RolesAllowed("admin")
     public String importPublications(@Context HttpServletRequest request) throws Exception {
-        return executeBatchJobFromUploadedFile(request, "publication-type-import");
+        return executeBatchJobFromUploadedFile(request, "publication-category-import");
     }
 
     /** Returns a publication name comparator **/
-    private Comparator<PublicationTypeVo> publicationTypeNameComparator(String lang) {
+    private Comparator<PublicationCategoryVo> publicationCategoryNameComparator(String lang) {
         return (p1, p2) -> {
             String n1 = p1.getDesc(lang) != null ? p1.getDesc(lang).getName() : null;
             String n2 = p2.getDesc(lang) != null ? p2.getDesc(lang).getName() : null;

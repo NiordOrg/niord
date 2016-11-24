@@ -200,33 +200,33 @@ angular.module('niord.admin')
             },
 
 
-            /** Returns all publication types **/
-            getPublicationTypes: function () {
-                return $http.get('/rest/publication-types/all?lang=' + $rootScope.language);
+            /** Returns all publication categories **/
+            getPublicationCategories: function () {
+                return $http.get('/rest/publication-categories/all?lang=' + $rootScope.language);
             },
 
 
-            /** Returns the details for the given publication type **/
-            getPublicationTypeDetails: function (publicationType) {
-                return $http.get('/rest/publication-types/publication-type/' + publicationType.typeId);
+            /** Returns the details for the given publication category **/
+            getPublicationCategoryDetails: function (publicationCategory) {
+                return $http.get('/rest/publication-categories/publication-category/' + publicationCategory.categoryId);
             },
 
 
-            /** Creates a new publication type **/
-            createPublicationType: function(publicationType) {
-                return $http.post('/rest/publication-types/publication-type/', publicationType);
+            /** Creates a new publication category **/
+            createPublicationCategory: function(publicationCategory) {
+                return $http.post('/rest/publication-categories/publication-category/', publicationCategory);
             },
 
 
-            /** Updates the given publication type **/
-            updatePublicationType: function(publicationType) {
-                return $http.put('/rest/publication-types/publication-type/' + publicationType.typeId, publicationType);
+            /** Updates the given publication category **/
+            updatePublicationCategory: function(publicationCategory) {
+                return $http.put('/rest/publication-categories/publication-category/' + publicationCategory.categoryId, publicationCategory);
             },
 
 
-            /** Deletes the given publication type **/
-            deletePublicationType: function(publicationType) {
-                return $http['delete']('/rest/publication-types/publication-type/' + publicationType.typeId);
+            /** Deletes the given publication category **/
+            deletePublicationCategory: function(publicationCategory) {
+                return $http['delete']('/rest/publication-categories/publication-category/' + publicationCategory.categoryId);
             }
 
         };

@@ -24,11 +24,11 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlType;
 
 /**
- * Publication Type description VO
+ * Publication Category description VO
  */
-@ApiModel(value = "PublicationTypeDesc", description = "Translatable fields of the PublicationType model")
+@ApiModel(value = "PublicationCategoryDesc", description = "Translatable fields of the PublicationCategory model")
 @XmlType(propOrder = { "name", "description" })
-public class PublicationTypeDescVo implements ILocalizedDesc, IJsonSerializable {
+public class PublicationCategoryDescVo implements ILocalizedDesc, IJsonSerializable {
 
     String lang;
     String name;
@@ -44,7 +44,7 @@ public class PublicationTypeDescVo implements ILocalizedDesc, IJsonSerializable 
     /** {@inheritDoc} */
     @Override
     public void copyDesc(ILocalizedDesc localizedDesc) {
-        PublicationTypeDescVo desc = (PublicationTypeDescVo)localizedDesc;
+        PublicationCategoryDescVo desc = (PublicationCategoryDescVo)localizedDesc;
         this.name = desc.getName();
         this.description = desc.getDescription();
     }

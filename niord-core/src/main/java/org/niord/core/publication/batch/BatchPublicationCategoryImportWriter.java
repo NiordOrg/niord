@@ -17,34 +17,34 @@
 package org.niord.core.publication.batch;
 
 import org.niord.core.batch.AbstractItemHandler;
-import org.niord.core.publication.PublicationType;
-import org.niord.core.publication.PublicationTypeService;
+import org.niord.core.publication.PublicationCategory;
+import org.niord.core.publication.PublicationCategoryService;
 
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.List;
 
 /**
- * Persists the publication types to the database
+ * Persists the publication categories to the database
  */
 @Named
-public class BatchPublicationTypeImportWriter extends AbstractItemHandler {
+public class BatchPublicationCategoryImportWriter extends AbstractItemHandler {
 
     @Inject
-    PublicationTypeService publicationTypeService;
+    PublicationCategoryService publicationCategoryService;
 
     /** {@inheritDoc} **/
     @Override
     public void writeItems(List<Object> items) throws Exception {
         long t0 = System.currentTimeMillis();
         for (Object i : items) {
-            PublicationType publicationType = (PublicationType) i;
-            if (publicationType.isNew()) {
-                publicationTypeService.createPublicationType(publicationType);
+            PublicationCategory publicationTpublicationCategory = (PublicationCategory) i;
+            if (publicationTpublicationCategory.isNew()) {
+                publicationCategoryService.createPublicationCategory(publicationTpublicationCategory);
             } else {
-                publicationTypeService.saveEntity(publicationType);
+                publicationCategoryService.saveEntity(publicationTpublicationCategory);
             }
         }
-        getLog().info(String.format("Persisted %d publication types in %d ms", items.size(), System.currentTimeMillis() - t0));
+        getLog().info(String.format("Persisted %d publication categories in %d ms", items.size(), System.currentTimeMillis() - t0));
     }
 }

@@ -50,11 +50,7 @@ import java.util.stream.Collectors;
 @Entity
 @NamedQueries({
         @NamedQuery(name="Publication.findByPublicationId",
-                query="SELECT p FROM Publication p where p.publicationId = :publicationId"),
-        @NamedQuery(name  = "Publication.searchPublications",
-                query = "select distinct p from Publication p join p.descs d where  "
-                        + " p.messagePublication in (:messagePublications) and d.lang = :lang "
-                        + " and lower(d.title) like :term")
+                query="SELECT p FROM Publication p where p.publicationId = :publicationId")
 })
 @SuppressWarnings("unused")
 public class Publication extends BaseEntity<Integer> implements ILocalizable<PublicationDesc> {
@@ -64,7 +60,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
     @NotNull
     @ManyToOne
-    PublicationType type;
+    PublicationCategory category;
 
     @ManyToOne
     Domain domain;
@@ -101,7 +97,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     /** Constructor */
     public Publication(PublicationVo publication) {
         this.publicationId = publication.getPublicationId();
-        this.type = new PublicationType(publication.getType());
+        this.category = new PublicationCategory(publication.getCategory());
         this.fileType = publication.getFileType();
 
         if (publication.getDescs() != null) {
@@ -128,7 +124,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     /** Updates this publication from another publication */
     public void updatePublication(Publication publication) {
         this.publicationId = publication.getPublicationId();
-        this.type = publication.getType();
+        this.category = publication.getCategory();
         this.domain = publication.getDomain();
         this.messagePublication = publication.getMessagePublication();
         this.fileType = publication.getFileType();
@@ -149,7 +145,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
         P publication = newInstance(clz);
         publication.setPublicationId(publicationId);
-        publication.setType(type.toVo(dataFilter));
+        publication.setCategory(category.toVo(dataFilter));
         publication.setFileType(fileType);
 
         if (!descs.isEmpty()) {
@@ -207,12 +203,12 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
         this.publicationId = publicationId;
     }
 
-    public PublicationType getType() {
-        return type;
+    public PublicationCategory getCategory() {
+        return category;
     }
 
-    public void setType(PublicationType type) {
-        this.type = type;
+    public void setCategory(PublicationCategory category) {
+        this.category = category;
     }
 
     public Domain getDomain() {

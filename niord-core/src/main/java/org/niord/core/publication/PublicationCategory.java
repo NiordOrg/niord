@@ -17,8 +17,8 @@
 package org.niord.core.publication;
 
 import org.niord.core.model.BaseEntity;
-import org.niord.model.publication.PublicationTypeDescVo;
-import org.niord.model.publication.PublicationTypeVo;
+import org.niord.model.publication.PublicationCategoryDescVo;
+import org.niord.model.publication.PublicationCategoryVo;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 
@@ -33,50 +33,50 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Defines a publication type that must be associated with a message.
+ * Defines a publication category that must be associated with a message.
  */
 @Entity
 @NamedQueries({
-        @NamedQuery(name="PublicationType.findByTypeId",
-                query="SELECT t FROM PublicationType t where t.typeId = :typeId")
+        @NamedQuery(name= "PublicationCategory.findByCategoryId",
+                query="SELECT t FROM PublicationCategory t where t.categoryId = :categoryId")
 })
 @SuppressWarnings("unused")
-public class PublicationType extends BaseEntity<Integer> implements ILocalizable<PublicationTypeDesc> {
+public class PublicationCategory extends BaseEntity<Integer> implements ILocalizable<PublicationCategoryDesc> {
 
     @NotNull
-    String typeId;
+    String categoryId;
 
     int priority = 0;
 
-    /** Whether to publish publications of this type or not **/
+    /** Whether to publish publications of this category or not **/
     boolean publish = false;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
-    List<PublicationTypeDesc> descs = new ArrayList<>();
+    List<PublicationCategoryDesc> descs = new ArrayList<>();
 
 
     /** Constructor */
-    public PublicationType() {
+    public PublicationCategory() {
     }
 
 
     /** Constructor */
-    public PublicationType(PublicationTypeVo type) {
-        this.typeId = type.getTypeId();
-        this.priority = type.getPriority() != null ? type.getPriority() : 0;
-        this.publish = type.getPublish() != null ? type.getPublish() : false;
+    public PublicationCategory(PublicationCategoryVo category) {
+        this.categoryId = category.getCategoryId();
+        this.priority = category.getPriority() != null ? category.getPriority() : 0;
+        this.publish = category.getPublish() != null ? category.getPublish() : false;
 
-        if (type.getDescs() != null) {
-            type.getDescs().stream()
-                    .filter(PublicationTypeDescVo::descDefined)
-                    .forEach(desc -> addDesc(new PublicationTypeDesc(desc)));
+        if (category.getDescs() != null) {
+            category.getDescs().stream()
+                    .filter(PublicationCategoryDescVo::descDefined)
+                    .forEach(desc -> addDesc(new PublicationCategoryDesc(desc)));
         }
     }
 
 
-    /** Updates this publication from another publication type */
-    public void updatePublicationType(PublicationType publication) {
-        this.typeId = publication.getTypeId();
+    /** Updates this publication from another publication category */
+    public void updatePublicationCategory(PublicationCategory publication) {
+        this.categoryId = publication.getCategoryId();
         this.priority = publication.getPriority();
         this.publish = publication.isPublish();
         descs.clear();
@@ -85,18 +85,18 @@ public class PublicationType extends BaseEntity<Integer> implements ILocalizable
 
 
     /** Converts this entity to a value object */
-    public PublicationTypeVo toVo(DataFilter dataFilter) {
-        PublicationTypeVo type = new PublicationTypeVo();
-        type.setTypeId(typeId);
-        type.setPriority(priority);
-        type.setPublish(publish);
+    public PublicationCategoryVo toVo(DataFilter dataFilter) {
+        PublicationCategoryVo category = new PublicationCategoryVo();
+        category.setCategoryId(categoryId);
+        category.setPriority(priority);
+        category.setPublish(publish);
 
         if (!descs.isEmpty()) {
-            type.setDescs(getDescs(dataFilter).stream()
-                    .map(PublicationTypeDesc::toVo)
+            category.setDescs(getDescs(dataFilter).stream()
+                    .map(PublicationCategoryDesc::toVo)
                     .collect(Collectors.toList()));
         }
-        return type;
+        return category;
     }
 
 
@@ -104,8 +104,8 @@ public class PublicationType extends BaseEntity<Integer> implements ILocalizable
      * {@inheritDoc}
      */
     @Override
-    public PublicationTypeDesc createDesc(String lang) {
-        PublicationTypeDesc desc = new PublicationTypeDesc();
+    public PublicationCategoryDesc createDesc(String lang) {
+        PublicationCategoryDesc desc = new PublicationCategoryDesc();
         desc.setLang(lang);
         desc.setEntity(this);
         getDescs().add(desc);
@@ -114,7 +114,7 @@ public class PublicationType extends BaseEntity<Integer> implements ILocalizable
 
 
     /** Adds a description entity to this entity */
-    public void addDesc(PublicationTypeDesc desc) {
+    public void addDesc(PublicationCategoryDesc desc) {
         desc.setEntity(this);
         descs.add(desc);
     }
@@ -123,12 +123,12 @@ public class PublicationType extends BaseEntity<Integer> implements ILocalizable
     /** Getters and Setters **/
     /*************************/
 
-    public String getTypeId() {
-        return typeId;
+    public String getCategoryId() {
+        return categoryId;
     }
 
-    public void setTypeId(String typeId) {
-        this.typeId = typeId;
+    public void setCategoryId(String categoryId) {
+        this.categoryId = categoryId;
     }
 
     public int getPriority() {
@@ -148,12 +148,12 @@ public class PublicationType extends BaseEntity<Integer> implements ILocalizable
     }
 
     @Override
-    public List<PublicationTypeDesc> getDescs() {
+    public List<PublicationCategoryDesc> getDescs() {
         return descs;
     }
 
     @Override
-    public void setDescs(List<PublicationTypeDesc> descs) {
+    public void setDescs(List<PublicationCategoryDesc> descs) {
         this.descs = descs;
     }
 }

@@ -143,14 +143,14 @@
                     <tr>
                         <th>ID</th>
                         <th>Title</th>
-                        <th>Type</th>
+                        <th>Category</th>
                         <th>File Type</th>
                         <th></th>
                     </tr>
                     <tr ng-repeat="publication in publications">
                         <td>{{publication.publicationId}}</td>
                         <td>{{publication.descs[0].title}}</td>
-                        <td>{{publication.type.descs[0].name}}</td>
+                        <td>{{publication.category.descs[0].name}}</td>
                         <td>{{publication.fileType}}</td>
                         <td nowrap>
                             <a href ng-click="editPublication(publication);" title="Edit Publication"><i class="glyphicon glyphicon-pencil"></i></a>

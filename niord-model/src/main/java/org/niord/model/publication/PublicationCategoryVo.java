@@ -25,25 +25,25 @@ import javax.xml.bind.annotation.XmlType;
 import java.util.List;
 
 /**
- * Publication Type
+ * Publication Category
  */
-@ApiModel(value = "PublicationType", description = "Publication type model")
-@XmlRootElement(name = "publicationType")
+@ApiModel(value = "PublicationCategory", description = "Publication category model")
+@XmlRootElement(name = "publicationCategory")
 @XmlType(propOrder = {
-        "typeId", "priority", "publish", "descs"
+        "categoryId", "priority", "publish", "descs"
 })
-public class PublicationTypeVo implements ILocalizable<PublicationTypeDescVo>, IJsonSerializable {
+public class PublicationCategoryVo implements ILocalizable<PublicationCategoryDescVo>, IJsonSerializable {
 
-    String typeId;
+    String categoryId;
     Integer priority;
     Boolean publish;
-    List<PublicationTypeDescVo> descs;
+    List<PublicationCategoryDescVo> descs;
 
 
     /** {@inheritDoc} */
     @Override
-    public PublicationTypeDescVo createDesc(String lang) {
-        PublicationTypeDescVo desc = new PublicationTypeDescVo();
+    public PublicationCategoryDescVo createDesc(String lang) {
+        PublicationCategoryDescVo desc = new PublicationCategoryDescVo();
         desc.setLang(lang);
         checkCreateDescs().add(desc);
         return desc;
@@ -54,12 +54,12 @@ public class PublicationTypeVo implements ILocalizable<PublicationTypeDescVo>, I
     /** Getters and Setters **/
     /*************************/
 
-    public String getTypeId() {
-        return typeId;
+    public String getCategoryId() {
+        return categoryId;
     }
 
-    public void setTypeId(String typeId) {
-        this.typeId = typeId;
+    public void setCategoryId(String categoryId) {
+        this.categoryId = categoryId;
     }
 
     public Integer getPriority() {
@@ -79,12 +79,12 @@ public class PublicationTypeVo implements ILocalizable<PublicationTypeDescVo>, I
     }
 
     @Override
-    public List<PublicationTypeDescVo> getDescs() {
+    public List<PublicationCategoryDescVo> getDescs() {
         return descs;
     }
 
     @Override
-    public void setDescs(List<PublicationTypeDescVo> descs) {
+    public void setDescs(List<PublicationCategoryDescVo> descs) {
         this.descs = descs;
     }
 }

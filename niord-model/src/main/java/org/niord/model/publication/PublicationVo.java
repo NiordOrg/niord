@@ -30,12 +30,12 @@ import java.util.List;
 @ApiModel(value = "Publication", description = "Publication model")
 @XmlRootElement(name = "publication")
 @XmlType(propOrder = {
-        "publicationId", "type", "fileType", "descs"
+        "publicationId", "category", "fileType", "descs"
 })
 public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSerializable {
 
     String publicationId;
-    PublicationTypeVo type;
+    PublicationCategoryVo category;
     PublicationFileType fileType;
     List<PublicationDescVo> descs;
 
@@ -62,12 +62,12 @@ public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSeri
         this.publicationId = publicationId;
     }
 
-    public PublicationTypeVo getType() {
-        return type;
+    public PublicationCategoryVo getCategory() {
+        return category;
     }
 
-    public void setType(PublicationTypeVo type) {
-        this.type = type;
+    public void setCategory(PublicationCategoryVo category) {
+        this.category = category;
     }
 
     public PublicationFileType getFileType() {
