@@ -19,8 +19,8 @@ package org.niord.core.publication.batch;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.domain.DomainService;
 import org.niord.core.publication.Publication;
-import org.niord.core.publication.PublicationService;
 import org.niord.core.publication.PublicationCategoryService;
+import org.niord.core.publication.PublicationService;
 import org.niord.core.publication.vo.SystemPublicationVo;
 
 import javax.inject.Inject;
@@ -47,29 +47,6 @@ public class BatchPublicationImportProcessor extends AbstractItemHandler {
 
         SystemPublicationVo publicationVo = (SystemPublicationVo) item;
 
-        Publication publication = new Publication(publicationVo);
-
-        // Find or create the associated publication category
-        publication.setCategory(publicationCategoryService.findOrCreatePublicationCategory(publication.getCategory()));
-
-        // Substitute the domain with the persisted on
-        if (publication.getDomain() != null) {
-            publication.setDomain(domainService.findByDomainId(publication.getDomain().getDomainId()));
-        }
-
-        // Look for an existing publication with the same name
-        Publication orig = publicationService.findByPublicationId(publication.getPublicationId());
-
-        if (orig == null) {
-            // Persist new publication
-            getLog().info("Persisting new publication " + publication);
-            return publication;
-
-        } else {
-            // Update original publication
-            getLog().info("Updating publication " + orig.getId());
-            orig.updatePublication(publication);
-            return orig;
-        }
+        return new Publication(publicationVo);
     }
 }

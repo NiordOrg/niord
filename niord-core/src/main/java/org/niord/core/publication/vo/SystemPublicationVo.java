@@ -28,7 +28,9 @@ import java.util.Map;
 @SuppressWarnings("unused")
 public class SystemPublicationVo extends PublicationVo {
 
+    String publicationIdFormat;
     PublicationMainType mainType;
+    PublicationVo template;
     DomainVo domain;
     MessagePublication messagePublication;
     boolean languageSpecific;
@@ -40,12 +42,28 @@ public class SystemPublicationVo extends PublicationVo {
     /** Getters and Setters **/
     /*************************/
 
+    public String getPublicationIdFormat() {
+        return publicationIdFormat;
+    }
+
+    public void setPublicationIdFormat(String publicationIdFormat) {
+        this.publicationIdFormat = publicationIdFormat;
+    }
+
     public PublicationMainType getMainType() {
         return mainType;
     }
 
     public void setMainType(PublicationMainType mainType) {
         this.mainType = mainType;
+    }
+
+    public PublicationVo getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(PublicationVo template) {
+        this.template = template;
     }
 
     public DomainVo getDomain() {

@@ -16,16 +16,18 @@
 
 package org.niord.core.publication;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.JpaPropertiesAttributeConverter;
 import org.niord.core.domain.Domain;
 import org.niord.core.model.BaseEntity;
+import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.vo.PublicationMainType;
-import org.niord.model.publication.PublicationType;
 import org.niord.core.publication.vo.SystemPublicationVo;
+import org.niord.core.util.TimeUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
-import org.niord.core.publication.vo.MessagePublication;
 import org.niord.model.publication.PublicationDescVo;
+import org.niord.model.publication.PublicationType;
 import org.niord.model.publication.PublicationVo;
 
 import javax.persistence.CascadeType;
@@ -38,8 +40,12 @@ import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,13 +57,18 @@ import java.util.stream.Collectors;
 @Entity
 @NamedQueries({
         @NamedQuery(name="Publication.findByPublicationId",
-                query="SELECT p FROM Publication p where p.publicationId = :publicationId")
+                query="SELECT p FROM Publication p where p.publicationId = :publicationId"),
+        @NamedQuery(name="Publication.findByTemplateId",
+                query="SELECT p FROM Publication p where p.template is not null and p.template.publicationId = :templateId")
 })
 @SuppressWarnings("unused")
 public class Publication extends BaseEntity<Integer> implements ILocalizable<PublicationDesc> {
 
     @NotNull
     String publicationId;
+
+    /** Used by templates to define the format of the ID's of the concrete publications **/
+    String publicationIdFormat;
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -67,12 +78,22 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     @Enumerated(EnumType.STRING)
     PublicationType type = PublicationType.LINK;
 
+    @ManyToOne
+    Publication template;
+
     @NotNull
     @ManyToOne
     PublicationCategory category;
 
     @ManyToOne
     Domain domain;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    Date publishDateFrom;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    Date publishDateTo;
+
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -103,7 +124,9 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     public Publication(PublicationVo publication) {
         this.publicationId = publication.getPublicationId();
         this.type = publication.getType();
-        this.category = new PublicationCategory(publication.getCategory());
+        this.category = publication.getCategory() != null ? new PublicationCategory(publication.getCategory()) : null;
+        this.publishDateFrom = publication.getPublishDateFrom();
+        this.publishDateTo = publication.getPublishDateTo();
 
         if (publication.getDescs() != null) {
             publication.getDescs().stream()
@@ -113,7 +136,9 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
         if (publication instanceof SystemPublicationVo) {
             SystemPublicationVo sysPub = (SystemPublicationVo) publication;
+            this.publicationIdFormat = sysPub.getPublicationIdFormat();
             this.mainType = sysPub.getMainType();
+            this.template = sysPub.getTemplate() != null ? new Publication(sysPub.getTemplate()) : null;
             this.domain = sysPub.getDomain() != null ? new Domain(sysPub.getDomain()) : null;
             this.messagePublication = sysPub.getMessagePublication();
             this.languageSpecific = sysPub.isLanguageSpecific();
@@ -130,10 +155,14 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     /** Updates this publication from another publication */
     public void updatePublication(Publication publication) {
         this.publicationId = publication.getPublicationId();
+        this.publicationIdFormat = publication.getPublicationIdFormat();
         this.mainType = publication.getMainType();
+        this.template = publication.getTemplate();
         this.type = publication.getType();
         this.category = publication.getCategory();
         this.domain = publication.getDomain();
+        this.publishDateFrom = publication.getPublishDateFrom();
+        this.publishDateTo = publication.getPublishDateTo();
         this.messagePublication = publication.getMessagePublication();
         this.languageSpecific = publication.isLanguageSpecific();
         this.printSettings.clear();
@@ -142,6 +171,38 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
         this.reportParams.putAll(publication.getReportParams());
         descs.clear();
         copyDescsAndRemoveBlanks(publication.getDescs());
+    }
+
+
+    /** Updates this publication from its template */
+    public void updateFromTemplate() {
+        if (template == null) {
+            return;
+        }
+
+        if (StringUtils.isBlank(this.publicationId)) {
+            this.publicationId = str(template.getPublicationIdFormat(), publicationId, publishDateFrom, null);
+        }
+        this.type = val(template.getType(), type);
+        this.category = val(template.getCategory(), category);
+        this.domain = val(template.getDomain(), domain);
+        this.messagePublication = val(template.getMessagePublication(), messagePublication);
+        this.languageSpecific = val(template.isLanguageSpecific(), languageSpecific);
+        if (!template.getPrintSettings().isEmpty()) {
+            this.printSettings.clear();
+            this.printSettings.putAll(template.getPrintSettings());
+        }
+        if (!template.getReportParams().isEmpty()) {
+            this.reportParams.clear();
+            template.getReportParams().entrySet().forEach(kv ->
+                    this.reportParams.put(kv.getKey(), str(kv.getValue().toString(), "", publishDateFrom, null)));
+        }
+        template.getDescs().forEach(d -> {
+            PublicationDesc pubDesc = checkCreateDesc(d.getLang());
+            pubDesc.setTitle(str(d.getTitle(), pubDesc.getTitle(), publishDateFrom, d.getLang()));
+            pubDesc.setFormat(str(d.getFormat(), pubDesc.getFormat(), publishDateFrom, d.getLang()));
+            pubDesc.setLink(str(d.getLink(), pubDesc.getLink(), publishDateFrom, d.getLang()));
+        });
     }
 
 
@@ -154,6 +215,8 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
         publication.setPublicationId(publicationId);
         publication.setType(type);
         publication.setCategory(category.toVo(dataFilter));
+        publication.setPublishDateFrom(publishDateFrom);
+        publication.setPublishDateTo(publishDateTo);
 
         if (!descs.isEmpty()) {
             publication.setDescs(getDescs(compFilter).stream()
@@ -163,7 +226,9 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
         if (publication instanceof SystemPublicationVo) {
             SystemPublicationVo sysPub = (SystemPublicationVo) publication;
+            sysPub.setPublicationIdFormat(publicationIdFormat);
             sysPub.setMainType(mainType);
+            sysPub.setTemplate(template != null ? template.toVo(PublicationVo.class, dataFilter) : null);
             sysPub.setDomain((domain != null) ? domain.toVo()  : null);
             sysPub.setMessagePublication(messagePublication);
             sysPub.setLanguageSpecific(languageSpecific);
@@ -177,6 +242,44 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
         }
 
         return publication;
+    }
+
+
+    /** Returns the value, or the default value if the value is null **/
+    private <D> D val(D value, D defaultValue) {
+        return value != null  ? value : defaultValue;
+    }
+
+
+    /**
+     * Expand the parameters of a value with the format ${week}, ${year}, etc.
+     * @param value the value to expand parameters for
+     * @param date the date to use
+     * @param lang the language to use
+     * @return the updated value
+     */
+    private String str(String value, String defaultValue, Date date, String lang) {
+        if (StringUtils.isNotBlank(value) && value.contains("${")) {
+            Map<String, String> replacementValues = new HashMap<>();
+            if (date != null) {
+                int year = TimeUtils.getCalendarField(date, Calendar.YEAR);
+                int week = TimeUtils.getCalendarField(date, Calendar.WEEK_OF_YEAR);
+
+                replacementValues.put("${year-2-digits}", String.valueOf(year).substring(2));
+                replacementValues.put("${year}", String.valueOf(year));
+                replacementValues.put("${week}", String.valueOf(week));
+                replacementValues.put("${week-2-digits}", String.format("%02d", week));
+            }
+            if (StringUtils.isNotBlank(lang)) {
+                replacementValues.put("${lang}", lang);
+            }
+            for (Map.Entry<String, String> kv : replacementValues.entrySet()) {
+                value = value.replace(kv.getKey(), kv.getValue());
+            }
+        } else if (StringUtils.isNotBlank(defaultValue)) {
+            value = defaultValue;
+        }
+        return value;
     }
 
 
@@ -211,12 +314,28 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
         this.publicationId = publicationId;
     }
 
+    public String getPublicationIdFormat() {
+        return publicationIdFormat;
+    }
+
+    public void setPublicationIdFormat(String publicationIdFormat) {
+        this.publicationIdFormat = publicationIdFormat;
+    }
+
     public PublicationMainType getMainType() {
         return mainType;
     }
 
     public void setMainType(PublicationMainType mainType) {
         this.mainType = mainType;
+    }
+
+    public Publication getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(Publication template) {
+        this.template = template;
     }
 
     public PublicationType getType() {
@@ -241,6 +360,22 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
     public void setDomain(Domain domain) {
         this.domain = domain;
+    }
+
+    public Date getPublishDateFrom() {
+        return publishDateFrom;
+    }
+
+    public void setPublishDateFrom(Date publishDateFrom) {
+        this.publishDateFrom = publishDateFrom;
+    }
+
+    public Date getPublishDateTo() {
+        return publishDateTo;
+    }
+
+    public void setPublishDateTo(Date publishDateTo) {
+        this.publishDateTo = publishDateTo;
     }
 
     public MessagePublication getMessagePublication() {

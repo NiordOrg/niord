@@ -22,6 +22,7 @@ import org.niord.model.ILocalizable;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -37,6 +38,8 @@ public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSeri
     String publicationId;
     PublicationCategoryVo category;
     PublicationType type;
+    Date publishDateFrom;
+    Date publishDateTo;
     List<PublicationDescVo> descs;
 
 
@@ -76,6 +79,22 @@ public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSeri
 
     public void setType(PublicationType type) {
         this.type = type;
+    }
+
+    public Date getPublishDateFrom() {
+        return publishDateFrom;
+    }
+
+    public void setPublishDateFrom(Date publishDateFrom) {
+        this.publishDateFrom = publishDateFrom;
+    }
+
+    public Date getPublishDateTo() {
+        return publishDateTo;
+    }
+
+    public void setPublishDateTo(Date publishDateTo) {
+        this.publishDateTo = publishDateTo;
     }
 
     @Override

@@ -32,6 +32,9 @@ import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Root;
 import java.util.List;
 
+import static org.niord.core.publication.vo.PublicationMainType.PUBLICATION;
+import static org.niord.core.publication.vo.PublicationMainType.TEMPLATE;
+
 /**
  * Business interface for accessing publications
  */
@@ -50,17 +53,29 @@ public class PublicationService extends BaseService {
 
     /**
      * Returns the publication with the given publication ID
-     * @param publication the publication ID
+     * @param publicationId the publication ID
      * @return the publication with the given publication ID or null if not found
      */
-    public Publication findByPublicationId(String publication) {
+    public Publication findByPublicationId(String publicationId) {
         try {
             return em.createNamedQuery("Publication.findByPublicationId", Publication.class)
-                    .setParameter("publicationId", publication)
+                    .setParameter("publicationId", publicationId)
                     .getSingleResult();
         } catch (Exception ignored) {
         }
         return null;
+    }
+
+
+    /**
+     * Returns the publications with the given template
+     * @param templateId the template publication ID
+     * @return the publications with the given template
+     */
+    public List<Publication> findByTemplateId(String templateId) {
+        return em.createNamedQuery("Publication.findByTemplateId", Publication.class)
+                .setParameter("templateId", templateId)
+                .getResultList();
     }
 
 
@@ -147,18 +162,33 @@ public class PublicationService extends BaseService {
         Publication original = findByPublicationId(publication.getPublicationId());
         if (original == null) {
             throw new IllegalArgumentException("Cannot update non-existing publication "
-                    + publication.getId());
+                    + publication.getPublicationId());
+        }
+
+        // Substitute the template with the persisted on
+        if (publication.getTemplate() != null) {
+            publication.setTemplate(findByPublicationId(publication.getTemplate().getPublicationId()));
+        }
+
+        // Substitute the publication category with the persisted on
+        if (publication.getCategory() != null) {
+            publication.setCategory(publicationCategoryService.findByCategoryId(publication.getCategory().getCategoryId()));
+        }
+
+        // Substitute the domain with the persisted on
+        if (publication.getDomain() != null) {
+            publication.setDomain(domainService.findByDomainId(publication.getDomain().getDomainId()));
         }
 
         // Copy the publication data
         original.updatePublication(publication);
 
-        // Substitute the publication category with the persisted on
-        original.setCategory(publicationCategoryService.findByCategoryId(original.getCategory().getCategoryId()));
-
-        // Substitute the domain with the persisted on
-        if (original.getDomain() != null) {
-            original.setDomain(domainService.findByDomainId(original.getDomain().getDomainId()));
+        // If this is a template, update all publications based on this template
+        if (original.getMainType() == TEMPLATE) {
+            findByTemplateId(original.getPublicationId()).forEach(Publication::updateFromTemplate);
+        } else if (original.getTemplate() != null) {
+            // Let the template override any changes
+            original.updateFromTemplate();
         }
 
         return saveEntity(original);
@@ -176,12 +206,24 @@ public class PublicationService extends BaseService {
                     + publication.getId());
         }
 
+        // Substitute the template with the persisted on
+        if (publication.getTemplate() != null) {
+            publication.setTemplate(findByPublicationId(publication.getTemplate().getPublicationId()));
+        }
+
         // Substitute the publication category with the persisted on
-        publication.setCategory(publicationCategoryService.findByCategoryId(publication.getCategory().getCategoryId()));
+        if (publication.getCategory() != null) {
+            publication.setCategory(publicationCategoryService.findByCategoryId(publication.getCategory().getCategoryId()));
+        }
 
         // Substitute the domain with the persisted on
         if (publication.getDomain() != null) {
             publication.setDomain(domainService.findByDomainId(publication.getDomain().getDomainId()));
+        }
+
+        // If the publication has an associated template, update from the template
+        if (publication.getMainType() == PUBLICATION && publication.getTemplate() != null) {
+            publication.updateFromTemplate();
         }
 
         return saveEntity(publication);

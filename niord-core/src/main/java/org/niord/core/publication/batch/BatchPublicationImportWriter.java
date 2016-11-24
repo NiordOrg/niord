@@ -39,10 +39,18 @@ public class BatchPublicationImportWriter extends AbstractItemHandler {
         long t0 = System.currentTimeMillis();
         for (Object i : items) {
             Publication publication = (Publication) i;
-            if (publication.isNew()) {
+
+            // Look for an existing publication with the same name
+            Publication orig = publicationService.findByPublicationId(publication.getPublicationId());
+
+            if (orig == null) {
+                // Persist new publication
+                getLog().info("Persisting new publication " + publication.getPublicationId());
                 publicationService.createPublication(publication);
             } else {
-                publicationService.saveEntity(publication);
+                // Update original publication
+                getLog().info("Updating publication " + orig.getPublicationId());
+                publicationService.updatePublication(publication);
             }
         }
         getLog().info(String.format("Persisted %d publications in %d ms", items.size(), System.currentTimeMillis() - t0));
