@@ -33,10 +33,12 @@ angular.module('niord.admin')
 
             $scope.publications = [];
             $scope.publication = undefined; // The publication being edited
+            $scope.publicationCategories = [];
             $scope.editMode = 'add';
             $scope.filter = {
                 title: '',
-                type: ''
+                type: '',
+                category: ''
             };
 
 
@@ -44,12 +46,20 @@ angular.module('niord.admin')
             $scope.loadPublications = function() {
                 $scope.publication = undefined;
                 AdminPublicationService
-                    .searchPublications($scope.filter.title)
+                    .searchPublications($scope.filter.title, $scope.filter.type, $scope.filter.category)
                     .success(function (publications) {
                         $scope.publications = publications;
                     });
             };
             $scope.$watch("filter", $scope.loadPublications, true);
+
+
+            // Load categories
+            AdminPublicationService
+                .getPublicationCategories()
+                .success(function (publicationCategories) {
+                    $scope.publicationCategories = publicationCategories;
+                });
 
 
             // Used to ensure that description entities have a "title" field
