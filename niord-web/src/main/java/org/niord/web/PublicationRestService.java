@@ -23,6 +23,7 @@ import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationSearchParams;
 import org.niord.core.publication.PublicationService;
+import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.model.publication.PublicationType;
 import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.user.UserService;
@@ -86,16 +87,18 @@ public class PublicationRestService extends AbstractBatchableRestService {
             @QueryParam("domain") String domain,
             @QueryParam("category") String category,
             @QueryParam("messagePublication") MessagePublication messagePublication,
+            @QueryParam("mainType") @DefaultValue("PUBLICATION") PublicationMainType mainType,
             @QueryParam("type") PublicationType type,
             @QueryParam("title") @DefaultValue("") String title,
             @QueryParam("limit") @DefaultValue("100") int limit) {
 
         PublicationSearchParams params = new PublicationSearchParams()
                 .language(lang)
+                .mainType(mainType)
+                .type(type)
                 .domain(domain)
                 .category(category)
                 .messagePublication(messagePublication)
-                .type(type)
                 .title(title);
         params.maxSize(limit);
 

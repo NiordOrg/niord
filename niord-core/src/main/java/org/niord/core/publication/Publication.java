@@ -19,6 +19,7 @@ package org.niord.core.publication;
 import org.niord.core.db.JpaPropertiesAttributeConverter;
 import org.niord.core.domain.Domain;
 import org.niord.core.model.BaseEntity;
+import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.model.publication.PublicationType;
 import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.model.DataFilter;
@@ -57,6 +58,10 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
     @NotNull
     String publicationId;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    PublicationMainType mainType = PublicationMainType.PUBLICATION;
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -108,6 +113,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
         if (publication instanceof SystemPublicationVo) {
             SystemPublicationVo sysPub = (SystemPublicationVo) publication;
+            this.mainType = sysPub.getMainType();
             this.domain = sysPub.getDomain() != null ? new Domain(sysPub.getDomain()) : null;
             this.messagePublication = sysPub.getMessagePublication();
             this.languageSpecific = sysPub.isLanguageSpecific();
@@ -124,6 +130,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     /** Updates this publication from another publication */
     public void updatePublication(Publication publication) {
         this.publicationId = publication.getPublicationId();
+        this.mainType = publication.getMainType();
         this.type = publication.getType();
         this.category = publication.getCategory();
         this.domain = publication.getDomain();
@@ -156,6 +163,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
         if (publication instanceof SystemPublicationVo) {
             SystemPublicationVo sysPub = (SystemPublicationVo) publication;
+            sysPub.setMainType(mainType);
             sysPub.setDomain((domain != null) ? domain.toVo()  : null);
             sysPub.setMessagePublication(messagePublication);
             sysPub.setLanguageSpecific(languageSpecific);
@@ -201,6 +209,14 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
     public void setPublicationId(String publicationId) {
         this.publicationId = publicationId;
+    }
+
+    public PublicationMainType getMainType() {
+        return mainType;
+    }
+
+    public void setMainType(PublicationMainType mainType) {
+        this.mainType = mainType;
     }
 
     public PublicationType getType() {

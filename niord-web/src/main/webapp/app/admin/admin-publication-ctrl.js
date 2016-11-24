@@ -31,6 +31,7 @@ angular.module('niord.admin')
         function ($scope, $rootScope, growl, AdminPublicationService, DialogService, LangService, UploadFileService) {
             'use strict';
 
+            $scope.mainType = 'PUBLICATION';
             $scope.publications = [];
             $scope.publication = undefined; // The publication being edited
             $scope.publicationCategories = [];
@@ -42,11 +43,17 @@ angular.module('niord.admin')
             };
 
 
+            /** Sets the mainType of publications, either 'PUBLICATION' or 'TEMPLATE' **/
+            $scope.init = function (mainType) {
+                $scope.mainType = mainType;
+                $scope.loadPublications();
+            };
+
             /** Loads the publications from the back-end */
             $scope.loadPublications = function() {
                 $scope.publication = undefined;
                 AdminPublicationService
-                    .searchPublications($scope.filter.title, $scope.filter.type, $scope.filter.category)
+                    .searchPublications($scope.mainType, $scope.filter.type, $scope.filter.category, $scope.filter.title)
                     .success(function (publications) {
                         $scope.publications = publications;
                     });

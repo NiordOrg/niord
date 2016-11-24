@@ -17,6 +17,7 @@
 package org.niord.core.publication;
 
 import org.niord.core.publication.vo.MessagePublication;
+import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.model.publication.PublicationType;
 import org.niord.model.search.PagedSearchParamsVo;
 
@@ -36,6 +37,7 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
     String title;
     String domain;    // If defined, only include publications for the given domain
     String category;
+    PublicationMainType mainType;
     PublicationType type;
     MessagePublication messagePublication;
 
@@ -47,6 +49,7 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
     public String toString() {
         List<String> desc = new ArrayList<>();
         if (messagePublication != null) { desc.add(String.format("MessagePublication: %s", messagePublication)); }
+        if (mainType != null) { desc.add(String.format("Main Type: %s", mainType)); }
         if (type != null) { desc.add(String.format("Type: %s", type)); }
         if (isNotBlank(language)) { desc.add(String.format("Language: %s", language)); }
         if (isNotBlank(domain)) { desc.add(String.format("Domain: %s", domain)); }
@@ -105,6 +108,15 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
 
     public PublicationSearchParams messagePublication(MessagePublication messagePublication) {
         this.messagePublication = messagePublication;
+        return this;
+    }
+
+    public PublicationMainType getMainType() {
+        return mainType;
+    }
+
+    public PublicationSearchParams mainType(PublicationMainType mainType) {
+        this.mainType = mainType;
         return this;
     }
 

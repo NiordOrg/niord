@@ -11,7 +11,7 @@
                 Publications
             </tab-heading>
             <div ng-include="'/app/admin/admin-page-publication-pubs.html'"
-                 ng-controller="PublicationsAdminCtrl"></div>
+                 ng-controller="PublicationsAdminCtrl" ng-init="init('PUBLICATION')"></div>
         </uib-tab>
 
         <!-- Templates -->
@@ -20,7 +20,7 @@
                 Publication Templates
             </tab-heading>
             <div ng-include="'/app/admin/admin-page-publication-pubs.html'"
-                 ng-controller="PublicationsAdminCtrl"></div>
+                 ng-controller="PublicationsAdminCtrl" ng-init="init('TEMPLATE')"></div>
         </uib-tab>
 
         <!-- Categories -->

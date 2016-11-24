@@ -82,6 +82,12 @@ public class PublicationService extends BaseService {
         // Build the predicate
         CriteriaHelper<Publication> criteriaHelper = new CriteriaHelper<>(cb, publicationQuery);
 
+        // Match the main type
+        criteriaHelper.equals(publicationRoot.get("mainType"), params.getMainType());
+
+        // Match the file type
+        criteriaHelper.equals(publicationRoot.get("type"), params.getType());
+
         // Match the title
         if (StringUtils.isNotBlank(params.getTitle())) {
             Join<Publication, PublicationDesc> descs = publicationRoot.join("descs", JoinType.LEFT);
@@ -110,9 +116,6 @@ public class PublicationService extends BaseService {
 
         // Match the message publication category
         criteriaHelper.equals(publicationRoot.get("messagePublication"), params.getMessagePublication());
-
-        // Match the file type
-        criteriaHelper.equals(publicationRoot.get("type"), params.getType());
 
         // Complete the query
         publicationQuery.select(publicationRoot)

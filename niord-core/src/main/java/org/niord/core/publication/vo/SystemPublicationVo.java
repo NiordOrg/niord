@@ -28,6 +28,7 @@ import java.util.Map;
 @SuppressWarnings("unused")
 public class SystemPublicationVo extends PublicationVo {
 
+    PublicationMainType mainType;
     DomainVo domain;
     MessagePublication messagePublication;
     boolean languageSpecific;
@@ -38,6 +39,14 @@ public class SystemPublicationVo extends PublicationVo {
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public PublicationMainType getMainType() {
+        return mainType;
+    }
+
+    public void setMainType(PublicationMainType mainType) {
+        this.mainType = mainType;
+    }
 
     public DomainVo getDomain() {
         return domain;
