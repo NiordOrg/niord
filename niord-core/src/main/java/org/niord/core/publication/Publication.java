@@ -19,7 +19,7 @@ package org.niord.core.publication;
 import org.niord.core.db.JpaPropertiesAttributeConverter;
 import org.niord.core.domain.Domain;
 import org.niord.core.model.BaseEntity;
-import org.niord.model.publication.PublicationFileType;
+import org.niord.model.publication.PublicationType;
 import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
@@ -59,6 +59,10 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     String publicationId;
 
     @NotNull
+    @Enumerated(EnumType.STRING)
+    PublicationType type = PublicationType.LINK;
+
+    @NotNull
     @ManyToOne
     PublicationCategory category;
 
@@ -68,10 +72,6 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     @NotNull
     @Enumerated(EnumType.STRING)
     MessagePublication messagePublication = MessagePublication.NONE;
-
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    PublicationFileType fileType = PublicationFileType.LINK;
 
     boolean languageSpecific;
 
@@ -97,8 +97,8 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     /** Constructor */
     public Publication(PublicationVo publication) {
         this.publicationId = publication.getPublicationId();
+        this.type = publication.getType();
         this.category = new PublicationCategory(publication.getCategory());
-        this.fileType = publication.getFileType();
 
         if (publication.getDescs() != null) {
             publication.getDescs().stream()
@@ -124,10 +124,10 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     /** Updates this publication from another publication */
     public void updatePublication(Publication publication) {
         this.publicationId = publication.getPublicationId();
+        this.type = publication.getType();
         this.category = publication.getCategory();
         this.domain = publication.getDomain();
         this.messagePublication = publication.getMessagePublication();
-        this.fileType = publication.getFileType();
         this.languageSpecific = publication.isLanguageSpecific();
         this.printSettings.clear();
         this.printSettings.putAll(publication.getPrintSettings());
@@ -145,8 +145,8 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
         P publication = newInstance(clz);
         publication.setPublicationId(publicationId);
+        publication.setType(type);
         publication.setCategory(category.toVo(dataFilter));
-        publication.setFileType(fileType);
 
         if (!descs.isEmpty()) {
             publication.setDescs(getDescs(compFilter).stream()
@@ -203,6 +203,14 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
         this.publicationId = publicationId;
     }
 
+    public PublicationType getType() {
+        return type;
+    }
+
+    public void setType(PublicationType type) {
+        this.type = type;
+    }
+
     public PublicationCategory getCategory() {
         return category;
     }
@@ -225,14 +233,6 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
     public void setMessagePublication(MessagePublication messagePublication) {
         this.messagePublication = messagePublication;
-    }
-
-    public PublicationFileType getFileType() {
-        return fileType;
-    }
-
-    public void setFileType(PublicationFileType fileType) {
-        this.fileType = fileType;
     }
 
     public boolean isLanguageSpecific() {

@@ -17,20 +17,20 @@
 package org.niord.model.publication;
 
 /**
- * Defines the type of publication file that the publications links to.
+ * Defines the type of publication resource that the publications links to.
  */
-public enum PublicationFileType {
+public enum PublicationType {
 
     /** No link or file is specified directly **/
     NONE,
 
-    /** The publication file is defined via a link **/
+    /** The publication resource is defined via a link **/
     LINK,
 
-    /** The publication file is uploaded to the Niord repository **/
+    /** The publication resource is uploaded to the Niord repository **/
     REPOSITORY,
 
-    /** The publication file is defined via a message report and possibly uploaded to the Niord repository **/
+    /** The publication resource is defined via a message report and possibly uploaded to the Niord repository **/
     MESSAGE_REPORT
 
 }

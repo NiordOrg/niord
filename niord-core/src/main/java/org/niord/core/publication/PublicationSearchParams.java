@@ -17,7 +17,7 @@
 package org.niord.core.publication;
 
 import org.niord.core.publication.vo.MessagePublication;
-import org.niord.model.publication.PublicationFileType;
+import org.niord.model.publication.PublicationType;
 import org.niord.model.search.PagedSearchParamsVo;
 
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
     String title;
     String domain;    // If defined, only include publications for the given domain
     String type;
-    PublicationFileType fileType;
+    PublicationType fileType;
     MessagePublication messagePublication;
 
     /**
@@ -108,11 +108,11 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
         return this;
     }
 
-    public PublicationFileType getFileType() {
+    public PublicationType getFileType() {
         return fileType;
     }
 
-    public PublicationSearchParams fileType(PublicationFileType fileType) {
+    public PublicationSearchParams fileType(PublicationType fileType) {
         this.fileType = fileType;
         return this;
     }

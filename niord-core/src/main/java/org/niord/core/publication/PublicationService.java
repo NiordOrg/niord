@@ -112,7 +112,7 @@ public class PublicationService extends BaseService {
         criteriaHelper.equals(publicationRoot.get("messagePublication"), params.getMessagePublication());
 
         // Match the file type
-        criteriaHelper.equals(publicationRoot.get("fileType"), params.getFileType());
+        criteriaHelper.equals(publicationRoot.get("type"), params.getFileType());
 
         // Complete the query
         publicationQuery.select(publicationRoot)
