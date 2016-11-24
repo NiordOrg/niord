@@ -84,18 +84,18 @@ public class PublicationRestService extends AbstractBatchableRestService {
     public List<PublicationVo> searchPublications(
             @QueryParam("lang") String lang,
             @QueryParam("domain") String domain,
-            @QueryParam("type") String type,
+            @QueryParam("category") String category,
             @QueryParam("messagePublication") MessagePublication messagePublication,
-            @QueryParam("fileType") PublicationType fileType,
+            @QueryParam("type") PublicationType type,
             @QueryParam("title") @DefaultValue("") String title,
             @QueryParam("limit") @DefaultValue("100") int limit) {
 
         PublicationSearchParams params = new PublicationSearchParams()
                 .language(lang)
                 .domain(domain)
-                .type(type)
+                .category(category)
                 .messagePublication(messagePublication)
-                .fileType(fileType)
+                .type(type)
                 .title(title);
         params.maxSize(limit);
 

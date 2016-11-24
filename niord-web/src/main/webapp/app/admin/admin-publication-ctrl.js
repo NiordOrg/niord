@@ -35,7 +35,8 @@ angular.module('niord.admin')
             $scope.publication = undefined; // The publication being edited
             $scope.editMode = 'add';
             $scope.filter = {
-                title: ''
+                title: '',
+                type: ''
             };
 
 

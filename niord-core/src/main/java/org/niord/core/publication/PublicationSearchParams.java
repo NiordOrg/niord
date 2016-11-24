@@ -35,8 +35,8 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
     String language;
     String title;
     String domain;    // If defined, only include publications for the given domain
-    String type;
-    PublicationType fileType;
+    String category;
+    PublicationType type;
     MessagePublication messagePublication;
 
     /**
@@ -47,10 +47,10 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
     public String toString() {
         List<String> desc = new ArrayList<>();
         if (messagePublication != null) { desc.add(String.format("MessagePublication: %s", messagePublication)); }
-        if (fileType != null) { desc.add(String.format("FileType: %s", fileType)); }
+        if (type != null) { desc.add(String.format("Type: %s", type)); }
         if (isNotBlank(language)) { desc.add(String.format("Language: %s", language)); }
         if (isNotBlank(domain)) { desc.add(String.format("Domain: %s", domain)); }
-        if (isNotBlank(type)) { desc.add(String.format("Type: %s", type)); }
+        if (isNotBlank(category)) { desc.add(String.format("Category: %s", category)); }
         if (isNotBlank(title)) { desc.add(String.format("Title: '%s'", title)); }
         if (isNotBlank(domain)) { desc.add(String.format("Domain: '%s'", domain)); }
 
@@ -90,12 +90,12 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
         return this;
     }
 
-    public String getType() {
-        return type;
+    public String getCategory() {
+        return category;
     }
 
-    public PublicationSearchParams type(String type) {
-        this.type = type;
+    public PublicationSearchParams category(String category) {
+        this.category = category;
         return this;
     }
 
@@ -108,12 +108,12 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
         return this;
     }
 
-    public PublicationType getFileType() {
-        return fileType;
+    public PublicationType getType() {
+        return type;
     }
 
-    public PublicationSearchParams fileType(PublicationType fileType) {
-        this.fileType = fileType;
+    public PublicationSearchParams type(PublicationType type) {
+        this.type = type;
         return this;
     }
 }

@@ -93,10 +93,10 @@ public class PublicationService extends BaseService {
             }
         }
 
-        // Match the type
-        if (StringUtils.isNotBlank(params.getType())) {
-            Join<Publication, PublicationCategory> typeJoin = publicationRoot.join("type", JoinType.LEFT);
-            criteriaHelper.equals(typeJoin.get("typeId"), params.getType());
+        // Match the category
+        if (StringUtils.isNotBlank(params.getCategory())) {
+            Join<Publication, PublicationCategory> typeJoin = publicationRoot.join("category", JoinType.LEFT);
+            criteriaHelper.equals(typeJoin.get("categoryId"), params.getCategory());
         }
 
         // Match the domain
@@ -112,7 +112,7 @@ public class PublicationService extends BaseService {
         criteriaHelper.equals(publicationRoot.get("messagePublication"), params.getMessagePublication());
 
         // Match the file type
-        criteriaHelper.equals(publicationRoot.get("type"), params.getFileType());
+        criteriaHelper.equals(publicationRoot.get("type"), params.getType());
 
         // Complete the query
         publicationQuery.select(publicationRoot)
