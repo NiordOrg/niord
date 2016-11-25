@@ -300,6 +300,8 @@
                     <tr>
                         <th>ID</th>
                         <th>Title</th>
+                        <th ng-if="mainType == 'PUBLICATION'" style="text-align: right">From Date</th>
+                        <th ng-if="mainType == 'PUBLICATION'" style="text-align: right">To Date</th>
                         <th>Category</th>
                         <th>File Type</th>
                         <th></th>
@@ -307,6 +309,8 @@
                     <tr ng-repeat="publication in publications">
                         <td>{{publication.publicationId}}</td>
                         <td>{{publication.descs[0].title}}</td>
+                        <td ng-if="mainType == 'PUBLICATION'" align="right">{{publication.publishDateFrom  | formatDate:'ll'}}</td>
+                        <td ng-if="mainType == 'PUBLICATION'" align="right">{{publication.publishDateTo  | formatDate:'ll'}}</td>
                         <td>{{publication.category.descs[0].name}}</td>
                         <td>{{'publication_type.' + publication.type | translate}}</td>
                         <td nowrap>
