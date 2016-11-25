@@ -94,8 +94,6 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     @Temporal(TemporalType.TIMESTAMP)
     Date publishDateTo;
 
-
-    @NotNull
     @Enumerated(EnumType.STRING)
     MessagePublication messagePublication = MessagePublication.NONE;
 
@@ -228,7 +226,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
             SystemPublicationVo sysPub = (SystemPublicationVo) publication;
             sysPub.setPublicationIdFormat(publicationIdFormat);
             sysPub.setMainType(mainType);
-            sysPub.setTemplate(template != null ? template.toVo(PublicationVo.class, dataFilter) : null);
+            sysPub.setTemplate(template != null ? template.toVo(SystemPublicationVo.class, dataFilter) : null);
             sysPub.setDomain((domain != null) ? domain.toVo()  : null);
             sysPub.setMessagePublication(messagePublication);
             sysPub.setLanguageSpecific(languageSpecific);

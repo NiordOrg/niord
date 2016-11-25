@@ -30,7 +30,7 @@ public class SystemPublicationVo extends PublicationVo {
 
     String publicationIdFormat;
     PublicationMainType mainType;
-    PublicationVo template;
+    SystemPublicationVo template;
     DomainVo domain;
     MessagePublication messagePublication;
     boolean languageSpecific;
@@ -58,11 +58,11 @@ public class SystemPublicationVo extends PublicationVo {
         this.mainType = mainType;
     }
 
-    public PublicationVo getTemplate() {
+    public SystemPublicationVo getTemplate() {
         return template;
     }
 
-    public void setTemplate(PublicationVo template) {
+    public void setTemplate(SystemPublicationVo template) {
         this.template = template;
     }
 
