@@ -112,13 +112,13 @@ angular.module('niord.admin')
                     case 'type':
                         return !hasTemplate || pub.template.type === undefined;
                     case 'link':
-                        return (!hasTemplate || pub.template.link === undefined) && pub.type == 'LINK';
+                        return (!hasTemplate && pub.type == 'LINK') || (pub.template && pub.template.type == 'LINK');
                     case 'repoFile':
                         return isPublication && (pub.type == 'REPOSITORY' || pub.type == 'MESSAGE_REPORT');
                     case 'report':
                         return !hasTemplate && pub.type == 'MESSAGE_REPORT';
                     case 'messagePublication':
-                        return !hasTemplate || pub.template.messagePublication === undefined;
+                        return !hasTemplate || (pub.template.messagePublication === undefined);
                 }
                 return true;
             };

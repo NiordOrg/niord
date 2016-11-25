@@ -115,7 +115,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @GET
     @Path("/search-details")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed({ "editor" })
     @GZIP
     @NoCache
     public List<SystemPublicationVo> searchSystemPublications(

@@ -225,7 +225,7 @@ angular.module('niord.messages')
                 if (mainType) {
                     params += '&mainType=' + mainType;
                 }
-                return $http.get('/rest/publications/search?' + params);
+                return $http.get('/rest/publications/search-details?' + params);
             },
 
 
