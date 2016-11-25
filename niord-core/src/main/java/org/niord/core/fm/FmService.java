@@ -216,7 +216,7 @@ public class FmService extends BaseService {
         if (report.getProperties() != null && !report.getProperties().isEmpty()) {
             Date today = new Date();
             int year = TimeUtils.getCalendarField(today, Calendar.YEAR);
-            int week = TimeUtils.getCalendarField(today, Calendar.WEEK_OF_YEAR);
+            int week = TimeUtils.getISO8601WeekOfYear(today);
 
             Map<String, String> replacementValues = new HashMap<>();
             replacementValues.put("${year-2-digits}", String.valueOf(year).substring(2));

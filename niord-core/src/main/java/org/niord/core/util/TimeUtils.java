@@ -41,6 +41,7 @@ public class TimeUtils {
         return cal;
     }
 
+
     /**
      * Resets the time part of the date to 0:0:0
      * @param date the date to reset
@@ -55,6 +56,7 @@ public class TimeUtils {
         return date;
     }
 
+
     /**
      * Resets the seconds part of the date to 0
      * @param cal the date to reset
@@ -67,6 +69,7 @@ public class TimeUtils {
         }
         return cal;
     }
+
 
     /**
      * Resets the seconds part of the date to 0
@@ -81,6 +84,7 @@ public class TimeUtils {
         }
         return date;
     }
+
 
     /**
      * Resets the time part of the date to 23:59:59
@@ -154,6 +158,7 @@ public class TimeUtils {
         return resetTime(date1).getTime() == resetTime(date2).getTime();
     }
 
+
     /**
      * Checks if the two Dates is for the same date, hour and minute
      * @param date1 the first date
@@ -168,6 +173,7 @@ public class TimeUtils {
         return resetSeconds(date1).getTime() == resetSeconds(date2).getTime();
     }
 
+
     /**
      * Computes the number of weeks in a given year
      * See: http://stackoverflow.com/questions/18438332/how-to-get-total-number-of-week-in-the-current-year
@@ -181,4 +187,21 @@ public class TimeUtils {
         cal.setMinimalDaysInFirstWeek(4); // 1 week minimum from Thursday
         return cal.getMaximum(Calendar.WEEK_OF_YEAR);
     }
+
+
+    /**
+     * Computes the ISO-8601 week of year for the given date
+     * See: http://stackoverflow.com/questions/147178/what-is-a-good-simple-way-to-compute-iso-8601-week-number
+     *
+     * @param date the date of choice
+     * @return the ISO-8601 week number of the date
+     */
+    public static int getISO8601WeekOfYear(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setMinimalDaysInFirstWeek(4);
+        calendar.setFirstDayOfWeek(Calendar.MONDAY);
+        calendar.setTime(date);
+        return calendar.get(Calendar.WEEK_OF_YEAR);
+    }
+
 }

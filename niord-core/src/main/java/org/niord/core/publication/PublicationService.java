@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.message.MessageTagService;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
@@ -50,6 +51,10 @@ public class PublicationService extends BaseService {
 
     @Inject
     DomainService domainService;
+
+    @Inject
+    MessageTagService messageTagService;
+
 
     /**
      * Returns the publication with the given publication ID
@@ -165,30 +170,18 @@ public class PublicationService extends BaseService {
                     + publication.getPublicationId());
         }
 
-        // Substitute the template with the persisted on
-        if (publication.getTemplate() != null) {
-            publication.setTemplate(findByPublicationId(publication.getTemplate().getPublicationId()));
-        }
-
-        // Substitute the publication category with the persisted on
-        if (publication.getCategory() != null) {
-            publication.setCategory(publicationCategoryService.findByCategoryId(publication.getCategory().getCategoryId()));
-        }
-
-        // Substitute the domain with the persisted on
-        if (publication.getDomain() != null) {
-            publication.setDomain(domainService.findByDomainId(publication.getDomain().getDomainId()));
-        }
+        //Substitute related entities with the persisted ones
+        updateRelatedEntities(publication);
 
         // Copy the publication data
         original.updatePublication(publication);
 
         // If this is a template, update all publications based on this template
         if (original.getMainType() == TEMPLATE) {
-            findByTemplateId(original.getPublicationId()).forEach(Publication::updateFromTemplate);
+            findByTemplateId(original.getPublicationId()).forEach(this::updateFromTemplate);
         } else if (original.getTemplate() != null) {
             // Let the template override any changes
-            original.updateFromTemplate();
+            updateFromTemplate(original);
         }
 
         return saveEntity(original);
@@ -206,6 +199,20 @@ public class PublicationService extends BaseService {
                     + publication.getId());
         }
 
+        //Substitute related entities with the persisted ones
+        updateRelatedEntities(publication);
+
+        // If the publication has an associated template, update from the template
+        if (publication.getMainType() == PUBLICATION && publication.getTemplate() != null) {
+            updateFromTemplate(publication);
+        }
+
+        return saveEntity(publication);
+    }
+
+
+    /** Substitute related entities with the persisted ones **/
+    private void updateRelatedEntities(Publication publication) {
         // Substitute the template with the persisted on
         if (publication.getTemplate() != null) {
             publication.setTemplate(findByPublicationId(publication.getTemplate().getPublicationId()));
@@ -221,12 +228,19 @@ public class PublicationService extends BaseService {
             publication.setDomain(domainService.findByDomainId(publication.getDomain().getDomainId()));
         }
 
-        // If the publication has an associated template, update from the template
-        if (publication.getMainType() == PUBLICATION && publication.getTemplate() != null) {
-            publication.updateFromTemplate();
+        // Substitute the message tag with the persisted on
+        if (publication.getMessageTag() != null) {
+            publication.setMessageTag(messageTagService.findTag(publication.getMessageTag().getTagId()));
         }
+    }
 
-        return saveEntity(publication);
+
+    /** Updates the publication from its template */
+    private void updateFromTemplate(Publication publication) {
+        if (publication.getMainType() == PUBLICATION && publication.getTemplate() != null) {
+            PublicationTemplateUpdateCtx ctx = new PublicationTemplateUpdateCtx(publication, messageTagService);
+            publication.updateFromTemplate(ctx);
+        }
     }
 
 

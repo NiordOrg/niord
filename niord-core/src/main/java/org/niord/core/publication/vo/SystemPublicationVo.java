@@ -17,6 +17,7 @@
 package org.niord.core.publication.vo;
 
 import org.niord.core.domain.vo.DomainVo;
+import org.niord.core.message.vo.MessageTagVo;
 import org.niord.model.publication.PublicationVo;
 
 import java.util.HashMap;
@@ -33,6 +34,8 @@ public class SystemPublicationVo extends PublicationVo {
     SystemPublicationVo template;
     DomainVo domain;
     PeriodicalType periodicalType;
+    String messageTagFormat;
+    MessageTagVo messageTag;
     MessagePublication messagePublication;
     boolean languageSpecific;
     Map<String, Object> printSettings = new HashMap<>();
@@ -81,6 +84,22 @@ public class SystemPublicationVo extends PublicationVo {
 
     public void setPeriodicalType(PeriodicalType periodicalType) {
         this.periodicalType = periodicalType;
+    }
+
+    public String getMessageTagFormat() {
+        return messageTagFormat;
+    }
+
+    public void setMessageTagFormat(String messageTagFormat) {
+        this.messageTagFormat = messageTagFormat;
+    }
+
+    public MessageTagVo getMessageTag() {
+        return messageTag;
+    }
+
+    public void setMessageTag(MessageTagVo messageTag) {
+        this.messageTag = messageTag;
     }
 
     public MessagePublication getMessagePublication() {

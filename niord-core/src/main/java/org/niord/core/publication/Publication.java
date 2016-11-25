@@ -19,12 +19,12 @@ package org.niord.core.publication;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.JpaPropertiesAttributeConverter;
 import org.niord.core.domain.Domain;
+import org.niord.core.message.MessageTag;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.vo.PeriodicalType;
 import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.publication.vo.SystemPublicationVo;
-import org.niord.core.util.TimeUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.publication.PublicationDescVo;
@@ -45,7 +45,6 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -91,6 +90,13 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
     @Enumerated(EnumType.STRING)
     PeriodicalType periodicalType;
+
+    /** Used by templates to define the format of associated message tags **/
+    String messageTagFormat;
+
+    /** Used for report-based publications to associated a list of messages **/
+    @ManyToOne
+    MessageTag messageTag;
 
     @Temporal(TemporalType.TIMESTAMP)
     Date publishDateFrom;
@@ -142,6 +148,8 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
             this.mainType = sysPub.getMainType();
             this.template = sysPub.getTemplate() != null ? new Publication(sysPub.getTemplate()) : null;
             this.domain = sysPub.getDomain() != null ? new Domain(sysPub.getDomain()) : null;
+            this.messageTagFormat = sysPub.getMessageTagFormat();
+            this.messageTag = sysPub.getMessageTag() != null ? new MessageTag(sysPub.getMessageTag()) : null;
             this.periodicalType = sysPub.getPeriodicalType();
             this.messagePublication = sysPub.getMessagePublication();
             this.languageSpecific = sysPub.isLanguageSpecific();
@@ -164,6 +172,8 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
         this.type = publication.getType();
         this.category = publication.getCategory();
         this.domain = publication.getDomain();
+        this.messageTagFormat = publication.getMessageTagFormat();
+        this.messageTag = publication.getMessageTag();
         this.periodicalType = publication.getPeriodicalType();
         this.publishDateFrom = publication.getPublishDateFrom();
         this.publishDateTo = publication.getPublishDateTo();
@@ -175,39 +185,6 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
         this.reportParams.putAll(publication.getReportParams());
         descs.clear();
         copyDescsAndRemoveBlanks(publication.getDescs());
-    }
-
-
-    /** Updates this publication from its template */
-    public void updateFromTemplate() {
-        if (template == null) {
-            return;
-        }
-
-        if (StringUtils.isBlank(this.publicationId)) {
-            this.publicationId = str(template.getPublicationIdFormat(), publicationId, publishDateFrom, null);
-        }
-        this.type = val(template.getType(), type);
-        this.category = val(template.getCategory(), category);
-        this.domain = val(template.getDomain(), domain);
-        this.periodicalType = val(template.getPeriodicalType(), periodicalType);
-        this.messagePublication = val(template.getMessagePublication(), messagePublication);
-        this.languageSpecific = val(template.isLanguageSpecific(), languageSpecific);
-        if (!template.getPrintSettings().isEmpty()) {
-            this.printSettings.clear();
-            this.printSettings.putAll(template.getPrintSettings());
-        }
-        if (!template.getReportParams().isEmpty()) {
-            this.reportParams.clear();
-            template.getReportParams().entrySet().forEach(kv ->
-                    this.reportParams.put(kv.getKey(), str(kv.getValue().toString(), "", publishDateFrom, null)));
-        }
-        template.getDescs().forEach(d -> {
-            PublicationDesc pubDesc = checkCreateDesc(d.getLang());
-            pubDesc.setTitle(str(d.getTitle(), pubDesc.getTitle(), publishDateFrom, d.getLang()));
-            pubDesc.setFormat(str(d.getFormat(), pubDesc.getFormat(), publishDateFrom, d.getLang()));
-            pubDesc.setLink(str(d.getLink(), pubDesc.getLink(), publishDateFrom, d.getLang()));
-        });
     }
 
 
@@ -235,6 +212,8 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
             sysPub.setMainType(mainType);
             sysPub.setTemplate(template != null ? template.toVo(SystemPublicationVo.class, dataFilter) : null);
             sysPub.setDomain((domain != null) ? domain.toVo()  : null);
+            sysPub.setMessageTagFormat(messageTagFormat);
+            sysPub.setMessageTag(messageTag != null ? messageTag.toVo() : null);
             sysPub.setPeriodicalType(periodicalType);
             sysPub.setMessagePublication(messagePublication);
             sysPub.setLanguageSpecific(languageSpecific);
@@ -251,41 +230,40 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     }
 
 
-    /** Returns the value, or the default value if the value is null **/
-    private <D> D val(D value, D defaultValue) {
-        return value != null  ? value : defaultValue;
-    }
-
-
-    /**
-     * Expand the parameters of a value with the format ${week}, ${year}, etc.
-     * @param value the value to expand parameters for
-     * @param date the date to use
-     * @param lang the language to use
-     * @return the updated value
-     */
-    private String str(String value, String defaultValue, Date date, String lang) {
-        if (StringUtils.isNotBlank(value) && value.contains("${")) {
-            Map<String, String> replacementValues = new HashMap<>();
-            if (date != null) {
-                int year = TimeUtils.getCalendarField(date, Calendar.YEAR);
-                int week = TimeUtils.getCalendarField(date, Calendar.WEEK_OF_YEAR);
-
-                replacementValues.put("${year-2-digits}", String.valueOf(year).substring(2));
-                replacementValues.put("${year}", String.valueOf(year));
-                replacementValues.put("${week}", String.valueOf(week));
-                replacementValues.put("${week-2-digits}", String.format("%02d", week));
-            }
-            if (StringUtils.isNotBlank(lang)) {
-                replacementValues.put("${lang}", lang);
-            }
-            for (Map.Entry<String, String> kv : replacementValues.entrySet()) {
-                value = value.replace(kv.getKey(), kv.getValue());
-            }
-        } else if (StringUtils.isNotBlank(defaultValue)) {
-            value = defaultValue;
+    /** Updates this publication from its template */
+    public void updateFromTemplate(PublicationTemplateUpdateCtx ctx) {
+        if (template == null) {
+            return;
         }
-        return value;
+
+        if (StringUtils.isBlank(this.publicationId)) {
+            this.publicationId = ctx.str(template.getPublicationIdFormat(), publicationId);
+        }
+        this.type = ctx.val(template.getType(), type);
+        this.category = ctx.val(template.getCategory(), category);
+        this.domain = ctx.val(template.getDomain(), domain);
+        this.messageTagFormat = ctx.str(template.getMessageTagFormat(), messageTagFormat);
+        if (this.messageTag == null && StringUtils.isNotBlank(this.messageTagFormat)) {
+            this.messageTag = ctx.findOrCreatePublicMessageTag(this.messageTagFormat);
+        }
+        this.periodicalType = ctx.val(template.getPeriodicalType(), periodicalType);
+        this.messagePublication = ctx.val(template.getMessagePublication(), messagePublication);
+        this.languageSpecific = ctx.val(template.isLanguageSpecific(), languageSpecific);
+        if (!template.getPrintSettings().isEmpty()) {
+            this.printSettings.clear();
+            this.printSettings.putAll(template.getPrintSettings());
+        }
+        if (!template.getReportParams().isEmpty()) {
+            this.reportParams.clear();
+            template.getReportParams().entrySet().forEach(kv ->
+                    this.reportParams.put(kv.getKey(), ctx.str(kv.getValue().toString(), "")));
+        }
+        template.getDescs().forEach(d -> {
+            PublicationDesc pubDesc = checkCreateDesc(d.getLang());
+            pubDesc.setTitle(ctx.str(d.getTitle(), pubDesc.getTitle()));
+            pubDesc.setFormat(ctx.str(d.getFormat(), pubDesc.getFormat()));
+            pubDesc.setLink(ctx.str(d.getLink(), pubDesc.getLink()));
+        });
     }
 
 
@@ -390,6 +368,22 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
     public void setPublishDateTo(Date publishDateTo) {
         this.publishDateTo = publishDateTo;
+    }
+
+    public String getMessageTagFormat() {
+        return messageTagFormat;
+    }
+
+    public void setMessageTagFormat(String messageTagFormat) {
+        this.messageTagFormat = messageTagFormat;
+    }
+
+    public MessageTag getMessageTag() {
+        return messageTag;
+    }
+
+    public void setMessageTag(MessageTag messageTag) {
+        this.messageTag = messageTag;
     }
 
     public MessagePublication getMessagePublication() {

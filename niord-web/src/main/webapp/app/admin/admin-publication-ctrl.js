@@ -61,12 +61,13 @@ angular.module('niord.admin')
             $scope.$watch("filter", $scope.loadPublications, true);
 
 
-            // Sync up $scope.publication.publication with $scope.publication.template
-            $scope.$watch("publication.publication", function (pub) {
+            // Sync up publication fields used by various editors back to the proper fields
+            $scope.$watch("publication", function (pub) {
                 if ($scope.publication) {
-                    $scope.publication.template = pub;
+                    $scope.publication.template = pub.publication;
+                    $scope.publication.messageTag = pub.tag;
                 }
-            });
+            }, true);
 
 
             // Load categories
@@ -80,20 +81,26 @@ angular.module('niord.admin')
             /** Returns if the given editor field should be displayed **/
             $scope.showEditorField = function (field) {
                 var pub = $scope.publication;
+                var isPublication = pub.mainType == 'PUBLICATION';
+                var isTemplate = pub.mainType == 'TEMPLATE';
                 var hasTemplate = pub.template !== undefined;
                 switch (field) {
                     case 'publicationIdFormat':
-                        return pub.mainType == 'TEMPLATE';
+                        return isTemplate;
                     case 'template':
-                        return pub.mainType == 'PUBLICATION';
+                        return isPublication;
                     case 'category':
                         return !hasTemplate || pub.template.category === undefined;
                     case 'title':
                         return !hasTemplate || pub.template.descs[0].title === undefined;
+                    case 'messageTagFormat':
+                        return isTemplate && pub.type == 'MESSAGE_REPORT';
+                    case 'messageTag':
+                        return isPublication && pub.type == 'MESSAGE_REPORT';
                     case 'periodicalType':
-                        return pub.mainType == 'TEMPLATE';
+                        return isTemplate;
                     case 'dates':
-                        return pub.mainType == 'PUBLICATION';
+                        return isPublication;
                     case 'type':
                         return !hasTemplate || pub.template.type === undefined;
                     case 'link':
@@ -122,6 +129,8 @@ angular.module('niord.admin')
                     category: { categoryId: undefined },
                     mainType: $scope.mainType,
                     type: 'LINK',
+                    messageTagFormat: undefined,
+                    messageTag: undefined,
                     periodicalType: undefined,
                     publishDateFrom: undefined,
                     publishDateTo: undefined,
@@ -139,8 +148,11 @@ angular.module('niord.admin')
                     .success(function (pub) {
                         $scope.editMode = 'edit';
                         $scope.publication = pub;
+                        LangService.sortDescs($scope.publication);
+
+                        // Some field editors rely on hardcoded property names:
                         $scope.publication.publication = pub.template;
-                        LangService.sortDescs($scope.publication)
+                        $scope.publication.tag = pub.messageTag;
                     })
                     .error($scope.displayError);
             };
@@ -168,13 +180,20 @@ angular.module('niord.admin')
                     .success(function (pub) {
                         $scope.editMode = 'add';
                         $scope.publication = pub;
+                        LangService.sortDescs($scope.publication);
+
+                        // Some field editors rely on hardcoded property names:
                         $scope.publication.publication = pub.template;
+                        $scope.publication.tag = pub.messageTag;
+
+                        // Reset publication ID
                         delete $scope.publication.publicationId;
+
+                        // Handle next issue date computation
                         if (nextIssue && pub.publishDateFrom && pub.template && pub.template.periodicalType) {
                             $scope.publication.publishDateFrom = nextIssueDate(pub.publishDateFrom, pub.template.periodicalType);
                             $scope.publication.publishDateTo = nextIssueDate(pub.publishDateTo, pub.template.periodicalType);
                         }
-                        LangService.sortDescs($scope.publication);
                     })
                     .error($scope.displayError);
             };

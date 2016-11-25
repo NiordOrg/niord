@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -105,7 +106,7 @@ public class MessageSeriesService extends BaseService {
     public List<MessageSeries> persistedMessageSeries(List<MessageSeries> series) {
         return series.stream()
                 .map(ms -> findBySeriesId(ms.getSeriesId()))
-                .filter(ms -> ms != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
@@ -439,7 +440,7 @@ public class MessageSeriesService extends BaseService {
                 throw new IllegalArgumentException("Publish date must be specified");
             }
             int year = TimeUtils.getCalendarField(publishDate, Calendar.YEAR);
-            int week = TimeUtils.getCalendarField(publishDate, Calendar.WEEK_OF_YEAR);
+            int week = TimeUtils.getISO8601WeekOfYear(publishDate);
             MainType mainType = message.getMainType() != null ? message.getMainType() : message.getType().getMainType();
 
             params.put("${year-2-digits}", String.valueOf(year).substring(2));

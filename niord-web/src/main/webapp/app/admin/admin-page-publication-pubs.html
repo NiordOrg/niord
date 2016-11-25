@@ -127,6 +127,32 @@
                     </div>
                 </div>
 
+               <!-- ******* File -> Message Tag Format ******* -->
+               <div class="form-group" ng-if="showEditorField('messageTagFormat')">
+                   <label class="col-sm-4 col-md-2">Message Tag Format</label>
+                   <div class="col-sm-6 col-md-10">
+                       <div class="row">
+                           <div class="col-sm-6">
+                               <input class="form-control input-sm" placeholder="Message Tag Format" type="text"
+                                      ng-model="publication.messageTagFormat"
+                                      autocapitalize="off" autocorrect="off" autocomplete="off">
+                           </div>
+                       </div>
+                   </div>
+               </div>
+
+               <!-- ******* File -> Message Tag ******* -->
+               <div class="form-group" ng-if="showEditorField('messageTag')">
+                   <label class="col-sm-4 col-md-2">Message Tag</label>
+                   <div class="col-sm-6 col-md-10">
+                       <div class="row">
+                           <div class="col-sm-6">
+                               <message-tags-field tag-data="publication" multiple="false"></message-tags-field>
+                           </div>
+                       </div>
+                   </div>
+               </div>
+
                <!-- ******* File -> Report ******* -->
                <div class="form-group" ng-if="showEditorField('report')">
                    <label class="col-sm-4 col-md-2">Report</label>
