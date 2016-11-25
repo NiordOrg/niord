@@ -16,8 +16,23 @@
                        <div class="row">
                            <div class="col-sm-12">
                                <input class="form-control input-sm" placeholder="ID" type="text"
-                                      ng-model="publication.publicationId" ng-disabled="editMode == 'edit'"
-                                      autocapitalize="off" autocorrect="off" autocomplete="off" required>
+                                      ng-model="publication.publicationId"
+                                      ng-disabled="editMode == 'edit' || (publication.template && publication.template.publicationIdFormat)"
+                                      autocapitalize="off" autocorrect="off" autocomplete="off">
+                           </div>
+                       </div>
+                   </div>
+               </div>
+
+               <!-- ******* Publication ID Format ******* -->
+               <div class="form-group" ng-if="showEditorField('publicationIdFormat')">
+                   <label class="col-sm-4 col-md-2">ID Format</label>
+                   <div class="col-sm-6 col-md-10">
+                       <div class="row">
+                           <div class="col-sm-6">
+                               <input class="form-control input-sm" placeholder="ID Format" type="text"
+                                      ng-model="publication.publicationIdFormat"
+                                      autocapitalize="off" autocorrect="off" autocomplete="off">
                            </div>
                        </div>
                    </div>
@@ -62,6 +77,20 @@
                    </div>
                </div>
 
+               <!-- ******* Periodical Type ******* -->
+               <div class="form-group" ng-if="showEditorField('periodicalType')">
+                   <label class="col-sm-4 col-md-2">Periodical Type</label>
+                   <div class="col-sm-8 col-md-10">
+                       <select class="form-control input-sm" ng-model="publication.periodicalType" style="width: 180px">
+                           <option value=""></option>
+                           <option value="DAILY">Daily</option>
+                           <option value="WEEKLY">Weekly</option>
+                           <option value="MONTHLY">Monthly</option>
+                           <option value="YEARLY">Yearly</option>
+                       </select>
+                   </div>
+               </div>
+
                <!-- ******* Publication Dates ******* -->
                <div class="form-group" ng-if="showEditorField('dates')">
                    <label class="col-sm-4 col-md-2">Publish Dates</label>
@@ -69,12 +98,12 @@
                        <div class="row">
                            <div class="col-xs-6 col-sm-6 col-md-4">
                                <date-time-picker ng-model="publication.publishDateFrom" placeholder="Publish From"
-                                                 format="'l'" time="'00:00:00'">
+                                                 format="'lll z'">
                                </date-time-picker>
                            </div>
                            <div class="col-xs-6 col-sm-6 col-md-4">
                                <date-time-picker ng-model="publication.publishDateTo" placeholder="Publish To"
-                                                 format="'l'" time="'23:59:59'">
+                                                 format="'lll z'">
                                </date-time-picker>
                            </div>
                        </div>
@@ -148,6 +177,7 @@
 
            </div>
 
+            <!-- ******* Submit/Cancel buttons ******* -->
             <div style="margin-top: 20px;" class="row">
                 <div class="col-sm-offset-4">
                     <button type="submit" class="btn btn-default btn-sm" ng-click="loadPublications()">
@@ -233,7 +263,7 @@
                             <a href ng-click="copyPublication(publication, false);" title="Duplicate Publication"><span class="glyphicon glyphicon-duplicate"></span></a>
                             &nbsp;
                             <a href ng-click="copyPublication(publication, true);" title="Duplicate Publication - Next Issue"
-                                    ng-if="mainType == 'PUBLICATION' && publication.publishDateFrom && publication.publishDateTo">
+                                    ng-if="publication.publishDateFrom && publication.template && publication.template.periodicalType">
                                 <span class="glyphicon glyphicon-duplicate">+</span></a>
                         </td>
                     </tr>

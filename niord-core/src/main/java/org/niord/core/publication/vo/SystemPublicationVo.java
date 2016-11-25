@@ -32,6 +32,7 @@ public class SystemPublicationVo extends PublicationVo {
     PublicationMainType mainType;
     SystemPublicationVo template;
     DomainVo domain;
+    PeriodicalType periodicalType;
     MessagePublication messagePublication;
     boolean languageSpecific;
     Map<String, Object> printSettings = new HashMap<>();
@@ -72,6 +73,14 @@ public class SystemPublicationVo extends PublicationVo {
 
     public void setDomain(DomainVo domain) {
         this.domain = domain;
+    }
+
+    public PeriodicalType getPeriodicalType() {
+        return periodicalType;
+    }
+
+    public void setPeriodicalType(PeriodicalType periodicalType) {
+        this.periodicalType = periodicalType;
     }
 
     public MessagePublication getMessagePublication() {

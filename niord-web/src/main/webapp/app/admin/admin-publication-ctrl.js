@@ -82,12 +82,16 @@ angular.module('niord.admin')
                 var pub = $scope.publication;
                 var hasTemplate = pub.template !== undefined;
                 switch (field) {
+                    case 'publicationIdFormat':
+                        return pub.mainType == 'TEMPLATE';
                     case 'template':
                         return pub.mainType == 'PUBLICATION';
                     case 'category':
                         return !hasTemplate || pub.template.category === undefined;
                     case 'title':
                         return !hasTemplate || pub.template.descs[0].title === undefined;
+                    case 'periodicalType':
+                        return pub.mainType == 'TEMPLATE';
                     case 'dates':
                         return pub.mainType == 'PUBLICATION';
                     case 'type':
@@ -118,6 +122,7 @@ angular.module('niord.admin')
                     category: { categoryId: undefined },
                     mainType: $scope.mainType,
                     type: 'LINK',
+                    periodicalType: undefined,
                     publishDateFrom: undefined,
                     publishDateTo: undefined,
                     messagePublication: 'NONE',
@@ -141,6 +146,22 @@ angular.module('niord.admin')
             };
 
 
+            /** Computes the next issue date **/
+            function nextIssueDate(date, periodicalType) {
+                if (date && periodicalType) {
+                    var d = moment(date);
+                    switch (periodicalType) {
+                        case 'DAILY': d = d.add(1, 'day'); break;
+                        case 'WEEKLY': d = d.add(1, 'week'); break;
+                        case 'MONTHLY': d = d.add(1, 'month'); break;
+                        case 'YEARLY': d = d.add(1, 'year'); break;
+                    }
+                    date = d.valueOf();
+                }
+                return date;
+            }
+
+
             /** Copies a publication **/
             $scope.copyPublication = function (publication, nextIssue) {
                 AdminPublicationService.getPublicationDetails(publication)
@@ -149,10 +170,9 @@ angular.module('niord.admin')
                         $scope.publication = pub;
                         $scope.publication.publication = pub.template;
                         delete $scope.publication.publicationId;
-                        if (nextIssue && pub.publishDateFrom && pub.publishDateTo) {
-                            var duration = pub.publishDateTo - pub.publishDateFrom;
-                            $scope.publication.publishDateFrom = pub.publishDateTo;
-                            $scope.publication.publishDateTo = pub.publishDateTo + duration;
+                        if (nextIssue && pub.publishDateFrom && pub.template && pub.template.periodicalType) {
+                            $scope.publication.publishDateFrom = nextIssueDate(pub.publishDateFrom, pub.template.periodicalType);
+                            $scope.publication.publishDateTo = nextIssueDate(pub.publishDateTo, pub.template.periodicalType);
                         }
                         LangService.sortDescs($scope.publication);
                     })
@@ -184,6 +204,9 @@ angular.module('niord.admin')
             $scope.savePublication = function () {
                 if ($scope.publication.messagePublication == '') {
                     delete $scope.publication.messagePublication;
+                }
+                if ($scope.publication.periodicalType == '') {
+                    delete $scope.publication.periodicalType;
                 }
                 if ($scope.publication && $scope.editMode == 'add') {
                     AdminPublicationService

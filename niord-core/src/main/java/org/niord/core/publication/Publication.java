@@ -21,6 +21,7 @@ import org.niord.core.db.JpaPropertiesAttributeConverter;
 import org.niord.core.domain.Domain;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.publication.vo.MessagePublication;
+import org.niord.core.publication.vo.PeriodicalType;
 import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.util.TimeUtils;
@@ -88,6 +89,9 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     @ManyToOne
     Domain domain;
 
+    @Enumerated(EnumType.STRING)
+    PeriodicalType periodicalType;
+
     @Temporal(TemporalType.TIMESTAMP)
     Date publishDateFrom;
 
@@ -138,6 +142,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
             this.mainType = sysPub.getMainType();
             this.template = sysPub.getTemplate() != null ? new Publication(sysPub.getTemplate()) : null;
             this.domain = sysPub.getDomain() != null ? new Domain(sysPub.getDomain()) : null;
+            this.periodicalType = sysPub.getPeriodicalType();
             this.messagePublication = sysPub.getMessagePublication();
             this.languageSpecific = sysPub.isLanguageSpecific();
             if (sysPub.getPrintSettings() != null) {
@@ -159,6 +164,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
         this.type = publication.getType();
         this.category = publication.getCategory();
         this.domain = publication.getDomain();
+        this.periodicalType = publication.getPeriodicalType();
         this.publishDateFrom = publication.getPublishDateFrom();
         this.publishDateTo = publication.getPublishDateTo();
         this.messagePublication = publication.getMessagePublication();
@@ -184,6 +190,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
         this.type = val(template.getType(), type);
         this.category = val(template.getCategory(), category);
         this.domain = val(template.getDomain(), domain);
+        this.periodicalType = val(template.getPeriodicalType(), periodicalType);
         this.messagePublication = val(template.getMessagePublication(), messagePublication);
         this.languageSpecific = val(template.isLanguageSpecific(), languageSpecific);
         if (!template.getPrintSettings().isEmpty()) {
@@ -228,6 +235,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
             sysPub.setMainType(mainType);
             sysPub.setTemplate(template != null ? template.toVo(SystemPublicationVo.class, dataFilter) : null);
             sysPub.setDomain((domain != null) ? domain.toVo()  : null);
+            sysPub.setPeriodicalType(periodicalType);
             sysPub.setMessagePublication(messagePublication);
             sysPub.setLanguageSpecific(languageSpecific);
 
@@ -358,6 +366,14 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
     public void setDomain(Domain domain) {
         this.domain = domain;
+    }
+
+    public PeriodicalType getPeriodicalType() {
+        return periodicalType;
+    }
+
+    public void setPeriodicalType(PeriodicalType periodicalType) {
+        this.periodicalType = periodicalType;
     }
 
     public Date getPublishDateFrom() {
