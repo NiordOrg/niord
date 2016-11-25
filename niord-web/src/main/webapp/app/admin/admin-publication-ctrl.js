@@ -96,7 +96,7 @@ angular.module('niord.admin')
                     case 'messageTagFormat':
                         return isTemplate && pub.type == 'MESSAGE_REPORT';
                     case 'messageTag':
-                        return isPublication && pub.type == 'MESSAGE_REPORT';
+                        return isPublication && pub.type == 'MESSAGE_REPORT' && !(pub.template && pub.template.messageTagFormat);
                     case 'periodicalType':
                         return isTemplate;
                     case 'dates':
@@ -182,18 +182,24 @@ angular.module('niord.admin')
                         $scope.publication = pub;
                         LangService.sortDescs($scope.publication);
 
-                        // Some field editors rely on hardcoded property names:
-                        $scope.publication.publication = pub.template;
-                        $scope.publication.tag = pub.messageTag;
-
                         // Reset publication ID
                         delete $scope.publication.publicationId;
+
+                        // Reset publication message tag, if a template messageTagFormat is defined
+                        if (pub.template && pub.template.messageTagFormat) {
+                            delete $scope.publication.messageTag;
+                        }
 
                         // Handle next issue date computation
                         if (nextIssue && pub.publishDateFrom && pub.template && pub.template.periodicalType) {
                             $scope.publication.publishDateFrom = nextIssueDate(pub.publishDateFrom, pub.template.periodicalType);
                             $scope.publication.publishDateTo = nextIssueDate(pub.publishDateTo, pub.template.periodicalType);
                         }
+
+                        // Some field editors rely on hardcoded property names:
+                        $scope.publication.publication = pub.template;
+                        $scope.publication.tag = pub.messageTag;
+
                     })
                     .error($scope.displayError);
             };

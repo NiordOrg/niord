@@ -23,6 +23,7 @@ import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -44,6 +45,7 @@ import java.util.stream.Collectors;
 public class PublicationCategory extends BaseEntity<Integer> implements ILocalizable<PublicationCategoryDesc> {
 
     @NotNull
+    @Column(unique = true)
     String categoryId;
 
     int priority = 0;

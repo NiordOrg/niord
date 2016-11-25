@@ -65,6 +65,7 @@ import java.util.stream.Collectors;
 public class Publication extends BaseEntity<Integer> implements ILocalizable<PublicationDesc> {
 
     @NotNull
+    @Column(unique = true)
     String publicationId;
 
     /** Used by templates to define the format of the ID's of the concrete publications **/
