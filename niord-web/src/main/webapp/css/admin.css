@@ -256,6 +256,12 @@ tr.batch-execution-row td div.progress {
     font-size: 12px;
 }
 
+.publication-repo-file {
+    font-size: 12px;
+    padding: 10px;
+    border: 1px solid lightgray;
+}
+
 /** Dictionary admin page **/
 
 .dictionary-table tr td {

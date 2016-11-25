@@ -27,8 +27,8 @@ angular.module('niord.admin')
      * Controller for the Admin Publications -> Publications and Templates pages
      */
     .controller('PublicationsAdminCtrl', [
-                 '$scope', '$rootScope', 'growl', 'AdminPublicationService', 'DialogService', 'LangService', 'UploadFileService',
-        function ($scope, $rootScope, growl, AdminPublicationService, DialogService, LangService, UploadFileService) {
+                 '$scope', '$rootScope', '$window', 'growl', 'AdminPublicationService', 'DialogService', 'LangService', 'UploadFileService',
+        function ($scope, $rootScope, $window, growl, AdminPublicationService, DialogService, LangService, UploadFileService) {
             'use strict';
 
             $scope.mainType = 'PUBLICATION';
@@ -66,6 +66,14 @@ angular.module('niord.admin')
                 if ($scope.publication) {
                     $scope.publication.template = pub.publication;
                     $scope.publication.messageTag = pub.tag;
+
+                    // If the languageSpecific flag is not set, sync links across descs
+                    if (!$scope.publication.languageSpecific) {
+                        var descs = $scope.publication.descs;
+                        for (var x = 1; x < descs.length; x++) {
+                            descs[x].link = descs[0].link;
+                        }
+                    }
                 }
             }, true);
 
@@ -105,12 +113,74 @@ angular.module('niord.admin')
                         return !hasTemplate || pub.template.type === undefined;
                     case 'link':
                         return (!hasTemplate || pub.template.link === undefined) && pub.type == 'LINK';
+                    case 'repoFile':
+                        return isPublication && (pub.type == 'REPOSITORY' || pub.type == 'MESSAGE_REPORT');
                     case 'report':
                         return !hasTemplate && pub.type == 'MESSAGE_REPORT';
                     case 'messagePublication':
                         return !hasTemplate || pub.template.messagePublication === undefined;
                 }
                 return true;
+            };
+
+
+            /** Uploads a file for the given language **/
+            $scope.uploadFile = function (lang) {
+                UploadFileService.showUploadFileDialog(
+                    'Upload Publication File',
+                    '/rest/repo/upload/' + encodeURIComponent($scope.publication.repoPath),
+                    'pdf',
+                    true).result
+                    .then(function (result) {
+                        if (result && result.length == 1) {
+                            var desc = LangService.descForLanguage($scope.publication, lang);
+                            desc.link = '/rest/repo/file/' + result[0];
+                        }
+                    });
+            };
+
+
+            /** Utility function for concatenating a key-value request parameter to the parameter string **/
+            function concatParam(param, k, v) {
+                param = param || '';
+                if (k && v) {
+                    param += (param.length > 0) ? '&' : '';
+                    param += encodeURIComponent(k) + '=' + encodeURIComponent(v);
+                }
+                return param;
+            }
+
+
+            /** Generates a report file for the current publication **/
+            $scope.previewReportFile = function (lang) {
+                var pub = $scope.publication;
+                var printSettings = pub.template ? pub.template.printSettings : pub.printSettings;
+
+                // Check that required params are defined
+                if (!pub.messageTag) {
+                    growl.error("Missing message tag", { ttl: 5000 });
+                    return;
+                }
+                if (!pub.printSettings.report) {
+                    growl.error("Missing Report", { ttl: 5000 });
+                    return;
+                }
+
+                var printParam = 'tag=' + encodeURIComponent(pub.messageTag.tagId);
+                angular.forEach(printSettings, function (v, k) {
+                    printParam = concatParam(printParam, k, v);
+                });
+                angular.forEach(pub.reportParams, function (v, k) {
+                    printParam = concatParam(printParam, 'param:' + k, v);
+                });
+                printParam = concatParam(printParam, 'lang', lang);
+
+                AdminPublicationService
+                    .publicationTicket()
+                    .success(function (ticket) {
+                        printParam = concatParam(printParam, 'ticket', ticket);
+                        $window.location = '/rest/message-reports/report.pdf?' + printParam;
+                    });
             };
 
 
@@ -205,20 +275,6 @@ angular.module('niord.admin')
             };
 
 
-            /** Called when the languageSpecific flag has been changed **/
-            $scope.languageSpecificUpdate = function () {
-                if ($scope.publication) {
-                    if ($scope.publication.languageSpecific) {
-                        $scope.publication.descs[0].lang = $rootScope.language;
-                        LangService.checkDescs($scope.publication, ensureTitleField);
-                    } else {
-                        $scope.publication.descs.length = 1;
-                        delete $scope.publication.descs[0].lang;
-                    }
-                }
-            };
-
-
             /** Displays the error message */
             $scope.displayError = function () {
                 growl.error("Error saving publication", { ttl: 5000 });
@@ -263,7 +319,7 @@ angular.module('niord.admin')
             /** Generate an export file */
             $scope.exportPublications = function () {
                 AdminPublicationService
-                    .publicationExportTicket()
+                    .publicationTicket('admin')
                     .success(function (ticket) {
                         var link = document.createElement("a");
                         link.href = '/rest/publications/export?ticket=' + ticket;

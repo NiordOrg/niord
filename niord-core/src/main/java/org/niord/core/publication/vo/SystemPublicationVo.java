@@ -38,6 +38,7 @@ public class SystemPublicationVo extends PublicationVo {
     MessageTagVo messageTag;
     MessagePublication messagePublication;
     boolean languageSpecific;
+    String repoPath;
     Map<String, Object> printSettings = new HashMap<>();
     Map<String, Object> reportParams = new HashMap<>();
 
@@ -116,6 +117,14 @@ public class SystemPublicationVo extends PublicationVo {
 
     public void setLanguageSpecific(boolean languageSpecific) {
         this.languageSpecific = languageSpecific;
+    }
+
+    public String getRepoPath() {
+        return repoPath;
+    }
+
+    public void setRepoPath(String repoPath) {
+        this.repoPath = repoPath;
     }
 
     public Map<String, Object> getPrintSettings() {

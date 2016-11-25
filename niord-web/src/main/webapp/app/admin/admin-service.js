@@ -204,8 +204,9 @@ angular.module('niord.admin')
 
 
             /** Returns the ticket that can be used to generate an export file that requires the amdin role */
-            publicationExportTicket: function () {
-                return $http.get('/rest/tickets/ticket?role=admin');
+            publicationTicket: function (role) {
+                var param = role ? '?role=' + role : '';
+                return $http.get('/rest/tickets/ticket' + param);
             },
 
 

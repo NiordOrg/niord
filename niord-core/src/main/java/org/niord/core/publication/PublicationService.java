@@ -21,6 +21,7 @@ import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.MessageTagService;
+import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
@@ -54,6 +55,9 @@ public class PublicationService extends BaseService {
 
     @Inject
     MessageTagService messageTagService;
+
+    @Inject
+    RepositoryService repositoryService;
 
 
     /**
@@ -159,6 +163,25 @@ public class PublicationService extends BaseService {
 
 
     /**
+     * Saves the publication and returns the persisted publication
+     * @param publication the publication to save
+     * @return the persisted publication
+     */
+    private Publication savePublication(Publication publication) {
+
+        // Update the repository path
+        String repoPath = String.format(
+                "%s/%s/%s",
+                Publication.PUBLICATION_REPO_FOLDER,
+                publication.getCategory().getCategoryId(),
+                publication.getPublicationId());
+        publication.setRepoPath(repoPath);
+
+        return saveEntity(publication);
+    }
+
+
+    /**
      * Updates the publication data from the publication template
      * @param publication the publication to update
      * @return the updated publication
@@ -184,7 +207,7 @@ public class PublicationService extends BaseService {
             updateFromTemplate(original);
         }
 
-        return saveEntity(original);
+        return savePublication(original);
     }
 
 
@@ -207,7 +230,7 @@ public class PublicationService extends BaseService {
             updateFromTemplate(publication);
         }
 
-        return saveEntity(publication);
+        return savePublication(publication);
     }
 
 

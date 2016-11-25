@@ -64,6 +64,9 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class Publication extends BaseEntity<Integer> implements ILocalizable<PublicationDesc> {
 
+    public static String PUBLICATION_REPO_FOLDER = "publications";
+
+
     @NotNull
     @Column(unique = true)
     String publicationId;
@@ -109,6 +112,8 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     MessagePublication messagePublication = MessagePublication.NONE;
 
     boolean languageSpecific;
+
+    String repoPath;
 
     /** Selected report and print settings (page size, etc) **/
     @Column(name="printSettings", columnDefinition = "TEXT")
@@ -218,6 +223,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
             sysPub.setPeriodicalType(periodicalType);
             sysPub.setMessagePublication(messagePublication);
             sysPub.setLanguageSpecific(languageSpecific);
+            sysPub.setRepoPath(repoPath);
 
             if (!printSettings.isEmpty()) {
                 sysPub.setPrintSettings(new HashMap<>(printSettings));
@@ -401,6 +407,14 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
     public void setLanguageSpecific(boolean languageSpecific) {
         this.languageSpecific = languageSpecific;
+    }
+
+    public String getRepoPath() {
+        return repoPath;
+    }
+
+    public void setRepoPath(String repoPath) {
+        this.repoPath = repoPath;
     }
 
     public Map<String, Object> getPrintSettings() {

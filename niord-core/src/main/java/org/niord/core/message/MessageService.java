@@ -64,6 +64,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -73,13 +74,8 @@ import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.niord.core.geojson.Feature.WGS84_SRID;
-import static org.niord.core.message.MessageIdMatch.MatchType.SHORT_ID;
-import static org.niord.core.message.MessageIdMatch.MatchType.TEXT;
-import static org.niord.core.message.MessageIdMatch.MatchType.UID;
-import static org.niord.core.message.MessageSearchParams.CommentsType.ANY;
-import static org.niord.core.message.MessageSearchParams.CommentsType.ANY_UNACK;
-import static org.niord.core.message.MessageSearchParams.CommentsType.OWN;
-import static org.niord.core.message.MessageSearchParams.CommentsType.OWN_UNACK;
+import static org.niord.core.message.MessageIdMatch.MatchType.*;
+import static org.niord.core.message.MessageSearchParams.CommentsType.*;
 import static org.niord.core.message.vo.SystemMessageSeriesVo.NumberSequenceType.MANUAL;
 import static org.niord.model.search.PagedSearchParamsVo.SortOrder;
 
@@ -437,7 +433,7 @@ public class MessageService extends BaseService {
         original.getReferences().clear();
         message.getReferences().stream()
                 .map(this::updateReference)
-                .filter(r -> r != null)
+                .filter(Objects::nonNull)
                 .forEach(original::addReference);
 
         original.setOriginalInformation(message.getOriginalInformation());
@@ -445,7 +441,7 @@ public class MessageService extends BaseService {
         original.getParts().clear();
         message.getParts().stream()
                 .map(this::updateMessagePart)
-                .filter(p -> p != null)
+                .filter(Objects::nonNull)
                 .forEach(original::addPart);
         original.getParts().removeIf(part -> !part.partDefined());
 
@@ -456,7 +452,7 @@ public class MessageService extends BaseService {
         original.getAttachments().clear();
         message.getAttachments().stream()
                 .map(this::updateAttachment)
-                .filter(a -> a != null)
+                .filter(Objects::nonNull)
                 .forEach(original::addAttachment);
 
         original.setSeparatePage(message.getSeparatePage());
@@ -754,7 +750,7 @@ public class MessageService extends BaseService {
                 .getResultList();
 
         // Sort the result according to the order of the messages in the ID list
-        messages.sort((m1, m2) -> ids.indexOf(m1.getId()) - ids.indexOf(m2.getId()));
+        messages.sort(Comparator.comparingInt(m -> ids.indexOf(m.getId())));
 
         return messages;
     }
@@ -1098,6 +1094,9 @@ public class MessageService extends BaseService {
      * @return the UIDs of the message with the separatePage flag set
      */
     public Set<String> getSeparatePageUids(Set<String> uids) {
+        if (uids == null || uids.isEmpty()) {
+            return Collections.emptySet();
+        }
         return em.createNamedQuery("Message.separatePageUids", String.class)
                 .setParameter("uids", uids)
                 .getResultList().stream()
