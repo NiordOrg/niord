@@ -30,7 +30,7 @@ import java.util.Map;
 import static org.niord.core.message.vo.MessageTagVo.MessageTagType.PUBLIC;
 
 /**
- * Helper class used when updating a publication from its context.
+ * Helper class used when updating a publication from its template.
  * An instance of this class is only valid within a single transaction.
  * <p>
  * Primarily, the class has utility methods for expanding the parameters
