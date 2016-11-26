@@ -17,10 +17,8 @@
 package org.niord.core.publication.batch;
 
 import org.niord.core.batch.AbstractItemHandler;
-import org.niord.core.domain.DomainService;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationCategoryService;
-import org.niord.core.publication.PublicationService;
 import org.niord.core.publication.vo.SystemPublicationVo;
 
 import javax.inject.Inject;
@@ -33,20 +31,18 @@ import javax.inject.Named;
 public class BatchPublicationImportProcessor extends AbstractItemHandler {
 
     @Inject
-    PublicationService publicationService;
-
-    @Inject
     PublicationCategoryService publicationCategoryService;
-
-    @Inject
-    DomainService domainService;
 
     /** {@inheritDoc} **/
     @Override
     public Object processItem(Object item) throws Exception {
 
         SystemPublicationVo publicationVo = (SystemPublicationVo) item;
+        Publication publication = new Publication(publicationVo);
 
-        return new Publication(publicationVo);
+        // Create any missing category
+        publication.setCategory(publicationCategoryService.findOrCreatePublicationCategory(publication.getCategory()));
+
+        return publication;
     }
 }

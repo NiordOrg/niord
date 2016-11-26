@@ -170,12 +170,14 @@ public class PublicationService extends BaseService {
     private Publication savePublication(Publication publication) {
 
         // Update the repository path
-        String repoPath = String.format(
-                "%s/%s/%s",
-                Publication.PUBLICATION_REPO_FOLDER,
-                publication.getCategory().getCategoryId(),
-                publication.getPublicationId());
-        publication.setRepoPath(repoPath);
+        if (publication.getMainType() == PUBLICATION) {
+            String repoPath = String.format(
+                    "%s/%s/%s",
+                    Publication.PUBLICATION_REPO_FOLDER,
+                    publication.getCategory().getCategoryId(),
+                    publication.getPublicationId());
+            publication.setRepoPath(repoPath);
+        }
 
         return saveEntity(publication);
     }
