@@ -40,6 +40,7 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
     PublicationMainType mainType;
     PublicationType type;
     MessagePublication messagePublication;
+    Boolean published;
 
     /**
      * Returns a string representation of the search criteria
@@ -51,6 +52,7 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
         if (messagePublication != null) { desc.add(String.format("MessagePublication: %s", messagePublication)); }
         if (mainType != null) { desc.add(String.format("Main Type: %s", mainType)); }
         if (type != null) { desc.add(String.format("Type: %s", type)); }
+        if (published != null) { desc.add(String.format("Published: %b", published)); }
         if (isNotBlank(language)) { desc.add(String.format("Language: %s", language)); }
         if (isNotBlank(domain)) { desc.add(String.format("Domain: %s", domain)); }
         if (isNotBlank(category)) { desc.add(String.format("Category: %s", category)); }
@@ -126,6 +128,15 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
 
     public PublicationSearchParams type(PublicationType type) {
         this.type = type;
+        return this;
+    }
+
+    public Boolean getPublished() {
+        return published;
+    }
+
+    public PublicationSearchParams published(Boolean published) {
+        this.published = published;
         return this;
     }
 }

@@ -17,6 +17,8 @@
 package org.niord.model.publication;
 
 import io.swagger.annotations.ApiModel;
+import org.apache.commons.lang.StringUtils;
+import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
@@ -33,6 +35,7 @@ import java.util.List;
 @XmlType(propOrder = {
         "publicationId", "category", "type", "descs"
 })
+@SuppressWarnings("unused")
 public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSerializable {
 
     String publicationId;
@@ -43,7 +46,9 @@ public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSeri
     List<PublicationDescVo> descs;
 
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public PublicationDescVo createDesc(String lang) {
         PublicationDescVo desc = new PublicationDescVo();
@@ -51,6 +56,39 @@ public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSeri
         checkCreateDescs().add(desc);
         return desc;
     }
+
+
+    /** Returns a filtered copy of this entity **/
+    public PublicationVo copy(DataFilter filter) {
+
+        PublicationVo publication = new PublicationVo();
+        publication.setPublicationId(publicationId);
+        if (category != null) {
+            publication.setCategory(category.copy(filter));
+        }
+        publication.setType(type);
+        publication.setPublishDateFrom(publishDateFrom);
+        publication.setPublishDateTo(publishDateTo);
+        publication.copyDescs(getDescs(filter));
+        return publication;
+    }
+
+
+    /**
+     * Rewrites the publication links from one repository path to another.
+     */
+    public void rewriteRepoPath(String repoPath1, String repoPath2) {
+        if (StringUtils.isNotBlank(repoPath1) && StringUtils.isNotBlank(repoPath2)) {
+            if (getDescs() != null) {
+                getDescs().forEach(desc -> {
+                    if (desc.getLink() != null && desc.getLink().contains(repoPath1)) {
+                        desc.setLink(desc.getLink().replace(repoPath1, repoPath2));
+                    }
+                });
+            }
+        }
+    }
+
 
     /*************************/
     /** Getters and Setters **/

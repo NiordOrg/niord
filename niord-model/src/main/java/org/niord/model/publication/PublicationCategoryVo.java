@@ -17,6 +17,7 @@
 package org.niord.model.publication;
 
 import io.swagger.annotations.ApiModel;
+import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
@@ -47,6 +48,18 @@ public class PublicationCategoryVo implements ILocalizable<PublicationCategoryDe
         desc.setLang(lang);
         checkCreateDescs().add(desc);
         return desc;
+    }
+
+
+    /** Returns a filtered copy of this entity **/
+    public PublicationCategoryVo copy(DataFilter filter) {
+
+        PublicationCategoryVo category = new PublicationCategoryVo();
+        category.setCategoryId(categoryId);
+        category.setPriority(priority);
+        category.setPublish(publish);
+        category.copyDescs(getDescs(filter));
+        return category;
     }
 
 

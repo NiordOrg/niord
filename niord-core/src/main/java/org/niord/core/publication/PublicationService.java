@@ -31,7 +31,9 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Root;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.niord.core.publication.vo.PublicationMainType.PUBLICATION;
@@ -124,9 +126,14 @@ public class PublicationService extends BaseService {
         }
 
         // Match the category
+        Join<Publication, PublicationCategory> typeJoin = publicationRoot.join("category", JoinType.LEFT);
         if (StringUtils.isNotBlank(params.getCategory())) {
-            Join<Publication, PublicationCategory> typeJoin = publicationRoot.join("category", JoinType.LEFT);
             criteriaHelper.equals(typeJoin.get("categoryId"), params.getCategory());
+        }
+
+        // Match the publish flag of the category
+        if (params.getPublished() != null) {
+            criteriaHelper.equals(typeJoin.get("publish"), params.getPublished());
         }
 
         // Match the domain
@@ -141,10 +148,15 @@ public class PublicationService extends BaseService {
         // Match the message publication category
         criteriaHelper.equals(publicationRoot.get("messagePublication"), params.getMessagePublication());
 
+        // Compute the sort order
+        List<Order> sortOrders = new ArrayList<>();
+        sortOrders.add(cb.asc(typeJoin.get("priority")));
+        sortOrders.add(cb.desc(publicationRoot.get("publishDateFrom")));
+
         // Complete the query
         publicationQuery.select(publicationRoot)
-                .distinct(true)
-                .where(criteriaHelper.where());
+                .where(criteriaHelper.where())
+                .orderBy(sortOrders);
 
         // Execute the query and update the search result
         return em.createQuery(publicationQuery)

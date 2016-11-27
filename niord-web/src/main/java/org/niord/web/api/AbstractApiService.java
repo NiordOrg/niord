@@ -25,6 +25,7 @@ import org.niord.core.message.MessageService;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationSearchParams;
 import org.niord.core.publication.PublicationService;
+import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.model.message.MainType;
 import org.niord.model.message.Status;
 import org.niord.model.search.PagedSearchParamsVo;
@@ -162,7 +163,9 @@ public abstract class AbstractApiService {
     public List<Publication> searchPublications(String language) {
 
         PublicationSearchParams params = new PublicationSearchParams()
-                .language(language);
+                .language(language)
+                .published(true)
+                .mainType(PublicationMainType.PUBLICATION);
 
         return publicationService.searchPublications(params);
     }

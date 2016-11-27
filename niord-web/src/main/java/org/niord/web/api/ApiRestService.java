@@ -356,6 +356,7 @@ public class ApiRestService extends AbstractApiService {
             if (publication.getDescs() != null) {
                 publication.getDescs().stream()
                         .filter(d -> StringUtils.isNotBlank(d.getLink()))
+                        .filter(d -> !d.getLink().matches("^(?i)(https?)://.*$"))
                         .forEach(d -> d.setLink(concat(baseUri, d.getLink())));
             }
         }
