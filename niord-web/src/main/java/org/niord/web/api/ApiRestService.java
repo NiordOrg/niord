@@ -25,9 +25,11 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.niord.core.NiordApp;
 import org.niord.core.message.Message;
+import org.niord.core.publication.Publication;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MainType;
 import org.niord.model.message.MessageVo;
+import org.niord.model.publication.PublicationVo;
 import org.niord.model.search.PagedSearchResultVo;
 
 import javax.ejb.Stateless;
@@ -52,9 +54,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
- * A public REST API for accessing Niord data.
+ * A public REST API for accessing message and publications Niord data.
  * <p>
  * Also, defines the Swagger API using annotations.
  * <p>
@@ -64,52 +67,60 @@ import java.util.Set;
  * To facilitate both formats, use the "dateFormat" parameter.
  */
 @Api(value = "/public/v1",
-     description = "Public API for accessing the Niord NW-NM system",
-     tags = {"message_list"})
+     description = "Public API for accessing message and publication data from the Niord NW-NM system",
+     tags = {"messages", "publications" })
 @Path("/public/v1")
 @Stateless
 @SuppressWarnings("unused")
 public class ApiRestService extends AbstractApiService {
 
-    /** The format to use for dates in generated JSON **/
-    public enum JsonDateFormat { UNIX_EPOCH, ISO_8601 }
+    /**
+     * The format to use for dates in generated JSON
+     **/
+    public enum JsonDateFormat {
+        UNIX_EPOCH, ISO_8601
+    }
 
     @Inject
     NiordApp app;
 
-    /** {@inheritDoc} */
+
+    /**
+     * {@inheritDoc}
+     */
     @ApiOperation(
             value = "Returns the published NW and NM messages",
             response = MessageVo.class,
-            responseContainer = "List"
+            responseContainer = "List",
+            tags = {"messages"}
     )
     @GET
     @Path("/messages")
     @Produces({"application/json;charset=UTF-8"})
     @GZIP
-    public Response search(
-            @ApiParam(value = "Two-letter ISO 639-1 language code", example="en")
+    public Response searchMessages(
+            @ApiParam(value = "Two-letter ISO 639-1 language code", example = "en")
             @QueryParam("lang") String language,
 
-            @ApiParam(value = "The IDs of the domains to select messages from", example="niord-client-nw")
+            @ApiParam(value = "The IDs of the domains to select messages from", example = "niord-client-nw")
             @QueryParam("domain") Set<String> domainIds,
 
-            @ApiParam(value = "Specific message series to select messages from", example="dma-nw")
+            @ApiParam(value = "Specific message series to select messages from", example = "dma-nw")
             @QueryParam("messageSeries") Set<String> messageSeries,
 
-            @ApiParam(value = "The IDs of the areas to select messages from", example="urn:mrn:iho:country:dk")
+            @ApiParam(value = "The IDs of the areas to select messages from", example = "urn:mrn:iho:country:dk")
             @QueryParam("areaId") Set<String> areaIds,
 
-            @ApiParam(value = "Either NW (navigational warnings) or NM (notices to mariners)", example="NW")
+            @ApiParam(value = "Either NW (navigational warnings) or NM (notices to mariners)", example = "NW")
             @QueryParam("mainType") Set<MainType> mainTypes,
 
-            @ApiParam(value = "Well-Known Text for geographical extent", example="POLYGON((7 54, 7 57, 13 56, 13 57, 7 54))")
+            @ApiParam(value = "Well-Known Text for geographical extent", example = "POLYGON((7 54, 7 57, 13 56, 13 57, 7 54))")
             @QueryParam("wkt") String wkt,
 
-            @ApiParam(value = "Whether to rewrite all embedded links and paths to be absolute URL's", example="true")
+            @ApiParam(value = "Whether to rewrite all embedded links and paths to be absolute URL's", example = "true")
             @QueryParam("externalize") @DefaultValue("true") boolean externalize,
 
-            @ApiParam(value = "The date format to use for JSON date-time encoding. Either 'UNIX_EPOCH' or 'ISO_8601'", example="UNIX_EPOCH")
+            @ApiParam(value = "The date format to use for JSON date-time encoding. Either 'UNIX_EPOCH' or 'ISO_8601'", example = "UNIX_EPOCH")
             @QueryParam("dateFormat") @DefaultValue("UNIX_EPOCH") JsonDateFormat dateFormat
 
     ) throws Exception {
@@ -138,29 +149,32 @@ public class ApiRestService extends AbstractApiService {
     }
 
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     */
     @ApiOperation(
             value = "Returns the public (published, cancelled or expired) NW or NM message details",
-            response = MessageVo.class
+            response = MessageVo.class,
+            tags = {"messages"}
     )
     @GET
     @Path("/message/{messageId}")
     @Produces({"application/json;charset=UTF-8"})
     @GZIP
-    public Response details(
-            @ApiParam(value = "The message UID or short ID", example="NM-1275-16")
+    public Response messageDetails(
+            @ApiParam(value = "The message UID or short ID", example = "NM-1275-16")
             @PathParam("messageId") String messageId,
 
-            @ApiParam(value = "Two-letter ISO 639-1 language code", example="en")
+            @ApiParam(value = "Two-letter ISO 639-1 language code", example = "en")
             @QueryParam("lang") String language,
 
-            @ApiParam(value = "Whether to rewrite all embedded links and paths to be absolute URL's", example="true")
+            @ApiParam(value = "Whether to rewrite all embedded links and paths to be absolute URL's", example = "true")
             @QueryParam("externalize") @DefaultValue("true") boolean externalize,
 
-            @ApiParam(value = "The date format to use for JSON date-time encoding. Either 'UNIX_EPOCH' or 'ISO_8601'", example="UNIX_EPOCH")
+            @ApiParam(value = "The date format to use for JSON date-time encoding. Either 'UNIX_EPOCH' or 'ISO_8601'", example = "UNIX_EPOCH")
             @QueryParam("dateFormat") @DefaultValue("UNIX_EPOCH") JsonDateFormat dateFormat
 
-        ) throws Exception {
+    ) throws Exception {
 
         // Perform the search
         Message message = super.getMessage(messageId);
@@ -198,7 +212,8 @@ public class ApiRestService extends AbstractApiService {
      * @return the XSD for the Message class
      */
     @ApiOperation(
-            value = "Returns XSD model of the Message class"
+            value = "Returns XSD model of the Message class",
+            tags = {"messages"}
     )
     @GET
     @Path("/xsd/{schemaFile}")
@@ -208,7 +223,7 @@ public class ApiRestService extends AbstractApiService {
     public String getMessageXsd(
             @ApiParam(value = "The schema file, either schema1.xsd or schema2.xsd", example="schema2.xsd")
             @PathParam("schemaFile")
-            String schemaFile) throws Exception {
+                    String schemaFile) throws Exception {
 
         if (!schemaFile.equals("schema1.xsd") && !schemaFile.equals("schema2.xsd")) {
             throw new Exception("Only 'schema1.xsd' and 'schema2.xsd' allowed");
@@ -239,7 +254,7 @@ public class ApiRestService extends AbstractApiService {
     /**
      * Convert the message to a value object representation.
      * If requested, rewrite all links to make them external URLs.
-     * @param msg the message to convert to a vlaue object
+     * @param msg the message to convert to a value object
      * @param externalize whether to rewrite all links to make them external URLs
      * @return the message value object representation
      **/
@@ -270,6 +285,82 @@ public class ApiRestService extends AbstractApiService {
         }
 
         return message;
+    }
+
+
+
+    /**
+     * Searches for publications
+     */
+    @ApiOperation(
+            value = "Returns the publications",
+            response = PublicationVo.class,
+            responseContainer = "List",
+            tags = {"publications"}
+    )
+    @GET
+    @Path("/publications")
+    @Produces({"application/json;charset=UTF-8"})
+    @GZIP
+    public Response searchPublications(
+
+            @ApiParam(value = "Two-letter ISO 639-1 language code", example = "en")
+            @QueryParam("lang") String language,
+
+            @ApiParam(value = "Whether to rewrite all embedded links and paths to be absolute URL's", example = "true")
+            @QueryParam("externalize") @DefaultValue("true") boolean externalize,
+
+            @ApiParam(value = "The date format to use for JSON date-time encoding. Either 'UNIX_EPOCH' or 'ISO_8601'", example = "UNIX_EPOCH")
+            @QueryParam("dateFormat") @DefaultValue("UNIX_EPOCH") JsonDateFormat dateFormat
+    ) {
+
+        List<PublicationVo> publications = super.searchPublications(language).stream()
+                .map(p -> toPublicationVo(p, language, externalize))
+                .collect(Collectors.toList());
+
+        // Depending on the dateFormat param, either use UNIX epoch or ISO-8601
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(
+                SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
+                dateFormat == JsonDateFormat.UNIX_EPOCH);
+
+        StreamingOutput stream = os -> mapper.writeValue(os, publications);
+
+        return Response
+                .ok(stream, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
+                .build();
+    }
+
+    /**
+     * Convert the publication to a value object representation.
+     * If requested, rewrite all links to make them external URLs.
+     * @param pub the publication to convert to a value object
+     * @param externalize whether to rewrite all links to make them external URLs
+     * @return the publication value object representation
+     **/
+    private PublicationVo toPublicationVo(Publication pub, String language, boolean externalize) {
+
+        // Sanity check
+        if (pub == null) {
+            return null;
+        }
+
+        // Convert the publication to a value object
+        DataFilter filter = DataFilter.get().lang(language);
+        PublicationVo publication = pub.toVo(PublicationVo.class, filter);
+
+        // If "externalize" is set, rewrite all links to make them external
+        if (externalize) {
+            String baseUri = app.getBaseUri();
+
+            if (publication.getDescs() != null) {
+                publication.getDescs().stream()
+                        .filter(d -> StringUtils.isNotBlank(d.getLink()))
+                        .forEach(d -> d.setLink(concat(baseUri, d.getLink())));
+            }
+        }
+
+        return publication;
     }
 
 

@@ -22,6 +22,9 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
+import org.niord.core.publication.Publication;
+import org.niord.core.publication.PublicationSearchParams;
+import org.niord.core.publication.PublicationService;
 import org.niord.model.message.MainType;
 import org.niord.model.message.Status;
 import org.niord.model.search.PagedSearchParamsVo;
@@ -30,6 +33,7 @@ import org.slf4j.Logger;
 
 import javax.inject.Inject;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -46,6 +50,9 @@ public abstract class AbstractApiService {
 
     @Inject
     MessageService messageService;
+
+    @Inject
+    PublicationService publicationService;
 
     @Inject
     NiordApp app;
@@ -148,4 +155,15 @@ public abstract class AbstractApiService {
         return searchResult;
     }
 
+
+    /**
+     * Searches for publications
+     */
+    public List<Publication> searchPublications(String language) {
+
+        PublicationSearchParams params = new PublicationSearchParams()
+                .language(language);
+
+        return publicationService.searchPublications(params);
+    }
 }
