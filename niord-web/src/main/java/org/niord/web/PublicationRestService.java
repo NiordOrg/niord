@@ -23,14 +23,14 @@ import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationSearchParams;
 import org.niord.core.publication.PublicationService;
+import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.vo.PublicationMainType;
-import org.niord.model.publication.PublicationType;
 import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.user.UserService;
-import org.niord.core.publication.vo.MessagePublication;
-import org.niord.model.publication.PublicationVo;
 import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
+import org.niord.model.publication.PublicationType;
+import org.niord.model.publication.PublicationVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
@@ -106,7 +106,6 @@ public class PublicationRestService extends AbstractBatchableRestService {
 
         return publicationService.searchPublications(params).stream()
                 .map(p -> p.toVo(PublicationVo.class, dataFilter))
-                .sorted(publicationTitleComparator(lang))
                 .collect(Collectors.toList());
     }
 
@@ -142,7 +141,6 @@ public class PublicationRestService extends AbstractBatchableRestService {
 
         return publicationService.searchPublications(params).stream()
                 .map(p -> p.toVo(SystemPublicationVo.class, dataFilter))
-                .sorted(publicationTitleComparator(lang))
                 .collect(Collectors.toList());
     }
 
@@ -156,11 +154,15 @@ public class PublicationRestService extends AbstractBatchableRestService {
     public List<PublicationVo> getAllPublications(
             @QueryParam("lang") String lang,
             @QueryParam("limit") @DefaultValue("1000") int limit) {
+
+        PublicationSearchParams params = new PublicationSearchParams()
+                .language(lang);
+        params.maxSize(limit);
+
         DataFilter dataFilter = DataFilter.get().lang(lang);
-        return publicationService.getPublications().stream()
-                .limit(limit)
+
+        return publicationService.searchPublications(params).stream()
                 .map(p -> p.toVo(PublicationVo.class, dataFilter))
-                .sorted(publicationTitleComparator(lang))
                 .collect(Collectors.toList());
     }
 
@@ -246,8 +248,10 @@ public class PublicationRestService extends AbstractBatchableRestService {
             throw new WebApplicationException(403);
         }
 
+        PublicationSearchParams params = new PublicationSearchParams().language(lang);
         DataFilter dataFilter = DataFilter.get().lang(lang);
-        return publicationService.getPublications().stream()
+
+        return publicationService.searchPublications(params).stream()
                 .map(p -> p.toVo(SystemPublicationVo.class, dataFilter))
                 .sorted(publicationTitleComparator(lang))
                 .collect(Collectors.toList());
