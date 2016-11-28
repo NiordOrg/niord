@@ -146,7 +146,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
         if (publication.getDescs() != null) {
             publication.getDescs().stream()
                     .filter(PublicationDescVo::descDefined)
-                    .forEach(desc -> addDesc(new PublicationDesc(desc)));
+                    .forEach(desc -> checkCreateDesc(desc.getLang()).update(desc));
         }
 
         if (publication instanceof SystemPublicationVo) {
@@ -210,6 +210,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
         if (!descs.isEmpty()) {
             publication.setDescs(getDescs(compFilter).stream()
                     .map(PublicationDesc::toVo)
+                    .filter(PublicationDescVo::descDefined)
                     .collect(Collectors.toList()));
         }
 
@@ -265,8 +266,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
         }
         template.getDescs().forEach(d -> {
             PublicationDesc pubDesc = checkCreateDesc(d.getLang());
-            pubDesc.setTitle(ctx.str(d.getTitle(), pubDesc.getTitle()));
-            pubDesc.setFormat(ctx.str(d.getFormat(), pubDesc.getFormat()));
+            pubDesc.setTitle(ctx.str(d.getTitleFormat(), pubDesc.getTitle()));
             pubDesc.setLink(ctx.str(d.getLink(), pubDesc.getLink()));
         });
     }

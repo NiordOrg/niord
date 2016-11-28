@@ -17,8 +17,8 @@
 package org.niord.core.publication;
 
 import org.niord.core.model.DescEntity;
-import org.niord.model.publication.PublicationDescVo;
 import org.niord.model.ILocalizedDesc;
+import org.niord.model.publication.PublicationDescVo;
 
 import javax.persistence.Entity;
 import javax.validation.constraints.NotNull;
@@ -34,9 +34,14 @@ public class PublicationDesc extends DescEntity<Publication> {
     String title;
 
     /**
+     * The title format is used by templates to define the format of concrete publications based on the template
+     */
+    String titleFormat;
+
+    /**
      * The format can be used to format a message publication
      */
-    String format;
+    String messagePublicationFormat;
 
     /**
      * If defined, will be used as a link for all message publications
@@ -48,12 +53,12 @@ public class PublicationDesc extends DescEntity<Publication> {
     }
 
 
-    /** Constructor */
-    public PublicationDesc(PublicationDescVo desc) {
-        super(desc);
+    /** Updates this entity from a value object **/
+    public void update(PublicationDescVo desc) {
         this.title = desc.getTitle();
-        this.format = desc.getFormat();
+        this.titleFormat = desc.getTitleFormat();
         this.link = desc.getLink();
+        this.messagePublicationFormat = desc.getMessagePublicationFormat();
     }
 
 
@@ -62,8 +67,9 @@ public class PublicationDesc extends DescEntity<Publication> {
         PublicationDescVo desc = new PublicationDescVo();
         desc.setLang(lang);
         desc.setTitle(title);
-        desc.setFormat(format);
+        desc.setTitleFormat(titleFormat);
         desc.setLink(link);
+        desc.setMessagePublicationFormat(messagePublicationFormat);
         return desc;
     }
 
@@ -71,7 +77,7 @@ public class PublicationDesc extends DescEntity<Publication> {
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(title, format, link);
+        return ILocalizedDesc.fieldsDefined(title, titleFormat, messagePublicationFormat, link);
     }
 
 
@@ -80,8 +86,9 @@ public class PublicationDesc extends DescEntity<Publication> {
     public void copyDesc(ILocalizedDesc localizedDesc) {
         PublicationDesc desc = (PublicationDesc)localizedDesc;
         this.title = desc.getTitle();
-        this.format = desc.getFormat();
+        this.titleFormat = desc.getTitleFormat();
         this.link = desc.getLink();
+        this.messagePublicationFormat = desc.getMessagePublicationFormat();
     }
 
 
@@ -97,12 +104,20 @@ public class PublicationDesc extends DescEntity<Publication> {
         this.title = title;
     }
 
-    public String getFormat() {
-        return format;
+    public String getTitleFormat() {
+        return titleFormat;
     }
 
-    public void setFormat(String format) {
-        this.format = format;
+    public void setTitleFormat(String titleFormat) {
+        this.titleFormat = titleFormat;
+    }
+
+    public String getMessagePublicationFormat() {
+        return messagePublicationFormat;
+    }
+
+    public void setMessagePublicationFormat(String messagePublicationFormat) {
+        this.messagePublicationFormat = messagePublicationFormat;
     }
 
     public String getLink() {

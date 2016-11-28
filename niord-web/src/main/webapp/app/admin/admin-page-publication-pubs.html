@@ -50,6 +50,19 @@
                    </div>
                </div>
 
+               <!-- ******* Title Format ******* -->
+               <div class="form-group" ng-if="showEditorField('titleFormat')">
+                   <label class="col-sm-4 col-md-2">Title Format</label>
+                   <div class="col-sm-6 col-md-10">
+                       <div class="row">
+                           <div class="col-xs-12 col-sm-6" ng-repeat="desc in publication.descs">
+                               <input class="form-control input-sm" placeholder="Title" type="text" ng-model="desc.titleFormat"
+                                      bg-flag="desc.lang">
+                           </div>
+                       </div>
+                   </div>
+               </div>
+
                <!-- ******* Periodical Type ******* -->
                <div class="form-group" ng-if="showEditorField('periodicalType')">
                    <label class="col-sm-4 col-md-2">Periodical Type</label>
@@ -193,7 +206,7 @@
                        <div class="row" ng-if="publication.messagePublication == 'INTERNAL' || publication.messagePublication == 'EXTERNAL'"
                             style="margin-top:10px">
                            <div class="col-sm-12 col-md-6" ng-repeat="desc in publication.descs">
-                               <input class="form-control input-sm" placeholder="Format" type="text" ng-model="desc.format"
+                               <input class="form-control input-sm" placeholder="Format" type="text" ng-model="desc.messagePublicationFormat"
                                       bg-flag="desc.lang">
                            </div>
                        </div>

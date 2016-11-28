@@ -38,9 +38,9 @@ public class PublicationTest {
         SystemPublicationVo pub = new SystemPublicationVo();
         pub.setPublicationId("dk-harbour-pilot");
         pub.checkCreateDesc("da").setLink("http://www.danskehavnelods.dk");
-        pub.getDesc("da").setFormat("www.danskehavnelods.dk");
+        pub.checkCreateDesc("da").setMessagePublicationFormat("www.danskehavnelods.dk");
         pub.checkCreateDesc("en").setLink("http://www.danskehavnelods.dk");
-        pub.getDesc("en").setFormat("www.danskehavnelods.dk");
+        pub.checkCreateDesc("en").setMessagePublicationFormat("www.danskehavnelods.dk");
         MessagePublicationVo msgPub = PublicationUtils.extractMessagePublication(msg, pub, "da");
         assertNotNull(msgPub);
         System.out.println("Msg Pub: " + msgPub);
@@ -48,9 +48,9 @@ public class PublicationTest {
         pub = new SystemPublicationVo();
         pub.setPublicationId("dk-firing-areas-2016");
         pub.checkCreateDesc("da").setLink("http://www.soefartsstyrelsen.dk/SikkerhedTilSoes/Sejladsinformation/EfS/ThisYear2/Skydebilag%202016%20DK.pdf");
-        pub.getDesc("da").setFormat("Oversigt over forsvarets skydepladser 2016, punkt ${parameters}");
+        pub.checkCreateDesc("da").setMessagePublicationFormat("Oversigt over forsvarets skydepladser 2016, punkt ${parameters}");
         pub.checkCreateDesc("en").setLink("http://www.soefartsstyrelsen.dk/SikkerhedTilSoes/Sejladsinformation/EfS/ThisYear2/Skydebilag%202016%20UK.pdf");
-        pub.getDesc("en").setFormat("Danish List of Firing Practice Areas, section ${parameters}");
+        pub.checkCreateDesc("en").setMessagePublicationFormat("Danish List of Firing Practice Areas, section ${parameters}");
         msgPub = PublicationUtils.extractMessagePublication(msg, pub, "da");
         assertNotNull(msgPub);
         System.out.println("Msg Pub: " + msgPub);
@@ -61,8 +61,8 @@ public class PublicationTest {
 
         pub = new SystemPublicationVo();
         pub.setPublicationId("dk-journal-no");
-        pub.checkCreateDesc("da").setFormat("J.nr. ${parameters}");
-        pub.checkCreateDesc("en").setFormat("J.no ${parameters}");
+        pub.checkCreateDesc("da").setMessagePublicationFormat("J.nr. ${parameters}");
+        pub.checkCreateDesc("en").setMessagePublicationFormat("J.no ${parameters}");
         PublicationUtils.updateMessagePublications(msg, pub, "235434242", "http://www.google.dk", null);
         msg.getDescs().forEach(d -> System.out.println("MsgPub[" + d.getLang() + "]: " + d.getPublication()));
 

@@ -20,10 +20,10 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.niord.core.message.vo.MessagePublicationVo;
+import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.util.TextUtils;
 import org.niord.model.message.MessageVo;
-import org.niord.core.publication.vo.MessagePublication;
 import org.niord.model.publication.PublicationDescVo;
 
 import java.util.Objects;
@@ -63,7 +63,7 @@ public class PublicationUtils {
             MessagePublicationVo msgPub = new MessagePublicationVo();
             msgPub.setPublication(publication);
             String link = e.attr("href");
-            if (StringUtils.isNotBlank(link) && !Objects.equals(link, pubDesc.getLink())) {
+            if (StringUtils.isNotBlank(link) && pubDesc != null && !Objects.equals(link, pubDesc.getLink())) {
                 msgPub.setLink(link);
             }
             String text = TextUtils.removeTrailingDot(e.html());
@@ -73,7 +73,7 @@ public class PublicationUtils {
                 text = text.substring(1, text.length() - 1);
             }
 
-            String format = pubDesc.getFormat();
+            String format = pubDesc != null ? pubDesc.getMessagePublicationFormat() : null;
             if (StringUtils.isNotBlank(text) && StringUtils.isNotBlank(format) && format.contains("${parameters}")) {
                 int index = format.indexOf("${parameters}");
                 String prefix = format.substring(0, index);
@@ -112,9 +112,7 @@ public class PublicationUtils {
                 .filter(msgDesc -> lang == null || lang.equals(msgDesc.getLang()))
                 .forEach(msgDesc -> {
 
-            PublicationDescVo pubDesc = publication.getDesc(msgDesc.getLang());
-
-            String updatedPubHtml = computeMessagePublication(publication, parameters, link, pubDesc.getLang());
+            String updatedPubHtml = computeMessagePublication(publication, parameters, link, msgDesc.getLang());
 
             String pubHtml = internal
                     ? msgDesc.getInternalPublication()
@@ -155,16 +153,16 @@ public class PublicationUtils {
     public static String computeMessagePublication(SystemPublicationVo publication, String parameters, String link, String lang) {
 
         String result = null;
-        PublicationDescVo desc = publication.getDesc(lang);
-        if (desc != null && StringUtils.isNotBlank(desc.getFormat())) {
+        PublicationDescVo pubDesc = publication.getDesc(lang);
+        if (pubDesc != null && StringUtils.isNotBlank(pubDesc.getMessagePublicationFormat())) {
             String params = StringUtils.defaultIfBlank(parameters, "");
-            result = desc.getFormat().replace("${parameters}", params);
+            result = pubDesc.getMessagePublicationFormat().replace("${parameters}", params);
             if (publication.getMessagePublication() == MessagePublication.INTERNAL) {
                 result = "[" + result + "]";
             }
             result = TextUtils.trailingDot(result);
 
-            String href = StringUtils.defaultIfBlank(link, desc.getLink());
+            String href = StringUtils.defaultIfBlank(link, pubDesc.getLink());
 
             if (StringUtils.isNotBlank(href)) {
                 result = String.format(

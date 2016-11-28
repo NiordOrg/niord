@@ -27,19 +27,20 @@ import javax.xml.bind.annotation.XmlType;
  * The entity description VO
  */
 @ApiModel(value = "PublicationDesc", description = "Translatable fields of the Publication model")
-@XmlType(propOrder = { "title", "format", "link" })
+@XmlType(propOrder = { "title", "titleFormat", "link", "messagePublicationFormat" })
 public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
 
     String lang;
     String title;
-    String format;
+    String titleFormat;
     String link;
+    String messagePublicationFormat;
 
 
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(title, format, link);
+        return ILocalizedDesc.fieldsDefined(title, link);
     }
 
 
@@ -48,7 +49,6 @@ public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
     public void copyDesc(ILocalizedDesc localizedDesc) {
         PublicationDescVo desc = (PublicationDescVo)localizedDesc;
         this.title = desc.getTitle();
-        this.format = desc.getFormat();
         this.link = desc.getLink();
     }
 
@@ -75,12 +75,12 @@ public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
         this.title = title;
     }
 
-    public String getFormat() {
-        return format;
+    public String getTitleFormat() {
+        return titleFormat;
     }
 
-    public void setFormat(String format) {
-        this.format = format;
+    public void setTitleFormat(String titleFormat) {
+        this.titleFormat = titleFormat;
     }
 
     public String getLink() {
@@ -89,5 +89,13 @@ public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
 
     public void setLink(String link) {
         this.link = link;
+    }
+
+    public String getMessagePublicationFormat() {
+        return messagePublicationFormat;
+    }
+
+    public void setMessagePublicationFormat(String messagePublicationFormat) {
+        this.messagePublicationFormat = messagePublicationFormat;
     }
 }

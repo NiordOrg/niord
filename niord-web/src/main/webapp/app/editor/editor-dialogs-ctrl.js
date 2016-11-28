@@ -56,7 +56,7 @@ angular.module('niord.editor')
                 if (pub && pub.publication && pub.publication.descs) {
                     for (var x = 0; x < pub.publication.descs.length; x++) {
                         var desc = pub.publication.descs[x];
-                        if (desc && desc.format && desc.format.indexOf('${parameters}') !== -1) {
+                        if (desc && desc.messagePublicationFormat && desc.messagePublicationFormat.indexOf('${parameters}') !== -1) {
                             return true;
                         }
                     }
@@ -67,7 +67,9 @@ angular.module('niord.editor')
 
             /** Check if the link should be editable **/
             $scope.showLink = function (pub) {
-                return pub && pub.publication && !pub.publication.languageSpecific;
+                return pub && pub.publication && pub.publication.type == 'LINK'
+                    && !pub.publication.languageSpecific &&
+                    $.grep(pub.publication.descs, function (d) { return d.link !== undefined }).length == 0;
             };
 
 

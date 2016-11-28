@@ -49,6 +49,7 @@ angular.module('niord.admin')
                 $scope.loadPublications();
             };
 
+
             /** Loads the publications from the back-end */
             $scope.loadPublications = function() {
                 $scope.publication = undefined;
@@ -99,6 +100,8 @@ angular.module('niord.admin')
                         return !hasTemplate || pub.template.category === undefined;
                     case 'title':
                         return !hasTemplate || pub.template.descs[0].title === undefined;
+                    case 'titleFormat':
+                        return isTemplate;
                     case 'messageTagFormat':
                         return isTemplate && pub.type == 'MESSAGE_REPORT';
                     case 'messageTag':
