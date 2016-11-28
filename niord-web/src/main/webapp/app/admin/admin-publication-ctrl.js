@@ -93,8 +93,6 @@ angular.module('niord.admin')
                 var isTemplate = pub.mainType == 'TEMPLATE';
                 var hasTemplate = pub.template !== undefined;
                 switch (field) {
-                    case 'publicationIdFormat':
-                        return isTemplate;
                     case 'template':
                         return isPublication;
                     case 'category':
@@ -192,23 +190,12 @@ angular.module('niord.admin')
 
             /** Adds a new publication **/
             $scope.addPublication = function () {
-                $scope.editMode = 'add';
-                $scope.publication = {
-                    publicationId: undefined,
-                    template: undefined,
-                    category: { categoryId: undefined },
-                    mainType: $scope.mainType,
-                    type: 'LINK',
-                    messageTagFormat: undefined,
-                    messageTag: undefined,
-                    periodicalType: undefined,
-                    publishDateFrom: undefined,
-                    publishDateTo: undefined,
-                    messagePublication: 'NONE',
-                    languageSpecific: true,
-                    descs: []
-                };
-                LangService.checkDescs($scope.publication, ensureTitleField);
+                AdminPublicationService.newPublicationTemplate($scope.mainType)
+                    .success(function (pub) {
+                        $scope.editMode = 'add';
+                        $scope.publication = pub;
+                        LangService.checkDescs($scope.publication, ensureTitleField);
+                    });
             };
 
 
@@ -228,43 +215,13 @@ angular.module('niord.admin')
             };
 
 
-            /** Computes the next issue date **/
-            function nextIssueDate(date, periodicalType) {
-                if (date && periodicalType) {
-                    var d = moment(date);
-                    switch (periodicalType) {
-                        case 'DAILY': d = d.add(1, 'day'); break;
-                        case 'WEEKLY': d = d.add(1, 'week'); break;
-                        case 'MONTHLY': d = d.add(1, 'month'); break;
-                        case 'YEARLY': d = d.add(1, 'year'); break;
-                    }
-                    date = d.valueOf();
-                }
-                return date;
-            }
-
-
             /** Copies a publication **/
             $scope.copyPublication = function (publication, nextIssue) {
-                AdminPublicationService.getPublicationDetails(publication)
+                AdminPublicationService.copyPublicationTemplate(publication, nextIssue)
                     .success(function (pub) {
                         $scope.editMode = 'add';
                         $scope.publication = pub;
                         LangService.sortDescs($scope.publication);
-
-                        // Reset publication ID
-                        delete $scope.publication.publicationId;
-
-                        // Reset publication message tag, if a template messageTagFormat is defined
-                        if (pub.template && pub.template.messageTagFormat) {
-                            delete $scope.publication.messageTag;
-                        }
-
-                        // Handle next issue date computation
-                        if (nextIssue && pub.publishDateFrom && pub.template && pub.template.periodicalType) {
-                            $scope.publication.publishDateFrom = nextIssueDate(pub.publishDateFrom, pub.template.periodicalType);
-                            $scope.publication.publishDateTo = nextIssueDate(pub.publishDateTo, pub.template.periodicalType);
-                        }
 
                         // Some field editors rely on hardcoded property names:
                         $scope.publication.publication = pub.template;

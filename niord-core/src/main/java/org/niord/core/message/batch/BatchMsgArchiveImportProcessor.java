@@ -110,7 +110,7 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
             Boolean assignNewUids = (Boolean)job.getProperties().get("assignNewUids");
             if (assignNewUids) {
                 message.setLegacyId(message.getUid());
-                message.assignNewUid(true);
+                message.assignNewUid();
             }
 
             // Check that an existing message with the message UID does not exist

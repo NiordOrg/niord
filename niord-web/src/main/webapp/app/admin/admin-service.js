@@ -181,7 +181,21 @@ angular.module('niord.admin')
 
             /** Returns the details for the given publication **/
             getPublicationDetails: function (publication) {
-                return $http.get('/rest/publications/publication/' + publication.publicationId);
+                return $http.get('/rest/publications/editable-publication/' + publication.publicationId);
+            },
+
+
+            /** Returns the new publication template **/
+            newPublicationTemplate: function (mainType) {
+                return $http.get('/rest/publications/new-publication-template?mainType=' + mainType);
+            },
+
+
+            /** Returns the new publication template **/
+            copyPublicationTemplate: function (publication, nextIssue) {
+                return $http.get('/rest/publications/copy-publication-template/'
+                    + encodeURIComponent(publication.publicationId)
+                    + '?nextIssue=' + nextIssue);
             },
 
 

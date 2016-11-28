@@ -21,6 +21,8 @@ import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.MessageTagService;
+import org.niord.core.publication.vo.PublicationMainType;
+import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
@@ -33,11 +35,15 @@ import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Root;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.niord.core.publication.vo.PublicationMainType.PUBLICATION;
 import static org.niord.core.publication.vo.PublicationMainType.TEMPLATE;
+import static org.niord.model.publication.PublicationType.LINK;
+import static org.niord.model.publication.PublicationType.MESSAGE_REPORT;
+import static org.niord.model.publication.PublicationType.REPOSITORY;
 
 /**
  * Business interface for accessing publications
@@ -175,20 +181,30 @@ public class PublicationService extends BaseService {
 
 
     /**
+     * Creates a new template publication
+     * @param mainType the main type of publication
+     * @return a new template publication
+     */
+    public Publication newTemplatePublication(PublicationMainType mainType) {
+        Publication publication = new Publication();
+        publication.setMainType(mainType);
+        publication.assignNewUid();
+        publication.setType(LINK);
+        publication.setLanguageSpecific(true);
+        return publication;
+    }
+
+
+    /**
      * Saves the publication and returns the persisted publication
      * @param publication the publication to save
      * @return the persisted publication
      */
     private Publication savePublication(Publication publication) {
 
-        // Update the repository path
-        if (publication.getMainType() == PUBLICATION) {
-            String repoPath = String.format(
-                    "%s/%s/%s",
-                    Publication.PUBLICATION_REPO_FOLDER,
-                    publication.getCategory().getCategoryId(),
-                    publication.getPublicationId());
-            publication.setRepoPath(repoPath);
+        // Update the publication ID and repoPath
+        if (StringUtils.isEmpty(publication.getPublicationId())) {
+            publication.assignNewUid();
         }
 
         return saveEntity(publication);
@@ -295,4 +311,28 @@ public class PublicationService extends BaseService {
         return false;
     }
 
+
+    /***************************************/
+    /** Repo methods                      **/
+    /***************************************/
+
+    /**
+     * Creates a temporary repository folder for the given publication
+     * @param publication the publication
+     */
+    public void createTempPublicationRepoFolder(SystemPublicationVo publication) throws IOException {
+        if (publication.getType() == REPOSITORY || publication.getType() == MESSAGE_REPORT) {
+            repositoryService.createTempEditRepoFolder(publication, false);
+        }
+    }
+
+    /**
+     * Update the publication repository folder from a temporary repository folder used whilst editing the publication
+     * @param publication the publication
+     */
+    public void updatePublicationFromTempRepoFolder(SystemPublicationVo publication) throws IOException {
+        if (publication.getType() == REPOSITORY || publication.getType() == MESSAGE_REPORT) {
+            repositoryService.updateRepoFolderFromTempEditFolder(publication);
+        }
+    }
 }

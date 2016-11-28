@@ -24,6 +24,7 @@ import org.niord.core.model.DescEntity;
 import org.niord.core.model.VersionedEntity;
 import org.niord.core.user.User;
 import org.niord.core.util.TimeUtils;
+import org.niord.core.util.UidUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.geojson.FeatureCollectionVo;
@@ -59,7 +60,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -265,7 +265,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         setCreated(message.getCreated());
         setUpdated(message.getUpdated());
         this.uid = message.getId();
-        this.repoPath = uidToMessageRepoPath(uid);
+        this.repoPath = UidUtils.uidToHashedFolderPath(MESSAGE_REPO_FOLDER, uid);
         this.number = message.getNumber();
         this.shortId = message.getShortId();
         this.mainType = message.getMainType();
@@ -392,9 +392,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         }
 
         if (uid == null) {
-            assignNewUid(false);
+            assignNewUid();
         }
-        repoPath = uidToMessageRepoPath(uid);
+        repoPath = UidUtils.uidToHashedFolderPath(MESSAGE_REPO_FOLDER, uid);
 
         // Set "area" to be the first area in the "areas" list
         area = areas.isEmpty() ? null : areas.get(0);
@@ -495,11 +495,11 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
 
     /** Assigns a new UID to the Feature **/
-    public String assignNewUid(boolean rewriteDescription) {
+    public String assignNewUid() {
         String oldRepoPath = repoPath;
 
-        uid = UUID.randomUUID().toString();
-        repoPath = uidToMessageRepoPath(uid);
+        uid = UidUtils.newUid();
+        repoPath = UidUtils.uidToHashedFolderPath(MESSAGE_REPO_FOLDER, uid);
 
         // Rewrite any links pointing to the old repository path
         if (StringUtils.isNotBlank(oldRepoPath)) {
@@ -521,51 +521,6 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             }
         }
         return uid;
-    }
-
-
-    /**
-     * Validates that the uid has the proper UUID format
-     * @param uid the UID to validate
-     * @return if the UID has a valid UUID format
-     */
-    public static boolean validUidFormat(String uid) {
-        try{
-            UUID uuid = UUID.fromString(uid);
-            return true;
-        } catch (IllegalArgumentException exception){
-            return false;
-        }
-    }
-
-
-    /**
-     * Converts the uid to a message repository path.
-     * <p>
-     * To allow for a more efficient file directory structure,
-     * the message repository folders are nested into two layers
-     * of sub-directories. The hashing used for the directories
-     * is based on the first 3 (1+2) characters of the UUID associated
-     * with the messages, yielding approx 4K folders.
-     *
-     * @param uid the UID
-     * @return the associated message repository path
-     */
-    public static String uidToMessageRepoPath(String uid) {
-        if (StringUtils.isBlank(uid)) {
-            return null;
-        }
-        if (!validUidFormat(uid)) {
-            throw new IllegalArgumentException("Invalid UID format " + uid);
-        }
-
-        // Compose the repo path as "messages/uid[0;0]/uid[1;2]/uid"
-        return String.format(
-                "%s/%s/%s/%s",
-                MESSAGE_REPO_FOLDER,
-                uid.substring(0,1),
-                uid.substring(1,3),
-                uid);
     }
 
 

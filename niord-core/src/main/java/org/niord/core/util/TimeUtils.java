@@ -121,6 +121,24 @@ public class TimeUtils {
 
 
     /**
+     * Shortcut function that adds an amount to the given calendar field
+     * @param date the date
+     * @param calFieldId the Calendar field
+     * @param amount the amount to add
+     * @return the result
+     */
+    public static Date add(Date date, int calFieldId, int amount) {
+        if (date != null) {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(date);
+            cal.add(calFieldId, amount);
+            return cal.getTime();
+        }
+        return date;
+    }
+
+
+    /**
      * Returns a Date for the given year, month and day.
      * Parameters left as null are ignored, so e.g. getDate(null, 0, 1) will return January 1st of the current year.
      *

@@ -335,8 +335,7 @@ public class MessageRestService  {
     @RolesAllowed({"editor"})
     public SystemMessageVo copyMessageTemplate(
             @PathParam("messageId") String messageId,
-            @QueryParam("referenceType") ReferenceType referenceType,
-            @QueryParam("lang") String language) throws Exception {
+            @QueryParam("referenceType") ReferenceType referenceType) throws Exception {
 
         log.info("Creating copy of message " + messageId);
         Domain domain = domainService.currentDomain();

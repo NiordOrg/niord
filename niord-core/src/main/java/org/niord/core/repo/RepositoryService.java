@@ -15,9 +15,6 @@
  */
 package org.niord.core.repo;
 
-import org.jboss.security.annotation.SecurityDomain;
-import org.niord.core.settings.annotation.Setting;
-import org.niord.core.util.WebUtils;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileUploadException;
@@ -29,6 +26,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.settings.annotation.Setting;
+import org.niord.core.util.WebUtils;
 import org.slf4j.Logger;
 
 import javax.annotation.PostConstruct;
@@ -42,9 +42,26 @@ import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
-import java.io.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.EntityTag;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
+import javax.ws.rs.core.Response;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.DirectoryStream;
@@ -53,9 +70,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
-import static org.niord.core.settings.Setting.*;
+import static org.niord.core.settings.Setting.Type;
 
 /**
  * A repository service.<br>
@@ -550,5 +572,64 @@ public class RepositoryService {
             return true;
         }
         return false;
+    }
+
+
+    /**
+     * Creates a temporary repository folder for the given repository-backed value object
+     * @param vo the message
+     * @param copyToTemp whether to copy all resources to the associated temporary directory or not
+     */
+    public void createTempEditRepoFolder(IRepoBackedVo vo, boolean copyToTemp) throws IOException {
+
+        String editRepoPath = getNewTempDir().getPath();
+        vo.setEditRepoPath(editRepoPath);
+
+        if (copyToTemp) {
+
+            // For existing messages, copy the existing message repo to the new repository
+            if (StringUtils.isNotBlank(vo.getRepoPath())) {
+                Path srcPath = getRepoRoot().resolve(vo.getRepoPath());
+                Path dstPath = getRepoRoot().resolve(editRepoPath);
+                if (Files.exists(srcPath)) {
+                    log.info("Copy folder " + srcPath + " to temporary folder " + dstPath);
+                    FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
+                }
+            }
+
+            // Point any embedded links and images to the temporary repository folder
+            vo.rewriteRepoPath(vo.getRepoPath(), vo.getEditRepoPath());
+        }
+    }
+
+
+    /**
+     * Copy new files from the temporary edit-repo path to the actual repo folder associated with the value object
+     * @param vo the value object to update
+     */
+    public void updateRepoFolderFromTempEditFolder(IRepoBackedVo vo) throws IOException {
+
+        if (vo != null && StringUtils.isNotBlank(vo.getRepoPath()) && StringUtils.isNotBlank(vo.getEditRepoPath())) {
+
+            Path srcPath = getRepoRoot().resolve(vo.getEditRepoPath());
+            Path dstPath = getRepoRoot().resolve(vo.getRepoPath());
+            String revision = String.valueOf(vo.getRevision());
+
+            if (Files.exists(srcPath)) {
+
+                // Case 1: If this is a new publication, copy the entire directory
+                if (!Files.exists(dstPath)) {
+                    log.info("Syncing folder " + srcPath + " with " + dstPath);
+                    FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
+
+                    // Case 2: Copy the latest revision sub-folder back to the source folder
+                } else if (Files.exists(srcPath.resolve(revision))) {
+                    log.info("Syncing revision " + revision + " of folder " + srcPath + " with folder " + dstPath);
+                    FileUtils.copyDirectory(srcPath.resolve(revision).toFile(), dstPath.resolve(revision).toFile(), true);
+                } else {
+                    log.info("No new revision files to sync");
+                }
+            }
+        }
     }
 }

@@ -17,16 +17,17 @@ package org.niord.core.message.vo;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.message.Message;
+import org.niord.core.repo.IRepoBackedVo;
+import org.niord.core.util.UidUtils;
 import org.niord.model.message.MessageVo;
 
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Extends the {@linkplain MessageVo} model with system-specific fields and attributes.
  */
 @SuppressWarnings("unused")
-public class SystemMessageVo extends MessageVo {
+public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
 
     int revision;
     Boolean autoTitle;
@@ -40,8 +41,8 @@ public class SystemMessageVo extends MessageVo {
 
     /** Assigns a new ID to the message **/
     public void assignNewId() {
-        setId(UUID.randomUUID().toString());
-        repoPath = Message.uidToMessageRepoPath(getId());
+        setId(UidUtils.newUid());
+        repoPath = UidUtils.uidToHashedFolderPath(Message.MESSAGE_REPO_FOLDER, getId());
     }
 
 
@@ -98,6 +99,7 @@ public class SystemMessageVo extends MessageVo {
     /** Getters and Setters **/
     /*************************/
 
+    @Override
     public int getRevision() {
         return revision;
     }
@@ -122,6 +124,7 @@ public class SystemMessageVo extends MessageVo {
         this.thumbnailPath = thumbnailPath;
     }
 
+    @Override
     public String getRepoPath() {
         return repoPath;
     }
@@ -130,10 +133,12 @@ public class SystemMessageVo extends MessageVo {
         this.repoPath = repoPath;
     }
 
+    @Override
     public String getEditRepoPath() {
         return editRepoPath;
     }
 
+    @Override
     public void setEditRepoPath(String editRepoPath) {
         this.editRepoPath = editRepoPath;
     }

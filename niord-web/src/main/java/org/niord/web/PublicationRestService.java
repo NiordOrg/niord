@@ -51,6 +51,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -167,15 +168,108 @@ public class PublicationRestService extends AbstractBatchableRestService {
     }
 
 
+
+    /**
+     * Returns a system-model version of the publication, which has been associated with a temporary
+     * repository folder for new changes.
+     *
+     * @param publication the publication get an system-model version of
+     * @return the system-model version of the publication
+     */
+    private SystemPublicationVo toSystemPublication(Publication publication) throws IOException {
+        SystemPublicationVo publicationVo = publication
+                .toVo(SystemPublicationVo.class, DataFilter.get());
+
+        // Create a temporary repository folder for the publication
+        publicationService.createTempPublicationRepoFolder(publicationVo);
+
+        return publicationVo;
+    }
+
+
     /** Returns the publication with the given ID */
     @GET
     @Path("/publication/{publicationId}")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public SystemPublicationVo getPublication(@PathParam("publicationId") String publicationId) throws Exception {
+    public PublicationVo getPublication(@PathParam("publicationId") String publicationId) throws Exception {
         return publicationService.findByPublicationId(publicationId)
-                .toVo(SystemPublicationVo.class, DataFilter.get());
+                .toVo(PublicationVo.class, DataFilter.get());
+    }
+
+
+    /** Returns the editable publication with the given ID */
+    @GET
+    @Path("/editable-publication/{publicationId}")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed({ "admin" })
+    @GZIP
+    @NoCache
+    public SystemPublicationVo getSystemPublication(@PathParam("publicationId") String publicationId) throws Exception {
+        Publication publication = publicationService.findByPublicationId(publicationId);
+        return toSystemPublication(publication);
+    }
+
+
+    /**
+     * Creates a new publication template with a temporary repository path
+     *
+     * @return the new publication template
+     */
+    @GET
+    @Path("/new-publication-template")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"admin"})
+    public SystemPublicationVo newTemplatePublication(
+            @QueryParam("mainType") PublicationMainType mainType) throws Exception {
+
+        log.info("Creating new publication template");
+
+        // Create a new template publication
+        Publication publication = publicationService.newTemplatePublication(mainType);
+
+        return toSystemPublication(publication);
+    }
+
+
+    /**
+     * Creates a new publication copy template with a temporary repository path
+     *
+     * @return the new publication copy template
+     */
+    @GET
+    @Path("/copy-publication-template/{publicationId}")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"admin"})
+    public SystemPublicationVo copyPublicationTemplate(
+            @PathParam("publicationId") String publicationId,
+            @QueryParam("nextIssue") boolean nextIssue) throws Exception {
+
+        log.info("Creating copy of publication " + publicationId);
+
+        Publication publication = publicationService.findByPublicationId(publicationId);
+        if (publication == null) {
+            return null;
+        }
+
+        // Create a system model version of the publication
+        SystemPublicationVo editPublication = toSystemPublication(publication);
+
+        // Assign a new ID and repoPath
+        editPublication.assignNewId();
+
+        // If nextIssue is requested, update accordingly
+        editPublication.nextIssue();
+
+        // Reset various fields
+        editPublication.setMessageTag(null);
+
+        return editPublication;
     }
 
 
@@ -189,8 +283,13 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @NoCache
     public SystemPublicationVo createPublication(SystemPublicationVo publication) throws Exception {
         log.info("Creating publication " + publication);
-        return publicationService.createPublication(new Publication(publication))
-                .toVo(SystemPublicationVo.class, DataFilter.get());
+        Publication pub = publicationService.createPublication(new Publication(publication));
+
+        // Copy resources from the temporary editing folder to the repository folder
+        publication.setPublicationId(publication.getPublicationId());
+        publicationService.updatePublicationFromTempRepoFolder(publication);
+
+        return pub.toVo(SystemPublicationVo.class, DataFilter.get());
     }
 
 
@@ -211,8 +310,12 @@ public class PublicationRestService extends AbstractBatchableRestService {
         }
 
         log.info("Updating publication " + publicationId);
-        return publicationService.updatePublication(new Publication(publication))
-                .toVo(SystemPublicationVo.class, DataFilter.get());
+        Publication pub = publicationService.updatePublication(new Publication(publication));
+
+        // Copy resources from the temporary editing folder to the repository folder
+        publicationService.updatePublicationFromTempRepoFolder(publication);
+
+        return pub.toVo(SystemPublicationVo.class, DataFilter.get());
     }
 
 

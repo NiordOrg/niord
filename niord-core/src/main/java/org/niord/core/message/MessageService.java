@@ -16,7 +16,6 @@
 package org.niord.core.message;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
@@ -59,7 +58,6 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -592,7 +590,7 @@ public class MessageService extends BaseService {
     public Message newTemplateMessage(MainType mainType) {
 
         Message message = new Message();
-        message.assignNewUid(false);
+        message.assignNewUid();
         message.setMainType(mainType);
         message.setStatus(Status.DRAFT);
         message.setAutoTitle(true);
@@ -1211,25 +1209,7 @@ public class MessageService extends BaseService {
      * @param message the message
      */
     public void createTempMessageRepoFolder(SystemMessageVo message, boolean copyToTemp) throws IOException {
-
-        String editRepoPath = repositoryService.getNewTempDir().getPath();
-        message.setEditRepoPath(editRepoPath);
-
-        if (copyToTemp) {
-
-            // For existing messages, copy the existing message repo to the new repository
-            if (message.getId() != null) {
-                java.nio.file.Path srcPath = repositoryService.getRepoRoot().resolve(message.getRepoPath());
-                java.nio.file.Path dstPath = repositoryService.getRepoRoot().resolve(editRepoPath);
-                if (Files.exists(srcPath)) {
-                    log.info("Copy folder " + srcPath + " to temporary folder " + dstPath);
-                    FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
-                }
-            }
-
-            // Point embedded links and images to the temporary repository folder
-            message.toEditRepo();
-        }
+        repositoryService.createTempEditRepoFolder(message, copyToTemp);
     }
 
     /**
@@ -1237,28 +1217,6 @@ public class MessageService extends BaseService {
      * @param message the message
      */
     public void updateMessageFromTempRepoFolder(SystemMessageVo message) throws IOException {
-
-        if (message.getId() != null && StringUtils.isNotBlank(message.getEditRepoPath())) {
-
-            java.nio.file.Path srcPath = repositoryService.getRepoRoot().resolve(message.getEditRepoPath());
-            java.nio.file.Path dstPath = repositoryService.getRepoRoot().resolve(message.getRepoPath());
-            String revision = String.valueOf(message.getRevision());
-
-            if (Files.exists(srcPath)) {
-
-                // Case 1: If this is a new message, copy the entire directory
-                if (!Files.exists(dstPath)) {
-                    log.info("Syncing folder " + srcPath + " with " + dstPath);
-                    FileUtils.copyDirectory(srcPath.toFile(), dstPath.toFile(), true);
-
-                // Case 2: Copy the latest revision sub-folder back to the source folder
-                } else if (Files.exists(srcPath.resolve(revision))) {
-                    log.info("Syncing revision " + revision + " of folder " + srcPath + " with folder " + dstPath);
-                    FileUtils.copyDirectory(srcPath.resolve(revision).toFile(), dstPath.resolve(revision).toFile(), true);
-                } else {
-                    log.info("No new revision files to sync");
-                }
-            }
-        }
+        repositoryService.updateRepoFolderFromTempEditFolder(message);
     }
 }

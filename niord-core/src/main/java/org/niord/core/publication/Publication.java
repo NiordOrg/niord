@@ -20,11 +20,12 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.JpaPropertiesAttributeConverter;
 import org.niord.core.domain.Domain;
 import org.niord.core.message.MessageTag;
-import org.niord.core.model.BaseEntity;
+import org.niord.core.model.VersionedEntity;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.vo.PeriodicalType;
 import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.publication.vo.SystemPublicationVo;
+import org.niord.core.util.UidUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.publication.PublicationDescVo;
@@ -62,17 +63,17 @@ import java.util.stream.Collectors;
                 query="SELECT p FROM Publication p where p.template is not null and p.template.publicationId = :templateId")
 })
 @SuppressWarnings("unused")
-public class Publication extends BaseEntity<Integer> implements ILocalizable<PublicationDesc> {
+public class Publication extends VersionedEntity<Integer> implements ILocalizable<PublicationDesc> {
 
     public static String PUBLICATION_REPO_FOLDER = "publications";
 
 
-    @NotNull
-    @Column(unique = true)
+    @Column(nullable = false, unique = true, length = 36)
     String publicationId;
 
-    /** Used by templates to define the format of the ID's of the concrete publications **/
-    String publicationIdFormat;
+    // Unlike Publication.version, which is used to control optimistic locking, the Publication.revision
+    // attribute is used define the repo-path sub-folder used for attachments when a message is edited.
+    int revision;
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -150,7 +151,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
         if (publication instanceof SystemPublicationVo) {
             SystemPublicationVo sysPub = (SystemPublicationVo) publication;
-            this.publicationIdFormat = sysPub.getPublicationIdFormat();
+            this.revision = sysPub.getRevision();
             this.mainType = sysPub.getMainType();
             this.template = sysPub.getTemplate() != null ? new Publication(sysPub.getTemplate()) : null;
             this.domain = sysPub.getDomain() != null ? new Domain(sysPub.getDomain()) : null;
@@ -172,7 +173,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
     /** Updates this publication from another publication */
     public void updatePublication(Publication publication) {
         this.publicationId = publication.getPublicationId();
-        this.publicationIdFormat = publication.getPublicationIdFormat();
+        this.revision = publication.getRevision();
         this.mainType = publication.getMainType();
         this.template = publication.getTemplate();
         this.type = publication.getType();
@@ -202,7 +203,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
         P publication = newInstance(clz);
         publication.setPublicationId(publicationId);
         publication.setType(type);
-        publication.setCategory(category.toVo(dataFilter));
+        publication.setCategory(category != null ? category.toVo(dataFilter) : null);
         publication.setPublishDateFrom(publishDateFrom);
         publication.setPublishDateTo(publishDateTo);
 
@@ -214,7 +215,7 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
 
         if (publication instanceof SystemPublicationVo) {
             SystemPublicationVo sysPub = (SystemPublicationVo) publication;
-            sysPub.setPublicationIdFormat(publicationIdFormat);
+            sysPub.setRevision(revision + 1); // NB: Increase revision number
             sysPub.setMainType(mainType);
             sysPub.setTemplate(template != null ? template.toVo(SystemPublicationVo.class, dataFilter) : null);
             sysPub.setDomain((domain != null) ? domain.toVo()  : null);
@@ -243,9 +244,6 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
             return;
         }
 
-        if (StringUtils.isBlank(this.publicationId)) {
-            this.publicationId = ctx.str(template.getPublicationIdFormat(), publicationId);
-        }
         this.type = ctx.val(template.getType(), type);
         this.category = ctx.val(template.getCategory(), category);
         this.domain = ctx.val(template.getDomain(), domain);
@@ -271,6 +269,26 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
             pubDesc.setFormat(ctx.str(d.getFormat(), pubDesc.getFormat()));
             pubDesc.setLink(ctx.str(d.getLink(), pubDesc.getLink()));
         });
+    }
+
+
+    /** Assigns a new UID to the publication **/
+    public String assignNewUid() {
+        String oldRepoPath = repoPath;
+
+        publicationId = UidUtils.newUid();
+        repoPath = UidUtils.uidToHashedFolderPath(PUBLICATION_REPO_FOLDER, publicationId);
+
+        // Rewrite any links pointing to the old repository path
+        if (StringUtils.isNotBlank(oldRepoPath)) {
+            String prefix = "\"/rest/repo/file/";
+            getDescs().forEach(desc -> {
+                        if (desc.getLink() != null && desc.getLink().contains(prefix + oldRepoPath)) {
+                            desc.setLink(desc.getLink().replace(prefix + oldRepoPath, prefix + repoPath));
+                        }
+                    });
+        }
+        return publicationId;
     }
 
 
@@ -305,12 +323,12 @@ public class Publication extends BaseEntity<Integer> implements ILocalizable<Pub
         this.publicationId = publicationId;
     }
 
-    public String getPublicationIdFormat() {
-        return publicationIdFormat;
+    public int getRevision() {
+        return revision;
     }
 
-    public void setPublicationIdFormat(String publicationIdFormat) {
-        this.publicationIdFormat = publicationIdFormat;
+    public void setRevision(int revision) {
+        this.revision = revision;
     }
 
     public PublicationMainType getMainType() {
