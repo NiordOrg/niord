@@ -55,7 +55,8 @@ public class PublicationCategoryService extends BaseService {
      * @return the list of publication categories
      */
     public List<PublicationCategory> getPublicationCategories() {
-        return getAll(PublicationCategory.class);
+        return em.createNamedQuery("PublicationCategory.findAll", PublicationCategory.class)
+            .getResultList();
     }
 
 

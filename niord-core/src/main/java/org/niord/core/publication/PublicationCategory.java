@@ -38,6 +38,8 @@ import java.util.stream.Collectors;
  */
 @Entity
 @NamedQueries({
+        @NamedQuery(name= "PublicationCategory.findAll",
+                query="SELECT t FROM PublicationCategory t order by t.priority asc"),
         @NamedQuery(name= "PublicationCategory.findByCategoryId",
                 query="SELECT t FROM PublicationCategory t where t.categoryId = :categoryId")
 })

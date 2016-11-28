@@ -22,9 +22,8 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationCategoryService;
-import org.niord.model.publication.PublicationCategoryVo;
-import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
+import org.niord.model.publication.PublicationCategoryVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
@@ -45,7 +44,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -80,7 +78,6 @@ public class PublicationCategoryRestService extends AbstractBatchableRestService
         return publicationCategoryService.getPublicationCategories().stream()
                 .limit(limit)
                 .map(p -> p.toVo(dataFilter))
-                .sorted(publicationCategoryNameComparator(lang))
                 .collect(Collectors.toList());
     }
 
@@ -160,15 +157,6 @@ public class PublicationCategoryRestService extends AbstractBatchableRestService
     @RolesAllowed("admin")
     public String importPublications(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "publication-category-import");
-    }
-
-    /** Returns a publication name comparator **/
-    private Comparator<PublicationCategoryVo> publicationCategoryNameComparator(String lang) {
-        return (p1, p2) -> {
-            String n1 = p1.getDesc(lang) != null ? p1.getDesc(lang).getName() : null;
-            String n2 = p2.getDesc(lang) != null ? p2.getDesc(lang).getName() : null;
-            return TextUtils.compareIgnoreCase(n1, n2);
-        };
     }
 
 }
