@@ -51,9 +51,6 @@ public class PublicationDesc extends DescEntity<Publication> {
     /** Constructor */
     public PublicationDesc(PublicationDescVo desc) {
         super(desc);
-        if (desc.getLang() == null) {
-            this.lang = "*";
-        }
         this.title = desc.getTitle();
         this.format = desc.getFormat();
         this.link = desc.getLink();
@@ -63,7 +60,7 @@ public class PublicationDesc extends DescEntity<Publication> {
     /** Converts this entity to a value object */
     public PublicationDescVo toVo() {
         PublicationDescVo desc = new PublicationDescVo();
-        desc.setLang(lang.equals("*") ? null : lang);
+        desc.setLang(lang);
         desc.setTitle(title);
         desc.setFormat(format);
         desc.setLink(link);
