@@ -108,6 +108,9 @@ public class ApiRestService extends AbstractApiService {
             @ApiParam(value = "Specific message series to select messages from", example = "dma-nw")
             @QueryParam("messageSeries") Set<String> messageSeries,
 
+            @ApiParam(value = "The IDs of the publications to select message from")
+            @QueryParam("publication") Set<String> publicationIds,
+
             @ApiParam(value = "The IDs of the areas to select messages from", example = "urn:mrn:iho:country:dk")
             @QueryParam("areaId") Set<String> areaIds,
 
@@ -126,7 +129,8 @@ public class ApiRestService extends AbstractApiService {
     ) throws Exception {
 
         // Perform the search
-        PagedSearchResultVo<Message> searchResult = super.searchMessages(language, domainIds, messageSeries, areaIds, mainTypes, wkt);
+        PagedSearchResultVo<Message> searchResult =
+                super.searchMessages(language, domainIds, messageSeries, publicationIds, areaIds, mainTypes, wkt);
 
 
         // Convert messages to value objects and externalize message links, if requested

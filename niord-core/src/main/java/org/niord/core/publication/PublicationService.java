@@ -37,7 +37,10 @@ import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Root;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.niord.core.publication.vo.PublicationMainType.PUBLICATION;
 import static org.niord.core.publication.vo.PublicationMainType.TEMPLATE;
@@ -93,6 +96,22 @@ public class PublicationService extends BaseService {
         return em.createNamedQuery("Publication.findByTemplateId", Publication.class)
                 .setParameter("templateId", templateId)
                 .getResultList();
+    }
+
+
+    /**
+     * Returns the tag IDs for the message-report publications with the given publication IDs
+     * @param publicationIds the publication IDs
+     * @return the tag IDs for the message-report publications with the given publication IDs
+     */
+    public Set<String> findTagsByPublicationIds(Set<String> publicationIds) {
+        if (publicationIds == null || publicationIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return em.createNamedQuery("Publication.findTagsByPublicationIds", String.class)
+                .setParameter("publicationIds", publicationIds)
+                .getResultList().stream()
+                .collect(Collectors.toSet());
     }
 
 

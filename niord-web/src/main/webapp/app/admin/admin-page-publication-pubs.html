@@ -165,6 +165,19 @@
                    </div>
                </div>
 
+               <!-- ******* File -> Repository File Name ******* -->
+               <div class="form-group" ng-if="showEditorField('repoFileName')">
+                   <label class="col-sm-4 col-md-2">PDF File Name</label>
+                   <div class="col-sm-6 col-md-10">
+                       <div class="row">
+                           <div class="col-xs-12 col-sm-6" ng-repeat="desc in publication.descs" ng-if="publication.languageSpecific || $first">
+                               <input class="form-control input-sm" placeholder="PDF File Name" type="text"
+                                      ng-model="desc.fileName" bg-flag="desc.lang">
+                           </div>
+                       </div>
+                   </div>
+               </div>
+
                <!-- ******* File -> Repository File ******* -->
                <div class="form-group" ng-if="showEditorField('repoFile')">
                    <label class="col-sm-4 col-md-2">Repository File</label>
@@ -174,6 +187,9 @@
                                 ng-repeat="desc in publication.descs"
                                 ng-if="publication.languageSpecific || $first">
                                <div class="publication-repo-file" bg-flag="desc.lang">
+                                   <div ng-if="desc.link">
+                                       {{desc.link}}
+                                   </div>
                                    <button class="btn btn-xs btn-default"
                                            ng-click="uploadFile(desc.lang)">
                                        Upload File...

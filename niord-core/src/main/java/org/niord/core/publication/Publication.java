@@ -38,10 +38,12 @@ import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Index;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
@@ -56,11 +58,19 @@ import java.util.stream.Collectors;
  * Defines a publication that may be associated with a message.
  */
 @Entity
+@Table(indexes = {
+        @Index(name = "publication_id_k", columnList="publicationId"),
+        @Index(name = "publication_type_k", columnList="type"),
+        @Index(name = "publication_main_type_k", columnList="mainType")
+})
 @NamedQueries({
         @NamedQuery(name="Publication.findByPublicationId",
                 query="SELECT p FROM Publication p where p.publicationId = :publicationId"),
         @NamedQuery(name="Publication.findByTemplateId",
-                query="SELECT p FROM Publication p where p.template is not null and p.template.publicationId = :templateId")
+                query="SELECT p FROM Publication p where p.template is not null and p.template.publicationId = :templateId"),
+        @NamedQuery(name="Publication.findTagsByPublicationIds",
+                query="SELECT DISTINCT p.messageTag.tagId FROM Publication p where p.publicationId in (:publicationIds) "
+                     + " and p.type = 'MESSAGE_REPORT' and p.messageTag is not null"),
 })
 @SuppressWarnings("unused")
 public class Publication extends VersionedEntity<Integer> implements ILocalizable<PublicationDesc> {

@@ -114,6 +114,8 @@ angular.module('niord.admin')
                         return !hasTemplate || pub.template.type === undefined;
                     case 'link':
                         return (!hasTemplate && pub.type == 'LINK') || (pub.template && pub.template.type == 'LINK');
+                    case 'repoFileName':
+                        return isTemplate && pub.type == 'MESSAGE_REPORT';
                     case 'repoFile':
                         return isPublication && (pub.type == 'REPOSITORY' || pub.type == 'MESSAGE_REPORT');
                     case 'report':
@@ -129,7 +131,7 @@ angular.module('niord.admin')
             $scope.uploadFile = function (lang) {
                 UploadFileService.showUploadFileDialog(
                     'Upload Publication File',
-                    '/rest/repo/upload/' + encodeURIComponent($scope.publication.repoPath),
+                    '/rest/repo/upload/' + encodeURIComponent($scope.publication.repoPath  + '/' + $scope.publication.revision),
                     'pdf',
                     true).result
                     .then(function (result) {

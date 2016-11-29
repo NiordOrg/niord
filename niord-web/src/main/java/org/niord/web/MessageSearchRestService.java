@@ -30,6 +30,7 @@ import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.publication.PublicationService;
 import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MessageVo;
@@ -72,6 +73,9 @@ public class MessageSearchRestService {
 
     @Inject
     MessageTagService messageTagService;
+
+    @Inject
+    PublicationService publicationService;
 
     @Inject
     DomainService domainService;
@@ -132,6 +136,11 @@ public class MessageSearchRestService {
                 );
             }
             */
+
+            // Convert publications to their associated message tags
+            if (!params.getPublications().isEmpty()) {
+                params.getTags().addAll(publicationService.findTagsByPublicationIds(params.getPublications()));
+            }
 
             // Validate that the specified tags are allowed for the current user
             if (!params.getTags().isEmpty()) {

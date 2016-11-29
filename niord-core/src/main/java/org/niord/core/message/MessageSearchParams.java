@@ -72,6 +72,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     Set<String> categoryIds = new HashSet<>();
     Set<String> chartNumbers = new HashSet<>();
     Set<String> tags = new HashSet<>();
+    Set<String> publications = new HashSet<>();
     String viewMode;
 
     Geometry extent;
@@ -98,6 +99,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
                 .categoryIds(toSet(req.getParameterValues("category"), Function.identity()))
                 .chartNumbers(toSet(req.getParameterValues("chart"), Function.identity()))
                 .tags(toSet(req.getParameterValues("tag"), Function.identity()))
+                .publications(toSet(req.getParameterValues("publication"), Function.identity()))
                 .messageId(req.getParameter("messageId"))
                 .referenceLevels(checkNull(req.getParameter("referenceLevels"), Integer::valueOf))
                 .from((Long)checkNull(req.getParameter("fromDate"), Long::valueOf))
@@ -208,6 +210,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         if (categoryIds.size() > 0) { desc.add(String.format("Category ID's: %s", categoryIds)); }
         if (chartNumbers.size() > 0) { desc.add(String.format("Chart Numbers: %s", chartNumbers)); }
         if (tags.size() > 0) { desc.add(String.format("Tags: %s", tags)); }
+        if (publications.size() > 0) { desc.add(String.format("Publications: %s", publications)); }
         if (extent != null) { desc.add(String.format("Extent: '%s'", extent.toString())); }
 
         return desc.stream().collect(Collectors.joining(", "));
@@ -414,6 +417,15 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public MessageSearchParams tags(Set<String> tags) {
         this.tags = toSet(tags);
+        return this;
+    }
+
+    public Set<String> getPublications() {
+        return publications;
+    }
+
+    public MessageSearchParams publications(Set<String> publications) {
+        this.publications = toSet(publications);
         return this;
     }
 

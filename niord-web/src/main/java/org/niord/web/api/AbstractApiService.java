@@ -22,6 +22,8 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
+import org.niord.core.message.MessageTag;
+import org.niord.core.message.MessageTagService;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationSearchParams;
 import org.niord.core.publication.PublicationService;
@@ -56,6 +58,9 @@ public abstract class AbstractApiService {
     PublicationService publicationService;
 
     @Inject
+    MessageTagService messageTagService;
+
+    @Inject
     NiordApp app;
 
 
@@ -81,6 +86,7 @@ public abstract class AbstractApiService {
             String language,
             Set<String> domainIds,
             Set<String> messageSeries,
+            Set<String> publicationIds,
             Set<String> areaIds,
             Set<MainType> mainTypes,
             String wkt) throws Exception {
@@ -88,6 +94,7 @@ public abstract class AbstractApiService {
         MessageSearchParams params = new MessageSearchParams();
         params.language(language)
                 .statuses(Collections.singleton(Status.PUBLISHED))
+                .publications(publicationIds)
                 .mainTypes(mainTypes)
                 .areaIds(areaIds)
                 .extent(wkt)
@@ -96,18 +103,32 @@ public abstract class AbstractApiService {
                 .sortOrder(PagedSearchParamsVo.SortOrder.ASC);
 
 
+        // Convert publications to their associated message tags
+        if (!params.getPublications().isEmpty()) {
+            Set<String> tags = publicationService.findTagsByPublicationIds(params.getPublications());
+
+            // Validate user access to the tags
+            if (!tags.isEmpty()) {
+                String[] tagIds = tags.toArray(new String[tags.size()]);
+                params.tags(messageTagService.findTags(tagIds).stream()
+                        .map(MessageTag::getTagId)
+                        .collect(Collectors.toSet()));
+            }
+        }
+
+        boolean tagsSpecified = !params.getTags().isEmpty();
         boolean domainsSpecified = domainIds != null && !domainIds.isEmpty();
         boolean messageSeriesSpecified = messageSeries != null && !messageSeries.isEmpty();
 
-        // If no domain and no message series have been defined, use the domains published by default
-        if (!domainsSpecified && !messageSeriesSpecified) {
+        // If no tags or domains or message series have been defined, use the domains published by default
+        if (!tagsSpecified && !domainsSpecified && !messageSeriesSpecified) {
             domainIds = domainService.getPublishedDomains().stream()
                     .map(Domain::getDomainId)
                     .collect(Collectors.toSet());
             domainsSpecified = true;
         }
 
-        // Check if a domain has been specified
+        // Check if a domain has been specified - convert them to message series, area nad category restrictions
         if (domainsSpecified) {
             domainIds.forEach(domainId -> {
                 Domain domain = domainService.findByDomainId(domainId);
@@ -141,11 +162,10 @@ public abstract class AbstractApiService {
             params.getSeriesIds().addAll(messageSeries);
         }
 
-        // If no message series (and thus, no domains) have been specified, return nothing
-        if (params.getSeriesIds().isEmpty()) {
+        // If no publications or message series (and thus, no domains) have been specified, return nothing
+        if (params.getTags().isEmpty() && params.getSeriesIds().isEmpty()) {
             return new PagedSearchResultVo<>();
         }
-
 
         // Perform the search
         long t0 = System.currentTimeMillis();

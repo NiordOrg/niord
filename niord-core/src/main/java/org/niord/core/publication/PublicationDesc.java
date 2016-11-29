@@ -39,14 +39,20 @@ public class PublicationDesc extends DescEntity<Publication> {
     String titleFormat;
 
     /**
+     * If defined, will be used as a link for all message publications
+     */
+    String link;
+
+    /**
+     * The file name of the linked file
+     */
+    String fileName;
+
+    /**
      * The format can be used to format a message publication
      */
     String messagePublicationFormat;
 
-    /**
-     * If defined, will be used as a link for all message publications
-     */
-    String link;
 
     /** Constructor */
     public PublicationDesc() {
@@ -58,6 +64,7 @@ public class PublicationDesc extends DescEntity<Publication> {
         this.title = desc.getTitle();
         this.titleFormat = desc.getTitleFormat();
         this.link = desc.getLink();
+        this.fileName = desc.getFileName();
         this.messagePublicationFormat = desc.getMessagePublicationFormat();
     }
 
@@ -69,6 +76,7 @@ public class PublicationDesc extends DescEntity<Publication> {
         desc.setTitle(title);
         desc.setTitleFormat(titleFormat);
         desc.setLink(link);
+        desc.setFileName(fileName);
         desc.setMessagePublicationFormat(messagePublicationFormat);
         return desc;
     }
@@ -77,7 +85,7 @@ public class PublicationDesc extends DescEntity<Publication> {
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(title, titleFormat, messagePublicationFormat, link);
+        return ILocalizedDesc.fieldsDefined(title, titleFormat, messagePublicationFormat, link, fileName);
     }
 
 
@@ -88,6 +96,7 @@ public class PublicationDesc extends DescEntity<Publication> {
         this.title = desc.getTitle();
         this.titleFormat = desc.getTitleFormat();
         this.link = desc.getLink();
+        this.fileName = desc.getFileName();
         this.messagePublicationFormat = desc.getMessagePublicationFormat();
     }
 
@@ -112,19 +121,27 @@ public class PublicationDesc extends DescEntity<Publication> {
         this.titleFormat = titleFormat;
     }
 
-    public String getMessagePublicationFormat() {
-        return messagePublicationFormat;
-    }
-
-    public void setMessagePublicationFormat(String messagePublicationFormat) {
-        this.messagePublicationFormat = messagePublicationFormat;
-    }
-
     public String getLink() {
         return link;
     }
 
     public void setLink(String link) {
         this.link = link;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public String getMessagePublicationFormat() {
+        return messagePublicationFormat;
+    }
+
+    public void setMessagePublicationFormat(String messagePublicationFormat) {
+        this.messagePublicationFormat = messagePublicationFormat;
     }
 }

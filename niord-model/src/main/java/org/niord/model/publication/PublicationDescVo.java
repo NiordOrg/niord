@@ -27,20 +27,22 @@ import javax.xml.bind.annotation.XmlType;
  * The entity description VO
  */
 @ApiModel(value = "PublicationDesc", description = "Translatable fields of the Publication model")
-@XmlType(propOrder = { "title", "titleFormat", "link", "messagePublicationFormat" })
+@XmlType(propOrder = { "title", "titleFormat", "link", "fileName", "messagePublicationFormat" })
+@SuppressWarnings("unused")
 public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
 
     String lang;
     String title;
     String titleFormat;
     String link;
+    String fileName;
     String messagePublicationFormat;
 
 
     /** {@inheritDoc} */
     @Override
     public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(title, link);
+        return ILocalizedDesc.fieldsDefined(title, titleFormat, link, fileName);
     }
 
 
@@ -49,7 +51,10 @@ public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
     public void copyDesc(ILocalizedDesc localizedDesc) {
         PublicationDescVo desc = (PublicationDescVo)localizedDesc;
         this.title = desc.getTitle();
+        this.titleFormat = desc.getTitleFormat();
         this.link = desc.getLink();
+        this.fileName = desc.getFileName();
+        this.messagePublicationFormat = desc.getMessagePublicationFormat();
     }
 
     /*************************/
@@ -89,6 +94,14 @@ public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
 
     public void setLink(String link) {
         this.link = link;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
     public String getMessagePublicationFormat() {
