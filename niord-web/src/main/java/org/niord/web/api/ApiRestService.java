@@ -139,12 +139,7 @@ public class ApiRestService extends AbstractApiService {
                 .getData();
 
         // Depending on the dateFormat param, either use UNIX epoch or ISO-8601
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(
-                SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
-                dateFormat == JsonDateFormat.UNIX_EPOCH);
-
-        StreamingOutput stream = os -> mapper.writeValue(os, messages);
+        StreamingOutput stream = os -> objectMapperForDateFormat(dateFormat).writeValue(os, messages);
 
         return Response
                 .ok(stream, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
@@ -194,12 +189,7 @@ public class ApiRestService extends AbstractApiService {
             MessageVo result = toMessageVo(message, language, externalize);
 
             // Depending on the dateFormat param, either use UNIX epoch or ISO-8601
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.configure(
-                    SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
-                    dateFormat == JsonDateFormat.UNIX_EPOCH);
-
-            StreamingOutput stream = os -> mapper.writeValue(os, result);
+            StreamingOutput stream = os -> objectMapperForDateFormat(dateFormat).writeValue(os, result);
 
             return Response
                     .ok(stream, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
@@ -323,17 +313,62 @@ public class ApiRestService extends AbstractApiService {
                 .collect(Collectors.toList());
 
         // Depending on the dateFormat param, either use UNIX epoch or ISO-8601
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(
-                SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
-                dateFormat == JsonDateFormat.UNIX_EPOCH);
-
-        StreamingOutput stream = os -> mapper.writeValue(os, publications);
+        StreamingOutput stream = os -> objectMapperForDateFormat(dateFormat).writeValue(os, publications);
 
         return Response
                 .ok(stream, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
                 .build();
     }
+
+
+    /**
+     * Returns the details for the given publications
+     */
+    @ApiOperation(
+            value = "Returns the publication with the given ID",
+            response = PublicationVo.class,
+            tags = {"publications"}
+    )
+    @GET
+    @Path("/publication/{publicationId}")
+    @Produces({"application/json;charset=UTF-8"})
+    @GZIP
+    public Response publicationDetails(
+
+            @ApiParam(value = "The publication ID", example = "5eab7f50-d890-42d9-8f0a-d30e078d3d5a")
+            @PathParam("publicationId") String publicationId,
+
+            @ApiParam(value = "Two-letter ISO 639-1 language code", example = "en")
+            @QueryParam("lang") String language,
+
+            @ApiParam(value = "Whether to rewrite all embedded links and paths to be absolute URL's", example = "true")
+            @QueryParam("externalize") @DefaultValue("true") boolean externalize,
+
+            @ApiParam(value = "The date format to use for JSON date-time encoding. Either 'UNIX_EPOCH' or 'ISO_8601'", example = "UNIX_EPOCH")
+            @QueryParam("dateFormat") @DefaultValue("UNIX_EPOCH") JsonDateFormat dateFormat
+    ) {
+
+        Publication publication = super.getPublication(publicationId);
+
+        if (publication == null) {
+            return Response
+                    .status(Response.Status.NOT_FOUND)
+                    .entity("No publication found with ID: " + publicationId)
+                    .build();
+        } else {
+
+            // Convert publication to value objects and externalize publication links, if requested
+            PublicationVo result = toPublicationVo(publication, language, externalize);
+
+            // Depending on the dateFormat param, either use UNIX epoch or ISO-8601
+            StreamingOutput stream = os -> objectMapperForDateFormat(dateFormat).writeValue(os, result);
+
+            return Response
+                    .ok(stream, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
+                    .build();
+        }
+    }
+
 
     /**
      * Convert the publication to a value object representation.
@@ -366,6 +401,17 @@ public class ApiRestService extends AbstractApiService {
         }
 
         return publication;
+    }
+
+
+
+    /** Returns an ObjectMapper for the given date format **/
+    private ObjectMapper objectMapperForDateFormat(JsonDateFormat dateFormat) {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(
+                SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,
+                dateFormat == JsonDateFormat.UNIX_EPOCH);
+        return mapper;
     }
 
 

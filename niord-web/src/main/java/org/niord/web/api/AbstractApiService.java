@@ -177,6 +177,22 @@ public abstract class AbstractApiService {
     }
 
 
+
+    /**
+     * Returns the publication with the given ID if it is public
+     *
+     * @param publicationId the message ID
+     * @return the message with the given ID if it is public
+     */
+    public Publication getPublication(String publicationId) {
+        Publication publication = publicationService.findByPublicationId(publicationId);
+        // TODO: Check dates
+        return publication != null && publication.getCategory().isPublish()
+                ? publication
+                : null;
+    }
+
+
     /**
      * Searches for publications
      */
