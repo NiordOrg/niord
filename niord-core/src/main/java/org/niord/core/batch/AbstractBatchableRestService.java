@@ -36,7 +36,7 @@ import java.util.Map;
 public abstract class AbstractBatchableRestService {
 
     @Context
-    ServletContext servletContext;
+    protected ServletContext servletContext;
 
     @Inject
     Logger log;

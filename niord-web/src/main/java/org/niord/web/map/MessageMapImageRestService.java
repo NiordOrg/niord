@@ -153,23 +153,6 @@ public class MessageMapImageRestService {
 
 
     /**
-     * Resolves the relative repository path as a temporary repository path (used whilst editing messages)
-     * and returns the full path to it.
-     * @param path the path to resolve and validate as a temporary repository path
-     * @return the full path
-     */
-    private Path validateTempMessageRepoPath(String path) {
-        // Validate that the path is a temporary repository folder path
-        Path folder = repositoryService.getRepoRoot().resolve(path);
-        if (!folder.toAbsolutePath().startsWith(repositoryService.getTempRepoRoot().toAbsolutePath())) {
-            log.warn("Failed streaming file to temp root folder: " + folder);
-            throw new WebApplicationException("Invalid upload folder: " + path, 403);
-        }
-        return folder;
-    }
-
-
-    /**
      * Returns a redirect to the actual repository image file
      **/
     private Response redirect(Path imagePath) throws IOException, URISyntaxException {
@@ -199,7 +182,7 @@ public class MessageMapImageRestService {
     public String updateMessageMapImage(@PathParam("folder") String path, String image) throws Exception {
 
         // Validate that the path is a temporary repository folder path
-        Path folder = validateTempMessageRepoPath(path);
+        Path folder = repositoryService.validateTempMessageRepoPath(path);
 
         if (!image.toLowerCase().startsWith(UPLOADED_IMAGE_PREFIX)) {
             throw new WebApplicationException(400);
@@ -234,7 +217,7 @@ public class MessageMapImageRestService {
     public String uploadMessageMapImage(@PathParam("folder") String path, @Context HttpServletRequest request) throws Exception {
 
         // Validate that the path is a temporary repository folder path
-        Path folder = validateTempMessageRepoPath(path);
+        Path folder = repositoryService.validateTempMessageRepoPath(path);
 
         FileItemFactory factory = RepositoryService.newDiskFileItemFactory(servletContext);
         ServletFileUpload upload = new ServletFileUpload(factory);

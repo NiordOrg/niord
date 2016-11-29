@@ -16,6 +16,12 @@
 
 package org.niord.web;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
@@ -26,9 +32,11 @@ import org.niord.core.publication.PublicationService;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.publication.vo.SystemPublicationVo;
+import org.niord.core.repo.RepositoryService;
 import org.niord.core.user.UserService;
 import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
+import org.niord.model.publication.PublicationDescVo;
 import org.niord.model.publication.PublicationType;
 import org.niord.model.publication.PublicationVo;
 import org.slf4j.Logger;
@@ -51,7 +59,12 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -75,6 +88,10 @@ public class PublicationRestService extends AbstractBatchableRestService {
 
     @Inject
     UserService userService;
+
+    @Inject
+    RepositoryService repositoryService;
+
 
 
     /** Searches publications based on the given search parameters */
@@ -333,6 +350,77 @@ public class PublicationRestService extends AbstractBatchableRestService {
 
 
     /**
+     * Uploads a publication file
+     *
+     * @param request the servlet request
+     * @return the repository path of the uploaded file
+     */
+    @POST
+    @Path("/upload-publication-file/{folder:.+}")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed("admin")
+    public PublicationDescVo uploadPublicationFile(@PathParam("folder") String path, @Context HttpServletRequest request) throws Exception {
+
+        FileItemFactory factory = RepositoryService.newDiskFileItemFactory(servletContext);
+        ServletFileUpload upload = new ServletFileUpload(factory);
+
+        List<FileItem> items = upload.parseRequest(request);
+
+        // Get hold of the first uploaded publication file
+        FileItem fileItem = items.stream()
+                .filter(item -> !item.isFormField())
+                .findFirst()
+                .orElseThrow(() -> new WebApplicationException("No uploaded publication file", 400));
+
+        // Check for the associated publication desc record
+        PublicationDescVo desc = items.stream()
+                .filter(item -> item.isFormField() && "data".equals(item.getFieldName()))
+                .map(item -> {
+                    try {
+                        return new ObjectMapper().
+                                readValue(item.getString("UTF-8"), PublicationDescVo.class);
+                    } catch (Exception ignored) {
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElseThrow(() -> new WebApplicationException("No publication descriptor found", 400));
+
+        // Validate that the path is a temporary repository folder path
+        java.nio.file.Path folder = repositoryService.validateTempMessageRepoPath(path);
+        if (Files.notExists(folder)) {
+            try {
+                Files.createDirectories(folder);
+            } catch (IOException e) {
+                log.error("Error creating publication folder " + folder, e);
+                throw new WebApplicationException("Invalid publication folder: " + path, 403);
+            }
+        }
+
+        String fileName = StringUtils.defaultIfBlank(
+                desc.getFileName(),
+                Paths.get(fileItem.getName()).getFileName().toString()); // NB: IE includes the path in item.getName()!
+
+        File destFile = folder.resolve(fileName).toFile();
+        try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(destFile))) {
+            IOUtils.copy(fileItem.getInputStream(), out);
+        } catch (IOException ex) {
+            log.error("Error creating publication file " + destFile, ex);
+            throw new WebApplicationException("Error creating destination file: " + destFile, 500);
+        }
+
+        desc.setFileName(fileName);
+        desc.setLink(path + "/" + fileName);
+
+        log.info("Copied publication file " + fileItem.getName() + " to destination " + destFile);
+
+        return desc;
+    }
+
+
+    /**
      * Returns all publications for export purposes
      *
      * If not called via Ajax, pass a ticket request parameter along, which
@@ -354,6 +442,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
         PublicationSearchParams params = new PublicationSearchParams().language(lang);
         DataFilter dataFilter = DataFilter.get().lang(lang);
 
+        // TODO: Sort templates first - not by title
         return publicationService.searchPublications(params).stream()
                 .map(p -> p.toVo(SystemPublicationVo.class, dataFilter))
                 .sorted(publicationTitleComparator(lang))
@@ -375,6 +464,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     public String importPublications(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "publication-import");
     }
+
 
     /** Returns a publication name comparator **/
     private Comparator<PublicationVo> publicationTitleComparator(String lang) {

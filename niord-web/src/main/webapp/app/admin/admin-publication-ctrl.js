@@ -35,6 +35,7 @@ angular.module('niord.admin')
             $scope.publications = [];
             $scope.publication = undefined; // The publication being edited
             $scope.publicationCategories = [];
+            $scope.publicationFileUploadUrl = '';
             $scope.editMode = 'add';
             $scope.filter = {
                 title: '',
@@ -127,19 +128,18 @@ angular.module('niord.admin')
             };
 
 
-            /** Uploads a file for the given language **/
-            $scope.uploadFile = function (lang) {
-                UploadFileService.showUploadFileDialog(
-                    'Upload Publication File',
-                    '/rest/repo/upload/' + encodeURIComponent($scope.publication.repoPath  + '/' + $scope.publication.revision),
-                    'pdf',
-                    true).result
-                    .then(function (result) {
-                        if (result && result.length == 1) {
-                            var desc = LangService.descForLanguage($scope.publication, lang);
-                            desc.link = '/rest/repo/file/' + result[0];
-                        }
-                    });
+            /** Called when a publication file has been uploaded **/
+            $scope.publicationFileUploaded = function (resultDesc) {
+                var desc = LangService.descForLanguage($scope.publication, resultDesc.lang);
+                angular.copy(resultDesc, desc);
+                $scope.$$phase || $scope.$apply();
+            };
+
+
+            /** Called when a publication file upload has failed **/
+            $scope.publicationFileUploadError = function (status, statusText) {
+                growl.error("Error uploading file:" + statusText, { ttl: 5000 });
+                $scope.$$phase || $scope.$apply();
             };
 
 
@@ -178,6 +178,11 @@ angular.module('niord.admin')
                 });
                 printParam = concatParam(printParam, 'lang', lang);
 
+                var desc = LangService.descForLanguage(pub, lang);
+                if (desc.fileName) {
+                    printParam = concatParam(printParam, 'fileName', desc.fileName);
+                }
+
                 AdminPublicationService
                     .publicationTicket()
                     .success(function (ticket) {
@@ -215,6 +220,9 @@ angular.module('niord.admin')
                         // Some field editors rely on hardcoded property names:
                         $scope.publication.publication = pub.template;
                         $scope.publication.tag = pub.messageTag;
+
+                        $scope.publicationFileUploadUrl = '/rest/publications/upload-publication-file/'
+                            + encodeURIComponent($scope.publication.editRepoPath  + '/' + $scope.publication.revision)
                     })
                     .error($scope.displayError);
             };

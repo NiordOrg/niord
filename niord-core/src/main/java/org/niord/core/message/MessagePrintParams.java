@@ -17,6 +17,7 @@
 package org.niord.core.message;
 
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.util.WebUtils;
 import org.niord.model.search.PagedSearchParamsVo;
 
 import javax.servlet.http.HttpServletRequest;
@@ -38,6 +39,7 @@ public class MessagePrintParams extends PagedSearchParamsVo {
     String pageSize = "A4";
     String pageOrientation = "portrait";
     Boolean mapThumbnails = Boolean.FALSE;
+    String fileName;
     Boolean debug = Boolean.FALSE;
     Map<String, Object> params = new HashMap<>();
 
@@ -52,13 +54,27 @@ public class MessagePrintParams extends PagedSearchParamsVo {
         params.report(req.getParameter("report"))
                 .pageSize(checkNull(req.getParameter("pageSize"), "A4", Function.identity()))
                 .pageOrientation(checkNull(req.getParameter("pageOrientation"), "portrait", Function.identity()))
-                .debug(checkNull(req.getParameter("debug"), false, Boolean::valueOf))
                 .mapThumbnails(checkNull(req.getParameter("mapThumbnails"), false, Boolean::valueOf))
+                .fileName(checkNull(req.getParameter("fileName"), null, Function.identity()))
+                .debug(checkNull(req.getParameter("debug"), false, Boolean::valueOf))
                 .readReportParams(req);
 
         return params;
     }
 
+    /**
+     * Returns a valid PDF file name "Content-Disposition" header
+     * @param defaultName the default name to use if no file name has been set
+     * @return a valid PDF file name "Content-Disposition" header
+     */
+    public String getFileNameHeader(String defaultName) {
+        String name = StringUtils.defaultIfBlank(fileName, defaultName);
+        if (!name.toLowerCase().endsWith(".pdf")) {
+            name += ".pdf";
+        }
+
+        return "attachment; filename=\"" + WebUtils.encodeURIComponent(name) + "\"";
+    }
 
     /**
      * Returns a string representation of the print params
@@ -103,6 +119,15 @@ public class MessagePrintParams extends PagedSearchParamsVo {
 
     public MessagePrintParams pageOrientation(String pageOrientation) {
         this.pageOrientation = pageOrientation;
+        return this;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public MessagePrintParams fileName(String fileName) {
+        this.fileName = fileName;
         return this;
     }
 

@@ -278,6 +278,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
             PublicationDesc pubDesc = checkCreateDesc(d.getLang());
             pubDesc.setTitle(ctx.str(d.getTitleFormat(), pubDesc.getTitle()));
             pubDesc.setLink(ctx.str(d.getLink(), pubDesc.getLink()));
+            pubDesc.setFileName(ctx.str(d.getFileName(), pubDesc.getFileName()));
         });
     }
 
@@ -433,6 +434,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
         return languageSpecific;
     }
 
+    @SuppressWarnings("all")
     public void setLanguageSpecific(boolean languageSpecific) {
         this.languageSpecific = languageSpecific;
     }

@@ -168,7 +168,7 @@ public class MessageReportRestService {
             return printParams.getDebug()
                     ? response.type("text/html;charset=UTF-8").build()
                     : response.type("application/pdf")
-                    .header("Content-Disposition", "attachment; filename=\"message-" + messageId + ".pdf\"")
+                    .header("Content-Disposition", printParams.getFileNameHeader("message-" + messageId))
                     .build();
 
         } catch (Exception e) {
@@ -236,7 +236,7 @@ public class MessageReportRestService {
             return printParams.getDebug()
                     ? response.type("text/html;charset=UTF-8").build()
                     : response.type("application/pdf")
-                    .header("Content-Disposition", "attachment; filename=\"messages.pdf\"")
+                    .header("Content-Disposition", printParams.getFileNameHeader("messages"))
                     .build();
 
         } catch (Exception e) {

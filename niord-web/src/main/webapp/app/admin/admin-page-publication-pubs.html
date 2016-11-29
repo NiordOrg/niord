@@ -187,13 +187,18 @@
                                 ng-repeat="desc in publication.descs"
                                 ng-if="publication.languageSpecific || $first">
                                <div class="publication-repo-file" bg-flag="desc.lang">
+                                   <div>
+                                       <file-upload url="publicationFileUploadUrl"
+                                                    drop-text="or drop .pdf file here" multiple="false"
+                                                    file-types="'pdf'" auto-upload="true" remove-after-upload="true"
+                                                    success="publicationFileUploaded(result)"
+                                                    error="publicationFileUploadError(status, statusText)"
+                                                    data="desc">
+                                       </file-upload>
+                                   </div>
                                    <div ng-if="desc.link">
                                        {{desc.link}}
                                    </div>
-                                   <button class="btn btn-xs btn-default"
-                                           ng-click="uploadFile(desc.lang)">
-                                       Upload File...
-                                   </button>
                                    <button class="btn btn-xs btn-default"
                                            ng-if="publication.type == 'MESSAGE_REPORT' && publication.messageTag"
                                            ng-click="previewReportFile(desc.lang)">
