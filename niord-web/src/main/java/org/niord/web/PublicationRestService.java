@@ -299,7 +299,13 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @GZIP
     @NoCache
     public SystemPublicationVo createPublication(SystemPublicationVo publication) throws Exception {
+
         log.info("Creating publication " + publication);
+
+        // Point embedded links to the message repository folder
+        publication.rewriteRepoPath(publication.getEditRepoPath(), publication.getRepoPath());
+
+        // Persist the publication
         Publication pub = publicationService.createPublication(new Publication(publication));
 
         // Copy resources from the temporary editing folder to the repository folder
@@ -325,6 +331,9 @@ public class PublicationRestService extends AbstractBatchableRestService {
         if (!Objects.equals(publicationId, publication.getPublicationId())) {
             throw new WebApplicationException(400);
         }
+
+        // Point embedded links to the message repository folder
+        publication.rewriteRepoPath(publication.getEditRepoPath(), publication.getRepoPath());
 
         log.info("Updating publication " + publicationId);
         Publication pub = publicationService.updatePublication(new Publication(publication));
