@@ -21,7 +21,9 @@ import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.model.publication.PublicationType;
 import org.niord.model.search.PagedSearchParamsVo;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -33,6 +35,8 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
 @SuppressWarnings("unused")
 public class PublicationSearchParams extends PagedSearchParamsVo {
 
+    public static final String DATE_FORMAT = "dd-MM-yyyy";
+
     String language;
     String title;
     String domain;    // If defined, only include publications for the given domain
@@ -41,6 +45,8 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
     PublicationType type;
     MessagePublication messagePublication;
     Boolean published;
+    Date from;
+    Date to;
 
     /**
      * Returns a string representation of the search criteria
@@ -58,6 +64,8 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
         if (isNotBlank(category)) { desc.add(String.format("Category: %s", category)); }
         if (isNotBlank(title)) { desc.add(String.format("Title: '%s'", title)); }
         if (isNotBlank(domain)) { desc.add(String.format("Domain: '%s'", domain)); }
+        if (from != null) { desc.add(String.format("From: %s", new SimpleDateFormat(DATE_FORMAT).format(from))); }
+        if (to != null) { desc.add(String.format("To: %s", new SimpleDateFormat(DATE_FORMAT).format(to))); }
 
         return desc.stream().collect(Collectors.joining(", "));
     }
@@ -139,4 +147,33 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
         this.published = published;
         return this;
     }
+
+    public Date getFrom() {
+        return from;
+    }
+
+    public PublicationSearchParams from(Date from) {
+        this.from = from;
+        return this;
+    }
+
+    public PublicationSearchParams from(Long from) {
+        this.from = from == null ? null : new Date(from);
+        return this;
+    }
+
+    public Date getTo() {
+        return to;
+    }
+
+    public PublicationSearchParams to(Date to) {
+        this.to = to;
+        return this;
+    }
+
+    public PublicationSearchParams to(Long to) {
+        this.to = to == null ? null : new Date(to);
+        return this;
+    }
+
 }

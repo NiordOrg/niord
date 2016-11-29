@@ -25,6 +25,7 @@ import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
+import org.niord.core.util.TimeUtils;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
@@ -38,15 +39,14 @@ import javax.persistence.criteria.Root;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.niord.core.publication.vo.PublicationMainType.PUBLICATION;
 import static org.niord.core.publication.vo.PublicationMainType.TEMPLATE;
-import static org.niord.model.publication.PublicationType.LINK;
-import static org.niord.model.publication.PublicationType.MESSAGE_REPORT;
-import static org.niord.model.publication.PublicationType.REPOSITORY;
+import static org.niord.model.publication.PublicationType.*;
 
 /**
  * Business interface for accessing publications
@@ -172,6 +172,13 @@ public class PublicationService extends BaseService {
 
         // Match the message publication category
         criteriaHelper.equals(publicationRoot.get("messagePublication"), params.getMessagePublication());
+
+        // Filter by dates
+        if (params.getFrom() != null || params.getTo() != null) {
+            Date from = TimeUtils.resetTime(params.getFrom());
+            Date to = TimeUtils.endOfDay(params.getTo());
+            criteriaHelper.overlaps(publicationRoot.get("publishDateFrom"), publicationRoot.get("publishDateTo"), from, to);
+        }
 
         // Compute the sort order
         List<Order> sortOrders = new ArrayList<>();

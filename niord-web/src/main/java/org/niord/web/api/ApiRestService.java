@@ -301,6 +301,12 @@ public class ApiRestService extends AbstractApiService {
             @ApiParam(value = "Two-letter ISO 639-1 language code", example = "en")
             @QueryParam("lang") String language,
 
+            @ApiParam(value = "Timestamp (Unix epoch) for the start date of the publications")
+            @QueryParam("from") Long from,
+
+            @ApiParam(value = "Timestamp (Unix epoch) for the end date of the publications")
+            @QueryParam("to") Long to,
+
             @ApiParam(value = "Whether to rewrite all embedded links and paths to be absolute URL's", example = "true")
             @QueryParam("externalize") @DefaultValue("true") boolean externalize,
 
@@ -308,7 +314,12 @@ public class ApiRestService extends AbstractApiService {
             @QueryParam("dateFormat") @DefaultValue("UNIX_EPOCH") JsonDateFormat dateFormat
     ) {
 
-        List<PublicationVo> publications = super.searchPublications(language).stream()
+        // If from and to-dates are unspecified, return the publications currently active
+        if (from == null && to == null) {
+            from = to = System.currentTimeMillis();
+        }
+
+        List<PublicationVo> publications = super.searchPublications(language, from, to).stream()
                 .map(p -> toPublicationVo(p, language, externalize))
                 .collect(Collectors.toList());
 

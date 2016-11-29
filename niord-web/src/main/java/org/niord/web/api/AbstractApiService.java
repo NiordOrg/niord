@@ -196,10 +196,12 @@ public abstract class AbstractApiService {
     /**
      * Searches for publications
      */
-    public List<Publication> searchPublications(String language) {
+    public List<Publication> searchPublications(String language, Long from, Long to) {
 
         PublicationSearchParams params = new PublicationSearchParams()
                 .language(language)
+                .from(from)
+                .to(to)
                 .published(true)
                 .mainType(PublicationMainType.PUBLICATION);
 

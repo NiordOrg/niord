@@ -289,17 +289,17 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         return this;
     }
 
+    public MessageSearchParams to(Long to) {
+        this.to = to == null ? null : new Date(to);
+        return this;
+    }
+
     public DateType getDateType() {
         return dateType;
     }
 
     public MessageSearchParams dateType(DateType dateType) {
         this.dateType = dateType;
-        return this;
-    }
-
-    public MessageSearchParams to(Long to) {
-        this.to = to == null ? null : new Date(to);
         return this;
     }
 
