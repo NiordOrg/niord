@@ -318,7 +318,7 @@ angular.module('niord.admin')
             /** Deletes the given publication */
             $scope.deletePublication = function (publication) {
                 DialogService.showConfirmDialog(
-                    "Delete Publication?", "Delete publication '" + publication.descs[0].name + "'?")
+                    "Delete Publication?", "Delete publication '" + publication.descs[0].title + "'?")
                     .then(function() {
                         AdminPublicationService
                             .deletePublication(publication)

@@ -329,7 +329,12 @@
                         <th></th>
                     </tr>
                     <tr ng-repeat="publication in publications">
-                        <td>{{publication.descs[0].title}}</td>
+                        <td>
+                            {{publication.descs[0].title}}
+                            <a ng-if="publication.descs[0].link" ng-href="{{publication.descs[0].link}}" target="_blank">
+                                <span style="font-size: 10px; margin-left:5px;" class="glyphicon glyphicon-new-window"></span>
+                            </a>
+                        </td>
                         <td ng-if="mainType == 'PUBLICATION'" align="right">{{publication.publishDateFrom  | formatDate:'ll'}}</td>
                         <td ng-if="mainType == 'PUBLICATION'" align="right">{{publication.publishDateTo  | formatDate:'ll'}}</td>
                         <td>{{publication.category.descs[0].name}}</td>
