@@ -22,6 +22,7 @@ import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
+import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 import java.util.Date;
@@ -33,12 +34,14 @@ import java.util.List;
 @ApiModel(value = "Publication", description = "Publication model")
 @XmlRootElement(name = "publication")
 @XmlType(propOrder = {
-        "publicationId", "category", "type", "descs"
+        "category", "type", "publishDateFrom", "publishDateTo", "descs"
 })
 @SuppressWarnings("unused")
 public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSerializable {
 
     String publicationId;
+    Date created;
+    Date updated;
     PublicationCategoryVo category;
     PublicationType type;
     Date publishDateFrom;
@@ -63,6 +66,8 @@ public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSeri
 
         PublicationVo publication = new PublicationVo();
         publication.setPublicationId(publicationId);
+        publication.setCreated(created);
+        publication.setUpdated(updated);
         if (category != null) {
             publication.setCategory(category.copy(filter));
         }
@@ -94,13 +99,31 @@ public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSeri
     /** Getters and Setters **/
     /*************************/
 
-
+    @XmlAttribute
     public String getPublicationId() {
         return publicationId;
     }
 
     public void setPublicationId(String publicationId) {
         this.publicationId = publicationId;
+    }
+
+    @XmlAttribute
+    public Date getCreated() {
+        return created;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
+    }
+
+    @XmlAttribute
+    public Date getUpdated() {
+        return updated;
+    }
+
+    public void setUpdated(Date updated) {
+        this.updated = updated;
     }
 
     public PublicationCategoryVo getCategory() {

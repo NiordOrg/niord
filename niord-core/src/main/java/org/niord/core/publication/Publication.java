@@ -148,6 +148,8 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
     /** Constructor */
     public Publication(PublicationVo publication) {
         this.publicationId = publication.getPublicationId();
+        setCreated(publication.getCreated());
+        setUpdated(publication.getUpdated());
         this.type = publication.getType();
         this.category = publication.getCategory() != null ? new PublicationCategory(publication.getCategory()) : null;
         this.publishDateFrom = publication.getPublishDateFrom();
@@ -183,6 +185,8 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
     /** Updates this publication from another publication */
     public void updatePublication(Publication publication) {
         this.publicationId = publication.getPublicationId();
+        setCreated(publication.getCreated());
+        setUpdated(publication.getUpdated());
         this.revision = publication.getRevision();
         this.mainType = publication.getMainType();
         this.template = publication.getTemplate();
@@ -212,6 +216,8 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
 
         P publication = newInstance(clz);
         publication.setPublicationId(publicationId);
+        publication.setCreated(getCreated());
+        publication.setUpdated(getUpdated());
         publication.setType(type);
         publication.setCategory(category != null ? category.toVo(dataFilter) : null);
         publication.setPublishDateFrom(publishDateFrom);

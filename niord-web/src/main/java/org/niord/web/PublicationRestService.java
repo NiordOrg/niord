@@ -310,6 +310,13 @@ public class PublicationRestService extends AbstractBatchableRestService {
 
         // Reset various fields
         editPublication.setMessageTag(null);
+        editPublication.setRevision(0);
+        if (editPublication.getDescs() != null && editPublication.getType() == PublicationType.MESSAGE_REPORT) {
+            editPublication.getDescs().forEach(desc -> {
+                desc.setLink(null);
+                desc.setFileName(null);
+            });
+        }
 
         return editPublication;
     }

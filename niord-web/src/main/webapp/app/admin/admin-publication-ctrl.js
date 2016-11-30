@@ -168,6 +168,7 @@ angular.module('niord.admin')
                         AdminPublicationService.deletePublicationFile(desc.link);
                     }
                     delete desc.link;
+                    $scope.setDirty();
                 }
             };
 
@@ -224,6 +225,7 @@ angular.module('niord.admin')
                         .generatePublicationReport(desc, repoPath, printParam)
                         .success(function (resultDesc) {
                             angular.copy(resultDesc, desc);
+                            $scope.setDirty();
                         })
                 }
             };
