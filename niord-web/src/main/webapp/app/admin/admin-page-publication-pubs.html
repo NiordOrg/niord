@@ -5,7 +5,7 @@
     <!-- ** Add/edit publications        ** -->
     <!-- ********************************** -->
     <div ng-if="publication !== undefined" style="margin-top: 20px">
-        <form name="publicationForm" class="form-horizontal">
+        <form name="publicationForm" id="publicationForm" class="form-horizontal">
 
            <div class="form-controls">
 
@@ -258,7 +258,7 @@
             <div style="margin-top: 20px;" class="row">
                 <div class="col-sm-offset-4">
                     <button type="submit" class="btn btn-default btn-sm" ng-click="loadPublications()">
-                        Cancel
+                        Close
                     </button>
                     <button type="submit" class="btn btn-primary btn-sm" ng-click="savePublication(publication)"
                             ng-disabled="publicationForm.$pristine || publicationForm.$invalid">

@@ -27,8 +27,8 @@ angular.module('niord.admin')
      * Controller for the Admin Publications -> Publications and Templates pages
      */
     .controller('PublicationsAdminCtrl', [
-                 '$scope', '$rootScope', '$window', 'growl', 'AdminPublicationService', 'DialogService', 'LangService', 'UploadFileService',
-        function ($scope, $rootScope, $window, growl, AdminPublicationService, DialogService, LangService, UploadFileService) {
+                 '$scope', '$rootScope', '$window', '$timeout', 'growl', 'AdminPublicationService', 'DialogService', 'LangService', 'UploadFileService',
+        function ($scope, $rootScope, $window, $timeout, growl, AdminPublicationService, DialogService, LangService, UploadFileService) {
             'use strict';
 
             $scope.mainType = 'PUBLICATION';
@@ -86,6 +86,22 @@ angular.module('niord.admin')
                 .success(function (publicationCategories) {
                     $scope.publicationCategories = publicationCategories;
                 });
+
+
+            /** Set the form as pristine **/
+            $scope.setPristine = function () {
+                $timeout(function () {
+                    try { angular.element($("#publicationForm")).scope().publicationForm.$setPristine(); } catch (err) { console.error(err)}
+                }, 100);
+            };
+
+
+            /** Set the form as dirty **/
+            $scope.setDirty = function () {
+                $timeout(function () {
+                    try { angular.element($("#publicationForm")).scope().publicationForm.$setDirty(); } catch (err) { console.error(err)}
+                }, 100);
+            };
 
 
             /** Returns if the given editor field should be displayed **/
@@ -226,6 +242,7 @@ angular.module('niord.admin')
                         $scope.editMode = 'add';
                         $scope.publication = pub;
                         LangService.checkDescs($scope.publication, ensureTitleField);
+                        $scope.setDirty();
                     });
             };
 
@@ -244,6 +261,7 @@ angular.module('niord.admin')
 
                         $scope.publicationFileUploadUrl = '/rest/publications/upload-publication-file/'
                             + encodeURIComponent($scope.publication.editRepoPath  + '/' + $scope.publication.revision)
+                        $scope.setPristine();
                     })
                     .error($scope.displayError);
             };
@@ -261,6 +279,7 @@ angular.module('niord.admin')
                         $scope.publication.publication = pub.template;
                         $scope.publication.tag = pub.messageTag;
 
+                        $scope.setDirty();
                     })
                     .error($scope.displayError);
             };
@@ -283,12 +302,12 @@ angular.module('niord.admin')
                 if ($scope.publication && $scope.editMode == 'add') {
                     AdminPublicationService
                         .createPublication($scope.publication)
-                        .success($scope.loadPublications)
+                        .success($scope.editPublication)
                         .error($scope.displayError);
                 } else if ($scope.publication && $scope.editMode == 'edit') {
                     AdminPublicationService
                         .updatePublication($scope.publication)
-                        .success($scope.loadPublications)
+                        .success($scope.editPublication)
                         .error($scope.displayError);
                 }
             };
