@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.niord.core.publication.vo.PublicationStatus.ACTIVE;
+
 /**
  * Abstract base class for the API services
  */
@@ -186,8 +188,7 @@ public abstract class AbstractApiService {
      */
     public Publication getPublication(String publicationId) {
         Publication publication = publicationService.findByPublicationId(publicationId);
-        // TODO: Check dates
-        return publication != null && publication.getCategory().isPublish()
+        return publication != null && publication.getStatus() == ACTIVE && publication.getCategory().isPublish()
                 ? publication
                 : null;
     }
@@ -202,6 +203,7 @@ public abstract class AbstractApiService {
                 .language(language)
                 .from(from)
                 .to(to)
+                .status(ACTIVE)
                 .published(true)
                 .mainType(PublicationMainType.PUBLICATION);
 

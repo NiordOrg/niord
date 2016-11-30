@@ -22,6 +22,7 @@ import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.MessageTagService;
 import org.niord.core.publication.vo.PublicationMainType;
+import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
@@ -46,6 +47,7 @@ import java.util.stream.Collectors;
 
 import static org.niord.core.publication.vo.PublicationMainType.PUBLICATION;
 import static org.niord.core.publication.vo.PublicationMainType.TEMPLATE;
+import static org.niord.core.publication.vo.PublicationStatus.*;
 import static org.niord.model.publication.PublicationType.*;
 
 /**
@@ -139,6 +141,9 @@ public class PublicationService extends BaseService {
         // Match the file type
         criteriaHelper.equals(publicationRoot.get("type"), params.getType());
 
+        // Match the status
+        criteriaHelper.equals(publicationRoot.get("status"), params.getStatus());
+
         // Match the title
         if (StringUtils.isNotBlank(params.getTitle())) {
             Join<Publication, PublicationDesc> descs = publicationRoot.join("descs", JoinType.LEFT);
@@ -214,7 +219,7 @@ public class PublicationService extends BaseService {
     public Publication newTemplatePublication(PublicationMainType mainType) {
         Publication publication = new Publication();
         publication.setMainType(mainType);
-        publication.assignNewUid();
+        publication.assignNewPublicationId();
         publication.setType(LINK);
         publication.setLanguageSpecific(true);
         return publication;
@@ -229,9 +234,7 @@ public class PublicationService extends BaseService {
     private Publication savePublication(Publication publication) {
 
         // Update the publication ID and repoPath
-        if (StringUtils.isEmpty(publication.getPublicationId())) {
-            publication.assignNewUid();
-        }
+        publication.checkPublicationId();
 
         return saveEntity(publication);
     }
@@ -249,7 +252,7 @@ public class PublicationService extends BaseService {
                     + publication.getPublicationId());
         }
 
-        //Substitute related entities with the persisted ones
+        // Substitute related entities with the persisted ones
         updateRelatedEntities(publication);
 
         // Copy the publication data
@@ -278,7 +281,7 @@ public class PublicationService extends BaseService {
                     + publication.getId());
         }
 
-        //Substitute related entities with the persisted ones
+        // Substitute related entities with the persisted ones
         updateRelatedEntities(publication);
 
         // If the publication has an associated template, update from the template
@@ -338,6 +341,49 @@ public class PublicationService extends BaseService {
     }
 
 
+    /**
+     * Updates the status of the publication
+     * @param publicationId the ID of the publication
+     * @param status the new status
+     * @return the update publication
+     */
+    public Publication updateStatus(String publicationId, PublicationStatus status) throws Exception {
+
+        Publication pub = findByPublicationId(publicationId);
+        if (pub == null) {
+            throw new IllegalArgumentException("Non-existing publication " + publicationId);
+        }
+
+        // Validate that the status change is valid
+        PublicationStatus curStatus = pub.getStatus();
+        boolean valid = false;
+        switch (status) {
+            case RECORDING:
+                valid = curStatus == DRAFT && pub.getMainType() == PUBLICATION && pub.getType() == MESSAGE_REPORT
+                        && pub.getMessageTag() != null;
+                break;
+            case ACTIVE:
+                valid = (curStatus == DRAFT || curStatus == RECORDING)
+                        && (pub.getMainType() == TEMPLATE || pub.getType() == NONE ||
+                            pub.getDescs().stream().allMatch(d -> StringUtils.isNotBlank(d.getLink())));
+                break;
+            case INACTIVE:
+                valid = curStatus == ACTIVE;
+                break;
+        }
+
+        if (!valid) {
+            throw new Exception("Invalid state transition " + curStatus + " -> " + status);
+        }
+
+        // Update the status
+        pub.setStatus(status);
+        log.info("Updating status for " + publicationId + ": " + curStatus + " -> " + status);
+
+        return savePublication(pub);
+    }
+
+
     /***************************************/
     /** Repo methods                      **/
     /***************************************/
@@ -347,9 +393,7 @@ public class PublicationService extends BaseService {
      * @param publication the publication
      */
     public void createTempPublicationRepoFolder(SystemPublicationVo publication) throws IOException {
-        if (publication.getType() == REPOSITORY || publication.getType() == MESSAGE_REPORT) {
-            repositoryService.createTempEditRepoFolder(publication, false);
-        }
+        repositoryService.createTempEditRepoFolder(publication, false);
     }
 
     /**

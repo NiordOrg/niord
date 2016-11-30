@@ -32,12 +32,14 @@ import org.niord.core.publication.PublicationSearchParams;
 import org.niord.core.publication.PublicationService;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.vo.PublicationMainType;
+import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.user.TicketService;
 import org.niord.core.user.UserService;
 import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
+import org.niord.model.IJsonSerializable;
 import org.niord.model.publication.PublicationDescVo;
 import org.niord.model.publication.PublicationType;
 import org.niord.model.publication.PublicationVo;
@@ -309,6 +311,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
         }
 
         // Reset various fields
+        editPublication.setStatus(PublicationStatus.DRAFT);
         editPublication.setMessageTag(null);
         editPublication.setRevision(0);
         if (editPublication.getDescs() != null && editPublication.getType() == PublicationType.MESSAGE_REPORT) {
@@ -394,6 +397,36 @@ public class PublicationRestService extends AbstractBatchableRestService {
         log.info("Deleting publication " + publicationId);
         publicationService.deletePublication(publicationId);
     }
+
+
+    /**
+     * Updates the statuses of a publication
+     *
+     * @param update the status updates
+     * @return the updated publication
+     */
+    @PUT
+    @Path("/update-status")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed("admin")
+    public SystemPublicationVo updatePubliationStatuses(UpdatePublicationStatusParam update) throws Exception {
+
+        log.info("Updating status " + update);
+
+        try {
+            return publicationService
+                    .updateStatus(update.getPublicationId(), update.getStatus())
+                    .toVo(SystemPublicationVo.class, DataFilter.get());
+
+        } catch (Exception e) {
+            log.error("Error updating status " + e.getMessage(), e);
+            throw new WebApplicationException(e.getMessage(), 400);
+        }
+    }
+
 
 
     /**
@@ -600,6 +633,38 @@ public class PublicationRestService extends AbstractBatchableRestService {
             String n2 = p2.getDesc(lang) != null ? p2.getDesc(lang).getTitle() : null;
             return TextUtils.compareIgnoreCase(n1, n2);
         };
+    }
+
+    /***************************
+     * Helper classes
+     ***************************/
+
+    /** Encapsulates a status change for a publication */
+    @SuppressWarnings("unused")
+    public static class UpdatePublicationStatusParam implements IJsonSerializable {
+        String publicationId;
+        PublicationStatus status;
+
+        @Override
+        public String toString() {
+            return "{publicationId='" + publicationId + "', status=" + status + "}";
+        }
+
+        public String getPublicationId() {
+            return publicationId;
+        }
+
+        public void setPublicationId(String publicationId) {
+            this.publicationId = publicationId;
+        }
+
+        public PublicationStatus getStatus() {
+            return status;
+        }
+
+        public void setStatus(PublicationStatus status) {
+            this.status = status;
+        }
     }
 
 }

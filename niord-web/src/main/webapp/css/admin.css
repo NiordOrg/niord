@@ -262,6 +262,39 @@ tr.batch-execution-row td div.progress {
     border: 1px solid lightgray;
 }
 
+@keyframes recording-anim {
+    0%   {background-color: darkred}
+    50%  {background-color: #666}
+    100% {background-color: darkred}
+}
+
+
+.label-publication-status {
+    font-size: 10px;
+    font-weight: normal!important;
+    display: inline-block;
+    margin-bottom: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.publication-status-DRAFT {
+    background-color: #5555CC;
+}
+
+.publication-status-RECORDING {
+    background-color: darkred;
+    animation: recording-anim 4s infinite;
+}
+
+.publication-status-ACTIVE {
+    background-color: #559955;
+}
+
+.publication-status-INACTIVE {
+    background-color: #999999;
+}
+
+
 /** Dictionary admin page **/
 
 .dictionary-table tr td {

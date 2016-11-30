@@ -74,6 +74,7 @@ angular.module('niord.admin')
                         var descs = $scope.publication.descs;
                         for (var x = 1; x < descs.length; x++) {
                             descs[x].link = descs[0].link;
+                            descs[x].fileName = descs[0].fileName;
                         }
                     }
                 }
@@ -141,6 +142,52 @@ angular.module('niord.admin')
                         return !hasTemplate || (pub.template.messagePublication === undefined);
                 }
                 return true;
+            };
+
+
+            /** For link-based publications, check that links are defined **/
+            function checkLinkDefined(pub) {
+                if (pub.mainType == 'PUBLICATION' && pub.type != 'NONE') {
+                    for (var x = 0; x < pub.descs.length; x++) {
+                        if (!pub.descs[x].link) {
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+
+            /** Returns if the publiaction can change status to the given status **/
+            $scope.canChangeStatus = function (status) {
+                var pub = $scope.publication;
+                var isSaved = pub.created;
+                var isPublication = pub.mainType == 'PUBLICATION';
+                var curStatus = pub.status;
+                switch (status) {
+                    case 'RECORDING':
+                        return isSaved && isPublication && curStatus == 'DRAFT' && pub.type == 'MESSAGE_REPORT' && pub.messageTag;
+                    case 'ACTIVE':
+                        return isSaved && (curStatus == 'DRAFT' || curStatus == 'RECORDING') && checkLinkDefined(pub);
+                    case 'INACTIVE':
+                        return isSaved && curStatus == 'ACTIVE';
+                }
+                return false;
+            };
+
+
+            /** Updates the status of the currently edited publication **/
+            $scope.changeStatus = function (status) {
+                if ($scope.canChangeStatus(status)) {
+                    DialogService.showConfirmDialog(
+                        "Update Status?", "Update status to '" + status.toLowerCase() + "'?")
+                        .then(function() {
+                            AdminPublicationService
+                                .updatePublicationStatus($scope.publication, status)
+                                .success($scope.editPublication)
+                                .error($scope.displayError);
+                        });
+                }
             };
 
 

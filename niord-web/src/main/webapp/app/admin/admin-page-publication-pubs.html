@@ -9,6 +9,18 @@
 
            <div class="form-controls">
 
+               <!-- ******* Status ******* -->
+               <div class="form-group">
+                   <label class="col-sm-4 col-md-2">Status</label>
+                   <div class="col-sm-6 col-md-10">
+                       <div class="row">
+                           <div class="col-sm-6">
+                               <publication-status-field status="publication.status"></publication-status-field>
+                           </div>
+                       </div>
+                   </div>
+               </div>
+
                <!-- ******* Template ******* -->
                <div class="form-group" ng-if="showEditorField('template')">
                    <label class="col-sm-4 col-md-2">Template</label>
@@ -255,16 +267,36 @@
            </div>
 
             <!-- ******* Submit/Cancel buttons ******* -->
-            <div style="margin-top: 20px;" class="row">
-                <div class="col-sm-offset-4">
+            <div style="margin-top: 40px;" class="row">
+                <div class="col-sm-offset-4 col-md-offset-2 col-sm-8 col-md-10">
                     <button type="submit" class="btn btn-default btn-sm" ng-click="loadPublications()">
-                        Close
+                        Back
                     </button>
                     <button type="submit" class="btn btn-primary btn-sm" ng-click="savePublication(publication)"
                             ng-disabled="publicationForm.$pristine || publicationForm.$invalid">
                         <span class="glyphicon glyphicon-floppy-disk"></span>
                         Save
                     </button>
+                    <span class="pull-right">
+                        <button class="btn btn-default btn-sm"
+                                ng-if="canChangeStatus('RECORDING')"
+                                ng-click="changeStatus('RECORDING')"
+                                ng-disabled="publicationForm.$dirty">
+                            Start Recording Messages
+                        </button>
+                        <button class="btn btn-default btn-sm"
+                                ng-if="canChangeStatus('ACTIVE')"
+                                ng-click="changeStatus('ACTIVE')"
+                                ng-disabled="publicationForm.$dirty">
+                            Make Active
+                        </button>
+                        <button class="btn btn-default btn-sm"
+                                ng-if="canChangeStatus('INACTIVE')"
+                                ng-click="changeStatus('INACTIVE')"
+                                ng-disabled="publicationForm.$dirty">
+                            Make Inactive
+                        </button>
+                    </span>
                 </div>
             </div>
         </form>
@@ -321,6 +353,7 @@
             <div class="col-sm-12 col-md-12">
                 <table class='table table-condensed table-hover publication-table'>
                     <tr>
+                        <th>Status</th>
                         <th>Title</th>
                         <th ng-if="mainType == 'PUBLICATION'" style="text-align: right">From Date</th>
                         <th ng-if="mainType == 'PUBLICATION'" style="text-align: right">To Date</th>
@@ -329,6 +362,7 @@
                         <th></th>
                     </tr>
                     <tr ng-repeat="publication in publications">
+                        <td><publication-status-field status="publication.status"></publication-status-field></td>
                         <td>
                             {{publication.descs[0].title}}
                             <a ng-if="publication.descs[0].link" ng-href="{{publication.descs[0].link}}" target="_blank">

@@ -38,6 +38,7 @@ public class SystemPublicationVo extends PublicationVo implements IRepoBackedVo 
 
     int revision;
     PublicationMainType mainType;
+    PublicationStatus status;
     SystemPublicationVo template;
     DomainVo domain;
     PeriodicalType periodicalType;
@@ -107,6 +108,14 @@ public class SystemPublicationVo extends PublicationVo implements IRepoBackedVo 
 
     public void setMainType(PublicationMainType mainType) {
         this.mainType = mainType;
+    }
+
+    public PublicationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(PublicationStatus status) {
+        this.status = status;
     }
 
     public SystemPublicationVo getTemplate() {

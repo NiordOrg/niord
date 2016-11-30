@@ -18,6 +18,7 @@ package org.niord.core.publication;
 
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.vo.PublicationMainType;
+import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.model.publication.PublicationType;
 import org.niord.model.search.PagedSearchParamsVo;
 
@@ -43,6 +44,7 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
     String category;
     PublicationMainType mainType;
     PublicationType type;
+    PublicationStatus status;
     MessagePublication messagePublication;
     Boolean published;
     Date from;
@@ -58,6 +60,7 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
         if (messagePublication != null) { desc.add(String.format("MessagePublication: %s", messagePublication)); }
         if (mainType != null) { desc.add(String.format("Main Type: %s", mainType)); }
         if (type != null) { desc.add(String.format("Type: %s", type)); }
+        if (status != null) { desc.add(String.format("Status: %s", status)); }
         if (published != null) { desc.add(String.format("Published: %b", published)); }
         if (isNotBlank(language)) { desc.add(String.format("Language: %s", language)); }
         if (isNotBlank(domain)) { desc.add(String.format("Domain: %s", domain)); }
@@ -136,6 +139,15 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
 
     public PublicationSearchParams type(PublicationType type) {
         this.type = type;
+        return this;
+    }
+
+    public PublicationStatus getStatus() {
+        return status;
+    }
+
+    public PublicationSearchParams status(PublicationStatus status) {
+        this.status = status;
         return this;
     }
 

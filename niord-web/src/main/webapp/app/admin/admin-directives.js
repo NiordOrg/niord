@@ -20,9 +20,9 @@
 angular.module('niord.common')
 
 
-    /**
+    /*************************************
      * Defines a view mode filter panel
-     */
+     *************************************/
     .directive('adminPage', [function () {
         return {
             restrict: 'EA',
@@ -35,6 +35,33 @@ angular.module('niord.common')
             link: function(scope) {
             }
         };
+    }])
+
+
+    /*************************************
+     * Renders the status of a publication
+     *************************************/
+    .directive('publicationStatusField', [ 'LangService', function (LangService) {
+        'use strict';
+
+        return {
+            restrict: 'E',
+            template: '<span class="label label-publication-status" ng-class="statusClass">{{statusName}}</span>',
+            scope: {
+                status:  "="
+            },
+            link: function(scope) {
+
+                /** Updates the status label **/
+                function updateStatusLabel() {
+                    scope.statusClass = 'publication-status-' + scope.status;
+                    scope.statusName = scope.status.toLowerCase();
+                }
+
+                scope.$watch('status', updateStatusLabel, true);
+
+            }
+        }
     }]);
 
 

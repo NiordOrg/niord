@@ -211,6 +211,13 @@ angular.module('niord.admin')
             },
 
 
+            /** Updates the status of the given publication **/
+            updatePublicationStatus: function (publication, status) {
+                return $http.put('/rest/publications/update-status', {
+                    publicationId: publication.publicationId, status: status });
+            },
+
+
             /** Deletes the given publication **/
             deletePublication: function(publication) {
                 return $http['delete']('/rest/publications/publication/' + publication.publicationId);

@@ -24,6 +24,7 @@ import org.niord.core.model.VersionedEntity;
 import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.vo.PeriodicalType;
 import org.niord.core.publication.vo.PublicationMainType;
+import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.util.UidUtils;
 import org.niord.model.DataFilter;
@@ -92,6 +93,10 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
     @NotNull
     @Enumerated(EnumType.STRING)
     PublicationType type = PublicationType.LINK;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    PublicationStatus status = PublicationStatus.DRAFT;
 
     @ManyToOne
     Publication template;
@@ -164,6 +169,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
         if (publication instanceof SystemPublicationVo) {
             SystemPublicationVo sysPub = (SystemPublicationVo) publication;
             this.revision = sysPub.getRevision();
+            this.status = sysPub.getStatus();
             this.mainType = sysPub.getMainType();
             this.template = sysPub.getTemplate() != null ? new Publication(sysPub.getTemplate()) : null;
             this.domain = sysPub.getDomain() != null ? new Domain(sysPub.getDomain()) : null;
@@ -189,6 +195,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
         setUpdated(publication.getUpdated());
         this.revision = publication.getRevision();
         this.mainType = publication.getMainType();
+        this.status = publication.getStatus();
         this.template = publication.getTemplate();
         this.type = publication.getType();
         this.category = publication.getCategory();
@@ -233,6 +240,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
         if (publication instanceof SystemPublicationVo) {
             SystemPublicationVo sysPub = (SystemPublicationVo) publication;
             sysPub.setRevision(revision + 1); // NB: Increase revision number
+            sysPub.setStatus(status);
             sysPub.setMainType(mainType);
             sysPub.setTemplate(template != null ? template.toVo(SystemPublicationVo.class, dataFilter) : null);
             sysPub.setDomain((domain != null) ? domain.toVo()  : null);
@@ -257,7 +265,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
 
     /** Updates this publication from its template */
     public void updateFromTemplate(PublicationTemplateUpdateCtx ctx) {
-        if (template == null) {
+        if (template == null || !status.isDraft()) {
             return;
         }
 
@@ -289,8 +297,18 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
     }
 
 
+    /** Checks that the publication ID and repoPath are defined. Creates new ones if not **/
+    public void checkPublicationId() {
+        if (StringUtils.isBlank(publicationId)) {
+            assignNewPublicationId();
+        } else if (StringUtils.isBlank(repoPath)) {
+            repoPath = UidUtils.uidToHashedFolderPath(PUBLICATION_REPO_FOLDER, publicationId);
+        }
+    }
+
+
     /** Assigns a new UID to the publication **/
-    public String assignNewUid() {
+    public String assignNewPublicationId() {
         String oldRepoPath = repoPath;
 
         publicationId = UidUtils.newUid();
@@ -356,20 +374,28 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
         this.mainType = mainType;
     }
 
-    public Publication getTemplate() {
-        return template;
-    }
-
-    public void setTemplate(Publication template) {
-        this.template = template;
-    }
-
     public PublicationType getType() {
         return type;
     }
 
     public void setType(PublicationType type) {
         this.type = type;
+    }
+
+    public PublicationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(PublicationStatus status) {
+        this.status = status;
+    }
+
+    public Publication getTemplate() {
+        return template;
+    }
+
+    public void setTemplate(Publication template) {
+        this.template = template;
     }
 
     public PublicationCategory getCategory() {
