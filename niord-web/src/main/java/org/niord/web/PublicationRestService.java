@@ -337,7 +337,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
         log.info("Creating publication " + publication);
 
         // Point embedded links to the message repository folder
-        publication.rewriteRepoPath(publication.getEditRepoPath(), publication.getRepoPath());
+        publication.toPublicationRepo();
 
         // Persist the publication
         Publication pub = publicationService.createPublication(new Publication(publication));
@@ -369,7 +369,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
         }
 
         // Point embedded links to the message repository folder
-        publication.rewriteRepoPath(publication.getEditRepoPath(), publication.getRepoPath());
+        publication.toPublicationRepo();
 
         log.info("Updating publication " + publicationId);
         Publication pub = publicationService.updatePublication(new Publication(publication));

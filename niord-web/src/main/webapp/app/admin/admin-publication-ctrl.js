@@ -122,7 +122,7 @@ angular.module('niord.admin')
                     case 'messageTagFormat':
                         return isTemplate && pub.type == 'MESSAGE_REPORT';
                     case 'messageTag':
-                        return isPublication && pub.type == 'MESSAGE_REPORT' && !(pub.template && pub.template.messageTagFormat);
+                        return isPublication && pub.type == 'MESSAGE_REPORT' && !(hasTemplate && pub.template.messageTagFormat);
                     case 'periodicalType':
                         return isTemplate;
                     case 'dates':
@@ -130,7 +130,7 @@ angular.module('niord.admin')
                     case 'type':
                         return !hasTemplate || pub.template.type === undefined;
                     case 'link':
-                        return (!hasTemplate && pub.type == 'LINK') || (pub.template && pub.template.type == 'LINK');
+                        return (!hasTemplate && pub.type == 'LINK') || (hasTemplate && pub.template.type == 'LINK');
                     case 'repoFileName':
                         return isTemplate && pub.type == 'MESSAGE_REPORT';
                     case 'repoFile':

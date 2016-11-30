@@ -16,6 +16,7 @@
 
 package org.niord.core.publication.vo;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.domain.vo.DomainVo;
 import org.niord.core.message.vo.MessageTagVo;
 import org.niord.core.publication.Publication;
@@ -77,6 +78,15 @@ public class SystemPublicationVo extends PublicationVo implements IRepoBackedVo 
         return date;
     }
 
+    /**
+     * Should be called before saving an edited message, to point links back to the publication repository
+     */
+    public void toPublicationRepo() {
+        if (StringUtils.isNotBlank(getPublicationId()) && StringUtils.isBlank(repoPath)) {
+            repoPath = UidUtils.uidToHashedFolderPath(Publication.PUBLICATION_REPO_FOLDER, getPublicationId());
+        }
+        rewriteRepoPath(getEditRepoPath(), getRepoPath());
+    }
 
     /*************************/
     /** Getters and Setters **/
