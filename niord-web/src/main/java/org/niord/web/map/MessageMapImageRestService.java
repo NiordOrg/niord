@@ -182,7 +182,7 @@ public class MessageMapImageRestService {
     public String updateMessageMapImage(@PathParam("folder") String path, String image) throws Exception {
 
         // Validate that the path is a temporary repository folder path
-        Path folder = repositoryService.validateTempMessageRepoPath(path);
+        Path folder = repositoryService.validateTempRepoPath(path);
 
         if (!image.toLowerCase().startsWith(UPLOADED_IMAGE_PREFIX)) {
             throw new WebApplicationException(400);
@@ -217,7 +217,7 @@ public class MessageMapImageRestService {
     public String uploadMessageMapImage(@PathParam("folder") String path, @Context HttpServletRequest request) throws Exception {
 
         // Validate that the path is a temporary repository folder path
-        Path folder = repositoryService.validateTempMessageRepoPath(path);
+        Path folder = repositoryService.validateTempRepoPath(path);
 
         FileItemFactory factory = RepositoryService.newDiskFileItemFactory(servletContext);
         ServletFileUpload upload = new ServletFileUpload(factory);

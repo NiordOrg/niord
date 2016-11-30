@@ -24,6 +24,7 @@ import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.util.concurrent.IsolationLevel;
 import org.niord.core.cache.BaseCache;
 import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.slf4j.Logger;
 
 import javax.ejb.Singleton;
@@ -62,6 +63,13 @@ public class TicketService extends BaseCache<String, TicketService.TicketData> {
     @Inject
     private Logger log;
 
+    @Inject
+    UserService userService;
+
+    @Inject
+    DomainService domainService;
+
+
     /** {@inheritDoc} */
     @Override
     public String getCacheId() {
@@ -78,7 +86,7 @@ public class TicketService extends BaseCache<String, TicketService.TicketData> {
 
 
     /**
-     * Issues a ticket tied to the current domain and user.
+     * Issues a ticket tied to the given domain and user.
      * Optionally, a set of roles may be specified.
      * <p>
      * The ticket will expire after 1 minute and can only be validated once.
@@ -104,6 +112,21 @@ public class TicketService extends BaseCache<String, TicketService.TicketData> {
         super.getCache().put(ticket, ticketData);
 
         return ticket;
+    }
+
+
+    /**
+     * Issues a ticket tied to the current domain and user.
+     * Optionally, a set of roles may be specified.
+     * <p>
+     * The ticket will expire after 1 minute and can only be validated once.
+     *
+     * @param roles the roles the ticket should be tied to
+     * @return the ticket
+     */
+    public String createTicket(String... roles) {
+
+        return createTicket(domainService.currentDomain(), userService.currentUser(), roles);
     }
 
 
@@ -174,11 +197,11 @@ public class TicketService extends BaseCache<String, TicketService.TicketData> {
         }
 
         // Check if there is any match between the set of roles
-        Set<String> roleSet = Arrays.asList(roles).stream()
+        Set<String> roleSet = Arrays.stream(roles)
                 .map(String::toLowerCase)
                 .collect(Collectors.toSet());
 
-        return Arrays.asList(ticketRoles).stream()
+        return Arrays.stream(ticketRoles)
                 .map(String::toLowerCase)
                 .anyMatch(roleSet::contains);
     }

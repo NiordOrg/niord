@@ -17,9 +17,7 @@ package org.niord.web;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
-import org.niord.core.domain.DomainService;
 import org.niord.core.user.TicketService;
-import org.niord.core.user.UserService;
 import org.slf4j.Logger;
 
 import javax.annotation.Resource;
@@ -64,12 +62,6 @@ public class TicketRestService {
     @Inject
     TicketService ticketService;
 
-    @Inject
-    UserService userService;
-
-    @Inject
-    DomainService domainService;
-
     /**
      * Returns a ticket to be used in a subsequent call.
      *
@@ -96,11 +88,8 @@ public class TicketRestService {
             ticketRoles = roles.toArray(new String[roles.size()]);
         }
 
-        return ticketService.createTicket(
-                domainService.currentDomain(),
-                userService.currentUser(),
-                ticketRoles
-        );
+        // Create a ticket for the current domain, user and the given roles
+        return ticketService.createTicket(ticketRoles);
     }
 
 }

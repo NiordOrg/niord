@@ -25,6 +25,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.NiordApp;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationSearchParams;
@@ -33,6 +34,7 @@ import org.niord.core.publication.vo.MessagePublication;
 import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.repo.RepositoryService;
+import org.niord.core.user.TicketService;
 import org.niord.core.user.UserService;
 import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
@@ -63,11 +65,16 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
@@ -79,6 +86,9 @@ import java.util.stream.Collectors;
 @SecurityDomain("keycloak")
 @PermitAll
 public class PublicationRestService extends AbstractBatchableRestService {
+
+    // See http://stackoverflow.com/questions/8092244/regex-to-extract-filename
+    private static final Pattern FILE_NAME_HEADER_PATTERN = Pattern.compile("(?<=filename=\").*?(?=\")");
 
     @Inject
     Logger log;
@@ -92,9 +102,15 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @Inject
     RepositoryService repositoryService;
 
+    @Inject
+    TicketService ticketService;
 
+    @Inject
+    NiordApp app;
 
-    /** Searches publications based on the given search parameters */
+    /**
+     * Searches publications based on the given search parameters
+     */
     @GET
     @Path("/search")
     @Produces("application/json;charset=UTF-8")
@@ -128,11 +144,13 @@ public class PublicationRestService extends AbstractBatchableRestService {
     }
 
 
-    /** Searches publications based on the given search parameters - returns details information for each publication */
+    /**
+     * Searches publications based on the given search parameters - returns details information for each publication
+     */
     @GET
     @Path("/search-details")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "editor" })
+    @RolesAllowed({"editor"})
     @GZIP
     @NoCache
     public List<SystemPublicationVo> searchSystemPublications(
@@ -163,7 +181,9 @@ public class PublicationRestService extends AbstractBatchableRestService {
     }
 
 
-    /** Returns all publications up to the given limit */
+    /**
+     * Returns all publications up to the given limit
+     */
     @GET
     @Path("/all")
     @Produces("application/json;charset=UTF-8")
@@ -185,7 +205,6 @@ public class PublicationRestService extends AbstractBatchableRestService {
     }
 
 
-
     /**
      * Returns a system-model version of the publication, which has been associated with a temporary
      * repository folder for new changes.
@@ -204,7 +223,9 @@ public class PublicationRestService extends AbstractBatchableRestService {
     }
 
 
-    /** Returns the publication with the given ID */
+    /**
+     * Returns the publication with the given ID
+     */
     @GET
     @Path("/publication/{publicationId}")
     @Produces("application/json;charset=UTF-8")
@@ -216,11 +237,13 @@ public class PublicationRestService extends AbstractBatchableRestService {
     }
 
 
-    /** Returns the editable publication with the given ID */
+    /**
+     * Returns the editable publication with the given ID
+     */
     @GET
     @Path("/editable-publication/{publicationId}")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed({"admin"})
     @GZIP
     @NoCache
     public SystemPublicationVo getSystemPublication(@PathParam("publicationId") String publicationId) throws Exception {
@@ -292,12 +315,14 @@ public class PublicationRestService extends AbstractBatchableRestService {
     }
 
 
-    /** Creates a new publication */
+    /**
+     * Creates a new publication
+     */
     @POST
     @Path("/publication/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed({"admin"})
     @GZIP
     @NoCache
     public SystemPublicationVo createPublication(SystemPublicationVo publication) throws Exception {
@@ -318,12 +343,14 @@ public class PublicationRestService extends AbstractBatchableRestService {
     }
 
 
-    /** Updates an existing publication */
+    /**
+     * Updates an existing publication
+     */
     @PUT
     @Path("/publication/{publicationId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed({"admin"})
     @GZIP
     @NoCache
     public SystemPublicationVo updatePublication(
@@ -347,11 +374,13 @@ public class PublicationRestService extends AbstractBatchableRestService {
     }
 
 
-    /** Deletes an existing publication */
+    /**
+     * Deletes an existing publication
+     */
     @DELETE
     @Path("/publication/{publicationId}")
     @Consumes("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed({"admin"})
     @GZIP
     @NoCache
     public void deletePublication(@PathParam("publicationId") String publicationId) throws Exception {
@@ -361,10 +390,77 @@ public class PublicationRestService extends AbstractBatchableRestService {
 
 
     /**
+     * Generates a publication report based on the PDF print parameters passed along
+     *
+     *
+     * @param request the servlet request
+     * @return the updated publication descriptor
+     */
+    @POST
+    @Path("/generate-publication-report/{folder:.+}")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed("admin")
+    public PublicationDescVo generatePublicationReport(
+            @PathParam("folder") String path,
+            PublicationDescVo desc,
+            @Context HttpServletRequest request) throws Exception {
+
+        URL url = new URL(
+                app.getBaseUri()
+                + "/rest/message-reports/report.pdf?"
+                + request.getQueryString()
+                + "&ticket=" + ticketService.createTicket());
+
+        // Validate that the path is a temporary repository folder path
+        java.nio.file.Path folder = checkCreateTempRepoPath(path);
+
+        HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
+        int responseCode = httpConn.getResponseCode();
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            httpConn.disconnect();
+            log.error("Error creating publication report " + request.getQueryString());
+            throw new WebApplicationException("Error creating publication report: " + request.getQueryString(), 500);
+        }
+
+        // If the file name has not been specified in the descriptor, extract it from the
+        // "Content-Disposition" header of the report connection
+        String fileName = desc.getFileName();
+        if (StringUtils.isBlank(fileName)) {
+            String disposition = httpConn.getHeaderField("Content-Disposition");
+            if (StringUtils.isNotBlank(disposition)) {
+                Matcher regexMatcher = FILE_NAME_HEADER_PATTERN.matcher(disposition);
+                if (regexMatcher.find()) {
+                    fileName = regexMatcher.group();
+                }
+            }
+        }
+        fileName = StringUtils.defaultIfBlank(fileName, "publication.pdf");
+
+        File destFile = folder.resolve(fileName).toFile();
+        try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(destFile));
+             InputStream is = httpConn.getInputStream()) {
+            IOUtils.copy(is, out);
+        } catch (IOException ex) {
+            log.error("Error generating publication report " + destFile, ex);
+            throw new WebApplicationException("Error generating publication report: " + destFile, 500);
+        }
+        httpConn.disconnect();
+
+        desc.setFileName(fileName);
+        desc.setLink(repositoryService.getRepoUri(destFile.toPath()));
+
+        log.info("Generated publication report at destination " + destFile);
+
+        return desc;
+    }
+
+
+    /**
      * Uploads a publication file
      *
      * @param request the servlet request
-     * @return the repository path of the uploaded file
+     * @return the updated publication descriptor
      */
     @POST
     @Path("/upload-publication-file/{folder:.+}")
@@ -400,15 +496,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
                 .orElseThrow(() -> new WebApplicationException("No publication descriptor found", 400));
 
         // Validate that the path is a temporary repository folder path
-        java.nio.file.Path folder = repositoryService.validateTempMessageRepoPath(path);
-        if (Files.notExists(folder)) {
-            try {
-                Files.createDirectories(folder);
-            } catch (IOException e) {
-                log.error("Error creating publication folder " + folder, e);
-                throw new WebApplicationException("Invalid publication folder: " + path, 403);
-            }
-        }
+        java.nio.file.Path folder = checkCreateTempRepoPath(path);
 
         String fileName = StringUtils.defaultIfBlank(
                 desc.getFileName(),
@@ -423,13 +511,34 @@ public class PublicationRestService extends AbstractBatchableRestService {
         }
 
         desc.setFileName(fileName);
-        desc.setLink(path + "/" + fileName);
+        desc.setLink(repositoryService.getRepoUri(destFile.toPath()));
 
         log.info("Copied publication file " + fileItem.getName() + " to destination " + destFile);
 
         return desc;
     }
 
+
+    /**
+     * Checks that the path is a temp repo path and create the associated folder if it does not exist
+     * @param path the path to check
+     * @return the file path to the folder
+     */
+    private java.nio.file.Path checkCreateTempRepoPath(String path) {
+
+        // Validate that the path is a temporary repository folder path
+        java.nio.file.Path folder = repositoryService.validateTempRepoPath(path);
+
+        if (Files.notExists(folder)) {
+            try {
+                Files.createDirectories(folder);
+            } catch (IOException e) {
+                log.error("Error creating publication folder " + folder, e);
+                throw new WebApplicationException("Invalid publication folder: " + path, 403);
+            }
+        }
+        return folder;
+    }
 
     /**
      * Returns all publications for export purposes

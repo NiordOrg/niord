@@ -187,7 +187,7 @@
                                 ng-repeat="desc in publication.descs"
                                 ng-if="publication.languageSpecific || $first">
                                <div class="publication-repo-file" bg-flag="desc.lang">
-                                   <div>
+                                   <div ng-if="!desc.link" style="margin-bottom: 10px">
                                        <file-upload url="publicationFileUploadUrl"
                                                     drop-text="or drop .pdf file here" multiple="false"
                                                     file-types="'pdf'" auto-upload="true" remove-after-upload="true"
@@ -196,14 +196,32 @@
                                                     data="desc">
                                        </file-upload>
                                    </div>
-                                   <div ng-if="desc.link">
-                                       {{desc.link}}
+                                   <div ng-if="desc.link" style="margin-bottom: 10px">
+                                       <a ng-href="{{desc.link}}" target="_blank">
+                                           <span class="glyphicon glyphicon-book"></span>
+                                           {{desc.fileName}}
+                                       </a>
                                    </div>
-                                   <button class="btn btn-xs btn-default"
-                                           ng-if="publication.type == 'MESSAGE_REPORT' && publication.messageTag"
-                                           ng-click="previewReportFile(desc.lang)">
-                                       Preview Report
-                                   </button>
+                                   <div>
+                                       <span ng-if="!desc.link && publication.type == 'MESSAGE_REPORT' && publication.messageTag" class="dropdown">
+                                           <button class="btn btn-default btn-xs dropdown-toggle" type="button" id="generateBtn"
+                                                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                                               Generate Report
+                                               <span class="caret"></span>
+                                           </button>
+                                           <ul class="dropdown-menu">
+                                               <li><a href ng-click="generateReport(desc, true)">Preview Report</a></li>
+                                               <li><a href ng-click="generateReport(desc, false)">Generate Report</a></li>
+                                           </ul>
+                                       </span>
+                                       <span ng-if="desc.link">
+                                           <button class="btn btn-default btn-xs" type="button"
+                                            ng-click="removePublicationFile(desc)">
+                                               <span class="glyphicon glyphicon-trash"></span>
+                                               Remove Report
+                                           </button>
+                                       </span>
+                                   </div>
                                </div>
                            </div>
                        </div>

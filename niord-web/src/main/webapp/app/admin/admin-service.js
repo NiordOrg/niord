@@ -217,6 +217,20 @@ angular.module('niord.admin')
             },
 
 
+            /** Deletes the given publication file  **/
+            deletePublicationFile: function (path) {
+                return $http['delete'](path);
+            },
+
+
+            /** Generates a new publication report **/
+            generatePublicationReport: function (desc, repoPath, printParam) {
+                return $http.post(
+                    '/rest/publications/generate-publication-report/' + encodeURIComponent(repoPath) + '?' + printParam,
+                    desc);
+            },
+
+
             /** Returns the ticket that can be used to generate an export file that requires the amdin role */
             publicationTicket: function (role) {
                 var param = role ? '?role=' + role : '';

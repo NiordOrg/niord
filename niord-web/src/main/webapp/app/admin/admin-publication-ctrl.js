@@ -143,6 +143,19 @@ angular.module('niord.admin')
             };
 
 
+            /** Called to remove the publication file or link **/
+            $scope.removePublicationFile = function (desc) {
+                if (desc.link) {
+                    // To preserve revision history, we only delete the linked file from the
+                    // repository if it is the latest (unsaved) revision.
+                    if (desc.link.indexOf($scope.publication.editRepoPath + '/' + $scope.publication.revision + '/') != -1) {
+                        AdminPublicationService.deletePublicationFile(desc.link);
+                    }
+                    delete desc.link;
+                }
+            };
+
+
             /** Utility function for concatenating a key-value request parameter to the parameter string **/
             function concatParam(param, k, v) {
                 param = param || '';
@@ -155,7 +168,7 @@ angular.module('niord.admin')
 
 
             /** Generates a report file for the current publication **/
-            $scope.previewReportFile = function (lang) {
+            $scope.generateReport = function (desc, preview) {
                 var pub = $scope.publication;
                 var printSettings = pub.template ? pub.template.printSettings : pub.printSettings;
 
@@ -176,19 +189,27 @@ angular.module('niord.admin')
                 angular.forEach(pub.reportParams, function (v, k) {
                     printParam = concatParam(printParam, 'param:' + k, v);
                 });
-                printParam = concatParam(printParam, 'lang', lang);
+                printParam = concatParam(printParam, 'lang', desc.lang);
 
-                var desc = LangService.descForLanguage(pub, lang);
                 if (desc.fileName) {
                     printParam = concatParam(printParam, 'fileName', desc.fileName);
                 }
 
-                AdminPublicationService
-                    .publicationTicket()
-                    .success(function (ticket) {
-                        printParam = concatParam(printParam, 'ticket', ticket);
-                        $window.location = '/rest/message-reports/report.pdf?' + printParam;
-                    });
+                if (preview) {
+                    AdminPublicationService
+                        .publicationTicket()
+                        .success(function (ticket) {
+                            printParam = concatParam(printParam, 'ticket', ticket);
+                            $window.location = '/rest/message-reports/report.pdf?' + printParam;
+                        });
+                } else {
+                    var repoPath = $scope.publication.editRepoPath + '/' + $scope.publication.revision;
+                    AdminPublicationService
+                        .generatePublicationReport(desc, repoPath, printParam)
+                        .success(function (resultDesc) {
+                            angular.copy(resultDesc, desc);
+                        })
+                }
             };
 
 

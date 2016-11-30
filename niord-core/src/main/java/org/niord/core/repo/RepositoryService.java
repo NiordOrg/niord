@@ -506,7 +506,7 @@ public class RepositoryService {
     public List<String> uploadTempFile(@PathParam("folder") String path, @Context HttpServletRequest request) throws FileUploadException, IOException {
 
         // Check that the specified folder is indeed under the "temp" root
-        validateTempMessageRepoPath(path);
+        validateTempRepoPath(path);
 
         return uploadFile(path, request);
     }
@@ -518,7 +518,7 @@ public class RepositoryService {
      * @param path the path to resolve and validate as a temporary repository path
      * @return the full path
      */
-    public Path validateTempMessageRepoPath(String path) {
+    public Path validateTempRepoPath(String path) {
         // Validate that the path is a temporary repository folder path
         Path folder = getRepoRoot().resolve(path);
         if (!folder.toAbsolutePath().startsWith(getTempRepoRoot().toAbsolutePath())) {
