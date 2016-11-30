@@ -281,7 +281,9 @@ public class PublicationRestService extends AbstractBatchableRestService {
         editPublication.assignNewId();
 
         // If nextIssue is requested, update accordingly
-        editPublication.nextIssue();
+        if (nextIssue) {
+            editPublication.nextIssue();
+        }
 
         // Reset various fields
         editPublication.setMessageTag(null);
