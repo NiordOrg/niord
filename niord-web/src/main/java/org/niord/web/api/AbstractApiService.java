@@ -174,7 +174,7 @@ public abstract class AbstractApiService {
         if (params.getTags().isEmpty()) {
              params.statuses(Collections.singleton(Status.PUBLISHED));
         } else {
-            params.statuses(new HashSet<>(Arrays.asList(Status.PUBLISHED, Status.CANCELLED, Status.DELETED)));
+            params.statuses(new HashSet<>(Arrays.asList(Status.PUBLISHED, Status.CANCELLED, Status.EXPIRED)));
         }
 
         // Perform the search
