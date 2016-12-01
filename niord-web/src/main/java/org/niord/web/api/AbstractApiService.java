@@ -35,7 +35,9 @@ import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -95,7 +97,6 @@ public abstract class AbstractApiService {
 
         MessageSearchParams params = new MessageSearchParams();
         params.language(language)
-                .statuses(Collections.singleton(Status.PUBLISHED))
                 .publications(publicationIds)
                 .mainTypes(mainTypes)
                 .areaIds(areaIds)
@@ -167,6 +168,13 @@ public abstract class AbstractApiService {
         // If no publications or message series (and thus, no domains) have been specified, return nothing
         if (params.getTags().isEmpty() && params.getSeriesIds().isEmpty()) {
             return new PagedSearchResultVo<>();
+        }
+
+        // Enforce allowed statuses
+        if (params.getTags().isEmpty()) {
+             params.statuses(Collections.singleton(Status.PUBLISHED));
+        } else {
+            params.statuses(new HashSet<>(Arrays.asList(Status.PUBLISHED, Status.CANCELLED, Status.DELETED)));
         }
 
         // Perform the search
