@@ -158,7 +158,7 @@ angular.module('niord.admin')
         return {
 
             /** Returns all publications **/
-            searchPublications: function (mainType, type, category, title) {
+            searchPublications: function (mainType, type, category, status, title) {
                 var params = 'lang=' + $rootScope.language;
                 if ($rootScope.domain) {
                     params += '&domain=' + encodeURIComponent($rootScope.domain.domainId);
@@ -171,6 +171,9 @@ angular.module('niord.admin')
                 }
                 if (type && type.length > 0) {
                     params += '&type=' + type;
+                }
+                if (status && status.length > 0) {
+                    params += '&status=' + status;
                 }
                 if (category && category.length > 0) {
                     params += '&category=' + encodeURIComponent(category);

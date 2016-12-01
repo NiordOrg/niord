@@ -40,7 +40,8 @@ angular.module('niord.admin')
             $scope.filter = {
                 title: '',
                 type: '',
-                category: ''
+                category: '',
+                status: ''
             };
 
 
@@ -55,7 +56,7 @@ angular.module('niord.admin')
             $scope.loadPublications = function() {
                 $scope.publication = undefined;
                 AdminPublicationService
-                    .searchPublications($scope.mainType, $scope.filter.type, $scope.filter.category, $scope.filter.title)
+                    .searchPublications($scope.mainType, $scope.filter.type, $scope.filter.category, $scope.filter.status, $scope.filter.title)
                     .success(function (publications) {
                         $scope.publications = publications;
                     });

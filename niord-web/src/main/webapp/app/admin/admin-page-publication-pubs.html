@@ -366,19 +366,28 @@
             </div>
         </div>
         <div class="row" style="margin-top: 10px">
-            <div class="col-xs-12 col-sm-6 col-md-4">
-                <select class="form-control input-sm" ng-model="filter.category"
-                        ng-options="category.categoryId as category.descs[0].name for category in publicationCategories">
-                    <option value="">All Categories</option>
+            <div class="col-xs-12 col-sm-6 col-md-3">
+                <select class="form-control input-sm" ng-model="filter.status">
+                    <option value="">All Statuses</option>
+                    <option value="DRAFT">Drafts</option>
+                    <option value="RECORDING" ng-if="mainType == 'PUBLICATION'">Recording</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
                 </select>
             </div>
-            <div class="col-xs-12 col-sm-6 col-md-6">
-                <select class="form-control input-sm" ng-model="filter.type" style="width: 120px">
+            <div class="col-xs-12 col-sm-6 col-md-3">
+                <select class="form-control input-sm" ng-model="filter.type">
                     <option value="">All File Types</option>
                     <option value="NONE" translate>publication_type.NONE</option>
                     <option value="LINK" translate>publication_type.LINK</option>
                     <option value="REPOSITORY" translate>publication_type.REPOSITORY</option>
                     <option value="MESSAGE_REPORT" translate>publication_type.MESSAGE_REPORT</option>
+                </select>
+            </div>
+            <div class="col-xs-12 col-sm-6 col-md-6">
+                <select class="form-control input-sm" ng-model="filter.category"
+                        ng-options="category.categoryId as category.descs[0].name for category in publicationCategories">
+                    <option value="">All Categories</option>
                 </select>
             </div>
         </div>
