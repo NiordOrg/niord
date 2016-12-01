@@ -505,7 +505,7 @@ angular.module('niord.common')
                     text = text || '';
                     MessageService.searchPublications(text, scope.messagePublication, scope.mainType, scope.type, scope.status)
                         .success(function (publications) {
-                            scope.publications = publications;
+                            scope.publications = publications.data;
                         });
                 };
 

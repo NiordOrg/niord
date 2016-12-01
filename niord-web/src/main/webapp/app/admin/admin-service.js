@@ -158,25 +158,31 @@ angular.module('niord.admin')
         return {
 
             /** Returns all publications **/
-            searchPublications: function (mainType, type, category, status, title) {
+            searchPublications: function (filter, page) {
                 var params = 'lang=' + $rootScope.language;
                 if ($rootScope.domain) {
                     params += '&domain=' + encodeURIComponent($rootScope.domain.domainId);
                 }
-                if (title) {
-                    params += '&title=' + encodeURIComponent(title);
+                if (filter.title) {
+                    params += '&title=' + encodeURIComponent(filter.title);
                 }
-                if (mainType && mainType.length > 0) {
-                    params += '&mainType=' + mainType;
+                if (filter.mainType && filter.mainType.length > 0) {
+                    params += '&mainType=' + filter.mainType;
                 }
-                if (type && type.length > 0) {
-                    params += '&type=' + type;
+                if (filter.type && filter.type.length > 0) {
+                    params += '&type=' + filter.type;
                 }
-                if (status && status.length > 0) {
-                    params += '&status=' + status;
+                if (filter.status && filter.status.length > 0) {
+                    params += '&status=' + filter.status;
                 }
-                if (category && category.length > 0) {
-                    params += '&category=' + encodeURIComponent(category);
+                if (filter.category && filter.category.length > 0) {
+                    params += '&category=' + encodeURIComponent(filter.category);
+                }
+                if (filter.maxSize) {
+                    params += '&maxSize=' + filter.maxSize;
+                }
+                if (page) {
+                    params += '&page=' + (page - 1);
                 }
                 return $http.get('/rest/publications/search-details?' + params);
             },

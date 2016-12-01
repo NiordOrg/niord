@@ -41,8 +41,11 @@ angular.module('niord.admin')
                 title: '',
                 type: '',
                 category: '',
-                status: ''
+                status: '',
+                maxSize: 10
             };
+            $scope.totalPublicationNo = 0;
+            $scope.pageData = { page: 1 };
 
 
             /** Sets the mainType of publications, either 'PUBLICATION' or 'TEMPLATE' **/
@@ -56,12 +59,19 @@ angular.module('niord.admin')
             $scope.loadPublications = function() {
                 $scope.publication = undefined;
                 AdminPublicationService
-                    .searchPublications($scope.mainType, $scope.filter.type, $scope.filter.category, $scope.filter.status, $scope.filter.title)
+                    .searchPublications($scope.filter, $scope.pageData.page)
                     .success(function (publications) {
-                        $scope.publications = publications;
+                        $scope.publications = publications.data;
+                        $scope.totalPublicationNo = publications.total;
                     });
             };
-            $scope.$watch("filter", $scope.loadPublications, true);
+
+            // Monitor changes to search filter and search result page
+            $scope.$watch("filter", function () {
+                $scope.pageData.page = 1;
+                $scope.loadPublications();
+            }, true);
+            $scope.$watch("pageData", $scope.loadPublications, true);
 
 
             // Sync up publication fields used by various editors back to the proper fields

@@ -344,7 +344,8 @@
     <div ng-show="publication === undefined">
         <div class="row">
             <div class="col-xs-12 col-sm-6 col-md-4">
-                <input class="form-control input-sm col-sm-2" ng-model="filter.title" type="text" placeholder="Title">
+                <input class="form-control input-sm col-sm-2" ng-model="filter.title" type="text" placeholder="Title"
+                       ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }">
                 <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
                       ng-click="filter.title = ''" ng-show="filter.title != ''"></span>
             </div>
@@ -429,6 +430,18 @@
                         </td>
                     </tr>
                 </table>
+
+                <!-- Pagination -->
+                <div class="row">
+                    <div class="col-sm-12">
+                        <uib-pagination total-items="totalPublicationNo" items-per-page="filter.maxSize"
+                                        ng-model="pageData.page"
+                                        class="pagination pagination-sm" previous-text="&lsaquo;"  next-text="&rsaquo;"
+                                        boundary-links="true" first-text="&laquo;" last-text="&raquo;">
+                        </uib-pagination>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>

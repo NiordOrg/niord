@@ -32,20 +32,24 @@ import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
 import org.niord.core.util.TimeUtils;
 import org.niord.model.message.Status;
+import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.persistence.Tuple;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Root;
+import javax.persistence.criteria.Selection;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -86,6 +90,7 @@ public class PublicationService extends BaseService {
 
     /**
      * Returns the publication with the given publication ID
+     *
      * @param publicationId the publication ID
      * @return the publication with the given publication ID or null if not found
      */
@@ -101,8 +106,32 @@ public class PublicationService extends BaseService {
 
 
     /**
-     * Returns the publications with the given IDs
-     * @param publicationIds the publication IDs
+     * Returns the publications with the given database IDs
+     *
+     * @param ids the database IDs
+     * @return the publications with the database IDs
+     */
+    public List<Publication> findByIds(List<Integer> ids) {
+
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Publication> publications = em.createNamedQuery("Publication.findByIds", Publication.class)
+                .setParameter("ids", ids)
+                .getResultList();
+
+        // Sort the result according to the order of the publications in the ID list
+        publications.sort(Comparator.comparingInt(m -> ids.indexOf(m.getId())));
+
+        return publications;
+    }
+
+
+    /**
+     * Returns the publications with the database IDs
+     *
+     * @param publicationIds the database IDs
      * @return the publications with the IDs
      */
     public List<Publication> findByPublicationIds(String... publicationIds) {
@@ -120,6 +149,7 @@ public class PublicationService extends BaseService {
 
     /**
      * Returns the publications with the given template
+     *
      * @param templateId the template publication ID
      * @return the publications with the given template
      */
@@ -132,6 +162,7 @@ public class PublicationService extends BaseService {
 
     /**
      * Returns the tag IDs for the message-report publications with the given publication IDs
+     *
      * @param publicationIds the publication IDs
      * @return the tag IDs for the message-report publications with the given publication IDs
      */
@@ -148,6 +179,7 @@ public class PublicationService extends BaseService {
 
     /**
      * Returns the message-recording publications
+     *
      * @param series the message series to find recording publications fro
      * @return the message-recording publications
      */
@@ -164,17 +196,48 @@ public class PublicationService extends BaseService {
      * @param params the search parameters
      * @return the search result
      */
+    public PagedSearchResultVo<Publication> searchPublications(PublicationSearchParams params) {
+
+        PagedSearchResultVo<Publication> result = new PagedSearchResultVo<>();
+
+        try {
+
+            List<Integer> pagedPublicationIds = searchPagedPublicationIds(params, result);
+
+            // Fetch the publications
+            List<Publication> publications = findByIds(pagedPublicationIds);
+            result.setData(publications);
+            result.updateSize();
+
+        } catch (Exception e) {
+            log.error("Error performing search " + params + ": " + e, e);
+        }
+
+        return result;
+    }
+
+
+    /**
+     * Searches for a page of publication IDs matching the given search parameters
+     * Will also update the search result with the total number of matches
+     *
+     * @param params the search parameters
+     * @param result the result structure to update with the total number of matches
+     * @return a page of publication IDs matching the given search parameters
+     */
     @SuppressWarnings("all")
-    public List<Publication> searchPublications(PublicationSearchParams params) {
+    public List<Integer> searchPagedPublicationIds(
+            PublicationSearchParams params,
+            PagedSearchResultVo<Publication> result) {
 
 
         CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<Publication> publicationQuery = cb.createQuery(Publication.class);
+        CriteriaQuery<Tuple> tupleQuery = cb.createTupleQuery();
 
-        Root<Publication> publicationRoot = publicationQuery.from(Publication.class);
+        Root<Publication> publicationRoot = tupleQuery.from(Publication.class);
 
         // Build the predicate
-        CriteriaHelper<Publication> criteriaHelper = new CriteriaHelper<>(cb, publicationQuery);
+        CriteriaHelper<Tuple> criteriaHelper = CriteriaHelper.initWithTupleQuery(em);
 
         // Match the main type
         criteriaHelper.equals(publicationRoot.get("mainType"), params.getMainType());
@@ -233,15 +296,36 @@ public class PublicationService extends BaseService {
         sortOrders.add(cb.asc(typeJoin.get("priority")));
         sortOrders.add(cb.desc(publicationRoot.get("publishDateFrom")));
 
+        // Select ID field + fields used for sorting
+        List<Selection<?>> fields = new ArrayList<>();
+        fields.add(publicationRoot.get("id"));
+        fields.add(typeJoin.get("priority"));
+        fields.add(publicationRoot.get("publishDateFrom"));
+        Selection[] f = fields.toArray(new Selection<?>[fields.size()]);
+
         // Complete the query
-        publicationQuery.select(publicationRoot)
+        tupleQuery.multiselect(f)
+                .distinct(true)
                 .where(criteriaHelper.where())
                 .orderBy(sortOrders);
 
-        // Execute the query and update the search result
-        return em.createQuery(publicationQuery)
-                .setMaxResults(params.getMaxSize())
+
+        // Execute the query
+        List<Tuple> totalResult = em
+                .createQuery(tupleQuery)
                 .getResultList();
+
+        // Register the total result
+        result.setTotal(totalResult.size());
+
+        List<Integer> publicationIds = totalResult.stream()
+                .map(t -> (Integer) t.get(0))
+                .collect(Collectors.toList());
+
+        // Extract and return the paged sub-list
+        int startIndex = Math.min(publicationIds.size(), params.getPage() * params.getMaxSize());
+        int endIndex = Math.min(publicationIds.size(), startIndex + params.getMaxSize());
+        return publicationIds.subList(startIndex, endIndex);
     }
 
 

@@ -215,6 +215,8 @@ public abstract class AbstractApiService {
                 .published(true)
                 .mainType(PublicationMainType.PUBLICATION);
 
-        return publicationService.searchPublications(params);
+        return publicationService
+                .searchPublications(params)
+                .getData();
     }
 }

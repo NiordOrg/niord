@@ -43,6 +43,7 @@ import org.niord.model.IJsonSerializable;
 import org.niord.model.publication.PublicationDescVo;
 import org.niord.model.publication.PublicationType;
 import org.niord.model.publication.PublicationVo;
+import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
@@ -119,7 +120,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<PublicationVo> searchPublications(
+    public PagedSearchResultVo<PublicationVo> searchPublications(
             @QueryParam("lang") String lang,
             @QueryParam("domain") String domain,
             @QueryParam("category") String category,
@@ -128,7 +129,8 @@ public class PublicationRestService extends AbstractBatchableRestService {
             @QueryParam("type") PublicationType type,
             @QueryParam("status") Set<PublicationStatus> statuses,
             @QueryParam("title") @DefaultValue("") String title,
-            @QueryParam("limit") @DefaultValue("100") int limit) {
+            @QueryParam("maxSize") @DefaultValue("100") int maxSize,
+            @QueryParam("page") @DefaultValue("0") int page) {
 
         PublicationSearchParams params = new PublicationSearchParams()
                 .language(lang)
@@ -139,13 +141,12 @@ public class PublicationRestService extends AbstractBatchableRestService {
                 .category(category)
                 .messagePublication(messagePublication)
                 .title(title);
-        params.maxSize(limit);
+        params.maxSize(maxSize).page(page);
 
         DataFilter dataFilter = DataFilter.get().lang(lang);
 
-        return publicationService.searchPublications(params).stream()
-                .map(p -> p.toVo(PublicationVo.class, dataFilter))
-                .collect(Collectors.toList());
+        return publicationService.searchPublications(params)
+                .map(p -> p.toVo(PublicationVo.class, dataFilter));
     }
 
 
@@ -158,7 +159,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @RolesAllowed({"editor"})
     @GZIP
     @NoCache
-    public List<SystemPublicationVo> searchSystemPublications(
+    public PagedSearchResultVo<SystemPublicationVo> searchSystemPublications(
             @QueryParam("lang") String lang,
             @QueryParam("domain") String domain,
             @QueryParam("category") String category,
@@ -167,7 +168,8 @@ public class PublicationRestService extends AbstractBatchableRestService {
             @QueryParam("type") PublicationType type,
             @QueryParam("status") Set<PublicationStatus> statuses,
             @QueryParam("title") @DefaultValue("") String title,
-            @QueryParam("limit") @DefaultValue("100") int limit) {
+            @QueryParam("maxSize") @DefaultValue("100") int maxSize,
+            @QueryParam("page") @DefaultValue("0") int page) {
 
         PublicationSearchParams params = new PublicationSearchParams()
                 .language(lang)
@@ -178,13 +180,12 @@ public class PublicationRestService extends AbstractBatchableRestService {
                 .category(category)
                 .messagePublication(messagePublication)
                 .title(title);
-        params.maxSize(limit);
+        params.maxSize(maxSize).page(page);
 
         DataFilter dataFilter = DataFilter.get().lang(lang);
 
-        return publicationService.searchPublications(params).stream()
-                .map(p -> p.toVo(SystemPublicationVo.class, dataFilter))
-                .collect(Collectors.toList());
+        return publicationService.searchPublications(params)
+                .map(p -> p.toVo(SystemPublicationVo.class, dataFilter));
     }
 
 
@@ -198,17 +199,17 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @NoCache
     public List<PublicationVo> getAllPublications(
             @QueryParam("lang") String lang,
-            @QueryParam("limit") @DefaultValue("1000") int limit) {
+            @QueryParam("maxSize") @DefaultValue("1000") int maxSize) {
 
         PublicationSearchParams params = new PublicationSearchParams()
                 .language(lang);
-        params.maxSize(limit);
+        params.maxSize(maxSize).page(0);
 
         DataFilter dataFilter = DataFilter.get().lang(lang);
 
-        return publicationService.searchPublications(params).stream()
+        return publicationService.searchPublications(params)
                 .map(p -> p.toVo(PublicationVo.class, dataFilter))
-                .collect(Collectors.toList());
+                .getData();
     }
 
 
@@ -609,8 +610,10 @@ public class PublicationRestService extends AbstractBatchableRestService {
         DataFilter dataFilter = DataFilter.get().lang(lang);
 
         // TODO: Sort templates first - not by title
-        return publicationService.searchPublications(params).stream()
+        return publicationService.searchPublications(params)
                 .map(p -> p.toVo(SystemPublicationVo.class, dataFilter))
+                .getData()
+                .stream()
                 .sorted(publicationTitleComparator(lang))
                 .collect(Collectors.toList());
     }
