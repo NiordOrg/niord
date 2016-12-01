@@ -68,6 +68,8 @@ import java.util.stream.Collectors;
 @NamedQueries({
         @NamedQuery(name="Publication.findByPublicationId",
                 query="SELECT p FROM Publication p where p.publicationId = :publicationId"),
+        @NamedQuery(name="Publication.findByPublicationIds",
+                query="SELECT p FROM Publication p where p.publicationId in (:publicationIds)"),
         @NamedQuery(name="Publication.findByTemplateId",
                 query="SELECT p FROM Publication p where p.template is not null and p.template.publicationId = :templateId"),
         @NamedQuery(name="Publication.findTagsByPublicationIds",

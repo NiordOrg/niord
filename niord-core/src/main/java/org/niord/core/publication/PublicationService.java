@@ -44,8 +44,10 @@ import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Root;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -95,6 +97,24 @@ public class PublicationService extends BaseService {
         } catch (Exception ignored) {
         }
         return null;
+    }
+
+
+    /**
+     * Returns the publications with the given IDs
+     * @param publicationIds the publication IDs
+     * @return the publications with the IDs
+     */
+    public List<Publication> findByPublicationIds(String... publicationIds) {
+
+        if (publicationIds == null || publicationIds.length == 0) {
+            return Collections.emptyList();
+        }
+
+        Set<String> idSet = new HashSet<>(Arrays.asList(publicationIds));
+        return em.createNamedQuery("Publication.findByPublicationIds", Publication.class)
+                .setParameter("publicationIds", idSet)
+                .getResultList();
     }
 
 
@@ -163,7 +183,9 @@ public class PublicationService extends BaseService {
         criteriaHelper.equals(publicationRoot.get("type"), params.getType());
 
         // Match the status
-        criteriaHelper.equals(publicationRoot.get("status"), params.getStatus());
+        if (params.getStatuses() != null && !params.getStatuses().isEmpty()) {
+            criteriaHelper.in(publicationRoot.get("status"), params.getStatuses());
+        }
 
         // Match the title
         if (StringUtils.isNotBlank(params.getTitle())) {

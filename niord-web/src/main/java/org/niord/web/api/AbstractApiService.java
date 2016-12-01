@@ -211,7 +211,7 @@ public abstract class AbstractApiService {
                 .language(language)
                 .from(from)
                 .to(to)
-                .status(ACTIVE)
+                .statuses(ACTIVE)
                 .published(true)
                 .mainType(PublicationMainType.PUBLICATION);
 

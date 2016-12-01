@@ -117,7 +117,7 @@ angular.module('niord.admin')
                     case 'category':
                         return !hasTemplate || pub.template.category === undefined;
                     case 'title':
-                        return !hasTemplate || pub.template.descs[0].title === undefined;
+                        return !hasTemplate || pub.template.descs[0].titleFormat === undefined;
                     case 'titleFormat':
                         return isTemplate;
                     case 'messageTagFormat':

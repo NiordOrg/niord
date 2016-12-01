@@ -75,6 +75,7 @@ import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -125,7 +126,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
             @QueryParam("messagePublication") MessagePublication messagePublication,
             @QueryParam("mainType") @DefaultValue("PUBLICATION") PublicationMainType mainType,
             @QueryParam("type") PublicationType type,
-            @QueryParam("status") PublicationStatus status,
+            @QueryParam("status") Set<PublicationStatus> statuses,
             @QueryParam("title") @DefaultValue("") String title,
             @QueryParam("limit") @DefaultValue("100") int limit) {
 
@@ -133,7 +134,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
                 .language(lang)
                 .mainType(mainType)
                 .type(type)
-                .status(status)
+                .statuses(statuses)
                 .domain(domain)
                 .category(category)
                 .messagePublication(messagePublication)
@@ -164,7 +165,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
             @QueryParam("messagePublication") MessagePublication messagePublication,
             @QueryParam("mainType") @DefaultValue("PUBLICATION") PublicationMainType mainType,
             @QueryParam("type") PublicationType type,
-            @QueryParam("status") PublicationStatus status,
+            @QueryParam("status") Set<PublicationStatus> statuses,
             @QueryParam("title") @DefaultValue("") String title,
             @QueryParam("limit") @DefaultValue("100") int limit) {
 
@@ -172,7 +173,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
                 .language(lang)
                 .mainType(mainType)
                 .type(type)
-                .status(status)
+                .statuses(statuses)
                 .domain(domain)
                 .category(category)
                 .messagePublication(messagePublication)
@@ -233,13 +234,14 @@ public class PublicationRestService extends AbstractBatchableRestService {
      * Returns the publication with the given ID
      */
     @GET
-    @Path("/publication/{publicationId}")
+    @Path("/publication/{publicationIds}")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public PublicationVo getPublication(@PathParam("publicationId") String publicationId) throws Exception {
-        return publicationService.findByPublicationId(publicationId)
-                .toVo(PublicationVo.class, DataFilter.get());
+    public List<PublicationVo> getPublications(@PathParam("publicationIds") String publicationIds) throws Exception {
+        return publicationService.findByPublicationIds(publicationIds.split(",")).stream()
+                .map(p -> p.toVo(PublicationVo.class, DataFilter.get()))
+                .collect(Collectors.toList());
     }
 
 

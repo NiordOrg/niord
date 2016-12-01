@@ -438,8 +438,8 @@ angular.module('niord.common')
      * Defines a publication field used for
      * selecting a publication
      ********************************/
-    .directive('publicationField', [ '$rootScope', 'MessageService', 'LangService',
-        function ($rootScope, MessageService, LangService) {
+    .directive('publicationField', [ '$rootScope', '$http','MessageService', 'LangService',
+        function ($rootScope, $http, MessageService, LangService) {
         'use strict';
 
         return {
@@ -447,15 +447,24 @@ angular.module('niord.common')
             templateUrl: '/app/common/publication-field.html',
             replace: false,
             scope: {
-                publicationData: "=",
+                publicationData:    "=",
                 messagePublication: "=",
-                mainType: "@",
-                status: "@",
-                initId: "=",
-                tabIndex:   "=",
+                mainType:           "@",
+                type:               "@",
+                status:             "@",
+                initIds:            "=",
+                multiple:           "=",
+                tabIndex:           "=",
                 publicationChanged: "&"
             },
             link: function(scope, element, attrs) {
+
+                scope.publicationData = scope.publicationData || {};
+                scope.multiple = scope.multiple || false;
+                if (scope.multiple && !scope.publicationData.publications) {
+                    scope.publicationData.publications = [];
+                }
+
 
                 if (scope.tabIndex) {
                     var input = element.find("input");
@@ -470,30 +479,44 @@ angular.module('niord.common')
                     }
                 };
 
+                // init-ids can be used to instantiate the field from a list of publications IDs
+                scope.$watch("initIds", function (initIds) {
+                    if (initIds && initIds.length > 0) {
+                        $http.get('/rest/publications/publication/' + initIds.join()).then(function(response) {
+                            // Reset the initId array
+                            initIds.length = 0;
+                            // Update the loaded entities
+                            angular.forEach(response.data, function (publication) {
+                                LangService.sortDescs(publication);
+                                if (scope.multiple) {
+                                    scope.publicationData.publications.push(publication);
+                                } else {
+                                    scope.publicationData.publication = publication;
+                                }
+                            });
+                        });
+                    }
+                }, true);
 
-                if (scope.initId) {
-                    MessageService.getPublicationDetails(scope.initId)
-                        .success(function (publication) {
-                            scope.publicationData['publication'] = LangService.sortDescs(publication);
-                        })
-                        .error(function () {
-                            console.error("Error looking up publication " + scope.initId);
-                        })
-                }
 
                 /** Refreshes the publication selection **/
                 scope.publications = [];
                 scope.refreshPublications = function (text) {
                     text = text || '';
-                    MessageService.searchPublications(text, scope.messagePublication, scope.mainType, scope.status)
+                    MessageService.searchPublications(text, scope.messagePublication, scope.mainType, scope.type, scope.status)
                         .success(function (publications) {
                             scope.publications = publications;
                         });
                 };
 
+
                 /** Removes the current publication selection */
                 scope.removePublication = function () {
-                    delete scope.publicationData['publication'];
+                    if (scope.multiple) {
+                        scope.publicationData.publications.length = 0;
+                    } else {
+                        delete scope.publicationData['publication'];
+                    }
                     scope.publicationUpdated();
                 }
             }

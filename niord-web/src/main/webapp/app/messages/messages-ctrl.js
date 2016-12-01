@@ -40,7 +40,7 @@ angular.module('niord.messages')
             $scope.selection = $rootScope.messageSelection;
             $scope.selectionList = []; // Flattened list of selected messages
             $scope.totalMessageNo = 0;
-            $scope.filterNames = [ 'domain', 'messageSeries', 'text', 'type', 'status', 'tag',
+            $scope.filterNames = [ 'domain', 'messageSeries', 'text', 'type', 'status', 'tag', 'publication',
                 'user', 'comments', 'reference', 'chart', 'area', 'category', 'date' ];
             $scope.state = {
 
@@ -87,6 +87,11 @@ angular.module('niord.messages')
                     enabled: false,
                     focusField: '#tags input.ui-select-search',
                     tags: []
+                },
+                publication: {
+                    enabled: false,
+                    focusField: '#publications input.ui-select-search',
+                    publications: []
                 },
                 user: {
                     enabled: false,
@@ -139,6 +144,7 @@ angular.module('niord.messages')
             // The fields initialized with these IDs will reset the arrays, once they have
             // loaded the corresponding entities and updated the "state" object with the them.
             $scope.initTagIds = [];
+            $scope.initPublicationIds = [];
             $scope.initAreaIds = [];
             $scope.initCategoryIds = [];
             $scope.initChartIds = [];
@@ -147,8 +153,8 @@ angular.module('niord.messages')
 
             /** Returns the number of pending base entities that has not yet been loaded */
             $scope.pendingInitDataNo = function () {
-                return $scope.initTagIds.length + $scope.initAreaIds.length + $scope.initCategoryIds.length
-                     + $scope.initChartIds.length + $scope.initSeriesIds.length;
+                return $scope.initTagIds.length + $scope.initPublicationIds.length + $scope.initAreaIds.length
+                    + $scope.initCategoryIds.length + $scope.initChartIds.length + $scope.initSeriesIds.length;
             };
 
 
@@ -237,6 +243,9 @@ angular.module('niord.messages')
                         break;
                     case 'tag':
                         filter.tags.length = 0;
+                        break;
+                    case 'publication':
+                        filter.publications.length = 0;
                         break;
                     case 'user':
                         filter.username = undefined;
@@ -365,6 +374,11 @@ angular.module('niord.messages')
                         params += '&tag=' + tag.tagId;
                     })
                 }
+                if (s.publication.enabled) {
+                    angular.forEach(s.publication.publications, function (publication) {
+                        params += '&publication=' + publication.publicationId;
+                    })
+                }
                 if ($scope.loggedIn && s.user.enabled && s.user.username && s.user.username.length > 0) {
                     params += '&username=' + encodeURIComponent(s.user.username);
                     if (s.user.userType && s.user.userType.length > 0) {
@@ -478,6 +492,10 @@ angular.module('niord.messages')
                 if (params.tag && params.tag.length > 0) {
                     s.tag.enabled = true;
                     $scope.initTagIds = (typeof params.tag === 'string') ? [ params.tag ] : params.tag;
+                }
+                if (params.publication && params.publication.length > 0) {
+                    s.publication.enabled = true;
+                    $scope.initPublicationIds = (typeof params.publication === 'string') ? [ params.publication ] : params.publication;
                 }
                 if ($scope.loggedIn && params.username) {
                     s.user.enabled = true;

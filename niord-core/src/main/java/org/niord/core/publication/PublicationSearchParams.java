@@ -25,7 +25,10 @@ import org.niord.model.search.PagedSearchParamsVo;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang.StringUtils.isNotBlank;
@@ -44,7 +47,7 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
     String category;
     PublicationMainType mainType;
     PublicationType type;
-    PublicationStatus status;
+    Set<PublicationStatus> statuses = new HashSet<>();
     MessagePublication messagePublication;
     Boolean published;
     Date from;
@@ -60,7 +63,7 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
         if (messagePublication != null) { desc.add(String.format("MessagePublication: %s", messagePublication)); }
         if (mainType != null) { desc.add(String.format("Main Type: %s", mainType)); }
         if (type != null) { desc.add(String.format("Type: %s", type)); }
-        if (status != null) { desc.add(String.format("Status: %s", status)); }
+        if (statuses != null && !statuses.isEmpty()) { desc.add(String.format("Statuses: %s", statuses)); }
         if (published != null) { desc.add(String.format("Published: %b", published)); }
         if (isNotBlank(language)) { desc.add(String.format("Language: %s", language)); }
         if (isNotBlank(domain)) { desc.add(String.format("Domain: %s", domain)); }
@@ -142,12 +145,17 @@ public class PublicationSearchParams extends PagedSearchParamsVo {
         return this;
     }
 
-    public PublicationStatus getStatus() {
-        return status;
+    public Set<PublicationStatus> getStatuses() {
+        return statuses;
     }
 
-    public PublicationSearchParams status(PublicationStatus status) {
-        this.status = status;
+    public PublicationSearchParams statuses(Set<PublicationStatus> statuses) {
+        this.statuses = statuses;
+        return this;
+    }
+
+    public PublicationSearchParams statuses(PublicationStatus... statuses) {
+        this.statuses = toSet(statuses, Function.identity());
         return this;
     }
 

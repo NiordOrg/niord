@@ -1,5 +1,5 @@
 <div class="input-group">
-    <ui-select ng-model="publicationData.publication" ng-change="publicationUpdated()">
+    <ui-select ng-if="!multiple" ng-model="publicationData.publication" ng-change="publicationUpdated()">
         <ui-select-match placeholder="Select Publication">
             {{publicationData.publication.descs[0].title}}
         </ui-select-match>
@@ -12,6 +12,21 @@
 
         </ui-select-choices>
     </ui-select>
+
+    <ui-select ng-if="multiple" multiple  ng-model="publicationData.publications" >
+        <ui-select-match placeholder="Select Publications">
+            {{$item.descs[0].title}}
+        </ui-select-match>
+        <ui-select-choices repeat="p in publications"
+                           refresh="refreshPublications($select.search)"
+                           refresh-delay="200">
+            <div>
+                <span ng-bind-html="p.descs[0].title | highlight: $select.search"></span>
+            </div>
+
+        </ui-select-choices>
+    </ui-select>
+
 
     <span class="input-group-addon clickable" style="font-size: 12px" ng-click="removePublication()"><span class="glyphicon glyphicon-trash"></span></span>
 </div>
