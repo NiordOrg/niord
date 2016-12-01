@@ -62,7 +62,8 @@ import java.util.stream.Collectors;
 @Table(indexes = {
         @Index(name = "publication_id_k", columnList="publicationId"),
         @Index(name = "publication_type_k", columnList="type"),
-        @Index(name = "publication_main_type_k", columnList="mainType")
+        @Index(name = "publication_main_type_k", columnList="mainType"),
+        @Index(name = "publication_status_k", columnList="status")
 })
 @NamedQueries({
         @NamedQuery(name="Publication.findByPublicationId",
@@ -72,6 +73,10 @@ import java.util.stream.Collectors;
         @NamedQuery(name="Publication.findTagsByPublicationIds",
                 query="SELECT DISTINCT p.messageTag.tagId FROM Publication p where p.publicationId in (:publicationIds) "
                      + " and p.type = 'MESSAGE_REPORT' and p.messageTag is not null"),
+        @NamedQuery(name="Publication.findRecordingPublications",
+                query="SELECT p FROM Publication p where p.status = 'RECORDING' "
+                        + " and p.type = 'MESSAGE_REPORT' and p.messageTag is not null "
+                        + " and (p.domain is null or :series member of p.domain.messageSeries)")
 })
 @SuppressWarnings("unused")
 public class Publication extends VersionedEntity<Integer> implements ILocalizable<PublicationDesc> {
@@ -111,8 +116,15 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
     @Enumerated(EnumType.STRING)
     PeriodicalType periodicalType;
 
-    /** Used by templates to define the format of associated message tags **/
+    /** Used by templates to define the name format of associated message tag **/
     String messageTagFormat;
+
+    /**
+     * May be used to define a filter for message that should be tagged when the publication is in recording status.
+     * Example filter:
+     * "(msg.type == 'TEMPORARY_NOTICE' || msg.type == 'PRELIMINARY_NOTICE') && msg.status == 'PUBLISHED'"
+     */
+    String messageTagFilter;
 
     /** Used for report-based publications to associated a list of messages **/
     @ManyToOne
@@ -174,6 +186,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
             this.template = sysPub.getTemplate() != null ? new Publication(sysPub.getTemplate()) : null;
             this.domain = sysPub.getDomain() != null ? new Domain(sysPub.getDomain()) : null;
             this.messageTagFormat = sysPub.getMessageTagFormat();
+            this.messageTagFilter = sysPub.getMessageTagFilter();
             this.messageTag = sysPub.getMessageTag() != null ? new MessageTag(sysPub.getMessageTag()) : null;
             this.periodicalType = sysPub.getPeriodicalType();
             this.messagePublication = sysPub.getMessagePublication();
@@ -201,6 +214,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
         this.category = publication.getCategory();
         this.domain = publication.getDomain();
         this.messageTagFormat = publication.getMessageTagFormat();
+        this.messageTagFilter = publication.getMessageTagFilter();
         this.messageTag = publication.getMessageTag();
         this.periodicalType = publication.getPeriodicalType();
         this.publishDateFrom = publication.getPublishDateFrom();
@@ -245,6 +259,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
             sysPub.setTemplate(template != null ? template.toVo(SystemPublicationVo.class, dataFilter) : null);
             sysPub.setDomain((domain != null) ? domain.toVo()  : null);
             sysPub.setMessageTagFormat(messageTagFormat);
+            sysPub.setMessageTagFilter(messageTagFilter);
             sysPub.setMessageTag(messageTag != null ? messageTag.toVo() : null);
             sysPub.setPeriodicalType(periodicalType);
             sysPub.setMessagePublication(messagePublication);
@@ -273,6 +288,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
         this.category = ctx.val(template.getCategory(), category);
         this.domain = ctx.val(template.getDomain(), domain);
         this.messageTagFormat = ctx.str(template.getMessageTagFormat(), messageTagFormat);
+        this.messageTagFilter = ctx.str(template.getMessageTagFilter(), messageTagFilter);
         if (this.messageTag == null && StringUtils.isNotBlank(this.messageTagFormat)) {
             this.messageTag = ctx.findOrCreatePublicMessageTag(this.messageTagFormat);
         }
@@ -444,6 +460,14 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
 
     public void setMessageTagFormat(String messageTagFormat) {
         this.messageTagFormat = messageTagFormat;
+    }
+
+    public String getMessageTagFilter() {
+        return messageTagFilter;
+    }
+
+    public void setMessageTagFilter(String messageTagFilter) {
+        this.messageTagFilter = messageTagFilter;
     }
 
     public MessageTag getMessageTag() {

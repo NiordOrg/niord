@@ -19,11 +19,11 @@ package org.niord.web;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
-import org.niord.core.message.MessageFilter;
-import org.niord.core.message.MessageFilterService;
+import org.niord.core.message.MessageParamFilter;
+import org.niord.core.message.MessageParamFilterService;
 import org.niord.core.user.User;
 import org.niord.core.user.UserService;
-import org.niord.core.message.vo.MessageFilterVo;
+import org.niord.core.message.vo.MessageParamFilterVo;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
@@ -45,13 +45,13 @@ import java.util.stream.Collectors;
 @Path("/filters")
 @Stateless
 @SecurityDomain("keycloak")
-public class MessageFilterRestService {
+public class MessageParamFilterRestService {
 
     @Inject
     Logger log;
 
     @Inject
-    MessageFilterService messageFilterService;
+    MessageParamFilterService messageParamFilterService;
 
     @Inject
     UserService userService;
@@ -72,12 +72,12 @@ public class MessageFilterRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<MessageFilterVo> getMessageFilters() {
+    public List<MessageParamFilterVo> getMessageFilters() {
         // Must be logged in
         checkUserLoggedIn();
 
-        return messageFilterService.getMessageFiltersForUser().stream()
-                .map(MessageFilter::toVo)
+        return messageParamFilterService.getMessageFiltersForUser().stream()
+                .map(MessageParamFilter::toVo)
                 .collect(Collectors.toList());
     }
 
@@ -88,11 +88,11 @@ public class MessageFilterRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public MessageFilterVo getMessageFilter(@PathParam("filterId") Integer filterId) {
+    public MessageParamFilterVo getMessageFilter(@PathParam("filterId") Integer filterId) {
         // Must be logged in
         checkUserLoggedIn();
 
-        MessageFilter filter = messageFilterService.findById(filterId);
+        MessageParamFilter filter = messageParamFilterService.findById(filterId);
         return filter == null ? null : filter.toVo();
     }
 
@@ -104,12 +104,12 @@ public class MessageFilterRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public MessageFilterVo createMessageFilter(MessageFilterVo filter) {
+    public MessageParamFilterVo createMessageFilter(MessageParamFilterVo filter) {
         // Must be logged in
         checkUserLoggedIn();
 
         log.info("Creating new message filter " + filter);
-        return messageFilterService.createOrUpdateMessageFilter(new MessageFilter(filter)).toVo();
+        return messageParamFilterService.createOrUpdateMessageFilter(new MessageParamFilter(filter)).toVo();
     }
 
 
@@ -123,7 +123,7 @@ public class MessageFilterRestService {
         checkUserLoggedIn();
 
         log.info("Deleting message filter " + filterId);
-        messageFilterService.deleteMessageFilter(filterId);
+        messageParamFilterService.deleteMessageFilter(filterId);
     }
 }
 

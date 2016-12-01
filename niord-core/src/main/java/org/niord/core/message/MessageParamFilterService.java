@@ -28,11 +28,11 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Business interface for managing message filters
+ * Business interface for managing persisted message parameter filters
  */
 @Stateless
 @SuppressWarnings("unused")
-public class MessageFilterService extends BaseService {
+public class MessageParamFilterService extends BaseService {
 
     @Inject
     private Logger log;
@@ -46,11 +46,11 @@ public class MessageFilterService extends BaseService {
      * @param id the message filter
      * @return the message filters with the given identifier or null if not found
      */
-    public MessageFilter findById(Integer id) {
+    public MessageParamFilter findById(Integer id) {
         User user = userService.currentUser();
 
         // Look up the given filter
-        MessageFilter filter = getByPrimaryKey(MessageFilter.class, id);
+        MessageParamFilter filter = getByPrimaryKey(MessageParamFilter.class, id);
 
         // Check that the current user is the owner of the filter
         if (filter != null && !user.getId().equals(filter.getUser().getId())) {
@@ -65,11 +65,11 @@ public class MessageFilterService extends BaseService {
      * @param name the name of the message filter to look up
      * @return the matching message filter or null
      */
-    public MessageFilter findByCurrentUserAndName(String name) {
+    public MessageParamFilter findByCurrentUserAndName(String name) {
         User user = userService.currentUser();
 
         try {
-            return em.createNamedQuery("MessageFilter.findByUserAndName", MessageFilter.class)
+            return em.createNamedQuery("MessageParamFilter.findByUserAndName", MessageParamFilter.class)
                     .setParameter("user", user)
                     .setParameter("name", name)
                     .getSingleResult();
@@ -84,11 +84,11 @@ public class MessageFilterService extends BaseService {
      * @param ids the message filter IDs of the message filters to look up
      * @return the list of all message filters for the current user with the given IDs
      */
-    public List<MessageFilter> findByCurrentUserAndIds(Integer... ids) {
+    public List<MessageParamFilter> findByCurrentUserAndIds(Integer... ids) {
         User user = userService.currentUser();
 
         Set<Integer> filterIds = new HashSet<>(Arrays.asList(ids));
-        return em.createNamedQuery("MessageFilter.findByUserAndIds", MessageFilter.class)
+        return em.createNamedQuery("MessageParamFilter.findByUserAndIds", MessageParamFilter.class)
                 .setParameter("user", user)
                 .setParameter("ids", filterIds)
                 .getResultList();
@@ -99,9 +99,9 @@ public class MessageFilterService extends BaseService {
      * Returns all message filters for the current user
      * @return the list of all message filters for the current user
      */
-    public List<MessageFilter> getMessageFiltersForUser() {
+    public List<MessageParamFilter> getMessageFiltersForUser() {
         User user = userService.currentUser();
-        return em.createNamedQuery("MessageFilter.findByUser", MessageFilter.class)
+        return em.createNamedQuery("MessageParamFilter.findByUser", MessageParamFilter.class)
                 .setParameter("user", user)
                 .getResultList();
     }
@@ -113,8 +113,8 @@ public class MessageFilterService extends BaseService {
      * @param filter the new message filter
      * @return the persisted message filter
      */
-    public MessageFilter createOrUpdateMessageFilter(MessageFilter filter) {
-        MessageFilter original;
+    public MessageParamFilter createOrUpdateMessageFilter(MessageParamFilter filter) {
+        MessageParamFilter original;
 
         // Search for an existing filter with the same ID or name
         if (filter.getId() != null) {
@@ -147,7 +147,7 @@ public class MessageFilterService extends BaseService {
     public boolean deleteMessageFilter(Integer id) {
         User user = userService.currentUser();
 
-        MessageFilter original = findById(id);
+        MessageParamFilter original = findById(id);
         if (original != null) {
             log.info("Removing message filter " + id);
             remove(original);

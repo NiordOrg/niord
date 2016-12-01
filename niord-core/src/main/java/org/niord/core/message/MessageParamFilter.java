@@ -17,7 +17,7 @@ package org.niord.core.message;
 
 import org.niord.core.model.BaseEntity;
 import org.niord.core.user.User;
-import org.niord.core.message.vo.MessageFilterVo;
+import org.niord.core.message.vo.MessageParamFilterVo;
 
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
@@ -28,22 +28,23 @@ import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotNull;
 
 /**
- * Used for persisting a named message filter as defined by a request parameter string.
+ * Used for persisting a named message parameter filter as defined by a request parameter string.
  */
 @Entity
 @Table(
-    uniqueConstraints = @UniqueConstraint(columnNames = { "name", "user_id" })
+        name = "MessageFilter",
+        uniqueConstraints = @UniqueConstraint(columnNames = { "name", "user_id" })
 )
 @NamedQueries({
-        @NamedQuery(name= "MessageFilter.findByUserAndIds",
-                query="SELECT f FROM MessageFilter f where f.user = :user and f.id in (:ids)"),
-        @NamedQuery(name= "MessageFilter.findByUserAndName",
-                query="SELECT f FROM MessageFilter f where f.user = :user and f.name = :name"),
-        @NamedQuery(name="MessageFilter.findByUser",
-            query="SELECT f FROM MessageFilter f where f.user = :user")
+        @NamedQuery(name= "MessageParamFilter.findByUserAndIds",
+                query="SELECT f FROM MessageParamFilter f where f.user = :user and f.id in (:ids)"),
+        @NamedQuery(name= "MessageParamFilter.findByUserAndName",
+                query="SELECT f FROM MessageParamFilter f where f.user = :user and f.name = :name"),
+        @NamedQuery(name= "MessageParamFilter.findByUser",
+            query="SELECT f FROM MessageParamFilter f where f.user = :user")
 })
 @SuppressWarnings("unused")
-public class MessageFilter extends BaseEntity<Integer> {
+public class MessageParamFilter extends BaseEntity<Integer> {
 
     @NotNull
     String name;
@@ -56,13 +57,13 @@ public class MessageFilter extends BaseEntity<Integer> {
     /**
      * Constructor
      */
-    public MessageFilter() {
+    public MessageParamFilter() {
     }
 
     /**
      * Constructor
      */
-    public MessageFilter(MessageFilterVo filter) {
+    public MessageParamFilter(MessageParamFilterVo filter) {
         this.id = filter.getId();
         this.name = filter.getName();
         this.parameters = filter.getParameters();
@@ -70,8 +71,8 @@ public class MessageFilter extends BaseEntity<Integer> {
 
 
     /** Converts this entity to a value object */
-    public MessageFilterVo toVo() {
-        MessageFilterVo filter = new MessageFilterVo();
+    public MessageParamFilterVo toVo() {
+        MessageParamFilterVo filter = new MessageParamFilterVo();
         filter.setId(id);
         filter.setName(name);
         filter.setParameters(parameters);

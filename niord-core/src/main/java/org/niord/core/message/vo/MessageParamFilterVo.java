@@ -19,9 +19,9 @@ package org.niord.core.message.vo;
 import org.niord.model.IJsonSerializable;
 
 /**
- * Represents a persisted message list filter
+ * Represents a persisted message parameter filter
  */
-public class MessageFilterVo implements IJsonSerializable {
+public class MessageParamFilterVo implements IJsonSerializable {
 
     Integer id;
     String name;

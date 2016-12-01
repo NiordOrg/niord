@@ -33,6 +33,7 @@ import org.niord.core.geojson.FeatureService;
 import org.niord.core.message.MessageSearchParams.DateType;
 import org.niord.core.message.MessageSearchParams.UserType;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.publication.PublicationService;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
@@ -95,6 +96,9 @@ public class MessageService extends BaseService {
 
     @Inject
     MessageTagService messageTagService;
+
+    @Inject
+    PublicationService publicationService;
 
     @Inject
     MessageLuceneIndex messageLuceneIndex;
@@ -558,6 +562,9 @@ public class MessageService extends BaseService {
                 message.setPublishDateTo(now);
             }
         }
+
+        // Add or remove the message from any message-recording publication message tags
+        publicationService.updateRecordingPublications(message);
 
         message = saveMessage(message);
         return message;

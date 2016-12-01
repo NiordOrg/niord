@@ -124,6 +124,8 @@ angular.module('niord.admin')
                         return isTemplate && pub.type == 'MESSAGE_REPORT';
                     case 'messageTag':
                         return isPublication && pub.type == 'MESSAGE_REPORT' && !(hasTemplate && pub.template.messageTagFormat);
+                    case 'messageTagFilter':
+                        return pub.type == 'MESSAGE_REPORT' && !(hasTemplate && pub.template.messageTagFilter);
                     case 'periodicalType':
                         return isTemplate;
                     case 'dates':
@@ -189,6 +191,24 @@ angular.module('niord.admin')
                                 .success($scope.editPublication)
                                 .error($scope.displayError);
                         });
+                }
+            };
+
+
+            /** Updates the message tag filter **/
+            $scope.setMessageTagFilter = function (filterType) {
+                switch (filterType) {
+                    case 'published':
+                        $scope.publication.messageTagFilter = "msg.status == 'PUBLISHED'";
+                        break;
+                    case 'nm-tp':
+                        $scope.publication.messageTagFilter =
+                            "msg.type == 'TEMPORARY_NOTICE' || msg.type == 'PRELIMINARY_NOTICE'";
+                        break;
+                    case 'published-nm-tp':
+                        $scope.publication.messageTagFilter =
+                            "(msg.type == 'TEMPORARY_NOTICE' || msg.type == 'PRELIMINARY_NOTICE') && msg.status == 'PUBLISHED'";
+                        break;
                 }
             };
 

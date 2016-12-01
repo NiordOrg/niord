@@ -43,6 +43,7 @@ public class SystemPublicationVo extends PublicationVo implements IRepoBackedVo 
     DomainVo domain;
     PeriodicalType periodicalType;
     String messageTagFormat;
+    String messageTagFilter;
     MessageTagVo messageTag;
     MessagePublication messagePublication;
     boolean languageSpecific;
@@ -148,6 +149,14 @@ public class SystemPublicationVo extends PublicationVo implements IRepoBackedVo 
 
     public void setMessageTagFormat(String messageTagFormat) {
         this.messageTagFormat = messageTagFormat;
+    }
+
+    public String getMessageTagFilter() {
+        return messageTagFilter;
+    }
+
+    public void setMessageTagFilter(String messageTagFilter) {
+        this.messageTagFilter = messageTagFilter;
     }
 
     public MessageTagVo getMessageTag() {

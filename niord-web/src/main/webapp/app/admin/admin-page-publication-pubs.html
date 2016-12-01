@@ -151,6 +151,33 @@
                    </div>
                </div>
 
+               <!-- ******* File -> Message Tag Filter ******* -->
+               <div class="form-group" ng-if="showEditorField('messageTagFilter')">
+                   <label class="col-sm-4 col-md-2">Message Tag Filter</label>
+                   <div class="col-sm-6 col-md-10">
+                       <div class="row">
+                           <div class="col-sm-12">
+                               <div class="input-group">
+                                   <input class="form-control input-sm" placeholder="Message Tag Filter" type="text"
+                                          ng-model="publication.messageTagFilter"
+                                          autocapitalize="off" autocorrect="off" autocomplete="off">
+                                   <div class="input-group-btn">
+                                       <button type="button" class="btn btn-sm btn-default dropdown-toggle"
+                                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                           Predefined <span class="caret"></span>
+                                       </button>
+                                       <ul class="dropdown-menu dropdown-menu-right">
+                                           <li><a href ng-click="setMessageTagFilter('published')">Only Published</a></li>
+                                           <li><a href ng-click="setMessageTagFilter('nm-tp')">NM T&P</a></li>
+                                           <li><a href ng-click="setMessageTagFilter('published-nm-tp')">Published NM T&P</a></li>
+                                       </ul>
+                                   </div>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+               </div>
+
                <!-- ******* File -> Report ******* -->
                <div class="form-group" ng-if="showEditorField('report')">
                    <label class="col-sm-4 col-md-2">Report</label>

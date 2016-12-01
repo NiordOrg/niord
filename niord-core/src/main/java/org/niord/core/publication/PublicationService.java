@@ -20,6 +20,10 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.message.Message;
+import org.niord.core.message.MessageScriptFilterService;
+import org.niord.core.message.MessageSeries;
+import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
 import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.publication.vo.PublicationStatus;
@@ -72,6 +76,9 @@ public class PublicationService extends BaseService {
     @Inject
     RepositoryService repositoryService;
 
+    @Inject
+    MessageScriptFilterService messageScriptFilterService;
+
 
     /**
      * Returns the publication with the given publication ID
@@ -114,6 +121,18 @@ public class PublicationService extends BaseService {
                 .setParameter("publicationIds", publicationIds)
                 .getResultList().stream()
                 .collect(Collectors.toSet());
+    }
+
+
+    /**
+     * Returns the message-recording publications
+     * @param series the message series to find recording publications fro
+     * @return the message-recording publications
+     */
+    public List<Publication> findRecordingPublications(MessageSeries series) {
+        return em.createNamedQuery("Publication.findRecordingPublications", Publication.class)
+                .setParameter("series", series)
+                .getResultList();
     }
 
 
@@ -383,9 +402,39 @@ public class PublicationService extends BaseService {
         pub.setStatus(status);
         log.info("Updating status for " + publicationId + ": " + curStatus + " -> " + status);
 
+        // If the status is ACTIVE or INACTIVE, lock any associated message tag
+        if ((pub.getStatus() == ACTIVE || pub.getStatus() == INACTIVE) && pub.getMessageTag() != null) {
+            pub.getMessageTag().setLocked(true);
+        }
+
         return savePublication(pub);
     }
 
+
+    /**
+     * Will update all message tags for publications in the RECORDING status
+     * @param message the message to update recording publications for
+     */
+    public void updateRecordingPublications(Message message) {
+        for (Publication p : findRecordingPublications(message.getMessageSeries())) {
+
+            MessageTag tag = p.getMessageTag();
+
+            // Check if the message should be included in the associated message tag
+            boolean includeMessage = messageScriptFilterService.includeMessage(p.getMessageTagFilter(), message);
+            boolean isIncluded = tag.getMessages().contains(message);
+
+            if (includeMessage && !isIncluded) {
+                tag.getMessages().add(message);
+                tag.updateMessageCount();
+                log.info("Added message " + message.getUid() + " to tag: " + tag.getName());
+            } else if (!includeMessage && isIncluded) {
+                tag.getMessages().remove(message);
+                tag.updateMessageCount();
+                log.info("Removed message " + message.getUid() + " from tag: " + tag.getName());
+            }
+        }
+    }
 
     /***************************************/
     /** Repo methods                      **/
