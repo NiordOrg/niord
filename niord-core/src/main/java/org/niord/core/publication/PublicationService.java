@@ -358,6 +358,9 @@ public class PublicationService extends BaseService {
         PublicationStatus curStatus = pub.getStatus();
         boolean valid = false;
         switch (status) {
+            case DRAFT:
+                valid = curStatus == RECORDING && pub.getMainType() == PUBLICATION && pub.getType() == MESSAGE_REPORT;
+                break;
             case RECORDING:
                 valid = curStatus == DRAFT && pub.getMainType() == PUBLICATION && pub.getType() == MESSAGE_REPORT
                         && pub.getMessageTag() != null;

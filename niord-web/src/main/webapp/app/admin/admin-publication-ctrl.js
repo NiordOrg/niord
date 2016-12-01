@@ -165,6 +165,8 @@ angular.module('niord.admin')
                 var isPublication = pub.mainType == 'PUBLICATION';
                 var curStatus = pub.status;
                 switch (status) {
+                    case 'DRAFT':
+                        return isSaved && isPublication && curStatus == 'RECORDING';
                     case 'RECORDING':
                         return isSaved && isPublication && curStatus == 'DRAFT' && pub.type == 'MESSAGE_REPORT' && pub.messageTag;
                     case 'ACTIVE':

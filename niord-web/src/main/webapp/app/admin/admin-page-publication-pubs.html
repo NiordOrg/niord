@@ -285,6 +285,12 @@
                             Start Recording Messages
                         </button>
                         <button class="btn btn-default btn-sm"
+                                ng-if="canChangeStatus('DRAFT')"
+                                ng-click="changeStatus('DRAFT')"
+                                ng-disabled="publicationForm.$dirty">
+                            Stop Recording Messages
+                        </button>
+                        <button class="btn btn-default btn-sm"
                                 ng-if="canChangeStatus('ACTIVE')"
                                 ng-click="changeStatus('ACTIVE')"
                                 ng-disabled="publicationForm.$dirty">

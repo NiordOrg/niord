@@ -283,7 +283,7 @@ tr.batch-execution-row td div.progress {
 
 .publication-status-RECORDING {
     background-color: darkred;
-    animation: recording-anim 4s infinite;
+    animation: recording-anim 3s infinite;
 }
 
 .publication-status-ACTIVE {
