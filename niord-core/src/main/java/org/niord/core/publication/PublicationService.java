@@ -31,6 +31,7 @@ import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
 import org.niord.core.util.TimeUtils;
+import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
@@ -52,6 +53,7 @@ import java.util.stream.Collectors;
 import static org.niord.core.publication.vo.PublicationMainType.PUBLICATION;
 import static org.niord.core.publication.vo.PublicationMainType.TEMPLATE;
 import static org.niord.core.publication.vo.PublicationStatus.*;
+import static org.niord.model.message.Status.PUBLISHED;
 import static org.niord.model.publication.PublicationType.*;
 
 /**
@@ -414,8 +416,16 @@ public class PublicationService extends BaseService {
     /**
      * Will update all message tags for publications in the RECORDING status
      * @param message the message to update recording publications for
+     * @param prevStatus the previous status
      */
-    public void updateRecordingPublications(Message message) {
+    public void updateRecordingPublications(Message message, Status prevStatus) {
+
+        // Only process message that either enters or leaves the PUBLISHED status
+        if (message.getStatus() != PUBLISHED && prevStatus != PUBLISHED) {
+            return;
+        }
+
+        // Find publications that are recording messages, and check them against their filter
         for (Publication p : findRecordingPublications(message.getMessageSeries())) {
 
             MessageTag tag = p.getMessageTag();

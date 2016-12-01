@@ -125,7 +125,7 @@ angular.module('niord.admin')
                     case 'messageTag':
                         return isPublication && pub.type == 'MESSAGE_REPORT' && !(hasTemplate && pub.template.messageTagFormat);
                     case 'messageTagFilter':
-                        return pub.type == 'MESSAGE_REPORT' && !(hasTemplate && pub.template.messageTagFilter);
+                        return pub.type == 'MESSAGE_REPORT' && !(hasTemplate && (pub.template.messageTagFilter || pub.template.messageTagFormat));
                     case 'periodicalType':
                         return isTemplate;
                     case 'dates':
@@ -210,6 +210,7 @@ angular.module('niord.admin')
                             "(msg.type == 'TEMPORARY_NOTICE' || msg.type == 'PRELIMINARY_NOTICE') && msg.status == 'PUBLISHED'";
                         break;
                 }
+                $scope.setDirty();
             };
 
 
