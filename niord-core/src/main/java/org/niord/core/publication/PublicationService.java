@@ -387,7 +387,7 @@ public class PublicationService extends BaseService {
                         && pub.getMessageTag() != null;
                 break;
             case ACTIVE:
-                valid = (curStatus == DRAFT || curStatus == RECORDING)
+                valid = curStatus != ACTIVE
                         && (pub.getMainType() == TEMPLATE || pub.getType() == NONE ||
                             pub.getDescs().stream().allMatch(d -> StringUtils.isNotBlank(d.getLink())));
                 break;

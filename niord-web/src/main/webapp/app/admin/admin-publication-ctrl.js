@@ -172,7 +172,7 @@ angular.module('niord.admin')
                     case 'RECORDING':
                         return isSaved && isPublication && curStatus == 'DRAFT' && pub.type == 'MESSAGE_REPORT' && pub.messageTag;
                     case 'ACTIVE':
-                        return isSaved && (curStatus == 'DRAFT' || curStatus == 'RECORDING') && checkLinkDefined(pub);
+                        return isSaved && curStatus != 'ACTIVE' && checkLinkDefined(pub);
                     case 'INACTIVE':
                         return isSaved && curStatus == 'ACTIVE';
                 }
