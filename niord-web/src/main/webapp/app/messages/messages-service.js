@@ -214,7 +214,7 @@ angular.module('niord.messages')
 
 
             /** Returns all publications */
-            searchPublications: function(title, messagePublication, mainType) {
+            searchPublications: function(title, messagePublication, mainType, status) {
                 var params = 'lang=' + $rootScope.language;
                 if (title) {
                     params += '&title=' + encodeURIComponent(title);
@@ -224,6 +224,9 @@ angular.module('niord.messages')
                 }
                 if (mainType) {
                     params += '&mainType=' + mainType;
+                }
+                if (status) {
+                    params += '&status=' + status;
                 }
                 return $http.get('/rest/publications/search-details?' + params);
             },

@@ -125,6 +125,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
             @QueryParam("messagePublication") MessagePublication messagePublication,
             @QueryParam("mainType") @DefaultValue("PUBLICATION") PublicationMainType mainType,
             @QueryParam("type") PublicationType type,
+            @QueryParam("status") PublicationStatus status,
             @QueryParam("title") @DefaultValue("") String title,
             @QueryParam("limit") @DefaultValue("100") int limit) {
 
@@ -132,6 +133,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
                 .language(lang)
                 .mainType(mainType)
                 .type(type)
+                .status(status)
                 .domain(domain)
                 .category(category)
                 .messagePublication(messagePublication)
@@ -162,6 +164,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
             @QueryParam("messagePublication") MessagePublication messagePublication,
             @QueryParam("mainType") @DefaultValue("PUBLICATION") PublicationMainType mainType,
             @QueryParam("type") PublicationType type,
+            @QueryParam("status") PublicationStatus status,
             @QueryParam("title") @DefaultValue("") String title,
             @QueryParam("limit") @DefaultValue("100") int limit) {
 
@@ -169,6 +172,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
                 .language(lang)
                 .mainType(mainType)
                 .type(type)
+                .status(status)
                 .domain(domain)
                 .category(category)
                 .messagePublication(messagePublication)

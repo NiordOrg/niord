@@ -450,6 +450,7 @@ angular.module('niord.common')
                 publicationData: "=",
                 messagePublication: "=",
                 mainType: "@",
+                status: "@",
                 initId: "=",
                 tabIndex:   "=",
                 publicationChanged: "&"
@@ -484,7 +485,7 @@ angular.module('niord.common')
                 scope.publications = [];
                 scope.refreshPublications = function (text) {
                     text = text || '';
-                    MessageService.searchPublications(text, scope.messagePublication, scope.mainType)
+                    MessageService.searchPublications(text, scope.messagePublication, scope.mainType, scope.status)
                         .success(function (publications) {
                             scope.publications = publications;
                         });
