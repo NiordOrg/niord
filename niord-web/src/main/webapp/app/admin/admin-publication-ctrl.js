@@ -38,6 +38,7 @@ angular.module('niord.admin')
             $scope.publicationFileUploadUrl = '';
             $scope.editMode = 'add';
             $scope.filter = {
+                mainType: 'PUBLICATION',
                 title: '',
                 type: '',
                 category: '',
@@ -50,7 +51,7 @@ angular.module('niord.admin')
 
             /** Sets the mainType of publications, either 'PUBLICATION' or 'TEMPLATE' **/
             $scope.init = function (mainType) {
-                $scope.mainType = mainType;
+                $scope.filter.mainType = mainType;
                 $scope.loadPublications();
             };
 
