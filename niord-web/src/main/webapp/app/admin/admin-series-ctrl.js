@@ -81,29 +81,6 @@ angular.module('niord.admin')
             };
 
 
-            /** Inserts the token in the publish tag format field */
-            $scope.insertTagFormatToken = function (index, token) {
-                $scope.series.publishTagFormats[index] += token;
-                $('#tagFormat' + index).focus();
-                $scope.seriesForm.$setDirty();
-            };
-
-
-            /** Adds a new blank publish tag format after the given index **/
-            $scope.addPublishTagFormat = function (index) {
-                $scope.series.publishTagFormats.splice(index + 1, 0, '');
-            };
-
-
-            /** Removes the publish tag format at the given index **/
-            $scope.removePublishTagFormat = function (index) {
-                $scope.series.publishTagFormats.splice(index, 1);
-                if ($scope.series.publishTagFormats.length == 0) {
-                    $scope.addPublishTagFormat(0);
-                }
-            };
-
-
             /** Adds a new message series **/
             $scope.addMessageSeries = function () {
                 $scope.editMode = 'add';
@@ -111,8 +88,7 @@ angular.module('niord.admin')
                     seriesId: '',
                     mainType: 'NW',
                     numberSequenceType: 'YEARLY',
-                    shortFormat: '',
-                    publishTagFormats: [ '' ]
+                    shortFormat: ''
                 };
                 $scope.updateShortFormat();
                 $scope.seriesForm.$setPristine();
@@ -132,10 +108,6 @@ angular.module('niord.admin')
                 $scope.editMode = 'edit';
                 $scope.series = angular.copy(series);
                 $scope.updateShortFormat();
-                if (!$scope.series.publishTagFormats) {
-                    $scope.series.publishTagFormats = [];
-                }
-                $scope.series.publishTagFormats.push('');
                 $scope.seriesForm.$setPristine();
             };
 

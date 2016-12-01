@@ -43,7 +43,6 @@ public class SystemMessageSeriesVo extends MessageSeriesVo {
     String shortFormat;
     NumberSequenceType numberSequenceType;
     Integer nextMessageNumber;
-    List<String> publishTagFormats;
     List<String> editorFields;
 
     /*************************/
@@ -72,14 +71,6 @@ public class SystemMessageSeriesVo extends MessageSeriesVo {
 
     public void setNextMessageNumber(Integer nextMessageNumber) {
         this.nextMessageNumber = nextMessageNumber;
-    }
-
-    public List<String> getPublishTagFormats() {
-        return publishTagFormats;
-    }
-
-    public void setPublishTagFormats(List<String> publishTagFormats) {
-        this.publishTagFormats = publishTagFormats;
     }
 
     public List<String> getEditorFields() {

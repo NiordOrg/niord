@@ -554,9 +554,6 @@ public class MessageService extends BaseService {
             // Assign a new message number and short ID
             messageSeriesService.updateMessageIdsFromMessageSeries(message, true);
 
-            // Associate the message with the message tags specified by the message series
-            messageSeriesService.updateMessageTagsFromMessageSeries(message);
-
         } else if (status == Status.CANCELLED || status == Status.EXPIRED) {
             if (message.getPublishDateTo() == null || message.getPublishDateTo().before(now)) {
                 message.setPublishDateTo(now);

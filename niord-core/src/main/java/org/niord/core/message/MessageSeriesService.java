@@ -43,8 +43,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.niord.core.message.vo.MessageTagVo.MessageTagType.PUBLIC;
-
 /**
  * Business interface for managing message series
  */
@@ -206,8 +204,6 @@ public class MessageSeriesService extends BaseService {
         original.setShortFormat(series.getShortFormat());
         original.setNumberSequenceType(series.getNumberSequenceType() != null
             ? series.getNumberSequenceType() : null);
-        original.getPublishTagFormats().clear();
-        original.getPublishTagFormats().addAll(series.getPublishTagFormats());
         original.getEditorFields().clear();
         original.getEditorFields().addAll(series.getEditorFields());
 
@@ -372,55 +368,6 @@ public class MessageSeriesService extends BaseService {
             }
         }
 
-    }
-
-
-    /**
-     * Assign the message to the message tags defined by the publishTagFormat list of the message series
-     * @param message the message to update
-     */
-    public void updateMessageTagsFromMessageSeries(Message message) {
-
-        MessageSeries messageSeries = message.getMessageSeries();
-        if (messageSeries == null) {
-            throw new IllegalArgumentException("Message series must be specified");
-        }
-
-        // Next, if the message has been published, update the message tag association.
-        // we include cancelled and expired states in order to handle import of old messages.
-        if (message.getStatus().isPublic()) {
-            FormatResolver formatResolver = new FormatResolver(message, app);
-            message.getMessageSeries()
-                    .getPublishTagFormats().stream()
-                    .map(formatResolver::resolveFormat)
-                    .map(this::findOrCreatePublicMessageTag)
-                    .filter(tag -> !tag.getMessages().contains(message))
-                    .forEach(tag -> {
-                        tag.getMessages().add(message);
-                        log.debug("Added message to tag with name " + tag.getName());
-                        tag.updateMessageCount();
-                    });
-        }
-    }
-
-
-    /**
-     * Finds or creates a public tag with the given name
-     * @param name the tag name
-     * @return the tag
-     */
-    private MessageTag findOrCreatePublicMessageTag(String name) {
-        List<MessageTag> tags = messageTagService.findTagsByTypeAndName(PUBLIC, name);
-        if (tags.isEmpty()) {
-            MessageTag tag = new MessageTag();
-            tag.checkAssignTagId();
-            tag.setName(name);
-            tag.setType(PUBLIC);
-            tag.setLocked(true);
-            return saveEntity(tag);
-        } else {
-            return tags.get(0);
-        }
     }
 
 
