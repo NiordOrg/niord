@@ -56,7 +56,7 @@
                    <div class="col-sm-6 col-md-10">
                        <div class="row">
                            <div class="col-xs-12 col-sm-6" ng-repeat="desc in publication.descs">
-                               <input class="form-control input-sm" placeholder="Title" type="text" ng-model="desc.title" ng-required="mainType == 'PUBLICATION'"
+                               <input class="form-control input-sm" placeholder="Title" type="text" ng-model="desc.title" ng-required="filter.mainType == 'PUBLICATION'"
                                       bg-flag="desc.lang">
                            </div>
                        </div>
@@ -371,7 +371,7 @@
                 <select class="form-control input-sm" ng-model="filter.status">
                     <option value="">All Statuses</option>
                     <option value="DRAFT">Drafts</option>
-                    <option value="RECORDING" ng-if="mainType == 'PUBLICATION'">Recording</option>
+                    <option value="RECORDING" ng-if="filter.mainType == 'PUBLICATION'">Recording</option>
                     <option value="ACTIVE">Active</option>
                     <option value="INACTIVE">Inactive</option>
                 </select>
@@ -399,8 +399,8 @@
                     <tr>
                         <th>Status</th>
                         <th>Title</th>
-                        <th ng-if="mainType == 'PUBLICATION'" style="text-align: right">From Date</th>
-                        <th ng-if="mainType == 'PUBLICATION'" style="text-align: right">To Date</th>
+                        <th ng-if="filter.mainType == 'PUBLICATION'" style="text-align: right">From Date</th>
+                        <th ng-if="filter.mainType == 'PUBLICATION'" style="text-align: right">To Date</th>
                         <th>Category</th>
                         <th>File Type</th>
                         <th></th>
@@ -413,8 +413,8 @@
                                 <span style="font-size: 10px; margin-left:5px;" class="glyphicon glyphicon-new-window"></span>
                             </a>
                         </td>
-                        <td ng-if="mainType == 'PUBLICATION'" align="right">{{publication.publishDateFrom  | formatDate:'ll'}}</td>
-                        <td ng-if="mainType == 'PUBLICATION'" align="right">{{publication.publishDateTo  | formatDate:'ll'}}</td>
+                        <td ng-if="filter.mainType == 'PUBLICATION'" align="right">{{publication.publishDateFrom  | formatDate:'ll'}}</td>
+                        <td ng-if="filter.mainType == 'PUBLICATION'" align="right">{{publication.publishDateTo  | formatDate:'ll'}}</td>
                         <td>{{publication.category.descs[0].name}}</td>
                         <td>{{'publication_type.' + publication.type | translate}}</td>
                         <td nowrap>

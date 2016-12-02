@@ -31,7 +31,6 @@ angular.module('niord.admin')
         function ($scope, $rootScope, $window, $timeout, growl, AdminPublicationService, DialogService, LangService, UploadFileService) {
             'use strict';
 
-            $scope.mainType = 'PUBLICATION';
             $scope.publications = [];
             $scope.publication = undefined; // The publication being edited
             $scope.publicationCategories = [];
@@ -321,7 +320,7 @@ angular.module('niord.admin')
 
             /** Adds a new publication **/
             $scope.addPublication = function () {
-                AdminPublicationService.newPublicationTemplate($scope.mainType)
+                AdminPublicationService.newPublicationTemplate($scope.filter.mainType)
                     .success(function (pub) {
                         $scope.editMode = 'add';
                         $scope.publication = pub;
