@@ -40,6 +40,7 @@ angular.module('niord.editor')
 
             $scope.messagePublication = messagePublication;
             $scope.publicationId = publicationId;
+            $scope.publicationIds = publicationId ? [ publicationId ] : undefined;
             $scope.pub = {
                 parameters: undefined,
                 link: undefined,
