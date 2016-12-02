@@ -16,8 +16,6 @@
 
 package org.niord.core.message;
 
-import org.niord.model.message.Status;
-
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
@@ -34,16 +32,8 @@ public class MessageScriptFilterEvaluator {
     /** Exclude all messages **/
     public static MessageScriptFilterEvaluator EXCLUDE_ALL = new MessageScriptFilterEvaluator() {
         @Override
-        public boolean includeMessage(Message message) {
+        public boolean includeMessage(Message message, Object data) {
             return false;
-        }
-    };
-
-    /** Include all published messages **/
-    public static MessageScriptFilterEvaluator INCLUDE_PUBLISHED = new MessageScriptFilterEvaluator() {
-        @Override
-        public boolean includeMessage(Message message) {
-            return message.getStatus() == Status.PUBLISHED;
         }
     };
 
@@ -72,7 +62,7 @@ public class MessageScriptFilterEvaluator {
                 // Instead, we wrap the filter in a function and call that function.
                 ScriptEngine jsEngine = new ScriptEngineManager()
                         .getEngineByName("JavaScript");
-                jsEngine.eval("function includeMessage(msg) { return " + filter + "; }");
+                jsEngine.eval("function includeMessage(msg, data) { return " + filter + "; }");
                 filterFunction = (Invocable)jsEngine;
             } catch (Exception e) {
                 throw new Exception("Invalid access log filter: " + filter);
@@ -84,13 +74,14 @@ public class MessageScriptFilterEvaluator {
     /**
      * Check if the message is included in the filter or not
      * @param message the message to check
+     * @param data optionally, a data object can be passed on to the filter function
      * @return if the message is included in the filter or not
      */
-    public boolean includeMessage(Message message) {
+    public boolean includeMessage(Message message, Object data) {
         // Check if a message filter has been defined
         if (filterFunction != null) {
             try {
-                return  (Boolean)filterFunction.invokeFunction("includeMessage", message);
+                return  (Boolean)filterFunction.invokeFunction("includeMessage", message, data);
             } catch (Exception ignored) {
                 // Do not include
             }

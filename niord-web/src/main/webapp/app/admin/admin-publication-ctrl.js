@@ -209,7 +209,10 @@ angular.module('niord.admin')
             /** Updates the message tag filter **/
             $scope.setMessageTagFilter = function (filterType) {
                 switch (filterType) {
-                    case 'published':
+                    case 'new-published':
+                        $scope.publication.messageTagFilter = "data.phase == 'msg-status-change' && msg.status == 'PUBLISHED'";
+                        break;
+                    case 'all-published':
                         $scope.publication.messageTagFilter = "msg.status == 'PUBLISHED'";
                         break;
                     case 'nm-tp':

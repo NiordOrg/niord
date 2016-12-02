@@ -21,6 +21,9 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessageScriptFilterEvaluator;
 import org.niord.model.message.Status;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.niord.model.message.Type.TEMPORARY_NOTICE;
@@ -37,11 +40,14 @@ public class MessageScriptFilterEvaluatorTest {
         msg.setStatus(Status.PUBLISHED);
         msg.setType(TEMPORARY_NOTICE);
 
-        String filter1 = "(msg.type == 'TEMPORARY_NOTICE' || msg.type == 'PRELIMINARY_NOTICE') && msg.status == 'PUBLISHED'";
+        Map<String, String> data = new HashMap<>();
+        data.put("phase", "start-recording");
+
+        String filter1 = "data.phase == 'start-recording' && (msg.type == 'TEMPORARY_NOTICE' || msg.type == 'PRELIMINARY_NOTICE') && msg.status == 'PUBLISHED'";
         String filter2 = "msg.status == 'DRAFT'";
 
-        assertTrue(new MessageScriptFilterEvaluator(filter1).includeMessage(msg));
-        assertFalse(new MessageScriptFilterEvaluator(filter2).includeMessage(msg));
+        assertTrue(new MessageScriptFilterEvaluator(filter1).includeMessage(msg, data));
+        assertFalse(new MessageScriptFilterEvaluator(filter2).includeMessage(msg, data));
 
     }
 }

@@ -357,6 +357,11 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         return this;
     }
 
+    public MessageSearchParams statuses(Status... statuses) {
+        this.statuses = toSet(statuses, Function.identity());
+        return this;
+    }
+
     public Set<Type> getTypes() {
         return types;
     }

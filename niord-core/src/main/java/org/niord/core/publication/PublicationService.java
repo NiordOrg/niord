@@ -22,7 +22,9 @@ import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageScriptFilterService;
+import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
+import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
 import org.niord.core.publication.vo.PublicationMainType;
@@ -53,6 +55,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -69,6 +72,17 @@ import static org.niord.model.publication.PublicationType.*;
 @SuppressWarnings("unused")
 public class PublicationService extends BaseService {
 
+    private static final String PHASE_START_RECORDING       = "start-recording";
+    private static final String PHASE_MESSAGE_STATUS_CHANGE = "msg-status-change";
+
+    /**
+     * The message tag filter is only ever evaluated for messages that is PUBLISHED or was PUBLISHED (status changes),
+     * hence, the filter below will add all messages that gets published after recording starts, but not remove
+     * them again.
+     */
+    private static final String DEFAULT_MESSAGE_TAG_FILTER  = "data.phase == 'msg-status-change'";
+
+
     @Inject
     private Logger log;
 
@@ -77,6 +91,9 @@ public class PublicationService extends BaseService {
 
     @Inject
     DomainService domainService;
+
+    @Inject
+    MessageService messageService;
 
     @Inject
     MessageTagService messageTagService;
@@ -515,7 +532,66 @@ public class PublicationService extends BaseService {
             pub.getMessageTag().setLocked(true);
         }
 
+        // If the status is RECORDING, check if any published messages should be assigned to the associated message tag
+        if (pub.getStatus() == RECORDING) {
+            startRecordingPublication(pub);
+        }
+
         return savePublication(pub);
+    }
+
+
+    /**
+     * When a publication enters the RECORDING status, check if any of the currently published messages
+     * should be assigned to the associated message tag.
+      * @param publication the publication
+     */
+    private void startRecordingPublication(Publication publication) {
+
+        // Sanity checks
+        if (publication.getStatus() != RECORDING || publication.getMessageTag() == null ||
+                StringUtils.isBlank(publication.getMessageTagFilter())) {
+            return;
+        }
+
+        // Look up all published messages
+        MessageSearchParams params = new MessageSearchParams()
+                .domain(publication.getDomain() != null ? publication.getDomain().getDomainId() : null)
+                .statuses(PUBLISHED);
+        List<Message> messages = messageService.search(params).getData();
+
+        // For each message, check if it should be included in the associated message tag
+        messages.forEach(m -> checkMessageForRecordingPublication(publication, m, PHASE_START_RECORDING));
+    }
+
+
+    /**
+     * Check if the message should be assigned to the associated message tag of the recording publication
+     * @param publication the publication
+     * @param message the message
+     * @param phase the phase
+     */
+    private void checkMessageForRecordingPublication(Publication publication, Message message, String phase) {
+        MessageTag tag = publication.getMessageTag();
+
+        Map<String, String> data = Collections.singletonMap("phase", phase);
+        String messageTagFilter = StringUtils.defaultIfBlank(
+                publication.getMessageTagFilter(),
+                DEFAULT_MESSAGE_TAG_FILTER);
+
+        // Check if the message should be included in the associated message tag
+        boolean includeMessage = messageScriptFilterService.includeMessage(messageTagFilter, message, data);
+        boolean isIncluded = tag.getMessages().contains(message);
+
+        if (includeMessage && !isIncluded) {
+            tag.getMessages().add(message);
+            tag.updateMessageCount();
+            log.info("Added message " + message.getUid() + " to tag: " + tag.getName());
+        } else if (!includeMessage && isIncluded) {
+            tag.getMessages().remove(message);
+            tag.updateMessageCount();
+            log.info("Removed message " + message.getUid() + " from tag: " + tag.getName());
+        }
     }
 
 
@@ -532,25 +608,11 @@ public class PublicationService extends BaseService {
         }
 
         // Find publications that are recording messages, and check them against their filter
-        for (Publication p : findRecordingPublications(message.getMessageSeries())) {
-
-            MessageTag tag = p.getMessageTag();
-
-            // Check if the message should be included in the associated message tag
-            boolean includeMessage = messageScriptFilterService.includeMessage(p.getMessageTagFilter(), message);
-            boolean isIncluded = tag.getMessages().contains(message);
-
-            if (includeMessage && !isIncluded) {
-                tag.getMessages().add(message);
-                tag.updateMessageCount();
-                log.info("Added message " + message.getUid() + " to tag: " + tag.getName());
-            } else if (!includeMessage && isIncluded) {
-                tag.getMessages().remove(message);
-                tag.updateMessageCount();
-                log.info("Removed message " + message.getUid() + " from tag: " + tag.getName());
-            }
+        for (Publication publication : findRecordingPublications(message.getMessageSeries())) {
+            checkMessageForRecordingPublication(publication, message, PHASE_MESSAGE_STATUS_CHANGE);
         }
     }
+
 
     /***************************************/
     /** Repo methods                      **/

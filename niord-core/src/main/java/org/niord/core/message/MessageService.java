@@ -561,7 +561,7 @@ public class MessageService extends BaseService {
         }
 
         // Add or remove the message from any message-recording publication message tags
-        publicationService.updateRecordingPublications(message, status);
+        publicationService.updateRecordingPublications(message, currentStatus);
 
         message = saveMessage(message);
         return message;

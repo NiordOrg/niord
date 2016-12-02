@@ -96,7 +96,7 @@ public class PublicationTemplateUpdateCtx {
      * @return the updated value
      */
     public String str(String value, String defaultValue) {
-        if (!replacementValues.isEmpty() && StringUtils.isNotBlank(value) && value.contains("${")) {
+        if (!replacementValues.isEmpty() && StringUtils.isNotBlank(value)) {
             for (Map.Entry<String, String> kv : replacementValues.entrySet()) {
                 value = value.replace(kv.getKey(), kv.getValue());
             }

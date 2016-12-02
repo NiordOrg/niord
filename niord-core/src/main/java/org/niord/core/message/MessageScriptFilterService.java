@@ -20,7 +20,6 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
-import javax.annotation.PostConstruct;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
 import javax.ejb.Singleton;
@@ -48,22 +47,12 @@ public class MessageScriptFilterService extends BaseService {
 
 
     /**
-     * Initialize the service
-     */
-    @PostConstruct
-    public void init() {
-        // Default behaviour for blank filters
-        filters.put("", MessageScriptFilterEvaluator.INCLUDE_PUBLISHED);
-    }
-
-
-    /**
      * Check if the message is included in the filter or not
      * @param filter the filter
      * @param message the message to check
      * @return if the message is included in the filter or not
      */
-    public boolean includeMessage(String filter, Message message) {
+    public boolean includeMessage(String filter, Message message, Object data) {
 
         filter = StringUtils.defaultIfBlank(filter, "");
 
@@ -85,7 +74,7 @@ public class MessageScriptFilterService extends BaseService {
             }
         }
 
-        return evaluator.includeMessage(message);
+        return evaluator.includeMessage(message, data);
     }
 
 }
