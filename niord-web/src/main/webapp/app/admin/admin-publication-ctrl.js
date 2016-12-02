@@ -127,8 +127,6 @@ angular.module('niord.admin')
                         return isPublication;
                     case 'category':
                         return !hasTemplate || pub.template.category === undefined;
-                    case 'domain':
-                        return !hasTemplate || pub.template.domain === undefined;
                     case 'title':
                         return !hasTemplate || pub.template.descs[0].titleFormat === undefined;
                     case 'titleFormat':
@@ -205,12 +203,6 @@ angular.module('niord.admin')
                                 .error($scope.displayError);
                         });
                 }
-            };
-
-
-            /** Called when the "current domain" checkbox is checked or unchecked **/
-            $scope.domainChanged = function () {
-
             };
 
 
@@ -333,7 +325,6 @@ angular.module('niord.admin')
                     .success(function (pub) {
                         $scope.editMode = 'add';
                         $scope.publication = pub;
-                        $scope.publication.currentDomain = pub.domain !== undefined;
                         LangService.checkDescs($scope.publication, ensureTitleField);
                         $scope.setDirty();
                     });
@@ -346,7 +337,6 @@ angular.module('niord.admin')
                     .success(function (pub) {
                         $scope.editMode = 'edit';
                         $scope.publication = pub;
-                        $scope.publication.currentDomain = pub.domain !== undefined;
                         LangService.sortDescs($scope.publication);
 
                         // Some field editors rely on hardcoded property names:
@@ -367,7 +357,6 @@ angular.module('niord.admin')
                     .success(function (pub) {
                         $scope.editMode = 'add';
                         $scope.publication = pub;
-                        $scope.publication.currentDomain = pub.domain !== undefined;
                         LangService.sortDescs($scope.publication);
 
                         // Some field editors rely on hardcoded property names:
@@ -388,23 +377,27 @@ angular.module('niord.admin')
 
             /** Saves the current publication being edited */
             $scope.savePublication = function () {
+                var pub = $scope.publication;
 
-                if ($scope.publication.messagePublication == '') {
-                    delete $scope.publication.messagePublication;
+                if (pub.messagePublication == '') {
+                    delete pub.messagePublication;
                 }
-                if ($scope.publication.periodicalType == '') {
-                    delete $scope.publication.periodicalType;
+                if (pub.periodicalType == '') {
+                    delete pub.periodicalType;
                 }
-                $scope.publication.domain = ($scope.publication.currentDomain) ? $rootScope.domain : undefined;
+                pub.domain =
+                    (pub.type == 'MESSAGE_REPORT' || (pub.template && pub.template.type == 'MESSAGE_REPORT'))
+                        ? $rootScope.domain
+                        : undefined;
 
-                if ($scope.publication && $scope.editMode == 'add') {
+                if (pub && $scope.editMode == 'add') {
                     AdminPublicationService
-                        .createPublication($scope.publication)
+                        .createPublication(pub)
                         .success($scope.editPublication)
                         .error($scope.displayError);
-                } else if ($scope.publication && $scope.editMode == 'edit') {
+                } else if (pub && $scope.editMode == 'edit') {
                     AdminPublicationService
-                        .updatePublication($scope.publication)
+                        .updatePublication(pub)
                         .success($scope.editPublication)
                         .error($scope.displayError);
                 }

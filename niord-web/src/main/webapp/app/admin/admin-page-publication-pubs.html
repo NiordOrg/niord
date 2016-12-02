@@ -21,19 +21,6 @@
                    </div>
                </div>
 
-               <!-- ******* Domain ******* -->
-               <div class="form-group" ng-if="showEditorField('domain')">
-                   <label class="col-sm-4 col-md-2">Domain</label>
-                   <div class="col-sm-6 col-md-10">
-                       <div class="row">
-                           <div class="col-sm-6">
-                               <input type="checkbox" ng-model="publication.currentDomain">
-                               Specific current domain
-                           </div>
-                       </div>
-                   </div>
-               </div>
-
                <!-- ******* Template ******* -->
                <div class="form-group" ng-if="showEditorField('template')">
                    <label class="col-sm-4 col-md-2">Template</label>
@@ -414,7 +401,6 @@
                         <th>Title</th>
                         <th ng-if="filter.mainType == 'PUBLICATION'" style="text-align: right">From Date</th>
                         <th ng-if="filter.mainType == 'PUBLICATION'" style="text-align: right">To Date</th>
-                        <th>Domain</th>
                         <th>Category</th>
                         <th>File Type</th>
                         <th></th>
@@ -429,9 +415,6 @@
                         </td>
                         <td ng-if="filter.mainType == 'PUBLICATION'" align="right">{{publication.publishDateFrom  | formatDate:'ll'}}</td>
                         <td ng-if="filter.mainType == 'PUBLICATION'" align="right">{{publication.publishDateTo  | formatDate:'ll'}}</td>
-                        <td>
-                            <input type="checkbox" ng-checked="publication.domain !== undefined" disabled="disabled">
-                        </td>
                         <td>{{publication.category.descs[0].name}}</td>
                         <td>{{'publication_type.' + publication.type | translate}}</td>
                         <td nowrap>
