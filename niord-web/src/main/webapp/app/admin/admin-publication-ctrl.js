@@ -230,6 +230,7 @@ angular.module('niord.admin')
                 var desc = LangService.descForLanguage($scope.publication, resultDesc.lang);
                 angular.copy(resultDesc, desc);
                 $scope.$$phase || $scope.$apply();
+                $scope.setDirty();
             };
 
 
