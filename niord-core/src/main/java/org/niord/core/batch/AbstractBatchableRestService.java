@@ -16,15 +16,11 @@
 package org.niord.core.batch;
 
 import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.niord.core.repo.RepositoryService;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Context;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,15 +31,14 @@ import java.util.Map;
  */
 public abstract class AbstractBatchableRestService {
 
-    @Context
-    protected ServletContext servletContext;
-
     @Inject
     Logger log;
 
     @Inject
     BatchService batchService;
 
+    @Inject
+    RepositoryService repositoryService;
 
     /**
      * Starts the execution of a batch job from an uploaded file
@@ -54,12 +49,9 @@ public abstract class AbstractBatchableRestService {
      */
     protected String executeBatchJobFromUploadedFile(HttpServletRequest request, String batchJobName) throws Exception {
 
-        FileItemFactory factory = RepositoryService.newDiskFileItemFactory(servletContext);
-        ServletFileUpload upload = new ServletFileUpload(factory);
-
         StringBuilder txt = new StringBuilder();
 
-        List<FileItem> items = upload.parseRequest(request);
+        List<FileItem> items = repositoryService.parseFileUploadRequest(request);
 
         // Collect properties from non-file form parameters
         Map<String, Object> params = new HashMap<>();

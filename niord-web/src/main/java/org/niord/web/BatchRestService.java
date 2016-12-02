@@ -16,8 +16,6 @@
 package org.niord.web;
 
 import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
@@ -36,7 +34,6 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -69,9 +66,6 @@ public class BatchRestService {
     @Inject
     Logger log;
 
-    @Context
-    ServletContext servletContext;
-
     @Inject
     BatchService batchService;
 
@@ -83,6 +77,10 @@ public class BatchRestService {
 
     @Inject
     UserService userService;
+
+    @Inject
+    RepositoryService repositoryService;
+
 
     /**
      * Returns the job names
@@ -304,12 +302,9 @@ public class BatchRestService {
     @RolesAllowed("sysadmin")
     public String executeBatchSet(@Context HttpServletRequest request) throws Exception {
 
-        FileItemFactory factory = RepositoryService.newDiskFileItemFactory(servletContext);
-        ServletFileUpload upload = new ServletFileUpload(factory);
-
         StringBuilder txt = new StringBuilder();
 
-        List<FileItem> items = upload.parseRequest(request);
+        List<FileItem> items = repositoryService.parseFileUploadRequest(request);
 
         // Start the batch job for each file item
         items.stream()

@@ -18,8 +18,6 @@ package org.niord.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
@@ -516,10 +514,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @RolesAllowed("admin")
     public PublicationDescVo uploadPublicationFile(@PathParam("folder") String path, @Context HttpServletRequest request) throws Exception {
 
-        FileItemFactory factory = RepositoryService.newDiskFileItemFactory(servletContext);
-        ServletFileUpload upload = new ServletFileUpload(factory);
-
-        List<FileItem> items = upload.parseRequest(request);
+        List<FileItem> items = repositoryService.parseFileUploadRequest(request);
 
         // Get hold of the first uploaded publication file
         FileItem fileItem = items.stream()

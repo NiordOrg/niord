@@ -16,8 +16,6 @@
 package org.niord.web.map;
 
 import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.FileItemFactory;
-import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.security.annotation.SecurityDomain;
@@ -31,7 +29,6 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -72,9 +69,6 @@ public class MessageMapImageRestService {
     static final int CACHE_TIMEOUT_MINUTES = 10;
     static final String IMAGE_PLACEHOLDER = "../img/map_image_placeholder.png";
     static final String UPLOADED_IMAGE_PREFIX = "data:image/png;base64,";
-
-    @Context
-    ServletContext servletContext;
 
     @Inject
     Logger log;
@@ -219,10 +213,7 @@ public class MessageMapImageRestService {
         // Validate that the path is a temporary repository folder path
         Path folder = repositoryService.validateTempRepoPath(path);
 
-        FileItemFactory factory = RepositoryService.newDiskFileItemFactory(servletContext);
-        ServletFileUpload upload = new ServletFileUpload(factory);
-
-        List<FileItem> items = upload.parseRequest(request);
+        List<FileItem> items = repositoryService.parseFileUploadRequest(request);
 
         // Get hold of the first uploaded image
         FileItem imageItem = items.stream()

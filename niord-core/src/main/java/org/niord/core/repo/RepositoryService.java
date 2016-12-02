@@ -112,6 +112,10 @@ public class RepositoryService {
     Integer cacheTimeout;
 
     @Inject
+    @Setting(value="repoFileUploadMaxSize", defaultValue="1073741824", description="Max size of uploaded file", type=Type.Long)
+    Long fileUploadMaxSize;
+
+    @Inject
     Logger log;
 
     @Inject
@@ -417,9 +421,7 @@ public class RepositoryService {
         }
 
         List<String> result = new ArrayList<>();
-        FileItemFactory factory = newDiskFileItemFactory(servletContext);
-        ServletFileUpload upload = new ServletFileUpload(factory);
-        List<FileItem> items = upload.parseRequest(request);
+        List<FileItem> items = parseFileUploadRequest(request);
 
         for (FileItem item : items) {
             if (!item.isFormField()) {
@@ -535,11 +537,26 @@ public class RepositoryService {
      * http://commons.apache.org/proper/commons-fileupload/using.html
      * @return the new DiskFileItemFactory
      */
-    public static DiskFileItemFactory newDiskFileItemFactory(ServletContext servletContext) {
+    private DiskFileItemFactory newDiskFileItemFactory(ServletContext servletContext) {
+        File repository = (File) servletContext.getAttribute("javax.servlet.context.tempdir");
         FileCleaningTracker fileCleaningTracker = FileCleanerCleanup.getFileCleaningTracker(servletContext);
-        DiskFileItemFactory factory = new DiskFileItemFactory(DiskFileItemFactory.DEFAULT_SIZE_THRESHOLD, null);
+        DiskFileItemFactory factory = new DiskFileItemFactory(DiskFileItemFactory.DEFAULT_SIZE_THRESHOLD, repository);
         factory.setFileCleaningTracker(fileCleaningTracker);
         return factory;
+    }
+
+
+    /**
+     * Parses the file upload request and returns the file items
+     * @param request the request
+     * @return the file items
+     */
+    public List<FileItem> parseFileUploadRequest(HttpServletRequest request) throws FileUploadException {
+        FileItemFactory factory = newDiskFileItemFactory(servletContext);
+        ServletFileUpload upload = new ServletFileUpload(factory);
+        upload.setFileSizeMax(fileUploadMaxSize);
+        upload.setSizeMax(fileUploadMaxSize);
+        return upload.parseRequest(request);
     }
 
 
