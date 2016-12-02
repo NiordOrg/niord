@@ -294,6 +294,9 @@ tr.batch-execution-row td div.progress {
     background-color: #999999;
 }
 
+.publication-btn {
+    margin-right: 5px;
+}
 
 /** Dictionary admin page **/
 

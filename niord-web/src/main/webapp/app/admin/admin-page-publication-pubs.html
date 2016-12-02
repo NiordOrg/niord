@@ -418,15 +418,20 @@
                         <td>{{publication.category.descs[0].name}}</td>
                         <td>{{'publication_type.' + publication.type | translate}}</td>
                         <td nowrap>
-                            <a href ng-click="editPublication(publication);" title="Edit Publication"><i class="glyphicon glyphicon-pencil"></i></a>
-                            &nbsp;
-                            <a href ng-click="deletePublication(publication);" title="Delete Publication"><i class="glyphicon glyphicon-trash"></i></a>
-                            &nbsp;
-                            <a href ng-click="copyPublication(publication, false);" title="Duplicate Publication"><span class="glyphicon glyphicon-duplicate"></span></a>
-                            &nbsp;
-                            <a href ng-click="copyPublication(publication, true);" title="Duplicate Publication - Next Issue"
+                            <a href ng-click="editPublication(publication);" class="publication-btn" title="Edit Publication">
+                                <i class="glyphicon glyphicon-pencil"></i>
+                            </a>
+                            <a href ng-click="copyPublication(publication, false);" class="publication-btn" title="Duplicate Publication">
+                                <span class="glyphicon glyphicon-duplicate"></span>
+                            </a>
+                            <a href ng-click="copyPublication(publication, true);" class="publication-btn" title="Duplicate Publication - Next Issue"
                                     ng-if="publication.publishDateFrom && publication.template && publication.template.periodicalType">
-                                <span class="glyphicon glyphicon-duplicate">+</span></a>
+                                <span class="glyphicon glyphicon-duplicate">+</span>
+                            </a>
+                            <a href ng-click="deletePublication(publication);" class="publication-btn" title="Delete Publication"
+                               ng-if="publication.status == 'DRAFT'">
+                                <i class="glyphicon glyphicon-trash"></i>
+                            </a>
                         </td>
                     </tr>
                 </table>
