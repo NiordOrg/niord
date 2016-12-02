@@ -90,7 +90,7 @@ public class MessageHistory extends BaseEntity<Integer> {
         history.setMessageId(id);
         history.setStatus(status);
         if (user != null) {
-            history.setUser(user.getUsername());
+            history.setUser(user.getName());
         }
         history.setVersion(version);
         history.setCreated(created);
