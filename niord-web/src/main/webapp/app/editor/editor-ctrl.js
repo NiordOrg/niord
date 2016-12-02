@@ -23,9 +23,9 @@ angular.module('niord.editor')
     /**
      * Main message editor controller
      */
-    .controller('EditorCtrl', ['$scope', '$rootScope', '$stateParams', '$state', '$http', '$timeout', '$uibModal', 'growl',
+    .controller('EditorCtrl', ['$scope', '$rootScope', '$window', '$stateParams', '$state', '$http', '$timeout', '$uibModal', 'growl',
             'MessageService', 'LangService', 'MapService', 'UploadFileService', 'AtonService',
-        function ($scope, $rootScope, $stateParams, $state, $http, $timeout, $uibModal, growl,
+        function ($scope, $rootScope, $window, $stateParams, $state, $http, $timeout, $uibModal, growl,
                   MessageService, LangService, MapService, UploadFileService, AtonService) {
             'use strict';
 
@@ -326,6 +326,13 @@ angular.module('niord.editor')
                         $scope.messageSaving = false;
                         growl.error("Error saving message", { ttl: 5000 })
                     });
+            };
+
+
+            /** Clears the current message **/
+            $scope.clearMessage = function () {
+                $window.location = '/#/editor/edit/';
+                $window.location.reload();
             };
 
 

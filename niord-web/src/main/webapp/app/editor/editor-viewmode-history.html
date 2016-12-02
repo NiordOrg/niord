@@ -3,10 +3,17 @@
     <h3 class="page-header">
         History
 
-        <a ng-href="{{backToListUrl}}" ng-if="backToListUrl"
-           class="btn btn-default btn-xs pull-right">
-            <span class="glyphicon glyphicon-arrow-left"></span> Back to list
-        </a>
+        <span class="pull-right">
+            <a ng-href="{{backToListUrl}}" ng-if="backToListUrl"
+               class="btn btn-default btn-xs">
+                <span class="glyphicon glyphicon-arrow-left"></span> Back to list
+            </a>
+            <a href ng-click="clearMessage()" ng-if="message"
+               style="margin-left: 5px"
+               class="btn btn-default btn-xs">
+                <span class="glyphicon glyphicon-remove"></span> Clear
+            </a>
+        </span>
     </h3>
 
     <div class="empty-search-result" ng-if="!message.created">
