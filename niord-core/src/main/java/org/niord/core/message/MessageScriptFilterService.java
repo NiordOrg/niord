@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * based on a JavaScript filter.
  * <p>
  * Example:
- * "(msg.type == 'TEMPORARY_NOTICE' || msg.type == 'PRELIMINARY_NOTICE') && msg.status == 'PUBLISHED'"
+ * "(msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) && msg.status == Status.PUBLISHED"
  */
 @Singleton
 @Lock(LockType.READ)

@@ -16,18 +16,26 @@
 
 package org.niord.core.message;
 
+import org.niord.model.message.MainType;
+import org.niord.model.message.Status;
+import org.niord.model.message.Type;
+
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 /**
  * Utility function used to determine if a message is included in a message filter.
  * <p>
  * Message filter example:
- * "(msg.type == 'TEMPORARY_NOTICE' || msg.type == 'PRELIMINARY_NOTICE') && msg.status == 'PUBLISHED'"
+ * "(msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) && msg.status == Status.PUBLISHED"
  */
 @SuppressWarnings("unused")
 public class MessageScriptFilterEvaluator {
+
+    private static Class<?>[] FILTER_ENUMS = { MainType.class, Type.class, Status.class };
 
     /** Exclude all messages **/
     public static MessageScriptFilterEvaluator EXCLUDE_ALL = new MessageScriptFilterEvaluator() {
@@ -56,20 +64,39 @@ public class MessageScriptFilterEvaluator {
         // Instantiate the filter Javascript engine
         if (filter != null && filter.trim().length() > 0) {
             try {
+                // In some JVMs, it actually works to use enum/string comparison, e.g.
+                // "msg.status == 'PUBLISHED'". But on others this will fail.
+                // See https://bugs.openjdk.java.net/browse/JDK-8072426
+                // So, we play it safe and import the Enums using the official Nashorn mechanism:
+
+                String jsFilter = getNashHornImports()
+                                + "function includeMessage(msg, data) { return " + filter + "; }";
+
                 // Considerations: Various documentation suggests that the ScriptEngine is indeed threadsafe.
                 // However, shared state is not isolated, so, setting the parameters (msg) as
                 // script engine state and evaluating the filter directly would not work correctly.
                 // Instead, we wrap the filter in a function and call that function.
                 ScriptEngine jsEngine = new ScriptEngineManager()
-                        .getEngineByName("JavaScript");
-                jsEngine.eval("function includeMessage(msg, data) { return " + filter + "; }");
+                        .getEngineByName("Nashorn");
+                jsEngine.eval(jsFilter);
                 filterFunction = (Invocable)jsEngine;
             } catch (Exception e) {
-                throw new Exception("Invalid access log filter: " + filter);
+                e.printStackTrace();
+                throw new Exception("Invalid message script: " + filter);
             }
         }
     }
 
+
+    /**
+     * Returns a scrip to prefix the message filter containing imports of various enums.
+     * Example "var Status = Java.type('org.niord.model.message.Status');"
+     */
+    private String getNashHornImports() {
+        return Arrays.stream(FILTER_ENUMS)
+                .map(type -> String.format("var %s = Java.type('%s');%n", type.getSimpleName(), type.getCanonicalName()))
+                .collect(Collectors.joining());
+    }
 
     /**
      * Check if the message is included in the filter or not

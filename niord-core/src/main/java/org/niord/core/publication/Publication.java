@@ -126,7 +126,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
     /**
      * May be used to define a filter for message that should be tagged when the publication is in recording status.
      * Example filter:
-     * "(msg.type == 'TEMPORARY_NOTICE' || msg.type == 'PRELIMINARY_NOTICE') && msg.status == 'PUBLISHED'"
+     * "(msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) && msg.status == Status.PUBLISHED"
      */
     String messageTagFilter;
 

@@ -210,18 +210,18 @@ angular.module('niord.admin')
             $scope.setMessageTagFilter = function (filterType) {
                 switch (filterType) {
                     case 'new-published':
-                        $scope.publication.messageTagFilter = "data.phase == 'msg-status-change' && msg.status == 'PUBLISHED'";
+                        $scope.publication.messageTagFilter = "data.phase == 'msg-status-change' && msg.status == Status.PUBLISHED";
                         break;
                     case 'all-published':
-                        $scope.publication.messageTagFilter = "msg.status == 'PUBLISHED'";
+                        $scope.publication.messageTagFilter = "msg.status == Status.PUBLISHED";
                         break;
                     case 'nm-tp':
                         $scope.publication.messageTagFilter =
-                            "msg.type == 'TEMPORARY_NOTICE' || msg.type == 'PRELIMINARY_NOTICE'";
+                            "msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE";
                         break;
                     case 'published-nm-tp':
                         $scope.publication.messageTagFilter =
-                            "(msg.type == 'TEMPORARY_NOTICE' || msg.type == 'PRELIMINARY_NOTICE') && msg.status == 'PUBLISHED'";
+                            "(msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) && msg.status == Status.PUBLISHED";
                         break;
                 }
                 $scope.setDirty();

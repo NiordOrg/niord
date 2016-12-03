@@ -43,8 +43,8 @@ public class MessageScriptFilterEvaluatorTest {
         Map<String, String> data = new HashMap<>();
         data.put("phase", "start-recording");
 
-        String filter1 = "data.phase == 'start-recording' && (msg.type == 'TEMPORARY_NOTICE' || msg.type == 'PRELIMINARY_NOTICE') && msg.status == 'PUBLISHED'";
-        String filter2 = "msg.status == 'DRAFT'";
+        String filter1 = "data.phase == 'start-recording' && (msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) && msg.status == Status.PUBLISHED";
+        String filter2 = "msg.status == Status.DRAFT";
 
         assertTrue(new MessageScriptFilterEvaluator(filter1).includeMessage(msg, data));
         assertFalse(new MessageScriptFilterEvaluator(filter2).includeMessage(msg, data));
