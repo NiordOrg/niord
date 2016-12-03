@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -80,7 +81,8 @@ public class PublicationService extends BaseService {
      * hence, the filter below will add all messages that gets published after recording starts, but not remove
      * them again.
      */
-    private static final String DEFAULT_MESSAGE_TAG_FILTER  = "data.phase == 'msg-status-change'";
+    private static final String DEFAULT_MESSAGE_TAG_FILTER
+            = "data.phase == 'msg-status-change' && (msg.status == Status.PUBLISHED || data.isIncluded)";
 
 
     @Inject
@@ -572,16 +574,22 @@ public class PublicationService extends BaseService {
      * @param phase the phase
      */
     private void checkMessageForRecordingPublication(Publication publication, Message message, String phase) {
-        MessageTag tag = publication.getMessageTag();
 
-        Map<String, String> data = Collections.singletonMap("phase", phase);
+        MessageTag tag = publication.getMessageTag();
+        boolean isIncluded = tag.getMessages().contains(message);
+
+        // "data" parameter for the message tag filter function
+        Map<String, Object> data = new HashMap<>();
+        data.put("phase", phase);
+        data.put("isIncluded", isIncluded);
+
+        // Determine the message tag filter to test
         String messageTagFilter = StringUtils.defaultIfBlank(
                 publication.getMessageTagFilter(),
                 DEFAULT_MESSAGE_TAG_FILTER);
 
         // Check if the message should be included in the associated message tag
         boolean includeMessage = messageScriptFilterService.includeMessage(messageTagFilter, message, data);
-        boolean isIncluded = tag.getMessages().contains(message);
 
         if (includeMessage && !isIncluded) {
             tag.getMessages().add(message);
