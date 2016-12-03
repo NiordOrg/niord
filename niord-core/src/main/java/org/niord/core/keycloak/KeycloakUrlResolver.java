@@ -18,6 +18,7 @@ package org.niord.core.keycloak;
 import org.apache.http.client.HttpClient;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.authentication.ClientCredentialsProvider;
+import org.keycloak.adapters.rotation.PublicKeyLocator;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.common.enums.RelativeUrlsUsed;
 import org.keycloak.common.enums.SslRequired;
@@ -25,7 +26,6 @@ import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.enums.TokenStore;
 
 import java.net.URI;
-import java.security.PublicKey;
 import java.util.Map;
 
 /**
@@ -163,15 +163,14 @@ public class KeycloakUrlResolver {
         }
 
         @Override
-        public PublicKey getRealmKey() {
-            return delegate.getRealmKey();
+        public void setPublicKeyLocator(PublicKeyLocator publicKeyLocator) {
+            delegate.setPublicKeyLocator(publicKeyLocator);
         }
 
         @Override
-        public void setRealmKey(PublicKey realmKey) {
-            delegate.setRealmKey(realmKey);
+        public PublicKeyLocator getPublicKeyLocator() {
+            return delegate.getPublicKeyLocator();
         }
-
         @Override
         public void setResourceName(String resourceName) {
             delegate.setResourceName(resourceName);

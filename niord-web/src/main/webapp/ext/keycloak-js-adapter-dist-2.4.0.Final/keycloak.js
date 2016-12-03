@@ -29,7 +29,7 @@
 
         var loginIframe = {
             enable: true,
-            callbackMap: [],
+            callbackList: [],
             interval: 5
         };
 
@@ -165,6 +165,8 @@
                                     kc.onAuthError && kc.onAuthError();
                                     if (initOptions.onLoad) {
                                         onLoad();
+                                    } else {
+                                        initPromise.setError();
                                     }
                                 });
                             });
@@ -176,6 +178,8 @@
                                 kc.onAuthError && kc.onAuthError();
                                 if (initOptions.onLoad) {
                                     onLoad();
+                                } else {
+                                    initPromise.setError();
                                 }
                             });
                         }
@@ -206,11 +210,18 @@
             var nonce = createUUID();
 
             var redirectUri = adapter.redirectUri(options);
-            if (options && options.prompt) {
-                redirectUri += (redirectUri.indexOf('?') == -1 ? '?' : '&') + 'prompt=' + options.prompt;
+
+            var callbackState = {
+                state: state,
+                nonce: nonce,
+                redirectUri: encodeURIComponent(redirectUri),
             }
 
-            callbackStorage.add({ state: state, nonce: nonce, redirectUri: encodeURIComponent(redirectUri) });
+            if (options && options.prompt) {
+                callbackState.prompt = options.prompt;
+            }
+
+            callbackStorage.add(callbackState);
 
             var action = 'auth';
             if (options && options.action == 'register') {
@@ -743,6 +754,7 @@
             if (oauthState && (oauth.code || oauth.error || oauth.access_token || oauth.id_token)) {
                 oauth.redirectUri = oauthState.redirectUri;
                 oauth.storedNonce = oauthState.nonce;
+                oauth.prompt = oauthState.prompt;
 
                 if (oauth.fragment) {
                     oauth.newUrl += '#' + oauth.fragment;
@@ -820,7 +832,7 @@
                 setTimeout(check, loginIframe.interval * 1000);
             }
 
-            var src = getRealmUrl() + '/protocol/openid-connect/login-status-iframe.html?client_id=' + encodeURIComponent(kc.clientId) + '&origin=' + getOrigin();
+            var src = getRealmUrl() + '/protocol/openid-connect/login-status-iframe.html';
             iframe.setAttribute('src', src );
             iframe.style.display = 'none';
             document.body.appendChild(iframe);
@@ -830,30 +842,21 @@
                     return;
                 }
 
-                try {
-                    var data = JSON.parse(event.data);
-                } catch (err) {
-                    return;
-                }
-
-                if (!data.callbackId) {
-                    return;
-                }
-
-                var promise = loginIframe.callbackMap[data.callbackId];
-                if (!promise) {
-                    return;
-                }
-
-                delete loginIframe.callbackMap[data.callbackId];
-
-                if ((!kc.sessionId || kc.sessionId == data.session) && data.loggedIn) {
-                    promise.setSuccess();
-                } else {
+                if (event.data != "unchanged") {
                     kc.clearToken();
-                    promise.setError();
+                }
+
+                for (var i = loginIframe.callbackList.length - 1; i >= 0; --i) {
+                    var promise = loginIframe.callbackList[i];
+                    if (event.data == "unchanged") {
+                        promise.setSuccess();
+                    } else {
+                        promise.setError();
+                    }
+                    loginIframe.callbackList.splice(i, 1);
                 }
             };
+
             window.addEventListener('message', messageCallback, false);
 
             var check = function() {
@@ -869,12 +872,13 @@
         function checkLoginIframe() {
             var promise = createPromise();
 
-            if (loginIframe.iframe && loginIframe.iframeOrigin) {
-                var msg = {};
-                msg.callbackId = createCallbackId();
-                loginIframe.callbackMap[msg.callbackId] = promise;
+            if (loginIframe.iframe && loginIframe.iframeOrigin ) {
+                var msg = kc.clientId + ' ' + kc.sessionId;
+                loginIframe.callbackList.push(promise);
                 var origin = loginIframe.iframeOrigin;
-                loginIframe.iframe.contentWindow.postMessage(JSON.stringify(msg), origin);
+                if (loginIframe.callbackList.length == 1) {
+                    loginIframe.iframe.contentWindow.postMessage(msg, origin);
+                }
             } else {
                 promise.setSuccess();
             }
@@ -1045,7 +1049,7 @@
 
             function clearExpired() {
                 var time = new Date().getTime();
-                for (var i = 1; i <= localStorage.length; i++)  {
+                for (var i = 0; i < localStorage.length; i++)  {
                     var key = localStorage.key(i);
                     if (key && key.indexOf('kc-callback-') == 0) {
                         var value = localStorage.getItem(key);
@@ -1221,9 +1225,6 @@
                     switch (param) {
                         case 'redirect_fragment':
                             oauth.fragment = queryParams[param];
-                            break;
-                        case 'prompt':
-                            oauth.prompt = queryParams[param];
                             break;
                         default:
                             if (responseMode != 'query' || !handleQueryParam(param, queryParams[param], oauth)) {

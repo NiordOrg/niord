@@ -16,6 +16,7 @@
 package org.niord.core.keycloak;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
@@ -466,6 +467,7 @@ public class KeycloakIntegrationService {
                 true, // Add auth header
                 is -> {
                     List<UserRepresentation> result = new ObjectMapper()
+                            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
                             .readValue(is, new TypeReference<List<UserRepresentation>>(){});
                     log.debug("Read users from Keycloak");
                     return result.stream()
