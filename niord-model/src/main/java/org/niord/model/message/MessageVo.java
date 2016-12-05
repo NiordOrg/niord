@@ -137,6 +137,14 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
             if (getParts() != null) {
                 getParts().forEach(part -> part.sortDescs(language));
             }
+            if (getAreas() != null) {
+                getAreas().forEach(area -> {
+                    while (area != null) {
+                        area.sortDescs(language);
+                        area = area.getParent();
+                    }
+                });
+            }
         }
     }
 
