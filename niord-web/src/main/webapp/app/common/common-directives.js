@@ -438,8 +438,8 @@ angular.module('niord.common')
      * Defines a publication field used for
      * selecting a publication
      ********************************/
-    .directive('publicationField', [ '$rootScope', '$http','MessageService', 'LangService',
-        function ($rootScope, $http, MessageService, LangService) {
+    .directive('publicationField', [ '$rootScope', '$http','MessageService', 'LangService', 'AuthService',
+        function ($rootScope, $http, MessageService, LangService, AuthService) {
         'use strict';
 
         return {
@@ -459,6 +459,7 @@ angular.module('niord.common')
             },
             link: function(scope, element, attrs) {
 
+                scope.loggedIn = AuthService.loggedIn;
                 scope.publicationData = scope.publicationData || {};
                 scope.multiple = scope.multiple || false;
                 if (scope.multiple && !scope.publicationData.publications) {
@@ -503,10 +504,12 @@ angular.module('niord.common')
                 scope.publications = [];
                 scope.refreshPublications = function (text) {
                     text = text || '';
-                    MessageService.searchPublications(text, scope.messagePublication, scope.mainType, scope.type, scope.status)
-                        .success(function (publications) {
-                            scope.publications = publications.data;
-                        });
+                    if (!scope.multiple || text.length > 0) {
+                        MessageService.searchPublications(text, scope.messagePublication, scope.mainType, scope.type, scope.status, scope.loggedIn)
+                            .success(function (publications) {
+                                scope.publications = publications.data;
+                            });
+                    }
                 };
 
 
