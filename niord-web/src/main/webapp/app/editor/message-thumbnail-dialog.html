@@ -10,8 +10,7 @@
         <div class="message-thumbnail-item" ng-style="{ width: mapImageSize + 4, height: mapImageSize + 4 }">
             <ol-map class="osm-water-bg message-thumbnail-map" ng-style="{ width: mapImageSize, height: mapImageSize }">
                 <map-tile-layer name="OSM" visible="true" layer-switcher="true" source="OSM"></map-tile-layer>
-                <map-tile-layer name="OSM (std)" visible="false" layer-switcher="showStdOSMLayer" source="OSM"
-                                source-properties="{ url: '//{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png' }"></map-tile-layer>
+                <map-tile-layer name="OSM (std)" visible="false" layer-switcher="showStdOSMLayer" source="STD-OSM"></map-tile-layer>
                 <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
                                 source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
                 <map-aton-layer name="AtoN" visible="false" layer-switcher="true"></map-aton-layer>

@@ -374,6 +374,12 @@ angular.module('niord.map')
                             });
                             break;
 
+                        case 'STD-OSM':
+                            olLayer = new ol.layer.Tile({
+                                source: new ol.source.OSM(scope.sourceProperties)
+                            });
+                            break;
+
                         case 'OSM':
                             olLayer = new ol.layer.Tile({
                                 source: new ol.source.OSM(scope.sourceProperties)
