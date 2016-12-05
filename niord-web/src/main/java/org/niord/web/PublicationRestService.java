@@ -319,7 +319,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
         editPublication.setStatus(PublicationStatus.DRAFT);
         editPublication.setMessageTag(null);
         editPublication.setRevision(0);
-        if (editPublication.getDescs() != null && editPublication.getType() == PublicationType.MESSAGE_REPORT) {
+        if (editPublication.getDescs() != null) {
             editPublication.getDescs().forEach(desc -> {
                 desc.setLink(null);
                 desc.setFileName(null);
