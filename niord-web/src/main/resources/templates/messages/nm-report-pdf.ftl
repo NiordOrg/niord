@@ -1,15 +1,12 @@
 <#include "message-support.ftl"/>
 
-<#assign permMessages = [] />
-<#assign tpMessages = [] />
+<#assign nmMessages = [] />
 <#assign miscMessages = [] />
 <#assign minMessageNo = 9999999 />
 <#assign maxMessageNo = -9999999 />
 <#list messages as msg>
-    <#if msg.type == 'PRELIMINARY_NOTICE' || msg.type == 'TEMPORARY_NOTICE'>
-        <#assign tpMessages = tpMessages + [msg] />
-    <#elseif msg.type == 'PERMANENT_NOTICE'>
-        <#assign permMessages = permMessages + [msg] />
+    <#if msg.type != 'MISCELLANEOUS_NOTICE'>
+        <#assign nmMessages = nmMessages + [msg] />
     <#elseif msg.type == 'MISCELLANEOUS_NOTICE'>
         <#assign miscMessages = miscMessages + [msg] />
     </#if>
@@ -105,21 +102,15 @@
 <div class="nm-toc">
     <h2>${text("pdf.toc")}</h2>
     <ol>
-    <#if permMessages?has_content>
+    <#if nmMessages?has_content>
         <li>
-            <div class="toc"><a href='#perm'>Chart Updates</a></div>
-            <@renderTOCEntries messages=permMessages prefix="perm" />
-        </li>
-    </#if>
-    <#if tpMessages?has_content>
-        <li>
-            <div class="toc"><a href='#tp'>T & P Messages</a></div>
-            <@renderTOCEntries messages=tpMessages prefix="tp" />
+            <div class="toc"><a href='#nm'>${text('pdf.nm')}</a></div>
+            <@renderTOCEntries messages=nmMessages prefix="nm" />
         </li>
     </#if>
     <#if miscMessages?has_content>
         <li>
-            <div class="toc"><a href='#misc'>Announcements...</a></div>
+            <div class="toc"><a href='#misc'>${text('pdf.misc_nm')}</a></div>
         </li>
     </#if>
     </ol>
@@ -131,26 +122,18 @@
 </div>
 
 
-<!-- Permanent messages -->
-<#if permMessages?has_content>
+<!-- Permanent and T&P messages -->
+<#if nmMessages?has_content>
     <div class="nm-section">
-        <h3 style="color: #333; font-size: 20px;" id="perm">Chart Updates</h3>
-        <@renderMessageList messages=permMessages areaHeadings=areaHeadings prefix="perm"/>
-    </div>
-</#if>
-
-<!-- T&P messages -->
-<#if tpMessages?has_content>
-    <div class="nm-section">
-        <h3 style="color: #333; font-size: 20px;" id="tp">T & P Messages</h3>
-        <@renderMessageList messages=tpMessages areaHeadings=areaHeadings prefix="tp"/>
+        <h3 style="color: #333; font-size: 20px;" id="nm">${text('pdf.nm')}</h3>
+        <@renderMessageList messages=nmMessages areaHeadings=areaHeadings prefix="nm"/>
     </div>
 </#if>
 
 <!-- Misc messages -->
 <#if miscMessages?has_content>
     <div class="nm-section">
-        <h3 style="color: #333; font-size: 20px;" id="misc">Announcements...</h3>
+        <h3 style="color: #333; font-size: 20px;" id="misc">${text('pdf.misc_nm')}</h3>
         <@renderMessageList messages=miscMessages areaHeadings=false/>
     </div>
 </#if>
