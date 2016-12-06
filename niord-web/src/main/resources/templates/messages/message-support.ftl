@@ -295,6 +295,8 @@
 
                             <#if ref.type == 'REPETITION'>
                                 - ${text("msg.reference.repetition")}
+                            <#elseif ref.type == 'REPETITION_NEW_TIME'>
+                                - ${text("msg.reference.repetition_new_time")}
                             <#elseif ref.type == 'CANCELLATION'>
                                 - ${text("msg.reference.cancelled")}
                             <#elseif ref.type == 'UPDATE'>

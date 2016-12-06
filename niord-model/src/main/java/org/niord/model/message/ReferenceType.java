@@ -21,6 +21,7 @@ package org.niord.model.message;
 public enum ReferenceType {
     REFERENCE,
     REPETITION,
+    REPETITION_NEW_TIME,
     CANCELLATION,
     UPDATE
 }

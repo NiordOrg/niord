@@ -210,6 +210,7 @@
                         <a href ng-click="referenceClicked(ref.messageId)">{{ref.messageId}}</a>
                         <span ng-switch="ref.type">
                             <span ng-switch-when="REPETITION" translate>msg.reference.repetition</span>
+                            <span ng-switch-when="REPETITION_NEW_TIME" translate>msg.reference.repetition_new_time</span>
                             <span ng-switch-when="CANCELLATION" translate>msg.reference.cancelled</span>
                             <span ng-switch-when="UPDATE" translate>msg.reference.updated</span>
                         </span>
@@ -241,6 +242,7 @@
                                             tabindex="{{503 + refIndex * 5}}">
                                         <option value="REFERENCE" translate>msg.reference.reference</option>
                                         <option value="REPETITION" translate>msg.reference.repetition</option>
+                                        <option value="REPETITION_NEW_TIME" translate>msg.reference.repetition_new_time</option>
                                         <option value="CANCELLATION" translate>msg.reference.cancelled</option>
                                         <option value="UPDATE" translate>msg.reference.updated</option>
                                     </select>

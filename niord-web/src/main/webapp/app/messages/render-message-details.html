@@ -45,6 +45,7 @@
                         <a href ng-click="referenceClicked(ref.messageId)">{{ref.messageId}}</a>
                         <span ng-switch="ref.type">
                             <span ng-switch-when="REPETITION" translate>msg.reference.repetition</span>
+                            <span ng-switch-when="REPETITION_NEW_TIME" translate>msg.reference.repetition_new_time</span>
                             <span ng-switch-when="CANCELLATION" translate>msg.reference.cancelled</span>
                             <span ng-switch-when="UPDATE" translate>msg.reference.updated</span>
                         </span>
