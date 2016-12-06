@@ -216,8 +216,8 @@ var app = angular.module('niord.admin', [
     }])
 
 
-    .run(['$rootScope', '$state', '$location', 'growl', 'bowser', 'AuthService',
-        function($rootScope, $state, $location, growl, bowser, AuthService) {
+    .run(['$rootScope', '$window', '$state', '$location', 'growl', 'bowser', 'AuthService',
+        function($rootScope, $window, $state, $location, growl, bowser, AuthService) {
 
         // Register if the user uses an IE browser - any IE version, but allow Edge for now
         $rootScope.msie = bowser.msie; // || bowser.msedge
@@ -246,6 +246,17 @@ var app = angular.module('niord.admin', [
                 }
             }
         });
+
+        if ($rootScope.analyticsTrackingId && $rootScope.analyticsTrackingId.length > 0) {
+
+            // initialise google analytics
+            try { $window.ga('create', $rootScope.analyticsTrackingId, 'auto'); } catch (ex) {}
+
+            // track pageview on state change
+            $rootScope.$on('$stateChangeSuccess', function (event) {
+                try { $window.ga('send', 'pageview', $location.path()); } catch (ex) {}
+            });
+        }
 
     }]);
 
