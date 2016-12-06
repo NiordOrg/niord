@@ -574,8 +574,10 @@ angular.module('niord.editor')
                                     angular.forEach(area.descs, function (desc) {
                                         feature.properties['name:' + desc.lang] = desc.name;
                                     });
-                                    msg.geometry.features.push(feature);
-                                    $scope.geometrySaved(msg.geometry);
+                                    if (msg.parts && msg.parts.length > 0 && msg.parts[0].geometry) {
+                                        msg.parts[0].geometry.features.push(feature);
+                                    }
+                                    $scope.geometrySaved();
                                 }
                             });
                         });
