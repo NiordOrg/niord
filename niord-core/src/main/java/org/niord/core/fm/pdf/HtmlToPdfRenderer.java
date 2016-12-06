@@ -19,6 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.helper.W3CDom;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Node;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 import org.xhtmlrenderer.pdf.PDFEncryption;
 
@@ -59,6 +60,9 @@ public class HtmlToPdfRenderer {
      */
     public void render() throws Exception {
 
+        // Clean up HTML. Sometimes they paste html into fields that contain illegal tags, e.g. "<o:p></o:p>"
+        cleanUpHtml();
+
         // Update all SVG elements
         updateSvgElements();
 
@@ -86,6 +90,18 @@ public class HtmlToPdfRenderer {
         renderer.setDocument(xhtmlContent, baseUri);
         renderer.layout();
         renderer.createPDF(pdf);
+    }
+
+
+    /**
+     * Clean up HTML.
+     * Sometimes they paste html into fields that contain illegal tags, e.g. "<o:p></o:p>"
+     */
+    private void cleanUpHtml() {
+        // Remove tags with a namespace component to get rid of e.g. "<o:p></o:p>" tags
+        doc.select("*").stream()
+                .filter(e -> e.tagName().contains(":"))
+                .forEach(Node::remove);
     }
 
 
