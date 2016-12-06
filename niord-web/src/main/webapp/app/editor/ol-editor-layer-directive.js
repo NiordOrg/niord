@@ -98,40 +98,40 @@ angular.module('niord.editor')
 
                     var normalStyle = new ol.style.Style({
                         fill: new ol.style.Fill({
-                            color: 'rgba(255, 0, 255, 0.2)'
+                            color: 'rgba(255, 0, 0, 0.2)'
                         }),
                         stroke: new ol.style.Stroke({
-                            color: '#8B008B',
+                            color: '#FF0000',
                             width: 1
                         }),
                         image: new ol.style.Circle({
                             radius: 4,
                             stroke: new ol.style.Stroke({
-                                color: '#8B008B',
+                                color: '#FF0000',
                                 width: 1
                             }),
                             fill: new ol.style.Fill({
-                                color: 'rgba(255, 0, 255, 0.6)'
+                                color: 'rgba(255, 0, 0, 0.6)'
                             })
                         })
                     });
 
                     var selectedStyle = new ol.style.Style({
                         fill: new ol.style.Fill({
-                            color: 'rgba(255, 0, 255, 0.2)'
+                            color: 'rgba(255, 0, 0, 0.2)'
                         }),
                         stroke: new ol.style.Stroke({
-                            color: '#8B008B',
+                            color: '#FF0000',
                             width: 3
                         }),
                         image: new ol.style.Circle({
                             radius: 4,
                             stroke: new ol.style.Stroke({
-                                color: '#8B008B',
+                                color: '#FF0000',
                                 width: 3
                             }),
                             fill: new ol.style.Fill({
-                                color: 'rgba(255, 0, 255, 0.6)'
+                                color: 'rgba(255, 0, 0, 0.6)'
                             })
                         })
                     });
@@ -418,7 +418,7 @@ angular.module('niord.editor')
                                 textAlign: 'center',
                                 font: '11px Arial',
                                 text: name,
-                                fill: new ol.style.Fill({color: 'darkmagenta'}),
+                                fill: new ol.style.Fill({color: 'red'}),
                                 stroke: new ol.style.Stroke({color: 'white', width: 2.0}),
                                 offsetX: 0,
                                 offsetY: 5
@@ -438,7 +438,7 @@ angular.module('niord.editor')
                                 textAlign: 'center',
                                 font: '11px Arial',
                                 text: name,
-                                fill: new ol.style.Fill({color: 'darkmagenta'}),
+                                fill: new ol.style.Fill({color: 'red'}),
                                 stroke: new ol.style.Stroke({color: 'white', width: 2.0}),
                                 offsetX: 0,
                                 offsetY: 10
@@ -446,9 +446,9 @@ angular.module('niord.editor')
                             image: new ol.style.Circle({
                                 radius: 2,
                                 fill: new ol.style.Fill({
-                                    color: 'rgb(50, 0, 50)'
+                                    color: 'rgb(100, 0, 0)'
                                 }),
-                                stroke: new ol.style.Stroke({color: 'darkmagenta', width: 2})
+                                stroke: new ol.style.Stroke({color: 'red', width: 2})
                             }),
                             geometry: function() {
                                 return new ol.geom.Point(coord);

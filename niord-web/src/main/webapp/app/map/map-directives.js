@@ -344,6 +344,7 @@ angular.module('niord.map')
             scope: {
                 name: '@',
                 visible: '=',
+                opacity: '=',
                 layerSwitcher: '=',
                 source: '@',
                 sourceProperties: '='
@@ -399,6 +400,9 @@ angular.module('niord.map')
 
                     // If the layer got created, add it
                     if (olLayer) {
+                        if (scope.opacity) {
+                            olLayer.setOpacity(scope.opacity);
+                        }
                         olLayer = MapService.initLayer(olLayer, scope.name, scope.visible, scope.layerSwitcher);
                         map.addLayer(olLayer);
                     }
