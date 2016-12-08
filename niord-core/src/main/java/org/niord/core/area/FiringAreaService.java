@@ -75,6 +75,16 @@ public class FiringAreaService extends BaseService {
 
 
     /**
+     * Returns the list of legacy firing periods
+     * @return the list of legacy firing periods
+     */
+    public List<FiringPeriod> getAllLegacyFiringPeriods() {
+        return em.createNamedQuery("FiringPeriod.findLegacyFiringPeriods", FiringPeriod.class)
+                .getResultList();
+    }
+
+
+    /**
      * Fetches all firing areas and their firing periods on the specified date
      * @param date the date
      * @param query a search query

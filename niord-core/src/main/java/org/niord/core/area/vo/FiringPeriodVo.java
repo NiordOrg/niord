@@ -27,6 +27,7 @@ import java.util.Date;
 public class FiringPeriodVo implements IJsonSerializable {
 
     Integer id;
+    String legacyId;
     Integer areaId;
     Date fromDate;
     Date toDate;
@@ -41,6 +42,14 @@ public class FiringPeriodVo implements IJsonSerializable {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public String getLegacyId() {
+        return legacyId;
+    }
+
+    public void setLegacyId(String legacyId) {
+        this.legacyId = legacyId;
     }
 
     public Integer getAreaId() {

@@ -27,6 +27,7 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import java.util.Date;
 
@@ -41,6 +42,8 @@ import java.util.Date;
 @NamedQueries({
         @NamedQuery(name="FiringPeriod.findByArea",
                 query = "select fp FROM FiringPeriod fp where fp.area = :area order by fp.fromDate, fp.toDate"),
+        @NamedQuery(name="FiringPeriod.findLegacyFiringPeriods",
+                query = "select fp FROM FiringPeriod fp where fp.legacyId is not null order by fp.fromDate, fp.toDate"),
         @NamedQuery(name="FiringPeriod.findByAreaAndInterval",
                 query = "select fp FROM FiringPeriod fp where fp.area = :area "
                         + " and fp.fromDate = :fromDate and fp.toDate = :toDate"),
@@ -51,6 +54,8 @@ import java.util.Date;
 })
 @SuppressWarnings("unused")
 public class FiringPeriod extends VersionedEntity<Integer> implements Comparable<FiringPeriod> {
+
+    String legacyId;
 
     @NotNull
     @ManyToOne
@@ -79,6 +84,7 @@ public class FiringPeriod extends VersionedEntity<Integer> implements Comparable
     public FiringPeriod(Area area, FiringPeriodVo firingPeriod) {
         this.area = area;
         this.id = firingPeriod.getId();
+        this.legacyId = firingPeriod.getLegacyId();
         this.fromDate = firingPeriod.getFromDate();
         this.toDate = firingPeriod.getToDate();
     }
@@ -89,6 +95,7 @@ public class FiringPeriod extends VersionedEntity<Integer> implements Comparable
      * @param firingPeriod the firing period to update this from
      */
     public void updateFiringPeriod(FiringPeriod firingPeriod) {
+        this.legacyId = firingPeriod.getLegacyId();
         this.fromDate = firingPeriod.getFromDate();
         this.toDate = firingPeriod.getToDate();
     }
@@ -99,12 +106,24 @@ public class FiringPeriod extends VersionedEntity<Integer> implements Comparable
     public FiringPeriodVo toVo() {
         FiringPeriodVo firingPeriod = new FiringPeriodVo();
         firingPeriod.setId(id);
+        firingPeriod.setLegacyId(legacyId);
         firingPeriod.setAreaId(area.getId());
         firingPeriod.setFromDate(fromDate);
         firingPeriod.setToDate(toDate);
         return firingPeriod;
     }
 
+
+    /**
+     * Checks if the time interval defined by this firing period has changed
+     * @param firingPeriod the firing period to compare with
+     * @return if the time interval defined by this firing period has changed
+     */
+    @Transient
+    public boolean hasChanged(FiringPeriod firingPeriod) {
+        return fromDate.getTime() !=  firingPeriod.getFromDate().getTime()
+                || toDate.getTime() != firingPeriod.getToDate().getTime();
+    }
 
     /** Returns if the firing period is properly defined **/
     public boolean firingPeriodDefined() {
@@ -126,6 +145,14 @@ public class FiringPeriod extends VersionedEntity<Integer> implements Comparable
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public String getLegacyId() {
+        return legacyId;
+    }
+
+    public void setLegacyId(String legacyId) {
+        this.legacyId = legacyId;
+    }
 
     public Area getArea() {
         return area;
