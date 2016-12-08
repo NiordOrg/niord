@@ -99,7 +99,7 @@ public class FiringAreaService extends BaseService {
 
         // Look up all firing areas
         DataFilter filter = DataFilter.get()
-                .fields(DataFilter.PARENT, DataFilter.DETAILS)
+                .fields(DataFilter.PARENT, DataFilter.DETAILS, DataFilter.GEOMETRY)
                 .lang(lang);
 
 

@@ -8,54 +8,74 @@
 
         <h3 class="page-header">
             Schedule
+        </h3>
 
-            <span class="pull-right">
-                <table>
-                    <tr>
+        <div class="row">
+
+            <div class="col-sm-8 col-md-6">
+
+                <div>
+                    <b>Schedule Date</b>
+                    <span class="pull-right" style="margin-bottom: 10px">
+                        <table>
+                            <tr>
+                                <td>
+                                    <a href ng-click="offsetDate(-1)">
+                                        <span class="glyphicon glyphicon-triangle-left" title="Previous day"></span>
+                                    </a>
+                                </td>
+                                <td>
+                                    <date-time-picker id="fromDate" ng-model="state.date" placeholder="Date" style="width: 200px"
+                                                      time="'00:00:00'" format="'l'" size="md"></date-time-picker>
+                                </td>
+                                <td>
+                                    <a href ng-click="offsetDate(1)">
+                                        <span class="glyphicon glyphicon-triangle-right" title="Next day"></span>
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
+                    </span>
+                </div>
+
+                <table class='table table-condensed table-hover' ng-if="firingAreas.length > 0">
+                    <tr style="background-color: lightgray">
+                        <th width="*">Name</th>
+                        <th width="300" style="text-align: center">Time</th>
+                        <th width="30"></th>
+                    </tr>
+                    <tr ng-repeat-start="area in firingAreas" ng-if="area.areaHeading">
+                        <td colspan="3"><h4 class="message-list-area-heading" render-areas="[area.areaHeading]"></h4></td>
+                    </tr>
+                    <tr ng-repeat-end>
                         <td>
-                            <a href ng-click="offsetDate(-1)">
-                                <span class="glyphicon glyphicon-triangle-left" title="Previous day"></span>
-                            </a>
+                            {{area.descs[0].name}}
                         </td>
                         <td>
-                            <date-time-picker id="fromDate" ng-model="state.date" placeholder="Date" style="width: 200px"
-                                              time="'00:00:00'" format="'l'" size="md"></date-time-picker>
+                            <time-schedule-editor area="area" date="state.date"></time-schedule-editor>
                         </td>
                         <td>
-                            <a href ng-click="offsetDate(1)">
-                                <span class="glyphicon glyphicon-triangle-right" title="Next day"></span>
-                            </a>
+                            <button class="btn btn-default btn-xs" ng-click="edit(area)"
+                                    ng-disabled="area.editing">
+                                <span class="glyphicon glyphicon-pencil"></span>
+                            </button>
                         </td>
                     </tr>
                 </table>
-            </span>
-        </h3>
+            </div>
 
-        <table class='table table-condensed table-hover' ng-if="firingAreas.length > 0">
-            <tr style="background-color: lightgray">
-                <th width="*">Name</th>
-                <th width="300" style="text-align: center">Time</th>
-                <th width="30"></th>
-            </tr>
-            <tr ng-repeat-start="area in firingAreas" ng-if="area.areaHeading">
-                <td colspan="3"><h4 class="message-list-area-heading" render-areas="[area.areaHeading]"></h4></td>
-            </tr>
-            <tr ng-repeat-end>
-                <td>
-                    {{area.descs[0].name}}
-                </td>
-                <td>
-                    <time-schedule-editor area="area" date="state.date"></time-schedule-editor>
-                </td>
-                <td>
-                    <button class="btn btn-default btn-xs" ng-click="edit(area)"
-                        ng-disabled="area.editing">
-                        <span class="glyphicon glyphicon-pencil"></span>
-                    </button>
-                </td>
-            </tr>
-        </table>
 
+            <div class="col-sm-4 col-md-6">
+                <ol-map class="firing-areas-map">
+                    <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="STD-OSM"></map-tile-layer>
+                    <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
+                                    source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
+                    <map-areas-layer name="Areas" visible="true" areas="firingAreas"></map-areas-layer>
+                    <map-layer-switcher></map-layer-switcher>
+                </ol-map>
+            </div>
+
+        </div>
     </div>
 
     <div ng-include="'app/layout/footer.html'"></div>

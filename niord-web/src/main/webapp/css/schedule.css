@@ -18,3 +18,12 @@
 .time-schedule-editor table tr td {
     padding-bottom: 5px;
 }
+
+
+.firing-areas-map {
+    width:100%;
+    height: 500px;
+    background-color: #b5d0d0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
