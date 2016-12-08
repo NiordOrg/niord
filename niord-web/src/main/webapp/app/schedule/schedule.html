@@ -7,12 +7,12 @@
     <div class="container schedule-content">
 
         <h3 class="page-header">
-            Schedule
+            Firing Area Schedule
         </h3>
 
         <div class="row">
 
-            <div class="col-sm-8 col-md-6">
+            <div class="col-md-8 col-lg-7">
 
                 <div>
                     <b>Schedule Date</b>
@@ -38,7 +38,7 @@
                     </span>
                 </div>
 
-                <table class='table table-condensed table-hover' ng-if="firingAreas.length > 0">
+                <table class='table table-condensed table-hover schedule-table' ng-if="firingAreas.length > 0">
                     <tr style="background-color: lightgray">
                         <th width="*">Name</th>
                         <th width="300" style="text-align: center">Time</th>
@@ -54,7 +54,7 @@
                         <td>
                             <time-schedule-editor area="area" date="state.date"></time-schedule-editor>
                         </td>
-                        <td>
+                        <td style="padding: 2px">
                             <button class="btn btn-default btn-xs" ng-click="edit(area)"
                                     ng-disabled="area.editing">
                                 <span class="glyphicon glyphicon-pencil"></span>
@@ -65,7 +65,7 @@
             </div>
 
 
-            <div class="col-sm-4 col-md-6">
+            <div class="col-md-4 col-lg-5">
                 <ol-map class="firing-areas-map">
                     <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="STD-OSM"></map-tile-layer>
                     <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS" opacity="0.5"

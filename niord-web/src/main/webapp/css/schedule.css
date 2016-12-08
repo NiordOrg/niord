@@ -9,6 +9,7 @@
 }
 
 .time-schedule-editor {
+    font-size: 12px;
     width: 320px;
     padding: 10px;
     border: 1px solid lightgray;
@@ -19,6 +20,10 @@
     padding-bottom: 5px;
 }
 
+
+table.schedule-table {
+    font-size: 12px;
+}
 
 .firing-areas-map {
     width:100%;
