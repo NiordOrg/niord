@@ -15,20 +15,20 @@
  */
 
 /**
- * The Message Schedule controller
+ * The Firing Area Schedule controller
  */
 angular.module('niord.schedule')
 
     /**
-     * Main message schedule controller
+     * Main firing area schedule controller
      */
-    .controller('ScheduleCtrl', ['$scope', '$rootScope', 'growl', 'MessageService',
-        function ($scope, $rootScope, growl, MessageService) {
+    .controller('ScheduleCtrl', ['$scope', '$rootScope', 'growl', 'ScheduleService',
+        function ($scope, $rootScope, growl, ScheduleService) {
             'use strict';
 
-            $scope.messageList = [];
-            $scope.date = moment();
+            $scope.firingAreas = [];
             $scope.state = {
+                date: moment(),
                 text: {
                     enabled: true,
                     query: ''
@@ -41,12 +41,12 @@ angular.module('niord.schedule')
             $scope.domain = $rootScope.domain;
 
 
-            /** Refreshes the list of published messages **/
-            $scope.loadMessages = function () {
-                var params = 'sortBy=AREA&sortOrder=ASC';
+            /** Refreshes the list of firing areas **/
+            $scope.loadFiringAreas = function () {
+                var params = 'date=' + $scope.state.date.valueOf() + '&lang=' + $rootScope.language;
 
                 var s = $scope.state;
-                if (s.text.enabled) {
+                if (s.text.enabled && s.text.query.length > 0) {
                     params += '&query=' + encodeURIComponent(s.text.query);
                 }
                 if (s.area.enabled) {
@@ -55,62 +55,45 @@ angular.module('niord.schedule')
                     })
                 }
 
-                MessageService.search(params)
-                    .success(function (result) {
-                        $scope.messageList = result.data;
-                        $scope.checkGroupByArea(2);
-
-                        // Fetch the schedule for the messages
-                        $scope.loadSchedule();
+                ScheduleService.searchFiringAreas(params)
+                    .success(function (areas) {
+                        $scope.firingAreas = areas;
+                        $scope.checkGroupByArea();
                     });
             };
 
             // Monitor changes to the state
-            $scope.$watch("state", $scope.loadMessages, true);
+            $scope.$watch("state", $scope.loadFiringAreas, true);
 
 
-            /** Loads the schedule for the current date and list of messages **/
-            $scope.loadSchedule = function () {
-                var messageIds = [];
-                angular.forEach($scope.messageList, function (message) {
-                    message.editing = false;
-                    message.schedule = [];
-                    messageIds.push(message.id);
-                });
-
-                // TODO: Load schedule
-
-            };
-
-            // Monitor changes to the date
-            $scope.$watch("date", $scope.loadSchedule, true);
-
-
-            /** Enter edit mode for the given message **/
-            $scope.edit = function (message) {
-                message.editing = true;
+            /** Changes the currently selected date with the given offset **/
+            $scope.offsetDate = function (offset) {
+                $scope.state.date = moment($scope.state.date).add(offset, 'days');
             };
 
 
-            /** Scans through the search result and marks all messages that should display an area head line **/
+            /** Enter edit mode for the given area **/
+            $scope.edit = function (area) {
+                area.editing = true;
+            };
+
+
+            /** Scans through the search result and marks all areas that should display an area head line **/
             $scope.checkGroupByArea = function (maxLevels) {
                 maxLevels = maxLevels || 2;
                 var lastAreaId = undefined;
-                if ($scope.messageList && $scope.messageList.length > 0) {
-                    for (var m = 0; m < $scope.messageList.length; m++) {
-                        var msg = $scope.messageList[m];
-                        if (msg.areas && msg.areas.length > 0) {
-                            var msgArea = msg.areas[0];
-                            var areas = [];
-                            for (var area = msgArea; area !== undefined; area = area.parent) {
-                                areas.unshift(area);
-                            }
-                            if (areas.length > 0) {
-                                area = areas[Math.min(areas.length - 1, maxLevels - 1)];
-                                if (!lastAreaId || area.id != lastAreaId) {
-                                    lastAreaId = area.id;
-                                    msg.areaHeading = area;
-                                }
+                if ($scope.firingAreas && $scope.firingAreas.length > 0) {
+                    for (var x = 0; x < $scope.firingAreas.length; x++) {
+                        var area = $scope.firingAreas[x];
+                        var lineage = [];
+                        for (var a = area; a !== undefined; a = a.parent) {
+                            lineage.unshift(a);
+                        }
+                        if (lineage.length > 0) {
+                            a = lineage[Math.min(lineage.length - 1, maxLevels - 1)];
+                            if (!lastAreaId || a.id != lastAreaId) {
+                                lastAreaId = a.id;
+                                area.areaHeading = a;
                             }
                         }
                     }

@@ -8,35 +8,48 @@
 
         <h3 class="page-header">
             Schedule
+
+            <span class="pull-right">
+                <table>
+                    <tr>
+                        <td>
+                            <a href ng-click="offsetDate(-1)">
+                                <span class="glyphicon glyphicon-triangle-left" title="Previous day"></span>
+                            </a>
+                        </td>
+                        <td>
+                            <date-time-picker id="fromDate" ng-model="state.date" placeholder="Date" style="width: 200px"
+                                              time="'00:00:00'" format="'l'" size="md"></date-time-picker>
+                        </td>
+                        <td>
+                            <a href ng-click="offsetDate(1)">
+                                <span class="glyphicon glyphicon-triangle-right" title="Next day"></span>
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+            </span>
         </h3>
 
-        <div class="pull-right" style="margin-bottom: 20px">
-            <date-time-picker id="fromDate" ng-model="date" placeholder="Date" style="width: 200px"
-                              time="'00:00:00'" format="'l'" size="lg"></date-time-picker>
-        </div>
-
-        <table class='table table-condensed' ng-if="messageList.length > 0">
+        <table class='table table-condensed' ng-if="firingAreas.length > 0">
             <tr style="background-color: lightgray">
-                <th width="120">ID</th>
-                <th width="*">Title</th>
+                <th width="*">Name</th>
                 <th width="300" style="text-align: center">Time</th>
                 <th width="30"></th>
             </tr>
-            <tr ng-repeat-start="message in messageList" ng-if="message.areaHeading">
-                <td colspan="4"><h4 class="message-list-area-heading" render-areas="[message.areaHeading]"></h4></td>
+            <tr ng-repeat-start="area in firingAreas" ng-if="area.areaHeading">
+                <td colspan="3"><h4 class="message-list-area-heading" render-areas="[area.areaHeading]"></h4></td>
             </tr>
             <tr ng-repeat-end>
-                <td nowrap><message-id-badge msg="message" show-blank="true"></message-id-badge></td>
-                <td message-details-link="message.id" message-list="messageList"  selection="selection">
-                    <span class="glyphicon glyphicon-new-window"></span>&nbsp;
-                    {{message.descs[0].title}}
+                <td>
+                    {{area.descs[0].name}}
                 </td>
                 <td>
-                    <time-schedule-editor message="message" date="date"></time-schedule-editor>
+                    <time-schedule-editor area="area" date="state.date"></time-schedule-editor>
                 </td>
                 <td>
-                    <button class="btn btn-default btn-xs" ng-click="edit(message)"
-                        ng-disabled="message.editing">
+                    <button class="btn btn-default btn-xs" ng-click="edit(area)"
+                        ng-disabled="area.editing">
                         <span class="glyphicon glyphicon-pencil"></span>
                     </button>
                 </td>

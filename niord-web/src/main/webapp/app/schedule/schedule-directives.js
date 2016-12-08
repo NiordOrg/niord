@@ -23,8 +23,8 @@ angular.module('niord.schedule')
      * Directives for editing the time schedule of
      * a message
      **********************************************/
-    .directive('timeScheduleEditor', ['$rootScope', '$timeout', 'DateIntervalService',
-        function ($rootScope, $timeout, DateIntervalService) {
+    .directive('timeScheduleEditor', ['$rootScope', '$timeout', 'growl', 'ScheduleService', 'DateIntervalService',
+        function ($rootScope, $timeout, growl, ScheduleService, DateIntervalService) {
 
         return {
             restrict: 'E',
@@ -32,29 +32,29 @@ angular.module('niord.schedule')
             replace: true,
             transclude: true,
             scope: {
-                message:    "=",
-                date:       "="
+                area:    "=",
+                date:    "="
             },
 
             link: function (scope, element) {
 
-                /** Adds a new time interval for the message **/
+                /** Adds a new time interval for the area **/
                 scope.addTimeInterval = function () {
-                    scope.message.editSchedule.push({
-                        fromTime: undefined,
-                        toTime: undefined
+                    scope.area.editFiringPeriods.push({
+                        fromDate: undefined,
+                        toDate: undefined
                     });
 
                     // Give focus to the newly added input field
                     $timeout(function() { 
-                        $(element[0]).find('input')[ (scope.message.editSchedule.length - 1) * 2].focus()
+                        $(element[0]).find('input')[ (scope.area.editFiringPeriods.length - 1) * 2].focus()
                     });
                 };
 
 
                 /** Removes the time interval from the list **/
                 scope.removeTimeInterval = function (index) {
-                    scope.message.editSchedule.splice(index, 1);
+                    scope.area.editFiringPeriods.splice(index, 1);
                 };
 
 
@@ -64,12 +64,12 @@ angular.module('niord.schedule')
                 };
 
 
-                /** Enter edit mode for the given message **/
+                /** Enter edit mode for the given area **/
                 scope.edit = function () {
-                    var msg = scope.message;
-                    if (msg.editing) {
-                        msg.editSchedule = msg.schedule ? angular.copy(msg.schedule) : [];
-                        if (msg.editSchedule.length == 0) {
+                    var area = scope.area;
+                    if (area.editing) {
+                        area.editFiringPeriods = area.firingPeriods ? angular.copy(area.firingPeriods) : [];
+                        if (area.editFiringPeriods.length == 0) {
                             scope.addTimeInterval();
                         }
                     }
@@ -78,67 +78,74 @@ angular.module('niord.schedule')
 
                 /** Clears the edited list of time intervals **/
                 scope.clear = function () {
-                    scope.message.editSchedule = [];
+                    scope.area.editFiringPeriods = [];
                 };
 
 
-                /** Cancel editing the message schedule **/
+                /** Cancel editing the area schedule **/
                 scope.cancel = function () {
-                    delete scope.message.editSchedule;
-                    scope.message.editing = false;
+                    delete scope.area.editFiringPeriods;
+                    scope.area.editing = false;
                 };
 
 
-                /** Saves the message schedule **/
+                /** Saves the area schedule **/
                 scope.save = function () {
-                    scope.message.schedule = [];
+                    scope.area.firingPeriods = [];
 
                     // Filter out dodgy time definitions
-                    angular.forEach(scope.message.editSchedule, function (ti) {
-                        if (ti.fromTime === undefined && ti.toTime === undefined) {
+                    angular.forEach(scope.area.editFiringPeriods, function (ti) {
+                        if (ti.fromDate === undefined && ti.toDate === undefined) {
                             return;
                         }
-                        if (ti.fromTime === undefined) {
-                            ti.fromTime = moment(scope.date).set({
+                        if (ti.fromDate === undefined) {
+                            ti.fromDate = moment(scope.date).set({
                                 hour: 0,
                                 minute: 0,
                                 second: 0,
                                 millisecond: 0
                             });
                         } else {
-                            ti.fromTime = moment(scope.date).set({
-                                hour: moment(ti.fromTime).hour(),
-                                minute: moment(ti.fromTime).minute(),
+                            ti.fromDate = moment(scope.date).set({
+                                hour: moment(ti.fromDate).hour(),
+                                minute: moment(ti.fromDate).minute(),
                                 second: 0,
                                 millisecond: 0
                             });
                         }
-                        if (ti.toTime === undefined) {
-                            ti.toTime = moment(scope.date).set({
+                        if (ti.toDate === undefined) {
+                            ti.toDate = moment(scope.date).set({
                                 hour: 23,
                                 minute: 59,
                                 second: 59,
                                 millisecond: 0
                             });
                         } else {
-                            ti.toTime = moment(scope.date).set({
-                                hour: moment(ti.toTime).hour(),
-                                minute: moment(ti.toTime).minute(),
+                            ti.toDate = moment(scope.date).set({
+                                hour: moment(ti.toDate).hour(),
+                                minute: moment(ti.toDate).minute(),
                                 second: 0,
                                 millisecond: 0
                             });
                         }
-                        scope.message.schedule.push(ti);
+                        scope.area.firingPeriods.push(ti);
                     });
 
-                    // TODO: Save properly
-
-                    scope.cancel();
+                    // Save the updated area
+                    ScheduleService.updateFiringPeriodsForArea(scope.area, scope.date)
+                        .success(function (area) {
+                            scope.area.firingPeriods = area.firingPeriods;
+                            scope.cancel();
+                        })
+                        .error(function() {
+                            growl.error("Error updating firing periods", { ttl: 5000 });
+                            scope.cancel();
+                        });
                 };
 
 
                 // Monitor the message.editing variable
-                scope.$watch("message.editing", scope.edit, true);
+                scope.$watch("area.editing", scope.edit, true);
             }
         };
     }]);

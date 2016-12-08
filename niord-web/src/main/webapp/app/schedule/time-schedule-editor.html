@@ -1,19 +1,19 @@
 
 <div>
 
-    <div ng-if="message.editing" class="time-schedule-editor">
+    <div ng-if="area.editing" class="time-schedule-editor">
         <div>
 
             <table>
-                <tr ng-repeat="ti in message.editSchedule">
+                <tr ng-repeat="ti in area.editFiringPeriods">
                     <td>
-                        <date-time-picker id="fromTime" ng-model="ti.fromTime" placeholder="From" style="width: 120px"
-                                          format="'LT'"></date-time-picker>
+                        <date-time-picker id="fromDate" ng-model="ti.fromDate" placeholder="From" style="width: 120px"
+                                          format="'LT'" icon="glyphicon-time"></date-time-picker>
                     </td>
                     <td width="20" align="center">&nbsp;-&nbsp;</td>
                     <td>
-                        <date-time-picker id="toTime" ng-model="ti.toTime" placeholder="To" style="width: 120px"
-                                          format="'LT'"></date-time-picker>
+                        <date-time-picker id="toDate" ng-model="ti.toDate" placeholder="To" style="width: 120px"
+                                          format="'LT'" icon="glyphicon-time"></date-time-picker>
                     </td>
                     <td width="30" align="right">
                         <a hreg ng-click="removeTimeInterval($index)">
@@ -43,8 +43,8 @@
     </div>
 
 
-    <div ng-if="!message.editing" style="text-align: right">
-        <div ng-repeat="ti in message.schedule">
+    <div ng-if="!area.editing" style="text-align: right">
+        <div ng-repeat="ti in area.firingPeriods">
             {{formatTimeInterval(ti)}}
         </div>
     </div>

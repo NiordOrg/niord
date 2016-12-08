@@ -42,6 +42,7 @@ public class SystemAreaVo extends AreaVo implements Comparable<SystemAreaVo> {
     Float originLatitude;   // For CW and CCW message sorting
     Float originLongitude;  // For CW and CCW message sorting
     Integer originAngle;    // For CW and CCW message sorting
+    List<FiringPeriodVo> firingPeriods;
     List<String> editorFields;
 
 
@@ -69,6 +70,14 @@ public class SystemAreaVo extends AreaVo implements Comparable<SystemAreaVo> {
             Collections.sort(children);
             children.forEach(SystemAreaVo::sortChildren);
         }
+    }
+
+
+    public List<FiringPeriodVo> checkCreateFiringPeriods() {
+        if (firingPeriods == null) {
+            firingPeriods = new ArrayList<>();
+        }
+        return firingPeriods;
     }
 
     /*************************/
@@ -138,6 +147,14 @@ public class SystemAreaVo extends AreaVo implements Comparable<SystemAreaVo> {
 
     public void setOriginAngle(Integer originAngle) {
         this.originAngle = originAngle;
+    }
+
+    public List<FiringPeriodVo> getFiringPeriods() {
+        return firingPeriods;
+    }
+
+    public void setFiringPeriods(List<FiringPeriodVo> firingPeriods) {
+        this.firingPeriods = firingPeriods;
     }
 
     public List<String> getEditorFields() {

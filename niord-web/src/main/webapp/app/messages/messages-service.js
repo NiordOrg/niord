@@ -655,8 +655,8 @@ angular.module('niord.messages')
 
             /** Translates a time interval */
             translateTimeInterval: function(lang, di) {
-                var from = di && di.fromTime ? moment(di.fromTime).locale(lang) : undefined;
-                var to = di && di.toTime ? moment(di.toTime).locale(lang) : undefined;
+                var from = di && di.fromDate ? moment(di.fromDate).locale(lang) : undefined;
+                var to = di && di.toDate ? moment(di.toDate).locale(lang) : undefined;
 
                 var time = '';
                 if (from && to) {

@@ -893,12 +893,13 @@ angular.module('niord.common')
                 readonly:       '=',
                 placeholder:    '@',
                 size:           '@',
+                icon:           '@',
                 tabIndex:       '='
             },
             template : '<div class="input-group date" data-date-format="l">'
                      + '  <input type="text" class="input-{{size}} form-control" />'
                      + '  <span class="input-group-addon">'
-                     + '    <span class="glyphicon glyphicon-calendar"></span>'
+                     + '    <span class="glyphicon" ng-class="icon"></span>'
                      + '  </span>'
                      + '</div>',
 
@@ -908,6 +909,7 @@ angular.module('niord.common')
 
                 var input = element.find("input");
 
+                scope.icon = scope.icon || 'glyphicon-calendar';
                 scope.size = scope.size || 'sm';
                 scope.format = scope.format || "DD/MM/YYYY HH:mm";
                 scope.$watch("format", function () {

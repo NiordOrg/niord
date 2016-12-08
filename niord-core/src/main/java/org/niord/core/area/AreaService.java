@@ -67,8 +67,8 @@ public class AreaService extends BaseService {
     /**
      * Returns the area with the given legacy id
      *
-     * @param legacyId the id of the area
-     * @return the area with the given id or null if not found
+     * @param legacyId the legacy id of the area
+     * @return the area with the given legacy id or null if not found
      */
     public Area findByLegacyId(String legacyId) {
         try {
