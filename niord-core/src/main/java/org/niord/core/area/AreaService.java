@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -121,15 +122,28 @@ public class AreaService extends BaseService {
             criteriaHelper.equals(parent.get("id"), params.getParentId());
         }
 
+        // Assemple lineage filters from search domain and areas
+        Set<String> lineages = new HashSet<>();
+
         // Optionally, filter by the areas associated with the specified domain
         if (StringUtils.isNotBlank(params.getDomain())) {
             Domain d = domainService.findByDomainId(params.getDomain());
             if (d != null && d.getAreas().size() > 0) {
-                Predicate[] areaMatch = d.getAreas().stream()
-                        .map(a -> cb.like(areaRoot.get("lineage"), a.getLineage() + "%"))
-                        .toArray(Predicate[]::new);
-                criteriaHelper.add(cb.or(areaMatch));
+                d.getAreas().forEach(a -> lineages.add(a.getLineage()));
             }
+        }
+
+        // Optionally, filter by area subtrees
+        if (params.getAreaIds() != null && !params.getAreaIds().isEmpty()) {
+            getAreaDetails(params.getAreaIds()).forEach(a -> lineages.add(a.getLineage()));
+        }
+
+        // If defined, apply the area lineage filter
+        if (!lineages.isEmpty()) {
+            Predicate[] areaMatch = lineages.stream()
+                    .map(lineage -> cb.like(areaRoot.get("lineage"), lineage + "%"))
+                    .toArray(Predicate[]::new);
+            criteriaHelper.add(cb.or(areaMatch));
         }
 
         // Optionally, search by type

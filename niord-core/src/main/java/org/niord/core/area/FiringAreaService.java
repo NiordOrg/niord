@@ -57,21 +57,6 @@ public class FiringAreaService extends BaseService {
 
 
     /**
-     * Returns all firing areas
-     * @param includeInactive whether to include inactive areas or not
-     * @return all firing areas
-     */
-    public List<Area> getFiringAreas(boolean includeInactive) {
-        AreaSearchParams param = new AreaSearchParams()
-                .inactive(includeInactive)
-                .type(AreaType.FIRING_AREA);
-        param.sortBy("TREE_ORDER").sortOrder(ASC);
-
-        return areaService.searchAreas(param);
-    }
-
-
-    /**
      * Returns any existing firing period with the given area and date interval. Return null if none is found
      * @param area the area
      * @param firingPeriodFromDate the from date
@@ -92,11 +77,13 @@ public class FiringAreaService extends BaseService {
     /**
      * Fetches all firing areas and their firing periods on the specified date
      * @param date the date
+     * @param query a search query
+     * @param areaIds area subtrees to search
      * @param inactive whether to include inactive areas or not
      * @param lang the language to filter areas by
      * @return all firing areas and their firing periods on the specified date
      */
-    public List<SystemAreaVo> getFiringPeriodsForDate(Date date, boolean inactive, String lang) {
+    public List<SystemAreaVo> getFiringPeriodsForDate(Date date, String query, Set<Integer> areaIds, boolean inactive, String lang) {
 
         Set<Boolean> activeSet = inactive
             ? new HashSet<>(Arrays.asList(TRUE, FALSE))
@@ -114,7 +101,16 @@ public class FiringAreaService extends BaseService {
         DataFilter filter = DataFilter.get()
                 .fields(DataFilter.PARENT, DataFilter.DETAILS)
                 .lang(lang);
-        List<SystemAreaVo> result = getFiringAreas(inactive).stream()
+
+
+        AreaSearchParams param = new AreaSearchParams()
+                .name(query)
+                .areaIds(areaIds)
+                .inactive(inactive)
+                .type(AreaType.FIRING_AREA);
+        param.sortBy("TREE_ORDER").sortOrder(ASC);
+
+        List<SystemAreaVo> result = areaService.searchAreas(param).stream()
                 .map(a -> a.toVo(SystemAreaVo.class, filter))
                 .collect(Collectors.toList());
 
@@ -142,7 +138,7 @@ public class FiringAreaService extends BaseService {
      */
     public SystemAreaVo getFiringAreaPeriodsForDate(Integer areaId, Date date, String lang) {
 
-        return getFiringPeriodsForDate(date, true, lang).stream()
+        return getFiringPeriodsForDate(date, null, null, true, lang).stream()
                 .filter(a -> Objects.equals(a.getId(), areaId))
                 .findFirst()
                 .orElse(null);

@@ -15,11 +15,12 @@
  */
 package org.niord.core.area;
 
-import org.niord.model.search.PagedSearchParamsVo;
 import org.niord.model.message.AreaType;
+import org.niord.model.search.PagedSearchParamsVo;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang.StringUtils.isNotBlank;
@@ -30,7 +31,8 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
 @SuppressWarnings("unused")
 public class AreaSearchParams extends PagedSearchParamsVo {
 
-    Integer parentId;
+    Integer parentId;       // Subtree under the parent
+    Set<Integer> areaIds;   // Subtrees under or including the areas
     String language;
     String name;
     AreaType type;
@@ -48,6 +50,7 @@ public class AreaSearchParams extends PagedSearchParamsVo {
     public String toString() {
         List<String> desc = new ArrayList<>();
         if (parentId != null) { desc.add(String.format("Parent: %s", parentId)); }
+        if (areaIds != null) { desc.add(String.format("Areas: %s", areaIds)); }
         if (isNotBlank(language)) { desc.add(String.format("Language: %s", language)); }
         if (isNotBlank(name)) { desc.add(String.format("Name: '%s'", name)); }
         if (type != null) { desc.add(String.format("Type: %s", type)); }
@@ -70,6 +73,15 @@ public class AreaSearchParams extends PagedSearchParamsVo {
 
     public AreaSearchParams parentId(Integer parentId) {
         this.parentId = parentId;
+        return this;
+    }
+
+    public Set<Integer> getAreaIds() {
+        return areaIds;
+    }
+
+    public AreaSearchParams areaIds(Set<Integer> areaIds) {
+        this.areaIds = areaIds;
         return this;
     }
 

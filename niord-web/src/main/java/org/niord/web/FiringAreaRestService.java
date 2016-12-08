@@ -37,6 +37,7 @@ import javax.ws.rs.QueryParam;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 
 /**
@@ -68,11 +69,13 @@ public class FiringAreaRestService {
     @NoCache
     public List<SystemAreaVo> getFiringPeriodsForDate(
             @QueryParam("date") Long date,
+            @QueryParam("query") String query,
+            @QueryParam("area") Set<Integer> areaIds,
             @QueryParam("inactive") @DefaultValue("false") Boolean inactive,
             @QueryParam("lang") String lang) {
 
         Date searchDate = date != null ? new Date(date) : new Date();
-        return firingAreaService.getFiringPeriodsForDate(searchDate, inactive, lang);
+        return firingAreaService.getFiringPeriodsForDate(searchDate, query, areaIds, inactive, lang);
     }
 
 
