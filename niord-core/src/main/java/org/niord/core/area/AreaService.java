@@ -25,6 +25,7 @@ import org.niord.core.message.Message;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
+import org.niord.model.search.PagedSearchParamsVo;
 import org.slf4j.Logger;
 
 import javax.ejb.Schedule;
@@ -34,10 +35,12 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -118,7 +121,7 @@ public class AreaService extends BaseService {
             criteriaHelper.equals(parent.get("id"), params.getParentId());
         }
 
-        // Optionally, filter by the domains associated with the current domain
+        // Optionally, filter by the areas associated with the specified domain
         if (StringUtils.isNotBlank(params.getDomain())) {
             Domain d = domainService.findByDomainId(params.getDomain());
             if (d != null && d.getAreas().size() > 0) {
@@ -149,11 +152,25 @@ public class AreaService extends BaseService {
             criteriaHelper.add(cb.equal(areaRoot.get("active"), true));
         }
 
+        // Compute the sort order
+        List<Order> sortOrders = new ArrayList<>();
+        if ("TREE_ORDER".equals(params.getSortBy())) {
+            Arrays.asList("treeSortOrder", "siblingSortOrder", "id")
+                .forEach(field -> {
+                    if (params.getSortOrder() == PagedSearchParamsVo.SortOrder.ASC) {
+                        sortOrders.add(cb.asc(areaRoot.get(field)));
+                    } else {
+                        sortOrders.add(cb.desc(areaRoot.get(field)));
+                    }
+                });
+        }
+
+
         // Complete the query
         areaQuery.select(areaRoot)
                 .distinct(true)
-                .where(criteriaHelper.where());
-                //.orderBy(cb.asc(cb.locate(cb.lower(descs.get("name")), name.toLowerCase())));
+                .where(criteriaHelper.where())
+                .orderBy(sortOrders);
 
         // Execute the query and update the search result
         return em.createQuery(areaQuery)

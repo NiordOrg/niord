@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static org.niord.model.search.PagedSearchParamsVo.SortOrder.ASC;
 
 /**
  * Business interface for accessing Niord firing areas
@@ -64,6 +65,8 @@ public class FiringAreaService extends BaseService {
         AreaSearchParams param = new AreaSearchParams()
                 .inactive(includeInactive)
                 .type(AreaType.FIRING_AREA);
+        param.sortBy("TREE_ORDER").sortOrder(ASC);
+
         return areaService.searchAreas(param);
     }
 
@@ -125,10 +128,6 @@ public class FiringAreaService extends BaseService {
                 area.checkCreateFiringPeriods().add(fp.toVo());
             }
         }
-
-        // Sort the areas
-        Collections.sort(result);
-        result.forEach(SystemAreaVo::sortChildren);
 
         return result;
     }
