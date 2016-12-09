@@ -578,15 +578,17 @@ angular.module('niord.map')
             replace: false,
             require: '^olMap',
             scope: {
-                name: '@',
-                visible: '=',
-                layerSwitcher: '=',
-                areas: '='
+                name:           '@',
+                visible:        '=',
+                layerSwitcher:  '=',
+                areas:          '=',
+                areaColor:      '@'
             },
             link: function(scope, element, attrs, ctrl) {
                 var olScope = ctrl.getOpenlayersScope();
                 var olLayer;
-                var areaColor = 'rgba(100, 100, 255, 0.8)';
+
+                scope.areaColor = scope.areaColor || 'rgba(100, 100, 255, 0.8)';
 
                 olScope.getMap().then(function(map) {
 
@@ -621,7 +623,7 @@ angular.module('niord.map')
                         // Add extent outline style
                         styles.push(new ol.style.Style({
                             stroke: new ol.style.Stroke({
-                                color: areaColor,
+                                color: scope.areaColor,
                                 width: 2,
                                 lineDash: [4,4]
                             })
@@ -633,7 +635,7 @@ angular.module('niord.map')
                             text: new ol.style.Text({
                                 font: '10px Arial',
                                 text: areaName,
-                                fill: new ol.style.Fill({color: areaColor}),
+                                fill: new ol.style.Fill({color: scope.areaColor}),
                                 textAlign: 'center'
                             }),
                             geometry: function(feature) {

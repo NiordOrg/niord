@@ -70,7 +70,8 @@
                     <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="STD-OSM"></map-tile-layer>
                     <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS" opacity="0.5"
                                     source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
-                    <map-areas-layer name="Areas" visible="true" areas="firingAreas"></map-areas-layer>
+                    <map-areas-layer name="Areas" visible="true" areas="firingAreas"
+                                     area-color="darkmagenta"></map-areas-layer>
                     <map-layer-switcher></map-layer-switcher>
                 </ol-map>
             </div>
