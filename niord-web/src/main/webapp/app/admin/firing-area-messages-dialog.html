@@ -1,0 +1,38 @@
+
+<div>
+    <div class="modal-header" style="text-align: center">
+        <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
+        <h4>Generate Firing Area Template Messages</h4>
+    </div>
+
+    <div class="modal-body">
+        
+        <form id="faMsgForm" name="faMsgForm" class="form-horizontal" style="margin-top: 20px">
+            <div class="form-group">
+                <label class="col-sm-4 control-label">Msg. Series</label>
+                <div class="col-sm-8">
+                    <select class="form-control input-sm" required
+                            ng-model="data.seriesId" ng-options="seriesId for seriesId in messageSeriesIds" >
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-sm-4 control-label">Message Tag</label>
+                <div class="col-sm-8">
+                    <message-tags-field tag-data="data" multiple="false"></message-tags-field>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 40px">
+                <div class="col-sm-12" style="text-align: right">
+                    <button class="btn btn-sm btn-default" ng-click="$dismiss('aborted')">Cancel</button>
+                    <button class="btn btn-sm btn-primary" ng-click="generateFiringAreaMessageTemplates()"
+                            ng-disabled="faMsgForm.$invalid">Generate Messages</button>
+                </div>
+            </div>
+        </form>
+
+    </div>
+</div>
+

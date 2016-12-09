@@ -31,6 +31,8 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
 @SuppressWarnings("unused")
 public class AreaSearchParams extends PagedSearchParamsVo {
 
+    public static final String TREE_SORT_ORDER = "TREE_ORDER";
+
     Integer parentId;       // Subtree under the parent
     Set<Integer> areaIds;   // Subtrees under or including the areas
     String language;

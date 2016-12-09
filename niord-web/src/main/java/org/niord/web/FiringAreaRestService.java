@@ -21,6 +21,14 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.area.FiringAreaService;
 import org.niord.core.area.vo.SystemAreaVo;
+import org.niord.core.domain.DomainService;
+import org.niord.core.message.Message;
+import org.niord.core.message.MessageSeries;
+import org.niord.core.message.MessageSeriesService;
+import org.niord.core.message.MessageTag;
+import org.niord.core.message.MessageTagService;
+import org.niord.model.IJsonSerializable;
+import org.niord.model.message.MessageVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
@@ -30,14 +38,17 @@ import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 /**
@@ -54,6 +65,15 @@ public class FiringAreaRestService {
 
     @Inject
     FiringAreaService firingAreaService;
+
+    @Inject
+    DomainService domainService;
+
+    @Inject
+    MessageSeriesService messageSeriesService;
+
+    @Inject
+    MessageTagService messageTagService;
 
     /**
      * Fetches the firing areas that has firing periods on the specified date
@@ -104,4 +124,60 @@ public class FiringAreaRestService {
         return firingAreaService.updateFiringPeriodsForArea(area, new Date(date), lang);
     }
 
+
+    /**
+     * Generates a firing area message template for all active firing areas
+     * @param params the parameters
+     * @return the generated firing area messages
+     */
+    @POST
+    @Path("/generate-firing-area-messages")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"admin"})
+    public List<MessageVo> generateFiringAreaMessages(FiringAreaMessageParams params) {
+
+        // Validate the the message series belong to the current domain
+        if (!domainService.currentDomain().containsMessageSeries(params.getSeriesId())) {
+            throw new WebApplicationException(403);
+        }
+
+        MessageSeries messageSeries = messageSeriesService.findBySeriesId(params.getSeriesId());
+        MessageTag tag = messageTagService.findTag(domainService.currentDomain(), params.getTagId());
+
+        log.info("Generating firing area message templates. Message Series: "
+                + params.getSeriesId() + ". Message Tag: " + params.getTagId());
+        return firingAreaService.generateFiringAreaMessages(messageSeries, tag).stream()
+                .map(m -> m.toVo(MessageVo.class, Message.MESSAGE_DETAILS_FILTER))
+                .collect(Collectors.toList());
+    }
+
+
+
+    /**
+     * Helper class used when generating firing area template messages
+     */
+    @SuppressWarnings("unused")
+    public static class FiringAreaMessageParams implements IJsonSerializable {
+        String seriesId;
+        String tagId;
+
+        public String getSeriesId() {
+            return seriesId;
+        }
+
+        public void setSeriesId(String seriesId) {
+            this.seriesId = seriesId;
+        }
+
+        public String getTagId() {
+            return tagId;
+        }
+
+        public void setTagId(String tagId) {
+            this.tagId = tagId;
+        }
+    }
 }

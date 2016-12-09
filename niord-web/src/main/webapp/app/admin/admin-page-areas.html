@@ -35,6 +35,8 @@
                         <li role="separator" class="divider"></li>
                         <li role="menuitem"><a href ng-click="recomputeTreeSortOrder()">Re-index areas</a></li>
                         <li role="menuitem"><a href ng-click="recomputePublishedMessagesSortOrder()">Re-index published messages</a></li>
+                        <li ng-if="domain.schedule" role="separator" class="divider"></li>
+                        <li ng-if="domain.schedule" role="menuitem"><a href ng-click="generateFiringAreaMessageTemplates()">Generate firing area messages...</a></li>
                     </ul>
                 </span>
             </div>

@@ -16,17 +16,32 @@
 
 package org.niord.core.area;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.vo.SystemAreaVo;
+import org.niord.core.category.Category;
+import org.niord.core.category.CategoryService;
+import org.niord.core.chart.ChartService;
+import org.niord.core.geojson.Feature;
+import org.niord.core.geojson.FeatureCollection;
+import org.niord.core.message.Message;
+import org.niord.core.message.MessagePart;
+import org.niord.core.message.MessageSeries;
+import org.niord.core.message.MessageService;
+import org.niord.core.message.MessageTag;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.service.BaseService;
 import org.niord.core.util.TimeUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.message.AreaType;
+import org.niord.model.message.MessagePartType;
+import org.niord.model.message.Status;
+import org.niord.model.message.Type;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -40,6 +55,8 @@ import java.util.stream.Collectors;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static org.niord.core.area.AreaSearchParams.TREE_SORT_ORDER;
+import static org.niord.model.message.MainType.NM;
 import static org.niord.model.search.PagedSearchParamsVo.SortOrder.ASC;
 
 /**
@@ -53,7 +70,106 @@ public class FiringAreaService extends BaseService {
     private Logger log;
 
     @Inject
+    MessageService messageService;
+
+    @Inject
     AreaService areaService;
+
+    @Inject
+    ChartService chartService;
+
+    @Inject
+    CategoryService categoryService;
+
+
+    /***************************************/
+    /** Firing Area Template Messages     **/
+    /***************************************/
+
+
+    /**
+     * Generates a firing area message template for all active firing areas.
+     * @param messageSeries the message series to use
+     * @param messageTag the message tag to assign the messages to
+     * @return the list of newly created firing area message templates
+     */
+    public List<Message> generateFiringAreaMessages(MessageSeries messageSeries, MessageTag messageTag) {
+
+        // Search for active firing areas
+        AreaSearchParams param = new AreaSearchParams()
+                .inactive(false)
+                .type(AreaType.FIRING_AREA);
+        param.sortBy(TREE_SORT_ORDER).sortOrder(ASC);
+
+        List<Area> firingAreas = areaService.searchAreas(param);
+        if (firingAreas.isEmpty()) {
+            log.info("No active firing areas found - skip generating messages");
+            return Collections.emptyList();
+        }
+
+        List<Message> faMessages = new ArrayList<>();
+        for (Area area : firingAreas) {
+
+            Message message = new Message();
+            message.setMessageSeries(messageSeries);
+            message.setMainType(messageSeries.getMainType());
+            message.setType(messageSeries.getMainType() == NM ? Type.MISCELLANEOUS_NOTICE : Type.LOCAL_WARNING);
+            message.setStatus(Status.DRAFT);
+            message.setShortId("FA-" + area.getDescs().get(0).getName().replace(" ", "-"));
+            message.setAutoTitle(true);
+            message.getAreas().add(area);
+
+            MessagePart part = message.addPart(new MessagePart(MessagePartType.DETAILS));
+            if (area.getGeometry() != null) {
+
+                // Compute the charts for the message
+                message.getCharts().addAll(chartService.getIntersectingCharts(area.getGeometry()));
+
+                // Copy the area geometry to the message
+                FeatureCollection featureCollection = new FeatureCollection();
+                Feature feature = new Feature();
+                featureCollection.addFeature(feature);
+                feature.setGeometry(area.getGeometry());
+                area.getDescs().stream()
+                        .filter(desc -> StringUtils.isNotBlank(desc.getName()))
+                        .forEach(desc -> feature.getProperties().put("name:" + desc.getLang(), desc.getName()));
+                part.setGeometry(featureCollection);
+            }
+
+            // Update the title line
+            message.updateMessageTitle();
+
+            // Categories
+            Category firingExercise = categoryService.getFiringExercisesCategory();
+            if (firingExercise != null) {
+                message.getCategories().add(firingExercise);
+            }
+
+            // Save the message
+            message = messageService.saveMessage(message);
+
+            // Add to message tag
+            if (messageTag != null) {
+                messageTag.getMessages().add(message);
+                message.getTags().add(messageTag);
+            }
+
+
+            faMessages.add(message);
+        }
+
+        if (messageTag != null) {
+            messageTag.updateMessageCount();
+            saveEntity(messageTag);
+        }
+
+        return faMessages;
+    }
+
+
+    /***************************************/
+    /** Firing Periods                    **/
+    /***************************************/
 
 
     /**
@@ -118,7 +234,7 @@ public class FiringAreaService extends BaseService {
                 .areaIds(areaIds)
                 .inactive(inactive)
                 .type(AreaType.FIRING_AREA);
-        param.sortBy("TREE_ORDER").sortOrder(ASC);
+        param.sortBy(TREE_SORT_ORDER).sortOrder(ASC);
 
         List<SystemAreaVo> result = areaService.searchAreas(param).stream()
                 .map(a -> a.toVo(SystemAreaVo.class, filter))

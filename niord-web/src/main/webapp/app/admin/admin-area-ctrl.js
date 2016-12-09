@@ -27,8 +27,8 @@ angular.module('niord.admin')
      * Area Admin Controller
      * Controller for the Admin Areas page
      */
-    .controller('AreaAdminCtrl', ['$scope', 'growl', 'LangService', 'AdminAreaService', 'DialogService', 'UploadFileService',
-        function ($scope, growl, LangService, AdminAreaService, DialogService, UploadFileService) {
+    .controller('AreaAdminCtrl', ['$scope', '$uibModal', 'growl', 'LangService', 'AdminAreaService', 'DialogService', 'UploadFileService',
+        function ($scope, $uibModal, growl, LangService, AdminAreaService, DialogService, UploadFileService) {
             'use strict';
 
             $scope.areas = [];
@@ -222,4 +222,56 @@ angular.module('niord.admin')
                     '/rest/areas/upload-areas',
                     'json');
             };
+
+
+            /** Open dialog for generating firing area template messages **/
+            $scope.generateFiringAreaMessageTemplates = function () {
+                $uibModal.open({
+                    controller: "FiringAreaMessagesDialogCtrl",
+                    templateUrl: "/app/admin/firing-area-messages-dialog.html",
+                    size: 'md'
+                });
+            }
+        }])
+
+
+
+    /**
+     * ********************************************************************************
+     * FiringAreaMessagesDialogCtrl
+     * ********************************************************************************
+     * Controller for creating template messages for each firing area
+     */
+    .controller('FiringAreaMessagesDialogCtrl', ['$scope', '$rootScope', 'growl', 'LangService', 'AdminAreaService',
+        function ($scope, $rootScope, growl, LangService, AdminAreaService) {
+            'use strict';
+
+            // Determine the message series for the current domain
+            $scope.messageSeriesIds = [];
+            if ($rootScope.domain && $rootScope.domain.messageSeries) {
+                angular.forEach($rootScope.domain.messageSeries, function (series) {
+                    $scope.messageSeriesIds.push(series.seriesId);
+                });
+            }
+
+            $scope.data = {
+                seriesId: $scope.messageSeriesIds.length > 0 ? $scope.messageSeriesIds[0] : undefined,
+                tag: undefined
+            };
+
+
+            /** Generates firing area template messages **/
+            $scope.generateFiringAreaMessageTemplates = function () {
+                AdminAreaService.generateFiringAreaMessageTemplates(
+                    $scope.data.seriesId,
+                    $scope.data.tag ? $scope.data.tag.tagId : undefined)
+                    .success(function (result) {
+                        growl.info('Generated ' + result.length + " firing area messages", { ttl: 3000 });
+                        $scope.$close("OK");
+                    })
+                    .error(function () {
+                        growl.error("Error generating firing area messages", { ttl: 5000 });
+                    })
+            }
+
         }]);

@@ -423,4 +423,16 @@ public class CategoryService extends BaseService {
         return category;
     }
 
+
+    /**
+     * Returns the firing exercises category or null if none is found.
+     *
+     * The current approach naively searches for a category with the name "Firing Exercises".
+     * TODO: A future approach should look up the category by a standardized MRN.
+     *
+     * @return the firing exercises category or null if none is found
+     */
+    public Category getFiringExercisesCategory() {
+        return findByName("Firing Exercises", "en", null);
+    }
 }

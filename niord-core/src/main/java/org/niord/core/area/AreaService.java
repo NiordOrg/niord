@@ -49,6 +49,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.niord.core.area.AreaSearchParams.TREE_SORT_ORDER;
+
 /**
  * Business interface for accessing Niord areas
  */
@@ -168,7 +170,7 @@ public class AreaService extends BaseService {
 
         // Compute the sort order
         List<Order> sortOrders = new ArrayList<>();
-        if ("TREE_ORDER".equals(params.getSortBy())) {
+        if (TREE_SORT_ORDER.equals(params.getSortBy())) {
             Arrays.asList("treeSortOrder", "siblingSortOrder", "id")
                 .forEach(field -> {
                     if (params.getSortOrder() == PagedSearchParamsVo.SortOrder.ASC) {

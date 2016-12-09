@@ -103,6 +103,11 @@ angular.module('niord.admin')
 
             recomputePublishedMessagesSortOrder: function() {
                 return $http.put('/rest/messages/recompute-area-sort-order');
+            },
+
+            generateFiringAreaMessageTemplates: function(seriesId, tagId) {
+                return $http.post('/rest/firing-areas/generate-firing-area-messages',
+                    { seriesId: seriesId, tagId: tagId });
             }
 
         };
