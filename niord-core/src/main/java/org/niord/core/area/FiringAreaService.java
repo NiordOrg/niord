@@ -137,6 +137,9 @@ public class FiringAreaService extends BaseService {
             }
 
             // Update the title line
+            for (AreaDesc desc : area.getDescs()) {
+                message.checkCreateDesc(desc.getLang());
+            }
             message.updateMessageTitle();
 
             // Categories
