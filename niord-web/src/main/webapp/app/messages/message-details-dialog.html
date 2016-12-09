@@ -15,7 +15,7 @@
                 <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
                                 source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
                 <map-open-sea-map-layer name="OpenSeaMap" visible="false" layer-switcher="openSeaMapLayerEnabled"></map-open-sea-map-layer>
-                <map-aton-layer atons="atons" name="AtoN" visible="false" layer-switcher="true"></map-aton-layer>
+                <map-aton-layer atons="atons" name="AtoN" visible="false" layer-switcher="domain && domain.atons"></map-aton-layer>
                 <map-message-details-layer name="Message" visible="true" message="msg" fit-extent="true"></map-message-details-layer>
                 <map-message-labels-layer name="Labels" visible="true" layer-switcher="true" message="msg"></map-message-labels-layer>
                 <map-layer-switcher></map-layer-switcher>

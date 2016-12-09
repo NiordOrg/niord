@@ -39,6 +39,7 @@ public class DomainVo implements IJsonSerializable {
     private List<CategoryVo> categories;
     private List<SystemMessageSeriesVo> messageSeries;
     private Boolean publish;
+    private Boolean atons;
     private Boolean schedule;
     private Boolean inKeycloak;
 
@@ -132,6 +133,14 @@ public class DomainVo implements IJsonSerializable {
 
     public void setPublish(Boolean publish) {
         this.publish = publish;
+    }
+
+    public Boolean getAtons() {
+        return atons;
+    }
+
+    public void setAtons(Boolean atons) {
+        this.atons = atons;
     }
 
     public Boolean getSchedule() {

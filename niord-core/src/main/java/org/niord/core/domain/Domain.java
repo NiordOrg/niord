@@ -84,8 +84,19 @@ public class Domain extends BaseEntity<Integer> {
     @ManyToMany
     List<MessageSeries> messageSeries = new ArrayList<>();
 
+    /**
+     * Defines whether to promulgate published messages of this domain by default
+     */
     Boolean publish;
 
+    /**
+     * Defines whether to integrate with the AtoN module or not for this domain
+     */
+    Boolean atons;
+
+    /**
+     * Defines if this domain handles scheduling of firing  exercises
+     */
     Boolean schedule;
 
     @Transient
@@ -111,8 +122,8 @@ public class Domain extends BaseEntity<Integer> {
         this.longitude = domain.getLon();
         this.zoomLevel = domain.getZoomLevel();
         this.messageSortOrder = StringUtils.isBlank(domain.getMessageSortOrder()) ? null : domain.getMessageSortOrder();
-        this.publish = domain.getSchedule();
         this.publish = domain.getPublish();
+        this.atons = domain.getAtons();
         this.schedule = domain.getSchedule();
         this.inKeycloak = domain.getInKeycloak();
 
@@ -150,6 +161,7 @@ public class Domain extends BaseEntity<Integer> {
         domain.setZoomLevel(zoomLevel);
         domain.setMessageSortOrder(messageSortOrder);
         domain.setPublish(publish);
+        domain.setAtons(atons);
         domain.setSchedule(schedule);
         domain.setInKeycloak(inKeycloak);
 
@@ -193,6 +205,7 @@ public class Domain extends BaseEntity<Integer> {
                 !Objects.equals(zoomLevel, template.getZoomLevel()) ||
                 !Objects.equals(messageSortOrder, template.getMessageSortOrder()) ||
                 !Objects.equals(publish, template.getPublish()) ||
+                !Objects.equals(atons, template.getAtons()) ||
                 !Objects.equals(schedule, template.getSchedule()) ||
                 hasChanged(areas, template.getAreas()) ||
                 hasChanged(categories, template.getCategories()) ||
@@ -324,6 +337,14 @@ public class Domain extends BaseEntity<Integer> {
 
     public void setPublish(Boolean publish) {
         this.publish = publish;
+    }
+
+    public Boolean getAtons() {
+        return atons;
+    }
+
+    public void setAtons(Boolean atons) {
+        this.atons = atons;
     }
 
     public Boolean getSchedule() {

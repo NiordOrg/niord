@@ -195,6 +195,7 @@ public class DomainService extends BaseService {
         original.setZoomLevel(domain.getZoomLevel());
         original.setMessageSortOrder(domain.getMessageSortOrder());
         original.setPublish(domain.getPublish());
+        original.setAtons(domain.getAtons());
         original.setSchedule(domain.getSchedule());
 
         // Substitute the areas with the persisted ones

@@ -13,7 +13,7 @@
                 <map-tile-layer name="OSM (std)" visible="false" layer-switcher="showStdOSMLayer" source="STD-OSM"></map-tile-layer>
                 <map-tile-layer name="WMS" visible="false" layer-switcher="wmsLayerEnabled" source="WMS"
                                 source-properties="{ url: '/wms/', params: {'LAYERS': 'cells', 'TRANSPARENT': 'TRUE'}, crossOrigin: ''}"></map-tile-layer>
-                <map-aton-layer name="AtoN" visible="false" layer-switcher="true"></map-aton-layer>
+                <map-aton-layer name="AtoN" visible="false" layer-switcher="domain && domain.atons"></map-aton-layer>
                 <map-message-list-layer name="Message" visible="true" layer-switcher="false" message-list="messageList" fit-extent="true"></map-message-list-layer>
                 <message-thumbnail-layer thumbnail-generated="thumbnailGenerated(image)"></message-thumbnail-layer>
                 <map-layer-switcher switcher-layers="switcherLayers" visible="false"></map-layer-switcher>

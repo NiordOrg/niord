@@ -19,7 +19,7 @@
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
             <ul class="nav navbar-nav">
                 <li ui-sref-active="active"><a href ui-sref="messages" translate>menu.messages</a></li>
-                <li ui-sref-active="active"><a href ui-sref="atons" translate>menu.atons</a></li>
+                <li ng-if="domain && domain.atons" ui-sref-active="active"><a href ui-sref="atons" translate>menu.atons</a></li>
                 <li ng-if="hasRole('editor')" ui-sref-active="active"><a href ui-sref="editor" translate>menu.editor</a></li>
                 <li ng-if="isLoggedIn && domain && domain.schedule" ui-sref-active="active"><a href ui-sref="schedule" translate>menu.schedule</a></li>
                 <li ng-if="hasRole('admin')" ui-sref-active="active"><a href ui-sref="admin" translate>menu.admin</a></li>
