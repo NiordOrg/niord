@@ -321,8 +321,9 @@ angular.module('niord.messages')
 
 
             /** Returns the message tags which contain the message with the given ID */
-            tagsForMessage: function (messageId) {
-                return $http.get('/rest/tags/message/' + messageId);
+            tagsForMessage: function (messageId, includeLocked) {
+                var params = (includeLocked === true) ? '' : '?locked=false';
+                return $http.get('/rest/tags/message/' + messageId + params);
             },
 
 
@@ -410,11 +411,14 @@ angular.module('niord.messages')
 
             
             /** Opens the message tags dialog */
-            messageTagsDialog: function () {
+            messageTagsDialog: function (includeLocked) {
                 return $uibModal.open({
                     controller: "MessageTagsDialogCtrl",
                     templateUrl: "/app/messages/message-tags-dialog.html",
-                    size: 'md'
+                    size: 'md',
+                    resolve: {
+                        includeLocked: function () { return includeLocked; }
+                    }
                 });
             },
 
@@ -447,7 +451,7 @@ angular.module('niord.messages')
 
             /** Record the last message tag selection **/
             saveLastMessageTagSelection: function (tag) {
-                if (tag) {
+                if (tag && !tag.locked) {
                     $window.sessionStorage.lastTagSelection = angular.toJson(tag);
                 } else {
                     $window.sessionStorage.removeItem('lastTagSelection')

@@ -143,8 +143,8 @@ angular.module('niord.messages')
     /*******************************************************************
      * Controller that handles displaying message tags in a dialog
      *******************************************************************/
-    .controller('MessageTagsDialogCtrl', ['$scope', '$timeout', 'growl', 'MessageService', 'AuthService',
-        function ($scope, $timeout, growl, MessageService, AuthService) {
+    .controller('MessageTagsDialogCtrl', ['$scope', '$timeout', 'growl', 'MessageService', 'AuthService', 'includeLocked',
+        function ($scope, $timeout, growl, MessageService, AuthService, includeLocked) {
             'use strict';
 
             $scope.isLoggedIn = AuthService.loggedIn;
@@ -213,6 +213,9 @@ angular.module('niord.messages')
                         params += '&type=' + type;
                     }
                 });
+                if (includeLocked !== true) {
+                    params += '&locked=false';
+                }
 
                 MessageService.tags(params)
                     .success(function (tags) {
@@ -548,7 +551,7 @@ angular.module('niord.messages')
 
             /** Opens the tags dialog */
             $scope.openTagsDialog = function () {
-                MessageService.messageTagsDialog().result
+                MessageService.messageTagsDialog(false).result
                     .then(function (tag) {
                         if (tag) {
                             $scope.tagData.tag = tag;

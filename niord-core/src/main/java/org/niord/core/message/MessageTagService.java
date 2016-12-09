@@ -46,10 +46,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.niord.core.message.vo.MessageTagVo.MessageTagType.DOMAIN;
-import static org.niord.core.message.vo.MessageTagVo.MessageTagType.PRIVATE;
-import static org.niord.core.message.vo.MessageTagVo.MessageTagType.PUBLIC;
-import static org.niord.core.message.vo.MessageTagVo.MessageTagType.TEMP;
+import static org.niord.core.message.vo.MessageTagVo.MessageTagType.*;
 import static org.niord.model.search.PagedSearchParamsVo.SortOrder.DESC;
 
 
@@ -194,6 +191,7 @@ public class MessageTagService extends BaseService {
      * @param params the search parameters
      * @return the search result
      */
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public List<MessageTag> searchMessageTags(MessageTagSearchParams params) {
         User user = userService.currentUser();
         Domain domain = domainService.currentDomain();
@@ -208,6 +206,9 @@ public class MessageTagService extends BaseService {
 
         // Name filtering
         criteriaHelper.like(tagRoot.get("name"), params.getName());
+
+        // Locked filtering
+        criteriaHelper.equals(tagRoot.get("locked"), params.getLocked());
 
         // Type filtering
         Set<MessageTagType> types = params.getTypes() != null ? params.getTypes() : new HashSet<>();

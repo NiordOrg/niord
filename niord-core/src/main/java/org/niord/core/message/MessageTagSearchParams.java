@@ -34,6 +34,7 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
 public class MessageTagSearchParams extends PagedSearchParamsVo {
 
     String name;
+    Boolean locked;
     Set<MessageTagType> types = new HashSet<>();
 
     /** Returns whether to sort by name or not */
@@ -83,6 +84,15 @@ public class MessageTagSearchParams extends PagedSearchParamsVo {
 
     public MessageTagSearchParams name(String name) {
         this.name = name;
+        return this;
+    }
+
+    public Boolean getLocked() {
+        return locked;
+    }
+
+    public MessageTagSearchParams locked(Boolean locked) {
+        this.locked = locked;
         return this;
     }
 

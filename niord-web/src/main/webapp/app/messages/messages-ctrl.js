@@ -710,7 +710,7 @@ angular.module('niord.messages')
 
             /** Adds the currently selected messages to the tag selected via the Message Tag dialog */
             $scope.addToTagDialog = function () {
-                MessageService.messageTagsDialog().result
+                MessageService.messageTagsDialog(false).result
                     .then(function (tag) {
                         if (tag && !$scope.selection.isEmpty()) {
                             MessageService.addMessagesToTag(tag, $scope.selection.keys)
@@ -724,7 +724,7 @@ angular.module('niord.messages')
 
             /** Removes the currently selected messages from the tag selected via the Message Tag dialog */
             $scope.removeFromTagDialog = function () {
-                MessageService.messageTagsDialog().result
+                MessageService.messageTagsDialog(false).result
                     .then(function (tag) {
                         if (tag && !$scope.selection.isEmpty()) {
                             MessageService.removeMessagesFromTag(tag, $scope.selection.keys)

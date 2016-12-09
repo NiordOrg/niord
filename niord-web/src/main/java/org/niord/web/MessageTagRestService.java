@@ -70,6 +70,7 @@ public class MessageTagRestService {
     @NoCache
     public List<MessageTagVo> searchTags(
             @QueryParam("name")  @DefaultValue("") String name,
+            @QueryParam("locked")  Boolean locked,
             @QueryParam("type") Set<MessageTagVo.MessageTagType> types,
             @QueryParam("sortBy") @DefaultValue("name") String sortBy,
             @QueryParam("sortOrder") @DefaultValue("ASC") SortOrder sortOrder,
@@ -77,6 +78,7 @@ public class MessageTagRestService {
 
         MessageTagSearchParams params = new MessageTagSearchParams();
         params.name(name)
+                .locked(locked)
                 .sortBy(sortBy)
                 .sortOrder(sortOrder)
                 .maxSize(limit);
@@ -96,8 +98,12 @@ public class MessageTagRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<MessageTagVo> findTagsByMessageId(@PathParam("messageUid") String messageUid) {
+    public List<MessageTagVo> findTagsByMessageId(
+            @PathParam("messageUid") String messageUid,
+            @QueryParam("locked")  Boolean locked
+    ) {
         return messageTagService.findTagsByMessageId(messageUid).stream()
+                .filter(m -> locked == null || m.isLocked() == locked)
                 .map(MessageTag::toVo)
                 .collect(Collectors.toList());
     }

@@ -378,9 +378,10 @@ angular.module('niord.messages')
             replace: true,
             templateUrl: '/app/messages/message-tags-field.html',
             scope: {
-                tagData:    "=",
-                initIds:    "=",
-                multiple:   "="
+                tagData:        "=",
+                initIds:        "=",
+                multiple:       "=",
+                includeLocked:  "="
             },
             link: function(scope) {
 
@@ -426,7 +427,7 @@ angular.module('niord.messages')
 
                 /** Opens the tags dialog */
                 scope.openTagsDialog = function () {
-                    MessageService.messageTagsDialog().result
+                    MessageService.messageTagsDialog(scope.includeLocked).result
                         .then(function (tag) {
                             if (tag && scope.multiple) {
                                 scope.tagData.tags.push(tag)
@@ -742,7 +743,7 @@ angular.module('niord.messages')
                             var tag = MessageService.getLastMessageTagSelection();
                             scope.lastSelectedMessageTag = (tag) ? tag.name : undefined;
 
-                            MessageService.tagsForMessage(scope.messageId)
+                            MessageService.tagsForMessage(scope.messageId, false)
                                 .success(function (messageTags) {
                                     scope.messageTags = messageTags;
 
@@ -771,7 +772,7 @@ angular.module('niord.messages')
 
                     /** Adds the current message to the tag selected via the Message Tag dialog */
                     scope.addToTagDialog = function () {
-                        MessageService.messageTagsDialog().result
+                        MessageService.messageTagsDialog(false).result
                             .then(scope.addToTag);
                     };
 

@@ -1027,7 +1027,7 @@ angular.module('niord.editor')
                     var tag = MessageService.getLastMessageTagSelection();
                     $scope.lastSelectedMessageTag = (tag) ? tag.name : undefined;
 
-                    MessageService.tagsForMessage($scope.message.id)
+                    MessageService.tagsForMessage($scope.message.id, false)
                         .success(function (messageTags) {
                             $scope.messageTags = messageTags;
 
@@ -1057,7 +1057,7 @@ angular.module('niord.editor')
 
             /** Adds the current message to the tag selected via the Message Tag dialog */
             $scope.addToTagDialog = function () {
-                MessageService.messageTagsDialog().result
+                MessageService.messageTagsDialog(false).result
                     .then($scope.addToTag);
             };
 
