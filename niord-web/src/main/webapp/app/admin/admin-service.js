@@ -106,7 +106,7 @@ angular.module('niord.admin')
             },
 
             generateFiringAreaMessageTemplates: function(seriesId, tagId) {
-                return $http.post('/rest/firing-areas/generate-firing-area-messages',
+                return $http.post('/rest/firing-schedules/generate-firing-area-messages',
                     { seriesId: seriesId, tagId: tagId });
             }
 

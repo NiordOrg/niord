@@ -27,14 +27,14 @@ angular.module('niord.schedule')
 
         return {
 
-            /** Searches for firing areas scheduled for the given day */
-            searchFiringAreas: function(params) {
-                return $http.get('/rest/firing-areas/search?' + params);
+            /** Searches for firing schedules for the given day */
+            searchFiringSchedules: function(params) {
+                return $http.get('/rest/firing-schedules/search?' + params);
             },
 
-            /** Updates the list of firing periods for the area at the given date */
-            updateFiringPeriodsForArea: function(firingArea, date) {
-                return $http.put('/rest/firing-areas/firing-area?date=' + date.valueOf(), firingArea);
+            /** Updates the firing schedule the given date */
+            updateFiringScheduleForDate: function(schedule, date) {
+                return $http.put('/rest/firing-schedules/firing-schedule?date=' + date.valueOf(), schedule);
             }
 
         };

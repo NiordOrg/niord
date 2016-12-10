@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.niord.core.area.vo;
+package org.niord.core.schedule.vo;
 
 import org.niord.model.IJsonSerializable;
 

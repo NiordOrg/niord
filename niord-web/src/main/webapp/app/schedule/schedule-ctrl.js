@@ -26,6 +26,7 @@ angular.module('niord.schedule')
         function ($scope, $rootScope, growl, ScheduleService) {
             'use strict';
 
+            $scope.firingSchedules = [];
             $scope.firingAreas = [];
             $scope.state = {
                 date: moment(),
@@ -41,8 +42,8 @@ angular.module('niord.schedule')
             $scope.domain = $rootScope.domain;
 
 
-            /** Refreshes the list of firing areas **/
-            $scope.loadFiringAreas = function () {
+            /** Refreshes the list of firing schedules **/
+            $scope.loadFiringSchedules = function () {
                 var params = 'date=' + $scope.state.date.valueOf() + '&lang=' + $rootScope.language;
 
                 var s = $scope.state;
@@ -55,15 +56,16 @@ angular.module('niord.schedule')
                     })
                 }
 
-                ScheduleService.searchFiringAreas(params)
-                    .success(function (areas) {
-                        $scope.firingAreas = areas;
+                ScheduleService.searchFiringSchedules(params)
+                    .success(function (firingSchedules) {
+                        $scope.firingSchedules = firingSchedules;
+                        $scope.firingAreas = firingSchedules.map(function (schedule) { return schedule.area; });
                         $scope.checkGroupByArea();
                     });
             };
 
             // Monitor changes to the state
-            $scope.$watch("state", $scope.loadFiringAreas, true);
+            $scope.$watch("state", $scope.loadFiringSchedules, true);
 
 
             /** Changes the currently selected date with the given offset **/

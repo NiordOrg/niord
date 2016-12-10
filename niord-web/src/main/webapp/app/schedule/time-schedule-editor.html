@@ -1,11 +1,11 @@
 
 <div>
 
-    <div ng-if="area.editing" class="time-schedule-editor">
+    <div ng-if="schedule.editing" class="time-schedule-editor">
         <div>
 
             <table>
-                <tr ng-repeat="ti in area.editFiringPeriods">
+                <tr ng-repeat="ti in schedule.editFiringPeriods">
                     <td>
                         <date-time-picker id="fromDate" ng-model="ti.fromDate" placeholder="From" style="width: 120px"
                                           format="'LT'" icon="glyphicon-time"></date-time-picker>
@@ -43,8 +43,8 @@
     </div>
 
 
-    <div ng-if="!area.editing" style="text-align: right">
-        <div ng-repeat="ti in area.firingPeriods">
+    <div ng-if="!schedule.editing" style="text-align: right">
+        <div ng-repeat="ti in schedule.firingPeriods">
             {{formatTimeInterval(ti)}}
         </div>
     </div>

@@ -32,29 +32,29 @@ angular.module('niord.schedule')
             replace: true,
             transclude: true,
             scope: {
-                area:    "=",
-                date:    "="
+                schedule:   "=",
+                date:       "="
             },
 
             link: function (scope, element) {
 
-                /** Adds a new time interval for the area **/
+                /** Adds a new time interval for the schedule **/
                 scope.addTimeInterval = function () {
-                    scope.area.editFiringPeriods.push({
+                    scope.schedule.editFiringPeriods.push({
                         fromDate: undefined,
                         toDate: undefined
                     });
 
                     // Give focus to the newly added input field
                     $timeout(function() { 
-                        $(element[0]).find('input')[ (scope.area.editFiringPeriods.length - 1) * 2].focus()
+                        $(element[0]).find('input')[ (scope.schedule.editFiringPeriods.length - 1) * 2].focus()
                     });
                 };
 
 
                 /** Removes the time interval from the list **/
                 scope.removeTimeInterval = function (index) {
-                    scope.area.editFiringPeriods.splice(index, 1);
+                    scope.schedule.editFiringPeriods.splice(index, 1);
                 };
 
 
@@ -66,10 +66,10 @@ angular.module('niord.schedule')
 
                 /** Enter edit mode for the given area **/
                 scope.edit = function () {
-                    var area = scope.area;
-                    if (area.editing) {
-                        area.editFiringPeriods = area.firingPeriods ? angular.copy(area.firingPeriods) : [];
-                        if (area.editFiringPeriods.length == 0) {
+                    var schedule = scope.schedule;
+                    if (schedule.editing) {
+                        schedule.editFiringPeriods = schedule.firingPeriods ? angular.copy(schedule.firingPeriods) : [];
+                        if (schedule.editFiringPeriods.length == 0) {
                             scope.addTimeInterval();
                         }
                     }
@@ -78,23 +78,23 @@ angular.module('niord.schedule')
 
                 /** Clears the edited list of time intervals **/
                 scope.clear = function () {
-                    scope.area.editFiringPeriods = [];
+                    scope.schedule.editFiringPeriods = [];
                 };
 
 
-                /** Cancel editing the area schedule **/
+                /** Cancel editing the schedule **/
                 scope.cancel = function () {
-                    delete scope.area.editFiringPeriods;
-                    scope.area.editing = false;
+                    delete scope.schedule.editFiringPeriods;
+                    scope.schedule.editing = false;
                 };
 
 
-                /** Saves the area schedule **/
+                /** Saves the schedule **/
                 scope.save = function () {
-                    scope.area.firingPeriods = [];
+                    scope.schedule.firingPeriods = [];
 
                     // Filter out dodgy time definitions
-                    angular.forEach(scope.area.editFiringPeriods, function (ti) {
+                    angular.forEach(scope.schedule.editFiringPeriods, function (ti) {
                         if (ti.fromDate === undefined && ti.toDate === undefined) {
                             return;
                         }
@@ -128,13 +128,13 @@ angular.module('niord.schedule')
                                 millisecond: 0
                             });
                         }
-                        scope.area.firingPeriods.push(ti);
+                        scope.schedule.firingPeriods.push(ti);
                     });
 
-                    // Save the updated area
-                    ScheduleService.updateFiringPeriodsForArea(scope.area, scope.date)
-                        .success(function (area) {
-                            scope.area.firingPeriods = area.firingPeriods;
+                    // Save the updated schedule
+                    ScheduleService.updateFiringScheduleForDate(scope.schedule, scope.date)
+                        .success(function (schedule) {
+                            scope.schedule.firingPeriods = schedule.firingPeriods;
                             scope.cancel();
                         })
                         .error(function() {
@@ -145,7 +145,7 @@ angular.module('niord.schedule')
 
 
                 // Monitor the message.editing variable
-                scope.$watch("area.editing", scope.edit, true);
+                scope.$watch("schedule.editing", scope.edit, true);
             }
         };
     }]);

@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package org.niord.core.area;
+package org.niord.core.schedule;
 
-import org.niord.core.area.vo.FiringPeriodVo;
+import org.niord.core.area.Area;
+import org.niord.core.schedule.vo.FiringPeriodVo;
 import org.niord.core.model.VersionedEntity;
 
 import javax.persistence.Entity;
