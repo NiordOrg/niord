@@ -25,6 +25,8 @@ import org.niord.core.area.vo.SystemAreaVo;
 import org.niord.core.category.Category;
 import org.niord.core.category.CategoryService;
 import org.niord.core.chart.ChartService;
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.niord.core.geojson.Feature;
 import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.message.Message;
@@ -86,6 +88,8 @@ public class FiringScheduleService extends BaseService {
     @Inject
     CategoryService categoryService;
 
+    @Inject
+    DomainService domainService;
 
     /***************************************/
     /** Firing Area Periods               **/
@@ -115,13 +119,15 @@ public class FiringScheduleService extends BaseService {
                 .setParameter("toDate", TimeUtils.endOfDay(date))
                 .getResultList();
 
-        // Look up all firing areas
+        // Look up all firing areas for the current domain
         DataFilter filter = DataFilter.get()
                 .fields(DataFilter.PARENT, DataFilter.DETAILS, DataFilter.GEOMETRY)
                 .lang(lang);
+        Domain domain = domainService.currentDomain();
 
         AreaSearchParams param = new AreaSearchParams()
                 .name(query)
+                .domain(domain == null ? null : domain.getDomainId())
                 .areaIds(areaIds)
                 .inactive(inactive)
                 .type(AreaType.FIRING_AREA);
