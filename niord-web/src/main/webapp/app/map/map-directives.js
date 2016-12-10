@@ -582,13 +582,16 @@ angular.module('niord.map')
                 visible:        '=',
                 layerSwitcher:  '=',
                 areas:          '=',
-                areaColor:      '@'
+                areaColor:      '@',
+                maxZoom:        '@',
+                fitExtent:      '@'
             },
             link: function(scope, element, attrs, ctrl) {
                 var olScope = ctrl.getOpenlayersScope();
                 var olLayer;
 
                 scope.areaColor = scope.areaColor || 'rgba(100, 100, 255, 0.8)';
+                var maxZoom = scope.maxZoom ? parseInt(scope.maxZoom) : 12;
 
                 olScope.getMap().then(function(map) {
 
@@ -662,6 +665,13 @@ angular.module('niord.map')
                                     feature.setStyle(scope.stylesForArea(feature, area));
                                     olLayer.getSource().addFeature(feature);
                                 }
+                            });
+                        }
+
+                        if (scope.fitExtent == 'true' && olLayer.getSource().getFeatures().length > 0) {
+                            map.getView().fit(olLayer.getSource().getExtent(), map.getSize(), {
+                                padding: [20, 20, 20, 20],
+                                maxZoom: maxZoom
                             });
                         }
                     };
