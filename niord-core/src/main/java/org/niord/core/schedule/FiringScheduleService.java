@@ -316,9 +316,11 @@ public class FiringScheduleService extends BaseService {
      */
     public List<Message> generateFiringAreaMessages(MessageSeries messageSeries, MessageTag messageTag) {
 
-        // Search for active firing areas
+        // Search for active firing areas for the current domain
+        Domain domain = domainService.currentDomain();
         AreaSearchParams param = new AreaSearchParams()
                 .inactive(false)
+                .domain(domain != null ? domain.getDomainId() : null)
                 .type(AreaType.FIRING_AREA);
         param.sortBy(TREE_SORT_ORDER).sortOrder(ASC);
 
