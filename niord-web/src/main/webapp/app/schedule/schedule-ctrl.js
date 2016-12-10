@@ -26,7 +26,7 @@ angular.module('niord.schedule')
         function ($scope, $rootScope, growl, ScheduleService) {
             'use strict';
 
-            $scope.firingSchedules = [];
+            $scope.firingAreaPeriods = [];
             $scope.firingAreas = [];
             $scope.state = {
                 date: moment(),
@@ -42,8 +42,8 @@ angular.module('niord.schedule')
             $scope.domain = $rootScope.domain;
 
 
-            /** Refreshes the list of firing schedules **/
-            $scope.loadFiringSchedules = function () {
+            /** Refreshes the list of firing area schedules **/
+            $scope.loadFiringAreaPeriods = function () {
                 var params = 'date=' + $scope.state.date.valueOf() + '&lang=' + $rootScope.language;
 
                 var s = $scope.state;
@@ -56,16 +56,16 @@ angular.module('niord.schedule')
                     })
                 }
 
-                ScheduleService.searchFiringSchedules(params)
-                    .success(function (firingSchedules) {
-                        $scope.firingSchedules = firingSchedules;
-                        $scope.firingAreas = firingSchedules.map(function (schedule) { return schedule.area; });
+                ScheduleService.searchFiringAreaPeriods(params)
+                    .success(function (firingAreaPeriods) {
+                        $scope.firingAreaPeriods = firingAreaPeriods;
+                        $scope.firingAreas = firingAreaPeriods.map(function (fap) { return fap.area; });
                         $scope.checkGroupByArea();
                     });
             };
 
             // Monitor changes to the state
-            $scope.$watch("state", $scope.loadFiringSchedules, true);
+            $scope.$watch("state", $scope.loadFiringAreaPeriods, true);
 
 
             /** Changes the currently selected date with the given offset **/
@@ -75,8 +75,8 @@ angular.module('niord.schedule')
 
 
             /** Enter edit mode for the given area **/
-            $scope.edit = function (area) {
-                area.editing = true;
+            $scope.edit = function (firingAreaPeriods) {
+                firingAreaPeriods.editing = true;
             };
 
 

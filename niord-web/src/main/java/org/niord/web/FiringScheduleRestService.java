@@ -26,7 +26,7 @@ import org.niord.core.message.MessageSeriesService;
 import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
 import org.niord.core.schedule.FiringScheduleService;
-import org.niord.core.schedule.vo.FiringScheduleVo;
+import org.niord.core.schedule.vo.FiringAreaPeriodsVo;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.message.MessageVo;
 import org.slf4j.Logger;
@@ -77,26 +77,26 @@ public class FiringScheduleRestService {
 
 
     /***************************************/
-    /** Firing Schedules                  **/
+    /** Firing Area Periods               **/
     /***************************************/
 
 
     /**
-     * Fetches the firing schedules, i.e. all firing areas and their firing periods that matches the parameters
+     * Fetches the firing area periods, i.e. all firing areas and their firing periods that matches the parameters
      *
      * @param date the date
      * @param query a search query
      * @param areaIds area subtrees to search
      * @param inactive whether to include inactive areas or not
      * @param lang the language to filter areas by
-     * @return the firing schedules that matches the parameters
+     * @return the firing area periods that matches the parameters
      */
     @GET
-    @Path("/search")
+    @Path("/search-firing-area-periods")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<FiringScheduleVo> getFiringSchedules(
+    public List<FiringAreaPeriodsVo> searchFiringAreaPeriods(
             @QueryParam("date") Long date,
             @QueryParam("query") String query,
             @QueryParam("area") Set<Integer> areaIds,
@@ -104,34 +104,34 @@ public class FiringScheduleRestService {
             @QueryParam("lang") String lang) {
 
         Date searchDate = date != null ? new Date(date) : new Date();
-        return firingScheduleService.getFiringSchedules(searchDate, query, areaIds, inactive, lang);
+        return firingScheduleService.searchFiringAreaPeriods(searchDate, query, areaIds, inactive, lang);
     }
 
 
     /**
-     * Updates the firing schedule, i.e. the list of firing periods for an area at the given date
-     * @param firingSchedule the area to update
-     * @param date the date to update the schedule for
+     * Updates the firing area periods, i.e. the list of firing periods for an area at the given date
+     * @param firingAreaPeriods the firing area periods to update
+     * @param date the date to update the firing periods for
      * @param lang the language to filter areas by
-     * @return the updated area
+     * @return the updated firing area periods
      */
     @PUT
-    @Path("/firing-schedule")
+    @Path("/firing-area-periods")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public FiringScheduleVo updateFiringScheduleForDate(
+    public FiringAreaPeriodsVo updateFiringAreaPeriodsForDate(
             @QueryParam("date") Long date,
             @QueryParam("lang") String lang,
-            FiringScheduleVo firingSchedule) {
+            FiringAreaPeriodsVo firingAreaPeriods) {
 
         Objects.requireNonNull(date, "The date must be specified");
-        Objects.requireNonNull(firingSchedule.getArea(), "The firing area must be specified");
+        Objects.requireNonNull(firingAreaPeriods.getArea(), "The firing area must be specified");
 
-        log.info("Updating firing schedule for area " + firingSchedule.getArea().getId());
-        return firingScheduleService.updateFiringScheduleForDate(firingSchedule, new Date(date), lang);
+        log.info("Updating firing area periods for area " + firingAreaPeriods.getArea().getId());
+        return firingScheduleService.updateFiringAreaPeriodsForDate(firingAreaPeriods, new Date(date), lang);
     }
 
 

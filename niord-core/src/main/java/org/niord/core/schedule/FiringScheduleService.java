@@ -33,7 +33,7 @@ import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTag;
 import org.niord.core.model.BaseEntity;
-import org.niord.core.schedule.vo.FiringScheduleVo;
+import org.niord.core.schedule.vo.FiringAreaPeriodsVo;
 import org.niord.core.service.BaseService;
 import org.niord.core.util.TimeUtils;
 import org.niord.model.DataFilter;
@@ -88,21 +88,21 @@ public class FiringScheduleService extends BaseService {
 
 
     /***************************************/
-    /** Firing Schedules                  **/
+    /** Firing Area Periods               **/
     /***************************************/
 
 
     /**
-     * Fetches the firing schedules, i.e. all firing areas and their firing periods that matches the parameters
+     * Fetches the firing area periods, i.e. all firing areas and their firing periods that matches the parameters
      *
      * @param date the date
      * @param query a search query
      * @param areaIds area subtrees to search
      * @param inactive whether to include inactive areas or not
      * @param lang the language to filter areas by
-     * @return the firing schedules that matches the parameters
+     * @return the firing area periods that matches the parameters
      */
-    public List<FiringScheduleVo> getFiringSchedules(Date date, String query, Set<Integer> areaIds, boolean inactive, String lang) {
+    public List<FiringAreaPeriodsVo> searchFiringAreaPeriods(Date date, String query, Set<Integer> areaIds, boolean inactive, String lang) {
 
         Set<Boolean> activeSet = inactive
             ? new HashSet<>(Arrays.asList(TRUE, FALSE))
@@ -127,19 +127,19 @@ public class FiringScheduleService extends BaseService {
                 .type(AreaType.FIRING_AREA);
         param.sortBy(TREE_SORT_ORDER).sortOrder(ASC);
 
-        List<FiringScheduleVo> result = areaService.searchAreas(param).stream()
+        List<FiringAreaPeriodsVo> result = areaService.searchAreas(param).stream()
                 .map(a -> a.toVo(SystemAreaVo.class, filter))
-                .map(FiringScheduleVo::new)
+                .map(FiringAreaPeriodsVo::new)
                 .collect(Collectors.toList());
 
-        Map<Integer, FiringScheduleVo> scheduleLookup = result.stream()
+        Map<Integer, FiringAreaPeriodsVo> areaLookup = result.stream()
                 .collect(Collectors.toMap(s -> s.getArea().getId(), Function.identity()));
 
         // Group the firing periods by area
         for (FiringPeriod fp : fps) {
-            FiringScheduleVo schedule = scheduleLookup.get(fp.getArea().getId());
-            if (schedule != null) {
-                schedule.getFiringPeriods().add(fp.toVo());
+            FiringAreaPeriodsVo firingAreaPeriods = areaLookup.get(fp.getArea().getId());
+            if (firingAreaPeriods != null) {
+                firingAreaPeriods.getFiringPeriods().add(fp.toVo());
             }
         }
 
@@ -148,39 +148,39 @@ public class FiringScheduleService extends BaseService {
 
 
     /**
-     * Fetches the firing schedule, i.e. the area and its firing periods on the specified date, and null if not found
+     * Fetches the firing area periods, i.e. the area and its firing periods on the specified date, and null if not found
      * @param areaId the id of the area
      * @param date the date
      * @param lang the language to filter areas by
-     * @return the firing schedule, and null if not found
+     * @return the firing area periods, and null if not found
      */
-    public FiringScheduleVo getFiringSchedule(Integer areaId, Date date, String lang) {
+    public FiringAreaPeriodsVo getFiringAreaPeriods(Integer areaId, Date date, String lang) {
 
         // TODO: Not very efficient
-        return getFiringSchedules(date, null, null, true, lang).stream()
-                .filter(schedule -> Objects.equals(schedule.getArea().getId(), areaId))
+        return searchFiringAreaPeriods(date, null, null, true, lang).stream()
+                .filter(fap -> Objects.equals(fap.getArea().getId(), areaId))
                 .findFirst()
                 .orElse(null);
     }
 
 
     /**
-     * Updates the firing schedule, i.e. the list of firing periods for an area at the given date
-     * @param firingSchedule the area to update
-     * @param date the date to update the schedule for
+     * Updates the firing area periods, i.e. the list of firing periods for an area at the given date
+     * @param firingAreaPeriods the area to update
+     * @param date the date to update the firing periods for
      * @param lang the language to filter areas by
-     * @return the updated area
+     * @return the updated firing area periods
      */
-    public FiringScheduleVo updateFiringScheduleForDate(FiringScheduleVo firingSchedule, Date date, String lang) {
+    public FiringAreaPeriodsVo updateFiringAreaPeriodsForDate(FiringAreaPeriodsVo firingAreaPeriods, Date date, String lang) {
 
-        // Fetch the current schedule for the area
-        FiringScheduleVo currentSchedule = getFiringSchedule(firingSchedule.getArea().getId(), date, lang);
-        if (currentSchedule == null) {
-            throw new WebApplicationException("No firing area " + firingSchedule.getArea().getId(), 400);
+        // Fetch the current firing periods for the area
+        FiringAreaPeriodsVo currentFiringPeriods = getFiringAreaPeriods(firingAreaPeriods.getArea().getId(), date, lang);
+        if (currentFiringPeriods == null) {
+            throw new WebApplicationException("No firing area " + firingAreaPeriods.getArea().getId(), 400);
         }
 
-        Area area = areaService.getAreaDetails(firingSchedule.getArea().getId());
-        List<FiringPeriod> updatedFps = firingSchedule.getFiringPeriods().stream()
+        Area area = areaService.getAreaDetails(firingAreaPeriods.getArea().getId());
+        List<FiringPeriod> updatedFps = firingAreaPeriods.getFiringPeriods().stream()
                 .map(fp -> new FiringPeriod(area, fp))
                 .collect(Collectors.toList());
 
@@ -201,12 +201,12 @@ public class FiringScheduleService extends BaseService {
                 .collect(Collectors.toSet());
 
         // Handle deleted firing periods
-        currentSchedule.getFiringPeriods().stream()
+        currentFiringPeriods.getFiringPeriods().stream()
                 .filter(fp -> !updatedFpIds.contains(fp.getId()))
                 .forEach(fp -> deleteFiringPeriod(fp.getId()));
 
         // Return the updated firing area
-        return getFiringSchedule(area.getId(), date, lang);
+        return getFiringAreaPeriods(area.getId(), date, lang);
     }
 
 

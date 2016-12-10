@@ -7,22 +7,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a firing schedule for a specific firing area
+ * Defines a firing area along with its firing periods
  */
 @SuppressWarnings("unused")
-public class FiringScheduleVo implements IJsonSerializable {
+public class FiringAreaPeriodsVo implements IJsonSerializable {
 
     SystemAreaVo area;
     List<FiringPeriodVo> firingPeriods = new ArrayList<>();
 
 
     /** Constructor **/
-    public FiringScheduleVo() {
+    public FiringAreaPeriodsVo() {
     }
 
 
     /** Constructor **/
-    public FiringScheduleVo(SystemAreaVo area) {
+    public FiringAreaPeriodsVo(SystemAreaVo area) {
         this.area = area;
     }
 

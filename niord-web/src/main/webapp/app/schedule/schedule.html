@@ -38,25 +38,25 @@
                     </span>
                 </div>
 
-                <table class='table table-condensed table-hover schedule-table' ng-if="firingSchedules.length > 0">
+                <table class='table table-condensed table-hover schedule-table' ng-if="firingAreaPeriods.length > 0">
                     <tr style="background-color: lightgray">
                         <th width="*">Name</th>
                         <th width="300" style="text-align: right; padding-right: 40px">Time</th>
                         <th width="30"></th>
                     </tr>
-                    <tr ng-repeat-start="schedule in firingSchedules" ng-if="schedule.area.areaHeading">
-                        <td colspan="3"><h4 class="message-list-area-heading" render-areas="[schedule.area.areaHeading]"></h4></td>
+                    <tr ng-repeat-start="fap in firingAreaPeriods" ng-if="fap.area.areaHeading">
+                        <td colspan="3"><h4 class="message-list-area-heading" render-areas="[fap.area.areaHeading]"></h4></td>
                     </tr>
                     <tr ng-repeat-end>
                         <td>
-                            {{schedule.area.descs[0].name}}
+                            {{fap.area.descs[0].name}}
                         </td>
                         <td>
-                            <time-schedule-editor schedule="schedule" date="state.date"></time-schedule-editor>
+                            <time-schedule-editor firing-area-periods="fap" date="state.date"></time-schedule-editor>
                         </td>
                         <td style="padding: 2px">
-                            <button class="btn btn-default btn-xs" ng-click="edit(schedule)"
-                                    ng-disabled="schedule.editing">
+                            <button class="btn btn-default btn-xs" ng-click="edit(fap)"
+                                    ng-disabled="fap.editing">
                                 <span class="glyphicon glyphicon-pencil"></span>
                             </button>
                         </td>
