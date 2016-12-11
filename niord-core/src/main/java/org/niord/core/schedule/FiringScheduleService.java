@@ -32,6 +32,7 @@ import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessagePart;
 import org.niord.core.message.MessageSeries;
+import org.niord.core.message.MessageSeriesService;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTag;
 import org.niord.core.model.BaseEntity;
@@ -90,6 +91,106 @@ public class FiringScheduleService extends BaseService {
 
     @Inject
     DomainService domainService;
+
+    @Inject
+    MessageSeriesService messageSeriesService;
+
+
+    /***************************************/
+    /** Firing Schedules                  **/
+    /***************************************/
+
+
+    /**
+     * Returns all firing schedules
+     * @return all firing schedules
+     */
+    public List<FiringSchedule> getFiringSchedules() {
+        return getAll(FiringSchedule.class);
+    }
+
+
+    /**
+     * Returns the firing schedule with the given ID, or null if not found
+     * @param id the ID
+     * @return the firing schedule with the given ID, or null if not found
+     */
+    public FiringSchedule findById(Integer id) {
+        return getByPrimaryKey(FiringSchedule.class, id);
+    }
+
+
+    /**
+     * Creates a new firing schedule based on the schedule template
+     * @param schedule the firing schedule to create
+     * @return the created firing schedule
+     */
+    public FiringSchedule createFiringSchedule(FiringSchedule schedule) {
+        if (schedule.isPersisted()) {
+            throw new IllegalArgumentException("Cannot create schedule with existing ID " + schedule.getId());
+        }
+
+        // Substitute the message series with the persisted ones
+        schedule.setTargetMessageSeries(messageSeriesService.findBySeriesId(schedule.getTargetMessageSeries().getSeriesId()));
+
+        // Substitute the domain with the persisted ones
+        Domain domain = domainService.findByDomainId(schedule.getDomain().getDomainId());
+        schedule.setDomain(domain);
+        domain.setFiringSchedule(schedule);
+
+        schedule = saveEntity(schedule);
+
+        return schedule;
+    }
+
+
+    /**
+     * Updates the firing schedule data from the schedule template
+     * @param schedule the firing schedule to update
+     * @return the updated firing schedule
+     */
+    public FiringSchedule updateFiringSchedule(FiringSchedule schedule) {
+        FiringSchedule original = findById(schedule.getId());
+        if (original == null) {
+            throw new IllegalArgumentException("Cannot update non-existing schedule " + schedule.getId());
+        }
+
+        // Substitute the domain with the persisted ones
+        Domain domain = domainService.findByDomainId(schedule.getDomain().getDomainId());
+        if (!Objects.equals(original.getDomain().getDomainId(), domain.getDomainId())) {
+            original.getDomain().setFiringSchedule(null);
+        }
+        original.setDomain(domain);
+        domain.setFiringSchedule(original);
+
+        // Substitute the message series with the persisted ones
+        original.setTargetMessageSeries(messageSeriesService.findBySeriesId(schedule.getTargetMessageSeries().getSeriesId()));
+
+        original.getMessageFields().clear();
+        original.getMessageFields().addAll(schedule.getMessageFields());
+
+        original.setActive(schedule.isActive());
+
+        return saveEntity(original);
+    }
+
+
+    /**
+     * Deletes the firing schedule
+     * @param id the ID of the firing schedule to delete
+     */
+    public boolean deleteFiringSchedule(Integer id) {
+
+        FiringSchedule schedule = findById(id);
+        if (schedule != null) {
+            schedule.getDomain().setFiringSchedule(null);
+            remove(schedule);
+            return true;
+        }
+        return false;
+    }
+
+
 
     /***************************************/
     /** Firing Area Periods               **/

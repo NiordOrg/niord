@@ -167,7 +167,7 @@ public class DomainService extends BaseService {
      * @param role the role that the current user must have
      * @return all domains for which the current user has the given role
      */
-    public List<Domain> domainsWithUserRole(String role) {
+    public List<Domain> domainsWithUserRole(@SuppressWarnings("all") String role) {
         Set<String> domainIds = userService.getKeycloakDomainIdsForRole(role);
         return getDomains().stream()
                 .filter(d -> domainIds.contains(d.getDomainId()))
@@ -196,7 +196,6 @@ public class DomainService extends BaseService {
         original.setMessageSortOrder(domain.getMessageSortOrder());
         original.setPublish(domain.getPublish());
         original.setAtons(domain.getAtons());
-        original.setSchedule(domain.getSchedule());
 
         // Substitute the areas with the persisted ones
         original.setAreas(persistedList(Area.class, domain.getAreas()));
@@ -216,7 +215,7 @@ public class DomainService extends BaseService {
      * @param domain the domain to create
      * @return the created domain
      */
-    public Domain createDomain(Domain domain, boolean createInKeycloak) {
+    public Domain createDomain(Domain domain, @SuppressWarnings("all") boolean createInKeycloak) {
         Domain original = findByDomainId(domain.getDomainId());
         if (original != null) {
             throw new IllegalArgumentException("Cannot create domain with duplicate domain ID "

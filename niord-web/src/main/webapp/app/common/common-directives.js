@@ -352,10 +352,13 @@ angular.module('niord.common')
             replace: true,
             templateUrl: '/app/common/editor-fields-field.html',
             scope: {
-                editorData:     "="
+                editorData:     "=",
+                includeAll:     "=",
+                placeholder:    "@"
             },
             link: function(scope) {
 
+                scope.placeholder = scope.placeholder || "Select editor fields";
                 scope.editorData = scope.editorData || {};
                 scope.editorData.editorFields = scope.editorData.editorFields || [];
 
@@ -368,10 +371,10 @@ angular.module('niord.common')
                     scope.searchResult.length = 0;
                     angular.forEach($rootScope.editorFieldsBase, function (value, key) {
                         // Add it to the search result, if:
-                        // 1) It is not included by default
+                        // 1) It is not included by default (or includeAll is set)
                         // 2) The typed name is a substring match
                         // 3) It is not already selected
-                        if (!value &&
+                        if ((!value || scope.includeAll) &&
                             key.toUpperCase().indexOf(name.toUpperCase()) !== -1 &&
                             $.inArray(key, scope.editorData.editorFields) == -1) {
                             scope.searchResult.push(key);

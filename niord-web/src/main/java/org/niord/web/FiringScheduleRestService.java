@@ -25,8 +25,10 @@ import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageSeriesService;
 import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
+import org.niord.core.schedule.FiringSchedule;
 import org.niord.core.schedule.FiringScheduleService;
 import org.niord.core.schedule.vo.FiringAreaPeriodsVo;
+import org.niord.core.schedule.vo.FiringScheduleVo;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.message.MessageVo;
 import org.slf4j.Logger;
@@ -36,11 +38,13 @@ import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
@@ -74,6 +78,84 @@ public class FiringScheduleRestService {
 
     @Inject
     MessageTagService messageTagService;
+
+
+    /***************************************/
+    /** Firing Schedules                  **/
+    /***************************************/
+
+
+    /**
+     * Returns all firing schedules
+     * @return all firing schedules
+     */
+    @GET
+    @Path("/all")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public List<FiringScheduleVo> getFiringSchedules() {
+        return firingScheduleService.getFiringSchedules().stream()
+                .map(FiringSchedule::toVo)
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Creates a new firing schedule based on the schedule template
+     * @param schedule the firing schedule to create
+     * @return the created firing schedule
+     */
+    @POST
+    @Path("/firing-schedule/")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"sysadmin"})
+    public FiringScheduleVo createFiringSchedule(FiringScheduleVo schedule) {
+
+        log.info("Create new firing schedule " + schedule);
+        return firingScheduleService.createFiringSchedule(new FiringSchedule(schedule)).toVo();
+    }
+
+
+    /**
+     * Updates the firing schedule data from the schedule template
+     * @param schedule the firing schedule to update
+     * @return the updated firing schedule
+     */
+    @PUT
+    @Path("/firing-schedule/{id}")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"sysadmin"})
+    public FiringScheduleVo updateFiringSchedule(@PathParam("id") Integer id, FiringScheduleVo schedule) {
+        if (!Objects.equals(id, schedule.getId())) {
+            throw new WebApplicationException(400);
+        }
+
+        log.info("Updating firing schedule " + schedule);
+        return firingScheduleService.updateFiringSchedule(new FiringSchedule(schedule)).toVo();
+    }
+
+
+    /**
+     * Deletes the firing schedule
+     * @param id the ID of the firing schedule to delete
+     */
+    @DELETE
+    @Path("/firing-schedule/{id}")
+    @RolesAllowed({ "sysadmin" })
+    @GZIP
+    @NoCache
+    public void deleteFiringSchedule(@PathParam("id") Integer id) {
+
+        log.info("Updating firing schedule " + id);
+        firingScheduleService.deleteFiringSchedule(id);
+    }
 
 
     /***************************************/

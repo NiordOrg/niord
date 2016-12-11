@@ -502,6 +502,43 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
+     * AdminScheduleService
+     * ********************************************************************************
+     * Interface for calling firing schedule related functions at the application server
+     */
+    .factory('AdminScheduleService', [ '$http', '$rootScope', function($http, $rootScope) {
+        'use strict';
+
+        return {
+
+            /** Returns all schedules **/
+            getFiringSchedules: function () {
+                return $http.get('/rest/firing-schedules/all?lang=' + $rootScope.language);
+            },
+
+
+            /** Creates a new schedule **/
+            createFiringSchedule: function(schedule) {
+                return $http.post('/rest/firing-schedules/firing-schedule/', schedule);
+            },
+
+
+            /** Updates the given schedule **/
+            updateFiringSchedule: function(schedule) {
+                return $http.put('/rest/firing-schedules/firing-schedule/' + schedule.id, schedule);
+            },
+
+
+            /** Deletes the given schedule **/
+            deleteFiringSchedule: function(schedule) {
+                return $http['delete']('/rest/firing-schedules/firing-schedule/' + schedule.id);
+            }
+        };
+    }])
+
+
+    /**
+     * ********************************************************************************
      * AdminBatchService
      * ********************************************************************************
      * Interface for calling batch-related functions at the application server

@@ -1,7 +1,7 @@
 <div class="input-group">
 
     <ui-select multiple ng-model="editorData.editorFields">
-        <ui-select-match placeholder="Select editor fields">
+        <ui-select-match placeholder="{{placeholder}}">
             {{$item}}
         </ui-select-match>
         <ui-select-choices repeat="field in searchResult"

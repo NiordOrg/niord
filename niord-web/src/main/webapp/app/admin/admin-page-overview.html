@@ -29,6 +29,9 @@
         <dt ng-if="hasRole('sysadmin')"><a href ui-sref="admin.domains">Domains</a></dt>
         <dd ng-if="hasRole('sysadmin')">Manage the domains.</dd>
 
+        <dt ng-if="hasRole('sysadmin')"><a href ui-sref="admin.schedules">Schedules</a></dt>
+        <dd ng-if="hasRole('sysadmin')">Manage the list of firing schedules.</dd>
+
         <dt ng-if="adminIntegrationPageEnabled && hasRole('admin')"><a href ui-sref="admin.integration">Integration</a></dt>
         <dd ng-if="adminIntegrationPageEnabled && hasRole('admin')">Handle integration with the legacy systems.</dd>
 

@@ -70,6 +70,10 @@ public class MessageSeries extends VersionedEntity<Integer> {
     public MessageSeries() {
     }
 
+    /** Constructor */
+    public MessageSeries(String seriesId) {
+        this.seriesId = seriesId;
+    }
 
     /** Constructor */
     public MessageSeries(MessageSeriesVo series) {

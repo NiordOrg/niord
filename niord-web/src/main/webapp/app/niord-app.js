@@ -193,6 +193,11 @@ var app = angular.module('niord.admin', [
                 templateUrl: "/app/admin/admin-page-domains.html",
                 data: { rolesRequired: [ "sysadmin" ] }
             })
+            .state('admin.schedules', {
+                url: "/schedules",
+                templateUrl: "/app/admin/admin-page-schedules.html",
+                data: { rolesRequired: [ "sysadmin" ] }
+            })
             .state('admin.integration', {
                 url: "/integration",
                 templateUrl: "/app/admin/admin-page-integration.html"

@@ -26,6 +26,7 @@ import java.util.List;
 /**
  * Represents an application domain
  */
+@SuppressWarnings("unused")
 public class DomainVo implements IJsonSerializable {
 
     private String domainId;
@@ -38,9 +39,9 @@ public class DomainVo implements IJsonSerializable {
     private List<AreaVo> areas;
     private List<CategoryVo> categories;
     private List<SystemMessageSeriesVo> messageSeries;
+    private Boolean firingSchedule;
     private Boolean publish;
     private Boolean atons;
-    private Boolean schedule;
     private Boolean inKeycloak;
 
     /*************************/
@@ -143,12 +144,12 @@ public class DomainVo implements IJsonSerializable {
         this.atons = atons;
     }
 
-    public Boolean getSchedule() {
-        return schedule;
+    public Boolean getFiringSchedule() {
+        return firingSchedule;
     }
 
-    public void setSchedule(Boolean schedule) {
-        this.schedule = schedule;
+    public void setFiringSchedule(Boolean firingSchedule) {
+        this.firingSchedule = firingSchedule;
     }
 
     public Boolean getInKeycloak() {

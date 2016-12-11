@@ -10,6 +10,7 @@
         <li ui-sref-active="active" ng-if="hasResourceRole('manage-users', 'realm-management')"><a href ui-sref="admin.users">Users</a></li>
         <li ui-sref-active="active" ng-if="hasRole('sysadmin')"><a href ui-sref="admin.series">Message Series</a></li>
         <li ui-sref-active="active" ng-if="hasRole('sysadmin')"><a href ui-sref="admin.domains">Domains</a></li>
+        <li ui-sref-active="active" ng-if="hasRole('sysadmin')"><a href ui-sref="admin.schedules">Schedules</a></li>
         <li ui-sref-active="active" ng-if="adminIntegrationPageEnabled && hasRole('admin')"><a href ui-sref="admin.integration">Integration</a></li>
         <li ui-sref-active="active" ng-if="hasRole('admin')">
             <a href ui-sref="admin.batch">

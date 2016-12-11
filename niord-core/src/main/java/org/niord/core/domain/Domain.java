@@ -21,6 +21,7 @@ import org.niord.core.category.Category;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.vo.SystemMessageSeriesVo;
 import org.niord.core.model.BaseEntity;
+import org.niord.core.schedule.FiringSchedule;
 import org.niord.model.DataFilter;
 import org.niord.model.message.AreaVo;
 import org.niord.model.message.CategoryVo;
@@ -33,6 +34,7 @@ import javax.persistence.Index;
 import javax.persistence.ManyToMany;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
@@ -84,6 +86,9 @@ public class Domain extends BaseEntity<Integer> {
     @ManyToMany
     List<MessageSeries> messageSeries = new ArrayList<>();
 
+    @OneToOne
+    FiringSchedule firingSchedule;
+
     /**
      * Defines whether to promulgate published messages of this domain by default
      */
@@ -93,11 +98,6 @@ public class Domain extends BaseEntity<Integer> {
      * Defines whether to integrate with the AtoN module or not for this domain
      */
     Boolean atons;
-
-    /**
-     * Defines if this domain handles scheduling of firing  exercises
-     */
-    Boolean schedule;
 
     @Transient
     Boolean inKeycloak;
@@ -124,7 +124,6 @@ public class Domain extends BaseEntity<Integer> {
         this.messageSortOrder = StringUtils.isBlank(domain.getMessageSortOrder()) ? null : domain.getMessageSortOrder();
         this.publish = domain.getPublish();
         this.atons = domain.getAtons();
-        this.schedule = domain.getSchedule();
         this.inKeycloak = domain.getInKeycloak();
 
         this.areas.clear();
@@ -162,7 +161,7 @@ public class Domain extends BaseEntity<Integer> {
         domain.setMessageSortOrder(messageSortOrder);
         domain.setPublish(publish);
         domain.setAtons(atons);
-        domain.setSchedule(schedule);
+        domain.setFiringSchedule(firingSchedule != null);
         domain.setInKeycloak(inKeycloak);
 
         if (!areas.isEmpty()) {
@@ -206,7 +205,6 @@ public class Domain extends BaseEntity<Integer> {
                 !Objects.equals(messageSortOrder, template.getMessageSortOrder()) ||
                 !Objects.equals(publish, template.getPublish()) ||
                 !Objects.equals(atons, template.getAtons()) ||
-                !Objects.equals(schedule, template.getSchedule()) ||
                 hasChanged(areas, template.getAreas()) ||
                 hasChanged(categories, template.getCategories()) ||
                 hasChanged(messageSeries, template.getMessageSeries());
@@ -331,6 +329,14 @@ public class Domain extends BaseEntity<Integer> {
         this.messageSeries = messageSeries;
     }
 
+    public FiringSchedule getFiringSchedule() {
+        return firingSchedule;
+    }
+
+    public void setFiringSchedule(FiringSchedule firingSchedule) {
+        this.firingSchedule = firingSchedule;
+    }
+
     public Boolean getPublish() {
         return publish;
     }
@@ -345,14 +351,6 @@ public class Domain extends BaseEntity<Integer> {
 
     public void setAtons(Boolean atons) {
         this.atons = atons;
-    }
-
-    public Boolean getSchedule() {
-        return schedule;
-    }
-
-    public void setSchedule(Boolean scheduler) {
-        this.schedule = scheduler;
     }
 
     public Boolean getInKeycloak() {
