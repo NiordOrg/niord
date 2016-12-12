@@ -16,6 +16,7 @@
 package org.niord.core.message;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
@@ -1127,6 +1128,7 @@ public class MessageService extends BaseService {
 
             // Create a snapshot of the message
             ObjectMapper jsonMapper = new ObjectMapper();
+            jsonMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false); // Use ISO-8601 format
             DataFilter dataFilter = DataFilter.get()
                     .fields("Message.details", "Message.geometry");
             MessageVo snapshot = message.toVo(SystemMessageVo.class, dataFilter);
