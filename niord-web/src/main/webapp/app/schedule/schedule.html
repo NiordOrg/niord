@@ -1,5 +1,4 @@
 
-
 <div class="schedule" ng-controller="ScheduleCtrl">
 
     <div ng-include="'/app/schedule/schedule-filter.html'"></div>
@@ -10,7 +9,14 @@
             Firing Area Schedule
         </h3>
 
-        <div class="row">
+        <div ng-if="!domain.firingSchedule" class="row">
+            <div class="col-sm-12 empty-search-result">
+                <p>Domain has no firing schedule</p>
+            </div>
+        </div>
+
+
+        <div ng-if="domain.firingSchedule" class="row">
 
             <div class="col-md-8 col-lg-7">
 
