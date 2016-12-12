@@ -64,6 +64,9 @@ public class FiringSchedule extends VersionedEntity<Integer> {
     @ElementCollection
     List<String> messageFields = new ArrayList<>();
 
+    /** Number of scheduled days to include in the generated firing exercise messages **/
+    Integer scheduleDays;
+
     /** If the schedule is active or inactive **/
     boolean active;
 
@@ -79,6 +82,7 @@ public class FiringSchedule extends VersionedEntity<Integer> {
         this.domain = new Domain(schedule.getDomain());
         this.targetDomain = new Domain(schedule.getTargetDomain());
         this.targetMessageSeries = new MessageSeries(schedule.getTargetSeriesId());
+        this.scheduleDays = schedule.getScheduleDays();
         this.active = schedule.isActive();
         if (schedule.getMessageFields() != null) {
             messageFields.addAll(schedule.getMessageFields());
@@ -93,6 +97,7 @@ public class FiringSchedule extends VersionedEntity<Integer> {
         schedule.setDomain(domain.toVo());
         schedule.setTargetDomain(targetDomain.toVo());
         schedule.setTargetSeriesId(targetMessageSeries.getSeriesId());
+        schedule.setScheduleDays(scheduleDays);
         schedule.setActive(active);
         if (!messageFields.isEmpty()) {
             schedule.setMessageFields(new ArrayList<>(messageFields));
@@ -135,6 +140,14 @@ public class FiringSchedule extends VersionedEntity<Integer> {
 
     public void setMessageFields(List<String> messageFields) {
         this.messageFields = messageFields;
+    }
+
+    public Integer getScheduleDays() {
+        return scheduleDays;
+    }
+
+    public void setScheduleDays(Integer scheduleDays) {
+        this.scheduleDays = scheduleDays;
     }
 
     public boolean isActive() {

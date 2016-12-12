@@ -25,6 +25,7 @@ import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageSeriesService;
 import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
+import org.niord.core.schedule.FiringExerciseService;
 import org.niord.core.schedule.FiringSchedule;
 import org.niord.core.schedule.FiringScheduleService;
 import org.niord.core.schedule.vo.FiringAreaPeriodsVo;
@@ -69,6 +70,9 @@ public class FiringScheduleRestService {
 
     @Inject
     FiringScheduleService firingScheduleService;
+
+    @Inject
+    FiringExerciseService firingExerciseService;
 
     @Inject
     DomainService domainService;
@@ -155,6 +159,19 @@ public class FiringScheduleRestService {
 
         log.info("Updating firing schedule " + id);
         firingScheduleService.deleteFiringSchedule(id);
+    }
+
+
+    /**
+     * Updates the firing exercises based on the currently active firing schedules
+     */
+    @PUT
+    @Path("/update-firing-exercises")
+    @NoCache
+    @RolesAllowed({"sysadmin"})
+    public void updateFiringExercises() {
+        log.info("Updating firing exercises based on active schedules");
+        firingExerciseService.updateFiringExercises();
     }
 
 

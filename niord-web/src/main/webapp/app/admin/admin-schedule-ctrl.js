@@ -84,6 +84,7 @@ angular.module('niord.admin')
                     targetSeriesId: undefined,
                     messageFields: [],
                     editorFields: [], // Not part of model, but used by field editor
+                    scheduleDays: undefined,
                     active: false
                 };
             };
@@ -139,4 +140,10 @@ angular.module('niord.admin')
                             .error($scope.displayError);
                     });
             };
+
+
+            /** Updates the firing exercises **/
+            $scope.updateFiringExercises = function () {
+                AdminScheduleService.updateFiringExercises();
+            }
         }]);

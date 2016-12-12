@@ -532,6 +532,12 @@ angular.module('niord.admin')
             /** Deletes the given schedule **/
             deleteFiringSchedule: function(schedule) {
                 return $http['delete']('/rest/firing-schedules/firing-schedule/' + schedule.id);
+            },
+
+
+            /** Updates the firing exercises based on active schedules **/
+            updateFiringExercises: function () {
+                return $http.put('/rest/firing-schedules/update-firing-exercises');
             }
         };
     }])

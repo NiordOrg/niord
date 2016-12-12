@@ -556,9 +556,13 @@ public class PublicationService extends BaseService {
             return;
         }
 
+        Set<String> seriesIds = publication.getDomain() != null
+                ? publication.getDomain().getMessageSeries().stream().map(MessageSeries::getSeriesId).collect(Collectors.toSet())
+                : Collections.EMPTY_SET;
+
         // Look up all published messages
         MessageSearchParams params = new MessageSearchParams()
-                .domain(publication.getDomain() != null ? publication.getDomain().getDomainId() : null)
+                .seriesIds(seriesIds)
                 .statuses(PUBLISHED);
         List<Message> messages = messageService.search(params).getData();
 

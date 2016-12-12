@@ -449,12 +449,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     public void updateMessageTitle() {
         if (autoTitle) {
             // Get all involved message and message part languages
-            Set<String> langs = Stream.concat(
-                    getDescs().stream().map(DescEntity::getLang),
-                    getParts().stream().flatMap(p -> p.getDescs().stream()).map(DescEntity::getLang)
-            ).collect(Collectors.toSet());
-
-            langs.forEach(lang -> {
+            computeLanguages().forEach(lang -> {
                 try {
                     // First add area lineage
                     StringBuilder title = new StringBuilder();
@@ -491,6 +486,15 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             });
 
         }
+    }
+
+
+    /** Returns the set of languages used for this message **/
+    public Set<String> computeLanguages() {
+        return Stream.concat(
+                getDescs().stream().map(DescEntity::getLang),
+                getParts().stream().flatMap(p -> p.getDescs().stream()).map(DescEntity::getLang)
+        ).collect(Collectors.toSet());
     }
 
 

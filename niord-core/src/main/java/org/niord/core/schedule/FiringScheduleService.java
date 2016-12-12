@@ -103,6 +103,7 @@ public class FiringScheduleService extends BaseService {
 
     /**
      * Returns all firing schedules
+     *
      * @return all firing schedules
      */
     public List<FiringSchedule> getFiringSchedules() {
@@ -112,6 +113,7 @@ public class FiringScheduleService extends BaseService {
 
     /**
      * Returns the firing schedule with the given ID, or null if not found
+     *
      * @param id the ID
      * @return the firing schedule with the given ID, or null if not found
      */
@@ -122,6 +124,7 @@ public class FiringScheduleService extends BaseService {
 
     /**
      * Creates a new firing schedule based on the schedule template
+     *
      * @param schedule the firing schedule to create
      * @return the created firing schedule
      */
@@ -149,6 +152,7 @@ public class FiringScheduleService extends BaseService {
 
     /**
      * Updates the firing schedule data from the schedule template
+     *
      * @param schedule the firing schedule to update
      * @return the updated firing schedule
      */
@@ -175,6 +179,7 @@ public class FiringScheduleService extends BaseService {
         original.getMessageFields().clear();
         original.getMessageFields().addAll(schedule.getMessageFields());
 
+        original.setScheduleDays(schedule.getScheduleDays());
         original.setActive(schedule.isActive());
 
         return saveEntity(original);
@@ -183,6 +188,7 @@ public class FiringScheduleService extends BaseService {
 
     /**
      * Deletes the firing schedule
+     *
      * @param id the ID of the firing schedule to delete
      */
     public boolean deleteFiringSchedule(Integer id) {
@@ -195,7 +201,6 @@ public class FiringScheduleService extends BaseService {
         }
         return false;
     }
-
 
 
     /***************************************/
@@ -326,24 +331,6 @@ public class FiringScheduleService extends BaseService {
     /***************************************/
     /** Firing Periods                    **/
     /***************************************/
-
-
-    /**
-     * Returns any existing firing period with the given area and date interval. Return null if none is found
-     * @param area the area
-     * @param firingPeriodFromDate the from date
-     * @param firingPeriodToDate the to date
-     * @return any existing firing period with the given area and date interval
-     */
-    public FiringPeriod findFiringPeriod(Area area, Date firingPeriodFromDate, Date firingPeriodToDate) {
-        return em.createNamedQuery("FiringPeriod.findByAreaAndInterval", FiringPeriod.class)
-                .setParameter("area", area)
-                .setParameter("fromDate", TimeUtils.resetSeconds(firingPeriodFromDate))
-                .setParameter("toDate", TimeUtils.resetSeconds(firingPeriodToDate))
-                .getResultList().stream()
-                .findFirst()
-                .orElse(null);
-    }
 
 
     /**

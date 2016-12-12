@@ -17,6 +17,7 @@
 package org.niord.core.schedule;
 
 import org.niord.core.area.Area;
+import org.niord.core.message.DateInterval;
 import org.niord.core.schedule.vo.FiringPeriodVo;
 import org.niord.core.model.VersionedEntity;
 
@@ -42,15 +43,16 @@ import java.util.Date;
 })
 @NamedQueries({
         @NamedQuery(name="FiringPeriod.findByArea",
-                query = "select fp FROM FiringPeriod fp where fp.area = :area order by fp.fromDate, fp.toDate"),
+                query = "select distinct fp FROM FiringPeriod fp where fp.area = :area order by fp.fromDate, fp.toDate"),
         @NamedQuery(name="FiringPeriod.findLegacyFiringPeriods",
-                query = "select fp FROM FiringPeriod fp where fp.legacyId is not null order by fp.fromDate, fp.toDate"),
-        @NamedQuery(name="FiringPeriod.findByAreaAndInterval",
-                query = "select fp FROM FiringPeriod fp where fp.area = :area "
-                        + " and fp.fromDate = :fromDate and fp.toDate = :toDate"),
+                query = "select distinct fp FROM FiringPeriod fp where fp.legacyId is not null order by fp.fromDate, fp.toDate"),
         @NamedQuery(name="FiringPeriod.findByDateInterval",
-                query = "select fp FROM FiringPeriod fp where fp.fromDate <= :toDate and fp.toDate >= :fromDate "
+                query = "select distinct fp FROM FiringPeriod fp where fp.fromDate <= :toDate and fp.toDate >= :fromDate "
                         + " and fp.area.active in (:active) "
+                        + " order by fp.area, fp.fromDate, fp.toDate"),
+        @NamedQuery(name="FiringPeriod.findByAreasAndDateInterval",
+                query = "select distinct fp FROM FiringPeriod fp where fp.fromDate <= :toDate and fp.toDate >= :fromDate "
+                        + " and fp.area in (:areas) "
                         + " order by fp.area, fp.fromDate, fp.toDate")
 })
 @SuppressWarnings("unused")
@@ -112,6 +114,15 @@ public class FiringPeriod extends VersionedEntity<Integer> implements Comparable
         firingPeriod.setFromDate(fromDate);
         firingPeriod.setToDate(toDate);
         return firingPeriod;
+    }
+
+
+    /** Converts this entity to a message date interval **/
+    public DateInterval toDateInterval() {
+        DateInterval di = new DateInterval();
+        di.setFromDate(fromDate);
+        di.setToDate(toDate);
+        return di;
     }
 
 
