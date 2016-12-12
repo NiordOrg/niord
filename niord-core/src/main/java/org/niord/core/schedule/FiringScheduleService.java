@@ -133,6 +133,9 @@ public class FiringScheduleService extends BaseService {
         // Substitute the message series with the persisted ones
         schedule.setTargetMessageSeries(messageSeriesService.findBySeriesId(schedule.getTargetMessageSeries().getSeriesId()));
 
+        // Substitute the target domain with the persisted ones
+        schedule.setTargetDomain(domainService.findByDomainId(schedule.getTargetDomain().getDomainId()));
+
         // Substitute the domain with the persisted ones
         Domain domain = domainService.findByDomainId(schedule.getDomain().getDomainId());
         schedule.setDomain(domain);
@@ -162,6 +165,9 @@ public class FiringScheduleService extends BaseService {
         }
         original.setDomain(domain);
         domain.setFiringSchedule(original);
+
+        // Substitute the target domain with the persisted ones
+        original.setTargetDomain(domainService.findByDomainId(schedule.getTargetDomain().getDomainId()));
 
         // Substitute the message series with the persisted ones
         original.setTargetMessageSeries(messageSeriesService.findBySeriesId(schedule.getTargetMessageSeries().getSeriesId()));

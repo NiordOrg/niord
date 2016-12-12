@@ -29,6 +29,7 @@ public class FiringScheduleVo implements IJsonSerializable {
 
     Integer id;
     DomainVo domain;
+    DomainVo targetDomain;
     String targetSeriesId;
     List<String> messageFields;
     boolean active;
@@ -38,6 +39,7 @@ public class FiringScheduleVo implements IJsonSerializable {
         return "FiringScheduleVo{" +
                 "id=" + id +
                 ", domain=" + domain.getDomainId() +
+                ", targetDomain=" + targetDomain.getDomainId() +
                 ", targetSeriesId='" + targetSeriesId + '\'' +
                 ", messageFields=" + messageFields +
                 ", active=" + active +
@@ -62,6 +64,14 @@ public class FiringScheduleVo implements IJsonSerializable {
 
     public void setDomain(DomainVo domain) {
         this.domain = domain;
+    }
+
+    public DomainVo getTargetDomain() {
+        return targetDomain;
+    }
+
+    public void setTargetDomain(DomainVo targetDomain) {
+        this.targetDomain = targetDomain;
     }
 
     public String getTargetSeriesId() {

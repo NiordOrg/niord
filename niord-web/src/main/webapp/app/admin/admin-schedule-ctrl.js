@@ -36,19 +36,32 @@ angular.module('niord.admin')
             $scope.editMode = 'add';
 
 
-            // Determine the possible target message series
-            $scope.messageSeriesIds = [];
+            // Update the list if selectable domains
             $scope.domains = [];
             angular.forEach($rootScope.domains, function (domain) {
                 if (domain.editable) {
                     $scope.domains.push(domain);
                 }
-                if (domain.messageSeries) {
-                    angular.forEach(domain.messageSeries, function (series) {
-                        $scope.messageSeriesIds.push(series.seriesId);
+            });
+
+
+            /** Called when a target domain is selected **/
+            $scope.messageSeriesIds = [];
+            $scope.targetDomainSelected = function () {
+                $scope.messageSeriesIds.length = 0;
+                if ($scope.schedule) {
+                    angular.forEach($rootScope.domains, function (domain) {
+                        if (domain.domainId == $scope.schedule.targetDomain.domainId && domain.messageSeries) {
+                            angular.forEach(domain.messageSeries, function (series) {
+                                $scope.messageSeriesIds.push(series.seriesId);
+                            });
+                            if (domain.messageSeries.length == 1) {
+                                $scope.schedule.targetSeriesId = domain.messageSeries[0].seriesId;
+                            }
+                        }
                     });
                 }
-            });
+            };
 
 
             /** Loads the schedules from the back-end */
@@ -67,6 +80,7 @@ angular.module('niord.admin')
                 $scope.editMode = 'add';
                 $scope.schedule = {
                     domain: { domainId: $rootScope.domain.domainId },
+                    targetDomain: { domainId: undefined },
                     targetSeriesId: undefined,
                     messageFields: [],
                     editorFields: [], // Not part of model, but used by field editor
@@ -80,6 +94,8 @@ angular.module('niord.admin')
                 $scope.editMode = 'edit';
                 $scope.schedule = angular.copy(schedule);
                 $scope.schedule.domain = { domainId: $scope.schedule.domain.domainId };
+                $scope.schedule.targetDomain = { domainId: $scope.schedule.targetDomain.domainId };
+                $scope.targetDomainSelected();
 
                 // The field editor works on the "editorFields" field
                 $scope.schedule.editorFields = $scope.schedule.messageFields;

@@ -7,7 +7,7 @@
 
         <!-- Add/edit schedule -->
         <div ng-if="schedule !== undefined" style="margin-top: 20px">
-            <form name="edit_form" class="form-horizontal">
+            <form name="scheduleForm" class="form-horizontal">
 
                 <div class="row">
                     <div class="form-controls col-sm-12 col-md-8">
@@ -17,6 +17,16 @@
                             <div class="col-sm-8">
                                 <select class="form-control input-sm" required style="width: 200px"
                                         ng-model="schedule.domain.domainId" ng-options="domain.domainId as domain.name for domain in domains" >
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4">Target Domain</label>
+                            <div class="col-sm-8">
+                                <select class="form-control input-sm" required style="width: 200px"
+                                        ng-model="schedule.targetDomain.domainId" ng-options="domain.domainId as domain.name for domain in domains"
+                                        ng-change="targetDomainSelected()">
                                 </select>
                             </div>
                         </div>
@@ -54,7 +64,8 @@
                         <button type="submit" class="btn btn-default btn-sm" ng-click="loadFiringSchedules()">
                             Cancel
                         </button>
-                        <button type="submit" class="btn btn-primary btn-sm" ng-click="saveFiringSchedule(schedule)">
+                        <button type="submit" class="btn btn-primary btn-sm" ng-click="saveFiringSchedule(schedule)"
+                                ng-disabled="scheduleForm.$pristine || scheduleForm.$invalid">
                             <span class="glyphicon glyphicon-floppy-disk"></span>
                             Save Firing Schedule
                         </button>
@@ -89,12 +100,14 @@
                         <tr>
                             <th>Active</th>
                             <th>Domain</th>
+                            <th>Target Domain</th>
                             <th>Target Series</th>
                             <th></th>
                         </tr>
                         <tr ng-repeat="schedule in schedules">
                             <td><input type="checkbox" ng-model="schedule.active" disabled="disabled"></td>
                             <td>{{schedule.domain.name}}</td>
+                            <td>{{schedule.targetDomain.name}}</td>
                             <td>{{schedule.targetSeriesId}}</td>
                             <td nowrap align="right">
                                 <a href ng-click="editFiringSchedule(schedule);" title="Edit Schedule"><i class="glyphicon glyphicon-pencil"></i></a>

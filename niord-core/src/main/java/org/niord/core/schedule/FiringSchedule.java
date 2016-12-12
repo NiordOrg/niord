@@ -32,7 +32,7 @@ import java.util.List;
 /**
  * Defines a firing schedule.
  * <p>
- * A firing schedule is tied to a domain and has a target message series ID.
+ * A firing schedule is tied to a domain and has a target domain and message series ID.
  * <p>
  * The firing schedule will be "executed" periodically, meaning that for each published message in
  * the associated domain that is tied to a firing area, the firing periods for the area will
@@ -47,7 +47,15 @@ public class FiringSchedule extends VersionedEntity<Integer> {
     @NotNull
     Domain domain;
 
-    /** Defines the target message series where the firing exercise messages will be generated and maintained **/
+    /**
+     * The target domain defines the domain where the firing exercise messages will be generated and maintained.
+     * NB: We use target domain as well as target message series, because we need the timezone associated with the domain
+     **/
+    @ManyToOne
+    @NotNull
+    Domain targetDomain;
+
+    /** Defines the target message series of the target domain where the firing exercise messages will be generated **/
     @ManyToOne
     @NotNull
     MessageSeries targetMessageSeries;
@@ -69,6 +77,7 @@ public class FiringSchedule extends VersionedEntity<Integer> {
     public FiringSchedule(FiringScheduleVo schedule) {
         this.id = schedule.getId();
         this.domain = new Domain(schedule.getDomain());
+        this.targetDomain = new Domain(schedule.getTargetDomain());
         this.targetMessageSeries = new MessageSeries(schedule.getTargetSeriesId());
         this.active = schedule.isActive();
         if (schedule.getMessageFields() != null) {
@@ -82,6 +91,7 @@ public class FiringSchedule extends VersionedEntity<Integer> {
         FiringScheduleVo schedule = new FiringScheduleVo();
         schedule.setId(id);
         schedule.setDomain(domain.toVo());
+        schedule.setTargetDomain(targetDomain.toVo());
         schedule.setTargetSeriesId(targetMessageSeries.getSeriesId());
         schedule.setActive(active);
         if (!messageFields.isEmpty()) {
@@ -101,6 +111,14 @@ public class FiringSchedule extends VersionedEntity<Integer> {
 
     public void setDomain(Domain domain) {
         this.domain = domain;
+    }
+
+    public Domain getTargetDomain() {
+        return targetDomain;
+    }
+
+    public void setTargetDomain(Domain targetDomain) {
+        this.targetDomain = targetDomain;
     }
 
     public MessageSeries getTargetMessageSeries() {
