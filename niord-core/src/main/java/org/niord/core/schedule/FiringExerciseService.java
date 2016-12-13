@@ -271,7 +271,7 @@ public class FiringExerciseService extends BaseService {
             Message message = new Message();
             message.assignNewUid();
             message.setMainType(schedule.getTargetMessageSeries().getMainType());
-            message.setType(message.getMainType() == MainType.NW ? Type.LOCAL_WARNING : Type.MISCELLANEOUS_NOTICE);
+            message.setType(message.getMainType() == MainType.NW ? Type.LOCAL_WARNING : Type.TEMPORARY_NOTICE);
             message.setMessageSeries(schedule.getTargetMessageSeries());
             message.setStatus(Status.PUBLISHED);
             message.getAreas().addAll(firingAreaMessage.getAreas());
