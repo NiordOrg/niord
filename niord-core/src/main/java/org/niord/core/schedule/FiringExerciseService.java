@@ -355,7 +355,7 @@ public class FiringExerciseService extends BaseService {
                             : sdf1;
                         return String.format("%s - %s", sdf1.format(di.getFromDate()), sdf2.format(di.getToDate()));
                     })
-                    .collect(Collectors.joining("<br>"));
+                    .collect(Collectors.joining(".<br>"));
 
             if (StringUtils.isNotBlank(txt)) {
                 timePart.checkCreateDesc(lang).setDetails(txt);
