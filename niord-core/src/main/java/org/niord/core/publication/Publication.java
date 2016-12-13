@@ -313,6 +313,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
             pubDesc.setTitle(ctx.str(d.getTitleFormat(), pubDesc.getTitle()));
             pubDesc.setLink(ctx.str(d.getLink(), pubDesc.getLink()));
             pubDesc.setFileName(ctx.str(d.getFileName(), pubDesc.getFileName()));
+            pubDesc.setMessagePublicationFormat(ctx.str(d.getMessagePublicationFormat(), pubDesc.getMessagePublicationFormat()));
         });
     }
 
