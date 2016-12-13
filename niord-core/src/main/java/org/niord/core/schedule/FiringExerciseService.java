@@ -57,6 +57,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import static org.niord.core.settings.Setting.Type.Integer;
@@ -305,7 +306,7 @@ public class FiringExerciseService extends BaseService {
             message.setPublishDateTo(message.getEventDateTo());
 
             // Format the firing periods as text
-            formatTimeDescription(timePart, message.computeLanguages());
+            formatTimeDescription(timePart, message.computeLanguages(), schedule.targetTimeZone());
 
             // Get hold of the "details" message part, or create it
             if (message.partsByType(MessagePartType.DETAILS).isEmpty()) {
@@ -333,7 +334,7 @@ public class FiringExerciseService extends BaseService {
      * @param timePart the message part to update
      * @param languages the languages to include
      */
-    private void formatTimeDescription(MessagePart timePart, Set<String> languages) {
+    private void formatTimeDescription(MessagePart timePart, Set<String> languages, TimeZone timeZone) {
         DictionaryEntry dateTimeFormat = dictionaryService.findByName("message")
                 .getEntries().get("msg.time.date_time_format");
         DictionaryEntry timeFormat = dictionaryService.findByName("message")
@@ -353,6 +354,8 @@ public class FiringExerciseService extends BaseService {
                         SimpleDateFormat sdf2 = TimeUtils.sameDate(di.getFromDate(), di.getToDate())
                             ? new SimpleDateFormat(tf)
                             : sdf1;
+                        sdf1.setTimeZone(timeZone);
+                        sdf2.setTimeZone(timeZone);
                         return String.format("%s - %s", sdf1.format(di.getFromDate()), sdf2.format(di.getToDate()));
                     })
                     .collect(Collectors.joining(".<br>"));

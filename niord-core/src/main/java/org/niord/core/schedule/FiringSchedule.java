@@ -16,6 +16,7 @@
 
 package org.niord.core.schedule;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.domain.Domain;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.model.VersionedEntity;
@@ -25,6 +26,7 @@ import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.validation.constraints.NotNull;
+import java.util.TimeZone;
 
 /**
  * Defines a firing schedule.
@@ -92,6 +94,24 @@ public class FiringSchedule extends VersionedEntity<Integer> {
         return schedule;
     }
 
+
+    /**
+     * Computes the target time zone to use
+     * @return the target time zone to use
+     */
+    public TimeZone targetTimeZone() {
+
+        // Compute the timeZone
+        String timeZoneId = (targetDomain != null && StringUtils.isNotBlank(targetDomain.getTimeZone()))
+                ? targetDomain.getTimeZone()
+                : TimeZone.getDefault().getID();
+
+        try {
+            return TimeZone.getTimeZone(timeZoneId);
+        } catch (Exception e) {
+            return TimeZone.getDefault();
+        }
+    }
 
     /*************************/
     /** Getters and Setters **/
