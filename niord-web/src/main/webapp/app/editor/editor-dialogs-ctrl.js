@@ -384,7 +384,7 @@ angular.module('niord.editor')
                 result: ''
             };
             $scope.params = {
-                template: 'list',
+                template: 'numbered-list',
                 format: 'dec'
             };
             $scope.formats = [
@@ -398,6 +398,10 @@ angular.module('niord.editor')
             if ($window.localStorage['formatLocationSettings']) {
                 try {
                     angular.copy(angular.fromJson($window.localStorage['formatLocationSettings']), $scope.params);
+                    // "list" was renamed to "numbered-list"
+                    if ($scope.params.template == 'list') {
+                        $scope.params.template = 'numbered-list';
+                    }
                 } catch (error) {
                 }
             }

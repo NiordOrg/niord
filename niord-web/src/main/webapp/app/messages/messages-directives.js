@@ -134,6 +134,7 @@ angular.module('niord.messages')
                                 result += ' (INT ' + chart.internationalNumber + ')';
                             }
                         }
+                        result += '.';
                     }
                     element.html(result);
                 };

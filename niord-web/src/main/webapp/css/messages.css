@@ -28,6 +28,10 @@
     overflow-y: scroll;
 }
 
+.append-dot::after {
+    content: ".";
+}
+
 .label-message-id {
     font-size: 10px;
     display: inline-block;
@@ -490,6 +494,10 @@ table.positions td, table.positions th {
 table.positions td:nth-child(1) {
     text-align: right;
     color: darkgray;
+}
+
+ul.positions li {
+    margin-bottom: 0;
 }
 
 table.position-table td.pos-col {

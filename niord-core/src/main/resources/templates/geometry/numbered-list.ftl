@@ -1,5 +1,6 @@
 
 <#assign formatPos = "org.niord.core.fm.directive.LatLonDirective"?new()>
+<#assign trailingDot = "org.niord.core.fm.directive.TrailingDotDirective"?new()>
 
 <#function nameColumn geometry>
     <#list geometry as feature>
@@ -22,9 +23,9 @@
                 <#list feature.coordinates as coord>
                     <tr>
                         <td nowrap>${coord.index})</td>
-                        <td nowrap><@formatPos lat=coord.coordinates[1] lon=coord.coordinates[0] format=format/></td>
+                        <td nowrap><@formatPos lat=coord.coordinates[1] lon=coord.coordinates[0] format=format/><#if !coord.name?has_content>.</#if></td>
                         <#if hasName>
-                            <td><#if coord.name?has_content>${coord.name}</#if></td>
+                            <td><@trailingDot><#if coord.name?has_content>${coord.name}</#if></@trailingDot></td>
                         </#if>
                     </tr>
                 </#list>

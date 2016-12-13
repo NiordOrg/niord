@@ -2,6 +2,7 @@
 <#assign formatPos = "org.niord.core.fm.directive.LatLonDirective"?new()>
 <#assign formatDateInterval = "org.niord.core.fm.directive.DateIntervalDirective"?new()>
 <#assign txtToHtml = "org.niord.core.fm.directive.TextToHtmlDirective"?new()>
+<#assign trailingDot = "org.niord.core.fm.directive.TrailingDotDirective"?new()>
 
 <!-- ***************************************  -->
 <!-- Parametrized message styles             -->
@@ -291,21 +292,23 @@
                     <#list msg.references as ref>
                         <#assign refDesc=descForLang(ref, lang)!>
                         <div>
-                            <a href="${baseUri}/#/message/${ref.messageId?url('ASCII')}" target="_blank">${ref.messageId}</a>
+                            <@trailingDot>
+                                <a href="${baseUri}/#/message/${ref.messageId?url('ASCII')}" target="_blank">${ref.messageId}</a>
 
-                            <#if ref.type == 'REPETITION'>
-                                - ${text("msg.reference.repetition")}
-                            <#elseif ref.type == 'REPETITION_NEW_TIME'>
-                                - ${text("msg.reference.repetition_new_time")}
-                            <#elseif ref.type == 'CANCELLATION'>
-                                - ${text("msg.reference.cancelled")}
-                            <#elseif ref.type == 'UPDATE'>
-                                - ${text("msg.reference.updated")}
-                            </#if>
+                                <#if ref.type == 'REPETITION'>
+                                    - ${text("msg.reference.repetition")}
+                                <#elseif ref.type == 'REPETITION_NEW_TIME'>
+                                    - ${text("msg.reference.repetition_new_time")}
+                                <#elseif ref.type == 'CANCELLATION'>
+                                    - ${text("msg.reference.cancelled")}
+                                <#elseif ref.type == 'UPDATE'>
+                                    - ${text("msg.reference.updated")}
+                                </#if>
 
-                            <#if refDesc?has_content && refDesc.description??>
-                                - ${refDesc.description}
-                            </#if>
+                                <#if refDesc?has_content && refDesc.description??>
+                                    - ${refDesc.description}
+                                </#if>
+                            </@trailingDot>
                         </div>
                     </#list>
                 </td>
@@ -335,11 +338,13 @@
             <tr>
                 <td class="field-name">${text("msg.field.charts")}</td>
                 <td class="field-value">
-                    <#list msg.charts as chart>
-                    ${chart.chartNumber}
-                        <#if chart.internationalNumber?has_content>(INT ${chart.internationalNumber?c})</#if>
-                        <#if chart_has_next>, </#if>
-                    </#list>
+                    <@trailingDot>
+                        <#list msg.charts as chart>
+                        ${chart.chartNumber}
+                            <#if chart.internationalNumber?has_content>(INT ${chart.internationalNumber?c})</#if>
+                            <#if chart_has_next>, </#if>
+                        </#list>
+                    </@trailingDot>
                 </td>
             </tr>
         </#if>

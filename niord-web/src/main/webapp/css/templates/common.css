@@ -171,6 +171,10 @@ table.positions td:nth-child(1) {
     color: darkgray;
 }
 
+ul.positions li {
+    margin-bottom: 0;
+}
+
 table.position-table td.pos-col {
     padding-left: 1mm;
     padding-right: 1mm;
