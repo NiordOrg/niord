@@ -133,31 +133,35 @@ public abstract class AbstractApiService {
 
         // Check if a domain has been specified - convert them to message series, area nad category restrictions
         if (domainsSpecified) {
-            domainIds.forEach(domainId -> {
-                Domain domain = domainService.findByDomainId(domainId);
-                if (domain != null) {
-                    // Add the message series of the domain as a filter
-                    params.getSeriesIds().addAll(
-                            domain.getMessageSeries().stream()
-                                    .map(MessageSeries::getSeriesId)
-                                    .collect(Collectors.toSet())
-                    );
+            List<Domain> domains = domainService.findByDomainIds(domainIds);
 
-                    // Set the areas to be the ones defined by the domain
-                    params.getAreaIds().addAll(
-                            domain.getAreas().stream()
-                                    .map(a -> a.getId().toString())
-                                    .collect(Collectors.toSet())
-                    );
+            // Add the message series of the domains as a filter
+            params.getSeriesIds().addAll(
+                    domains.stream()
+                            .flatMap(d -> d.getMessageSeries().stream())
+                            .map(MessageSeries::getSeriesId)
+                            .collect(Collectors.toSet())
+            );
 
-                    // Set the categories to be the ones defined by the domain
-                    params.getCategoryIds().addAll(
-                            domain.getCategories().stream()
-                                    .map(c -> c.getId().toString())
-                                    .collect(Collectors.toSet())
-                    );
-                }
-            });
+            // If all domains specify areas, add these as a filter
+            if (domains.stream().noneMatch(d -> d.getAreas().isEmpty())) {
+                params.getAreaIds().addAll(
+                    domains.stream()
+                        .flatMap(d -> d.getAreas().stream())
+                        .map(a -> a.getId().toString())
+                        .collect(Collectors.toList())
+                );
+            }
+
+            // If all domains specify categories, add these as a filter
+            if (domains.stream().noneMatch(d -> d.getCategories().isEmpty())) {
+                params.getCategoryIds().addAll(
+                        domains.stream()
+                                .flatMap(d -> d.getCategories().stream())
+                                .map(c -> c.getId().toString())
+                                .collect(Collectors.toList())
+                );
+            }
         }
 
         // Check if specific message series has been specified

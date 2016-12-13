@@ -55,6 +55,8 @@ import java.util.stream.Collectors;
 @NamedQueries({
         @NamedQuery(name="Domain.findByDomainId",
                 query="SELECT d FROM Domain d where d.domainId = :domainId"),
+        @NamedQuery(name="Domain.findByDomainIds",
+                query="SELECT d FROM Domain d where d.domainId in (:domainIds)"),
         @NamedQuery(name="Domain.getPublishedDomains",
                 query="SELECT d FROM Domain d where d.publish = true")
 })

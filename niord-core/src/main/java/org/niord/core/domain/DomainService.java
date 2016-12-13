@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -119,6 +120,22 @@ public class DomainService extends BaseService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+
+    /**
+     * Returns the domains with the given domainId's
+     * @param domainIds the domain IDs
+     * @return the domains with the given domainId's
+     */
+    public List<Domain> findByDomainIds(Set<String> domainIds) {
+        if (domainIds == null || domainIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return em
+                .createNamedQuery("Domain.findByDomainIds", Domain.class)
+                .setParameter("domainIds", domainIds)
+                .getResultList();
     }
 
 
