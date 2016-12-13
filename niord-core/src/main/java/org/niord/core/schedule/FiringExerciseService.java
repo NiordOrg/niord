@@ -278,6 +278,7 @@ public class FiringExerciseService extends BaseService {
             message.getCategories().addAll(firingAreaMessage.getCategories());
             message.getCharts().addAll(firingAreaMessage.getCharts());
 
+            // Copy message description entities and message parts
             MessageVo firingAreaMessageVo = firingAreaMessage.toVo(SystemMessageVo.class, Message.MESSAGE_DETAILS_FILTER);
             firingAreaMessageVo.getDescs().forEach(d -> message.addDesc(new MessageDesc(d)));
             firingAreaMessageVo.getParts()
@@ -288,7 +289,7 @@ public class FiringExerciseService extends BaseService {
                         message.addPart(new MessagePart(p));
                     });
 
-            // Get hold of the "time" type, or add it as the very first message part
+            // Get hold of the "time" message part, or add it as the very first message part
             if (message.partsByType(MessagePartType.TIME).isEmpty()) {
                 MessagePart timePart = new MessagePart(MessagePartType.TIME);
                 message.getParts().add(0, timePart);
@@ -306,6 +307,19 @@ public class FiringExerciseService extends BaseService {
             // Format the firing periods as text
             formatTimeDescription(timePart, message.computeLanguages());
 
+            // Get hold of the "details" message part, or create it
+            if (message.partsByType(MessagePartType.DETAILS).isEmpty()) {
+                MessagePart detailsPart = message.addPart(new MessagePart(MessagePartType.DETAILS));
+            }
+            MessagePart detailsPart = message.partsByType(MessagePartType.DETAILS).get(0);
+
+            // Format the message subject
+            formatSubject(detailsPart, message.computeLanguages());
+
+            // Update the message title
+            message.setAutoTitle(true);
+            message.updateMessageTitle();
+
             result.add(message);
         }
 
@@ -317,6 +331,7 @@ public class FiringExerciseService extends BaseService {
     /**
      * Formats the date intervals as text
      * @param timePart the message part to update
+     * @param languages the languages to include
      */
     private void formatTimeDescription(MessagePart timePart, Set<String> languages) {
         DictionaryEntry dateTimeFormat = dictionaryService.findByName("message")
@@ -348,6 +363,25 @@ public class FiringExerciseService extends BaseService {
         });
     }
 
+
+    /**
+     * Formats the subject
+     * @param detailsPart the message part to update
+     * @param languages the languages to include
+     */
+    private void formatSubject(MessagePart detailsPart, Set<String> languages) {
+        DictionaryEntry titleEntry = dictionaryService.findByName("message")
+                .getEntries().get("msg.firing_exercises.subject");
+
+        languages.forEach(lang -> {
+
+            String subject = (titleEntry != null && titleEntry.getDesc(lang) != null)
+                    ? titleEntry.getDesc(lang).getValue()
+                    : "Firing exercises. Warning.";
+
+            detailsPart.checkCreateDesc(lang).setSubject(subject);
+        });
+    }
 
     /**
      * Returns the firing area associated with the message
