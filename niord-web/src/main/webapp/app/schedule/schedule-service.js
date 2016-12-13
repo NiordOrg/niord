@@ -35,8 +35,13 @@ angular.module('niord.schedule')
             /** Updates the firing area periods the given date */
             updateFiringAreaPeriodsForDate: function(schedule, date) {
                 return $http.put('/rest/firing-schedules/firing-area-periods?date=' + date.valueOf(), schedule);
-            }
+            },
 
+
+            /** Updates the firing exercises based on active schedules **/
+            updateFiringExercises: function () {
+                return $http.put('/rest/firing-schedules/update-firing-exercises');
+            }
         };
     }]);
 

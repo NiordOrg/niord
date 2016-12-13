@@ -22,8 +22,8 @@ angular.module('niord.schedule')
     /**
      * Main firing area schedule controller
      */
-    .controller('ScheduleCtrl', ['$scope', '$rootScope', 'growl', 'ScheduleService',
-        function ($scope, $rootScope, growl, ScheduleService) {
+    .controller('ScheduleCtrl', ['$scope', '$rootScope', 'growl', 'ScheduleService', 'DialogService',
+        function ($scope, $rootScope, growl, ScheduleService, DialogService) {
             'use strict';
 
             $scope.firingAreaPeriods = [];
@@ -79,6 +79,23 @@ angular.module('niord.schedule')
                 firingAreaPeriods.editing = true;
             };
 
+
+            /** Updates the firing exercises **/
+            $scope.updateFiringExercises = function () {
+                DialogService.showConfirmDialog(
+                    'Update Firing Exercises',
+                    'Firing exercises are automatically updated from the schedule every night.\n' +
+                    'Do you wish to update them now?')
+                    .then(function() {
+                        ScheduleService.updateFiringExercises()
+                            .success(function () {
+                                growl.info('Firing Exercises have been updated', { ttl: 3000 });
+                            })
+                            .error(function () {
+                                growl.error('Error updating firing Exercises', { ttl: 5000 });
+                            });
+                    });
+            };
 
             /** Scans through the search result and marks all areas that should display an area head line **/
             $scope.checkGroupByArea = function (maxLevels) {

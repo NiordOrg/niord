@@ -7,6 +7,12 @@
 
         <h3 class="page-header">
             Firing Area Schedule
+            <span class="pull-right">
+                <a href ng-click="updateFiringExercises()" ng-if="domain.firingSchedule" style="margin-left: 5px"
+                   class="btn btn-default btn-xs">
+                    <span class="glyphicon glyphicon-cog"></span> Update Firing Exercises...
+                </a>
+            </span>
         </h3>
 
         <div ng-if="!domain.firingSchedule" class="row">
