@@ -135,7 +135,9 @@ public class MessageReportRestService {
             @QueryParam("lang") String language,
             @Context HttpServletRequest request) throws Exception {
 
-        MessageVo message = messageRestService.getMessage(messageId, language);
+        // The "draft" report display all language variants, so, sort instead of filter by language
+        MessageVo message = messageRestService.getMessage(messageId, null);
+        message.sortDescs(language);
 
         MessagePrintParams printParams = MessagePrintParams.instantiate(request);
 
