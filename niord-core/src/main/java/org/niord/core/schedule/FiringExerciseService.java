@@ -361,6 +361,7 @@ public class FiringExerciseService extends BaseService {
                     .collect(Collectors.joining(".<br>"));
 
             if (StringUtils.isNotBlank(txt)) {
+                txt = txt + ".";
                 timePart.checkCreateDesc(lang).setDetails(txt);
             }
         });
