@@ -176,9 +176,6 @@ public class FiringScheduleService extends BaseService {
         // Substitute the message series with the persisted ones
         original.setTargetMessageSeries(messageSeriesService.findBySeriesId(schedule.getTargetMessageSeries().getSeriesId()));
 
-        original.getMessageFields().clear();
-        original.getMessageFields().addAll(schedule.getMessageFields());
-
         original.setScheduleDays(schedule.getScheduleDays());
         original.setActive(schedule.isActive());
 

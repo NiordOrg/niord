@@ -19,8 +19,6 @@ package org.niord.core.schedule.vo;
 import org.niord.core.domain.vo.DomainVo;
 import org.niord.model.IJsonSerializable;
 
-import java.util.List;
-
 /**
  * Defines a firing schedule value object
  */
@@ -31,7 +29,6 @@ public class FiringScheduleVo implements IJsonSerializable {
     DomainVo domain;
     DomainVo targetDomain;
     String targetSeriesId;
-    List<String> messageFields;
     Integer scheduleDays;
     boolean active;
 
@@ -42,7 +39,6 @@ public class FiringScheduleVo implements IJsonSerializable {
                 ", domain=" + domain.getDomainId() +
                 ", targetDomain=" + targetDomain.getDomainId() +
                 ", targetSeriesId='" + targetSeriesId + '\'' +
-                ", messageFields=" + messageFields +
                 ", scheduleDays=" + scheduleDays +
                 ", active=" + active +
                 '}';
@@ -82,14 +78,6 @@ public class FiringScheduleVo implements IJsonSerializable {
 
     public void setTargetSeriesId(String targetSeriesId) {
         this.targetSeriesId = targetSeriesId;
-    }
-
-    public List<String> getMessageFields() {
-        return messageFields;
-    }
-
-    public void setMessageFields(List<String> messageFields) {
-        this.messageFields = messageFields;
     }
 
     public Integer getScheduleDays() {

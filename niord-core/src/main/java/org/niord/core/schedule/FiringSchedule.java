@@ -21,13 +21,10 @@ import org.niord.core.message.MessageSeries;
 import org.niord.core.model.VersionedEntity;
 import org.niord.core.schedule.vo.FiringScheduleVo;
 
-import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Defines a firing schedule.
@@ -60,10 +57,6 @@ public class FiringSchedule extends VersionedEntity<Integer> {
     @NotNull
     MessageSeries targetMessageSeries;
 
-    /** Defines which fields to copy from the source firing area message to the target firing exercise message **/
-    @ElementCollection
-    List<String> messageFields = new ArrayList<>();
-
     /** Number of scheduled days to include in the generated firing exercise messages **/
     Integer scheduleDays;
 
@@ -84,9 +77,6 @@ public class FiringSchedule extends VersionedEntity<Integer> {
         this.targetMessageSeries = new MessageSeries(schedule.getTargetSeriesId());
         this.scheduleDays = schedule.getScheduleDays();
         this.active = schedule.isActive();
-        if (schedule.getMessageFields() != null) {
-            messageFields.addAll(schedule.getMessageFields());
-        }
     }
 
 
@@ -99,9 +89,6 @@ public class FiringSchedule extends VersionedEntity<Integer> {
         schedule.setTargetSeriesId(targetMessageSeries.getSeriesId());
         schedule.setScheduleDays(scheduleDays);
         schedule.setActive(active);
-        if (!messageFields.isEmpty()) {
-            schedule.setMessageFields(new ArrayList<>(messageFields));
-        }
         return schedule;
     }
 
@@ -132,14 +119,6 @@ public class FiringSchedule extends VersionedEntity<Integer> {
 
     public void setTargetMessageSeries(MessageSeries targetMessageSeries) {
         this.targetMessageSeries = targetMessageSeries;
-    }
-
-    public List<String> getMessageFields() {
-        return messageFields;
-    }
-
-    public void setMessageFields(List<String> messageFields) {
-        this.messageFields = messageFields;
     }
 
     public Integer getScheduleDays() {

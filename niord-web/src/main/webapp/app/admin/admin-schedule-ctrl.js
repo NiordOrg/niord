@@ -82,8 +82,6 @@ angular.module('niord.admin')
                     domain: { domainId: $rootScope.domain.domainId },
                     targetDomain: { domainId: undefined },
                     targetSeriesId: undefined,
-                    messageFields: [],
-                    editorFields: [], // Not part of model, but used by field editor
                     scheduleDays: undefined,
                     active: false
                 };
@@ -97,9 +95,6 @@ angular.module('niord.admin')
                 $scope.schedule.domain = { domainId: $scope.schedule.domain.domainId };
                 $scope.schedule.targetDomain = { domainId: $scope.schedule.targetDomain.domainId };
                 $scope.targetDomainSelected();
-
-                // The field editor works on the "editorFields" field
-                $scope.schedule.editorFields = $scope.schedule.messageFields;
             };
 
 
@@ -111,9 +106,6 @@ angular.module('niord.admin')
 
             /** Saves the current firing schedule being edited */
             $scope.saveFiringSchedule = function () {
-
-                // The field editor works on the "editorFields" field
-                $scope.schedule.messageFields = $scope.schedule.editorFields;
 
                 if ($scope.editMode == 'add') {
                     AdminScheduleService
