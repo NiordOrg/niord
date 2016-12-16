@@ -288,11 +288,11 @@ angular.module('niord.editor')
             /** Initialize the list of messages to compare **/
             $scope.initData = function () {
                 $scope.messageData.length = 0;
-                if ($scope.message2) {
-                    $scope.messageData.push({ snapshot: angular.toJson($scope.message2) });
-                }
                 if ($scope.message1) {
                     $scope.messageData.push({ snapshot: angular.toJson($scope.message1) });
+                }
+                if ($scope.message2) {
+                    $scope.messageData.push({ snapshot: angular.toJson($scope.message2) });
                 }
 
                 $scope.messageDiff = '';
