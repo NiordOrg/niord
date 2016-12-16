@@ -46,17 +46,17 @@
                 <span class="caret"></span>
             </span>
             <ul class="dropdown-menu">
+                <li ng-repeat="filter in namedFilters">
+                    <a href><span ng-click="applyNamedFilter(filter)">{{filter.name}}</span>
+                        <span class="pull-right glyphicon glyphicon-trash" ng-click="removeNamedFilter(filter)"></span></a>
+                </li>
+                <li role="separator" class="divider" ng-if="namedFilters.length > 0"></li>
                 <li ng-repeat="name in filterNames">
                     <a ng-click="enableFilter(name, !filterEnabled(name))" href>
                         <span class="glyphicon view-mode-menu-checkmark"
                               ng-class="{ 'glyphicon-ok': filterEnabled(name), 'glyphicon-none': !filterEnabled(name) }"></span>
                         <span ng-bind-html="'menu.filter.' + name | translate"></span>
                     </a>
-                </li>
-                <li role="separator" class="divider" ng-if="namedFilters.length > 0"></li>
-                <li ng-repeat="filter in namedFilters">
-                    <a href><span ng-click="applyNamedFilter(filter)">{{filter.name}}</span>
-                        <span class="pull-right glyphicon glyphicon-trash" ng-click="removeNamedFilter(filter)"></span></a>
                 </li>
                 <li role="separator" class="divider"></li>
                 <li><a ng-if="isLoggedIn" ng-click="clearAllFilters()" href translate>menu.filter.clear</a></li>
