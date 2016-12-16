@@ -366,6 +366,8 @@ angular.module('niord.admin')
                         $scope.publication.publication = pub.template;
                         $scope.publication.tag = pub.messageTag;
 
+                        $scope.publicationFileUploadUrl = '/rest/publications/upload-publication-file/'
+                            + encodeURIComponent($scope.publication.editRepoPath  + '/' + $scope.publication.revision)
                         $scope.setDirty();
                     })
                     .error($scope.displayError);
