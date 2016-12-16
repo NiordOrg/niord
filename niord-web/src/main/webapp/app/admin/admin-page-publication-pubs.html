@@ -430,7 +430,7 @@
                                 <span class="glyphicon glyphicon-duplicate">+</span>
                             </a>
                             <a href ng-click="deletePublication(publication);" class="publication-btn" title="Delete Publication"
-                               ng-if="publication.status == 'DRAFT'">
+                               ng-if="publication.status == 'DRAFT' || publication.status == 'INACTIVE'">
                                 <i class="glyphicon glyphicon-trash"></i>
                             </a>
                         </td>

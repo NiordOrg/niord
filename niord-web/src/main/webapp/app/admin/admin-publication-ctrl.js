@@ -411,7 +411,7 @@ angular.module('niord.admin')
 
             /** Deletes the given publication */
             $scope.deletePublication = function (publication) {
-                if (publication.status != 'DRAFT') {
+                if (publication.status != 'DRAFT' && publication.status != 'INACTIVE') {
                     return;
                 }
                 DialogService.showConfirmDialog(
