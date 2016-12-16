@@ -251,9 +251,9 @@
     <#if msgDesc?has_content && msgDesc.title?has_content>
         <div class="avoid-break-before-after">
             <strong>
-                <a href="${baseUri}/#/message/${msg.id}" target="_blank" id="msg_${msg.id}">
+                <!-- a href="${baseUri}/#/message/${msg.id}" target="_blank" id="msg_${msg.id}"-->
                     ${msgDesc.title}
-                </a>
+                <!--/a -->
             </strong>
             <@renderLangFlag desc=msgDesc lang=lang />
         </div>
@@ -293,7 +293,7 @@
                         <#assign refDesc=descForLang(ref, lang)!>
                         <div>
                             <@trailingDot>
-                                <a href="${baseUri}/#/message/${ref.messageId?url('ASCII')}" target="_blank">${ref.messageId}</a>
+                                <!-- a href="${baseUri}/#/message/${ref.messageId?url('ASCII')}" target="_blank" -->${ref.messageId}<!-- /a -->
 
                                 <#if ref.type == 'REPETITION'>
                                     - ${text("msg.reference.repetition")}
