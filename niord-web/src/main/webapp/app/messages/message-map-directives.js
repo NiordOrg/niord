@@ -280,6 +280,7 @@ angular.module('niord.messages')
                         if (messages.length >= 1) {
                             info.tooltip('hide');
                             scope.showMessageInfo(messages[0], messages);
+                            scope.$$phase || scope.$apply();
                         }
                     });
 
