@@ -786,8 +786,8 @@ public class MessageService extends BaseService {
             DateType dateType = param.getDateType() != null
                     ? param.getDateType()
                     : DateType.PUBLISH_DATE;
-            Date from = TimeUtils.resetTime(param.getFrom());
-            Date to = TimeUtils.endOfDay(param.getTo());
+            Date from = param.getFrom();
+            Date to = param.getTo();
             switch (dateType) {
                 case PUBLISH_DATE:
                     criteriaHelper.overlaps(msgRoot.get("publishDateFrom"), msgRoot.get("publishDateTo"), from, to);
