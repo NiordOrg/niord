@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 /**
@@ -244,6 +245,22 @@ public class Domain extends BaseEntity<Integer> {
     /** Returns if the domain supports the given main type **/
     public boolean supportsMainType(MainType mainType) {
         return mainType != null && getMessageSeries().stream().anyMatch(ms -> ms.getMainType() == mainType);
+    }
+
+
+    /**
+     * Computes the time zone of the domain. Use the default time zone if no time zone ID is specified
+     * @return the time zone of the
+     */
+    public TimeZone timeZone() {
+        try {
+            // Compute the timeZone
+            String timeZoneId = StringUtils.isNotBlank(timeZone) ? timeZone : TimeZone.getDefault().getID();
+
+            return TimeZone.getTimeZone(timeZoneId);
+        } catch (Exception e) {
+            return TimeZone.getDefault();
+        }
     }
 
 

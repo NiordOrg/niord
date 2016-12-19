@@ -16,9 +16,12 @@
 
 package org.niord.core.util;
 
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 /**
  * Utility methods for handling date and time.
@@ -52,6 +55,22 @@ public class TimeUtils {
             Calendar cal = Calendar.getInstance();       // get calendar instance
             cal.setTime(date);                           // set cal to date
             date = resetTime(cal).getTime();
+        }
+        return date;
+    }
+
+
+    /**
+     * Resets the time part of the date to 0:0:0 in the given time zone
+     * @param date the date to reset
+     * @param timeZone the time zone
+     * @return the reset date
+     */
+    public static Date resetTime(Date date, TimeZone timeZone) {
+        if (date != null) {
+            ZonedDateTime time = ZonedDateTime.ofInstant(date.toInstant(), timeZone.toZoneId());
+            time = time.with(LocalTime.of(0, 0, 0, 0));
+            date = Date.from(time.toInstant());
         }
         return date;
     }
@@ -105,6 +124,22 @@ public class TimeUtils {
 
 
     /**
+     * Resets the time part of the date to 23:59:59 in the given time zone
+     * @param date the date to set as the end of the day
+     * @param timeZone the time zone
+     * @return the end of the day
+     */
+    public static Date endOfDay(Date date, TimeZone timeZone) {
+        if (date != null) {
+            ZonedDateTime time = ZonedDateTime.ofInstant(date.toInstant(), timeZone.toZoneId());
+            time = time.with(LocalTime.of(23, 59, 59, 0));
+            date = Date.from(time.toInstant());
+        }
+        return date;
+    }
+
+
+    /**
      * Shortcut function that returns the given Calendar field for the date
      * @param date the date
      * @param calFieldId the Calendar field
@@ -132,7 +167,7 @@ public class TimeUtils {
             Calendar cal = Calendar.getInstance();
             cal.setTime(date);
             cal.add(calFieldId, amount);
-            return cal.getTime();
+            date = cal.getTime();
         }
         return date;
     }

@@ -20,10 +20,11 @@ import com.vividsolutions.jts.io.ParseException;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.domain.Domain;
 import org.niord.core.geojson.JtsConverter;
-import org.niord.model.search.PagedSearchParamsVo;
+import org.niord.core.util.TimeUtils;
 import org.niord.model.message.MainType;
 import org.niord.model.message.Status;
 import org.niord.model.message.Type;
+import org.niord.model.search.PagedSearchParamsVo;
 
 import javax.servlet.http.HttpServletRequest;
 import java.text.SimpleDateFormat;
@@ -32,6 +33,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -181,6 +183,18 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         }
         return this;
     }
+
+
+    /**
+     * Adjusts the from/to dates so that the date interval is from the beginning of the from-date
+     * to the end of the to-date in the given time zone
+     * @param timeZone the time zone
+     */
+    public void adjustDateInterval(TimeZone timeZone) {
+        from = TimeUtils.resetTime(from, timeZone);
+        to = TimeUtils.endOfDay(to, timeZone);
+    }
+
 
     /**
      * Returns a string representation of the search criteria

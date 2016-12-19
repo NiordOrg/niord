@@ -16,7 +16,6 @@
 
 package org.niord.core.schedule;
 
-import org.apache.commons.lang.StringUtils;
 import org.niord.core.domain.Domain;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.model.VersionedEntity;
@@ -100,18 +99,9 @@ public class FiringSchedule extends VersionedEntity<Integer> {
      * @return the target time zone to use
      */
     public TimeZone targetTimeZone() {
-
-        // Compute the timeZone
-        String timeZoneId = (targetDomain != null && StringUtils.isNotBlank(targetDomain.getTimeZone()))
-                ? targetDomain.getTimeZone()
-                : TimeZone.getDefault().getID();
-
-        try {
-            return TimeZone.getTimeZone(timeZoneId);
-        } catch (Exception e) {
-            return TimeZone.getDefault();
-        }
+        return targetDomain != null ? targetDomain.timeZone() : TimeZone.getDefault();
     }
+
 
     /*************************/
     /** Getters and Setters **/
