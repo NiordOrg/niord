@@ -108,9 +108,12 @@ public class FiringExerciseService extends BaseService {
     DictionaryService dictionaryService;
 
     /**
-     * Every night at 3 AM, firing exercises are created and updated according to the active schedules
+     * Every hour, firing exercises are created and updated according to the active schedules.
+     * TODO: Hourly update are used when the schedule is imported from a legacy system.
+     * TODO: Once Niord is used for scheduling, chang to run every night at 3 AM
      */
-    @Schedule(persistent = false, hour = "3")
+    //@Schedule(persistent = false, hour = "3")
+    @Schedule(persistent=false, second="50", minute="21", hour="*/1")
     public void updateFiringExercises() {
 
         Date today = TimeUtils.resetTime(new Date());
