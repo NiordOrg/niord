@@ -469,15 +469,18 @@ angular.module('niord.map')
             replace: false,
             require: '^olMap',
             scope: {
-                name: '@',
-                visible: '=',
-                layerSwitcher: '=',
-                charts: '='
+                name:           '@',
+                visible:        '=',
+                layerSwitcher:  '=',
+                charts:         '=',
+                maxZoom:        '@',
+                fitExtent:      '@'
             },
             link: function(scope, element, attrs, ctrl) {
                 var olScope = ctrl.getOpenlayersScope();
                 var olLayer;
                 var chartColor = 'rgba(255, 50, 0, 0.8)';
+                var maxZoom = scope.maxZoom ? parseInt(scope.maxZoom) : 12;
 
                 olScope.getMap().then(function(map) {
 
@@ -558,6 +561,14 @@ angular.module('niord.map')
                                 }
                             });
                         }
+
+                        if (scope.fitExtent == 'true' && olLayer.getSource().getFeatures().length > 0) {
+                            map.getView().fit(olLayer.getSource().getExtent(), map.getSize(), {
+                                padding: [20, 20, 20, 20],
+                                maxZoom: maxZoom
+                            });
+                        }
+
                     };
 
                     scope.$watchCollection("charts", scope.updateCharts, true);
