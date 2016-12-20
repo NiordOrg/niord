@@ -29,6 +29,7 @@ import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageSeriesService;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.batch.BatchMsgArchiveImportReader.ExtractedArchiveMessageVo;
+import org.niord.core.message.vo.SystemMessageSeriesVo;
 import org.niord.core.settings.SettingsService;
 import org.niord.model.message.Status;
 
@@ -37,6 +38,7 @@ import javax.inject.Named;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -151,7 +153,9 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
                 message.setStatus(Status.DRAFT);
 
                 // Reset various fields and flags
-                message.setShortId(null);
+                if (messageSeries.getNumberSequenceType() != SystemMessageSeriesVo.NumberSequenceType.MANUAL) {
+                    message.setShortId(null);
+                }
                 message.setPublishDateFrom(null);
                 message.setPublishDateTo(null);
 
@@ -172,21 +176,21 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
             // Make sure areas are resolved and/or created
             List<Area> areas = message.getAreas().stream()
                     .map(a -> areaService.findOrCreateArea(a, createBaseData))
-                    .filter(a -> a != null)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
             message.setAreas(areas);
 
             // Make sure categories are resolved and/or created
             List<Category> categories = message.getCategories().stream()
                     .map(c -> categoryService.findOrCreateCategory(c, createBaseData))
-                    .filter(c -> c != null)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
             message.setCategories(categories);
 
             // Make sure charts are resolved and/or created
             List<Chart> charts = message.getCharts().stream()
                     .map(c -> chartService.findOrCreateChart(c, createBaseData))
-                    .filter(c -> c != null)
+                    .filter(Objects::nonNull)
                     .collect(Collectors.toList());
             message.setCharts(charts);
 
