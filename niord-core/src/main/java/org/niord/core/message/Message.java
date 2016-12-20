@@ -94,10 +94,6 @@ import java.util.stream.Stream;
         @NamedQuery(name="Message.findByReference",
                 query="select distinct msg from Message msg join msg.references ref where "
                         + " lower(ref.messageId) in (:messageIds)"),
-        @NamedQuery(name="Message.findPublishableMessages",
-                query="SELECT msg FROM Message msg where msg.status = 'VERIFIED' and msg.publishDateFrom < :now"),
-        @NamedQuery(name="Message.findExpirableMessages",
-                query="SELECT msg FROM Message msg where msg.status = 'PUBLISHED' and msg.publishDateTo < :now"),
         @NamedQuery(name="Message.maxNumberInPeriod",
                 query="SELECT coalesce(max(msg.number), 0) FROM Message msg where msg.messageSeries = :series and "
                         + " msg.publishDateFrom between :fromDate and :toDate and msg.number is not null"),

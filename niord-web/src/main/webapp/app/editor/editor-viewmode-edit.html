@@ -274,7 +274,7 @@
                           tab-index="600">
 
                 <editor-field-value-viewer>
-                    <div ng-if="message.publishDateFrom">
+                    <div ng-if="message.publishDateFrom || message.publishDateTo">
                         <span ng-if="message.publishDateFrom">{{message.publishDateFrom | formatDate : 'lll z'}}</span>
                         <span ng-if="message.publishDateFrom || message.publishDateTo">&nbsp;-&nbsp;</span>
                         <span ng-if="message.publishDateTo">{{message.publishDateTo | formatDate : 'lll z'}}</span>

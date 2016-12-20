@@ -15,7 +15,10 @@
  */
 package org.niord.core.message;
 
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.niord.core.service.BaseService;
+import org.niord.core.util.TimeUtils;
 import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
@@ -24,6 +27,14 @@ import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.niord.core.message.MessageSearchParams.DateType.PUBLISH_FROM_DATE;
+import static org.niord.core.message.MessageSearchParams.DateType.PUBLISH_TO_DATE;
+import static org.niord.model.message.Status.PUBLISHED;
+import static org.niord.model.message.Status.VERIFIED;
 
 /**
  * This service sets up timers to perform regular message status checks:
@@ -41,7 +52,11 @@ public class ScheduledMessageService extends BaseService {
     private Logger log;
 
     @Inject
+    DomainService domainService;
+
+    @Inject
     MessageService messageService;
+
 
     /**
      * Called every minute to update expire published messages where publishDateTo is in the past
@@ -49,20 +64,21 @@ public class ScheduledMessageService extends BaseService {
     @Schedule(persistent = false, second = "27", minute = "*", hour = "*")
     public void checkForExpirablePublishedMessages() {
 
-        // TODO: UTC handling
-        Date now = new Date();
+        // We want to treat messages with timestamps within the same minute equally, so, reset the seconds
+        Date now = TimeUtils.resetSeconds(new Date());
 
-        em.createNamedQuery("Message.findExpirableMessages", Message.class)
-                .setParameter("now", now)
-                .getResultList()
-                .forEach(m -> {
-                    try {
-                        log.info("System expiring message " + m.getUid());
-                        messageService.updateStatus(m.getUid(), Status.EXPIRED);
-                    } catch (Exception ex) {
-                        log.error("Failed expiring message " + m.getUid(), ex);
-                    }
-                });
+        // We make the search for expired messages domain by domain, in order to use domain sort order
+        domainService.getDomains().stream()
+            .filter(domain ->  !domain.getMessageSeries().isEmpty())
+            .forEach(domain -> searchMessages(domain, PUBLISHED, PUBLISH_TO_DATE, null, now)
+                   .forEach(m -> {
+                       try {
+                           log.info("System expiring message " + m.getUid());
+                           messageService.updateStatus(m.getUid(), Status.EXPIRED);
+                       } catch (Exception ex) {
+                           log.error("Failed expiring message " + m.getUid(), ex);
+                       }
+                   }));
     }
 
 
@@ -73,28 +89,58 @@ public class ScheduledMessageService extends BaseService {
     @Schedule(persistent = false, second = "37", minute = "*", hour = "*")
     public void checkForPublishableMessages() {
 
-        // TODO: UTC handling
-        Date now = new Date();
+        // We want to treat messages with timestamps within the same minute equally, so, reset the seconds
+        Date now = TimeUtils.resetSeconds(new Date());
 
-        em.createNamedQuery("Message.findPublishableMessages", Message.class)
-                .setParameter("now", now)
-                .getResultList()
-                .forEach(m -> {
-                    try {
-                        log.info("System publishing message " + m.getUid());
-                        messageService.updateStatus(m.getUid(), Status.PUBLISHED);
-                    } catch (Exception ex) {
-                        log.error("Failed publishing message " + m.getUid(), ex);
+        // We make the search for expired messages domain by domain, in order to use domain sort order
+        domainService.getDomains().stream()
+                .filter(domain ->  !domain.getMessageSeries().isEmpty())
+                .forEach(domain -> searchMessages(domain, VERIFIED, PUBLISH_FROM_DATE, null, now)
+                        .forEach(m -> {
+                            try {
+                                log.info("System publishing message " + m.getUid());
+                                messageService.updateStatus(m.getUid(), PUBLISHED);
+                            } catch (Exception ex) {
+                                log.error("Failed publishing message " + m.getUid(), ex);
 
-                        // Change status to DRAFT so we do not fail on the same message every minute
-                        try {
-                            log.warn("System changing status to draft of message " + m.getUid());
-                            messageService.updateStatus(m.getUid(), Status.DRAFT);
-                        } catch (Exception e) {
-                            log.error("Failed changing status to DRAFT of message " + m.getUid(), e);
-                        }
-                    }
-                });
+                                // Change status to DRAFT so we do not fail on the same message every minute
+                                try {
+                                    log.warn("System changing status to draft of message " + m.getUid());
+                                    messageService.updateStatus(m.getUid(), Status.DRAFT);
+                                } catch (Exception e) {
+                                    log.error("Failed changing status to DRAFT of message " + m.getUid(), e);
+                                }
+                            }
+                        }));
     }
+
+
+    /**
+     * Searches for messages with the given status and where the publish dates are within
+     * the given interval.
+     * Sort the messages by domain sort order.
+     * @param domain the domain
+     * @param status the message status
+     * @param dateType the type of date interval to search by
+     * @param from the publish-from date
+     * @param to the publish-to date
+     * @return the messages matching the search criteria
+     */
+    private List<Message> searchMessages(Domain domain, Status status, MessageSearchParams.DateType dateType, Date from, Date to) {
+        Set<String> seriesIds = domain.getMessageSeries().stream()
+                .map(MessageSeries::getSeriesId)
+                .collect(Collectors.toSet());
+
+        MessageSearchParams params = new MessageSearchParams()
+                .seriesIds(seriesIds)
+                .statuses(status)
+                .dateType(dateType)
+                .from(from)
+                .to(to)
+                .checkSortByDomain(domain);
+
+        return messageService.search(params).getData();
+    }
+
 }
 

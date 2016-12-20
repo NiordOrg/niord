@@ -39,7 +39,6 @@ import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
 import org.niord.core.user.UserService;
-import org.niord.core.util.TimeUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MainType;
 import org.niord.model.message.MessageVo;
@@ -792,11 +791,17 @@ public class MessageService extends BaseService {
                 case PUBLISH_DATE:
                     criteriaHelper.overlaps(msgRoot.get("publishDateFrom"), msgRoot.get("publishDateTo"), from, to);
                     break;
+                case ACTIVE_DATE:
+                    criteriaHelper.overlaps(msgRoot.get("eventDateFrom"), msgRoot.get("eventDateTo"), from, to);
+                    break;
                 case CREATED_DATE:
                     criteriaHelper.between(msgRoot.get("created"), from, to);
                     break;
-                case ACTIVE_DATE:
-                    criteriaHelper.overlaps(msgRoot.get("eventDateFrom"), msgRoot.get("eventDateTo"), from, to);
+                case PUBLISH_FROM_DATE:
+                    criteriaHelper.between(msgRoot.get("publishDateFrom"), from, to);
+                    break;
+                case PUBLISH_TO_DATE:
+                    criteriaHelper.between(msgRoot.get("publishDateTo"), from, to);
                     break;
             }
         }

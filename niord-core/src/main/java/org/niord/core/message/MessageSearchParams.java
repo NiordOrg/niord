@@ -47,7 +47,23 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public static final String DATE_FORMAT = "dd-MM-yyyy";
 
-    public enum DateType { PUBLISH_DATE, ACTIVE_DATE, CREATED_DATE }
+    public enum DateType {
+
+        /** Search by date-interval that overlaps the publish date interval **/
+        PUBLISH_DATE,
+
+        /** Search by date-interval that contains the publish-from date **/
+        PUBLISH_FROM_DATE,
+
+        /** Search by date-interval that contains the publish-to date **/
+        PUBLISH_TO_DATE,
+
+        /** Search by date-interval that overlaps the event date interval **/
+        ACTIVE_DATE,
+
+        /** Search by date-interval that contains the created date **/
+        CREATED_DATE
+    }
 
     public enum UserType { CREATED_BY, UPDATED_BY, LAST_UPDATED_BY }
 
@@ -125,27 +141,40 @@ public class MessageSearchParams extends PagedSearchParamsVo {
                 .sortBy(req.getParameter("sortBy"))
                 .sortOrder(checkNull(req.getParameter("sortOrder"), SortOrder::valueOf));
 
+        // If no explicit sort order is specified, sort by domain sort order
+        params.checkSortByDomain(domain);
 
-        // For sorting, use the defaults of the domain
+        return params;
+    }
+
+
+    /**
+     * If no explicit sort order is specified, sort by domain sort order
+     * @param domain the domain
+     * @return the search parameter
+     */
+    public MessageSearchParams checkSortByDomain(Domain domain) {
+
         if (domain != null && StringUtils.isNotBlank(domain.getMessageSortOrder())) {
             try {
-                if (params.getSortBy() == null) {
-                    params.sortBy(domain.getMessageSortOrder().split(" ")[0]);
+                if (getSortBy() == null) {
+                    sortBy(domain.getMessageSortOrder().split(" ")[0]);
                 }
-                if (params.getSortOrder() == null) {
-                    params.sortOrder(SortOrder.valueOf(domain.getMessageSortOrder().split(" ")[1]));
+                if (getSortOrder() == null) {
+                    sortOrder(SortOrder.valueOf(domain.getMessageSortOrder().split(" ")[1]));
                 }
             } catch (Exception ignored) {
             }
         }
-        if (params.getSortBy() == null) {
-            params.sortBy("AREA");
-        }
-        if (params.getSortOrder() == null) {
-            params.sortOrder(SortOrder.ASC);
-        }
 
-        return params;
+        // Apply defaults
+        if (getSortBy() == null) {
+            sortBy("AREA");
+        }
+        if (getSortOrder() == null) {
+            sortOrder(SortOrder.ASC);
+        }
+        return this;
     }
 
 
