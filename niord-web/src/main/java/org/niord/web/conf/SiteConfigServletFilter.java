@@ -89,7 +89,7 @@ public class SiteConfigServletFilter extends AbstractTextResourceServletFilter {
      * Returns all domains formatted sa JSON.
      */
     private String getDomains() {
-        List<DomainVo> domains = domainRestService.getAllDomains(null, false);
+        List<DomainVo> domains = domainRestService.getAllDomains(null, false, false);
 
         StringBuilder js = new StringBuilder()
                 .append("    $rootScope.domains = ");

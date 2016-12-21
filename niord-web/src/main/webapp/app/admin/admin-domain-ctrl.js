@@ -86,6 +86,8 @@ angular.module('niord.admin')
                 $scope.editMode = 'add';
                 $scope.domain = {
                     domainId: undefined,
+                    active: true,
+                    sortOrder: 0,
                     name: undefined,
                     timeZone: moment.tz.guess(),
                     messageSortOrder: 'AREA ASC',

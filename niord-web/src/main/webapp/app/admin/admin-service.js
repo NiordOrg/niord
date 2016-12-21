@@ -470,7 +470,7 @@ angular.module('niord.admin')
 
             /** Returns all domain **/
             getDomains: function () {
-                return $http.get('/rest/domains/all?lang=' + $rootScope.language);
+                return $http.get('/rest/domains/all?inactive=true&lang=' + $rootScope.language);
             },
 
 

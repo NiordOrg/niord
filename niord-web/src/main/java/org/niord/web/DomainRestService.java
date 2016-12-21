@@ -70,10 +70,11 @@ public class DomainRestService extends AbstractBatchableRestService {
     @NoCache
     public List<DomainVo> getAllDomains(
             @QueryParam("lang") String lang,
+            @QueryParam("inactive") @DefaultValue("false") boolean includeInactive,
             @QueryParam("keycloakState") @DefaultValue("true") boolean keycloakState) {
 
         // Load the domains including their keycloak state, if requested
-        List<DomainVo> domains = domainService.getDomains(keycloakState ).stream()
+        List<DomainVo> domains = domainService.getDomains(includeInactive, keycloakState ).stream()
                 .map(Domain::toVo)
                 .collect(Collectors.toList());
 

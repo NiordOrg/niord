@@ -30,6 +30,8 @@ import java.util.List;
 public class DomainVo implements IJsonSerializable {
 
     private String domainId;
+    private boolean active;
+    private Integer sortOrder;
     private String name;
     private String timeZone;
     private Float lat;
@@ -54,6 +56,22 @@ public class DomainVo implements IJsonSerializable {
 
     public void setDomainId(String domainId) {
         this.domainId = domainId;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public Integer getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(Integer sortOrder) {
+        this.sortOrder = sortOrder;
     }
 
     public String getName() {

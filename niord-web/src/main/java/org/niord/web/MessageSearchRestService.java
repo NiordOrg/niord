@@ -187,7 +187,9 @@ public class MessageSearchRestService {
         }
 
         // Adjust the date interval so that is the beginning of the from-date and end of the to-date.
-        params.adjustDateInterval(currentDomain.timeZone());
+        if (currentDomain != null) {
+            params.adjustDateInterval(currentDomain.timeZone());
+        }
 
         // Perform the search
         long t0 = System.currentTimeMillis();

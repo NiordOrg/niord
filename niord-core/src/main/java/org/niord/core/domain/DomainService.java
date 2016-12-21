@@ -144,17 +144,22 @@ public class DomainService extends BaseService {
      * @return all domains
      */
     public List<Domain> getDomains() {
-        return getDomains(false);
+        return getDomains(false, false);
     }
 
 
     /**
      * Returns all domains, optionally with the current Keycloak state
+     * @param includeInactive whether to include inactive domains or not
      * @param keycloakState whether to load the state of the domains in Keycloak
      * @return all domains
      */
-    public List<Domain> getDomains(boolean keycloakState) {
-        List<Domain> domains = getAll(Domain.class);
+    public List<Domain> getDomains(boolean includeInactive, boolean keycloakState) {
+
+        String query = includeInactive ? "Domain.findAll" : "Domain.findActive";
+        List<Domain> domains = em.createNamedQuery(query, Domain.class)
+                .getResultList();
+
         if (keycloakState) {
             try {
                 Set<String> keycloakClients = keycloakService.getKeycloakDomainIds();
@@ -205,6 +210,8 @@ public class DomainService extends BaseService {
         }
 
         // Copy the domain data
+        original.setActive(domain.isActive());
+        original.setSortOrder(domain.getSortOrder());
         original.setName(domain.getName());
         original.setTimeZone(domain.getTimeZone());
         original.setLatitude(domain.getLatitude());

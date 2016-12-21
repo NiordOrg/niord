@@ -54,18 +54,26 @@ import java.util.stream.Collectors;
         @Index(name = "domain_domain_id", columnList="domainId", unique = true)
 })
 @NamedQueries({
+        @NamedQuery(name="Domain.findAll",
+                query="SELECT d FROM Domain d order by d.sortOrder ASC"),
+        @NamedQuery(name="Domain.findActive",
+                query="SELECT d FROM Domain d where d.active = true order by d.sortOrder ASC"),
         @NamedQuery(name="Domain.findByDomainId",
                 query="SELECT d FROM Domain d where d.domainId = :domainId"),
         @NamedQuery(name="Domain.findByDomainIds",
-                query="SELECT d FROM Domain d where d.domainId in (:domainIds)"),
+                query="SELECT d FROM Domain d where d.domainId in (:domainIds) order by d.sortOrder ASC"),
         @NamedQuery(name="Domain.getPublishedDomains",
-                query="SELECT d FROM Domain d where d.publish = true")
+                query="SELECT d FROM Domain d where d.publish = true and d.active = true order by d.sortOrder ASC")
 })
 @SuppressWarnings("unused")
 public class Domain extends BaseEntity<Integer> {
 
     @NotNull
     String domainId;
+
+    boolean active = true;
+
+    Integer sortOrder;
 
     @NotNull
     String name;
@@ -119,6 +127,8 @@ public class Domain extends BaseEntity<Integer> {
     /** Updates this domain from the given domain */
     public void updateDomain(DomainVo domain) {
         this.domainId = domain.getDomainId();
+        this.active = domain.isActive();
+        this.sortOrder = domain.getSortOrder();
         this.name = domain.getName();
         this.timeZone = domain.getTimeZone();
         this.latitude = domain.getLat();
@@ -156,6 +166,8 @@ public class Domain extends BaseEntity<Integer> {
     public DomainVo toVo() {
         DomainVo domain = new DomainVo();
         domain.setDomainId(domainId);
+        domain.setActive(active);
+        domain.setSortOrder(sortOrder);
         domain.setName(name);
         domain.setTimeZone(timeZone);
         domain.setLat(latitude);
@@ -200,6 +212,8 @@ public class Domain extends BaseEntity<Integer> {
     @Transient
     public boolean hasChanged(Domain template) {
         return !Objects.equals(domainId, template.getDomainId()) ||
+                active != template.isActive() ||
+                !Objects.equals(sortOrder, template.getSortOrder()) ||
                 !Objects.equals(name, template.getName()) ||
                 !Objects.equals(timeZone, template.getTimeZone()) ||
                 !Objects.equals(latitude, template.getLatitude()) ||
@@ -274,6 +288,22 @@ public class Domain extends BaseEntity<Integer> {
 
     public void setDomainId(String domainId) {
         this.domainId = domainId;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public Integer getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(Integer sortOrder) {
+        this.sortOrder = sortOrder;
     }
 
     public String getName() {
