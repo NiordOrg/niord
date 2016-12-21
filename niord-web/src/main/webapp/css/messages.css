@@ -52,6 +52,11 @@
 .status-VERIFIED {
     background-color: #5555CC;
 }
+.status-VERIFIED:after {
+    content: "\2713";
+    color: #8f8;
+    padding-left: 3px;
+}
 .status-DELETED {
     background-color: #333333;
 }
@@ -75,6 +80,11 @@
     background-color: white;
     color: #5555CC;
     border: 1px solid #5555CC;
+}
+.status-VERIFIED-outline:after {
+    content: "\2713";
+    color: #3a3;
+    padding-left: 3px;
 }
 .status-DELETED-outline {
     background-color: white;
