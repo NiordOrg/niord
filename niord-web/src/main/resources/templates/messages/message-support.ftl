@@ -293,7 +293,7 @@
                         <#assign refDesc=descForLang(ref, lang)!>
                         <div>
                             <@trailingDot>
-                                <!-- a href="${baseUri}/#/message/${ref.messageId?url('ASCII')}" target="_blank" -->${ref.messageId}<!-- /a -->
+                                ${ref.messageId}
 
                                 <#if ref.type == 'REPETITION'>
                                     - ${text("msg.reference.repetition")}

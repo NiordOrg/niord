@@ -153,24 +153,36 @@ angular.module('niord.messages')
         return {
             restrict: 'E',
             scope: {
-                ref:    "="
+                ref:    "=",
+                lang:   "="
             },
             link: function(scope, element) {
-                var result = '';
-                switch (scope.ref.type) {
-                    case 'REPETITION':
-                    case 'REPETITION_NEW_TIME':
-                    case 'CANCELLATION':
-                    case 'UPDATE':
-                        result += ' ' + LangService.translate('msg.reference.' + scope.ref.type.toLowerCase());
+
+                function endsWithDot(str) {
+                    return str && str.length > 0 && str.charAt(str.length-1) == '.';
                 }
-                if (scope.ref.descs && scope.ref.descs.length > 0 && scope.ref.descs[0].description) {
-                    result += ' - ' + scope.ref.descs[0].description;
-                }
-                if (result.length == 0 || result.charAt(result.length-1) != '.') {
-                    result += '.';
-                }
-                element.html(result);
+
+                scope.renderRefType = function () {
+                    var result = '';
+                    var lang = scope.lang || $rootScope.lanugage;
+                    switch (scope.ref.type) {
+                        case 'REPETITION':
+                        case 'REPETITION_NEW_TIME':
+                        case 'CANCELLATION':
+                        case 'UPDATE':
+                            result += ' ' + LangService.translate('msg.reference.' + scope.ref.type.toLowerCase(), null, lang);
+                    }
+                    if (scope.ref.descs && scope.ref.descs.length > 0 && scope.ref.descs[0].description) {
+                        result += ' - ' + scope.ref.descs[0].description;
+                    }
+                    if ((result.length == 0 && !endsWithDot(scope.ref.messageId)) ||
+                        (result.length > 0 && !endsWithDot(result))) {
+                        result += '.';
+                    }
+                    element.html(result);
+                };
+
+                scope.$watch("[ref,lang]", scope.renderRefType, true);
             }
         };
     }])
