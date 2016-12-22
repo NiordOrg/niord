@@ -102,12 +102,12 @@ ol.feature-coordinates li span {
 .message-description table {
     page-break-inside: auto;
     border-collapse: collapse;
-    border: 0.05em solid #333;
+    border: 0.05em solid #999;
 }
 
 .message-description table td, .message-description table th {
     vertical-align: top;
-    border: 0.05em solid #333;
+    border: 0.05em solid #999;
     padding: 3px;
 }
 
@@ -147,11 +147,11 @@ table.condensed td, table.condensed th {
 }
 
 tr.underline td {
-    border-bottom: 0.05em solid #333;
+    border-bottom: 0.05em solid #999;
 }
 
 td.underline {
-    border-bottom: 0.05em solid #333;
+    border-bottom: 0.05em solid #999;
 }
 
 table.positions {

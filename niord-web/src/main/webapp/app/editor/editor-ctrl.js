@@ -992,6 +992,10 @@ angular.module('niord.editor')
                     {title: 'None', value: ''},
                     {title: 'Underline', value: 'underline'}
                 ],
+                style_formats: [
+                    {title: 'No-wrap', inline: 'span', styles: {'white-space': 'nowrap'}}
+                ],
+                style_formats_merge: true,
                 file_browser_callback: $scope.fileBrowserCallback,
                 setup : function ( editor ) {
                     editor.addButton( 'niordlocations', {

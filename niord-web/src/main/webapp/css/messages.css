@@ -433,12 +433,12 @@ ol.message-details-positions li span {
 /** For tables in the message rich text description field **/
 .message-description table {
     border-collapse: collapse;
-    border: 1px solid #333;
+    border: 1px solid #999;
 }
 
 .message-description table td, .message-description table th {
     vertical-align: top;
-    border: 1px solid #333;
+    border: 1px solid #999;
     padding: 3px;
 }
 
@@ -481,11 +481,11 @@ table.condensed td, table.condensed th {
 }
 
 tr.underline td {
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid #999;
 }
 
 td.underline {
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid #999;
 }
 
 table.positions {
