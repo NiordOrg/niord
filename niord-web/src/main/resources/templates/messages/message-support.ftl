@@ -300,9 +300,9 @@
                                 <#elseif ref.type == 'REPETITION_NEW_TIME'>
                                     - ${text("msg.reference.repetition_new_time")}
                                 <#elseif ref.type == 'CANCELLATION'>
-                                    - ${text("msg.reference.cancelled")}
+                                    - ${text("msg.reference.cancellation")}
                                 <#elseif ref.type == 'UPDATE'>
-                                    - ${text("msg.reference.updated")}
+                                    - ${text("msg.reference.update")}
                                 </#if>
 
                                 <#if refDesc?has_content && refDesc.description??>

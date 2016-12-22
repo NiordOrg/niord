@@ -146,6 +146,37 @@ angular.module('niord.messages')
 
 
     /****************************************************************
+     * Renders the type and description of a reference
+     ****************************************************************/
+    .directive('renderReferenceType', [ '$rootScope', 'LangService',
+        function ($rootScope, LangService) {
+        return {
+            restrict: 'E',
+            scope: {
+                ref:    "="
+            },
+            link: function(scope, element) {
+                var result = '';
+                switch (scope.ref.type) {
+                    case 'REPETITION':
+                    case 'REPETITION_NEW_TIME':
+                    case 'CANCELLATION':
+                    case 'UPDATE':
+                        result += ' ' + LangService.translate('msg.reference.' + scope.ref.type.toLowerCase());
+                }
+                if (scope.ref.descs && scope.ref.descs.length > 0 && scope.ref.descs[0].description) {
+                    result += ' - ' + scope.ref.descs[0].description;
+                }
+                if (result.length > 0 && result.charAt(result.length-1) != '.') {
+                    result += '.';
+                }
+                element.html(result);
+            }
+        };
+    }])
+
+
+    /****************************************************************
      * Prints the event dates of all message parts
      ****************************************************************/
     .directive('renderMessageDates', ['$rootScope', 'DateIntervalService', function ($rootScope, DateIntervalService) {
