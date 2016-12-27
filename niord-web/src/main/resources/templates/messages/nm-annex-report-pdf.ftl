@@ -11,18 +11,6 @@
     <link rel="stylesheet" type="text/css" href="/css/templates/common.css">
 
     <style type="text/css" media="all">
-        h1 {
-            margin-top: 5mm;
-            text-align: center;
-            font-size: 36px;
-            color: #044a5f;
-        }
-        .date-bar {
-            margin: 5mm 0;
-            background-color: #044a5f;
-            color: white;
-            width: 100%;
-        }
         table.contact-info {
             margin-bottom: 1cm;
         }
@@ -36,18 +24,16 @@
 
 <@renderDefaultHeaderAndFooter headerText="Generated ${.now?datetime}"/>
 
-<h1>${text("pdf.nm_annex.title")}</h1>
+<h1 style="margin-top: 5mm">${text("pdf.nm_annex.title")}</h1>
 
-<div style="margin-top: 5mm; text-align: center">${text("pdf.nm_annex.subtitle")}</div>
+<div style="margin: 5mm 0; text-align: center">${text("pdf.nm_annex.subtitle")}</div>
 
-<div class="date-bar">
-    <table style="width: 100%;" cellpadding="3">
-        <tr>
-            <td>${.now?date}</td>
-            <td align="right">${text("pdf.nm_annex.subtitle")}</td>
-        </tr>
-    </table>
-</div>
+<table class="first-page-info-line" cellpadding="3">
+    <tr>
+        <td>${.now?date}</td>
+        <td align="right">${text("pdf.nm_annex.subtitle")}</td>
+    </tr>
+</table>
 
 <div>
   <#include "nm-annex-report-pdf-intro.ftl">

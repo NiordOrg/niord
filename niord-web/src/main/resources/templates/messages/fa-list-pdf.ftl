@@ -11,13 +11,8 @@
     <link rel="stylesheet" type="text/css" href="/css/templates/common.css">
 
     <style type="text/css" media="all">
-        h1 {
-            margin-top: 2cm;
-            text-align: center;
-            font-size: 36px;
-        }
         .intro {
-            margin-top: 2cm;
+            margin-top: 1cm;
             font-size: 12px;
         }
         .intro table {
@@ -34,9 +29,16 @@
 </head>
 <body>
 
-<@renderDefaultHeaderAndFooter headerText="Generated ${.now?datetime}"/>
+<@renderDefaultHeaderAndFooter headerText="Generated ${.now?string['dd. MMMM yyyy']}"/>
 
 <h1>${text("pdf.fa")}</h1>
+
+<table class="first-page-info-line" style="margin-top: 1cm" cellpadding="3">
+    <tr>
+        <td>${.now?string['dd. MMMM yyyy']}</td>
+        <td align="right">${text['pdf.fa']}</td>
+    </tr>
+</table>
 
 <div class="intro">
   <#include "fa-list-pdf-intro.ftl">

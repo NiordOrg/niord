@@ -249,7 +249,7 @@
     </#if>
 
     <#if msgDesc?has_content && msgDesc.title?has_content>
-        <div class="avoid-break-before-after">
+        <div class="avoid-break-before-after" id="msg_${msg.id}">
             <strong>
                 <!-- a href="${baseUri}/#/message/${msg.id}" target="_blank" id="msg_${msg.id}"-->
                     ${msgDesc.title}

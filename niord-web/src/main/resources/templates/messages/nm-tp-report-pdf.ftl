@@ -24,12 +24,6 @@
             width: 100%;
             padding: 5px 0;
         }
-        h1 {
-            margin-top: 2cm;
-            text-align: center;
-            font-size: 36px;
-            color: #334;
-        }
         h4 {
             color: #8f2f7b;
             font-size: 16px;
@@ -40,7 +34,7 @@
 </head>
 <body>
 
-<@renderDefaultHeaderAndFooter headerText="Generated ${.now?datetime}"/>
+<@renderDefaultHeaderAndFooter headerText="Generated ${.now?string['dd. MMMM yyyy']}"/>
 
 <!-- First page -->
 <h1>${text("pdf.nm_tp")}</h1>

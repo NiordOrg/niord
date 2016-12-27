@@ -33,12 +33,6 @@
         .nm-section {
             page-break-before:always;
         }
-        h1 {
-            margin-top: 2cm;
-            text-align: center;
-            font-size: 36px;
-            color: #334;
-        }
         /** TODO: The string-set does not work - Flying Saucer problem? **/
         h3 {
             string-set: sectiontitle content();
@@ -87,7 +81,7 @@
 <div style="font-size: 24px; text-align: right; margin-top: 1cm; margin-bottom: 1mm">
     ${text("pdf.week")} ${week!""}, ${year!""}
 </div>
-<table style="background-color: #334; color: white; width: 100%">
+<table class="first-page-info-line">
     <tr>
         <td width="30%" align="left">${.now?string["dd. MMMM yyyy"]}</td>
         <td width="40%" align="center">ISSN ${ISSN!""}</td>

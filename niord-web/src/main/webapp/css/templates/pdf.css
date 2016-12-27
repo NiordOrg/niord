@@ -87,3 +87,16 @@ div.toc a::after {
     margin: 5mm;
     padding: 0;
 }
+
+.first-page-info-line {
+    background-color: #334;
+    color: white;
+    width: 100%;
+}
+
+h1 {
+    margin-top: 2cm;
+    text-align: center;
+    font-size: 36px;
+    color: #334;
+}
