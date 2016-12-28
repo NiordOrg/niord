@@ -959,7 +959,7 @@ angular.module('niord.messages')
                     if (searchParams.length > 0) {
                         searchParams += '&';
                     }
-                    searchParams += 'viewMode=map&includeGeneral=true';
+                    searchParams += 'viewMode=map&includeNoPos=true';
                 }
 
                 MessageService.search(searchParams, $scope.page, $scope.maxSize)

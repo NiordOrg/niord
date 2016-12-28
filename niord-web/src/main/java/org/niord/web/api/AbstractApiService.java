@@ -101,7 +101,7 @@ public abstract class AbstractApiService {
                 .mainTypes(mainTypes)
                 .areaIds(areaIds)
                 .extent(wkt)
-                .includeGeneral(Boolean.TRUE) // Messages without a geometry may be included if WKT specified
+                .includeNoPos(Boolean.TRUE) // Messages without a geometry may be included if WKT specified
                 .sortBy("AREA")
                 .sortOrder(PagedSearchParamsVo.SortOrder.ASC);
 

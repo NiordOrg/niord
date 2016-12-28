@@ -1,9 +1,9 @@
 
 <div id="msg-info"/>
 
-<div class="map-general-messages" ng-if="generalMessages.length > 0">
-    <h4 translate>msg.general_messages</h4>
-    <div ng-repeat="msg in generalMessages" style="padding: 5px 0; border-bottom: 1px solid lightgray">
+<div class="map-no-pos-messages" ng-if="noPosMessages.length > 0">
+    <h4 translate>msg.no_pos_messages</h4>
+    <div ng-repeat="msg in noPosMessages" style="padding: 5px 0; border-bottom: 1px solid lightgray">
         <div message-details-link="msg.id" message-list="messages" selection="selection">
             <message-id-badge msg="msg" show-blank="true"></message-id-badge>&nbsp;
             <strong>{{msg.descs[0].title}}</strong>

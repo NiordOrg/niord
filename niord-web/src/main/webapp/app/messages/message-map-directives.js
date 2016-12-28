@@ -31,22 +31,22 @@ angular.module('niord.messages')
             templateUrl: '/app/messages/map-message-list-layer.html',
             require: '^olMap',
             scope: {
-                name: '@',
-                visible: '=',
-                layerSwitcher: '=',
-                messageList: '=',
-                selection: '=',
-                showOutline: '@',
-                showGeneral: '@',
-                fitExtent: '@',
-                maxZoom: '@'
+                name:           '@',
+                visible:        '=',
+                layerSwitcher:  '=',
+                messageList:    '=',
+                selection:      '=',
+                showOutline:    '@',
+                showNoPos:      '@',
+                fitExtent:      '@',
+                maxZoom:        '@'
             },
             link: function(scope, element, attrs, ctrl) {
                 var olScope = ctrl.getOpenlayersScope();
                 var olLayer;
                 var maxZoom = scope.maxZoom ? parseInt(scope.maxZoom) : 10;
 
-                scope.generalMessages = []; // Messages with no geometry
+                scope.noPosMessages = []; // Messages with no geometry
                 scope.language = $rootScope.language;
 
                 olScope.getMap().then(function(map) {
@@ -137,7 +137,7 @@ angular.module('niord.messages')
 
                     scope.updateLayerFromMessageList = function () {
                         olLayer.getSource().clear();
-                        scope.generalMessages.length = 0;
+                        scope.noPosMessages.length = 0;
                         if (scope.messageList && scope.messageList.length > 0) {
                             angular.forEach(scope.messageList, function (message) {
                                 var features = MessageService.getMessageFeatures(message);
@@ -158,8 +158,8 @@ angular.module('niord.messages')
                                         }
                                         olLayer.getSource().addFeature(olFeature);
                                     });
-                                } else if (scope.showGeneral == 'true') {
-                                    scope.generalMessages.push(message);
+                                } else if (scope.showNoPos == 'true') {
+                                    scope.noPosMessages.push(message);
                                 }
                             });
                             if (scope.fitExtent == 'true') {

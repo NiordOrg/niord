@@ -887,7 +887,7 @@ public class MessageService extends BaseService {
                     fRoot.get("geometry"),
                     param.getExtent());
 
-            if (param.getIncludeGeneral() != null && param.getIncludeGeneral().booleanValue()) {
+            if (param.getIncludeNoPos() != null && param.getIncludeNoPos().booleanValue()) {
                 // search for message with no geometry in addition to messages within extent
                 criteriaHelper.add(builder.or(builder.equal(msgRoot.get("hasGeometry"), false), geomPredicate));
             } else {

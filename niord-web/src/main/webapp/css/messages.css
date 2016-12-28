@@ -234,7 +234,7 @@ img.map-general-message-icon {
     img.map-general-message-icon { display: block; }
 }
 
-.map-general-messages {
+.map-no-pos-messages {
     z-index: 1100;
     position: absolute;
     top: 20px;
@@ -249,7 +249,7 @@ img.map-general-message-icon {
 }
 
 @media (min-width: 600px) {
-    .map-general-messages {
+    .map-no-pos-messages {
         width: 300px;
         left: auto;
         right: 10px;

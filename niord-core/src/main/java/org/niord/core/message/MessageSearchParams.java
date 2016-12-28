@@ -95,7 +95,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     Geometry extent;
     // If an extent is specified, use this to fetch messages with no geometry
-    Boolean includeGeneral;
+    Boolean includeNoPos;
 
 
     /**
@@ -133,7 +133,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
                         checkNull(req.getParameter("minLon"), Double::valueOf),
                         checkNull(req.getParameter("maxLat"), Double::valueOf),
                         checkNull(req.getParameter("maxLon"), Double::valueOf))
-                .includeGeneral(checkNull(req.getParameter("includeGeneral"), Boolean::valueOf))
+                .includeNoPos(checkNull(req.getParameter("includeNoPos"), Boolean::valueOf))
 
                 // Standard paged search parameters
                 .maxSize(checkNull(req.getParameter("maxSize"), 100, Integer::valueOf))
@@ -486,12 +486,12 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         return this;
     }
 
-    public Boolean getIncludeGeneral() {
-        return includeGeneral;
+    public Boolean getIncludeNoPos() {
+        return includeNoPos;
     }
 
-    public MessageSearchParams includeGeneral(Boolean includeGeneral) {
-        this.includeGeneral = includeGeneral;
+    public MessageSearchParams includeNoPos(Boolean includeNoPos) {
+        this.includeNoPos = includeNoPos;
         return this;
     }
 
