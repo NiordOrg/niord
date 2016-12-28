@@ -242,6 +242,9 @@
     <#if msg.shortId?has_content>
         <div class="avoid-break-before-after">
             <span class="label-message-id">${msg.shortId}</span>
+            <#if msg.status == 'CANCELLED' || msg.status == 'EXPIRED'>
+                <span class="label-status">${text("msg.status." + msg.status)}</span>
+            </#if>
             <#if msg.mainType == 'NM' && msg.type??>
                 <#switch msg.type>
                     <#case 'TEMPORARY_NOTICE'>(T)<#break>
