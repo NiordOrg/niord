@@ -29,11 +29,11 @@
 </head>
 <body>
 
-<@renderDefaultHeaderAndFooter headerText="Generated ${.now?string['dd. MMMM yyyy']}"/>
+<@renderDefaultHeaderAndFooter headerText="${text('pdf.fa')}"/>
 
 <h1>${text("pdf.fa")}</h1>
 
-<table class="first-page-info-line" style="margin-top: 1cm" cellpadding="3">
+<table class="first-page-info-line" style="margin-top: 1cm">
     <tr>
         <td>${.now?string['dd. MMMM yyyy']}</td>
         <td align="right">${text['pdf.fa']}</td>

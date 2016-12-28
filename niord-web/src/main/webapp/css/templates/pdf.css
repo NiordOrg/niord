@@ -1,7 +1,7 @@
 
 /** General page rules **/
 @page {
-    margin: 1.5cm 1.0cm 2.0cm 1.0cm;
+    margin: 2cm 1.0cm 2.0cm 1.0cm;
     padding: 0;
 
     @top-center {
@@ -18,8 +18,10 @@
 div.header {
     display: block;
     position: running(header);
+    padding-bottom: 1mm;
+    margin-top: 10mm;
+    margin-bottom: 5mm;
     border-bottom: 0.05em solid gray;
-    padding-bottom: 5px;
     color: darkgray;
 }
 
@@ -88,10 +90,14 @@ div.toc a::after {
     padding: 0;
 }
 
-.first-page-info-line {
+table.first-page-info-line {
     background-color: #334;
     color: white;
     width: 100%;
+}
+
+table.first-page-info-line td {
+    padding: 1mm 2mm;
 }
 
 h1 {
@@ -99,4 +105,20 @@ h1 {
     text-align: center;
     font-size: 36px;
     color: #334;
+}
+
+h2 {
+    color: #334;
+    font-size: 24px;
+}
+
+h3 {
+    color: #334;
+    font-size: 20px;
+}
+
+h4 {
+    color: #8f2f7b;
+    font-size: 16px;
+    margin-bottom: 0;
 }

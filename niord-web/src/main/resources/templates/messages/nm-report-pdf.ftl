@@ -33,13 +33,6 @@
         .nm-section {
             page-break-before:always;
         }
-        /** TODO: The string-set does not work - Flying Saucer problem? **/
-        h3 {
-            string-set: sectiontitle content();
-        }
-        #section-title:before {
-            content: string(sectiontitle);
-        }
         .nm-toc {
             margin-top: 1cm;
         }
@@ -59,26 +52,25 @@
             width: 2cm;
             font-weight: normal;
         }
+        .week-year-header {
+            font-size: 24px;
+            text-align: right;
+            margin-top: 1cm;
+            margin-bottom: 1mm;
+        }
     </style>
 
 </head>
 <body>
 
 <!-- Headers and footers -->
-<div class="first-page-header">
-</div>
-<div class="header">
-    <span style="float: left"><span id="section-title"></span></span>
-    <span style="float: right">${text("pdf.page")} <span id="pagenumber"></span></span>
-    &nbsp;
-</div>
-<#include "message-list-pdf-footer.ftl">
+<@renderDefaultHeaderAndFooter headerText="${text('pdf.nm')} - ${text('pdf.week')} ${week!''}, ${year!''}"/>
 
 
 <!-- First page -->
 <h1>${text("pdf.nm")}</h1>
 
-<div style="font-size: 24px; text-align: right; margin-top: 1cm; margin-bottom: 1mm">
+<div class="week-year-header">
     ${text("pdf.week")} ${week!""}, ${year!""}
 </div>
 <table class="first-page-info-line">
@@ -119,7 +111,7 @@
 <!-- Permanent and T&P messages -->
 <#if nmMessages?has_content>
     <div class="nm-section">
-        <h3 style="color: #333; font-size: 20px;" id="nm">${text('pdf.nm')}</h3>
+        <h3 id="nm">${text('pdf.nm')}</h3>
         <@renderMessageList messages=nmMessages areaHeadings=areaHeadings prefix="nm"/>
     </div>
 </#if>
@@ -127,7 +119,7 @@
 <!-- Misc messages -->
 <#if miscMessages?has_content>
     <div class="nm-section">
-        <h3 style="color: #333; font-size: 20px;" id="misc">${text('pdf.misc_nm')}</h3>
+        <h3 id="misc">${text('pdf.misc_nm')}</h3>
         <@renderMessageList messages=miscMessages areaHeadings=false/>
     </div>
 </#if>

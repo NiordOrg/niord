@@ -24,25 +24,27 @@
             width: 100%;
             padding: 5px 0;
         }
-        h4 {
-            color: #8f2f7b;
-            font-size: 16px;
-            margin-bottom: 0;
+        .week-year-header {
+            font-size: 24px;
+            text-align: right;
+            margin-top: 1cm;
+            margin-bottom: 1mm;
         }
     </style>
 
 </head>
 <body>
 
-<@renderDefaultHeaderAndFooter headerText="Generated ${.now?string['dd. MMMM yyyy']}"/>
+<@renderDefaultHeaderAndFooter headerText="${text('pdf.nm_tp')} - ${text('pdf.week')} ${week!''}, ${year!''}"/>
 
 <!-- First page -->
 <h1>${text("pdf.nm_tp")}</h1>
 
-<div style="font-size: 24px; text-align: right; margin-top: 1cm; margin-bottom: 1mm">
+<div class="week-year-header">
     ${text("pdf.week")} ${week!""}, ${year!""}
 </div>
-<table style="background-color: #334; color: white; width: 100%">
+
+<table class="first-page-info-line" style="margin-bottom: 1cm">
     <tr>
         <td width="50%" align="left">${.now?string["dd. MMMM yyyy"]}</td>
         <td width="50%" align="right">
@@ -78,6 +80,11 @@
                         </td>
                     </tr>
                 </#if>
+            <#elseif  areaHeadings && areaHeadingId == -9999999>
+                <tr class="table-header-row">
+                    <td colspan="3" class="table-header"><h4 id="${areaHeadingId?c}">${text("msg.area.general")}</h4></td>
+                </tr>
+                <#assign areaHeadingId=-9999998 />
             </#if>
             <tr>
                 <td class="table-item">

@@ -135,7 +135,7 @@
                     <#assign messageId=msg.shortId />
                 </#if>
                 <div style="margin: 1mm">
-                    <h4 style="color: #8f2f7b; font-size: 16px;" id="${messageId}">${text("pdf.attachment.title", messageId)}</h4>
+                    <h4 id="${messageId}">${text("pdf.attachment.title", messageId)}</h4>
                 </div>
                 <@renderAttachment att=att />
             </div>
@@ -168,6 +168,9 @@
                     <#assign tocAreaHeadingId=area.id />
                     <li><a href='#${prefix}${tocAreaHeadingId?c}'><@areaLineage area=areaHeading(area) /></a></li>
                 </#if>
+            <#elseif  tocAreaHeadingId == -9999999>
+                <li><a href='#${prefix}${tocAreaHeadingId?c}'>${text("msg.area.general")}</a></li>
+                <#assign tocAreaHeadingId=-9999998 />
             </#if>
         </#list>
     </ol>
@@ -408,6 +411,11 @@
                         <td colspan="${colspan}" class="table-header"><h4 id="${prefix}${areaHeadingId?c}"><@areaLineage area=areaHeading(area) /></h4></td>
                     </tr>
                 </#if>
+            <#elseif  areaHeadings && areaHeadingId == -9999999>
+                <tr class="table-header-row">
+                    <td colspan="${colspan}" class="table-header"><h4 id="${prefix}${areaHeadingId?c}">${text("msg.area.general")}</h4></td>
+                </tr>
+                <#assign areaHeadingId=-9999998 />
             </#if>
             <#if separatePageIds?? && separatePageIds?seq_contains(msg.id)>
                 <#assign msgClass="break-before" />

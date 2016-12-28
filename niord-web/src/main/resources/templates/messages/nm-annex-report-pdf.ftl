@@ -22,15 +22,13 @@
 </head>
 <body>
 
-<@renderDefaultHeaderAndFooter headerText="Generated ${.now?datetime}"/>
+<@renderDefaultHeaderAndFooter headerText="${text('pdf.nm_annex.title')} - ${text('pdf.nm_annex.subtitle')}"/>
 
 <h1 style="margin-top: 5mm">${text("pdf.nm_annex.title")}</h1>
 
-<div style="margin: 5mm 0; text-align: center">${text("pdf.nm_annex.subtitle")}</div>
-
-<table class="first-page-info-line" cellpadding="3">
+<table class="first-page-info-line" style="margin-top: 1cm">
     <tr>
-        <td>${.now?date}</td>
+        <td>${.now?string['dd. MMMM yyyy']}</td>
         <td align="right">${text("pdf.nm_annex.subtitle")}</td>
     </tr>
 </table>
