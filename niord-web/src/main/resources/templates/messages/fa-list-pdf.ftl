@@ -29,13 +29,17 @@
 </head>
 <body>
 
+
 <@renderDefaultHeaderAndFooter headerText="${text('pdf.fa')}"/>
 
 <h1>${text("pdf.fa")}</h1>
 
 <table class="first-page-info-line" style="margin-top: 1cm">
     <tr>
-        <td>${.now?string['dd. MMMM yyyy']}</td>
+        <td>
+            ${.now?string['dd. MMMM yyyy']}
+            <#if edition?? && edition != '1'> - Version ${edition}</#if>
+        </td>
         <td align="right">${text['pdf.fa']}</td>
     </tr>
 </table>

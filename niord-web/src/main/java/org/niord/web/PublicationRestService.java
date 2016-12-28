@@ -79,6 +79,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static org.niord.core.publication.Publication.DEFAULT_EDITION;
+
 
 /**
  * REST interface for accessing publications.
@@ -319,6 +321,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
         editPublication.setStatus(PublicationStatus.DRAFT);
         editPublication.setMessageTag(null);
         editPublication.setRevision(0);
+        editPublication.setEdition(DEFAULT_EDITION);
         if (editPublication.getDescs() != null) {
             editPublication.getDescs().forEach(desc -> {
                 desc.setLink(null);
@@ -417,7 +420,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @GZIP
     @NoCache
     @RolesAllowed("admin")
-    public SystemPublicationVo updatePubliationStatuses(UpdatePublicationStatusParam update) throws Exception {
+    public SystemPublicationVo updatePublicationStatuses(UpdatePublicationStatusParam update) throws Exception {
 
         log.info("Updating status " + update);
 

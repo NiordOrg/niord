@@ -131,6 +131,8 @@ angular.module('niord.admin')
                         return !hasTemplate || pub.template.descs[0].titleFormat === undefined;
                     case 'titleFormat':
                         return isTemplate;
+                    case 'edition':
+                        return isPublication && pub.type == 'MESSAGE_REPORT';
                     case 'messageTagFormat':
                         return isTemplate && pub.type == 'MESSAGE_REPORT';
                     case 'messageTag':
@@ -228,6 +230,14 @@ angular.module('niord.admin')
             };
 
 
+            /** Inserts the token in the message tag format field */
+            $scope.insertTagFormatToken = function (token) {
+                $scope.publication.messageTagFormat += token;
+                $('#messageTagFormat').focus();
+                $scope.setDirty();
+            };
+
+
             /** Called when a publication file has been uploaded **/
             $scope.publicationFileUploaded = function (resultDesc) {
                 var desc = LangService.descForLanguage($scope.publication, resultDesc.lang);
@@ -292,10 +302,8 @@ angular.module('niord.admin')
                     printParam = concatParam(printParam, 'param:' + k, v);
                 });
                 printParam = concatParam(printParam, 'lang', desc.lang);
-
-                if (desc.fileName) {
-                    printParam = concatParam(printParam, 'fileName', desc.fileName);
-                }
+                printParam = concatParam(printParam, 'param:edition', pub.edition);
+                printParam = concatParam(printParam, 'fileName', desc.fileName);
 
                 if (preview) {
                     AdminPublicationService

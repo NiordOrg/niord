@@ -85,7 +85,8 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class Publication extends VersionedEntity<Integer> implements ILocalizable<PublicationDesc> {
 
-    public static String PUBLICATION_REPO_FOLDER = "publications";
+    public static final String PUBLICATION_REPO_FOLDER = "publications";
+    public static final Integer DEFAULT_EDITION = 1;
 
 
     @Column(nullable = false, unique = true, length = 36)
@@ -119,6 +120,13 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
 
     @Enumerated(EnumType.STRING)
     PeriodicalType periodicalType;
+
+    /**
+     * Can be used to e.g. make the messageTagFormat unique if multiple editions area created.
+     * Example messageTagFormat: "firing-areas-${year}-v${edition}"
+     * This would allow for multiple Firing Area reports in the same calendar year, but with separate message tags.
+     */
+    Integer edition;
 
     /** Used by templates to define the name format of associated message tag **/
     String messageTagFormat;
@@ -189,6 +197,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
             this.mainType = sysPub.getMainType();
             this.template = sysPub.getTemplate() != null ? new Publication(sysPub.getTemplate()) : null;
             this.domain = sysPub.getDomain() != null ? new Domain(sysPub.getDomain()) : null;
+            this.edition = sysPub.getEdition();
             this.messageTagFormat = sysPub.getMessageTagFormat();
             this.messageTagFilter = sysPub.getMessageTagFilter();
             this.messageTag = sysPub.getMessageTag() != null ? new MessageTag(sysPub.getMessageTag()) : null;
@@ -217,6 +226,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
         this.type = publication.getType();
         this.category = publication.getCategory();
         this.domain = publication.getDomain();
+        this.edition = publication.getEdition();
         this.messageTagFormat = publication.getMessageTagFormat();
         this.messageTagFilter = publication.getMessageTagFilter();
         this.messageTag = publication.getMessageTag();
@@ -262,6 +272,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
             sysPub.setMainType(mainType);
             sysPub.setTemplate(template != null ? template.toVo(SystemPublicationVo.class, dataFilter) : null);
             sysPub.setDomain((domain != null) ? domain.toVo()  : null);
+            sysPub.setEdition(edition);
             sysPub.setMessageTagFormat(messageTagFormat);
             sysPub.setMessageTagFilter(messageTagFilter);
             sysPub.setMessageTag(messageTag != null ? messageTag.toVo() : null);
@@ -457,6 +468,14 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
 
     public void setPublishDateTo(Date publishDateTo) {
         this.publishDateTo = publishDateTo;
+    }
+
+    public Integer getEdition() {
+        return edition;
+    }
+
+    public void setEdition(Integer edition) {
+        this.edition = edition;
     }
 
     public String getMessageTagFormat() {

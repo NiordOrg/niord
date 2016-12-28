@@ -368,6 +368,7 @@ public class PublicationService extends BaseService {
         publication.assignNewPublicationId();
         publication.setType(LINK);
         publication.setLanguageSpecific(true);
+        publication.setEdition(Publication.DEFAULT_EDITION);
         return publication;
     }
 

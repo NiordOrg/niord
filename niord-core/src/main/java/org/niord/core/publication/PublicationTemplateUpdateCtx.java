@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.niord.core.message.vo.MessageTagVo.MessageTagType.PUBLIC;
+import static org.niord.core.publication.Publication.DEFAULT_EDITION;
 
 /**
  * Helper class used when updating a publication from its template.
@@ -48,6 +49,11 @@ public class PublicationTemplateUpdateCtx {
     public PublicationTemplateUpdateCtx(Publication publication, MessageTagService messageTagService) {
         this.publication = publication;
         this.messageTagService = messageTagService;
+
+        String edition = publication.getEdition() != null
+                ? String.valueOf(publication.getEdition())
+                : String.valueOf(DEFAULT_EDITION);
+        replacementValues.put("${edition}", edition);
 
         Date date = publication.getPublishDateFrom();
         if (date != null) {

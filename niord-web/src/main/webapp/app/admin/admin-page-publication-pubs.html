@@ -126,15 +126,45 @@
                     </div>
                 </div>
 
+               <!-- ******* File -> Edition ******* -->
+               <div class="form-group" ng-if="showEditorField('edition')">
+                   <label class="col-sm-4 col-md-2">Publication Edition</label>
+                   <div class="col-sm-6 col-md-10">
+                       <div class="row">
+                           <div class="col-sm-4 col-md-2">
+                               <input class="form-control input-sm" placeholder="Publication Edition" type="number" step="1"
+                                      ng-model="publication.edition">
+                           </div>
+                       </div>
+                   </div>
+               </div>
+
                <!-- ******* File -> Message Tag Format ******* -->
                <div class="form-group" ng-if="showEditorField('messageTagFormat')">
                    <label class="col-sm-4 col-md-2">Message Tag Format</label>
                    <div class="col-sm-6 col-md-10">
                        <div class="row">
                            <div class="col-sm-6">
-                               <input class="form-control input-sm" placeholder="Message Tag Format" type="text"
-                                      ng-model="publication.messageTagFormat"
-                                      autocapitalize="off" autocorrect="off" autocomplete="off">
+                               <div class="input-group">
+                                   <input class="form-control input-sm" id=messageTagFormat"" placeholder="Message Tag Format"
+                                          type="text" ng-model="publication.messageTagFormat"
+                                          autocapitalize="off" autocorrect="off" autocomplete="off">
+                                   <div class="input-group-btn">
+                                       <button type="button" class="btn btn-sm btn-default dropdown-toggle"
+                                               data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                           insert <span class="caret"></span>
+                                       </button>
+                                       <ul class="dropdown-menu dropdown-menu-right">
+                                           <li><a href ng-click="insertTagFormatToken('${year}')">Year</a></li>
+                                           <li><a href ng-click="insertTagFormatToken('${year-2-digits}')">Year (2 digits)</a></li>
+                                           <li><a href ng-click="insertTagFormatToken('${week}')">Week</a></li>
+                                           <li><a href ng-click="insertTagFormatToken('${week-2-digits}')">Week (2 digits)</a></li>
+                                           <li><a href ng-click="insertTagFormatToken('${month}')">Month</a></li>
+                                           <li><a href ng-click="insertTagFormatToken('${month-2-digits}')">Month (2 digits)</a></li>
+                                           <li><a href ng-click="insertTagFormatToken('${edition}')">Edition</a></li>
+                                       </ul>
+                                   </div>
+                               </div>
                            </div>
                        </div>
                    </div>

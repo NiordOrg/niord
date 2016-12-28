@@ -42,6 +42,7 @@ public class SystemPublicationVo extends PublicationVo implements IRepoBackedVo 
     SystemPublicationVo template;
     DomainVo domain;
     PeriodicalType periodicalType;
+    Integer edition;
     String messageTagFormat;
     String messageTagFilter;
     MessageTagVo messageTag;
@@ -141,6 +142,14 @@ public class SystemPublicationVo extends PublicationVo implements IRepoBackedVo 
 
     public void setPeriodicalType(PeriodicalType periodicalType) {
         this.periodicalType = periodicalType;
+    }
+
+    public Integer getEdition() {
+        return edition;
+    }
+
+    public void setEdition(Integer edition) {
+        this.edition = edition;
     }
 
     public String getMessageTagFormat() {
