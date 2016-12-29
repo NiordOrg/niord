@@ -12,7 +12,7 @@
 
     <style type="text/css" media="all">
         .intro {
-            margin-top: 1cm;
+            margin-top: 2cm;
             font-size: 12px;
         }
         .intro table {
@@ -34,7 +34,7 @@
 
 <h1>${text("pdf.fa")}</h1>
 
-<table class="first-page-info-line" style="margin-top: 1cm">
+<table class="first-page-info-line" style="margin-top: 2cm">
     <tr>
         <td>
             ${.now?string['dd. MMMM yyyy']}
