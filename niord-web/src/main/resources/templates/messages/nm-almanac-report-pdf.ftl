@@ -23,9 +23,9 @@
 </head>
 <body>
 
-<@renderDefaultHeaderAndFooter headerText="${text('pdf.nm_annex.title')} - ${text('pdf.nm_annex.subtitle')}"/>
+<@renderDefaultHeaderAndFooter headerText="${text('pdf.nm_almanac.title')} - ${text('pdf.nm_almanac.subtitle')}"/>
 
-<h1 style="margin-top: 5mm">${text("pdf.nm_annex.title")}</h1>
+<h1 style="margin-top: 5mm">${text("pdf.nm_almanac.title")}</h1>
 
 <table class="first-page-info-line" style="margin-top: 1cm">
     <tr>
@@ -33,12 +33,12 @@
             ${.now?string['dd. MMMM yyyy']}
             <#if edition?? && edition != '1'> - Version ${edition}</#if>
         </td>
-        <td align="right">${text("pdf.nm_annex.subtitle")}</td>
+        <td align="right">${text("pdf.nm_almanac.subtitle")}</td>
     </tr>
 </table>
 
 <div>
-  <#include "nm-annex-report-pdf-intro.ftl">
+  <#include "nm-almanac-report-pdf-intro.ftl">
 </div>
 
 <div>
