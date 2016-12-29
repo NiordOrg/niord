@@ -13,6 +13,7 @@
     <style type="text/css" media="all">
         table.contact-info {
             margin-bottom: 1cm;
+            font-size: 11px;
         }
         table.contact-info tr td {
             padding: 3mm;
