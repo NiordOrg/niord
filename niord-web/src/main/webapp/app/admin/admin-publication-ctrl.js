@@ -148,7 +148,7 @@ angular.module('niord.admin')
                     case 'link':
                         return (!hasTemplate && pub.type == 'LINK') || (hasTemplate && pub.template.type == 'LINK');
                     case 'repoFileName':
-                        return isTemplate && pub.type == 'MESSAGE_REPORT';
+                        return (isTemplate || !hasTemplate) && pub.type == 'MESSAGE_REPORT';
                     case 'repoFile':
                         return isPublication && (pub.type == 'REPOSITORY' || pub.type == 'MESSAGE_REPORT');
                     case 'report':

@@ -931,7 +931,7 @@ angular.module('niord.messages')
                             angular.forEach(scope.reports, function (report) {
                                 if (report.reportId == reportId) {
                                     scope.showMapThumbnails = report.properties.mapThumbnails === undefined;
-                                    scope.reportParams = report.params;
+                                    angular.copy(report.params, scope.reportParams);
                                 }
                             })
                         }
