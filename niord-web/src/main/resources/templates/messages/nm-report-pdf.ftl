@@ -30,9 +30,6 @@
     <link rel="stylesheet" type="text/css" href="/css/templates/common.css">
 
     <style type="text/css" media="all">
-        .nm-section {
-            page-break-before:always;
-        }
         .nm-toc {
             margin-top: 1cm;
         }
@@ -42,6 +39,7 @@
         .intro {
             margin-top: 2cm;
             font-size: 12px;
+            page-break-after:always;
         }
         .intro table {
             margin: 0 auto;
@@ -87,18 +85,27 @@
 
 <div class="nm-toc">
     <h2>${text("pdf.toc")}</h2>
-    <ol>
-    <#if nmMessages?has_content>
-        <li>
-            <div class="toc"><a href='#nm'>${text('pdf.nm')}</a></div>
-            <@renderTOCEntries messages=nmMessages prefix="nm" />
-        </li>
-    </#if>
-    <#if miscMessages?has_content>
-        <li>
-            <div class="toc"><a href='#misc'>${text('pdf.misc_nm')}</a></div>
-        </li>
-    </#if>
+    <ol class='toc'>
+
+        <#assign tocAreaHeadingId=-9999999 />
+        <#list nmMessages as msg>
+            <#if msg.areas?has_content>
+                <#assign area=areaHeading(msg.areas[0]) />
+                <#if area?? && area.id != tocAreaHeadingId>
+                    <#assign tocAreaHeadingId=area.id />
+                    <li><a href='#nm${tocAreaHeadingId?c}'><@areaLineage area=areaHeading(area) /></a></li>
+                </#if>
+            <#elseif  tocAreaHeadingId == -9999999>
+                <li><a href='#nm${tocAreaHeadingId?c}'>${text("msg.area.general")}</a></li>
+                <#assign tocAreaHeadingId=-9999998 />
+            </#if>
+        </#list>
+
+        <#if miscMessages?has_content>
+            <li>
+                <div class="toc"><a href='#misc'>${text('pdf.misc_nm')}</a></div>
+            </li>
+        </#if>
     </ol>
 </div>
 
@@ -110,18 +117,17 @@
 
 <!-- Permanent and T&P messages -->
 <#if nmMessages?has_content>
-    <div class="nm-section">
-        <h3 id="nm">${text('pdf.nm')}</h3>
-        <@renderMessageList messages=nmMessages areaHeadings=areaHeadings prefix="nm"/>
-    </div>
+    <@renderMessageList messages=nmMessages areaHeadings=areaHeadings prefix="nm"/>
 </#if>
 
 <!-- Misc messages -->
 <#if miscMessages?has_content>
-    <div class="nm-section">
-        <h3 id="misc">${text('pdf.misc_nm')}</h3>
-        <@renderMessageList messages=miscMessages areaHeadings=false/>
-    </div>
+    <table width="100%">
+        <tr>
+            <td class="table-header"><h4 id="misc">${text('pdf.misc_nm')}</h4></td>
+        </tr>
+    </table>
+    <@renderMessageList messages=miscMessages areaHeadings=false/>
 </#if>
 
 </body>

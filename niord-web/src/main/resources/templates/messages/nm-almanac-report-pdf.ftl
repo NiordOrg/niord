@@ -12,7 +12,7 @@
 
     <style type="text/css" media="all">
         table.contact-info {
-            margin-bottom: 1cm;
+            margin-bottom: 5mm;
             font-size: 11px;
         }
         table.contact-info tr td {
@@ -27,7 +27,9 @@
 
 <h1 style="margin-top: 5mm">${text("pdf.nm_almanac.title")}</h1>
 
-<table class="first-page-info-line" style="margin-top: 1cm">
+<h5>${text("pdf.nm_almanac.desc")}</h5>
+
+<table class="first-page-info-line" style="margin-top: 5mm">
     <tr>
         <td>
             ${.now?string['dd. MMMM yyyy']}
@@ -43,11 +45,20 @@
 
 <div>
     <h2>${text("pdf.toc")}</h2>
-    <#list messages as msg>
-        <#if msg.descs?has_content && msg.descs[0].title?has_content>
-            <div class="toc"><a href='#msg_${msg.id}'>${msg.shortId} -  ${msg.descs[0].title}</a></div>
-        </#if>
-    </#list>
+    <table width="100%" cellpadding="1" cellspacing="0">
+        <#list messages as msg>
+            <#if msg.descs?has_content && msg.descs[0].title?has_content>
+                <tr>
+                    <td style="width: 2cm" valign="top">
+                        <a href='#msg_${msg.id}'>${msg.shortId}</a></div>
+                    </td>
+                    <td width="*">
+                        <div class="toc"><a href='#msg_${msg.id}'>${msg.descs[0].title}</a></div>
+                    </td>
+                </tr>
+            </#if>
+        </#list>
+    </table>
 </div>
 
 

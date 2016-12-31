@@ -12,7 +12,7 @@
 
     <style type="text/css" media="all">
         .intro {
-            margin-top: 2cm;
+            margin-top: 1cm;
             font-size: 12px;
         }
         .intro table {
@@ -32,9 +32,9 @@
 
 <@renderDefaultHeaderAndFooter headerText="${text('pdf.fa')}"/>
 
-<h1>${text("pdf.fa")}</h1>
+<h1>${text("pdf.fa.title")}</h1>
 
-<table class="first-page-info-line" style="margin-top: 2cm">
+<table class="first-page-info-line" style="margin-top: 10mm">
     <tr>
         <td>
             ${.now?string['dd. MMMM yyyy']}

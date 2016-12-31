@@ -25,6 +25,10 @@ div.header {
     color: darkgray;
 }
 
+div.header span {
+    white-space: nowrap;
+}
+
 div.footer {
     margin-top: 0;
     text-align: center;
@@ -91,7 +95,7 @@ div.toc a::after {
 }
 
 table.first-page-info-line {
-    background-color: #334;
+    background-color: #002D47;
     color: white;
     width: 100%;
 }
@@ -104,21 +108,28 @@ h1 {
     margin-top: 2cm;
     text-align: center;
     font-size: 36px;
-    color: #334;
+    color: #002D47;
 }
 
 h2 {
-    color: #334;
+    color: #002D47;
     font-size: 24px;
 }
 
 h3 {
-    color: #334;
+    color: #002D47;
     font-size: 20px;
 }
 
 h4 {
-    color: #8f2f7b;
+    color: #A32638;
     font-size: 16px;
     margin-bottom: 0;
 }
+
+h5 {
+    color: #002D47;
+    text-align: center;
+    font-size: 14px;
+}
+
