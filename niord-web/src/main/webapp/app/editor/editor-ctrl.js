@@ -299,6 +299,9 @@ angular.module('niord.editor')
                 } else if (!msg.messageSeries) {
                     growl.error("Please specify message series before saving", {ttl: 5000});
                     return;
+                } else if (msg.publishDateFrom && msg.publishDateTo && msg.publishDateFrom > msg.publishDateTo) {
+                    growl.error("Invalid publish date interval", {ttl: 5000});
+                    return;
                 }
                 if (msg.dateIntervals) {
                     for (var x = 0; x < msg.dateIntervals.length; x++) {
