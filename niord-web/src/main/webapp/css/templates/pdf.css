@@ -102,6 +102,7 @@ table.first-page-info-line {
 
 table.first-page-info-line td {
     padding: 1mm 2mm;
+    font-weight: bold;
 }
 
 h1 {
