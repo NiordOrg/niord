@@ -28,6 +28,7 @@
         </#if>
     </#list>
 </#if>
+<#assign title=title?remove_ending(".") />
 
 <@renderDefaultHeaderAndFooter headerText="${text('pdf.nm_annex.nm_ref', .vars['NtM-ref']!'')}" frontPage=true/>
 
