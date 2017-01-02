@@ -4,7 +4,7 @@
 <head>
 
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <title>${text("pdf.fa")}</title>
+    <title>${text("pdf.fa.title")}</title>
 
     <@pageSizeStyle />
     <link rel="stylesheet" type="text/css" href="/css/templates/pdf.css">
@@ -30,7 +30,7 @@
 <body>
 
 
-<@renderDefaultHeaderAndFooter headerText="${text('pdf.fa')}"/>
+<@renderDefaultHeaderAndFooter headerText="${text('pdf.fa.title')}"/>
 
 <h1>${text("pdf.fa.title")}</h1>
 
@@ -40,7 +40,7 @@
             ${.now?string['dd. MMMM yyyy']}
             <#if edition?? && edition != '1'> - Version ${edition}</#if>
         </td>
-        <td align="right">${text['pdf.fa']}</td>
+        <td align="right">${text['pdf.fa.subtitle']}</td>
     </tr>
 </table>
 
