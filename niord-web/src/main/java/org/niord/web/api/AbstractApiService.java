@@ -30,7 +30,6 @@ import org.niord.core.publication.PublicationService;
 import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.model.message.MainType;
 import org.niord.model.message.Status;
-import org.niord.model.search.PagedSearchParamsVo;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
@@ -95,15 +94,15 @@ public abstract class AbstractApiService {
             Set<MainType> mainTypes,
             String wkt) throws Exception {
 
+        Domain sortDomain = null;
+
         MessageSearchParams params = new MessageSearchParams();
         params.language(language)
                 .publications(publicationIds)
                 .mainTypes(mainTypes)
                 .areaIds(areaIds)
                 .extent(wkt)
-                .includeNoPos(Boolean.TRUE) // Messages without a geometry may be included if WKT specified
-                .sortBy("AREA")
-                .sortOrder(PagedSearchParamsVo.SortOrder.ASC);
+                .includeNoPos(Boolean.TRUE); // Messages without a geometry may be included if WKT specified
 
 
         // Convert publications to their associated message tags
@@ -116,6 +115,12 @@ public abstract class AbstractApiService {
                 params.tags(messageTagService.findTags(tagIds).stream()
                         .map(MessageTag::getTagId)
                         .collect(Collectors.toSet()));
+            }
+
+            // Use the first specified publication domain to sort by
+            Publication publication = publicationService.findByPublicationId(params.getPublications().iterator().next());
+            if (publication != null) {
+                sortDomain = publication.getDomain();
             }
         }
 
@@ -162,6 +167,11 @@ public abstract class AbstractApiService {
                                 .collect(Collectors.toList())
                 );
             }
+
+            // Sort by the first domain specified
+            if (!domains.isEmpty()) {
+                sortDomain = domains.get(0);
+            }
         }
 
         // Check if specific message series has been specified
@@ -180,6 +190,9 @@ public abstract class AbstractApiService {
         } else {
             params.statuses(new HashSet<>(Arrays.asList(Status.PUBLISHED, Status.CANCELLED, Status.EXPIRED)));
         }
+
+        // Apply domain sort order
+        params.checkSortByDomain(sortDomain);
 
         // Perform the search
         long t0 = System.currentTimeMillis();
