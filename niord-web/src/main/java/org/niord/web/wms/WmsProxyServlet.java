@@ -41,7 +41,7 @@ import static org.niord.core.settings.Setting.Type.Password;
  *
  * This servlet will mask out a couple of colours that makes the current Danish WMS service unusable...
  *
- * Define the settings for the "wmsLogin" and "wmsPassword" in the "${niord.home}/niord.json" settings file.
+ * Define the settings for the "wmsLogin", "wmsPassword", etc. in the "${niord.home}/niord.json" settings file.
  */
 @WebServlet(value = "/wms/*")
 public class WmsProxyServlet extends HttpServlet {
@@ -71,6 +71,11 @@ public class WmsProxyServlet extends HttpServlet {
     @Setting(value="wmsPassword", description="The WMS password", type = Password)
     String wmsPassword;
 
+    @Inject
+    @Setting(value="wmsLayers", description="The WMS layers")
+    String wmsLayers;
+
+
     /**
      * Main GET method
      * @param request servlet request
@@ -97,6 +102,9 @@ public class WmsProxyServlet extends HttpServlet {
                 .map(p -> String.format("%s=%s", p.getKey(), p.getValue()[0]))
                 .collect(Collectors.joining("&"));
         params += String.format("&SERVICENAME=%s&LOGIN=%s&PASSWORD=%s", wmsServiceName, wmsLogin, wmsPassword);
+        if (StringUtils.isNotBlank(wmsLayers)) {
+            params += String.format("&LAYERS=%s", wmsLayers);
+        }
 
         String url = wmsProvider + "?" + params;
         log.trace("Loading image " + url);
@@ -104,7 +112,7 @@ public class WmsProxyServlet extends HttpServlet {
         try {
             BufferedImage image = ImageIO.read(new URL(url));
             if (image != null) {
-                image = transformWhiteToTransparent(image);
+                //image = transformWhiteToTransparent(image);
 
                 OutputStream out = response.getOutputStream();
                 ImageIO.write(image, "png", out);
@@ -124,11 +132,13 @@ public class WmsProxyServlet extends HttpServlet {
         }
     }
 
+
     /**
      * Masks out white colour
      * @param image the image to mask out
      * @return the resulting image
      */
+    @SuppressWarnings("unused")
     private BufferedImage transformWhiteToTransparent(BufferedImage image) {
 
         BufferedImage dest = image;
