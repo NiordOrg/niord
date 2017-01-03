@@ -970,6 +970,8 @@ public class MessageService extends BaseService {
             areaRoot = msgRoot.join("area", JoinType.LEFT);
             fields.add(areaRoot.get("treeSortOrder"));
             fields.add(msgRoot.get("areaSortOrder"));
+            fields.add(msgRoot.get("year"));
+            fields.add(msgRoot.get("number"));
         }
         Selection[] f = fields.toArray(new Selection<?>[fields.size()]);
 
@@ -985,8 +987,8 @@ public class MessageService extends BaseService {
                         builder.asc(msgRoot.get("eventDateFrom")),
                         builder.asc(msgRoot.get("id")));
             } else {
-                tupleQuery.orderBy(builder.desc(
-                        msgRoot.get("eventDateFrom")),
+                tupleQuery.orderBy(
+                        builder.desc(msgRoot.get("eventDateFrom")),
                         builder.desc(msgRoot.get("id")));
             }
         } else if (param.sortById()) {
@@ -1008,11 +1010,15 @@ public class MessageService extends BaseService {
                 tupleQuery.orderBy(
                         builder.asc(areaRoot.get("treeSortOrder")),
                         builder.asc(msgRoot.get("areaSortOrder")),
-                        builder.desc(msgRoot.get("id")));
+                        builder.asc(msgRoot.get("year")),
+                        builder.asc(msgRoot.get("number")),
+                        builder.asc(msgRoot.get("id")));
             } else {
                 tupleQuery.orderBy(
                         builder.desc(areaRoot.get("treeSortOrder")),
                         builder.desc(msgRoot.get("areaSortOrder")),
+                        builder.desc(msgRoot.get("year")),
+                        builder.desc(msgRoot.get("number")),
                         builder.desc(msgRoot.get("id")));
             }
         }
