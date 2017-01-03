@@ -64,7 +64,7 @@ angular.module('niord.messages')
 
                     var outlineStyle = new ol.style.Style({
                         fill: new ol.style.Fill({ color: 'rgba(255, 0, 255, 0.2)' }),
-                        stroke: new ol.style.Stroke({ color: '#8B008B', width: 1 }),
+                        stroke: new ol.style.Stroke({ color: '#8B008B', width: 2 }),
                         image: new ol.style.Circle({
                             radius: 4,
                             stroke: new ol.style.Stroke({
@@ -79,7 +79,7 @@ angular.module('niord.messages')
 
                     var nwStyle = new ol.style.Style({
                         fill: new ol.style.Fill({ color: 'rgba(255, 0, 255, 0.2)' }),
-                        stroke: new ol.style.Stroke({ color: '#8B008B', width: 1 }),
+                        stroke: new ol.style.Stroke({ color: '#8B008B', width: 2 }),
                         image: new ol.style.Icon({
                             anchor: [0.5, 0.5],
                             scale: 0.3,
@@ -89,7 +89,7 @@ angular.module('niord.messages')
 
                     var nmStyle = new ol.style.Style({
                         fill: new ol.style.Fill({ color: 'rgba(255, 0, 255, 0.2)' }),
-                        stroke: new ol.style.Stroke({ color: '#8B008B', width: 1 }),
+                        stroke: new ol.style.Stroke({ color: '#8B008B', width: 2 }),
                         image: new ol.style.Icon({
                             anchor: [0.5, 0.5],
                             scale: 0.3,
@@ -105,6 +105,10 @@ angular.module('niord.messages')
                             color: 'rgba(100, 50, 100, 0.6)',
                             width: 1
                         })
+                    });
+
+                    var borderOutlineStyle = new ol.style.Style({
+                        stroke: new ol.style.Stroke({ color: '#FFFFFF', width: 4 })
                     });
 
                     // Construct the layer
@@ -124,7 +128,7 @@ angular.module('niord.messages')
                                 var message = feature.get('message');
                                 featureStyle = message.mainType == 'NW' ? nwStyle : nmStyle;
                             }
-                            return [ featureStyle ];
+                            return [ borderOutlineStyle, featureStyle ];
                         }
                     });
                     olLayer = MapService.initLayer(olLayer, scope.name, scope.visible, scope.layerSwitcher);
