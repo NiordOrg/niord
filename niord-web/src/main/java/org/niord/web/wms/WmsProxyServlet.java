@@ -99,6 +99,7 @@ public class WmsProxyServlet extends HttpServlet {
         String params = paramMap
                 .entrySet()
                 .stream()
+                .filter(p -> StringUtils.isBlank(wmsLayers) || !"layers".equalsIgnoreCase(p.getKey()))
                 .map(p -> String.format("%s=%s", p.getKey(), p.getValue()[0]))
                 .collect(Collectors.joining("&"));
         params += String.format("&SERVICENAME=%s&LOGIN=%s&PASSWORD=%s", wmsServiceName, wmsLogin, wmsPassword);
