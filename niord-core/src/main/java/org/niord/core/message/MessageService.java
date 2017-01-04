@@ -53,6 +53,7 @@ import javax.inject.Inject;
 import javax.persistence.Tuple;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Expression;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Predicate;
@@ -958,6 +959,7 @@ public class MessageService extends BaseService {
 
         // Determine the fields to fetch
         Join<Message, Area> areaRoot = null;
+        Expression<?> treeSortOrder = null;
         List<Selection<?>> fields = new ArrayList<>();
         fields.add(msgRoot.get("id"));
         if (param.sortByDate()) {
@@ -968,7 +970,11 @@ public class MessageService extends BaseService {
             fields.add(msgRoot.get("publishDateFrom"));
         } else if (param.sortByArea()) {
             areaRoot = msgRoot.join("area", JoinType.LEFT);
-            fields.add(areaRoot.get("treeSortOrder"));
+            // General messages (without an associated area) should be sorted last
+            treeSortOrder = builder.selectCase()
+                    .when(builder.isNull(areaRoot.get("treeSortOrder")), 999999)
+                    .otherwise(areaRoot.get("treeSortOrder"));
+            fields.add(treeSortOrder);
             fields.add(msgRoot.get("areaSortOrder"));
             fields.add(msgRoot.get("year"));
             fields.add(msgRoot.get("number"));
@@ -1008,14 +1014,14 @@ public class MessageService extends BaseService {
         } else if (param.sortByArea()) {
             if (param.getSortOrder() == SortOrder.ASC) {
                 tupleQuery.orderBy(
-                        builder.asc(areaRoot.get("treeSortOrder")),
+                        builder.asc(treeSortOrder),
                         builder.asc(msgRoot.get("areaSortOrder")),
                         builder.asc(msgRoot.get("year")),
                         builder.asc(msgRoot.get("number")),
                         builder.asc(msgRoot.get("id")));
             } else {
                 tupleQuery.orderBy(
-                        builder.desc(areaRoot.get("treeSortOrder")),
+                        builder.desc(treeSortOrder),
                         builder.desc(msgRoot.get("areaSortOrder")),
                         builder.desc(msgRoot.get("year")),
                         builder.desc(msgRoot.get("number")),
