@@ -43,7 +43,7 @@ var app = angular.module('niord.admin', [
 
 
         $urlRouterProvider
-            .when('/messages', '/messages/grid')
+            .when('/messages', '/messages/table')
             .when('/atons', '/atons/grid')
             .when('/editor', '/editor/edit/')
             .when('/admin', '/admin/overview')
@@ -107,6 +107,10 @@ var app = angular.module('niord.admin', [
                 url: "/messages",
                 templateUrl: "/app/messages/messages.html"
             })
+            .state('messages.table', {
+                url: "/table",
+                templateUrl: "/app/messages/messages-viewmode-table.html"
+            })
             .state('messages.grid', {
                 url: "/grid",
                 templateUrl: "/app/messages/messages-viewmode-grid.html"
@@ -118,10 +122,6 @@ var app = angular.module('niord.admin', [
             .state('messages.details', {
                 url: "/details",
                 templateUrl: "/app/messages/messages-viewmode-details.html"
-            })
-            .state('messages.table', {
-                url: "/table",
-                templateUrl: "/app/messages/messages-viewmode-table.html"
             })
             .state('messages.selected', {
                 url: "/selected",
