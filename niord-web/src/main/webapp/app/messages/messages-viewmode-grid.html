@@ -13,7 +13,8 @@
         <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 " ng-repeat-start="message in messageList" ng-if="message.areaHeading">
             <h4 class="message-list-area-heading">
                 <span render-areas="[message.areaHeading]"></span>
-                <span ng-if="isEditor" class="sort-by-area" ng-click="sortAreaMessages(message.areaHeading)">sort...</span>
+                <span ng-if="canSortAreaMessages(message.areaHeading)" class="sort-by-area"
+                      ng-click="sortAreaMessages(message.areaHeading)">sort...</span>
             </h4>
         </div>
         <div ng-repeat-end class="col-xs-11 col-sm-6 col-md-4 col-lg-3" style="margin-bottom: 20px">

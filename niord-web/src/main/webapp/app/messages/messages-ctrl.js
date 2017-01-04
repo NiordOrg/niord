@@ -1009,6 +1009,12 @@ angular.module('niord.messages')
             };
 
 
+            /** Returns if the messages for the given area can be sorted **/
+            $scope.canSortAreaMessages = function (area) {
+                return $scope.isEditor && area && area.id != -999999;
+            };
+
+
             /** Sorts the messages withing an area **/
             $scope.sortAreaMessages = function (area) {
                 var status = 'PUBLISHED';

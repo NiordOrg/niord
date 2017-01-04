@@ -16,7 +16,8 @@
                     <td colspan="2" style="border: none">
                         <h4 class="message-list-area-heading">
                             <span render-areas="[message.areaHeading]"></span>
-                            <span ng-if="isEditor" class="sort-by-area" ng-click="sortAreaMessages(message.areaHeading)">sort...</span>
+                            <span ng-if="canSortAreaMessages(message.areaHeading)" class="sort-by-area"
+                                  ng-click="sortAreaMessages(message.areaHeading)">sort...</span>
                         </h4>
                     </td>
                 </tr>
