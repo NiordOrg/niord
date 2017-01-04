@@ -107,10 +107,6 @@ angular.module('niord.messages')
                         })
                     });
 
-                    var borderOutlineStyle = new ol.style.Style({
-                        stroke: new ol.style.Stroke({ color: '#FFFFFF', width: 4 })
-                    });
-
                     // Construct the layer
                     var features = new ol.Collection();
                     olLayer = new ol.layer.Vector({
@@ -128,7 +124,7 @@ angular.module('niord.messages')
                                 var message = feature.get('message');
                                 featureStyle = message.mainType == 'NW' ? nwStyle : nmStyle;
                             }
-                            return [ borderOutlineStyle, featureStyle ];
+                            return [ featureStyle ];
                         }
                     });
                     olLayer = MapService.initLayer(olLayer, scope.name, scope.visible, scope.layerSwitcher);
