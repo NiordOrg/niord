@@ -257,7 +257,7 @@ angular.module('niord.editor')
             $scope.editable = function () {
                 var msg = $scope.message;
                 return msg && msg.status &&
-                    (msg.status == 'DRAFT' || msg.status == 'VERIFIED' || $rootScope.hasRole('sysadmin'));
+                    (msg.status == 'DRAFT' || msg.status == 'VERIFIED' || $rootScope.hasRole('admin'));
             };
 
 
@@ -1629,7 +1629,7 @@ angular.module('niord.editor')
             /** Returns if the current comment can be edited **/
             $scope.canEditComment = function () {
                 return $scope.comment &&
-                    (!$scope.comment.id || $scope.comment.ownComment || $rootScope.hasRole('sysadmin'));
+                    (!$scope.comment.id || $scope.comment.ownComment || $rootScope.hasRole('admin'));
             };
 
 

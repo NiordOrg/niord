@@ -150,7 +150,7 @@ public class MessageRestService  {
             // We know that the use is already an "editor".
             boolean draft = message.getStatus() == DRAFT
                     || message.getStatus() == VERIFIED;
-            if (!draft && !userService.isCallerInRole("sysadmin")) {
+            if (!draft && !userService.isCallerInRole("admin")) {
                 throw new WebApplicationException(403);
             }
         }
