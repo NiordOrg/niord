@@ -336,8 +336,8 @@ angular.module('niord.map')
     /**
      * The map-tile-layer directive will add a simple tile layer to the map
      */
-    .directive('mapTileLayer', ['$rootScope', 'MapService', 'AuthService',
-        function ($rootScope, MapService, AuthService) {
+    .directive('mapTileLayer', ['$rootScope', '$http', 'MapService', 'AuthService',
+        function ($rootScope, $http, MapService, AuthService) {
         return {
             restrict: 'E',
             replace: false,
@@ -353,6 +353,29 @@ angular.module('niord.map')
             link: function(scope, element, attrs, ctrl) {
                 var olScope = ctrl.getOpenlayersScope();
                 var olLayer;
+
+
+                /**
+                 * If the global "wmsProtected" flag is set, the tiles are loaded using Ajax.
+                 * This will ensure that the "Authorization" and "NiordDomain" headers get properly injected,
+                 * and thus, will allow the server that produces the WMS tiles to perform authorization checks.
+                 * See: http://stackoverflow.com/questions/29780147/how-to-return-image-from-http-get-in-angularjs
+                 */
+                function customAjaxWMSLoader(tile, src) {
+                    $http.get(src, {responseType: 'arraybuffer'})
+                        .then(function (response) {
+                            var img = tile.getImage();
+                            try {
+                                var blob = new Blob([response.data], {type: 'image/png'});
+                                img.src = (window.URL || window.webkitURL).createObjectURL(blob);
+                                img.width = img.height = 256;
+                            } catch (err) {
+                                img.src = "/img/blank.png";
+                                img.width = img.height = 256;
+                            }
+                        });
+                }
+
 
                 olScope.getMap().then(function(map) {
 
@@ -397,6 +420,12 @@ angular.module('niord.map')
                                 olLayer = new ol.layer.Tile({
                                     source: new ol.source.TileWMS(scope.sourceProperties)
                                 });
+
+                                // If "wmsProtected" is set, load WMS-tiles using Ajax
+                                if ($rootScope.wmsProtected) {
+                                    olLayer.getSource().setTileLoadFunction(customAjaxWMSLoader);
+                                    olLayer.setMaxResolution(1000);
+                                }
                             }
                             break;
                     }

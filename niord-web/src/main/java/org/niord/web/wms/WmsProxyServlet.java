@@ -93,7 +93,14 @@ public class WmsProxyServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
 
-        // TODO: Enforce wmsProtected
+        // Enforce "wmsProtected" flag. If set, only authenticated users can load the tiles.
+        // On the client level, load the tiles using Ajax (see map-directive.js) to ensure
+        // that the proper headers are passed along
+        if (wmsProtected && request.getUserPrincipal() == null) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.getWriter().println("<html><body><p>WMS service only available to authenticated users</p></body></html>");
+            return;
+        }
 
         // Cache for a day
         WebUtils.cache(response, CACHE_TIMEOUT);
@@ -139,7 +146,7 @@ public class WmsProxyServlet extends HttpServlet {
         // Fall back to return a blank image
         try {
             response.sendRedirect(BLANK_IMAGE);
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.trace("Failed returning blank image for URL " + url + ": " + e);
         }
     }
