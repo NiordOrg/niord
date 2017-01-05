@@ -24,9 +24,11 @@ import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.niord.core.NiordApp;
+import org.niord.core.area.Area;
 import org.niord.core.message.Message;
 import org.niord.core.publication.Publication;
 import org.niord.model.DataFilter;
+import org.niord.model.message.AreaVo;
 import org.niord.model.message.MainType;
 import org.niord.model.message.MessageVo;
 import org.niord.model.publication.PublicationVo;
@@ -83,6 +85,11 @@ public class ApiRestService extends AbstractApiService {
 
     @Inject
     NiordApp app;
+
+
+    /***************************
+     * Message end-points
+     ***************************/
 
 
     /**
@@ -282,6 +289,10 @@ public class ApiRestService extends AbstractApiService {
     }
 
 
+    /***************************
+     * Publication end-points
+     ***************************/
+
 
     /**
      * Searches for publications
@@ -414,6 +425,55 @@ public class ApiRestService extends AbstractApiService {
         return publication;
     }
 
+
+    /***************************
+     * Area end-points
+     ***************************/
+
+
+    /**
+     * Returns the details for the given area
+     */
+    @ApiOperation(
+            value = "Returns the area with the given ID",
+            response = AreaVo.class,
+            tags = {"areas"}
+    )
+    @GET
+    @Path("/area/{areaId}")
+    @Produces({"application/json;charset=UTF-8"})
+    @GZIP
+    public Response areaDetails(
+
+            @ApiParam(value = "The area ID", example = "urn:mrn:iho:country:dk")
+            @PathParam("areaId") String areaId,
+
+            @ApiParam(value = "Two-letter ISO 639-1 language code", example = "en")
+            @QueryParam("lang") String language
+    ) {
+
+        Area area = super.getArea(areaId);
+
+        if (area == null) {
+            return Response
+                    .status(Response.Status.NOT_FOUND)
+                    .entity("No area found with ID: " + areaId)
+                    .build();
+        } else {
+
+            // Convert area to value objects
+            AreaVo result = area.toVo(AreaVo.class, DataFilter.get().fields(DataFilter.PARENT).lang(language));
+
+            return Response
+                    .ok(result, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
+                    .build();
+        }
+    }
+
+
+    /***************************
+     * Utility functions
+     ***************************/
 
 
     /** Returns an ObjectMapper for the given date format **/

@@ -16,6 +16,8 @@
 package org.niord.web.api;
 
 import org.niord.core.NiordApp;
+import org.niord.core.area.Area;
+import org.niord.core.area.AreaService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.Message;
@@ -64,7 +66,15 @@ public abstract class AbstractApiService {
     MessageTagService messageTagService;
 
     @Inject
+    AreaService areaService;
+
+    @Inject
     NiordApp app;
+
+
+    /***************************
+     * Message functions
+     ***************************/
 
 
     /**
@@ -204,12 +214,16 @@ public abstract class AbstractApiService {
     }
 
 
+    /***************************
+     * Publication functions
+     ***************************/
+
 
     /**
      * Returns the publication with the given ID if it is public
      *
-     * @param publicationId the message ID
-     * @return the message with the given ID if it is public
+     * @param publicationId the publication ID
+     * @return the publication with the given ID if it is public
      */
     public Publication getPublication(String publicationId) {
         Publication publication = publicationService.findByPublicationId(publicationId);
@@ -236,4 +250,23 @@ public abstract class AbstractApiService {
                 .searchPublications(params)
                 .getData();
     }
+
+
+    /***************************
+     * Area functions
+     ***************************/
+
+
+    /**
+     * Returns the area with the given ID (ID or MRN)
+     *
+     * @param areaId the area ID or MRN
+     * @return the area with the given ID if it is public
+     */
+    public Area getArea(String areaId) {
+        return areaService.findByAreaId(areaId);
+    }
+
+
+
 }
