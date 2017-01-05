@@ -34,6 +34,7 @@ import java.net.URL;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.niord.core.settings.Setting.Type.Boolean;
 import static org.niord.core.settings.Setting.Type.Password;
 
 /**
@@ -75,6 +76,13 @@ public class WmsProxyServlet extends HttpServlet {
     @Setting(value="wmsLayers", description="The WMS layers")
     String wmsLayers;
 
+    @Inject
+    @Setting(value="wmsProtected",
+            description="Whether the API requires an authenticated user",
+            defaultValue = "true",
+            web = true,
+            type = Boolean)
+    Boolean wmsProtected;
 
     /**
      * Main GET method
@@ -83,6 +91,9 @@ public class WmsProxyServlet extends HttpServlet {
      */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+
+        // TODO: Enforce wmsProtected
 
         // Cache for a day
         WebUtils.cache(response, CACHE_TIMEOUT);

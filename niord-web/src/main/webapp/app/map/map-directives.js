@@ -336,7 +336,8 @@ angular.module('niord.map')
     /**
      * The map-tile-layer directive will add a simple tile layer to the map
      */
-    .directive('mapTileLayer', ['$rootScope', 'MapService', function ($rootScope, MapService) {
+    .directive('mapTileLayer', ['$rootScope', 'MapService', 'AuthService',
+        function ($rootScope, MapService, AuthService) {
         return {
             restrict: 'E',
             replace: false,
@@ -392,9 +393,11 @@ angular.module('niord.map')
                             break;
 
                         case 'WMS':
-                            olLayer = new ol.layer.Tile({
-                                source: new ol.source.TileWMS(scope.sourceProperties)
-                            });
+                            if (!$rootScope.wmsProtected || AuthService.loggedIn) {
+                                olLayer = new ol.layer.Tile({
+                                    source: new ol.source.TileWMS(scope.sourceProperties)
+                                });
+                            }
                             break;
                     }
 
