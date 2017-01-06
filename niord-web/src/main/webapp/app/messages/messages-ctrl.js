@@ -23,9 +23,9 @@
  */
 angular.module('niord.messages')
     .controller('MessageListCtrl', ['$scope', '$rootScope', '$window', '$location', '$http', '$timeout', 'growl',
-                'AuthService', 'FilterService', 'MessageService', 'AtonService',
+                'AuthService', 'FilterService', 'MessageService', 'AtonService', 'AnalyticsService',
         function ($scope, $rootScope, $window, $location, $http, $timeout, growl,
-                  AuthService, FilterService, MessageService, AtonService) {
+                  AuthService, FilterService, MessageService, AtonService, AnalyticsService) {
             'use strict';
 
             var loadTimer;
@@ -765,7 +765,12 @@ angular.module('niord.messages')
             /** Download the PDF for the current search result */
             $scope.generatePdf = function (printParams) {
                 printParams += '&' + $scope.toRequestFilterParameters();
-                $window.location = '/rest/message-reports/report.pdf?' + printParams;
+                var url = '/rest/message-reports/report.pdf?' + printParams;
+
+                // Log the event to Google Analytics
+                AnalyticsService.logEvent('PDF', 'generate-list-report', url);
+
+                $window.location = url;
             };
 
 

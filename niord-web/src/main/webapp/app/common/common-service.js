@@ -212,6 +212,62 @@ angular.module('niord.common')
 
 
     /**
+     * Interface for logging to Google Analytics
+     */
+    .factory('AnalyticsService', [ '$rootScope', '$window', '$location',
+        function($rootScope, $window, $location) {
+            'use strict';
+
+            function gaEnabled() {
+                return $rootScope.analyticsTrackingId && $rootScope.analyticsTrackingId.length > 0;
+            }
+
+            return {
+
+                /** Returns if Google Analytics is enabled or not **/
+                enabled: function () {
+                    return gaEnabled();
+                },
+
+
+                /** Initializes Google Analytics **/
+                initAnalytics: function () {
+                    // initialise google analytics
+                    if (gaEnabled()) {
+                        try {
+                            $window.ga('create', $rootScope.analyticsTrackingId, 'auto');
+                        } catch (ex) {
+                        }
+                    }
+                },
+
+
+                /** Logs the given page view **/
+                logPageView: function (page) {
+                    if (gaEnabled()) {
+                        try {
+                            page = page || $location.path();
+                            $window.ga('send', 'pageview', page);
+                        } catch (ex) {
+                        }
+                    }
+                },
+
+
+                /** Logs the given event **/
+                logEvent: function (category, action, label, value) {
+                    if (gaEnabled()) {
+                        try {
+                            $window.ga('send', 'event', category, action, label, value);
+                        } catch (ex) {
+                        }
+                    }
+                }
+            };
+        }])
+
+
+    /**
      * The modalService is very much inspired by (even copied from):
      * http://weblogs.asp.net/dwahlin/building-an-angularjs-modal-service
      */

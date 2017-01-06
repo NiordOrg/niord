@@ -388,7 +388,9 @@ angular.module('niord.map')
 
                     // Supports dynamically adding and removing the layer from the layer switcher
                     scope.$watch("layerSwitcher", function (layerSwitcher) {
-                        olLayer.set('displayInLayerSwitcher', layerSwitcher);
+                        if (olLayer) {
+                            olLayer.set('displayInLayerSwitcher', layerSwitcher);
+                        }
                     }, true);
 
 
