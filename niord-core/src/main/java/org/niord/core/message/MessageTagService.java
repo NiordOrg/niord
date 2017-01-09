@@ -308,13 +308,15 @@ public class MessageTagService extends BaseService {
 
     /**
      * Creates a new temporary, short-lived message tag from the given messages
+     * @param ttl time-to-live in minutes
      * @param messageUids the new message UIDs
      * @return the persisted message tag
      */
-    public MessageTag createTempMessageTag(List<String> messageUids) {
+    public MessageTag createTempMessageTag(Integer ttl, List<String> messageUids) {
         // Compute expiry time
+        int minutes = ttl == null ? TEMP_TAG_EXPIRY_MINUTES : ttl;
         Calendar expiryTime = Calendar.getInstance();
-        expiryTime.add(Calendar.MINUTE, TEMP_TAG_EXPIRY_MINUTES);
+        expiryTime.add(Calendar.MINUTE, minutes);
 
         // Create the temporary
         MessageTag tag = new MessageTag();

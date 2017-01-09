@@ -441,13 +441,14 @@ angular.module('niord.messages')
     /*******************************************************************
      * Controller that handles sorting of messages withing an area
      *******************************************************************/
-    .controller('SortAreaDialogCtrl', ['$scope', '$rootScope', '$timeout', 'MessageService', 'area', 'status',
-        function ($scope, $rootScope, $timeout, MessageService, area, status) {
+    .controller('SortAreaDialogCtrl', ['$scope', '$rootScope', '$timeout', 'MessageService', 'area', 'status', 'tag',
+        function ($scope, $rootScope, $timeout, MessageService, area, status, tag) {
             'use strict';
 
             $scope.data = {
                 area: area,
-                status: status || 'PUBLISHED'
+                status: status || 'PUBLISHED',
+                tag: tag
             };
             $scope.messageList = [];
             $scope.domain = $rootScope.domain;
@@ -456,10 +457,11 @@ angular.module('niord.messages')
             /** Refreshes the list of messages matching the message filter */
             $scope.refreshMessageList = function () {
                 $scope.messageList.length = 0;
-                if ($scope.data.area && $scope.data.status) {
-                    var params = 'area=' + $scope.data.area.id
-                        + '&status=' + $scope.data.status
-                        + '&sortBy=AREA&sortOrder=ASC';
+                if ($scope.data.tag || ($scope.data.area && $scope.data.status)) {
+                    var params = $scope.data.tag
+                        ? 'tag=' + encodeURIComponent($scope.data.tag)
+                        : 'area=' + $scope.data.area.id  + '&status=' + $scope.data.status;
+                    params += '&sortBy=AREA&sortOrder=ASC';
                     MessageService.search(params, 0, 1000)
                         .success(function (result) {
                             for (var x = 0; x < result.data.length; x++) {
@@ -496,7 +498,7 @@ angular.module('niord.messages')
 
 
             // Initially, give focus to the area field
-            if (!area) {
+            if (!area && !tag) {
                 $timeout(function () {
                     $('#area').find('div').controller('uiSelect').activate(false, true);
                 }, 100);

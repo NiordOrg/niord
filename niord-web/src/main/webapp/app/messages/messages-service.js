@@ -334,8 +334,9 @@ angular.module('niord.messages')
 
 
             /** Creates a temporary, short-lived message tag for the given message IDs */
-            createTempMessageTag: function (messageIds) {
-                return $http.post('/rest/tags/temp-tag/', messageIds);
+            createTempMessageTag: function (messageIds, ttl) {
+                var params = ttl ? '?ttl=' + ttl : '';
+                return $http.post('/rest/tags/temp-tag/' + params, messageIds);
             },
 
 
@@ -542,7 +543,7 @@ angular.module('niord.messages')
 
 
             /** Sorts the messages withing an area **/
-            sortAreaMessagesDialog: function (area, status) {
+            sortAreaMessagesDialog: function (area, status, tag) {
                 // Get the user to pick an area with a geometry
                 return $uibModal.open({
                     controller: "SortAreaDialogCtrl",
@@ -550,7 +551,8 @@ angular.module('niord.messages')
                     size: 'lg',
                     resolve: {
                         area: function () { return area; },
-                        status: function () { return status; }
+                        status: function () { return status; },
+                        tag: function () { return tag; }
                     }
                 });
             },

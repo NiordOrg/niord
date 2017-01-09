@@ -1020,23 +1020,54 @@ angular.module('niord.messages')
             };
 
 
-            /** Sorts the messages withing an area **/
+            /** Sorts the messages within an area **/
             $scope.sortAreaMessages = function (area) {
-                var status = 'PUBLISHED';
-                var s = $scope.state.status;
-                if (s.enabled) {
-                    if (!s.PUBLISHED && s.DRAFT) {
-                        status = 'DRAFT';
-                    } else if (!s.PUBLISHED && s.VERIFIED) {
-                        status = 'VERIFIED';
-                    }
-                }
 
-                // Get the user to pick an area with a geometry
-                MessageService.sortAreaMessagesDialog(area, status)
-                    .result.then(function () {
+                // Case 1: If an area is specified, create a temp message tag containing the messages for the given
+                //         area. This will allow for sorting of messages with different messages statuses.
+                if (area) {
+                    var messageIds = [];
+                    var inArea = false;
+                    for (var x = 0; x < $scope.messageList.length; x++) {
+                        var msg = $scope.messageList[x];
+                        if (msg.areaHeading && msg.areaHeading.id == area.id) {
+                            inArea = true;
+                        } else if (msg.areaHeading) {
+                            inArea = false;
+                        }
+                        if (inArea) {
+                            messageIds.push(msg.id);
+                        }
+                    }
+
+                    // Generate a temporary, short-lived message tag for the selection
+                    MessageService.createTempMessageTag(messageIds, 30)
+                        .success(function (tag) {
+                            MessageService.sortAreaMessagesDialog(null, null, tag.tagId)
+                                .result.then(function () {
+                                $scope.refreshMessages();
+                            });
+                        });
+
+
+                } else {
+                    // Case 2: When no area is specified. Open the sort dialog with any currently selected status
+                    var status = 'PUBLISHED';
+                    var s = $scope.state.status;
+                    if (s.enabled) {
+                        if (!s.PUBLISHED && s.DRAFT) {
+                            status = 'DRAFT';
+                        } else if (!s.PUBLISHED && s.VERIFIED) {
+                            status = 'VERIFIED';
+                        }
+                    }
+
+                    // Get the user to pick an area with a geometry
+                    MessageService.sortAreaMessagesDialog(area, status)
+                        .result.then(function () {
                         $scope.refreshMessages();
                     });
+                }
             };
 
 

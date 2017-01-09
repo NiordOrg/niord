@@ -189,9 +189,9 @@ public class MessageTagRestService {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public MessageTagVo createTempTag(List<String> messageUids) {
+    public MessageTagVo createTempTag(@QueryParam("ttl") Integer ttl, List<String> messageUids) {
         // TODO: Validate access to the messages for the current user
-        return messageTagService.createTempMessageTag(messageUids).toVo();
+        return messageTagService.createTempMessageTag(ttl, messageUids).toVo();
     }
 
 

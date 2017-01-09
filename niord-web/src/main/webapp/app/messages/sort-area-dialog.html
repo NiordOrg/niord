@@ -2,12 +2,12 @@
 
     <div class="modal-header" style="text-align: center; padding: 5px 15px">
         <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
-        <h4>Select Area</h4>
+        <h4>Sort Messages</h4>
     </div>
 
     <div class="modal-body print" style="padding-bottom: 0">
 
-        <div class="row">
+        <div class="row" ng-if="!data.tag">
             <div class="col-sm-6">
                 <areas-field id="area" area-data="data" multiple="false" domain="domain" message-sorting="true"></areas-field>
             </div>
