@@ -121,6 +121,11 @@
     <@renderMessageList messages=nmMessages areaHeadings=areaHeadings prefix="nm"/>
 </#if>
 
+<!-- Add page break -->
+<#if nmMessages?has_content && miscMessages?has_content>
+    <div class="page-break"></div>
+</#if>
+
 <!-- Misc messages -->
 <#if miscMessages?has_content>
     <table width="100%">
