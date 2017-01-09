@@ -305,8 +305,8 @@ public class PublicationService extends BaseService {
 
         // Filter by dates
         if (params.getFrom() != null || params.getTo() != null) {
-            Date from = TimeUtils.resetTime(params.getFrom());
-            Date to = TimeUtils.endOfDay(params.getTo());
+            Date from = params.getFrom(); //TimeUtils.resetTime(params.getFrom());
+            Date to = params.getTo(); //TimeUtils.endOfDay(params.getTo());
             criteriaHelper.overlaps(publicationRoot.get("publishDateFrom"), publicationRoot.get("publishDateTo"), from, to);
         }
 
