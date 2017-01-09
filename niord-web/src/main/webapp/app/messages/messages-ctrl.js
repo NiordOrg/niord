@@ -33,7 +33,7 @@ angular.module('niord.messages')
             $scope.isEditor = $rootScope.hasRole('editor');
             $scope.loggedIn = AuthService.loggedIn;
             $scope.page = 0;
-            $scope.maxSize = 100;
+            $scope.maxSize = 200;
             $scope.searchDomain = $rootScope.domain;
             $scope.showFilter = true;
             $scope.messageList = [];
@@ -1099,7 +1099,7 @@ angular.module('niord.messages')
                     $scope.state.map.enabled = newValue && newValue.endsWith('/map');
                     $scope.showFilter = newValue && !newValue.endsWith('/selected');
                     var isMap = $scope.state.map.enabled;
-                    $scope.maxSize = isMap ? 1000 : 100;
+                    $scope.maxSize = isMap ? 1000 : 200;
                     if (wasMap != isMap) {
                         $scope.messageList.length = 0;
                     }
