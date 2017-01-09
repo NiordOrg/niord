@@ -352,6 +352,14 @@ angular.module('niord.editor')
                 }
             }, true);
 
+
+            /** Swap the message order **/
+            $scope.swapMessages = function () {
+                var tempId = $scope.reference1.messageId;
+                $scope.reference1.messageId = $scope.reference2.messageId;
+                $scope.reference2.messageId = tempId;
+            }
+
         }])
 
 

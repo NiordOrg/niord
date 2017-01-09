@@ -1111,7 +1111,7 @@ angular.module('niord.editor')
             /** Opens a dialog that allows the editor to compare this message with another message **/
             $scope.compareMessages = function () {
                 if ($scope.message.created) {
-                    MessageService.compareMessagesDialog($scope.message.id, undefined);
+                    MessageService.compareMessagesDialog(undefined, $scope.message.id);
                 }
             };
 
