@@ -221,7 +221,7 @@ public class FmService extends BaseService {
             Map<String, String> replacementValues = new HashMap<>();
             replacementValues.put("${year-2-digits}", String.valueOf(year).substring(2));
             replacementValues.put("${year}", String.valueOf(year));
-            replacementValues.put("${week}", String.format("%02d", week));
+            replacementValues.put("${week}", String.format("%d", week));
             replacementValues.put("${week-2-digits}", String.format("%02d", week));
 
             report.setParams(report.getParams().entrySet().stream()
