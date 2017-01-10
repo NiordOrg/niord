@@ -105,6 +105,12 @@ angular.module('niord.messages')
             },
 
 
+            /** Returns the message with the given ID in all languages */
+            allLangDetails: function (id) {
+                return $http.get('/rest/messages/message/' + encodeURIComponent(id));
+            },
+
+
             /** Returns the editable message with the given ID */
             editableDetails: function (id) {
                 return $http.get('/rest/messages/editable-message/' + encodeURIComponent(id) + '?lang=' + $rootScope.language);

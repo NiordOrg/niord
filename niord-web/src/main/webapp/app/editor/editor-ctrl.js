@@ -1289,22 +1289,7 @@ angular.module('niord.editor')
                 $scope.previewMessage = undefined;
                 if ($scope.message) {
                     $scope.previewMessage = angular.copy($scope.message);
-                    LangService.sortDescs($scope.previewMessage, $scope.previewLang);
-                    if ($scope.previewMessage.parts) {
-                        angular.forEach($scope.previewMessage.parts, function (part) {
-                            LangService.sortDescs(part, $scope.previewLang);
-                        });
-                    }
-                    if ($scope.previewMessage.attachments) {
-                        angular.forEach($scope.previewMessage.attachments, function (att) {
-                            LangService.sortDescs(att, $scope.previewLang);
-                        });
-                    }
-                    if ($scope.previewMessage.references) {
-                        angular.forEach($scope.previewMessage.references, function (ref) {
-                            LangService.sortDescs(ref, $scope.previewLang);
-                        });
-                    }
+                    LangService.sortMessageDescs($scope.previewMessage, $scope.previewLang);
                 }
             };
             $scope.$watch("message", $scope.createPreviewMessage, true);

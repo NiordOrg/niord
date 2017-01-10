@@ -148,6 +148,32 @@ angular.module('niord.common')
             };
 
 
+            /** Sorts all the localizable description entities of the message by language **/
+            this.sortMessageDescs = function (msg, lang) {
+                var that = this;
+                lang = lang || $rootScope.language;
+                if (msg) {
+                    this.sortDescs(msg, lang);
+                    if (msg.parts) {
+                        angular.forEach(msg.parts, function (part) {
+                            that.sortDescs(part, lang);
+                        });
+                    }
+                    if (msg.attachments) {
+                        angular.forEach(msg.attachments, function (att) {
+                            that.sortDescs(att, lang);
+                        });
+                    }
+                    if (msg.references) {
+                        angular.forEach(msg.references, function (ref) {
+                            that.sortDescs(ref, lang);
+                        });
+                    }
+                }
+                return msg;
+            };
+
+
             /**
              * Recursively formats the names of the parent lineage for areas and categories
              **/

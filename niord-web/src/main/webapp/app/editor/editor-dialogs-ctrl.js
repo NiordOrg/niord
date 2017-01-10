@@ -272,12 +272,17 @@ angular.module('niord.editor')
     /*******************************************************************
      * Controller that handles the message Thumbnail dialog
      *******************************************************************/
-    .controller('MessageComparisonDialogCtrl', ['$scope', '$timeout', 'growl', 'MessageService', 'messageId1', 'messageId2',
-        function ($scope, $timeout, growl, MessageService, messageId1, messageId2) {
+    .controller('MessageComparisonDialogCtrl', ['$scope', '$rootScope', '$timeout', 'growl',
+                'MessageService', 'LangService', 'messageId1', 'messageId2',
+        function ($scope, $rootScope, $timeout, growl,
+                  MessageService, LangService, messageId1, messageId2) {
             'use strict';
 
             $scope.message1 = undefined;
             $scope.message2 = undefined;
+            $scope.langData = {
+                language: $rootScope.language
+            };
 
             // Contains a visual diff of the two message html representations
             $scope.messageDiff = '';
@@ -323,9 +328,9 @@ angular.module('niord.editor')
 
                 // Fetch the message to compare with
                 if (messageId && messageId.length > 0) {
-                    MessageService.details(messageId)
+                    MessageService.allLangDetails(messageId)
                         .success(function (message) {
-                            $scope.message1 = message;
+                            $scope.message1 = LangService.sortMessageDescs(message, $scope.langData.language);
                             $scope.initData();
                         })
                         .error(function (data, status) {
@@ -341,15 +346,23 @@ angular.module('niord.editor')
 
                 // Fetch the message to compare with
                 if (messageId && messageId.length > 0) {
-                    MessageService.details(messageId)
+                    MessageService.allLangDetails(messageId)
                         .success(function (message) {
-                            $scope.message2 = message;
+                            $scope.message2 = LangService.sortMessageDescs(message, $scope.langData.language);
                             $scope.initData();
                         })
                         .error(function (data, status) {
                             growl.error("Error loading message (code: " + status + ")", {ttl: 5000})
                         })
                 }
+            }, true);
+
+
+            // When the language changes, update the message data
+            $scope.$watch("langData.language", function (lang) {
+                LangService.sortMessageDescs($scope.message1, lang);
+                LangService.sortMessageDescs($scope.message2, lang);
+                $scope.initData();
             }, true);
 
 

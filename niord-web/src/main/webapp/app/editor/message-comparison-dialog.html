@@ -25,6 +25,20 @@
             </div>
         </div>
 
+        <div class="row" style="margin-top: 10px;">
+            <div class="form-group">
+                <label class="col-sm-6 col-md-4 col-lg-2" style="padding-top: 6px">Language</label>
+                <div class="col-sm-6 col-md-4 col-lg-4">
+                    <div class="btn-group">
+                        <label class="btn btn-default btn-sm"
+                               ng-repeat="lang in modelLanguages"
+                               ng-model="langData.language" uib-btn-radio="lang">
+                                <img ng-src="/img/flags/{{lang}}.png" height="14"/>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <uib-tabset class="framed-tabs" style="margin-top: 20px">
             <uib-tab active="true">
@@ -42,13 +56,13 @@
                     <div id="message1" class="col-sm-6">
                         <table ng-if="message1" class='table table-condensed'>
                             <tr render-message-details msg="message1" format="details" show-details-menu="false"
-                                compact="true"></tr>
+                                compact="true" lang="langData.language"></tr>
                         </table>
                     </div>
                     <div id="message2" class="col-sm-6">
                         <table ng-if="message2" class='table table-condensed'>
                             <tr render-message-details msg="message2" format="details" show-details-menu="false"
-                                compact="true"></tr>
+                                compact="true" lang="langData.language"></tr>
                         </table>
                     </div>
                 </div>
