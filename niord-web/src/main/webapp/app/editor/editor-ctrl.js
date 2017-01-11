@@ -1443,7 +1443,7 @@ angular.module('niord.editor')
                     closeButtonText: 'Cancel',
                     actionButtonText: 'Confirm Cancellation',
                     headerText: 'Cancel Message',
-                    cancelOptions: { createCancelMessage: true },
+                    cancelOptions: { createCancelMessage: false },
                     templateUrl: "cancelMessage.html"
                 };
 
