@@ -207,16 +207,16 @@
 <!-- ***************************************  -->
 <!-- Renders the message source + publ. date  -->
 <!-- ***************************************  -->
-<#function renderSource desc publishDate >
+<#function renderSource desc msg >
     <#assign source=""/>
     <#if desc?? && desc.source?has_content>
         <#assign source=source + desc.source/>
     </#if>
-    <#if desc?? && desc.source?has_content && publishDate??>
+    <#if desc?? && desc.source?has_content && msg.publishDateFrom??>
         <#assign source=source + ". "/>
     </#if>
-    <#if publishDate??>
-        <#assign source=source + text('msg.field.published') + ' ' + publishDate?string(text('msg.time.date_format'))/>
+    <#if msg.publishDateFrom??>
+        <#assign source=source + text('msg.field.published') + ' ' + msg.publishDateFrom?string(text('msg.time.date_format'))/>
     </#if>
     <#return source/>
 </#function>
@@ -384,7 +384,7 @@
         </#if>
 
         <!-- Source line -->
-        <#assign source=renderSource(msgDesc, msg.publishDateFrom)/>
+        <#assign source=renderSource(msgDesc, msg)/>
         <#if source?has_content>
             <tr>
                 <td class="field-value" align="right" colspan="2">

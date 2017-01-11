@@ -331,7 +331,7 @@ angular.module('niord.messages')
                                 if (scope.source.length > 0) {
                                     scope.source += ". ";
                                 }
-                                scope.source += LangService.translate('msg.field.published')
+                                scope.source += LangService.translate('msg.field.published', null, scope.lang)
                                         + " " + moment(scope.msg.publishDateFrom).format(scope.format);
                             }
                         }
