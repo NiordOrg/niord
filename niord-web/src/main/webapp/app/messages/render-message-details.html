@@ -98,8 +98,10 @@
 
 
             <!-- Source line -->
-            <tr ng-if="msg.descs[0].source">
-                <td colspan="2" class="text-right">({{msg.descs[0].source}})</td>
+            <tr ng-if="msg.descs[0].source || msg.publishDateFrom">
+                <td colspan="2" class="text-right">
+                    (<render-message-source msg="msg" lang="language"></render-message-source>)
+                </td>
             </tr>
 
         </table>

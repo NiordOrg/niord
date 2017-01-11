@@ -19,7 +19,6 @@ import freemarker.core.Environment;
 import freemarker.ext.beans.ResourceBundleModel;
 import freemarker.template.SimpleDate;
 import freemarker.template.SimpleScalar;
-import freemarker.template.TemplateBooleanModel;
 import freemarker.template.TemplateDirectiveBody;
 import freemarker.template.TemplateDirectiveModel;
 import freemarker.template.TemplateException;

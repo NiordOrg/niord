@@ -205,6 +205,24 @@
 
 
 <!-- ***************************************  -->
+<!-- Renders the message source + publ. date  -->
+<!-- ***************************************  -->
+<#function renderSource desc publishDate >
+    <#assign source=""/>
+    <#if desc?? && desc.source?has_content>
+        <#assign source=source + desc.source/>
+    </#if>
+    <#if desc?? && desc.source?has_content && publishDate??>
+        <#assign source=source + ". "/>
+    </#if>
+    <#if publishDate??>
+        <#assign source=source + text('msg.field.published') + ' ' + publishDate?string(text('msg.time.date_format'))/>
+    </#if>
+    <#return source/>
+</#function>
+
+
+<!-- ***************************************  -->
 <!-- Renders a message part                   -->
 <!-- ***************************************  -->
 <#macro renderMessagePart part lang=language draft=draft!false >
@@ -366,10 +384,11 @@
         </#if>
 
         <!-- Source line -->
-        <#if msgDesc?has_content && msgDesc.source?has_content>
+        <#assign source=renderSource(msgDesc, msg.publishDateFrom)/>
+        <#if source?has_content>
             <tr>
                 <td class="field-value" align="right" colspan="2">
-                    (${msgDesc.source!""})
+                    (${source!""})
                 </td>
             </tr>
         </#if>

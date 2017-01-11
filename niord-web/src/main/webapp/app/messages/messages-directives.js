@@ -283,7 +283,7 @@ angular.module('niord.messages')
                     scope.publication = '';
 
                     if (scope.msg) {
-                        var desc = LangService.desc(scope.msg, scope.lang);
+                        var desc = LangService.descForLanguage(scope.msg, scope.lang);
                         if (desc && desc.publication) {
                             scope.publication = desc.publication;
                         }
@@ -293,10 +293,54 @@ angular.module('niord.messages')
                     }
                 };
 
-                scope.$watch("msg", scope.updatePublication);
+                scope.$watch("[msg.descs,lang]", scope.updatePublication, true);
             }
         };
     }])
+
+
+    /****************************************************************
+     * Renders the message source + publication date
+     ****************************************************************/
+    .directive('renderMessageSource', ['$rootScope', 'LangService',
+        function ($rootScope, LangService) {
+
+            return {
+                restrict: 'E',
+                template: '<span class="message-source">{{source}}</span>',
+                scope: {
+                    msg: "=",
+                    lang: "=",
+                    format: "="
+                },
+                link: function(scope) {
+
+                    scope.lang = scope.lang || $rootScope.language;
+                    scope.source = '';
+                    scope.format = scope.format || LangService.translate('source.date_format');
+
+                    scope.updateSource = function () {
+                        scope.source = '';
+
+                        if (scope.msg) {
+                            var desc = LangService.descForLanguage(scope.msg, scope.lang);
+                            if (desc && desc.source) {
+                                scope.source = desc.source;
+                            }
+                            if (scope.msg.publishDateFrom) {
+                                if (scope.source.length > 0) {
+                                    scope.source += ". ";
+                                }
+                                scope.source += LangService.translate('msg.field.published')
+                                        + " " + moment(scope.msg.publishDateFrom).format(scope.format);
+                            }
+                        }
+                    };
+
+                    scope.$watch("[msg.descs, msg.publishDateFrom,lang]", scope.updateSource, true);
+                }
+            };
+        }])
 
 
     /****************************************************************
