@@ -253,6 +253,7 @@ public class FiringExerciseService extends BaseService {
             List<FiringPeriod> firingPeriods) {
 
         List<Message> result = new ArrayList<>();
+        Date now = new Date();
 
         for (Message firingAreaMessage : firingAreaMessages) {
 
@@ -306,6 +307,7 @@ public class FiringExerciseService extends BaseService {
 
             // Make sure the message expires after last event date
             message.updateEventDateInterval();
+            message.setPublishDateFrom(now);
             message.setPublishDateTo(message.getEventDateTo());
 
             // Format the firing periods as text
