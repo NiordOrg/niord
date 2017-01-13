@@ -16,6 +16,7 @@
 
 package org.niord.core.util;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
@@ -209,6 +210,24 @@ public class TimeUtils {
             return false;
         }
         return resetTime(date1).getTime() == resetTime(date2).getTime();
+    }
+
+
+    /**
+     * Checks if the two Dates is for the same date taking into account the given time zone
+     * @param date1 the first date
+     * @param date2 the second date
+     * @return if the two Dates is for the same date
+     */
+    public static boolean sameDate(Date date1, Date date2, TimeZone timeZone) {
+        if (date1 == null || date2 == null) {
+            return false;
+        } else if (timeZone == null) {
+            return sameDate(date1, date2);
+        }
+        LocalDate d1 = date1.toInstant().atZone(timeZone.toZoneId()).toLocalDate();
+        LocalDate d2 = date2.toInstant().atZone(timeZone.toZoneId()).toLocalDate();
+        return d1.equals(d2);
     }
 
 

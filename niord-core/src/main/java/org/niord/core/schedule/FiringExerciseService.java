@@ -356,7 +356,7 @@ public class FiringExerciseService extends BaseService {
             String txt = timePart.getEventDates().stream()
                     .map(di -> {
                         SimpleDateFormat sdf1 = new SimpleDateFormat(dtf, new Locale(lang));
-                        SimpleDateFormat sdf2 = TimeUtils.sameDate(di.getFromDate(), di.getToDate())
+                        SimpleDateFormat sdf2 = TimeUtils.sameDate(di.getFromDate(), di.getToDate(), timeZone)
                             ? new SimpleDateFormat(tf)
                             : sdf1;
                         sdf1.setTimeZone(timeZone);
