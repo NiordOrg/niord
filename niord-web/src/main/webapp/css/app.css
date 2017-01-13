@@ -121,6 +121,18 @@ input.ng-invalid-messageId {
     font-size: 12px;
 }
 
+.no-wrap-btn-group {
+    white-space: nowrap;
+}
+
+.no-wrap-btn-group> .btn {
+      float: inherit;
+}
+
+.no-wrap-btn-group > .btn + .btn {
+  margin-left: -4px;
+}
+
 .localized:disabled {
     background-color: #eeeeee!important;
 }

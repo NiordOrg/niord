@@ -188,9 +188,14 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         return "id".equalsIgnoreCase(sortBy);
     }
 
-    /** Returns whether to sort by date or not */
-    public boolean sortByDate() {
+    /** Returns whether to sort by event date or not */
+    public boolean sortByEventDate() {
         return "date".equalsIgnoreCase(sortBy);
+    }
+
+    /** Returns whether to sort by publish date or not */
+    public boolean sortByPublishDate() {
+        return "publish_date".equalsIgnoreCase(sortBy);
     }
 
     /** Returns whether to sort by area or not */

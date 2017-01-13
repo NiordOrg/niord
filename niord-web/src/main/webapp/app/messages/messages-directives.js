@@ -195,12 +195,16 @@ angular.module('niord.messages')
         return {
             restrict: 'E',
             scope: {
-                msg: "=",
-                firstLine: "="
+                msg:        "=",
+                type:       "=",
+                firstLine:  "="
             },
             link: function(scope, element) {
 
-                scope.updateTime = function () {
+                scope.type = scope.type || 'DATE';
+
+                /** Updates the time from the event time intervals **/
+                scope.updateEventTime = function () {
                     var lang = $rootScope.language;
                     var time = '';
                     // First check for a textual time description
@@ -208,7 +212,7 @@ angular.module('niord.messages')
                         for (var p = 0; p < scope.msg.parts.length; p++) {
                             var eventDates = scope.msg.parts[p].eventDates;
                             for (var x = 0; eventDates && x < eventDates.length; x++) {
-                                time += DateIntervalService.translateDateInterval(lang, eventDates[x], true) + "<br>";
+                                time += DateIntervalService.translateDateInterval(lang, eventDates[x], false) + "<br>";
                             }
                         }
                     }
@@ -223,6 +227,27 @@ angular.module('niord.messages')
                         }
                     }
                     element.html(time);
+                };
+
+
+                /** Updates the time from the publish time intervals **/
+                scope.updatePublishTime = function () {
+                    var time = '';
+                    if (scope.msg.publishDateFrom || scope.msg.publishDateTo) {
+                        var date = { allDay: true, fromDate: scope.msg.publishDateFrom, toDate : scope.msg.publishDateTo };
+                        time += DateIntervalService.translateDateInterval($rootScope.language, date, false);
+                    }
+                    element.html(time);
+                };
+
+
+                /** updates the time depending on the "type" selection **/
+                scope.updateTime = function () {
+                    if (scope.type == 'PUBLISH_DATE') {
+                        scope.updatePublishTime();
+                    } else {
+                        scope.updateEventTime();
+                    }
                 };
 
                 scope.$watch("msg", scope.updateTime);

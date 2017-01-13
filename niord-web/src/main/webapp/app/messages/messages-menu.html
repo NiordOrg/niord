@@ -202,6 +202,13 @@
                         <small ng-bind-html="sortIndicator('DATE')"></small>
                     </a>
                 </li>
+                <li>
+                    <a href ng-click="toggleSortOrder('PUBLISH_DATE')">
+                        <span class="glyphicon glyphicon-sort-by-attributes menu-icon"></span>&nbsp;
+                        <span translate>msg.field.publish_date</span>
+                        <small ng-bind-html="sortIndicator('PUBLISH_DATE')"></small>
+                    </a>
+                </li>
             </ul>
         </li>
 

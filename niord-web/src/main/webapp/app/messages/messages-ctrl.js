@@ -1014,6 +1014,18 @@ angular.module('niord.messages')
             };
 
 
+            // In table view-mode, either display event-data column or publish-date column
+            // store the selection in localStorage
+            $scope.dateColumnType = $window.localStorage.dateColumnType || 'DATE';
+
+            /** Sets the date column type (for table view-mode) - either 'DATE' or 'PUBLISH_DATE' **/
+            $scope.setDateColumnType = function (type) {
+                $scope.dateColumnType = type;
+                $window.localStorage.dateColumnType = type;
+                $scope.filterUpdated();
+            };
+
+
             /** Returns if the messages for the given area can be sorted **/
             $scope.canSortAreaMessages = function (area) {
                 return $scope.isEditor && area && area.id != -999999;

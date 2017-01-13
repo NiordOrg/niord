@@ -962,8 +962,12 @@ public class MessageService extends BaseService {
         Expression<?> treeSortOrder = null;
         List<Selection<?>> fields = new ArrayList<>();
         fields.add(msgRoot.get("id"));
-        if (param.sortByDate()) {
+        if (param.sortByEventDate()) {
             fields.add(msgRoot.get("eventDateFrom"));
+            fields.add(msgRoot.get("eventDateTo"));
+        } else if (param.sortByPublishDate()) {
+            fields.add(msgRoot.get("publishDateFrom"));
+            fields.add(msgRoot.get("publishDateTo"));
         } else if (param.sortById()) {
             fields.add(msgRoot.get("year"));
             fields.add(msgRoot.get("number"));
@@ -987,14 +991,28 @@ public class MessageService extends BaseService {
                 .where(criteriaHelper.where());
 
         // Sort the query
-        if (param.sortByDate()) {
+        if (param.sortByEventDate()) {
             if (param.getSortOrder() == SortOrder.ASC) {
                 tupleQuery.orderBy(
                         builder.asc(msgRoot.get("eventDateFrom")),
+                        builder.asc(msgRoot.get("eventDateTo")),
                         builder.asc(msgRoot.get("id")));
             } else {
                 tupleQuery.orderBy(
                         builder.desc(msgRoot.get("eventDateFrom")),
+                        builder.desc(msgRoot.get("eventDateTo")),
+                        builder.desc(msgRoot.get("id")));
+            }
+        } else if (param.sortByPublishDate()) {
+            if (param.getSortOrder() == SortOrder.ASC) {
+                tupleQuery.orderBy(
+                        builder.asc(msgRoot.get("publishDateFrom")),
+                        builder.asc(msgRoot.get("publishDateTo")),
+                        builder.asc(msgRoot.get("id")));
+            } else {
+                tupleQuery.orderBy(
+                        builder.desc(msgRoot.get("publishDateFrom")),
+                        builder.desc(msgRoot.get("publishDateTo")),
                         builder.desc(msgRoot.get("id")));
             }
         } else if (param.sortById()) {

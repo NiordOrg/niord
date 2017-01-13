@@ -16,9 +16,22 @@
                 ID
                 <span ng-if="state.sortBy == 'ID'"><small ng-bind-html="sortIndicator('ID')"></small></span>
             </th>
-            <th ng-click="toggleSortOrder('DATE')" class="clickable">
-                Event Date
-                <span ng-if="state.sortBy == 'DATE'"><small ng-bind-html="sortIndicator('DATE')"></small></span>
+            <th>
+                <div class="btn-group no-wrap-btn-group" uib-dropdown>
+                    <button id="split-button" type="button" class="btn btn-default btn-xs" style="font-size: 11px"
+                            ng-click="toggleSortOrder(dateColumnType)">
+                        <strong ng-if="dateColumnType == 'DATE'">Event Date</strong>
+                        <strong ng-if="dateColumnType == 'PUBLISH_DATE'">Publish Date</strong>
+                        <span ng-if="state.sortBy == dateColumnType"><small ng-bind-html="sortIndicator(dateColumnType)"></small></span>
+                    </button>
+                    <button type="button" class="btn btn-default btn-xs" style="font-size: 11px" uib-dropdown-toggle>
+                        &hellip;
+                    </button>
+                    <ul class="dropdown-menu" uib-dropdown-menu role="menu">
+                        <li role="menuitem"><a href ng-click="setDateColumnType('DATE')">Event Date</a></li>
+                        <li role="menuitem"><a href ng-click="setDateColumnType('PUBLISH_DATE')">Publish Date</a></li>
+                    </ul>
+                </div>
             </th>
             <th>Title</th>
             <th ng-click="toggleSortOrder('AREA')" class="clickable">
@@ -40,7 +53,7 @@
         <tr ng-repeat-end ng-class="{ 'message-row-selected' : isSelected(message) }">
             <td nowrap><message-id-badge msg="message" show-blank="true"></message-id-badge></td>
             <td nowrap>
-                <render-message-dates msg="message" first-line="true"/>
+                <render-message-dates msg="message" type="dateColumnType" first-line="true"></render-message-dates>
             </td>
             <td message-details-link="message.id" message-list="messageList"  selection="selection">
                 <span class="glyphicon glyphicon-new-window"></span>&nbsp;
