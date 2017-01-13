@@ -7,7 +7,9 @@
     </button>
     <ul class="dropdown-menu" style="right:0; left: auto" role="menu">
         <li ng-if="canEdit()">
-            <a href ng-click="edit()" ng-href="/#/editor/edit/{{messageId}}">
+            <a href ng-click="edit()"
+               ui-sref="editor.edit({ id: messageId })"
+               ui-sref-opts="{reload: true, notify: true}">
                 <span class="glyphicon glyphicon-pencil"></span>&nbsp;
                 <span translate>menu.action.edit</span>
             </a>
