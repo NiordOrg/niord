@@ -364,9 +364,7 @@
                 <td class="field-value">
                     <@trailingDot>
                         <#list msg.charts as chart>
-                        ${chart.chartNumber}
-                            <#if chart.internationalNumber?has_content>(INT ${chart.internationalNumber?c})</#if>
-                            <#if chart_has_next>, </#if>
+                          ${chart.chartNumber}<#if chart.internationalNumber?has_content> (INT ${chart.internationalNumber?c})</#if><#if chart_has_next>,</#if>
                         </#list>
                     </@trailingDot>
                 </td>
