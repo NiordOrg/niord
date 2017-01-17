@@ -69,7 +69,7 @@ public class MessageScriptFilterEvaluator {
                 // See https://bugs.openjdk.java.net/browse/JDK-8072426
                 // So, we play it safe and import the Enums using the official Nashorn mechanism:
 
-                String jsFilter = getNashHornImports()
+                String jsFilter = getNashornImports()
                                 + "function includeMessage(msg, data) { return " + filter + "; }";
 
                 // Considerations: Various documentation suggests that the ScriptEngine is indeed threadsafe.
@@ -92,7 +92,7 @@ public class MessageScriptFilterEvaluator {
      * Returns a scrip to prefix the message filter containing imports of various enums.
      * Example "var Status = Java.type('org.niord.model.message.Status');"
      */
-    private String getNashHornImports() {
+    private String getNashornImports() {
         return Arrays.stream(FILTER_ENUMS)
                 .map(type -> String.format("var %s = Java.type('%s');%n", type.getSimpleName(), type.getCanonicalName()))
                 .collect(Collectors.joining());
