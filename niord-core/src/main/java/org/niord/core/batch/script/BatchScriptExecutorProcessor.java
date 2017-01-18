@@ -16,6 +16,7 @@
 package org.niord.core.batch.script;
 
 import org.niord.core.batch.AbstractItemHandler;
+import org.niord.core.util.CdiUtils;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -25,13 +26,17 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.SimpleBindings;
+import java.util.Arrays;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * Execute the script file
  */
 @Named
 public class BatchScriptExecutorProcessor extends AbstractItemHandler {
+
+    private static Class<?>[] SCRIPT_CLASSES = { CdiUtils.class };
 
     @Inject
     EntityManager em;
@@ -47,10 +52,13 @@ public class BatchScriptExecutorProcessor extends AbstractItemHandler {
             ScriptEngine jsEngine = new ScriptEngineManager()
                     .getEngineByName("Nashorn");
 
+            // Make the entity manager available to the script as "em"
             Bindings bindings = new SimpleBindings();
             bindings.put("em", em);
             jsEngine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
 
+            // Add script imports
+            script = getNashornImports() + script;
 
             Object result = jsEngine.eval(script);
 
@@ -62,4 +70,16 @@ public class BatchScriptExecutorProcessor extends AbstractItemHandler {
             throw new Exception("Error executing script:\n" + script, e);
         }
     }
+
+
+    /**
+     * Returns a script to prefix the JavaScript.
+     * Example "var CdiUtils = Java.type('org.niord.core.util.CdiUtils');"
+     */
+    private String getNashornImports() {
+        return Arrays.stream(SCRIPT_CLASSES)
+                .map(type -> String.format("var %s = Java.type('%s');%n", type.getSimpleName(), type.getCanonicalName()))
+                .collect(Collectors.joining());
+    }
+
 }
