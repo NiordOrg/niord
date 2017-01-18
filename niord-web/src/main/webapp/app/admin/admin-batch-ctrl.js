@@ -68,8 +68,8 @@ angular.module('niord.admin')
      * ********************************************************************************
      * Batch Admin Controller
      */
-    .controller('BatchAdminCtrl', ['$scope', '$interval', '$stateParams', '$uibModal', 'AdminBatchService', 'UploadFileService',
-        function ($scope, $interval, $stateParams, $uibModal, AdminBatchService, UploadFileService) {
+    .controller('BatchAdminCtrl', ['$scope', '$interval', '$stateParams', '$uibModal', 'growl', 'AdminBatchService', 'UploadFileService',
+        function ($scope, $interval, $stateParams, $uibModal, growl, AdminBatchService, UploadFileService) {
             'use strict';
 
             $scope.batchStatus = {
@@ -232,6 +232,25 @@ angular.module('niord.admin')
                     '/rest/batch/execute-batch-set',
                     'zip');
             };
+
+
+            /** Allows the user (only sysadmins!) to execute a JavaScript on the back-end **/
+            $scope.executeJavaScript = function () {
+                $uibModal.open({
+                    controller: function ($scope) {
+                        $scope.javaScript = '';
+                    },
+                    templateUrl: "javaScriptBatchJobDialog.html",
+                    size: 'lg'
+                }).result.then(function (javascript) {
+                    if (javascript && javascript.length > 0) {
+                        AdminBatchService.executeJavaScript('javascript.js', javascript)
+                            .success(function () {
+                                growl.info('Scheduled script-executor batch job', { ttl: 3000 });
+                            })
+                    }
+                });
+            }
 
         }])
 

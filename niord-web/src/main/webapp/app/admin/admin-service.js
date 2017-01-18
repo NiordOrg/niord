@@ -594,6 +594,14 @@ angular.module('niord.admin')
             getBatchLogFileContent: function (instanceId, logFileName, fromLineNo) {
                 var fromLine = fromLineNo ? '?fromLineNo=' + fromLineNo : '';
                 return $http.get('/rest/batch/instance/' + instanceId + '/logs/' + encodeURIComponent(logFileName) + fromLine);
+            },
+
+            /** Executes the given JavaScript on the back-end (only Sysadmins) **/
+            executeJavaScript: function (scritpName, javascript) {
+                return $http.post('/rest/batch/execute-javascript', {
+                    scriptName: scritpName,
+                    javaScript: javascript
+                });
             }
 
         };

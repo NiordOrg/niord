@@ -137,6 +137,16 @@ tr.batch-execution-row td div.progress {
     font-size: 10px;
 }
 
+.batch-javascript-editor {
+    width: 100%;
+    min-height: 300px;
+    font-size: 11px;
+    font-family: "Courier New", serif;
+    color: black;
+    overflow-wrap: normal;
+    overflow-x: scroll;
+}
+
 /** Charts admin page **/
 
 .charts-map {

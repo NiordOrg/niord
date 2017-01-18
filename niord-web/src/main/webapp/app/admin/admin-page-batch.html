@@ -5,6 +5,7 @@
         <p style="margin-bottom: 20px">
             Manage and monitoring of batch jobs
             <button class="pull-right btn btn-sm btn-default" ng-click="uploadBatchSet()">Upload batch set...</button>
+            <button class="pull-right btn btn-sm btn-default" style="margin-right: 5px" ng-click="executeJavaScript()">Execute JavaScript...</button>
         </p>
 
         <div class="row">
@@ -92,3 +93,29 @@
 
 </admin-page>
 
+
+<!-- ************************************************** -->
+<!-- Dialog for submitting a back-end JavaScript        -->
+<!-- ************************************************** -->
+<script type="text/ng-template" id="javaScriptBatchJobDialog.html">
+    <div class="modal-header">
+        <h4 class="modal-title">Back-End JavaScript Editor</h4>
+    </div>
+    <div class="modal-body">
+
+        <div class="container-fluid">
+
+            <div class="row">
+                <div class="col-sm-12">
+                    <textarea class="batch-javascript-editor" ng-model="javaScript">
+                    </textarea>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-default" ng-click="$dismiss('aborted')">Cancel</button>
+        <button class="btn btn-primary" ng-click="$close(javaScript)">Execute</button>
+    </div>
+</script>

@@ -1,0 +1,12 @@
+<job id="script-executor" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
+    <listeners>
+        <listener ref="batchJobListener"/>
+    </listeners>
+    <step id="executeScriptStep">
+        <chunk item-count="1">
+            <reader ref="batchScriptExecutorReader" />
+            <processor ref="batchScriptExecutorProcessor"/>
+            <writer ref="batchScriptExecutorWriter" />
+        </chunk>
+    </step>
+</job>

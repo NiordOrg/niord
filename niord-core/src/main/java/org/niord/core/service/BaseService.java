@@ -24,6 +24,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -143,7 +144,7 @@ public abstract class BaseService {
     public <E extends BaseEntity> List<E> persistedList(Class<E> entityType, List<E> entities) {
         return entities.stream()
                 .map(e -> getByPrimaryKey(entityType, e.getId()))
-                .filter(e -> e != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
@@ -156,7 +157,7 @@ public abstract class BaseService {
     public <ID extends Serializable, E extends BaseEntity<ID>> List<E> persistedListForIds(Class<E> entityType, List<ID> ids) {
         return ids.stream()
                 .map(id -> getByPrimaryKey(entityType, id))
-                .filter(e -> e != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 

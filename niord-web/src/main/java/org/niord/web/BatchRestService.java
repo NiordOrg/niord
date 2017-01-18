@@ -16,6 +16,8 @@
 package org.niord.web;
 
 import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
@@ -27,6 +29,7 @@ import org.niord.core.repo.FileTypes;
 import org.niord.core.repo.IconSize;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.user.UserService;
+import org.niord.model.IJsonSerializable;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
@@ -53,6 +56,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -327,4 +331,60 @@ public class BatchRestService {
 
 
     }
+
+
+    /**
+     * Executes the given javascript via the "script-executor" batch job
+     *
+     * NB: Important to only let sysadmin access this operation.
+     *
+     * @param params the javascript parameter
+     */
+    @POST
+    @Path("/execute-javascript")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("text/plain")
+    @RolesAllowed("sysadmin")
+    public String executeJavaScript(ExecuteJavaScriptParams params) throws Exception {
+
+        if (StringUtils.isNotBlank(params.getJavaScript())) {
+            log.warn("User " + userService.currentUser().getName()
+                    + " scheduled execution of JavaScript:\n" + params.getJavaScript());
+
+            batchService.startBatchJobWithDataFile(
+                    "script-executor",
+                    IOUtils.toInputStream(params.getJavaScript(), "UTF-8"),
+                    StringUtils.defaultIfBlank(params.getScriptName(), "javascript.js"),
+                    new HashMap<>());
+        }
+
+        return "OK";
+    }
+
+
+    /**
+     * Used when executing a back-end JavaScript
+     */
+    @SuppressWarnings("unused")
+    public static class ExecuteJavaScriptParams implements IJsonSerializable {
+        String scriptName;
+        String javaScript;
+
+        public String getScriptName() {
+            return scriptName;
+        }
+
+        public void setScriptName(String scriptName) {
+            this.scriptName = scriptName;
+        }
+
+        public String getJavaScript() {
+            return javaScript;
+        }
+
+        public void setJavaScript(String javaScript) {
+            this.javaScript = javaScript;
+        }
+    }
+
 }
