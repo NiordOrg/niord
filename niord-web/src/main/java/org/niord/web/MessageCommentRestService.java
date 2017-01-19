@@ -135,9 +135,9 @@ public class MessageCommentRestService {
         if (!Objects.equals(commentId, comment.getId())) {
             throw new WebApplicationException(400);
         }
-        // Get the message by nessage id
+        // Get the message by message id
         Message message = messageService.resolveMessage(messageId);
-        if (message == null || !message.getComments().stream().anyMatch(c -> c.getId().equals(commentId))) {
+        if (message == null || message.getComments().stream().noneMatch(c -> c.getId().equals(commentId))) {
             throw new IllegalArgumentException("Invalid message or comment ID " + messageId);
         }
         return commentService
@@ -160,7 +160,7 @@ public class MessageCommentRestService {
     public CommentVo acknowledgeComment(@PathParam("messageId") String messageId, @PathParam("commentId") Integer commentId) {
         // Get the message by message id
         Message message = messageService.resolveMessage(messageId);
-        if (message == null || !message.getComments().stream().anyMatch(c -> c.getId().equals(commentId))) {
+        if (message == null || message.getComments().stream().noneMatch(c -> c.getId().equals(commentId))) {
             throw new IllegalArgumentException("Invalid message or comment ID " + messageId);
         }
         return commentService
