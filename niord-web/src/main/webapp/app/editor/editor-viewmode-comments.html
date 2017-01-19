@@ -77,7 +77,7 @@
                             <button class="btn btn-sm btn-primary" ng-click="saveComment()"
                                     ng-disabled="commentForm.$pristine || commentForm.$invalid">
                                 <span class="glyphicon glyphicon-floppy-disk"></span>
-                                <span ng-if="canSaveComment(false)">Save Comment</span>
+                                <span ng-if="!canSaveComment(true)">Save Comment</span>
                                 <span ng-if="canSaveComment(true)">Save and Send Comment</span>
                             </button>
                         </span>

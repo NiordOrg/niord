@@ -34,6 +34,7 @@ import javax.ejb.Asynchronous;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.mail.internet.InternetAddress;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -105,11 +106,11 @@ public class MessageMailService extends BaseService {
                 Mail mail = HtmlMail.fromHtml(mailContents, app.getBaseUri(), HtmlMail.StyleHandling.INLINE_STYLES, true)
                         //.from(new InternetAddress(user.getEmail()))
                         .replyTo(new InternetAddress(user.getEmail()))
-                        .recipients(mailTemplate.getRecipients())
+                        .recipients(Collections.singletonList(recipient))
                         .subject(mailSubject);
                 mailService.sendMail(mail);
 
-                String msg = "Mail sent to " + recipient + " in " + (System.currentTimeMillis() - t0) + " ms";
+                String msg = "Mail sent to " + mailTo + " in " + (System.currentTimeMillis() - t0) + " ms";
                 log.info(msg);
             } catch (Exception e) {
                 log.error("Error generating PDF for messages", e);
