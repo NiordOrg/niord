@@ -432,6 +432,7 @@ public class MessageService extends BaseService {
 
         original.setPublishDateFrom(message.getPublishDateFrom());
         original.setPublishDateTo(message.getPublishDateTo());
+        original.setFollowUpDate(message.getFollowUpDate());
 
         original.getReferences().clear();
         message.getReferences().stream()
@@ -968,6 +969,8 @@ public class MessageService extends BaseService {
         } else if (param.sortByPublishDate()) {
             fields.add(msgRoot.get("publishDateFrom"));
             fields.add(msgRoot.get("publishDateTo"));
+        } else if (param.sortByFollowUpDate()) {
+            fields.add(msgRoot.get("followUpDate"));
         } else if (param.sortById()) {
             fields.add(msgRoot.get("year"));
             fields.add(msgRoot.get("number"));
@@ -1013,6 +1016,16 @@ public class MessageService extends BaseService {
                 tupleQuery.orderBy(
                         builder.desc(msgRoot.get("publishDateFrom")),
                         builder.desc(msgRoot.get("publishDateTo")),
+                        builder.desc(msgRoot.get("id")));
+            }
+        } else if (param.sortByFollowUpDate()) {
+            if (param.getSortOrder() == SortOrder.ASC) {
+                tupleQuery.orderBy(
+                        builder.asc(msgRoot.get("followUpDate")),
+                        builder.asc(msgRoot.get("id")));
+            } else {
+                tupleQuery.orderBy(
+                        builder.desc(msgRoot.get("followUpDate")),
                         builder.desc(msgRoot.get("id")));
             }
         } else if (param.sortById()) {

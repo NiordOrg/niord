@@ -198,6 +198,11 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         return "publish_date".equalsIgnoreCase(sortBy);
     }
 
+    /** Returns whether to sort by follow-up date or not */
+    public boolean sortByFollowUpDate() {
+        return "follow_up_date".equalsIgnoreCase(sortBy);
+    }
+
     /** Returns whether to sort by area or not */
     public boolean sortByArea() {
         return "area".equalsIgnoreCase(sortBy);

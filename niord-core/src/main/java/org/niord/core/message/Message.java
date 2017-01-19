@@ -189,6 +189,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     @Temporal(TemporalType.TIMESTAMP)
     Date publishDateTo;
 
+    @Temporal(TemporalType.TIMESTAMP)
+    Date followUpDate;
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "message", orphanRemoval = true)
     @OrderColumn(name = "indexNo")
     List<Reference> references = new ArrayList<>();
@@ -282,6 +285,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         this.horizontalDatum = message.getHorizontalDatum();
         this.publishDateFrom = message.getPublishDateFrom();
         this.publishDateTo = message.getPublishDateTo();
+        this.followUpDate = message.getFollowUpDate();
         this.references.clear();
         if (message.getReferences() != null) {
             message.getReferences().stream()
@@ -338,6 +342,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             message.setHorizontalDatum(horizontalDatum);
             message.setPublishDateFrom(publishDateFrom);
             message.setPublishDateTo(publishDateTo);
+            message.setFollowUpDate(followUpDate);
             references.forEach(r -> message.checkCreateReferences().add(r.toVo(filter)));
             message.setOriginalInformation(originalInformation);
             attachments.forEach(att -> message.checkCreateAttachments().add(att.toVo(filter)));
@@ -768,6 +773,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setPublishDateTo(Date publishDateTo) {
         this.publishDateTo = publishDateTo;
+    }
+
+    public Date getFollowUpDate() {
+        return followUpDate;
+    }
+
+    public void setFollowUpDate(Date followUpDate) {
+        this.followUpDate = followUpDate;
     }
 
     public List<Reference> getReferences() {

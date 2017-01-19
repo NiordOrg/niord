@@ -13,29 +13,33 @@
     <table class='table table-condensed' ng-if="messageList.length > 0">
         <tr style="background-color: lightgray">
             <th ng-click="toggleSortOrder('ID')" class="clickable">
-                ID
+                <span translate>msg.field.id</span>
                 <span ng-if="state.sortBy == 'ID'"><small ng-bind-html="sortIndicator('ID')"></small></span>
             </th>
             <th>
                 <div class="btn-group no-wrap-btn-group" uib-dropdown>
                     <button id="split-button" type="button" class="btn btn-default btn-xs" style="font-size: 11px"
                             ng-click="toggleSortOrder(dateColumnType)">
-                        <strong ng-if="dateColumnType == 'DATE'">Event Date</strong>
-                        <strong ng-if="dateColumnType == 'PUBLISH_DATE'">Publish Date</strong>
+                        <strong ng-if="dateColumnType == 'DATE'" translate>msg.field.event_dates</strong>
+                        <strong ng-if="dateColumnType == 'PUBLISH_DATE'" translate>msg.field.publish_date</strong>
+                        <strong ng-if="dateColumnType == 'FOLLOW_UP_DATE'" translate>msg.field.follow_up_date</strong>
                         <span ng-if="state.sortBy == dateColumnType"><small ng-bind-html="sortIndicator(dateColumnType)"></small></span>
                     </button>
                     <button type="button" class="btn btn-default btn-xs" style="font-size: 11px" uib-dropdown-toggle>
                         &hellip;
                     </button>
                     <ul class="dropdown-menu" uib-dropdown-menu role="menu">
-                        <li role="menuitem"><a href ng-click="setDateColumnType('DATE')">Event Date</a></li>
-                        <li role="menuitem"><a href ng-click="setDateColumnType('PUBLISH_DATE')">Publish Date</a></li>
+                        <li role="menuitem"><a href ng-click="setDateColumnType('DATE')" translate>msg.field.event_dates</a></li>
+                        <li role="menuitem"><a href ng-click="setDateColumnType('PUBLISH_DATE')" translate>msg.field.publish_date</a></li>
+                        <li role="menuitem"><a href ng-click="setDateColumnType('FOLLOW_UP_DATE')" translate>msg.field.follow_up_date</a></li>
                     </ul>
                 </div>
             </th>
-            <th>Title</th>
+            <th>
+                <span translate>msg.field.title</span>
+            </th>
             <th ng-click="toggleSortOrder('AREA')" class="clickable">
-                Area
+                <span translate>msg.field.areas</span>
                 <span ng-if="state.sortBy == 'AREA'"><small ng-bind-html="sortIndicator('AREA')"></small></span>
             </th>
             <th><span class="glyphicon glyphicon-cog"></span></th>

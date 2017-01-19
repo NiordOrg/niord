@@ -241,10 +241,25 @@ angular.module('niord.messages')
                 };
 
 
+                /** Updates the time from the follow-up date **/
+                scope.updateFollowUpTime = function () {
+                    var time = '';
+                    if (scope.msg.followUpDate) {
+                        time = moment(scope.msg.followUpDate).format('ll');
+                        if (moment().isAfter(scope.msg.followUpDate)) {
+                            time = '<span class="red">' + time + '</span>';
+                        }
+                    }
+                    element.html(time);
+                };
+
+
                 /** updates the time depending on the "type" selection **/
                 scope.updateTime = function () {
                     if (scope.type == 'PUBLISH_DATE') {
                         scope.updatePublishTime();
+                    } else if (scope.type == 'FOLLOW_UP_DATE') {
+                        scope.updateFollowUpTime();
                     } else {
                         scope.updateEventTime();
                     }

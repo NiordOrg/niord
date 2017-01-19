@@ -287,6 +287,18 @@
                                               tab-index="601"></date-time-picker>
                         </div>
                     </div>
+
+                    <div class="row" style="margin-top: 10px">
+                        <div class="col-xs-6 col-sm-6 col-md-4" style="text-align: right; margin-top: 8px">
+                            <span translate>msg.field.follow_up_date</span>:
+                        </div>
+                        <div class="col-xs-6 col-sm-6 col-md-4">
+                            <date-time-picker ng-model="message.followUpDate" placeholder="Follow-up date"
+                                              format="'ll'" time="'00:00:00'"
+                                              readonly="message.status != 'DRAFT' && message.status != 'VERIFIED'  && message.status != 'PUBLISHED'"
+                                              tab-index="602"></date-time-picker>
+                        </div>
+                    </div>
                 </editor-field-value-editor>
 
             </editor-field>

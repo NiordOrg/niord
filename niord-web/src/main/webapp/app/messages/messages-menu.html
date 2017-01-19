@@ -209,6 +209,13 @@
                         <small ng-bind-html="sortIndicator('PUBLISH_DATE')"></small>
                     </a>
                 </li>
+                <li>
+                    <a href ng-click="toggleSortOrder('FOLLOW_UP_DATE')">
+                        <span class="glyphicon glyphicon-sort-by-attributes menu-icon"></span>&nbsp;
+                        <span translate>msg.field.follow_up_date</span>
+                        <small ng-bind-html="sortIndicator('FOLLOW_UP_DATE')"></small>
+                    </a>
+                </li>
             </ul>
         </li>
 

@@ -1018,7 +1018,7 @@ angular.module('niord.messages')
             // store the selection in localStorage
             $scope.dateColumnType = $window.localStorage.dateColumnType || 'DATE';
 
-            /** Sets the date column type (for table view-mode) - either 'DATE' or 'PUBLISH_DATE' **/
+            /** Sets the date column type (for table view-mode) - either 'DATE', 'PUBLISH_DATE' or 'FOLLOW_UP_DATE' **/
             $scope.setDateColumnType = function (type) {
                 $scope.dateColumnType = type;
                 $window.localStorage.dateColumnType = type;

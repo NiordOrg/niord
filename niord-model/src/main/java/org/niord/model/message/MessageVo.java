@@ -35,7 +35,7 @@ import java.util.List;
 @XmlRootElement(name = "message")
 @XmlType(propOrder = {
         "messageSeries", "number", "shortId", "mainType", "type", "status",
-        "areas", "categories", "charts", "horizontalDatum", "publishDateFrom", "publishDateTo",
+        "areas", "categories", "charts", "horizontalDatum", "publishDateFrom", "publishDateTo", "followUpDate",
         "references", "originalInformation", "parts", "descs", "attachments"
 })
 @SuppressWarnings("unused")
@@ -56,6 +56,7 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
     String horizontalDatum;
     Date publishDateFrom;
     Date publishDateTo;
+    Date followUpDate;
     List<ReferenceVo> references;
     Boolean originalInformation;
     List<MessagePartVo> parts;
@@ -94,6 +95,7 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
             message.setHorizontalDatum(horizontalDatum);
             message.setPublishDateFrom(publishDateFrom);
             message.setPublishDateTo(publishDateTo);
+            message.setFollowUpDate(followUpDate);
             if (references != null) {
                 references.forEach(r -> message.checkCreateReferences().add(r.copy(filter)));
             }
@@ -337,6 +339,14 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
 
     public void setPublishDateTo(Date publishDateTo) {
         this.publishDateTo = publishDateTo;
+    }
+
+    public Date getFollowUpDate() {
+        return followUpDate;
+    }
+
+    public void setFollowUpDate(Date followUpDate) {
+        this.followUpDate = followUpDate;
     }
 
     public List<ReferenceVo> getReferences() {
