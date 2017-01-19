@@ -21,15 +21,11 @@ import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
-import org.niord.core.NiordApp;
 import org.niord.core.domain.DomainService;
-import org.niord.core.fm.FmService;
-import org.niord.core.mail.HtmlMail;
-import org.niord.core.mail.Mail;
-import org.niord.core.mail.MailService;
+import org.niord.core.mail.Mail.MailRecipient;
+import org.niord.core.message.MessageMailService;
+import org.niord.core.message.MessageMailService.MessageMailTemplate;
 import org.niord.core.message.MessageSearchParams;
-import org.niord.core.user.User;
-import org.niord.core.user.UserService;
 import org.niord.model.message.MessageVo;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
@@ -37,6 +33,7 @@ import org.slf4j.Logger;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.mail.Message.RecipientType;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -44,6 +41,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
+import java.util.Collections;
 
 /**
  * REST interface for generating message e-mails.
@@ -58,22 +56,14 @@ public class MessageMailRestService {
     Logger log;
 
     @Inject
-    NiordApp app;
-
-    @Inject
     MessageSearchRestService messageSearchRestService;
 
     @Inject
-    FmService fmService;
-
-    @Inject
-    MailService mailService;
-
-    @Inject
-    UserService userService;
-
-    @Inject
     DomainService domainService;
+
+    @Inject
+    MessageMailService messageMailService;
+
 
     /**
      * Generates and sends an e-mail for the message search result.
@@ -87,46 +77,33 @@ public class MessageMailRestService {
     public String sendMessageMail(@Context HttpServletRequest request) throws Exception {
 
         long t0 = System.currentTimeMillis();
+
         String mailTo = request.getParameter("mailTo");
         String mailSubject = request.getParameter("mailSubject");
         String mailMessage = request.getParameter("mailMessage");
-
         if (StringUtils.isBlank(mailTo)) {
             throw new WebApplicationException(400);
         }
         mailSubject = StringUtils.defaultIfBlank(mailSubject, "No subject");
         mailMessage = StringEscapeUtils.escapeHtml(StringUtils.defaultIfBlank(mailMessage, "")).replace("\n", "<br>");
-
-        // Perform a search for at most 1000 messages
-        MessageSearchParams params = MessageSearchParams.instantiate(domainService.currentDomain(), request);
-        params.maxSize(1000).page(0);
-        PagedSearchResultVo<MessageVo> result = messageSearchRestService.searchMessages(params);
-
-        User user = userService.currentUser();
+        MailRecipient recipient = new MailRecipient(RecipientType.TO, new InternetAddress(mailTo));
 
         try {
-            String mailContents =
-                    fmService.newTemplateBuilder()
-                            .templatePath("/templates/messages/message-mail.ftl")
-                            .data("messages", result.getData())
-                            .data("areaHeadings", params.sortByArea())
-                            .data("searchCriteria", result.getDescription())
-                            .data("mailTo", mailTo)
-                            .data("mailMessage", mailMessage)
-                            .data("mailSender", user.getName())
-                            .data("mapThumbnails", false)
-                            .data("frontPage", false)
-                            .dictionaryNames("web", "message", "mail", "pdf")
-                            .language(params.getLanguage())
-                            .process();
+            // Perform a search for at most 1000 messages
+            MessageSearchParams params = MessageSearchParams.instantiate(domainService.currentDomain(), request);
+            params.maxSize(1000).page(0);
+            PagedSearchResultVo<MessageVo> result = messageSearchRestService.searchMessages(params);
 
-            Mail mail = HtmlMail.fromHtml(mailContents, app.getBaseUri(), HtmlMail.StyleHandling.INLINE_STYLES, true)
-                    .sender(new InternetAddress("noreply@e-navigation.net"))
-                    .from(new InternetAddress("noreply@e-navigation.net"))
-                    .replyTo(new InternetAddress(user.getEmail()))
-                    .recipient(javax.mail.Message.RecipientType.TO, new InternetAddress(mailTo))
-                    .subject(mailSubject);
-            mailService.sendMail(mail);
+
+            // Send the e-mail
+            MessageMailTemplate mailTemplate = new MessageMailTemplate()
+                    .subject(mailSubject)
+                    .mailMessage(mailMessage)
+                    .messages(result.getData())
+                    .recipients(Collections.singletonList(recipient))
+                    .language(params.getLanguage())
+                    .templatePath("/templates/messages/message-mail.ftl");
+            messageMailService.sendMessageMailAsync(mailTemplate);
 
             String msg = "Mail sent to " + mailTo + " in " + (System.currentTimeMillis() - t0) + " ms";
             log.info(msg);

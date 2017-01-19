@@ -81,6 +81,9 @@ public class CommentService extends BaseService {
         original.setComment(comment.getComment());
         original.setAcknowledgeDate(null);
         original.setAcknowledgedBy(null);
+        original.getEmailAddresses().clear();
+        original.getEmailAddresses().addAll(comment.getEmailAddresses());
+
         saveEntity(original);
 
         return original;

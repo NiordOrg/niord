@@ -175,6 +175,22 @@ public class UserService extends BaseService {
         }
     }
 
+
+    /**
+     * Searches for users whose name or e-mail matches the given name
+     * @param name the name to match
+     * @return the matching users
+     */
+    public List<User> searchUsers(String name) {
+        if (StringUtils.isBlank(name)) {
+            return Collections.emptyList();
+        }
+        return em.createNamedQuery("User.searchUsers", User.class)
+                .setParameter("term", "%" + name.toLowerCase() + "%")
+                .getResultList();
+    }
+
+
     /*************************/
     /** Keycloak methods    **/
     /*************************/
@@ -232,21 +248,6 @@ public class UserService extends BaseService {
      */
     public void deleteKeycloakUser(String userId) throws Exception {
         keycloakIntegrationService.deleteKeycloakUser(userId);
-    }
-
-
-    /**
-     * Searches for users whose name or e-mail matches the given name
-     * @param name the name to match
-     * @return the matching users
-     */
-    public List<User> searchUsers(String name) {
-        if (StringUtils.isBlank(name)) {
-            return Collections.emptyList();
-        }
-        return em.createNamedQuery("User.searchUsers", User.class)
-                .setParameter("term", "%" + name.toLowerCase() + "%")
-                .getResultList();
     }
 
 

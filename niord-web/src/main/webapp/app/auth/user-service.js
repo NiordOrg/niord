@@ -31,6 +31,11 @@ angular.module('niord.common')
                 /** Searches for users */
                 search: function(name) {
                     return $http.get('/rest/users/search?name=' + encodeURIComponent(name));
+                },
+
+                /** Searches for user email addresses */
+                searchEmails: function(name) {
+                    return $http.get('/rest/users/search-emails?name=' + encodeURIComponent(name));
                 }
             }
         }])

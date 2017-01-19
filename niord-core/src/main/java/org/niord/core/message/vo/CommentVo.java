@@ -18,6 +18,7 @@ package org.niord.core.message.vo;
 import org.niord.model.IJsonSerializable;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * Represents a comment to a messages. Comments can be acknowledged.
@@ -32,6 +33,7 @@ public class CommentVo implements IJsonSerializable {
     Date acknowledgeDate;
     String comment;
     Boolean ownComment;
+    List<String> emailAddresses;
 
     /*************************/
     /** Getters and Setters **/
@@ -91,5 +93,13 @@ public class CommentVo implements IJsonSerializable {
 
     public void setOwnComment(Boolean ownComment) {
         this.ownComment = ownComment;
+    }
+
+    public List<String> getEmailAddresses() {
+        return emailAddresses;
+    }
+
+    public void setEmailAddresses(List<String> emailAddresses) {
+        this.emailAddresses = emailAddresses;
     }
 }

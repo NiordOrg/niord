@@ -281,13 +281,14 @@ angular.module('niord.messages')
 
             /** Creates a comment for the given message */
             createComment: function(id, comment) {
-                return $http.post('/rest/messages/message/' + id + '/comment', comment);
+                return $http.post('/rest/messages/message/' + id + '/comment?lang=' + $rootScope.language, comment);
             },
 
 
             /** Updates a comment for the given message */
             updateComment: function(id, comment) {
-                return $http.put('/rest/messages/message/' + id + '/comment/' + comment.id, comment);
+                return $http.put('/rest/messages/message/' + id + '/comment/' + comment.id
+                    + '?lang=' + $rootScope.language, comment);
             },
 
 

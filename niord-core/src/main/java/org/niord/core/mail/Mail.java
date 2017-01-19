@@ -264,6 +264,11 @@ public class Mail implements Serializable {
         return this;
     }
 
+    public Mail recipients(List<MailRecipient> recipients) {
+        this.recipients = recipients;
+        return this;
+    }
+
     public Mail replyTo(Address addr) {
         replyTo.add(addr);
         return this;

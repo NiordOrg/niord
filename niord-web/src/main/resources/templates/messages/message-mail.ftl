@@ -9,7 +9,7 @@
 </head>
 <body>
 
-<h1>${text("mail.dear.user", mailTo)}</h1>
+<h3>${text("mail.dear.user", mailTo)}</h3>
 
 <p style="margin-top:20px">
     ${mailMessage}

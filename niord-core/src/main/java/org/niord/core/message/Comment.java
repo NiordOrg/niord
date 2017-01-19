@@ -19,6 +19,7 @@ import org.niord.core.message.vo.CommentVo;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.user.User;
 
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.Lob;
 import javax.persistence.ManyToOne;
@@ -28,7 +29,9 @@ import javax.persistence.PrePersist;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -63,6 +66,9 @@ public class Comment extends BaseEntity<Integer> {
     @Lob
     String comment;
 
+    @ElementCollection
+    List<String> emailAddresses = new ArrayList<>();
+
 
     /**
      * Constructor
@@ -79,6 +85,9 @@ public class Comment extends BaseEntity<Integer> {
         this.message = message;
         this.user = user;
         this.comment = comment.getComment();
+        if (comment.getEmailAddresses() != null) {
+            this.emailAddresses.addAll(comment.getEmailAddresses());
+        }
     }
 
 
@@ -91,6 +100,9 @@ public class Comment extends BaseEntity<Integer> {
         vo.setAcknowledgedBy(acknowledgedBy != null ? acknowledgedBy.getName() : null);
         vo.setAcknowledgeDate(acknowledgeDate);
         vo.setComment(comment);
+        if (!emailAddresses.isEmpty()) {
+            vo.setEmailAddresses(new ArrayList<>(emailAddresses));
+        }
         return vo;
     }
 
@@ -160,5 +172,13 @@ public class Comment extends BaseEntity<Integer> {
 
     public void setComment(String comment) {
         this.comment = comment;
+    }
+
+    public List<String> getEmailAddresses() {
+        return emailAddresses;
+    }
+
+    public void setEmailAddresses(List<String> emailAddresses) {
+        this.emailAddresses = emailAddresses;
     }
 }

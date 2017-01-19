@@ -16,6 +16,7 @@
 
 package org.niord.web;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
@@ -42,8 +43,10 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -54,6 +57,10 @@ import java.util.stream.Collectors;
 @SecurityDomain("keycloak")
 @PermitAll
 public class UserRestService extends AbstractBatchableRestService {
+
+    private static final Pattern EMAIL_PATTERN =
+            Pattern.compile("^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@"
+                    + "[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$");
 
     @Inject
     Logger log;
@@ -75,6 +82,29 @@ public class UserRestService extends AbstractBatchableRestService {
         return userService.searchUsers(name).stream()
                 .map(User::toVo)
                 .collect(Collectors.toList());
+    }
+
+
+    /** Returns email addresses whose users match the given name */
+    @GET
+    @Path("/search-emails")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed({ "editor" })
+    @GZIP
+    @NoCache
+    public List<String> searchEmails(@QueryParam("name") String name) {
+
+        List<String> emails = new ArrayList<>();
+        if (StringUtils.isNotBlank(name) && EMAIL_PATTERN.matcher(name).matches()) {
+            emails.add(name);
+        }
+
+        userService.searchUsers(name).stream()
+                .map(u -> u.getName() + " <" + u.getEmail() + ">")
+                .filter(Objects::nonNull)
+                .forEach(emails::add);
+
+        return emails;
     }
 
 

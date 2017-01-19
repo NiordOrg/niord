@@ -61,6 +61,10 @@
                                   ng-model="comment.comment" required></textarea>
                     </div>
                     <div style="margin-top: 10px;">
+                        <email-address-field email-data="comment" field="emailAddresses"
+                                    title="Send e-mail to"></email-address-field>
+                    </div>
+                    <div style="margin-top: 20px;">
                         <span ng-if="comment.id && !comment.acknowledgeDate">
                             <button class="btn btn-sm btn-success" ng-click="acknowledge()">
                                 Acknowledge
@@ -72,7 +76,9 @@
                             </button>
                             <button class="btn btn-sm btn-primary" ng-click="saveComment()"
                                     ng-disabled="commentForm.$pristine || commentForm.$invalid">
-                                <span class="glyphicon glyphicon-floppy-disk"></span> Save Comment
+                                <span class="glyphicon glyphicon-floppy-disk"></span>
+                                <span ng-if="canSaveComment(false)">Save Comment</span>
+                                <span ng-if="canSaveComment(true)">Save and Send Comment</span>
                             </button>
                         </span>
                     </div>

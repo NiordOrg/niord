@@ -1,0 +1,23 @@
+<div class="input-group">
+
+    <span class="input-group-addon" style="font-size: 11px"
+        ng-if="title">{{title}}</span>
+
+    <ui-select multiple  ng-model="emailData[field]" >
+        <ui-select-match placeholder="Select e-mail addresses">
+            {{$item}}
+        </ui-select-match>
+        <ui-select-choices repeat="email in emailSelection"
+                           refresh="refreshEmails($select.search)"
+                           refresh-delay="200">
+            <div>
+                <span>{{email}}</span>
+            </div>
+
+        </ui-select-choices>
+    </ui-select>
+
+
+    <span class="input-group-addon clickable" style="font-size: 11px"
+          ng-click="removeEmails()"><span class="glyphicon glyphicon-trash"></span></span>
+</div>

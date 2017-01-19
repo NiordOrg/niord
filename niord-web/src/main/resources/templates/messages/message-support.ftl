@@ -242,7 +242,7 @@
 <!-- ***************************************  -->
 <!-- Renders a message                        -->
 <!-- ***************************************  -->
-<#macro renderMessage msg lang=language draft=draft!false >
+<#macro renderMessage msg lang=language draft=draft!false link=link!false >
 
     <#assign msgDesc=descForLang(msg, lang)!>
 
@@ -275,9 +275,13 @@
     <#if msgDesc?has_content && msgDesc.title?has_content>
         <div class="avoid-break-before-after" id="msg_${msg.id}">
             <strong>
-                <!-- a href="${baseUri}/#/message/${msg.id}" target="_blank" id="msg_${msg.id}"-->
+                <#if link == true>
+                    <a href="${baseUri}/#/message/${msg.id}" target="_blank" id="msg_${msg.id}">
+                        ${msgDesc.title}
+                    </a>
+                <#else>
                     ${msgDesc.title}
-                <!--/a -->
+                </#if>
             </strong>
             <@renderLangFlag desc=msgDesc lang=lang />
         </div>
@@ -317,7 +321,13 @@
                         <#assign refDesc=descForLang(ref, lang)!>
                         <div>
                             <@trailingDot>
-                                ${ref.messageId}
+                                <#if link == true>
+                                    <a href="${baseUri}/#/message/${ref.messageId}" target="_blank" id="msg_${ref.messageId}">
+                                        ${ref.messageId}
+                                    </a>
+                                <#else>
+                                    ${ref.messageId}
+                                </#if>
 
                                 <#if ref.type == 'REPETITION'>
                                     - ${text("msg.reference.repetition")}
@@ -404,7 +414,7 @@
 <!-- ***************************************  -->
 <!-- Renders a list of messages               -->
 <!-- ***************************************  -->
-<#macro renderMessageList messages areaHeadings=true prefix="" draft=draft!false>
+<#macro renderMessageList messages areaHeadings=true prefix="" draft=draft!false link=link!false>
 
     <#assign areaHeadingId=-9999999 />
 
@@ -460,10 +470,10 @@
                                     <img src="/img/flags/${lang}.png" height="12"/>&nbsp;${text('lang.' + lang)} ${text('pdf.translation')}
                                 </div>
                             </#if>
-                            <@renderMessage msg=msg lang=lang draft=draft/>
+                            <@renderMessage msg=msg lang=lang draft=draft link=link/>
                         </#list>
                     <#else>
-                        <@renderMessage msg=msg lang=language draft=draft/>
+                        <@renderMessage msg=msg lang=language draft=draft link=link/>
                     </#if>
                 </td>
             </tr>

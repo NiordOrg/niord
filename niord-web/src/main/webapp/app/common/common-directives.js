@@ -438,6 +438,54 @@ angular.module('niord.common')
 
 
     /********************************
+     * Defines an email field used for
+     * selecting email addresses
+     ********************************/
+    .directive('emailAddressField', [ '$rootScope', 'UserService', 'AuthService',
+        function ($rootScope, UserService, AuthService) {
+            'use strict';
+
+            return {
+                restrict: 'E',
+                templateUrl: '/app/common/email-address-field.html',
+                replace: false,
+                scope: {
+                    emailData:  "=",
+                    field:      "@",
+                    title:      "@"
+                },
+                link: function(scope) {
+
+                    scope.field = scope.field || "to"; // e.g. "to", "bc", "bcc", etc.
+                    scope.emailData[scope.field] = scope.emailData[scope.field] || [];
+                    scope.loggedIn = AuthService.loggedIn;
+
+                    /** Refreshes the email address selection **/
+                    scope.emailSelection = [];
+                    scope.refreshEmails = function (text) {
+                        text = text || '';
+                        if (scope.loggedIn && text.length > 0) {
+                            UserService.searchEmails(text)
+                                .success(function (emails) {
+                                    scope.emailSelection.length = 0;
+                                    angular.forEach(emails, function (email) {
+                                        scope.emailSelection.push(email);
+                                    })
+                                });
+                        }
+                    };
+
+                    /** Removes the current email address selection */
+                    scope.removeEmails = function () {
+                        scope.emailData[scope.field].length = 0;
+                        scope.emailSelection.length = 0;
+                    }
+                }
+            }
+        }])
+
+
+    /********************************
      * Defines a publication field used for
      * selecting a publication
      ********************************/

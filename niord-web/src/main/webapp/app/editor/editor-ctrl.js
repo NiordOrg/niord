@@ -1590,6 +1590,13 @@ angular.module('niord.editor')
             };
 
 
+            /** Returns if the comment can be saved (and optionally e-mailed) **/
+            $scope.canSaveComment = function (sendEmail) {
+                return $scope.comment &&
+                    sendEmail == ($scope.comment.emailAddresses && $scope.comment.emailAddresses.length > 0)
+            };
+
+
             /** Saves the current comment comment **/
             $scope.saveComment = function () {
                 if ($scope.comment && $scope.comment.id) {
