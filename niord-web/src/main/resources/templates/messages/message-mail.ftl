@@ -19,6 +19,8 @@
     ${text("mail.greetings.best.regards", mailSender)}
 </p>
 
+<hr>
+
 <@renderMessageList messages=messages areaHeadings=false />
 
 </body>

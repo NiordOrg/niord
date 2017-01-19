@@ -1572,9 +1572,21 @@ angular.module('niord.editor')
             // Load the message comments (after the message has been loaded)
             $timeout($scope.loadComments, 200);
 
+
+            /** Set the form as pristine **/
+            $scope.setPristine = function () {
+                // $scope.commentForm does not work (form tied to sub-scope of this controller?)
+                try {
+                    angular.element($("#commentForm")).scope().commentForm.$setPristine();
+                } catch (err) {
+                }
+            };
+
+
             /** Selects a new comment for viewing/editing **/
             $scope.selectComment = function (comment) {
-                $scope.comment = comment;
+                $scope.comment = angular.copy(comment);
+                $scope.setPristine();
             };
 
 

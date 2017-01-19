@@ -55,7 +55,7 @@
             </div>
 
             <div ng-if="canEditComment()">
-                <form name="commentForm">
+                <form name="commentForm" id="commentForm">
                     <div>
                         <textarea id="comment" class="message-comment-editor" ui-tinymce="commentTinymceOptions"
                                   ng-model="comment.comment" required></textarea>

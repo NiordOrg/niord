@@ -103,8 +103,7 @@ public class MessageMailService extends BaseService {
                                 .process();
 
                 Mail mail = HtmlMail.fromHtml(mailContents, app.getBaseUri(), HtmlMail.StyleHandling.INLINE_STYLES, true)
-                        .sender(new InternetAddress("noreply@e-navigation.net"))
-                        .from(new InternetAddress("noreply@e-navigation.net"))
+                        //.from(new InternetAddress(user.getEmail()))
                         .replyTo(new InternetAddress(user.getEmail()))
                         .recipients(mailTemplate.getRecipients())
                         .subject(mailSubject);

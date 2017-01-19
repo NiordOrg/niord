@@ -94,6 +94,13 @@ public class MailService {
      */
     public void sendMail(Mail mail) throws MessagingException {
         try {
+            if (mail.getSender() == null) {
+                mail.setSender(new InternetAddress(mailSender));
+            }
+            if (mail.getFrom() == null || mail.getFrom().isEmpty()) {
+                mail.from(new InternetAddress(mailSender));
+            }
+
             log.info("Composing mail for " + mail.getRecipients());
             Message message = mail.compose(mailSession, mailAttachmentCache.getCache());
             log.info("Sending...");
