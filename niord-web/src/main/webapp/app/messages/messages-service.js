@@ -530,14 +530,13 @@ angular.module('niord.messages')
 
 
             /** Opens the message send-mail dialog */
-            messageMailDialog: function (total, params) {
+            messageMailDialog: function (messageIds) {
                 return $uibModal.open({
                     controller: "MessageMailDialogCtrl",
                     templateUrl: "/app/messages/message-mail-dialog.html",
                     size: 'md',
                     resolve: {
-                        total: function () { return total; },
-                        params: function () { return params; }
+                        messageIds: function () { return messageIds; }
                     }
                 });
             },

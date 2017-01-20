@@ -781,13 +781,7 @@ angular.module('niord.messages')
 
             /** Opens the message send-mail dialog */
             $scope.sendMailDialog = function () {
-                var params = $scope.toRequestFilterParameters();
-                if (params.length > 0) {
-                    params += '&';
-                }
-                params += 'lang=' + $rootScope.language;
-
-                MessageService.messageMailDialog($scope.totalMessageNo, params);
+                MessageService.messageMailDialog($scope.selection.keys);
             };
 
 

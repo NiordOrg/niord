@@ -78,15 +78,14 @@ public class MessageMailRestService {
 
         long t0 = System.currentTimeMillis();
 
-        String mailTo = request.getParameter("mailTo");
+        String[] mailAddresses = request.getParameterValues("mailTo");
         String mailSubject = request.getParameter("mailSubject");
         String mailMessage = request.getParameter("mailMessage");
-        if (StringUtils.isBlank(mailTo)) {
+        if (mailAddresses == null || mailAddresses.length == 0) {
             throw new WebApplicationException(400);
         }
         mailSubject = StringUtils.defaultIfBlank(mailSubject, "No subject");
         mailMessage = StringEscapeUtils.escapeHtml(StringUtils.defaultIfBlank(mailMessage, "")).replace("\n", "<br>");
-        MailRecipient recipient = new MailRecipient(RecipientType.TO, new InternetAddress(mailTo));
 
         try {
             // Perform a search for at most 1000 messages
@@ -95,22 +94,31 @@ public class MessageMailRestService {
             PagedSearchResultVo<MessageVo> result = messageSearchRestService.searchMessages(params);
 
 
-            // Send the e-mail
-            MessageMailTemplate mailTemplate = new MessageMailTemplate()
-                    .subject(mailSubject)
-                    .mailMessage(mailMessage)
-                    .messages(result.getData())
-                    .recipients(Collections.singletonList(recipient))
-                    .language(params.getLanguage())
-                    .templatePath("/templates/messages/message-mail.ftl");
-            messageMailService.sendMessageMailAsync(mailTemplate);
+            // Send the e-mails
+            StringBuilder str = new StringBuilder();
+            for (String mailTo : mailAddresses) {
 
-            String msg = "Mail sent to " + mailTo + " in " + (System.currentTimeMillis() - t0) + " ms";
-            log.info(msg);
-            return msg;
+                MailRecipient recipient = new MailRecipient(RecipientType.TO, new InternetAddress(mailTo));
+
+                MessageMailTemplate mailTemplate = new MessageMailTemplate()
+                        .subject(mailSubject)
+                        .mailMessage(mailMessage)
+                        .messages(result.getData())
+                        .recipients(Collections.singletonList(recipient))
+                        .language(params.getLanguage())
+                        .templatePath("/templates/messages/message-mail.ftl");
+
+                messageMailService.sendMessageMailAsync(mailTemplate);
+
+                String msg = "Mail sent to " + mailTo + " in " + (System.currentTimeMillis() - t0) + " ms";
+                log.info(msg);
+                str.append(msg).append("\n");
+
+            }
+            return str.toString();
 
         } catch (Exception e) {
-            log.error("Error generating PDF for messages", e);
+            log.error("Error sending e-mail for messages", e);
             throw e;
         }
     }

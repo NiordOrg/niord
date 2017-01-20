@@ -90,8 +90,8 @@
 
 
                 <!-- Mail -->
-                <li ng-if="isLoggedIn" role="separator" class="divider"></li>
-                <li ng-if="isLoggedIn">
+                <li ng-if="isLoggedIn  && selection.size() > 0" role="separator" class="divider"></li>
+                <li ng-if="isLoggedIn  && selection.size() > 0">
                     <a href ng-click="sendMailDialog()">
                         <span class="glyphicon glyphicon-envelope menu-icon"></span>&nbsp;
                         <span translate>menu.action.mail</span>

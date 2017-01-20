@@ -398,14 +398,14 @@ angular.module('niord.messages')
     /*******************************************************************
      * Controller that handles the message send-mail dialog
      *******************************************************************/
-    .controller('MessageMailDialogCtrl', ['$scope', 'growl', 'MessageService', 'total', 'params',
-        function ($scope, growl, MessageService, total, params) {
+    .controller('MessageMailDialogCtrl', ['$scope', '$rootScope', 'growl', 'MessageService', 'messageIds',
+        function ($scope, $rootScope, growl, MessageService, messageIds) {
             'use strict';
 
-            $scope.totalMessageNo = total;
+            $scope.totalMessageNo = messageIds.length;
 
             $scope.data = {
-                mailTo : '',
+                emailAddresses : [],
                 mailSubject: '',
                 mailMessage: ''
             };
@@ -414,23 +414,33 @@ angular.module('niord.messages')
             /** Sends the e-mail and closes the dialog **/
             $scope.sendMail = function () {
 
-                var p = params || '';
-                if (p.length > 0) {
-                    p += '&';
+                if ($scope.data.emailAddresses.length == 0
+                    || $scope.data.mailSubject.length == 0
+                    || messageIds.length == 0) {
+                    growl.error("Invalid e-mail", { ttl: 5000 });
+                    return;
                 }
-                p = p
-                    + '&mailTo=' + encodeURIComponent($scope.data.mailTo)
-                    + '&mailSubject=' + encodeURIComponent($scope.data.mailSubject)
-                    + '&mailMessage=' + encodeURIComponent($scope.data.mailMessage);
 
-                MessageService
-                    .sendMessageMail(p)
-                    .success(function () {
-                        growl.info("E-mail sent", { ttl: 3000 });
-                        $scope.$close("ok");
-                    })
-                    .error(function () {
-                        growl.error("Error sending e-mail", { ttl: 5000 });
+                // Generate a temporary, short-lived message tag for the selection
+                MessageService.createTempMessageTag(messageIds)
+                    .success(function (tag) {
+                        var p = 'tag=' + encodeURIComponent(tag.tagId)
+                            + '&mailSubject=' + encodeURIComponent($scope.data.mailSubject)
+                            + '&mailMessage=' + encodeURIComponent($scope.data.mailMessage);
+                            + '&lang=' + $rootScope.language;
+                        angular.forEach($scope.data.emailAddresses, function (email) {
+                            p = p + '&mailTo=' + encodeURIComponent(email)
+                        });
+
+                        MessageService
+                            .sendMessageMail(p)
+                            .success(function () {
+                                growl.info("E-mail sent", { ttl: 3000 });
+                                $scope.$close("ok");
+                            })
+                            .error(function () {
+                                growl.error("Error sending e-mail", { ttl: 5000 });
+                            });
                     });
             };
 
