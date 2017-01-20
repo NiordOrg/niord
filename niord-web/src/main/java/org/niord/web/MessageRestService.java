@@ -157,6 +157,17 @@ public class MessageRestService  {
     }
 
 
+    /** Short-cut function that returns if the user has message editing access **/
+    private boolean messageEditingAccess(Message message, boolean update) {
+        try {
+            checkMessageEditingAccess(message, update);
+            return true;
+        } catch (Exception ex) {
+            return false;
+        }
+    }
+
+
     /**
      * Checks that the user has viewing access to the given message. The message must adhere to one of the following
      * criteria:
@@ -189,6 +200,17 @@ public class MessageRestService  {
 
         // No access
         throw new WebApplicationException(403);
+    }
+
+
+    /** Short-cut function that returns if the user has message viewing access **/
+    private boolean messageViewingAccess(Message message) {
+        try {
+            checkMessageViewingAccess(message);
+            return true;
+        } catch (Exception ex) {
+            return false;
+        }
     }
 
 
@@ -397,6 +419,51 @@ public class MessageRestService  {
         }
 
         return editMessage;
+    }
+
+
+    /**
+     * Returns the list of referenced messages, optionally with the given reference type and status
+     *
+     * @return the list of referenced messages
+     */
+    @GET
+    @Path("/referenced-messages/{messageId}")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed({"editor"})
+    public List<MessageVo> copyMessageTemplate(
+            @PathParam("messageId") String messageId,
+            @QueryParam("status") Status status,
+            @QueryParam("referenceType") ReferenceType referenceType,
+            @QueryParam("lang") String language
+    ) throws Exception {
+
+        log.info("Returning referenced messages for " + messageId + ", type="
+                    + referenceType + ", status=" + status);
+
+        Message message = messageService.resolveMessage(messageId);
+        if (message == null) {
+            return Collections.emptyList();
+        }
+
+        // Validate viewing access to the message
+        checkMessageViewingAccess(message);
+
+        // Resolve the referenced messages
+        List<Message> referencedMessages = messageService.getReferencedMessages(message, referenceType, status);
+
+        DataFilter filter = Message.MESSAGE_DETAILS_FILTER
+                .lang(language)
+                .user(userService.userResolver());
+
+        // Return the result
+        // Filter the messages by access (exclude - do not throw exception)
+        return referencedMessages.stream()
+                .filter(msg -> messageViewingAccess(message))
+                .map(msg -> msg.toVo(MessageVo.class, filter))
+                .collect(Collectors.toList());
     }
 
 

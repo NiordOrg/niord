@@ -42,6 +42,7 @@ import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MainType;
 import org.niord.model.message.MessageVo;
+import org.niord.model.message.ReferenceType;
 import org.niord.model.message.Status;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
@@ -229,6 +230,24 @@ public class MessageService extends BaseService {
 
         // No current domain - just return the first message
         return messages.get(0);
+    }
+
+
+    /**
+     * Returns the list of referenced messages, optionally with the given reference type and status
+     *
+     * @param message the message to return referenced messages for
+     * @param referenceType optionally, the reference type
+     * @param status optionally, the status of the referenced messages
+     * @return the list of referenced messages
+     */
+    public List<Message> getReferencedMessages(Message message, ReferenceType referenceType, Status status) {
+        return message.getReferences().stream()
+                .filter(ref -> referenceType == null || referenceType == ref.getType())
+                .map(ref -> resolveMessage(ref.getMessageId()))
+                .filter(Objects::nonNull)
+                .filter(msg -> status == null || status == msg.getStatus())
+                .collect(Collectors.toList());
     }
 
 
