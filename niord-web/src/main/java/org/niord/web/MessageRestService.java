@@ -82,8 +82,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.niord.core.message.vo.MessageTagVo.MessageTagType.PUBLIC;
-import static org.niord.model.message.Status.DRAFT;
-import static org.niord.model.message.Status.VERIFIED;
+import static org.niord.model.message.ReferenceType.CANCELLATION;
+import static org.niord.model.message.Status.*;
 
 /**
  * REST interface for managing messages.
@@ -433,7 +433,7 @@ public class MessageRestService  {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public List<MessageVo> copyMessageTemplate(
+    public List<MessageVo> getReferencedMessages(
             @PathParam("messageId") String messageId,
             @QueryParam("status") Status status,
             @QueryParam("referenceType") ReferenceType referenceType,
@@ -552,13 +552,38 @@ public class MessageRestService  {
     @GZIP
     @NoCache
     @RolesAllowed({"editor"})
-    public MessageVo updateMessageStatus(@PathParam("messageId") String messageId, String status) throws Exception {
+    public MessageVo updateMessageStatus(
+            @PathParam("messageId") String messageId,
+            @QueryParam("cancelReferencedMessages") Boolean cancelReferencedMessages,
+            String status) throws Exception {
         log.info("Updating status of message " + messageId + " to " + status);
 
         // Validate access to the message
         checkMessageEditingAccess(messageService.findByUid(messageId), false);
 
         Message msg = messageService.updateStatus(messageId, Status.valueOf(status));
+
+        // When publishing a message, check if referenced messages should be cancelled
+        if (Status.valueOf(status) == PUBLISHED && cancelReferencedMessages != null && cancelReferencedMessages) {
+
+            // Get the cancel-referenced published messages that the user has edit-access to
+            List<Message> referencedMessages = messageService.getReferencedMessages(msg, CANCELLATION, PUBLISHED).stream()
+                    .filter(m -> messageEditingAccess(m, false))
+                    .collect(Collectors.toList());
+
+            if (!referencedMessages.isEmpty()) {
+                for (Message refMsg : referencedMessages) {
+                    try {
+                        messageService.updateStatus(refMsg.getUid(), CANCELLED);
+                        log.info("Cancelling referenced messages to " + messageId + ": " + refMsg.getUid());
+                    } catch (Exception ex) {
+                        log.error("Error cancelling referenced messages to " + messageId + ": " + refMsg.getUid(), ex);
+                    }
+                }
+            }
+
+        }
+
         return getMessage(msg.getUid(), null);
     }
 

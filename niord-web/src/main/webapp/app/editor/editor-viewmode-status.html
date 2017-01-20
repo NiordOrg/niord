@@ -90,3 +90,17 @@
         </div>
     </form>
 </script>
+
+<!-- Publish Message dialog -->
+<script type="text/ng-template" id="publishMessage.html">
+    <form name="copy_form">
+        <p>Please confirm publication</p>
+        <div ng-if="modalOptions.publishOptions.referencedMessages.length > 0">
+            <input type="checkbox" ng-model="modalOptions.publishOptions.cancelReferencedMessage">
+            Also cancel referenced messages:
+            <span ng-repeat="msg in modalOptions.publishOptions.referencedMessages">
+                <message-id-badge msg="msg" show-blank="true"></message-id-badge><span ng-if="!$last">, </span>
+            </span>
+        </div>
+    </form>
+</script>

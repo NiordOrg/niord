@@ -132,6 +132,15 @@ angular.module('niord.messages')
             },
 
 
+            /** Returns the referenced messages, optionally with the given type and status **/
+            referencedMessages: function (id, referenceType, status) {
+                var refParam = (referenceType) ? '&referenceType=' + referenceType : '';
+                var statusParam = (status) ? '&status=' + status : '';
+                return $http.get('/rest/messages/referenced-messages/' + encodeURIComponent(id)
+                    + '?lang=' + $rootScope.language + refParam + statusParam);
+            },
+
+
             /** Creates a new or updates an existing message */
             saveMessage: function(msg) {
                 if (msg.created) {
@@ -143,8 +152,9 @@ angular.module('niord.messages')
 
 
             /** Changes the status of an existing message */
-            updateMessageStatus: function(msg, status) {
-                return $http.put('/rest/messages/message/' + msg.id + '/status', status);
+            updateMessageStatus: function(msg, status, params) {
+                params = params || '';
+                return $http.put('/rest/messages/message/' + msg.id + '/status?' + params, status);
             },
 
 

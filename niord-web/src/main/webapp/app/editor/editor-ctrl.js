@@ -1386,14 +1386,33 @@ angular.module('niord.editor')
                     return;
                 }
 
-                DialogService.showConfirmDialog(
-                    "Publish Message?", "Publish Message?")
-                    .then(function() {
-                        MessageService.updateMessageStatus($scope.message, 'PUBLISHED')
-                            .success(function() { $scope.reloadMessage("Message published"); })
-                            .error(function(err) {
-                                growl.error("Publishing failed\n" + err, {ttl: 5000});
+                // Check if there are any referenced cancellations of published messages
+                MessageService.referencedMessages($scope.message.id, 'CANCELLATION', 'PUBLISHED')
+                    .success(function (messages) {
+
+                        var modalOptions = {
+                            closeButtonText: 'Cancel',
+                            actionButtonText: 'Publish Message',
+                            headerText: 'Publish Message',
+                            publishOptions: { cancelReferencedMessage: false, referencedMessages: messages },
+                            templateUrl: "publishMessage.html"
+                        };
+
+                        DialogService.showDialog({}, modalOptions)
+                            .then(function () {
+
+                                var params = undefined;
+                                if (modalOptions.publishOptions.cancelReferencedMessage) {
+                                    params = 'cancelReferencedMessages=true'
+                                }
+
+                                MessageService.updateMessageStatus($scope.message, 'PUBLISHED', params)
+                                    .success(function() { $scope.reloadMessage("Message published"); })
+                                    .error(function(err) {
+                                        growl.error("Publishing failed\n" + err, {ttl: 5000});
+                                    });
                             });
+
                     });
             };
 
