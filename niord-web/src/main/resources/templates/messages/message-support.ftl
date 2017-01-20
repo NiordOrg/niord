@@ -213,7 +213,7 @@
         <#assign source=source + desc.source/>
     </#if>
     <#if desc?? && desc.source?has_content && msg.publishDateFrom??>
-        <#assign source=source + ". "/>
+        <#assign source=source?remove_ending(".") + ". "/>
     </#if>
     <#if msg.publishDateFrom??>
         <#assign source=source + text('msg.field.published') + ' ' + msg.publishDateFrom?string(text('msg.time.date_format'))/>

@@ -369,7 +369,10 @@ angular.module('niord.messages')
                             }
                             if (scope.msg.publishDateFrom) {
                                 if (scope.source.length > 0) {
-                                    scope.source += ". ";
+                                    if (scope.source.charAt(scope.source.length-1) != '.') {
+                                        scope.source += ".";
+                                    }
+                                    scope.source += " ";
                                 }
                                 scope.source += LangService.translate('msg.field.published', null, scope.lang)
                                         + " " + moment(scope.msg.publishDateFrom).format(scope.format);
