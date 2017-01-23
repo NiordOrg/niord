@@ -17,7 +17,7 @@ package org.niord.core.message;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.core.SimpleAnalyzer;
+import org.apache.lucene.analysis.standard.ClassicAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
@@ -85,11 +85,6 @@ import static org.niord.core.settings.Setting.Type.Boolean;
  * <p>
  * Note to self: Using "Hibernate Search" for message (as for AtoNs), was ruled out because it would
  * be too complex to index all related entities by language.
- * <p>
- * Something seems to have change in Lucene. In earlier versions (e.g. 4.6), you could
- * use the StandardAnalyzer and quoted phrase searches including stop words (e.g. "the").<br>
- * However, in the current version of Lucene, I can only get this scenario to work with
- * SimpleAnalyzer. :-(
  */
 @Singleton
 @Lock(LockType.READ)
@@ -189,6 +184,21 @@ public class MessageLuceneIndex extends BaseService {
         } finally {
             lock.unlock();
         }
+    }
+
+
+    /**
+     * Returns the analyzer to use.
+     * <p>
+     * Something seems to have changed in Lucene. In earlier versions (e.g. 4.6), you could
+     * use the StandardAnalyzer and quoted phrase searches including stop words (e.g. "the").<br>
+     * However, in the current version of Lucene, it does not seem to work properly.
+     * Use ClassicAnalyzer instead.
+     *
+     * @return the analyzer to use.
+     */
+    private Analyzer getAnalyzer() {
+        return new ClassicAnalyzer();
     }
 
 
@@ -328,9 +338,7 @@ public class MessageLuceneIndex extends BaseService {
      */
     private IndexWriter getNewWriter() throws IOException {
 
-        // NB: See class javadoc for a discussion of analyzers
-        Analyzer analyzer = new SimpleAnalyzer();
-        IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+        IndexWriterConfig iwc = new IndexWriterConfig(getAnalyzer());
         // Add new documents to an existing index:
         iwc.setOpenMode(OpenMode.CREATE_OR_APPEND);
 
@@ -645,13 +653,10 @@ public class MessageLuceneIndex extends BaseService {
             freeTextSearch = LuceneUtils.normalizeQuery(freeTextSearch);
             String field = searchField(language);
 
-            // NB: See class javadoc for a discussion of analyzers
-            Analyzer analyzer = new SimpleAnalyzer();
-
             // Create a query parser with "or" operator as the default
             QueryParser parser = new ComplexPhraseQueryParser(
                     field,
-                    analyzer);
+                    getAnalyzer());
             parser.setDefaultOperator(QueryParser.OR_OPERATOR);
             parser.setAllowLeadingWildcard(true); // NB: Expensive!
             query = parser.parse(freeTextSearch);
