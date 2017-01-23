@@ -426,7 +426,7 @@ angular.module('niord.messages')
                     .success(function (tag) {
                         var p = 'tag=' + encodeURIComponent(tag.tagId)
                             + '&mailSubject=' + encodeURIComponent($scope.data.mailSubject)
-                            + '&mailMessage=' + encodeURIComponent($scope.data.mailMessage);
+                            + '&mailMessage=' + encodeURIComponent($scope.data.mailMessage)
                             + '&lang=' + $rootScope.language;
                         angular.forEach($scope.data.emailAddresses, function (email) {
                             p = p + '&mailTo=' + encodeURIComponent(email)
