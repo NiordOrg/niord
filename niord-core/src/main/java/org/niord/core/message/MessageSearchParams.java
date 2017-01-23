@@ -59,10 +59,13 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         PUBLISH_TO_DATE,
 
         /** Search by date-interval that overlaps the event date interval **/
-        ACTIVE_DATE,
+        EVENT_DATE,
 
         /** Search by date-interval that contains the created date **/
-        CREATED_DATE
+        CREATED_DATE,
+
+        /** Search by date-interval that contains the last-updated date **/
+        UPDATED_DATE
     }
 
     public enum UserType { CREATED_BY, UPDATED_BY, LAST_UPDATED_BY }

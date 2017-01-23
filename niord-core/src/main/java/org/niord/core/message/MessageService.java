@@ -812,11 +812,14 @@ public class MessageService extends BaseService {
                 case PUBLISH_DATE:
                     criteriaHelper.overlaps(msgRoot.get("publishDateFrom"), msgRoot.get("publishDateTo"), from, to);
                     break;
-                case ACTIVE_DATE:
+                case EVENT_DATE:
                     criteriaHelper.overlaps(msgRoot.get("eventDateFrom"), msgRoot.get("eventDateTo"), from, to);
                     break;
                 case CREATED_DATE:
                     criteriaHelper.between(msgRoot.get("created"), from, to);
+                    break;
+                case UPDATED_DATE:
+                    criteriaHelper.between(msgRoot.get("updated"), from, to);
                     break;
                 case PUBLISH_FROM_DATE:
                     criteriaHelper.between(msgRoot.get("publishDateFrom"), from, to);
