@@ -471,6 +471,50 @@ public class ApiRestService extends AbstractApiService {
     }
 
 
+    /**
+     * Returns the details for the given area
+     */
+    @ApiOperation(
+            value = "Returns the sub-areas of the area with the given ID",
+            response = AreaVo.class,
+            responseContainer = "List",
+            tags = {"areas"}
+    )
+    @GET
+    @Path("/area/{areaId}/sub-areas")
+    @Produces({"application/json;charset=UTF-8"})
+    @GZIP
+    public Response subAreas(
+
+            @ApiParam(value = "The area ID", example = "urn:mrn:iho:country:dk")
+            @PathParam("areaId") String areaId,
+
+            @ApiParam(value = "Two-letter ISO 639-1 language code", example = "en")
+            @QueryParam("lang") String language
+    ) {
+
+        Area area = super.getArea(areaId);
+
+        if (area == null) {
+            return Response
+                    .status(Response.Status.NOT_FOUND)
+                    .entity("No area found with ID: " + areaId)
+                    .build();
+        } else {
+
+            // NB: Area.getChildren() will return sub-areas in sibling sort order
+            List<AreaVo> result = area.getChildren().stream()
+                    .filter(Area::isActive)
+                    .map(a -> a.toVo(AreaVo.class, DataFilter.get().lang(language)))
+                    .collect(Collectors.toList());
+
+            return Response
+                    .ok(result, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
+                    .build();
+        }
+    }
+
+
     /***************************
      * Utility functions
      ***************************/
