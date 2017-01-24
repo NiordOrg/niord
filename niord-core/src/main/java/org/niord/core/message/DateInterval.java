@@ -40,9 +40,9 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity, 
     int indexNo;
 
     /**
-     * The all-day flag can be used to signal to the UI that the date interval must be treated as an al-day
-     * interval. So, the editor will force the time part of fromDate to "00:00:00" and the time part
-     * of toDate to "23:59:59" in the current time zone.<br>
+     * The all-day flag can be used to signal to the UI that the date interval must be treated as an all-day interval.
+     * So, the editor will force the time part of fromDate to "00:00:00" and the time part of toDate to "23:59:59"
+     * in the current time zone.<br>
      * Similarly, when presenting the message details, only print out the date part and not the time part.<br>
      */
     Boolean allDay;
