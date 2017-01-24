@@ -70,23 +70,23 @@
                         {{ 'menu.action.tag.remove_named' | translate : '{tag : "' + tag.name + '"}' }}
                     </a>
                 </li>
-                <li ng-if="onPage('editor.edit')" role="separator" class="divider"></li>
-                <li ng-if="onPage('editor.edit')">
+                <li ng-if="isEditor && onPage('editor.edit')" role="separator" class="divider"></li>
+                <li ng-if="isEditor && onPage('editor.edit')">
                     <a href ng-click="expandCollapseFields(true)">
                         <span class="glyphicon glyphicon-expand"></span>&nbsp;
                         <span translate>menu.action.fields.expand</span>
                     </a>
                 </li>
-                <li ng-if="onPage('editor.edit')">
+                <li ng-if="isEditor && onPage('editor.edit')">
                     <a href ng-click="expandCollapseFields(false)">
                         <span class="glyphicon glyphicon-collapse-up"></span>&nbsp;
                         <span translate>menu.action.fields.collapse</span>
                     </a>
                 </li>
-                <li ng-if="onPage('editor.edit')">
+                <li ng-if="isEditor && onPage('editor.edit')">
                     <div style="color: lightgray; line-height: 20px; margin-left: 20px;" translate>menu.action.fields.more</div>
                 </li>
-                <li ng-repeat="(field, enabled) in unusedEditorFields" ng-if="onPage('editor.edit')">
+                <li ng-repeat="(field, enabled) in unusedEditorFields" ng-if="isEditor && onPage('editor.edit')">
                     <a href ng-click="toggleUseEditorField(field)">
                         <span class="glyphicon view-mode-menu-checkmark"
                               ng-class="{ 'glyphicon-ok': enabled, 'glyphicon-none': !enabled }"></span>

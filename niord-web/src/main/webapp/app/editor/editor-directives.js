@@ -40,9 +40,11 @@ angular.module('niord.editor')
 
             controller: function($scope) {
 
+                $scope.isEditor = $rootScope.hasRole('editor');
+
                 /** Returns if the field is currently editable **/
                 this.fieldEditable = function () {
-                    return $scope.editMode[$scope.fieldId][$scope.index];
+                    return $scope.isEditor && $scope.editMode[$scope.fieldId][$scope.index];
                 }
             },
 
@@ -132,7 +134,7 @@ angular.module('niord.editor')
 
                 /** Returns if the edit mode is on **/
                 scope.editModeOn = function () {
-                    return scope.editMode[scope.fieldId][scope.index];
+                    return scope.isEditor && scope.editMode[scope.fieldId][scope.index];
                 };
 
 
