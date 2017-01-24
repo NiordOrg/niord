@@ -280,8 +280,9 @@ angular.module('niord.editor')
 
             $scope.message1 = undefined;
             $scope.message2 = undefined;
-            $scope.langData = {
-                language: $rootScope.language
+            $scope.modalData = {
+                language: $rootScope.language,
+                showXL: false
             };
 
             // Contains a visual diff of the two message html representations
@@ -330,7 +331,7 @@ angular.module('niord.editor')
                 if (messageId && messageId.length > 0) {
                     MessageService.allLangDetails(messageId)
                         .success(function (message) {
-                            $scope.message1 = LangService.sortMessageDescs(message, $scope.langData.language);
+                            $scope.message1 = LangService.sortMessageDescs(message, $scope.modalData.language);
                             $scope.initData();
                         })
                         .error(function (data, status) {
@@ -348,7 +349,7 @@ angular.module('niord.editor')
                 if (messageId && messageId.length > 0) {
                     MessageService.allLangDetails(messageId)
                         .success(function (message) {
-                            $scope.message2 = LangService.sortMessageDescs(message, $scope.langData.language);
+                            $scope.message2 = LangService.sortMessageDescs(message, $scope.modalData.language);
                             $scope.initData();
                         })
                         .error(function (data, status) {
@@ -359,7 +360,7 @@ angular.module('niord.editor')
 
 
             // When the language changes, update the message data
-            $scope.$watch("langData.language", function (lang) {
+            $scope.$watch("modalData.language", function (lang) {
                 LangService.sortMessageDescs($scope.message1, lang);
                 LangService.sortMessageDescs($scope.message2, lang);
                 $scope.initData();
@@ -371,6 +372,14 @@ angular.module('niord.editor')
                 var tempId = $scope.reference1.messageId;
                 $scope.reference1.messageId = $scope.reference2.messageId;
                 $scope.reference2.messageId = tempId;
+            };
+
+
+            /** Toggle XL mode of the dialog **/
+            $scope.toggleXL = function () {
+                var prevClass = $scope.modalData.showXL ? 'modal-lg' : 'modal-xl';
+                var newClass = $scope.modalData.showXL ? 'modal-xl' : 'modal-lg';
+                $('.' + prevClass).addClass(newClass).removeClass(prevClass);
             }
 
         }])

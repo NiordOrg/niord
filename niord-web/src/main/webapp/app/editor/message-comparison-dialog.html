@@ -32,7 +32,7 @@
                     <div class="btn-group">
                         <label class="btn btn-default btn-sm"
                                ng-repeat="lang in modelLanguages"
-                               ng-model="langData.language" uib-btn-radio="lang">
+                               ng-model="modalData.language" uib-btn-radio="lang">
                                 <img ng-src="/img/flags/{{lang}}.png" height="14"/>
                         </label>
                     </div>
@@ -56,13 +56,13 @@
                     <div id="message1" class="col-sm-6">
                         <table ng-if="message1" class='table table-condensed'>
                             <tr render-message-details msg="message1" format="details" show-details-menu="false"
-                                compact="true" language="langData.language"></tr>
+                                compact="true" language="modalData.language"></tr>
                         </table>
                     </div>
                     <div id="message2" class="col-sm-6">
                         <table ng-if="message2" class='table table-condensed'>
                             <tr render-message-details msg="message2" format="details" show-details-menu="false"
-                                compact="true" language="langData.language"></tr>
+                                compact="true" language="modalData.language"></tr>
                         </table>
                     </div>
                 </div>
@@ -110,7 +110,12 @@
 
         <div class="row" style="margin-top: 24px;">
             <div class="form-group col-xs-12" style="text-align: right">
-                <button class="btn btn-default btn-sm pull-left" ng-click="swapMessages()">Swap messages</button>
+                <button class="btn btn-default btn-sm pull-left"
+                        ng-click="swapMessages()">Swap messages</button>
+
+                <button class="btn btn-default btn-sm pull-left" style="margin-left: 10px"
+                        ng-change="toggleXL()" ng-model="modalData.showXL" uib-btn-checkbox>Show XL</button>
+
                 <button class="btn btn-primary btn-sm" ng-click="$dismiss('aborted')">Close</button>
             </div>
         </div>

@@ -281,6 +281,15 @@ table.borderless-table tr td, table.borderless-table tr th {
     transform: translate(0, 0);
 }
 
+/** Disable modal dialog animation **/
+
+@media (min-width: 768px) {
+    .modal-xl {
+        width: 96%;
+    }
+}
+
+
 /** Footer **/
 
 .footer {
