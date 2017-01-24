@@ -4,8 +4,10 @@
     <div ng-controller="BatchAdminCtrl" ng-init="loadBatchStatus()">
         <p style="margin-bottom: 20px">
             Manage and monitoring of batch jobs
-            <button class="pull-right btn btn-sm btn-default" ng-click="uploadBatchSet()">Upload batch set...</button>
-            <button class="pull-right btn btn-sm btn-default" style="margin-right: 5px" ng-click="executeJavaScript()">Execute JavaScript...</button>
+            <button class="pull-right btn btn-sm btn-default"
+                    ng-if="hasRole('sysadmin')" ng-click="uploadBatchSet()">Upload batch set...</button>
+            <button class="pull-right btn btn-sm btn-default" style="margin-right: 5px"
+                    ng-if="hasRole('sysadmin')" ng-click="executeJavaScript()">Execute JavaScript...</button>
         </p>
 
         <div class="row">
