@@ -430,7 +430,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         parts.stream()
                 .flatMap(p -> p.getEventDates().stream())
                 .forEach(di -> {
-            if (eventDateFrom == null || eventDateFrom.after(di.getFromDate())) {
+            if (eventDateFrom == null || (di.getFromDate() != null && eventDateFrom.after(di.getFromDate()))) {
                 eventDateFrom = di.getFromDate();
             }
             if (eventDateTo == null || (di.getToDate() != null && eventDateTo.before(di.getToDate()))) {
