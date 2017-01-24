@@ -1028,6 +1028,9 @@ angular.module('niord.messages')
 
             /** Sorts the messages within an area **/
             $scope.sortAreaMessages = function (area) {
+                if (!$scope.isEditor) {
+                    return;
+                }
 
                 // Case 1: If an area is specified, create a temp message tag containing the messages for the given
                 //         area. This will allow for sorting of messages with different messages statuses.
