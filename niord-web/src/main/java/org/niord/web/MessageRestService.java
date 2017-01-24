@@ -200,7 +200,8 @@ public class MessageRestService  {
 
         // 2) Grant access if the current domain of the user matches the message series of the message
         Domain domain = domainService.currentDomain();
-        if (domain != null && domain.containsMessageSeries(message.getMessageSeries()) && userService.isCallerInRole(Roles.EDITOR)) {
+        if (domain != null && domain.containsMessageSeries(message.getMessageSeries())
+                && userService.isCallerInRole(Roles.USER)) {
             return;
         }
 
