@@ -22,6 +22,7 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationCategoryService;
+import org.niord.core.user.Roles;
 import org.niord.model.DataFilter;
 import org.niord.model.publication.PublicationCategoryVo;
 import org.slf4j.Logger;
@@ -99,7 +100,7 @@ public class PublicationCategoryRestService extends AbstractBatchableRestService
     @Path("/publication-category/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @GZIP
     @NoCache
     public PublicationCategoryVo createPublicationCategory(PublicationCategoryVo publicationCategory) throws Exception {
@@ -114,7 +115,7 @@ public class PublicationCategoryRestService extends AbstractBatchableRestService
     @Path("/publication-category/{categoryId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @GZIP
     @NoCache
     public PublicationCategoryVo updatePublicationCategory(
@@ -135,7 +136,7 @@ public class PublicationCategoryRestService extends AbstractBatchableRestService
     @DELETE
     @Path("/publication-category/{categoryId}")
     @Consumes("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @GZIP
     @NoCache
     public void deletePublicationCategory(@PathParam("categoryId") String categoryId) throws Exception {
@@ -154,7 +155,7 @@ public class PublicationCategoryRestService extends AbstractBatchableRestService
     @Path("/upload-publication-categories")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public String importPublications(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "publication-category-import");
     }

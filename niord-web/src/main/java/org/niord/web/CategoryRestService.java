@@ -24,6 +24,7 @@ import org.niord.core.category.Category;
 import org.niord.core.category.CategorySearchParams;
 import org.niord.core.category.CategoryService;
 import org.niord.core.category.vo.SystemCategoryVo;
+import org.niord.core.user.Roles;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.slf4j.Logger;
@@ -193,7 +194,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Path("/category/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     public SystemCategoryVo createCategory(SystemCategoryVo categoryVo) throws Exception {
         Category category = new Category(categoryVo);
         log.info("Creating category " + category);
@@ -207,7 +208,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Path("/category/{categoryId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     public SystemCategoryVo updateCategory(@PathParam("categoryId") Integer categoryId, SystemCategoryVo categoryVo) throws Exception {
         if (!Objects.equals(categoryId, categoryVo.getId())) {
             throw new WebApplicationException(400);
@@ -221,7 +222,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
     /** Deletes the given category */
     @DELETE
     @Path("/category/{categoryId}")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     public boolean deleteCategory(@PathParam("categoryId") Integer categoryId) throws Exception {
         log.info("Deleting category " + categoryId);
         return categoryService.deleteCategory(categoryId);
@@ -232,7 +233,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @PUT
     @Path("/move-category")
     @Consumes("application/json;charset=UTF-8")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     public boolean moveCategory(MoveCategoryVo moveCategoryVo) throws Exception {
         log.info("Moving category " + moveCategoryVo.getCategoryId() + " to " + moveCategoryVo.getParentId());
         return categoryService.moveCategory(moveCategoryVo.getCategoryId(), moveCategoryVo.getParentId());
@@ -249,7 +250,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Path("/upload-categories")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public String importCategories(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "category-import");
     }

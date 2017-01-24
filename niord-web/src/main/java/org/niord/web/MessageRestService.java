@@ -40,6 +40,7 @@ import org.niord.core.publication.PublicationUtils;
 import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.repo.FileTypes;
 import org.niord.core.repo.RepositoryService;
+import org.niord.core.user.Roles;
 import org.niord.core.user.UserService;
 import org.niord.core.util.WebUtils;
 import org.niord.model.DataFilter;
@@ -95,6 +96,8 @@ import static org.niord.model.message.Status.*;
 @SuppressWarnings("unused")
 public class MessageRestService  {
 
+    enum EditOp { VIEW, UPDATE, CHANGE_STATUS }
+
     @Inject
     Logger log;
 
@@ -136,31 +139,40 @@ public class MessageRestService  {
      * Checks that the user has editing access to the given message by matching the current domain
      * with the message series of the message.<br>
      * Throws a 403 response code error if no access.
-     * @param update in addition to accessing the message in the Editor, require that the user has access to update the message
+     * @param editOp the type of edit operation
      * @param message the message
      */
-    private void checkMessageEditingAccess(Message message, boolean update) {
+    private void checkMessageEditingAccess(Message message, EditOp editOp) {
         Domain domain = domainService.currentDomain();
-        if (domain == null || message == null || !domain.containsMessageSeries(message.getMessageSeries()) ||
-                !userService.isCallerInRole("editor")) {
+
+        if (domain == null || message == null || !domain.containsMessageSeries(message.getMessageSeries())) {
             throw new WebApplicationException(403);
         }
 
-        if (update) {
-            // We know that the use is already an "editor".
-            boolean draft = message.getStatus() == DRAFT
-                    || message.getStatus() == VERIFIED;
-            if (!draft && !userService.isCallerInRole("admin")) {
-                throw new WebApplicationException(403);
-            }
+        if (editOp == EditOp.VIEW && !userService.isCallerInRole(Roles.USER)) {
+            throw new WebApplicationException("Only users, editors and admins can view an editable message", 403);
+        }
+
+        if (editOp == EditOp.CHANGE_STATUS && !userService.isCallerInRole(Roles.EDITOR)) {
+            throw new WebApplicationException("Only editors and admins can change status of a message", 403);
+        }
+
+        if (editOp == EditOp.UPDATE && !userService.isCallerInRole(Roles.EDITOR)) {
+            throw new WebApplicationException("Only editors and admins can update a message", 403);
+        }
+
+        // Extra check - only admins can edit a non-draft message
+        boolean draft = message.getStatus() == DRAFT || message.getStatus() == VERIFIED;
+        if (editOp == EditOp.UPDATE && !draft && !userService.isCallerInRole(Roles.ADMIN)) {
+            throw new WebApplicationException("Only admins can update a non-draft message", 403);
         }
     }
 
 
     /** Short-cut function that returns if the user has message editing access **/
-    private boolean messageEditingAccess(Message message, boolean update) {
+    private boolean messageEditingAccess(Message message, EditOp editOp) {
         try {
-            checkMessageEditingAccess(message, update);
+            checkMessageEditingAccess(message, editOp);
             return true;
         } catch (Exception ex) {
             return false;
@@ -188,7 +200,7 @@ public class MessageRestService  {
 
         // 2) Grant access if the current domain of the user matches the message series of the message
         Domain domain = domainService.currentDomain();
-        if (domain != null && domain.containsMessageSeries(message.getMessageSeries()) && userService.isCallerInRole("editor")) {
+        if (domain != null && domain.containsMessageSeries(message.getMessageSeries()) && userService.isCallerInRole(Roles.EDITOR)) {
             return;
         }
 
@@ -289,7 +301,7 @@ public class MessageRestService  {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.USER)
     public SystemMessageVo getSystemMessage(
             @PathParam("messageId") String messageId,
             @QueryParam("lang") String language) throws Exception {
@@ -300,7 +312,7 @@ public class MessageRestService  {
         }
 
         // Validate access to the message
-        checkMessageEditingAccess(message, false);
+        checkMessageEditingAccess(message, EditOp.VIEW);
 
         // Returns a system model version of the message
         return toSystemMessage(message, false);
@@ -317,7 +329,7 @@ public class MessageRestService  {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.EDITOR)
     public SystemMessageVo newTemplateMessage(@QueryParam("mainType") MainType mainType) throws Exception {
 
         log.info("Creating new message template");
@@ -354,7 +366,7 @@ public class MessageRestService  {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.EDITOR)
     public SystemMessageVo copyMessageTemplate(
             @PathParam("messageId") String messageId,
             @QueryParam("referenceType") ReferenceType referenceType) throws Exception {
@@ -432,7 +444,7 @@ public class MessageRestService  {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.EDITOR)
     public List<MessageVo> getReferencedMessages(
             @PathParam("messageId") String messageId,
             @QueryParam("status") Status status,
@@ -479,7 +491,7 @@ public class MessageRestService  {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.EDITOR)
     public MessageVo createMessage(SystemMessageVo message) throws Exception {
         log.info("Creating message " + message);
 
@@ -489,7 +501,7 @@ public class MessageRestService  {
         Message msg = new Message(message);
 
         // Validate access to the message
-        checkMessageEditingAccess(msg, true);
+        checkMessageEditingAccess(msg, EditOp.UPDATE);
 
         msg = messageService.createMessage(msg);
 
@@ -513,7 +525,7 @@ public class MessageRestService  {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.EDITOR)
     public MessageVo updateMessage(@PathParam("messageId") String messageId, SystemMessageVo message) throws Exception {
         if (!Objects.equals(messageId, message.getId())) {
             throw new WebApplicationException(400);
@@ -526,8 +538,8 @@ public class MessageRestService  {
         Message msg = new Message(message);
 
         // Validate access to the message
-        checkMessageEditingAccess(msg, true);
-        checkMessageEditingAccess(messageService.findByUid(messageId), true);
+        checkMessageEditingAccess(msg, EditOp.UPDATE);
+        checkMessageEditingAccess(messageService.findByUid(messageId), EditOp.UPDATE);
 
         msg = messageService.updateMessage(msg);
 
@@ -551,7 +563,7 @@ public class MessageRestService  {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.EDITOR)
     public MessageVo updateMessageStatus(
             @PathParam("messageId") String messageId,
             @QueryParam("cancelReferencedMessages") Boolean cancelReferencedMessages,
@@ -559,7 +571,7 @@ public class MessageRestService  {
         log.info("Updating status of message " + messageId + " to " + status);
 
         // Validate access to the message
-        checkMessageEditingAccess(messageService.findByUid(messageId), false);
+        checkMessageEditingAccess(messageService.findByUid(messageId), EditOp.CHANGE_STATUS);
 
         Message msg = messageService.updateStatus(messageId, Status.valueOf(status));
 
@@ -568,7 +580,7 @@ public class MessageRestService  {
 
             // Get the cancel-referenced published messages that the user has edit-access to
             List<Message> referencedMessages = messageService.getReferencedMessages(msg, CANCELLATION, PUBLISHED).stream()
-                    .filter(m -> messageEditingAccess(m, false))
+                    .filter(m -> messageEditingAccess(m, EditOp.CHANGE_STATUS))
                     .collect(Collectors.toList());
 
             if (!referencedMessages.isEmpty()) {
@@ -600,13 +612,13 @@ public class MessageRestService  {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.EDITOR)
     public List<MessageVo> updateMessageStatuses(List<UpdateStatusParam> updates) throws Exception {
         log.info("Updating statuses " + updates);
 
         // Validate access to the messages
         for (UpdateStatusParam update : updates) {
-            checkMessageEditingAccess(messageService.findByUid(update.getMessageId()), false);
+            checkMessageEditingAccess(messageService.findByUid(update.getMessageId()), EditOp.CHANGE_STATUS);
         }
 
         // Perform the updates
@@ -636,7 +648,7 @@ public class MessageRestService  {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed("editor")
+    @RolesAllowed(Roles.EDITOR)
     public List<AttachmentVo> uploadMessageAttachments(
             @PathParam("folder") String path,
             @Context HttpServletRequest request) throws Exception {
@@ -676,7 +688,7 @@ public class MessageRestService  {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.USER)
     public List<MessageHistoryVo> getMessageHistory(@PathParam("messageId") String messageId) {
 
         // Get the message id
@@ -700,7 +712,7 @@ public class MessageRestService  {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.USER)
     public List<MessageVo> getRecentlyEditedMessages(
             @QueryParam("lang") @DefaultValue("en") String lang,
             @QueryParam("maxMessageNo") @DefaultValue("20") int maxMessageNo
@@ -722,7 +734,7 @@ public class MessageRestService  {
     /** Re-computes the area sort order of published messages in the current domain */
     @PUT
     @Path("/recompute-area-sort-order")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     public void reindexPublishedMessageAreaSorting() {
 
         // Search for published message in the curretn domain
@@ -748,7 +760,7 @@ public class MessageRestService  {
     /** Swaps the area sort order of the two messages */
     @PUT
     @Path("/change-area-sort-order")
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.EDITOR)
     public void changeAreaSortOrder(AreaSortOrderUpdateParam params) {
         if (params.getId() == null || (params.getBeforeId() == null && params.getAfterId() == null)) {
             throw new WebApplicationException(400);
@@ -778,7 +790,7 @@ public class MessageRestService  {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.EDITOR)
     public SystemMessageVo adjustEditableMessage(SystemMessageVo message) throws Exception {
 
         // Compute the editor fields to use for the message
@@ -833,7 +845,7 @@ public class MessageRestService  {
     @Path("/extract-message-publication")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "editor" })
+    @RolesAllowed(Roles.EDITOR)
     @GZIP
     @NoCache
     public MessagePublicationVo extractMessagePublication(
@@ -856,7 +868,7 @@ public class MessageRestService  {
     @Path("/update-message-publications")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "editor" })
+    @RolesAllowed(Roles.EDITOR)
     @GZIP
     @NoCache
     public MessageVo updateMessagePublications(

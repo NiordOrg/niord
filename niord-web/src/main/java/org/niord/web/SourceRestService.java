@@ -23,6 +23,7 @@ import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.source.Source;
 import org.niord.core.source.SourceService;
 import org.niord.core.source.vo.SourceVo;
+import org.niord.core.user.Roles;
 import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 import org.slf4j.Logger;
@@ -144,7 +145,7 @@ public class SourceRestService extends AbstractBatchableRestService {
     @Path("/source/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @GZIP
     @NoCache
     public SourceVo createSource(SourceVo source) throws Exception {
@@ -159,7 +160,7 @@ public class SourceRestService extends AbstractBatchableRestService {
     @Path("/source/{id}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @GZIP
     @NoCache
     public SourceVo updateSource(
@@ -180,7 +181,7 @@ public class SourceRestService extends AbstractBatchableRestService {
     @DELETE
     @Path("/source/{id}")
     @Consumes("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @GZIP
     @NoCache
     public void deleteSource(@PathParam("id") Integer id) throws Exception {
@@ -199,7 +200,7 @@ public class SourceRestService extends AbstractBatchableRestService {
     @Path("/upload-sources")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public String importSources(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "source-import");
     }

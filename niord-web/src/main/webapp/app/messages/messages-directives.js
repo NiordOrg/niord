@@ -931,7 +931,8 @@ angular.module('niord.messages')
 
                     /** Returns if the user can edit the current message */
                     scope.canEdit = function () {
-                        return scope.hasRole('editor') &&
+                        // NB: 'user' can enter the Editor page, even if the cannot actually edit a message
+                        return scope.hasRole('user') &&
                                 scope.msg && scope.msg.messageSeries &&
                                 $rootScope.domain && $rootScope.domain.messageSeries &&
                                 $.grep($rootScope.domain.messageSeries, function (ms) {

@@ -28,6 +28,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.settings.annotation.Setting;
+import org.niord.core.user.Roles;
 import org.niord.core.util.WebUtils;
 import org.slf4j.Logger;
 
@@ -291,7 +292,7 @@ public class RepositoryService {
     @DELETE
     @javax.ws.rs.Path("/file/{file:.+}")
     @Produces("text/plain")
-    @RolesAllowed({ "editor" })
+    @RolesAllowed(Roles.EDITOR)
     public Response deleteFile(@PathParam("file") String path) throws IOException {
 
         Path f = repoRoot.resolve(path);
@@ -402,7 +403,7 @@ public class RepositoryService {
     @javax.ws.rs.Path("/upload/{folder:.+}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "editor" })
+    @RolesAllowed(Roles.EDITOR)
     public List<String> uploadFile(@PathParam("folder") String path, @Context HttpServletRequest request) throws FileUploadException, IOException {
 
         Path folder = repoRoot.resolve(path);
@@ -504,7 +505,7 @@ public class RepositoryService {
     @javax.ws.rs.Path("/upload-temp/{folder:.+}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "editor" })
+    @RolesAllowed(Roles.EDITOR)
     public List<String> uploadTempFile(@PathParam("folder") String path, @Context HttpServletRequest request) throws FileUploadException, IOException {
 
         // Check that the specified folder is indeed under the "temp" root

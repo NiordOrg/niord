@@ -45,6 +45,7 @@ import org.niord.core.NiordApp;
 import org.niord.core.domain.Domain;
 import org.niord.core.settings.SettingsService;
 import org.niord.core.settings.annotation.Setting;
+import org.niord.core.user.Roles;
 import org.niord.core.user.UserService;
 import org.niord.core.user.vo.GroupVo;
 import org.niord.core.user.vo.UserVo;
@@ -305,9 +306,10 @@ public class KeycloakIntegrationService {
 
         // Define the list of roles to set up for the client
         RoleRepresentation[] roleReps = new RoleRepresentation[] {
-                new RoleRepresentation("editor", "Editor", false),
-                new RoleRepresentation("admin", "Administrator", false),
-                new RoleRepresentation("sysadmin", "System administrator", false),
+                new RoleRepresentation(Roles.USER, "User", false),
+                new RoleRepresentation(Roles.EDITOR, "Editor", false),
+                new RoleRepresentation(Roles.ADMIN, "Administrator", false),
+                new RoleRepresentation(Roles.SYSADMIN, "System administrator", false),
         };
 
 

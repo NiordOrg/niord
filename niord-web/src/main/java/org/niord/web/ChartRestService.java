@@ -24,6 +24,7 @@ import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
 import org.niord.core.chart.vo.SystemChartVo;
 import org.niord.core.geojson.JtsConverter;
+import org.niord.core.user.Roles;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.geojson.GeometryVo;
 import org.slf4j.Logger;
@@ -115,7 +116,7 @@ public class ChartRestService extends AbstractBatchableRestService {
     @Path("/chart/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @GZIP
     @NoCache
     public SystemChartVo createChart(SystemChartVo chartVo) throws Exception {
@@ -128,7 +129,7 @@ public class ChartRestService extends AbstractBatchableRestService {
     @Path("/chart/{chartNumber}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @GZIP
     @NoCache
     public SystemChartVo updateChart(@PathParam("chartNumber") String chartNumber, SystemChartVo chartVo) throws Exception {
@@ -144,7 +145,7 @@ public class ChartRestService extends AbstractBatchableRestService {
     @DELETE
     @Path("/chart/{chartNumber}")
     @Consumes("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @GZIP
     @NoCache
     public void deleteChart(@PathParam("chartNumber") String chartNumber) throws Exception {
@@ -163,7 +164,7 @@ public class ChartRestService extends AbstractBatchableRestService {
     @Path("/upload-charts")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public String importCharts(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "chart-import");
     }
@@ -174,7 +175,7 @@ public class ChartRestService extends AbstractBatchableRestService {
     @Path("/intersecting-charts")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "editor" })
+    @RolesAllowed(Roles.EDITOR)
     @GZIP
     @NoCache
     public List<SystemChartVo> computeIntersectingCharts(FeatureCollectionVo featureCollection) {

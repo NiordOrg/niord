@@ -29,6 +29,7 @@ import org.niord.core.message.MessageExportService;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.user.Roles;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
@@ -121,7 +122,7 @@ public class MessageExportRestService extends AbstractBatchableRestService {
     @Path("/import")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public String importMessages(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "msg-archive-import");
     }
@@ -149,7 +150,7 @@ public class MessageExportRestService extends AbstractBatchableRestService {
         }
 
         // Determine all valid message series for the current user
-        Set<String> validMessageSeries = domainService.domainsWithUserRole("admin").stream()
+        Set<String> validMessageSeries = domainService.domainsWithUserRole(Roles.ADMIN).stream()
                 .flatMap(d -> d.getMessageSeries().stream())
                 .map(MessageSeries::getSeriesId)
                 .collect(Collectors.toSet());

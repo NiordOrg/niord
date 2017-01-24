@@ -22,6 +22,7 @@ import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.domain.vo.DomainVo;
+import org.niord.core.user.Roles;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
@@ -97,7 +98,7 @@ public class DomainRestService extends AbstractBatchableRestService {
     @Path("/domain/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "sysadmin" })
+    @RolesAllowed(Roles.SYSADMIN)
     @GZIP
     @NoCache
     public DomainVo createDomain(DomainVo domain) throws Exception {
@@ -105,12 +106,13 @@ public class DomainRestService extends AbstractBatchableRestService {
         return domainService.createDomain(new Domain(domain), true).toVo();
     }
 
+
     /** Updates an existing domain */
     @PUT
     @Path("/domain/{domainId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "sysadmin" })
+    @RolesAllowed(Roles.SYSADMIN)
     @GZIP
     @NoCache
     public DomainVo updateDomain(@PathParam("domainId") String domainId, DomainVo domain) throws Exception {
@@ -126,7 +128,7 @@ public class DomainRestService extends AbstractBatchableRestService {
     @DELETE
     @Path("/domain/{domainId}")
     @Consumes("application/json;charset=UTF-8")
-    @RolesAllowed({ "sysadmin" })
+    @RolesAllowed(Roles.SYSADMIN)
     @GZIP
     @NoCache
     public void deleteDomain(@PathParam("domainId") String domainId) throws Exception {
@@ -139,7 +141,7 @@ public class DomainRestService extends AbstractBatchableRestService {
     @POST
     @Path("/keycloak")
     @Consumes("application/json;charset=UTF-8")
-    @RolesAllowed({ "sysadmin" })
+    @RolesAllowed(Roles.SYSADMIN)
     @GZIP
     @NoCache
     public void createDomainInKeycloak(DomainVo domain) throws Exception {
@@ -158,7 +160,7 @@ public class DomainRestService extends AbstractBatchableRestService {
     @Path("/upload-domains")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
-    @RolesAllowed("sysadmin")
+    @RolesAllowed(Roles.SYSADMIN)
     public String importDomains(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "domain-import");
     }

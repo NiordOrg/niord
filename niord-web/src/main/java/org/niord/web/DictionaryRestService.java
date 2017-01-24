@@ -23,6 +23,7 @@ import org.niord.core.dictionary.DictionaryEntry;
 import org.niord.core.dictionary.DictionaryService;
 import org.niord.core.dictionary.vo.DictionaryEntryVo;
 import org.niord.core.dictionary.vo.DictionaryVo;
+import org.niord.core.user.Roles;
 import org.niord.model.DataFilter;
 import org.slf4j.Logger;
 
@@ -39,6 +40,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -92,7 +94,7 @@ public class DictionaryRestService {
                 .getEntries()
                 .values()
                 .stream()
-                .sorted((e1, e2) -> e1.getKey().toLowerCase().compareTo(e2.getKey().toLowerCase()))
+                .sorted(Comparator.comparing(e -> e.getKey().toLowerCase()))
                 .collect(Collectors.toList());
     }
 
@@ -114,7 +116,7 @@ public class DictionaryRestService {
                 .values()
                 .stream()
                 .filter(e -> e.getDesc(lang) != null && e.getDesc(lang).descDefined())
-                .sorted((e1, e2) -> e1.getKey().toLowerCase().compareTo(e2.getKey().toLowerCase()))
+                .sorted(Comparator.comparing(e2 -> e2.getKey().toLowerCase()))
                 .forEach(entry ->
                         result.append(entry.getKey())
                         .append(" = ")
@@ -136,7 +138,7 @@ public class DictionaryRestService {
     @Path("/dictionary/{name}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({"sysadmin"})
+    @RolesAllowed(Roles.SYSADMIN)
     public DictionaryEntryVo createArea(@PathParam("name") String name, DictionaryEntryVo entryVo) throws Exception {
         DictionaryEntry entry = new DictionaryEntry(entryVo);
         log.info("Creating dictionary entry " + entryVo);
@@ -149,7 +151,7 @@ public class DictionaryRestService {
     @Path("/dictionary/{name}/{key}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({"sysadmin"})
+    @RolesAllowed(Roles.SYSADMIN)
     public DictionaryEntryVo updateArea(@PathParam("name") String name, @PathParam("key") String key, DictionaryEntryVo entryVo) throws Exception {
         if (!Objects.equals(key, entryVo.getKey())) {
             throw new WebApplicationException(400);
@@ -163,7 +165,7 @@ public class DictionaryRestService {
     /** Deletes the given dictionary entry */
     @DELETE
     @Path("/dictionary/{name}/{key}")
-    @RolesAllowed({"sysadmin"})
+    @RolesAllowed(Roles.SYSADMIN)
     public boolean deleteArea(@PathParam("name") String name, @PathParam("key") String key) throws Exception {
         log.info("Deleting dictionary entry " + key);
         return dictionaryService.deleteEntry(name, key);

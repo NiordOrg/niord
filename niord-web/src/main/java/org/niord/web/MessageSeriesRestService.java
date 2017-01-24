@@ -21,6 +21,7 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageSeriesService;
 import org.niord.core.message.vo.SystemMessageSeriesVo;
+import org.niord.core.user.Roles;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
@@ -122,7 +123,7 @@ public class MessageSeriesRestService {
     @Path("/series/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "sysadmin" })
+    @RolesAllowed(Roles.SYSADMIN)
     @GZIP
     @NoCache
     public SystemMessageSeriesVo createMessageSeries(SystemMessageSeriesVo seriesVo) throws Exception {
@@ -136,7 +137,7 @@ public class MessageSeriesRestService {
     @Path("/series/{seriesId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "sysadmin" })
+    @RolesAllowed(Roles.SYSADMIN)
     @GZIP
     @NoCache
     public SystemMessageSeriesVo updateMessageSeries(@PathParam("seriesId") String seriesId, SystemMessageSeriesVo seriesVo) throws Exception {
@@ -153,7 +154,7 @@ public class MessageSeriesRestService {
     @DELETE
     @Path("/series/{seriesId}")
     @Consumes("application/json;charset=UTF-8")
-    @RolesAllowed({ "sysadmin" })
+    @RolesAllowed(Roles.SYSADMIN)
     @GZIP
     @NoCache
     public void deleteMessageSeries(@PathParam("seriesId") String seriesId) throws Exception {
@@ -182,7 +183,7 @@ public class MessageSeriesRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({ "sysadmin" })
+    @RolesAllowed(Roles.SYSADMIN)
     public Integer setNextMessageSeriesNumber(
             @PathParam("seriesIds") String seriesIds,
             @PathParam("year") int year,

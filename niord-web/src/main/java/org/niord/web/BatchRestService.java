@@ -28,6 +28,7 @@ import org.niord.core.batch.vo.BatchStatusVo;
 import org.niord.core.repo.FileTypes;
 import org.niord.core.repo.IconSize;
 import org.niord.core.repo.RepositoryService;
+import org.niord.core.user.Roles;
 import org.niord.core.user.UserService;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.search.PagedSearchResultVo;
@@ -109,7 +110,7 @@ public class BatchRestService {
     @PUT
     @Path("/execution/{executionId}/stop")
     @NoCache
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public void stopExecution(@PathParam("executionId") long executionId) {
         batchService.stopExecution(executionId);
     }
@@ -123,7 +124,7 @@ public class BatchRestService {
     @PUT
     @Path("/execution/{executionId}/restart")
     @NoCache
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public long restartExecution(@PathParam("executionId") long executionId) {
         return batchService.restartExecution(executionId);
     }
@@ -137,7 +138,7 @@ public class BatchRestService {
     @PUT
     @Path("/execution/{executionId}/abandon")
     @NoCache
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public void abandonExecution(@PathParam("executionId") long executionId) {
         batchService.abandonExecution(executionId);
     }
@@ -155,7 +156,7 @@ public class BatchRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public PagedSearchResultVo<BatchInstanceVo> getJobInstances(
             @PathParam("jobName") String jobName,
             @QueryParam("page") @DefaultValue("0") int page,
@@ -168,7 +169,7 @@ public class BatchRestService {
     /**
      * Returns the status of the batch job system
      *
-     * NB: Since this gets called every 10 seconds, adding a @RolesAllowed("admin") has
+     * NB: Since this gets called every 10 seconds, adding a @RolesAllowed(Roles.ADMIN) has
      * the potential of filling up the server log.
      * Instead, we allow all to call the endpoint, but return an empty result for non-admin users.
      *
@@ -181,7 +182,7 @@ public class BatchRestService {
     @NoCache
     @PermitAll
     public BatchStatusVo getStatus() {
-        if (!userService.isCallerInRole("admin")) {
+        if (!userService.isCallerInRole(Roles.ADMIN)) {
             return new BatchStatusVo();
         }
         return batchService.getStatus();
@@ -203,7 +204,7 @@ public class BatchRestService {
             @PathParam("fileName") String fileName) {
 
         // Check the ticket programmatically
-        if (!userService.isCallerInRole("admin")) {
+        if (!userService.isCallerInRole(Roles.ADMIN)) {
             throw new WebApplicationException(403);
         }
 
@@ -264,7 +265,7 @@ public class BatchRestService {
     @Path("/instance/{instanceId}/logs")
     @GZIP
     @NoCache
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public List<String> getBatchJobLogFiles(@PathParam("instanceId") long instanceId) throws IOException {
 
         return batchService.getBatchJobLogFiles(instanceId);
@@ -283,7 +284,7 @@ public class BatchRestService {
     @Produces("text/plain")
     @GZIP
     @NoCache
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public String getBatchJobLogFileContent(
             @PathParam("instanceId") long instanceId,
             @PathParam("logFileName") String logFileName,
@@ -303,7 +304,7 @@ public class BatchRestService {
     @Path("/execute-batch-set")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
-    @RolesAllowed("sysadmin")
+    @RolesAllowed(Roles.SYSADMIN)
     public String executeBatchSet(@Context HttpServletRequest request) throws Exception {
 
         StringBuilder txt = new StringBuilder();
@@ -344,7 +345,7 @@ public class BatchRestService {
     @Path("/execute-javascript")
     @Consumes("application/json;charset=UTF-8")
     @Produces("text/plain")
-    @RolesAllowed("sysadmin")
+    @RolesAllowed(Roles.SYSADMIN)
     public String executeJavaScript(ExecuteJavaScriptParams params) throws Exception {
 
         if (StringUtils.isNotBlank(params.getJavaScript())) {

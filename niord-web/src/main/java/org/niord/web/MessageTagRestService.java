@@ -23,6 +23,7 @@ import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagSearchParams;
 import org.niord.core.message.MessageTagService;
 import org.niord.core.message.vo.MessageTagVo;
+import org.niord.core.user.Roles;
 import org.niord.model.search.PagedSearchParamsVo.SortOrder;
 import org.slf4j.Logger;
 
@@ -129,7 +130,7 @@ public class MessageTagRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.USER)
     public MessageTagVo createTag(MessageTagVo tag) {
         return messageTagService.createMessageTag(new MessageTag(tag)).toVo();
     }
@@ -142,7 +143,7 @@ public class MessageTagRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.USER)
     public MessageTagVo updateTag(@PathParam("tagId") String tagId, MessageTagVo tag) {
         if (!Objects.equals(tagId, tag.getTagId())) {
             throw new WebApplicationException(400);
@@ -156,7 +157,7 @@ public class MessageTagRestService {
     @Path("/tag/{tagId}")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.USER)
     public boolean deleteTag(@PathParam("tagId") String tagId) {
         log.info("Deleting tag " + tagId);
         return messageTagService.deleteMessageTag(tagId);
@@ -169,7 +170,7 @@ public class MessageTagRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.ADMIN)
     public MessageTagVo unlockTag(@PathParam("tagId") String tagId) {
         MessageTag tag = messageTagService.findTag(tagId);
         if (tag.isLocked()) {
@@ -188,7 +189,7 @@ public class MessageTagRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.USER)
     public MessageTagVo createTempTag(@QueryParam("ttl") Integer ttl, List<String> messageUids) {
         // TODO: Validate access to the messages for the current user
         return messageTagService.createTempMessageTag(ttl, messageUids).toVo();
@@ -200,7 +201,7 @@ public class MessageTagRestService {
     @Path("/tag/{tagId}/messages")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.USER)
     public boolean clearTag(@PathParam("tagId") String tagId) {
         log.info("Clearing tag " + tagId);
         return messageTagService.clearMessageTag(tagId);
@@ -214,7 +215,7 @@ public class MessageTagRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.USER)
     public MessageTagVo addMessageToTag(@PathParam("tagId") String tagId, List<String> messageUids) {
         log.info("Adding messages " + messageUids + " to tag " + tagId);
 
@@ -230,7 +231,7 @@ public class MessageTagRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.USER)
     public MessageTagVo removeMessageFromTag(@PathParam("tagId") String tagId, List<String> messageUids) {
         log.info("Removing messages " + messageUids + " from tag " + tagId);
 

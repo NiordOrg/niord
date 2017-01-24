@@ -22,6 +22,7 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
 import org.niord.core.repo.RepositoryService;
+import org.niord.core.user.Roles;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.slf4j.Logger;
 
@@ -172,7 +173,7 @@ public class MessageMapImageRestService {
     @javax.ws.rs.Path("/{folder:.+}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("text/plain")
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.EDITOR)
     public String updateMessageMapImage(@PathParam("folder") String path, String image) throws Exception {
 
         // Validate that the path is a temporary repository folder path
@@ -207,7 +208,7 @@ public class MessageMapImageRestService {
     @javax.ws.rs.Path("/{folder:.+}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
-    @RolesAllowed("editor")
+    @RolesAllowed(Roles.EDITOR)
     public String uploadMessageMapImage(@PathParam("folder") String path, @Context HttpServletRequest request) throws Exception {
 
         // Validate that the path is a temporary repository folder path

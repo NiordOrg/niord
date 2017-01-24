@@ -32,6 +32,7 @@ angular.module('niord.editor')
             $scope.message = undefined;
             $scope.initId = $stateParams.id || '';
             $scope.referenceType = $stateParams.referenceType || '';
+            $scope.isEditor = $rootScope.hasRole('editor');
 
             // Records if a field is expanded or collapsed.
             // Flags packaged in arrays in order to handle message part fields
@@ -692,6 +693,10 @@ angular.module('niord.editor')
 
             /** Adds a new message part after the given index **/
             $scope.addMessagePart = function (index) {
+                if (!$scope.isEditor) {
+                    return;
+                }
+
                 var parts = $scope.message.parts;
                 index = Math.min(parts.length, index + 1);
                 parts.splice(index, 0, {
@@ -711,6 +716,10 @@ angular.module('niord.editor')
 
             /** Removes the message part at the given index **/
             $scope.removeMessagePart = function (index) {
+                if (!$scope.isEditor) {
+                    return;
+                }
+
                 var parts = $scope.message.parts;
                 if (index < parts.length) {
                     parts.splice(index, 1);
@@ -731,6 +740,10 @@ angular.module('niord.editor')
 
             /** Moves the given message part up or down **/
             $scope.moveMessagePart = function (index, moveUp) {
+                if (!$scope.isEditor) {
+                    return;
+                }
+
                 var parts = $scope.message.parts;
                 var toIndex = moveUp ? index - 1 : index + 1;
                 if (toIndex >= 0 && toIndex < parts.length) {
@@ -744,6 +757,14 @@ angular.module('niord.editor')
                     // Update message title, etc.
                     $scope.adjustEditableMessage();
                     $scope.setDirty();
+                }
+            };
+
+
+            /** Sets the type of the message part **/
+            $scope.setPartType = function (part, type) {
+                if ($scope.isEditor) {
+                    part.type = type;
                 }
             };
 
@@ -1283,6 +1304,7 @@ angular.module('niord.editor')
             'use strict';
 
             $scope.previewLang = $rootScope.language;
+            $scope.isEditor = $rootScope.hasRole('editor');
 
             /** Create a preview message, i.e. a message sorted to the currently selected language **/
             $scope.createPreviewMessage = function () {

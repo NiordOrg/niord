@@ -66,7 +66,7 @@ var app = angular.module('niord.admin', [
             .state('editor', {
                 url: "/editor",
                 templateUrl: "/app/editor/editor.html",
-                data: { rolesRequired: ["editor", "admin", "sysadmin"] }
+                data: { rolesRequired: ["user", "editor", "admin", "sysadmin"] }
             })
             .state('editor.edit', {
                 url: "/edit/:id",

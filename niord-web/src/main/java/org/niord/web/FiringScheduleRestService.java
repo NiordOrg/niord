@@ -30,6 +30,7 @@ import org.niord.core.schedule.FiringSchedule;
 import org.niord.core.schedule.FiringScheduleService;
 import org.niord.core.schedule.vo.FiringAreaPeriodsVo;
 import org.niord.core.schedule.vo.FiringScheduleVo;
+import org.niord.core.user.Roles;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.message.MessageVo;
 import org.slf4j.Logger;
@@ -116,7 +117,7 @@ public class FiringScheduleRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"sysadmin"})
+    @RolesAllowed(Roles.SYSADMIN)
     public FiringScheduleVo createFiringSchedule(FiringScheduleVo schedule) {
 
         log.info("Create new firing schedule " + schedule);
@@ -135,7 +136,7 @@ public class FiringScheduleRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"sysadmin"})
+    @RolesAllowed(Roles.SYSADMIN)
     public FiringScheduleVo updateFiringSchedule(@PathParam("id") Integer id, FiringScheduleVo schedule) {
         if (!Objects.equals(id, schedule.getId())) {
             throw new WebApplicationException(400);
@@ -152,7 +153,7 @@ public class FiringScheduleRestService {
      */
     @DELETE
     @Path("/firing-schedule/{id}")
-    @RolesAllowed({ "sysadmin" })
+    @RolesAllowed(Roles.SYSADMIN)
     @GZIP
     @NoCache
     public void deleteFiringSchedule(@PathParam("id") Integer id) {
@@ -168,7 +169,7 @@ public class FiringScheduleRestService {
     @PUT
     @Path("/update-firing-exercises")
     @NoCache
-    @RolesAllowed({"sysadmin"})
+    @RolesAllowed(Roles.SYSADMIN)
     public void updateFiringExercises() {
         log.info("Updating firing exercises based on active schedules");
         firingExerciseService.updateFiringExercises();
@@ -220,7 +221,7 @@ public class FiringScheduleRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.EDITOR)
     public FiringAreaPeriodsVo updateFiringAreaPeriodsForDate(
             @QueryParam("date") Long date,
             @QueryParam("lang") String lang,
@@ -250,7 +251,7 @@ public class FiringScheduleRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     public List<MessageVo> generateFiringAreaMessages(FiringAreaMessageParams params) {
 
         // Validate the the message series belong to the current domain

@@ -24,6 +24,7 @@ import org.niord.core.area.AreaSearchParams;
 import org.niord.core.area.AreaService;
 import org.niord.core.area.vo.SystemAreaVo;
 import org.niord.core.batch.AbstractBatchableRestService;
+import org.niord.core.user.Roles;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.slf4j.Logger;
@@ -209,7 +210,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     @Path("/area/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     public SystemAreaVo createArea(SystemAreaVo areaVo) throws Exception {
         Area area = new Area(areaVo);
         log.info("Creating area " + area);
@@ -225,7 +226,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     @Path("/area/{areaId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     public SystemAreaVo updateArea(@PathParam("areaId") Integer areaId, SystemAreaVo areaVo) throws Exception {
         if (!Objects.equals(areaId, areaVo.getId())) {
             throw new WebApplicationException(400);
@@ -239,7 +240,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     /** Deletes the given area */
     @DELETE
     @Path("/area/{areaId}")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     public boolean deleteArea(@PathParam("areaId") Integer areaId) throws Exception {
         log.info("Deleting area " + areaId);
         return areaService.deleteArea(areaId);
@@ -250,7 +251,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     @PUT
     @Path("/move-area")
     @Consumes("application/json;charset=UTF-8")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     public boolean moveArea(MoveAreaVo moveAreaVo) throws Exception {
         log.info("Moving area " + moveAreaVo.getAreaId() + " to " + moveAreaVo.getParentId());
         return areaService.moveArea(moveAreaVo.getAreaId(), moveAreaVo.getParentId());
@@ -261,7 +262,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     @PUT
     @Path("/change-sort-order")
     @Consumes("application/json;charset=UTF-8")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     public boolean changeSortOrder(ChangeSortOrderVo changeSortOrderVo) throws Exception {
         log.info("Changing sort-order of area " + changeSortOrderVo.getAreaId()
                 + " moving " + (changeSortOrderVo.isMoveUp() ? "up" : "down"));
@@ -272,7 +273,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     /** Re-computes the sort order of the area tree */
     @PUT
     @Path("/recompute-tree-sort-order")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     public boolean recomputeTreeSortOrder() {
         return areaService.recomputeTreeSortOrder();
     }
@@ -288,7 +289,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     @Path("/upload-areas")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public String importAreas(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "area-import");
     }

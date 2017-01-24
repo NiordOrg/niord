@@ -26,6 +26,7 @@ import org.niord.core.mail.Mail.MailRecipient;
 import org.niord.core.message.MessageMailService;
 import org.niord.core.message.MessageMailService.MessageMailTemplate;
 import org.niord.core.message.MessageSearchParams;
+import org.niord.core.user.Roles;
 import org.niord.model.message.MessageVo;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
@@ -73,7 +74,7 @@ public class MessageMailRestService {
     @Produces("text/plain")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.EDITOR)
     public String sendMessageMail(@Context HttpServletRequest request) throws Exception {
 
         long t0 = System.currentTimeMillis();

@@ -22,6 +22,7 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
+import org.niord.core.user.Roles;
 import org.niord.core.user.UserService;
 import org.niord.model.IJsonSerializable;
 import org.slf4j.Logger;
@@ -51,7 +52,7 @@ import java.util.stream.Collectors;
 @Path("/settings")
 @Stateless
 @SecurityDomain("keycloak")
-@RolesAllowed({"sysadmin"})
+@RolesAllowed(Roles.SYSADMIN)
 public class SettingsRestService extends AbstractBatchableRestService {
 
     @Inject
@@ -80,7 +81,7 @@ public class SettingsRestService extends AbstractBatchableRestService {
     @NoCache
     public List<SettingVo> getSettings() {
         // If a ticket is defined, check if programmatically
-        if (!userService.isCallerInRole("sysadmin")) {
+        if (!userService.isCallerInRole(Roles.SYSADMIN)) {
             throw new WebApplicationException(403);
         }
 

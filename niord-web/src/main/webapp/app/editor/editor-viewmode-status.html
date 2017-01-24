@@ -38,37 +38,36 @@
 
         <div class="col-sm-12 col-md-4 col-lg-3">
             <div class="panel panel-default message-status-panel">
-                <p>
+                <p style="margin-bottom: 20px;">
                     Status:
                     <strong>{{message.status}}</strong>
                 </p>
 
-                <div style="margin-top: 20px;">
+                <div ng-if="isEditor && message.status == 'VERIFIED'">
                     <button href class="btn btn-primary btn-sm message-status-action"
-                            ng-click="publish()" ng-if="message.status == 'VERIFIED'">
+                            ng-click="publish()">
                         <span class="glyphicon glyphicon-send"></span> Publish Message...
                     </button>
                 </div>
-                <div>
+                <div ng-if="isEditor && message.status == 'DRAFT'">
                     <button href class="btn btn-primary btn-sm message-status-action"
-                            ng-click="verify()" ng-if="message.status == 'DRAFT'">
+                            ng-click="verify()">
                         <span class="glyphicon glyphicon-ok"></span> Verify Message...
                     </button>
                 </div>
-                <div>
+                <div ng-if="isEditor && (message.status == 'DRAFT' || message.status == 'VERIFIED')">
                     <button href class="btn btn-default btn-sm message-status-action"
-                            ng-click="deleteDraft()"
-                            ng-if="message.status == 'DRAFT' || message.status == 'VERIFIED'">
+                            ng-click="deleteDraft()">
                         <span class="glyphicon glyphicon-trash"></span> Delete Message...
                     </button>
                 </div>
-                <div>
+                <div ng-if="isEditor && message.status == 'PUBLISHED'">
                     <button href class="btn btn-default btn-sm message-status-action"
-                            ng-click="cancel()" ng-if="message.status == 'PUBLISHED'">
+                            ng-click="cancel()">
                         <span class="glyphicon glyphicon-trash"></span> Cancel Message...
                     </button>
                 </div>
-                <div>
+                <div ng-if="isEditor">
                     <button href class="btn btn-default btn-sm message-status-action"
                             ng-click="copy()">
                         <span class="glyphicon glyphicon-duplicate"></span> Copy Message...

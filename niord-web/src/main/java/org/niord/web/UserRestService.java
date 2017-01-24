@@ -22,6 +22,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.domain.DomainService;
+import org.niord.core.user.Roles;
 import org.niord.core.user.User;
 import org.niord.core.user.UserService;
 import org.niord.core.user.vo.GroupVo;
@@ -75,7 +76,7 @@ public class UserRestService extends AbstractBatchableRestService {
     @GET
     @Path("/search")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "editor" })
+    @RolesAllowed(Roles.USER)
     @GZIP
     @NoCache
     public List<UserVo> search(@QueryParam("name") String name) {
@@ -89,7 +90,7 @@ public class UserRestService extends AbstractBatchableRestService {
     @GET
     @Path("/search-emails")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "editor" })
+    @RolesAllowed(Roles.USER)
     @GZIP
     @NoCache
     public List<String> searchEmails(@QueryParam("name") String name) {
@@ -112,7 +113,7 @@ public class UserRestService extends AbstractBatchableRestService {
     @GET
     @Path("/kc-users")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @GZIP
     @NoCache
     public List<UserVo> searchKeycloakUsers(
@@ -127,7 +128,7 @@ public class UserRestService extends AbstractBatchableRestService {
     @GET
     @Path("/kc-groups")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @GZIP
     @NoCache
     public List<GroupVo> getKeycloakGroups() {
@@ -139,7 +140,7 @@ public class UserRestService extends AbstractBatchableRestService {
     @GET
     @Path("/kc-user/{userId}/kc-groups")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @GZIP
     @NoCache
     public List<GroupVo> getKeycloakUserGroups(@PathParam("userId") String userId) {
@@ -153,7 +154,7 @@ public class UserRestService extends AbstractBatchableRestService {
      */
     @PUT
     @Path("/kc-user/{userId}/kc-groups/{groupId}")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @NoCache
     public void joinKeycloakGroup(@PathParam("userId") String userId, @PathParam("groupId") String groupId) {
         log.info("Joining Keycloak user " + userId + " to group " + groupId);
@@ -168,7 +169,7 @@ public class UserRestService extends AbstractBatchableRestService {
      */
     @DELETE
     @Path("/kc-user/{userId}/kc-groups/{groupId}")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @NoCache
     public void leaveKeycloakGroup(@PathParam("userId") String userId, @PathParam("groupId") String groupId) {
         log.info("Removing Keycloak user " + userId + " from group " + groupId);
@@ -183,7 +184,7 @@ public class UserRestService extends AbstractBatchableRestService {
     @Path("/kc-user/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @NoCache
     public UserVo addKeycloakUser(UserVo user) throws Exception {
         log.info("Creating Keycloak user " + user.getUsername());
@@ -199,7 +200,7 @@ public class UserRestService extends AbstractBatchableRestService {
     @Path("/kc-user/{userId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @NoCache
     public UserVo updateKeycloakUser(@PathParam("userId") String userId, UserVo user) throws Exception {
         if (!Objects.equals(userId, user.getKeycloakId())) {
@@ -215,7 +216,7 @@ public class UserRestService extends AbstractBatchableRestService {
      */
     @DELETE
     @Path("/kc-user/{userId}")
-    @RolesAllowed({ "admin" })
+    @RolesAllowed(Roles.ADMIN)
     @NoCache
     public void deleteKeycloakUser(@PathParam("userId") String userId) throws Exception {
         log.info("Deleting Keycloak user " + userId);

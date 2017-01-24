@@ -23,7 +23,7 @@ angular.module('niord.editor')
      * Directives that wraps an editable message
      * field with a title.
      **********************************************/
-    .directive('editorField', ['$document', function ($document) {
+    .directive('editorField', ['$document', '$rootScope', function ($document, $rootScope) {
         return {
             restrict: 'E',
             templateUrl: '/app/editor/editor-field.html',
@@ -50,6 +50,7 @@ angular.module('niord.editor')
 
                 scope.index = scope.index || 0;
                 scope.tabIndex = scope.tabIndex || -1;
+                scope.isEditor = $rootScope.hasRole('editor');
 
                 var elm = $(element[0]);
 
@@ -112,16 +113,20 @@ angular.module('niord.editor')
 
                 /** Toggles the edit mode of the field **/
                 scope.toggleEditField = function () {
-                    scope.editMode[scope.fieldId][scope.index] = !scope.editMode[scope.fieldId][scope.index];
+                    if (scope.isEditor) {
+                        scope.editMode[scope.fieldId][scope.index] = !scope.editMode[scope.fieldId][scope.index];
+                    }
                 };
 
 
                 /** Updates the edit state of the field editor from a keyboard event **/
                 scope.updateEditField = function(evt, editModeOn) {
-                    scope.editMode[scope.fieldId][scope.index] = editModeOn;
-                    evt.preventDefault();
-                    evt.stopPropagation();
-                    scope.$$phase || scope.$apply();
+                    if (scope.isEditor) {
+                        scope.editMode[scope.fieldId][scope.index] = editModeOn;
+                        evt.preventDefault();
+                        evt.stopPropagation();
+                        scope.$$phase || scope.$apply();
+                    }
                 };
 
 

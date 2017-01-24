@@ -169,7 +169,7 @@ angular.module('niord.messages')
 
             /** Returns if the domain used for searching messages only allows for public messages **/
             $scope.searchPublicMessages = function () {
-                return !$rootScope.hasRole('editor') || $rootScope.domain != $scope.searchDomain;
+                return !$rootScope.hasRole('user') || $rootScope.domain != $scope.searchDomain;
             };
 
 

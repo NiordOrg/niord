@@ -28,6 +28,7 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessageMailService;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.vo.CommentVo;
+import org.niord.core.user.Roles;
 import org.niord.core.user.User;
 import org.niord.core.user.UserService;
 import org.niord.model.message.MessageVo;
@@ -96,7 +97,7 @@ public class MessageCommentRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.USER)
     public List<CommentVo> getComments(@PathParam("messageId") String messageId) {
 
         // Get the message id
@@ -123,7 +124,7 @@ public class MessageCommentRestService {
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.USER)
     public CommentVo createComment(
             @PathParam("messageId") String messageId,
             @QueryParam("lang") String lang,
@@ -158,7 +159,7 @@ public class MessageCommentRestService {
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.USER)
     public CommentVo updateComment(
             @PathParam("messageId") String messageId,
             @PathParam("commentId") Integer commentId,
@@ -194,7 +195,7 @@ public class MessageCommentRestService {
     @Path("/message/{messageId}/comment/{commentId}/ack")
     @Produces("application/json;charset=UTF-8")
     @NoCache
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.USER)
     public CommentVo acknowledgeComment(@PathParam("messageId") String messageId, @PathParam("commentId") Integer commentId) {
         // Get the message by message id
         Message message = messageService.resolveMessage(messageId);

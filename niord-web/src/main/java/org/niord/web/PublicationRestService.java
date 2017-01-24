@@ -33,6 +33,7 @@ import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.repo.RepositoryService;
+import org.niord.core.user.Roles;
 import org.niord.core.user.TicketService;
 import org.niord.core.user.UserService;
 import org.niord.core.util.TextUtils;
@@ -156,7 +157,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @GET
     @Path("/search-details")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({"editor"})
+    @RolesAllowed(Roles.USER)
     @GZIP
     @NoCache
     public PagedSearchResultVo<SystemPublicationVo> searchSystemPublications(
@@ -252,7 +253,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @GET
     @Path("/editable-publication/{publicationId}")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     @GZIP
     @NoCache
     public SystemPublicationVo getSystemPublication(@PathParam("publicationId") String publicationId) throws Exception {
@@ -271,7 +272,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationVo newTemplatePublication(
             @QueryParam("mainType") PublicationMainType mainType) throws Exception {
 
@@ -294,7 +295,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationVo copyPublicationTemplate(
             @PathParam("publicationId") String publicationId,
             @QueryParam("nextIssue") boolean nextIssue) throws Exception {
@@ -340,7 +341,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @Path("/publication/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     @GZIP
     @NoCache
     public SystemPublicationVo createPublication(SystemPublicationVo publication) throws Exception {
@@ -368,7 +369,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @Path("/publication/{publicationId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     @GZIP
     @NoCache
     public SystemPublicationVo updatePublication(
@@ -398,7 +399,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @DELETE
     @Path("/publication/{publicationId}")
     @Consumes("application/json;charset=UTF-8")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(Roles.ADMIN)
     @GZIP
     @NoCache
     public void deletePublication(@PathParam("publicationId") String publicationId) throws Exception {
@@ -419,7 +420,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public SystemPublicationVo updatePublicationStatuses(UpdatePublicationStatusParam update) throws Exception {
 
         log.info("Updating status " + update);
@@ -448,7 +449,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @Path("/generate-publication-report/{folder:.+}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public PublicationDescVo generatePublicationReport(
             @PathParam("folder") String path,
             PublicationDescVo desc,
@@ -514,7 +515,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @Path("/upload-publication-file/{folder:.+}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public PublicationDescVo uploadPublicationFile(@PathParam("folder") String path, @Context HttpServletRequest request) throws Exception {
 
         List<FileItem> items = repositoryService.parseFileUploadRequest(request);
@@ -600,7 +601,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
             @QueryParam("lang") String lang) {
 
         // If a ticket is defined, check if programmatically
-        if (!userService.isCallerInRole("admin")) {
+        if (!userService.isCallerInRole(Roles.ADMIN)) {
             throw new WebApplicationException(403);
         }
 
@@ -627,7 +628,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
     @Path("/upload-publications")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
-    @RolesAllowed("admin")
+    @RolesAllowed(Roles.ADMIN)
     public String importPublications(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "publication-import");
     }
