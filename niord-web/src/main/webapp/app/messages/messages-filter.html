@@ -68,22 +68,22 @@
         <view-mode-filter-panel state="state" filter-name="status" clear-filter="clearFilter(name)" class="col-xs-12 col-sm-8 col-md-5 col-lg-5">
             <div class="btn-group">
                 <label class="btn btn-default btn-sm" style="padding: 5px" ng-model="state.status.PUBLISHED" uib-btn-checkbox>
-                    <span class="label label-message-id status-btn status-PUBLISHED-outline">Published</span>
+                    <span class="label label-message-id status-btn status-PUBLISHED-outline" translate>msg.status.PUBLISHED</span>
                 </label>
                 <label class="btn btn-default btn-sm" style="padding: 5px" ng-if="!searchPublicMessages()" ng-model="state.status.DRAFT" uib-btn-checkbox>
-                    <span class="label label-message-id status-btn status-DRAFT-outline">Draft</span>
+                    <span class="label label-message-id status-btn status-DRAFT-outline" translate>msg.status.DRAFT</span>
                 </label>
                 <label class="btn btn-default btn-sm" style="padding: 5px" ng-if="!searchPublicMessages()" ng-model="state.status.VERIFIED" uib-btn-checkbox>
-                    <span class="label label-message-id status-btn status-VERIFIED-outline">Verified</span>
+                    <span class="label label-message-id status-btn status-VERIFIED-outline" translate>msg.status.VERIFIED</span>
                 </label>
                 <label class="btn btn-default btn-sm" style="padding: 5px" ng-model="state.status.CANCELLED" uib-btn-checkbox>
-                    <span class="label label-message-id status-btn status-CANCELLED-outline">Cancelled</span>
+                    <span class="label label-message-id status-btn status-CANCELLED-outline" translate>msg.status.CANCELLED</span>
                 </label>
                 <label class="btn btn-default btn-sm" style="padding: 5px" ng-model="state.status.EXPIRED" uib-btn-checkbox>
-                    <span class="label label-message-id status-btn status-EXPIRED-outline">Expired</span>
+                    <span class="label label-message-id status-btn status-EXPIRED-outline" translate>msg.status.EXPIRED</span>
                 </label>
                 <label class="btn btn-default btn-sm" style="padding: 5px" ng-if="!searchPublicMessages()" ng-model="state.status.DELETED" uib-btn-checkbox>
-                    <span class="label label-message-id status-btn status-DELETED-outline">Deleted</span>
+                    <span class="label label-message-id status-btn status-DELETED-outline" translate>msg.status.DELETED</span>
                 </label>
                 <span class="small-link">
                     <a href ng-click="updateStateFilter(true)" translate>msg.filter.all</a> /

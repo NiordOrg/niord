@@ -5,12 +5,12 @@
         <span class="pull-right">
             <a ng-href="{{backToListUrl}}" ng-if="backToListUrl"
                class="btn btn-default btn-xs">
-                <span class="glyphicon glyphicon-arrow-left"></span> Back to list
+                <span class="glyphicon glyphicon-arrow-left"></span> <span translate>editor.back_to_list</span>
             </a>
             <a href ng-click="clearMessage()" ng-if="message"
                style="margin-left: 5px"
                class="btn btn-default btn-xs">
-                <span class="glyphicon glyphicon-remove"></span> Clear
+                <span class="glyphicon glyphicon-remove"></span> <span translate>editor.clear</span>
             </a>
         </span>
     </h3>
@@ -835,12 +835,14 @@
                     tabindex="3000"
                     ng-if="isEditor"
                     ng-click="saveMessage()" ng-disabled="editForm.$pristine || editForm.$invalid || messageSaving">
-                <span class="glyphicon glyphicon-floppy-disk"></span> Save Message
+                <span class="glyphicon glyphicon-floppy-disk"></span>
+                <span translate>editor.save_msg</span>...
             </button>
             <button class="btn btn-default btn-sm"
                     tabindex="3001"
                     ng-click="init()" ng-if="initId">
-                <span class="glyphicon glyphicon-refresh"></span> Reload Message
+                <span class="glyphicon glyphicon-refresh"></span>
+                <span translate>editor.reload_msg</span>...
             </button>
         </div>
 

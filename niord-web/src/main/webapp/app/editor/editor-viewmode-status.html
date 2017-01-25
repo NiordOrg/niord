@@ -6,12 +6,12 @@
         <span class="pull-right">
             <a ng-href="{{backToListUrl}}" ng-if="backToListUrl"
                class="btn btn-default btn-xs">
-                <span class="glyphicon glyphicon-arrow-left"></span> Back to list
+                <span class="glyphicon glyphicon-arrow-left"></span> <span translate>editor.back_to_list</span>
             </a>
             <a href ng-click="clearMessage()" ng-if="message"
                style="margin-left: 5px"
                class="btn btn-default btn-xs">
-                <span class="glyphicon glyphicon-remove"></span> Clear
+                <span class="glyphicon glyphicon-remove"></span> <span translate>editor.clear</span>
             </a>
         </span>
     </h3>
@@ -40,37 +40,47 @@
             <div class="panel panel-default message-status-panel">
                 <p style="margin-bottom: 20px;">
                     Status:
-                    <strong>{{message.status}}</strong>
+                    <strong translate>{{'msg.status.' + message.status}}</strong>
                 </p>
 
-                <div ng-if="isEditor && message.status == 'VERIFIED'">
+                <div ng-if="isEditor && message.status == 'VERIFIED' && !message.publishDateFrom">
                     <button href class="btn btn-primary btn-sm message-status-action"
                             ng-click="publish()">
-                        <span class="glyphicon glyphicon-send"></span> Publish Message...
+                        <span class="glyphicon glyphicon-send"></span>
+                        <span translate>editor.status.publish_msg</span>...
                     </button>
+                </div>
+                <div ng-if="isEditor && message.status == 'VERIFIED' && message.publishDateFrom"
+                    style="font-size: 11px; margin-bottom: 10px">
+                    <span translate>editor.status.publish</span>:
+                    {{message.publishDateFrom | formatDate:'lll'}}
                 </div>
                 <div ng-if="isEditor && message.status == 'DRAFT'">
                     <button href class="btn btn-primary btn-sm message-status-action"
                             ng-click="verify()">
-                        <span class="glyphicon glyphicon-ok"></span> Verify Message...
+                        <span class="glyphicon glyphicon-ok"></span>
+                        <span translate>editor.status.verify_msg</span>...
                     </button>
                 </div>
                 <div ng-if="isEditor && (message.status == 'DRAFT' || message.status == 'VERIFIED')">
                     <button href class="btn btn-default btn-sm message-status-action"
                             ng-click="deleteDraft()">
-                        <span class="glyphicon glyphicon-trash"></span> Delete Message...
+                        <span class="glyphicon glyphicon-trash"></span>
+                        <span translate>editor.status.delete_msg</span>...
                     </button>
                 </div>
                 <div ng-if="isEditor && message.status == 'PUBLISHED'">
                     <button href class="btn btn-default btn-sm message-status-action"
                             ng-click="cancel()">
-                        <span class="glyphicon glyphicon-trash"></span> Cancel Message...
+                        <span class="glyphicon glyphicon-trash"></span>
+                        <span translate>editor.status.cancel_msg</span>...
                     </button>
                 </div>
                 <div ng-if="isEditor">
                     <button href class="btn btn-default btn-sm message-status-action"
                             ng-click="copy()">
-                        <span class="glyphicon glyphicon-duplicate"></span> Copy Message...
+                        <span class="glyphicon glyphicon-duplicate"></span>
+                        <span translate>editor.status.copy_msg</span>...
                     </button>
                 </div>
             </div>
