@@ -59,10 +59,16 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity, 
 
 
     /** Constructor */
+    public DateInterval(Boolean allDay, Date fromDate, Date toDate) {
+        this.allDay = allDay;
+        this.fromDate = fromDate;
+        this.toDate = toDate;
+    }
+
+
+    /** Constructor */
     public DateInterval(DateIntervalVo dateInterval) {
-        this.allDay = dateInterval.getAllDay();
-        this.fromDate = dateInterval.getFromDate();
-        this.toDate = dateInterval.getToDate();
+        this(dateInterval.getAllDay(), dateInterval.getFromDate(), dateInterval.getToDate());
     }
 
 
@@ -93,6 +99,12 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity, 
             toDate = fromDate;
         }
         return fromDate != null || toDate != null;
+    }
+
+
+    /** Utility method that returns if the date interval is open-ended **/
+    public boolean openEnded() {
+        return fromDate != null && toDate == null;
     }
 
 

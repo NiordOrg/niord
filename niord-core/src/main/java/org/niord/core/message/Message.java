@@ -313,7 +313,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             this.separatePage = sysMessage.getSeparatePage();
         }
 
-        updateEventDateInterval();
+        updateAggregateEventDateInterval();
     }
 
 
@@ -409,7 +409,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         references.removeIf(r -> StringUtils.isBlank(r.getMessageId()));
 
         // Updates the start and end dates from the date intervals
-        updateEventDateInterval();
+        updateAggregateEventDateInterval();
 
         // Sync the year field from the publishDateFrom date
         year = publishDateFrom != null ? TimeUtils.getCalendarField(publishDateFrom, Calendar.YEAR) : null;
@@ -423,7 +423,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
 
     /** Compute the total event date interval **/
-    public void updateEventDateInterval() {
+    public void updateAggregateEventDateInterval() {
         // Update event date intervals
         eventDateFrom = eventDateTo = null;
 
@@ -437,6 +437,41 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                 eventDateTo = di.getToDate();
             }
         });
+    }
+
+
+    /**
+     * When a message is being published, check for the presence of event date intervals.
+     * If none are present, add an event date interval to all "Details" message parts
+     * with a start event date set to the publish start date.
+     */
+    public void checkEventDateIntervalsUponPublishStart() {
+        if (publishDateFrom != null && parts.stream().allMatch(p -> p.getEventDates().isEmpty())) {
+            parts.stream()
+                    .filter(p -> p.getType() == MessagePartType.DETAILS)
+                    .forEach(p -> p.addEventDates(new DateInterval(false, publishDateFrom, null)));
+        }
+    }
+
+
+    /**
+     * When a message is being expired or cancelled, check for the presence of open-ended event date intervals.
+     * if such a date interval exists and the event start date is prior to the publish end date, then set the
+     * event end date to that of the publish end date.
+     * If however, the event start date of an open-ended event date interval is after the publish end date,
+     * delete the event date interval altogether.
+     */
+    public void checkEventDateIntervalsUponPublishEnd() {
+        if (publishDateTo != null) {
+            parts.stream()
+                    .flatMap(p -> p.getEventDates().stream())
+                    .filter(ed -> ed.openEnded() && !ed.getFromDate().after(publishDateTo))
+                    .forEach(ed -> ed.setToDate(publishDateTo));
+
+            parts.forEach(p ->
+                    p.getEventDates().removeIf(ed -> ed.openEnded() && ed.getFromDate().after(publishDateTo)));
+
+        }
     }
 
 

@@ -553,11 +553,11 @@ public class MessageService extends BaseService {
     public Message updateStatus(String uid, Status status) throws Exception {
         Date now = new Date();
         Message message = findByUid(uid);
-        Status currentStatus = message.getStatus();
+        Status prevStatus = message.getStatus();
 
         // Check that a valid status transition is requested
-        if (!getValidStatusTransitions(currentStatus).contains(status)) {
-            throw new Exception("Invalid status transition " + currentStatus + " -> " + status);
+        if (!getValidStatusTransitions(prevStatus).contains(status)) {
+            throw new Exception("Invalid status transition " + prevStatus + " -> " + status);
         }
 
         // Register who last updated he message
@@ -566,23 +566,33 @@ public class MessageService extends BaseService {
         // Update the status
         message.setStatus(status);
 
-        // When published, update the message series
-        if ((currentStatus == Status.DRAFT || currentStatus == Status.VERIFIED) && status == Status.PUBLISHED) {
+        // When published, update dates and the message series
+        if ((prevStatus == Status.DRAFT || prevStatus == Status.VERIFIED) && status == Status.PUBLISHED) {
+
+            // Update the publish date needs updating
             if (message.getPublishDateFrom() == null || message.getPublishDateFrom().after(now)) {
                 message.setPublishDateFrom(now);
             }
+
+            // If no event dates are defined, add event dates based on publish start date
+            message.checkEventDateIntervalsUponPublishStart();
 
             // Assign a new message number and short ID
             messageSeriesService.updateMessageIdsFromMessageSeries(message, true);
 
         } else if (status == Status.CANCELLED || status == Status.EXPIRED) {
+
+            // Update the publish date needs updating
             if (message.getPublishDateTo() == null || message.getPublishDateTo().before(now)) {
                 message.setPublishDateTo(now);
             }
+
+            // Update or remove open-ended event date intervals based on the publish end date.
+            message.checkEventDateIntervalsUponPublishEnd();
         }
 
         // Add or remove the message from any message-recording publication message tags
-        publicationService.updateRecordingPublications(message, currentStatus);
+        publicationService.updateRecordingPublications(message, prevStatus);
 
         message = saveMessage(message);
         return message;

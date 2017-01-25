@@ -306,7 +306,7 @@ public class FiringExerciseService extends BaseService {
             fps.forEach(fp -> timePart.addEventDates(fp.toDateInterval()));
 
             // Make sure the message expires after last event date
-            message.updateEventDateInterval();
+            message.updateAggregateEventDateInterval();
             message.setPublishDateFrom(now);
             message.setPublishDateTo(message.getEventDateTo());
 
