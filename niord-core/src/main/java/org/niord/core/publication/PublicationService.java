@@ -32,7 +32,6 @@ import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.core.publication.vo.SystemPublicationVo;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
-import org.niord.core.util.TimeUtils;
 import org.niord.model.message.Status;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
@@ -62,9 +61,15 @@ import java.util.stream.Collectors;
 
 import static org.niord.core.publication.vo.PublicationMainType.PUBLICATION;
 import static org.niord.core.publication.vo.PublicationMainType.TEMPLATE;
-import static org.niord.core.publication.vo.PublicationStatus.*;
+import static org.niord.core.publication.vo.PublicationStatus.ACTIVE;
+import static org.niord.core.publication.vo.PublicationStatus.DRAFT;
+import static org.niord.core.publication.vo.PublicationStatus.INACTIVE;
+import static org.niord.core.publication.vo.PublicationStatus.RECORDING;
 import static org.niord.model.message.Status.PUBLISHED;
-import static org.niord.model.publication.PublicationType.*;
+import static org.niord.model.publication.PublicationType.LINK;
+import static org.niord.model.publication.PublicationType.MESSAGE_REPORT;
+import static org.niord.model.publication.PublicationType.NONE;
+import static org.niord.model.publication.PublicationType.REPOSITORY;
 
 /**
  * Business interface for accessing publications
