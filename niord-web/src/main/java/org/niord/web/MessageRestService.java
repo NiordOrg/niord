@@ -162,7 +162,7 @@ public class MessageRestService  {
         }
 
         // Extra check - only admins can edit a non-draft message
-        boolean draft = message.getStatus() == DRAFT || message.getStatus() == VERIFIED;
+        boolean draft = message.getStatus().isDraft();
         if (editOp == EditOp.UPDATE && !draft && !userService.isCallerInRole(Roles.ADMIN)) {
             throw new WebApplicationException("Only admins can update a non-draft message", 403);
         }

@@ -441,7 +441,6 @@ public class MessageService extends BaseService {
 
         // Substitute the Area with a persisted one
         original.setAreas(persistedList(Area.class, message.getAreas()));
-        original.setAreaSortOrder(areaService.computeMessageAreaSortingOrder(original));
 
         // Substitute the Categories with the persisted ones
         original.setCategories(persistedList(Category.class, message.getCategories()));
@@ -479,6 +478,11 @@ public class MessageService extends BaseService {
                 .forEach(original::addAttachment);
 
         original.setSeparatePage(message.getSeparatePage());
+
+        // For non-published messages, compute the area sort order based on associated area and message part geometry
+        if (original.getStatus().isDraft()) {
+            original.setAreaSortOrder(areaService.computeMessageAreaSortingOrder(original));
+        }
 
         // Persist the message
         saveMessage(original);
@@ -567,7 +571,7 @@ public class MessageService extends BaseService {
         message.setStatus(status);
 
         // When published, update dates and the message series
-        if ((prevStatus == Status.DRAFT || prevStatus == Status.VERIFIED) && status == Status.PUBLISHED) {
+        if (prevStatus.isDraft() && status == Status.PUBLISHED) {
 
             // Update the publish date needs updating
             if (message.getPublishDateFrom() == null || message.getPublishDateFrom().after(now)) {
