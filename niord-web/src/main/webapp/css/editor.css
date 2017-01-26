@@ -33,6 +33,12 @@
     width: 100%;
 }
 
+.editor-dirty {
+    color: red;
+    font-style: normal;
+    font-size: 14px;
+}
+
 /** Editor -> Editor **/
 
 .editor-fields-group {

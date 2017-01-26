@@ -1,6 +1,7 @@
 <div class="editor-contents container" xmlns="http://java.sun.com/jsf/facelets" xmlns="http://www.w3.org/1999/html">
     <h3 class="page-header">
         Editor
+        <span ng-if="canSaveMessage" class="glyphicon glyphicon-floppy-disk editor-dirty" uib-tooltip="Unsaved changes"></span>
 
         <span class="pull-right">
             <a ng-href="{{backToListUrl}}" ng-if="backToListUrl"
@@ -834,7 +835,7 @@
             <button class="btn btn-primary btn-sm"
                     tabindex="3000"
                     ng-if="isEditor"
-                    ng-click="saveMessage()" ng-disabled="editForm.$pristine || editForm.$invalid || messageSaving">
+                    ng-click="saveMessage()" ng-disabled="!canSaveMessage || messageSaving">
                 <span class="glyphicon glyphicon-floppy-disk"></span>
                 <span translate>editor.save_msg</span>...
             </button>

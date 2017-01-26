@@ -212,25 +212,44 @@ angular.module('niord.editor')
             /** Editor functionality    **/
             /*****************************/
 
+            // The usual $scope.editForm does not work (form tied to sub-scope of this controller?)
+            // So, we defined it ourselves
+            $scope.editForm = undefined;
+            $scope.resolveEditForm = function () {
+                if (!$scope.editForm) {
+                    try { $scope.editForm = angular.element($("#editForm")).scope().editForm; } catch (err) {}
+                }
+                return $scope.editForm;
+            };
+
 
             /** Set the form as pristine **/
             $scope.setPristine = function () {
-                // $scope.editForm does not work (form tied to sub-scope of this controller?)
-                try {
-                    angular.element($("#editForm")).scope().editForm.$setPristine();
-                } catch (err) {
+                if ($scope.resolveEditForm()) {
+                    $scope.editForm.$setPristine();
                 }
+                $scope.canSaveMessage = false;
             };
 
 
             /** Set the form as dirty **/
             $scope.setDirty = function () {
-                // $scope.editForm does not work (form tied to sub-scope of this controller?)
-                try {
-                    angular.element($("#editForm")).scope().editForm.$setDirty();
-                } catch (err) {
+                if ($scope.resolveEditForm()) {
+                    $scope.editForm.$setDirty();
                 }
+                $scope.canSaveMessage = true;
             };
+
+
+            // Monitor the dirty state
+            // The usual technique of monitoring form.$dirty, form.$pristine and form.$invalid does not work
+            // properly, because form fields are added and removed when field editors are activated
+            $scope.canSaveMessage = false;
+            $scope.$watch(function () {
+                return ($scope.resolveEditForm()) ? $scope.editForm.$dirty : false;
+            }, function (dirty) {
+                $scope.canSaveMessage = $scope.canSaveMessage || dirty;
+            }, true);
 
 
             /** Place focus in the editor **/
@@ -238,6 +257,9 @@ angular.module('niord.editor')
                 $timeout(function () {
                     $('.editor-field-label').first().focus();
                 });
+
+                // Reset edit-form every time the edit page is displayed
+                $scope.editForm = undefined;
             };
 
 
@@ -765,6 +787,7 @@ angular.module('niord.editor')
             $scope.setPartType = function (part, type) {
                 if ($scope.isEditor) {
                     part.type = type;
+                    $scope.setDirty();
                 }
             };
 
