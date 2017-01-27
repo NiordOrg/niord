@@ -14,7 +14,7 @@
         <maven.min.version>3.0.0</maven.min.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jboss.bom.version>10.1.0.Final</jboss.bom.version>
-        <keycloak.version>2.5.0.Final</keycloak.version>
+        <keycloak.version>2.5.1.Final</keycloak.version>
         <jackson.version>2.7.4</jackson.version>
         <swagger.version>1.5.10</swagger.version>
         <batik.version>1.8</batik.version>
