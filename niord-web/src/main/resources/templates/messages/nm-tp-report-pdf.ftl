@@ -74,7 +74,7 @@
                 <#assign area=areaHeading(msg.areas[0]) />
                 <#if areaHeadings && area?? && area.id != areaHeadingId>
                     <#assign areaHeadingId=area.id />
-                    <tr>
+                    <tr class="table-header-row">
                         <td colspan="3" class="table-item">
                             <h4 id="${areaHeadingId?c}"><@areaLineage area=areaHeading(area) /></h4>
                         </td>
