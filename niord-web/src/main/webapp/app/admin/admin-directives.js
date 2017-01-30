@@ -23,7 +23,7 @@ angular.module('niord.common')
     /*************************************
      * Defines a view mode filter panel
      *************************************/
-    .directive('adminPage', [function () {
+    .directive('adminPage', ['$state', function ($state) {
         return {
             restrict: 'EA',
             templateUrl: '/app/admin/admin-page.html',
@@ -37,6 +37,10 @@ angular.module('niord.common')
             link: function(scope) {
                 scope.parentPage = scope.parentPage || 'admin';
                 scope.parentPageTitle = scope.parentPageTitle || 'Admin';
+
+                scope.getParentPage = function () {
+                    return $state.href(scope.parentPage);
+                }
             }
         };
     }])
@@ -45,7 +49,7 @@ angular.module('niord.common')
     /*************************************
      * Renders the status of a publication
      *************************************/
-    .directive('publicationStatusField', [ 'LangService', function (LangService) {
+    .directive('publicationStatusField', [ function () {
         'use strict';
 
         return {
