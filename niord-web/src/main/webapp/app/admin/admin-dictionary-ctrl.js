@@ -129,5 +129,19 @@ angular.module('niord.admin')
                             .error($scope.displayError);
                     });
             };
+
+
+            /** Reloads dictionaries from resource bundles **/
+            $scope.reloadDictionaries = function () {
+                DialogService.showConfirmDialog(
+                    "Reload Dictionaries?", "Reload dictionaries from resource bundles?")
+                    .then(function() {
+                        AdminDictionariesService
+                            .reloadDictionaries()
+                            .success($scope.loadDictionaryEntries)
+                            .error($scope.displayError);
+                    });
+
+            }
         }]);
 

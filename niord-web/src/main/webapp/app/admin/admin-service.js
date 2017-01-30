@@ -638,6 +638,11 @@ angular.module('niord.admin')
             deleteEntry: function(name, entry) {
                 return $http['delete']('/rest/dictionaries/dictionary/' + encodeURIComponent(name) + '/'
                     + encodeURIComponent(entry.key));
+            },
+
+            /** Reloads dictionaries from resource bundles **/
+            reloadDictionaries: function() {
+                return $http.put('/rest/dictionaries/reload-resource-bundles');
             }
         };
     }])

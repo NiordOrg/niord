@@ -139,7 +139,7 @@ public class DictionaryRestService {
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed(Roles.SYSADMIN)
-    public DictionaryEntryVo createArea(@PathParam("name") String name, DictionaryEntryVo entryVo) throws Exception {
+    public DictionaryEntryVo createDictionary(@PathParam("name") String name, DictionaryEntryVo entryVo) throws Exception {
         DictionaryEntry entry = new DictionaryEntry(entryVo);
         log.info("Creating dictionary entry " + entryVo);
         return dictionaryService.createEntry(name, entry).toVo(DataFilter.get());
@@ -152,7 +152,7 @@ public class DictionaryRestService {
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed(Roles.SYSADMIN)
-    public DictionaryEntryVo updateArea(@PathParam("name") String name, @PathParam("key") String key, DictionaryEntryVo entryVo) throws Exception {
+    public DictionaryEntryVo updateDictionary(@PathParam("name") String name, @PathParam("key") String key, DictionaryEntryVo entryVo) throws Exception {
         if (!Objects.equals(key, entryVo.getKey())) {
             throw new WebApplicationException(400);
         }
@@ -166,9 +166,26 @@ public class DictionaryRestService {
     @DELETE
     @Path("/dictionary/{name}/{key}")
     @RolesAllowed(Roles.SYSADMIN)
-    public boolean deleteArea(@PathParam("name") String name, @PathParam("key") String key) throws Exception {
+    public boolean deleteDictionary(@PathParam("name") String name, @PathParam("key") String key) throws Exception {
         log.info("Deleting dictionary entry " + key);
         return dictionaryService.deleteEntry(name, key);
     }
+
+
+    /** Reload all dictionary values from the resource bundles */
+    @PUT
+    @Path("/reload-resource-bundles")
+    @Produces("text/plain")
+    @RolesAllowed(Roles.SYSADMIN)
+    public String reloadDictionariesFromResourceBundles() throws Exception {
+
+        long t0 = System.currentTimeMillis();
+
+        // Load default resource bundles into dictionaries - override existing values
+        dictionaryService.loadDefaultResourceBundles(true);
+
+        return String.format("Resource bundles loaded in %d ms", (System.currentTimeMillis() - t0));
+    }
+
 
 }

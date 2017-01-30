@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class DictionaryService extends BaseService {
 
-    public static final String[] DEFAULT_BUNDLES = { "web", "message", "pdf", "mail" };
+    public static final String[] DEFAULT_BUNDLES = {"web", "message", "pdf", "mail"};
 
     @Inject
     private Logger log;
@@ -73,12 +73,13 @@ public class DictionaryService extends BaseService {
         log.info(String.format("Cached %d dictionaries in %d ms", dictionaries.size(), System.currentTimeMillis() - t0));
 
         // Load default resource bundles into dictionaries
-        Arrays.stream(DEFAULT_BUNDLES).forEach(this::loadResourceBundle);
+        loadDefaultResourceBundles(false);
     }
 
 
     /**
      * Returns the dictionary names in sorted order
+     *
      * @return the dictionary names
      */
     public List<String> getDictionaryNames() {
@@ -91,6 +92,7 @@ public class DictionaryService extends BaseService {
 
     /**
      * Returns the dictionary with the given name
+     *
      * @param name the name
      * @return the dictionary with the given name
      */
@@ -108,7 +110,8 @@ public class DictionaryService extends BaseService {
 
     /**
      * Adds the given dictionary entry template
-     * @param name the name of the dictionary
+     *
+     * @param name  the name of the dictionary
      * @param entry the template dictionary entry to add
      * @return the added dictionary entry
      */
@@ -144,7 +147,8 @@ public class DictionaryService extends BaseService {
 
     /**
      * Updates the given dictionary entry template
-     * @param name the name of the dictionary
+     *
+     * @param name  the name of the dictionary
      * @param entry the template dictionary entry to update
      * @return the updated dictionary entry
      */
@@ -174,8 +178,9 @@ public class DictionaryService extends BaseService {
 
     /**
      * Deletes the given dictionary key
+     *
      * @param name the name of the dictionary
-     * @param key the dictionary key to delete
+     * @param key  the dictionary key to delete
      * @return if the entry was deleted
      */
     @Lock(LockType.WRITE)
@@ -204,6 +209,7 @@ public class DictionaryService extends BaseService {
 
     /**
      * Returns the cached dictionary with the given name.
+     *
      * @param name the name
      * @return the cached dictionary with the given name
      */
@@ -228,7 +234,7 @@ public class DictionaryService extends BaseService {
      *
      * @param name the name of the dictionary
      * @param lang the language of the dictionary
-     * @param key the key
+     * @param key  the key
      */
     public String value(String name, String lang, String key) {
         DictionaryVo dict = getCachedDictionary(name);
@@ -239,7 +245,8 @@ public class DictionaryService extends BaseService {
     /**
      * Returns the given dictionaries as a Properties object for the given language.
      * Returns null if undefined.
-     * @param names the dictionary names
+     *
+     * @param names    the dictionary names
      * @param language the language
      * @return the dictionaries for the given language as a Properties object
      */
@@ -255,7 +262,8 @@ public class DictionaryService extends BaseService {
     /**
      * Returns the given dictionaries as a ResourceBundle for the given language.
      * Returns null if undefined.
-     * @param names the dictionary names
+     *
+     * @param names    the dictionary names
      * @param language the language
      * @return the dictionaries for the given language as a ResourceBundle
      */
@@ -286,12 +294,24 @@ public class DictionaryService extends BaseService {
 
 
     /**
-     * Loads the resource bundles with the given name for all supported languages.
-     * Updates the associated dictionary with new entries.
-     * @param baseName the base name of the resource bundle
+     * Loads the default resource bundles for all supported languages.
+     * Depending on the override parameter, either update the associated dictionary with new entries or overrides all.
+     * @param override whether to override all entries or just new ones
      */
     @Lock(LockType.WRITE)
-    public void loadResourceBundle(String baseName) {
+    public void loadDefaultResourceBundles(boolean override) {
+        // Load default resource bundles into dictionaries
+        Arrays.stream(DEFAULT_BUNDLES).forEach(name -> loadResourceBundle(name, override));
+    }
+
+
+    /**
+     * Loads the resource bundles with the given name for all supported languages.
+     * Depending on the override parameter, either update the associated dictionary with new entries or overrides all.
+     * @param baseName the base name of the resource bundle
+     * @param override whether to override all entries or just new ones
+     */
+    private void loadResourceBundle(String baseName, boolean override) {
 
         log.info("Loading dictionary resource bundle " + baseName);
 
@@ -304,13 +324,20 @@ public class DictionaryService extends BaseService {
                 Properties props = new Properties();
                 props.load(new InputStreamReader(in, "UTF-8"));
 
-                // Merge the resource bundle with the existing dictionary
-                mergeDictWithResourceBundle(baseName, lang, props);
+                if (override) {
+                    // Updates the dictionary with the values of the resource bundle
+                    updateDictFromResourceBundle(baseName, lang, props);
+
+                } else {
+                    // Merge the resource bundle with the existing dictionary
+                    mergeDictWithResourceBundle(baseName, lang, props);
+                }
             } catch (IOException e) {
                 log.error("Error loading resource bundle " + resource + ": " + e);
             }
         }
     }
+
 
     /**
      * Merge a resource bundle with the existing dictionary
@@ -352,10 +379,47 @@ public class DictionaryService extends BaseService {
             // Remove the cached dictionary
             cachedDictionaries.remove(name);
 
-            log.info(String.format("Persisted %d new %s dictionary entries in %d ms",
+            log.info(String.format("Persisted %d new '%s' dictionary entries in %d ms",
                     undefKeys.size(), name, System.currentTimeMillis() - t0));
         }
     }
+
+
+    /**
+     * Updates a dictionary with the resource bundle dictionary
+     * @param name the name of the dictionary
+     * @param lang the language of the resource bundle
+     * @param properties the resource bundle to merge into the dictionary
+     */
+    private void updateDictFromResourceBundle(String name, String lang, Properties properties) {
+        // Sanity check
+        if (properties.size() == 0) {
+            return;
+        }
+
+        long t0 = System.currentTimeMillis();
+
+        // Update the underlying dictionary
+        Dictionary dictionary = findByName(name);
+
+        // If the dictionary did not exist, create it
+        if (dictionary == null) {
+            dictionary = new Dictionary();
+            dictionary.setName(name);
+            em.persist(dictionary);
+        }
+
+        for (String key : properties.stringPropertyNames()) {
+            updateEntry(dictionary, lang, key, properties.getProperty(key));
+        }
+
+        // Remove the cached dictionary
+        cachedDictionaries.remove(name);
+
+        log.info(String.format("Persisted %d '%s' dictionary entries in %d ms",
+                properties.size(), name, System.currentTimeMillis() - t0));
+    }
+
 
     /**
      * Creates or updates the given dictionary entry

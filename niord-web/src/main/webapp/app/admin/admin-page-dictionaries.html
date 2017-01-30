@@ -80,6 +80,8 @@
                         <ul uib-dropdown-menu role="menu" aria-labelledby="single-button">
                             <li role="menuitem"><a href="/rest/dictionaries/dictionary/{{currentDictionaryName}}_{{language}}.properties"
                                                    target="_blank">Export...</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li role="menuitem"><a href ng-click="reloadDictionaries()">Reload Dictionaries...</a></li>
                         </ul>
                     </span>
                 </div>
