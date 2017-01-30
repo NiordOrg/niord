@@ -37,7 +37,6 @@ angular.module('niord.common')
             link: function(scope) {
                 scope.parentPage = scope.parentPage || 'admin';
                 scope.parentPageTitle = scope.parentPageTitle || 'Admin';
-                console.log("ADMIN PAGE " + scope.parentPage);
             }
         };
     }])
