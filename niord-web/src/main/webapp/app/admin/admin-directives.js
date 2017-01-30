@@ -30,9 +30,14 @@ angular.module('niord.common')
             replace: true,
             transclude: true,
             scope: {
-                adminPageTitle: "@"
+                adminPageTitle:     "@",
+                parentPage:         "@",
+                parentPageTitle:    "@"
             },
             link: function(scope) {
+                scope.parentPage = scope.parentPage || 'admin';
+                scope.parentPageTitle = scope.parentPageTitle || 'Admin';
+                console.log("ADMIN PAGE " + scope.parentPage);
             }
         };
     }])
