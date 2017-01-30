@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Danish Maritime Authority.
+ * Copyright 2017 Danish Maritime Authority.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -214,7 +214,7 @@ angular.module('niord.admin')
             $scope.showLogFiles = function (instanceId) {
                 $uibModal.open({
                     controller: "BatchLogFileDialogCtrl",
-                    templateUrl: "/app/admin/batch-log-file-dialog.html",
+                    templateUrl: "/app/sysadmin/batch-log-file-dialog.html",
                     size: 'l',
                     resolve: {
                         instanceId: function () {

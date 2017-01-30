@@ -1,0 +1,31 @@
+
+<admin-page admin-page-title="Overview">
+
+    <p>The System Admin pages are used to administer system data and settings for the Niord application. It has been divided into the following sections:</p>
+
+    <dl class="dl-horizontal">
+
+        <dt><a href ui-sref="sysadmin.series">Message Series</a></dt>
+        <dd>Manage the message series used for message series identifier.</dd>
+
+        <dt><a href ui-sref="sysadmin.domains">Domains</a></dt>
+        <dd>Manage the domains.</dd>
+
+        <dt><a href ui-sref="sysadmin.schedules">Schedules</a></dt>
+        <dd>Manage the list of firing schedules.</dd>
+
+        <dt><a href ui-sref="sysadmin.dictionaries">Dictionaries</a></dt>
+        <dd>Manage the dictionaries.</dd>
+
+        <dt ng-if="adminIntegrationPageEnabled"><a href ui-sref="sysadmin.integration">Integration</a></dt>
+        <dd ng-if="adminIntegrationPageEnabled">Handle integration with the legacy systems.</dd>
+
+        <dt><a href ui-sref="sysadmin.settings">Settings</a></dt>
+        <dd>Manage the system settings.</dd>
+
+        <dt><a href ui-sref="sysadmin.batch">Batch Jobs</a></dt>
+        <dd>Monitor and manage batch jobs.</dd>
+    </dl>
+
+</admin-page>
+

@@ -1,0 +1,18 @@
+
+<div>
+    <ul class="nav admin-nav-sidebar">
+        <li ui-sref-active="active"><a href ui-sref="sysadmin.overview">Overview</a></li>
+        <li ui-sref-active="active"><a href ui-sref="sysadmin.series">Message Series</a></li>
+        <li ui-sref-active="active"><a href ui-sref="sysadmin.domains">Domains</a></li>
+        <li ui-sref-active="active"><a href ui-sref="sysadmin.schedules">Schedules</a></li>
+        <li ui-sref-active="active"><a href ui-sref="sysadmin.dictionaries">Dictionaries</a></li>
+        <li ui-sref-active="active" ng-if="adminIntegrationPageEnabled"><a href ui-sref="sysadmin.integration">Integration</a></li>
+        <li ui-sref-active="active"><a href ui-sref="sysadmin.settings">Settings</a></li>
+        <li ui-sref-active="active">
+            <a href ui-sref="sysadmin.batch">
+                Batch Jobs
+                &nbsp;<span uib-tooltip="{{batchStatus.runningExecutions}} running batch jobs" class="badge">{{batchStatus.runningExecutions}}</span>
+            </a>
+        </li>
+    </ul>
+</div>

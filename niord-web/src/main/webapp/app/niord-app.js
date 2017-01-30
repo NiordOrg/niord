@@ -47,6 +47,7 @@ var app = angular.module('niord.admin', [
             .when('/atons', '/atons/grid')
             .when('/editor', '/editor/edit/')
             .when('/admin', '/admin/overview')
+            .when('/sysadmin', '/sysadmin/overview')
             .otherwise("/");
 
         $stateProvider
@@ -183,40 +184,46 @@ var app = angular.module('niord.admin', [
                 url: "/users",
                 templateUrl: "/app/admin/admin-page-users.html"
             })
-            .state('admin.series', {
-                url: "/series",
-                templateUrl: "/app/admin/admin-page-series.html",
-                data: { rolesRequired: [ "sysadmin" ] }
-            })
-            .state('admin.domains', {
-                url: "/domains",
-                templateUrl: "/app/admin/admin-page-domains.html",
-                data: { rolesRequired: [ "sysadmin" ] }
-            })
-            .state('admin.schedules', {
-                url: "/schedules",
-                templateUrl: "/app/admin/admin-page-schedules.html",
-                data: { rolesRequired: [ "sysadmin" ] }
-            })
-            .state('admin.integration', {
-                url: "/integration",
-                templateUrl: "/app/admin/admin-page-integration.html"
-            })
-            .state('admin.batch', {
-                url: "/batch/:batchName",
-                templateUrl: "/app/admin/admin-page-batch.html"
-            })
-            .state('admin.dictionaries', {
-                url: "/dictionaries",
-                templateUrl: "/app/admin/admin-page-dictionaries.html",
-                data: { rolesRequired: [ "sysadmin" ] }
-            })
-            .state('admin.settings', {
-                url: "/settings",
-                templateUrl: "/app/admin/admin-page-settings.html",
-                data: { rolesRequired: [ "sysadmin" ] }
-            })
 
+
+            /** Sysadmin **/
+            .state('sysadmin', {
+                url: "/sysadmin",
+                templateUrl: "/app/sysadmin/sysadmin.html",
+                data: { rolesRequired: [ "sysadmin" ] }
+            })
+            .state('sysadmin.overview', {
+                url: "/overview",
+                templateUrl: "/app/sysadmin/sysadmin-page-overview.html"
+            })
+            .state('sysadmin.series', {
+                url: "/series",
+                templateUrl: "/app/sysadmin/sysadmin-page-series.html"
+            })
+            .state('sysadmin.domains', {
+                url: "/domains",
+                templateUrl: "/app/sysadmin/sysadmin-page-domains.html"
+            })
+            .state('sysadmin.schedules', {
+                url: "/schedules",
+                templateUrl: "/app/sysadmin/sysadmin-page-schedules.html"
+            })
+            .state('sysadmin.dictionaries', {
+                url: "/dictionaries",
+                templateUrl: "/app/sysadmin/sysadmin-page-dictionaries.html"
+            })
+            .state('sysadmin.settings', {
+                url: "/settings",
+                templateUrl: "/app/sysadmin/sysadmin-page-settings.html"
+            })
+            .state('sysadmin.integration', {
+                url: "/integration",
+                templateUrl: "/app/sysadmin/sysadmin-page-integration.html"
+            })
+            .state('sysadmin.batch', {
+                url: "/batch/:batchName",
+                templateUrl: "/app/sysadmin/sysadmin-page-batch.html"
+            })
         ;
     }])
 

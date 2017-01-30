@@ -23,6 +23,7 @@
                 <li ng-if="hasRole('user')" ui-sref-active="active"><a href ui-sref="editor" translate>menu.editor</a></li>
                 <li ng-if="isLoggedIn && domain && domain.firingSchedule" ui-sref-active="active"><a href ui-sref="schedule" translate>menu.schedule</a></li>
                 <li ng-if="hasRole('admin')" ui-sref-active="active"><a href ui-sref="admin" translate>menu.admin</a></li>
+                <li ng-if="hasRole('sysadmin')" ui-sref-active="active"><a href ui-sref="sysadmin" translate>menu.sysadmin</a></li>
             </ul>
 
             <ul class="nav navbar-nav navbar-right">
