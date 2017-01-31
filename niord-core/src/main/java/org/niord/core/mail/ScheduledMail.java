@@ -16,18 +16,23 @@
 
 package org.niord.core.mail;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.util.GzipUtils;
 import org.niord.core.util.TimeUtils;
 
+import javax.mail.internet.InternetAddress;
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.Index;
 import javax.persistence.Lob;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.PrePersist;
+import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
@@ -43,7 +48,7 @@ import java.util.stream.Collectors;
 /**
  * Defines a scheduled mail placed in a mail queue. The mail is comprised of:
  * <ul>
- *    <li>The list of recipients.</li>
+ *    <li>The list of recipients and from address.</li>
  *    <li>The mail subject.</li>
  *    <li>The HTML contents.</li>
  * </ul>
@@ -52,9 +57,13 @@ import java.util.stream.Collectors;
  * <i>attempts</i> field for the number of attempts to send the mail.
  */
 @Entity
+@Table(indexes = {
+        @Index(name = "scheduled_mail_send_date", columnList="sendDate"),
+        @Index(name = "scheduled_mail_status", columnList="status")
+})
 @NamedQueries({
         @NamedQuery(name = "ScheduledMail.findPendingMails",
-                query = "SELECT m FROM ScheduledMail m where m.status = 'PENDING' and m.sendDate >= :date " +
+                query = "SELECT m FROM ScheduledMail m where m.status = 'PENDING' and m.sendDate <= :date " +
                         " order by m.sendDate asc")
 })
 @SuppressWarnings("unused")
@@ -75,8 +84,10 @@ public class ScheduledMail extends BaseEntity<Integer> {
     @Temporal(TemporalType.TIMESTAMP)
     Date sendDate;
 
-    @OneToMany(mappedBy = "mail")
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "mail", orphanRemoval = true)
     List<ScheduledMailRecipient> recipients = new ArrayList<>();
+
+    String sender;
 
     @NotNull
     String subject;
@@ -101,6 +112,9 @@ public class ScheduledMail extends BaseEntity<Integer> {
         if (created == null) {
             created = new Date();
         }
+        if (sendDate == null) {
+            sendDate = created;
+        }
     }
 
 
@@ -111,12 +125,22 @@ public class ScheduledMail extends BaseEntity<Integer> {
      */
     public void registerMailErrorAttempt(String error) {
         if (attempts < MAX_ATTEMPTS) {
-            setSendDate(TimeUtils.add(new Date(), DELAYS[attempts], Calendar.MINUTE));
+            sendDate = TimeUtils.add(new Date(), Calendar.MINUTE, DELAYS[attempts]);
         } else {
-            setStatus(Status.ERROR);
+            status = Status.ERROR;
         }
         attempts++;
         lastError = error;
+    }
+
+
+    /**
+     * When sending the mail has succeeded, call this method to register the success
+     */
+    public void registerMailSent() {
+        status = Status.SENT;
+        attempts++;
+        lastError = null;
     }
 
 
@@ -128,16 +152,24 @@ public class ScheduledMail extends BaseEntity<Integer> {
      * @param includePlainText whether to include a plain text version or not
      * @return the HTML mail
      */
-    public Mail toMail(String baseUri, HtmlMail.StyleHandling styleHandling, boolean includePlainText) throws IOException {
+    public Mail toMail(String baseUri, HtmlMail.StyleHandling styleHandling, boolean includePlainText) throws Exception {
 
         List<Mail.MailRecipient> mailRecipients = recipients.stream()
                 .map(ScheduledMailRecipient::toMailRecipient)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        return HtmlMail.fromHtml(getHtmlContents(), baseUri, styleHandling, includePlainText)
+        Mail mail = HtmlMail.fromHtml(getHtmlContents(), baseUri, styleHandling, includePlainText)
                 .subject(subject)
                 .recipients(mailRecipients);
+
+        if (StringUtils.isNotBlank(sender)) {
+            // TODO: Figure out how to handle sender/from addresses ... depends on SMTP service
+            //mail.from(new InternetAddress(user.getEmail()))
+            mail.replyTo(new InternetAddress(sender));
+        }
+
+        return mail;
     }
 
 
@@ -189,6 +221,14 @@ public class ScheduledMail extends BaseEntity<Integer> {
 
     public void setRecipients(List<ScheduledMailRecipient> recipients) {
         this.recipients = recipients;
+    }
+
+    public String getSender() {
+        return sender;
+    }
+
+    public void setSender(String sender) {
+        this.sender = sender;
     }
 
     public String getSubject() {

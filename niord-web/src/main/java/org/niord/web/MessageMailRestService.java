@@ -111,7 +111,7 @@ public class MessageMailRestService {
 
                 messageMailService.sendMessageMailAsync(mailTemplate);
 
-                String msg = "Mail sent to " + mailTo + " in " + (System.currentTimeMillis() - t0) + " ms";
+                String msg = "Message mail scheduled to " + mailTo + " in " + (System.currentTimeMillis() - t0) + " ms";
                 log.info(msg);
                 str.append(msg).append("\n");
 

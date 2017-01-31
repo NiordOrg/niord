@@ -16,24 +16,28 @@
 package org.niord.core.mail;
 
 import org.niord.core.NiordApp;
+import org.niord.core.service.BaseService;
 import org.niord.core.settings.annotation.Setting;
 import org.slf4j.Logger;
 
 import javax.annotation.Resource;
 import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.inject.Inject;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
+import java.util.stream.Collectors;
 
 /**
  * Interface for sending emails
  */
 @Stateless
 @SuppressWarnings("unused")
-public class MailService {
+public class MailService extends BaseService {
 
     @Resource(name = "java:jboss/mail/Niord")
     Session mailSession;
@@ -73,9 +77,8 @@ public class MailService {
                     .from(new InternetAddress(mailSender))
                     .subject(title);
 
-            ValidMailRecipients mailRecipientFilter = new ValidMailRecipients(validRecipients);
             for (String recipient : recipients) {
-                mail.recipient(Message.RecipientType.TO,	mailRecipientFilter.filter(recipient));
+                mail.recipient(Message.RecipientType.TO, new InternetAddress(recipient));
             }
 
             sendMail(mail);
@@ -94,6 +97,8 @@ public class MailService {
      */
     public void sendMail(Mail mail) throws MessagingException {
         try {
+            long t0 = System.currentTimeMillis();
+
             if (mail.getSender() == null) {
                 mail.setSender(new InternetAddress(mailSender));
             }
@@ -101,15 +106,76 @@ public class MailService {
                 mail.from(new InternetAddress(mailSender));
             }
 
-            log.info("Composing mail for " + mail.getRecipients());
+            // Validate the mail recipients
+            ValidMailRecipients mailRecipientFilter = new ValidMailRecipients(validRecipients);
+            mail.filterRecipients(mailRecipientFilter);
+            if (mail.getRecipients().isEmpty()) {
+                throw new MessagingException("No valid recipient");
+            }
+
+            log.debug("Composing mail");
             Message message = mail.compose(mailSession, mailAttachmentCache.getCache());
-            log.info("Sending...");
+            log.debug("Sending...");
             Transport.send(message);
-            log.info("Done");
+
+
+            String recipients = mail.getRecipients().stream()
+                    .filter(r -> r.getAddress() != null)
+                    .map(r -> r.getAddress().toString())
+                    .collect(Collectors.joining(", "));
+            log.info("Sent email to " + recipients + " in " + (System.currentTimeMillis() - t0) + " ms");
 
         } catch (MessagingException e) {
             log.error("Failed sending mail for " + mail.getFrom(), e);
             throw e;
+        }
+    }
+
+
+    /**
+     * Sends the scheduled mail with the given ID and updates the status of the scheduled mail entity
+     * @param scheduledMailId the ID of the scheduled mail to send
+     * @return the updated mail entity
+     */
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    public ScheduledMail sendScheduledMail(Integer scheduledMailId) {
+        try {
+            ScheduledMail scheduledMail = em.find(ScheduledMail.class, scheduledMailId);
+
+            // Double-check that the scheduled mail is still pending
+            if (scheduledMail != null && scheduledMail.getStatus() == ScheduledMail.Status.PENDING) {
+
+                try {
+                    Mail mail = scheduledMail.toMail(app.getBaseUri(), HtmlMail.StyleHandling.INLINE_STYLES, true);
+
+                    // If undefined, set reply-to to the first to-recipient
+                    if (mail.getReplyTo().isEmpty()) {
+                        mail.getRecipients().stream()
+                                .filter(r -> r.getType() == Message.RecipientType.TO)
+                                .limit(1)
+                                .forEach(r -> mail.replyTo(r.getAddress()));
+                    }
+
+                    // Send the mail
+                    sendMail(mail);
+
+                    // Register that the mail has successfully been sent
+                    scheduledMail.registerMailSent();
+
+                } catch (Exception e) {
+
+                    // Register that the mail failed being sent
+                    scheduledMail.registerMailErrorAttempt(e.getMessage());
+                    log.error("Error sending mail " + scheduledMailId + ", attempt " + scheduledMail.getAttempts(), e);
+                }
+                saveEntity(scheduledMail);
+            }
+
+            return scheduledMail;
+
+        } catch (Exception e) {
+            log.error("Error finding scheduled mail " + scheduledMailId, e);
+            return null;
         }
     }
 

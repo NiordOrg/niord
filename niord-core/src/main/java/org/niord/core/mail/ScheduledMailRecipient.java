@@ -35,7 +35,7 @@ import javax.validation.constraints.NotNull;
 @SuppressWarnings("unused")
 public class ScheduledMailRecipient extends BaseEntity<Integer> {
 
-    enum RecipientType {TO, CC, BCC,}
+    public enum RecipientType {TO, CC, BCC,}
 
     @NotNull
     @ManyToOne
@@ -77,6 +77,7 @@ public class ScheduledMailRecipient extends BaseEntity<Integer> {
         try {
             return new MailRecipient(type, new InternetAddress(address));
         } catch (AddressException e) {
+            e.printStackTrace();
             return null;
         }
     }

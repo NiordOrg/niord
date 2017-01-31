@@ -17,24 +17,20 @@
 package org.niord.core.message;
 
 import org.apache.commons.lang.StringUtils;
-import org.niord.core.NiordApp;
-import org.niord.core.domain.DomainService;
 import org.niord.core.fm.FmService;
-import org.niord.core.mail.HtmlMail;
-import org.niord.core.mail.Mail;
 import org.niord.core.mail.Mail.MailRecipient;
-import org.niord.core.mail.MailService;
+import org.niord.core.mail.ScheduledMail;
+import org.niord.core.mail.ScheduledMailRecipient;
+import org.niord.core.mail.ScheduledMailRecipient.RecipientType;
 import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
 import org.niord.core.user.UserService;
 import org.niord.model.message.MessageVo;
 import org.slf4j.Logger;
 
-import javax.ejb.Asynchronous;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.mail.internet.InternetAddress;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -48,26 +44,16 @@ public class MessageMailService extends BaseService {
     Logger log;
 
     @Inject
-    NiordApp app;
-
-    @Inject
     FmService fmService;
 
     @Inject
-    MailService mailService;
-
-    @Inject
     UserService userService;
-
-    @Inject
-    DomainService domainService;
 
 
     /**
      * Generates an email from the given mail template
      * @param mailTemplate the message mail template
      */
-    @Asynchronous
     public void sendMessageMailAsync(MessageMailTemplate mailTemplate) throws Exception {
 
         if (mailTemplate.getRecipients().isEmpty()) {
@@ -103,14 +89,14 @@ public class MessageMailService extends BaseService {
                                 .language(mailTemplate.getLanguage())
                                 .process();
 
-                Mail mail = HtmlMail.fromHtml(mailContents, app.getBaseUri(), HtmlMail.StyleHandling.INLINE_STYLES, true)
-                        //.from(new InternetAddress(user.getEmail()))
-                        .replyTo(new InternetAddress(user.getEmail()))
-                        .recipients(Collections.singletonList(recipient))
-                        .subject(mailSubject);
-                mailService.sendMail(mail);
+                ScheduledMail scheduledMail = new ScheduledMail();
+                scheduledMail.setSubject(mailSubject);
+                scheduledMail.setHtmlContents(mailContents);
+                scheduledMail.addRecipient(new ScheduledMailRecipient(RecipientType.TO, recipient.getAddress().toString()));
+                scheduledMail.setSender(user.getInternetAddress());
+                saveEntity(scheduledMail);
 
-                String msg = "Mail sent to " + mailTo + " in " + (System.currentTimeMillis() - t0) + " ms";
+                String msg = "Mail scheduled to " + mailTo + " in " + (System.currentTimeMillis() - t0) + " ms";
                 log.info(msg);
             } catch (Exception e) {
                 log.error("Error generating PDF for messages", e);

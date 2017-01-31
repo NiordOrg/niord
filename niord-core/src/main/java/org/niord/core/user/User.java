@@ -137,6 +137,21 @@ public class User extends VersionedEntity<Integer> {
     }
 
 
+    /**
+     * Returns the RFC-822 internet address, e.g. name and email.
+     * Returns null if undefined.
+     * @return the RFC-822 internet address, e.g. name and email
+     */
+    @Transient
+    public String getInternetAddress() {
+        String address = getName();
+        if (StringUtils.isNotBlank(email)) {
+            address = StringUtils.isBlank(address) ? email : address + " <" + email + ">";
+        }
+        return StringUtils.isNotBlank(address) ? address : null;
+    }
+
+
     /** {@inheritDoc} */
     @Override
     public String toString() {

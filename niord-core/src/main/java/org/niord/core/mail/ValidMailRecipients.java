@@ -68,14 +68,29 @@ class ValidMailRecipients {
             throw new AddressException("Invalid recipient: " + addr);
         }
 
-        addrs[0].validate();
+        return filter(addrs[0]);
+    }
+
+
+    /**
+     * Filters the address and ensures that it is a valid address
+     * @param addr the address to filter
+     * @return the valid address
+     */
+    public Address filter(InternetAddress addr) throws AddressException {
+
+        if (addr == null) {
+            throw new AddressException("Undefined recipient");
+        }
+
+        addr.validate();
 
         // Production mode
         if (allValid) {
-            return addrs[0];
+            return addr;
 
-        } else if (validAddresses.contains(addrs[0].getAddress().toLowerCase())) {
-            return addrs[0];
+        } else if (validAddresses.contains(addr.getAddress().toLowerCase())) {
+            return addr;
 
         } else {
             // Return the first valid email address
@@ -87,4 +102,3 @@ class ValidMailRecipients {
         }
     }
 }
-

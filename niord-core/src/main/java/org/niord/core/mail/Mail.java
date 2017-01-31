@@ -22,11 +22,14 @@ import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Part;
 import javax.mail.Session;
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import java.io.Serializable;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -110,6 +113,31 @@ public class Mail implements Serializable {
 
         return message;
     }
+
+
+    /**
+     * Filters the list of mail recipients and only include valid ones
+     * @param validMailRecipients the valid mail recipients
+     * @return the update mail
+     */
+    public Mail filterRecipients(ValidMailRecipients validMailRecipients) {
+
+        List<MailRecipient> validRecipients = new ArrayList<>();
+        recipients.forEach(r -> {
+            if (r.getAddress() != null && r.getAddress() instanceof InternetAddress) {
+                try {
+                    Address addr = validMailRecipients.filter((InternetAddress) r.getAddress());
+                    validRecipients.add(new MailRecipient(r.getType(), addr));
+                } catch (AddressException ignored) {
+                    // Skip invalid address
+                }
+            }
+        });
+        recipients = validRecipients;
+
+        return this;
+    }
+
 
     /**
      * Composes the body of the message at the top level.
