@@ -109,7 +109,7 @@ public class MessageMailRestService {
                         .language(params.getLanguage())
                         .templatePath("/templates/messages/message-mail.ftl");
 
-                messageMailService.sendMessageMailAsync(mailTemplate);
+                messageMailService.sendMessageMail(mailTemplate);
 
                 String msg = "Message mail scheduled to " + mailTo + " in " + (System.currentTimeMillis() - t0) + " ms";
                 log.info(msg);

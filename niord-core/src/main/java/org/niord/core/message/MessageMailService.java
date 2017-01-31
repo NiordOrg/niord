@@ -54,7 +54,7 @@ public class MessageMailService extends BaseService {
      * Generates an email from the given mail template
      * @param mailTemplate the message mail template
      */
-    public void sendMessageMailAsync(MessageMailTemplate mailTemplate) throws Exception {
+    public void sendMessageMail(MessageMailTemplate mailTemplate) throws Exception {
 
         if (mailTemplate.getRecipients().isEmpty()) {
             throw new Exception("No mail recipient specified");

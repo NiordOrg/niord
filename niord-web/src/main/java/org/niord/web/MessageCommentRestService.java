@@ -244,7 +244,7 @@ public class MessageCommentRestService {
                         .recipients(recipients)
                         .language(lang)
                         .templatePath("/templates/messages/message-mail.ftl");
-                messageMailService.sendMessageMailAsync(mailTemplate);
+                messageMailService.sendMessageMail(mailTemplate);
 
             } catch (Exception e) {
                 log.error("Failed sending comment e-mail to users " + comment.getEmailAddresses()
