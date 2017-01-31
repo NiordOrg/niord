@@ -230,6 +230,32 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
+     * AdminMailsService
+     * ********************************************************************************
+     * Interface for calling scheduled mails-related functions at the application server
+     */
+    .factory('AdminMailsService', [ '$http', function($http) {
+        'use strict';
+
+        return {
+            search: function(p) {
+                var params = 'maxSize=2';
+                if (p.recipient) {
+                    params += '&recipient=' + encodeURIComponent(p.recipient);
+                }
+                return $http.get('/rest/scheduled-mails/search?' + params);
+            },
+
+            getMailDetails: function (id) {
+                return $http.get('/rest/scheduled-mails/scheduled-mail/' + id);
+            }
+
+        };
+    }])
+
+
+    /**
+     * ********************************************************************************
      * AdminBatchService
      * ********************************************************************************
      * Interface for calling batch-related functions at the application server

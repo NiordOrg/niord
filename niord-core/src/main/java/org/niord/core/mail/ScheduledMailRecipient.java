@@ -17,6 +17,7 @@
 package org.niord.core.mail;
 
 import org.niord.core.mail.Mail.MailRecipient;
+import org.niord.core.mail.vo.ScheduledMailRecipientVo;
 import org.niord.core.model.BaseEntity;
 
 import javax.mail.Message;
@@ -58,6 +59,15 @@ public class ScheduledMailRecipient extends BaseEntity<Integer> {
     public ScheduledMailRecipient(RecipientType recipientType, String address) {
         this.recipientType = recipientType;
         this.address = address;
+    }
+
+
+    /** Converts this entity to a value object */
+    public ScheduledMailRecipientVo toVo() {
+        ScheduledMailRecipientVo recipient = new ScheduledMailRecipientVo();
+        recipient.setAddress(address);
+        recipient.setRecipientType(recipientType);
+        return recipient;
     }
 
 

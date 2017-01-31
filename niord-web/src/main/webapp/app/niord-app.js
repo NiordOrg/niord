@@ -212,6 +212,10 @@ var app = angular.module('niord.admin', [
                 url: "/dictionaries",
                 templateUrl: "/app/sysadmin/sysadmin-page-dictionaries.html"
             })
+            .state('sysadmin.mails', {
+                url: "/mails",
+                templateUrl: "/app/sysadmin/sysadmin-page-mails.html"
+            })
             .state('sysadmin.settings', {
                 url: "/settings",
                 templateUrl: "/app/sysadmin/sysadmin-page-settings.html"

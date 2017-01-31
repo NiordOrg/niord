@@ -1,0 +1,45 @@
+
+<admin-page admin-page-title="Scheduled Mails" parent-page="sysadmin" parent-page-title="Sysadmin">
+
+    <div ng-controller="MailsAdminCtrl">
+
+        <p>Search scheduled mails.</p>
+
+        <!-- Edit setting -->
+        <div style="margin-top: 20px">
+
+            <div class="row">
+                <div class="col-xs-8 col-sm-6 col-md-4">
+                    <input class="form-control input-sm col-sm-2"
+                           ng-model="params.recipient"
+                           ng-model-options="{ updateOn: 'default blur', debounce: { default: 1000, blur: 0 } }"
+                           type="text" placeholder="Recipient">
+                    <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
+                          ng-click="params.recipient = ''" ng-show="search != ''"></span>
+                </div>
+            </div>
+
+            <div class="row" style="padding-top: 20px;">
+                <div class="col-sm-12 col-md-12">
+                    <table class='table table-condensed scheduled-mails-table'>
+                        <tr>
+                            <th>Created</th>
+                            <th>Status</th>
+                            <th>Sender</th>
+                            <th>Subject</th>
+                        </tr>
+                        <tr ng-repeat="mail in searchResult.data">
+                            <td>{{mail.created | formatDate:'lll'}}</td>
+                            <td>{{mail.status}}</td>
+                            <td>{{mail.sender}}</td>
+                            <td>{{mail.subject}}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</admin-page>
+

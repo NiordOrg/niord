@@ -320,3 +320,9 @@ tr.batch-execution-row td div.progress {
 .settings-table tr td {
     font-size: 12px;
 }
+
+/** Mails admin page **/
+
+.scheduled-mails-table tr td {
+    font-size: 12px;
+}

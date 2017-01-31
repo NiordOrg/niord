@@ -17,9 +17,12 @@
 package org.niord.core.mail;
 
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.dictionary.Dictionary;
+import org.niord.core.mail.vo.ScheduledMailVo;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.util.GzipUtils;
 import org.niord.core.util.TimeUtils;
+import org.niord.model.DataFilter;
 
 import javax.mail.internet.InternetAddress;
 import javax.persistence.CascadeType;
@@ -75,7 +78,7 @@ public class ScheduledMail extends BaseEntity<Integer> {
     /** In case of an error, how many minutes should the system wait before attempting to send the mail again **/
     public static final int[] DELAYS = {1, 5, 15, 60};
 
-    enum Status { PENDING, SENT, ERROR }
+    public enum Status { PENDING, SENT, ERROR }
 
     @Temporal(TemporalType.TIMESTAMP)
     Date created;
@@ -115,6 +118,34 @@ public class ScheduledMail extends BaseEntity<Integer> {
         if (sendDate == null) {
             sendDate = created;
         }
+    }
+
+
+    /** Converts this entity to a value object */
+    public ScheduledMailVo toVo(DataFilter filter) {
+        DataFilter compFilter = filter.forComponent(ScheduledMail.class);
+
+        ScheduledMailVo mail = new ScheduledMailVo();
+        mail.setId(id);
+        mail.setCreated(created);
+        mail.setSendDate(sendDate);
+        mail.setStatus(status);
+        mail.setSender(sender);
+        mail.setSubject(subject);
+        mail.setAttempts(attempts);
+        mail.setLastError(lastError);
+        if (!recipients.isEmpty()) {
+            mail.setRecipients(recipients.stream()
+                .map(ScheduledMailRecipient::toVo)
+                .collect(Collectors.toList()));
+        }
+        if (compFilter.includeDetails()) {
+            try {
+                mail.setContents(getHtmlContents());
+            } catch (IOException ignored) {
+            }
+        }
+        return mail;
     }
 
 

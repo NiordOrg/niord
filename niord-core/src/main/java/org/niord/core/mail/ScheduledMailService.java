@@ -16,9 +16,12 @@
 
 package org.niord.core.mail;
 
+import org.apache.commons.lang.StringUtils;
+import org.niord.core.db.CriteriaHelper;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.service.BaseService;
 import org.niord.core.util.CdiUtils;
+import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.annotation.Resource;
@@ -29,6 +32,11 @@ import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.inject.Inject;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Root;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -54,6 +62,70 @@ public class ScheduledMailService extends BaseService {
 
     @Resource
     ManagedExecutorService managedExecutorService;
+
+
+    /**
+     * Searches the filtered set of scheduled mails
+     * @param params the search parameters
+     * @return the search result
+     */
+    public PagedSearchResultVo<ScheduledMail> search(ScheduledMailSearchParams params) {
+
+        PagedSearchResultVo<ScheduledMail> result = new PagedSearchResultVo<>();
+
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<ScheduledMail> query = cb.createQuery(ScheduledMail.class);
+
+        Root<ScheduledMail> mailRoot = query.from(ScheduledMail.class);
+
+        // Build the predicate
+        CriteriaHelper<ScheduledMail> criteriaHelper = new CriteriaHelper<>(cb, query);
+
+        // Match the recipient
+        if (StringUtils.isNotBlank(params.getRecipient())) {
+            Join<ScheduledMail, ScheduledMailRecipient> recipients = mailRoot.join("recipients", JoinType.LEFT);
+            criteriaHelper.like(recipients.get("address"), params.getRecipient());
+        }
+
+        // Match status
+        criteriaHelper = criteriaHelper.equals(mailRoot.get("status"), params.getStatus());
+
+        // Match date interval
+        criteriaHelper.between(mailRoot.get("created"), params.getFrom(), params.getTo());
+
+
+        // First compute the total number of matching mails
+        /**
+        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class)
+                .select(cb.count(mailRoot))
+                .where(criteriaHelper.where())
+                .orderBy(cb.asc(mailRoot.get("created")));
+        result.setTotal(em.createQuery(countQuery).getSingleResult());
+        **/
+
+        // Then, extract the current page of matches
+        query.select(mailRoot)
+                .where(criteriaHelper.where())
+                .orderBy(cb.asc(mailRoot.get("created")));
+        List<ScheduledMail> mails = em.createQuery(query)
+                .setMaxResults(params.getMaxSize())
+                .setFirstResult(params.getPage() * params.getMaxSize())
+                .getResultList();
+        result.setData(mails);
+        result.updateSize();
+
+        return result;
+    }
+
+
+    /**
+     * Returns the mail with the given ID and null if undefined
+     * @param id the ID of the mail
+     * @return the mail with the given ID and null if undefined
+     */
+    public ScheduledMail getScheduledMail(Integer id) {
+        return getByPrimaryKey(ScheduledMail.class, id);
+    }
 
 
     /**
