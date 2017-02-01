@@ -27,8 +27,8 @@ angular.module('niord.admin')
      * Scheduled Mails Admin Controller
      * Controller for the Admin Scheduled Mails page
      */
-    .controller('MailsAdminCtrl', ['$scope', 'growl', 'AdminMailsService',
-        function ($scope, growl, AdminMailsService) {
+    .controller('MailsAdminCtrl', ['$scope', '$uibModal', 'growl', 'AdminMailsService',
+        function ($scope, $uibModal, growl, AdminMailsService) {
             'use strict';
 
             $scope.params = {
@@ -70,6 +70,37 @@ angular.module('niord.admin')
                     }
                 }
                 return r;
+            };
+
+
+            /** Filters the recipients by recipient type **/
+            function filterRecipients(mail, type) {
+                if (mail && mail.recipients) {
+                    return $.grep(mail.recipients, function (r) {
+                        return r.recipientType == type;
+                    })
+                }
+                return [];
+            }
+
+            /** Open the mail details dialog **/
+            $scope.openMail = function (mail) {
+                AdminMailsService.getMailDetails(mail.id)
+                    .success(function (details) {
+                        $uibModal.open({
+                            controller: function ($scope) {
+                                $scope.mail = details;
+                                $scope.to = filterRecipients(details, 'TO');
+                                $scope.cc = filterRecipients(details, 'CC');
+                                $scope.bcc = filterRecipients(details, 'BCC');
+                            },
+                            templateUrl: "mailDetailsDialog.html",
+                            size: 'md'
+                        })
+                    })
+                    .error(function () {
+                        growl.error("Error loading details for mail", { ttl: 5000 });
+                    });
             };
 
 

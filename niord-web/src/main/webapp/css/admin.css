@@ -330,3 +330,28 @@ tr.batch-execution-row td div.progress {
 .scheduled-mails-table tr td {
     font-size: 12px;
 }
+
+.scheduled-mail-details-table tr th {
+    font-size: 12px;
+    color: #aaa;
+    padding-right: 10px;
+    text-align: right;
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+.scheduled-mail-details-table tr td {
+    font-size: 12px;
+}
+
+.scheduled-mail-details {
+    display: block;
+    width: 100%;
+    background-color: #eee;
+    padding: 10px;
+    border: 1px solid lightgray;
+    box-shadow: 2px 2px 4px rgba(50, 50, 50, 0.5);
+    max-height: 300px;
+    overflow: hidden;
+    overflow-y: scroll;
+}

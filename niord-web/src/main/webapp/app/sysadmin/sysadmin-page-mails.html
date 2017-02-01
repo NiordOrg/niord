@@ -71,13 +71,19 @@
                         <th>Sender</th>
                         <th>Recipients</th>
                         <th>Subject</th>
+                        <th></th>
                     </tr>
                     <tr ng-repeat="mail in searchResult.data">
                         <td>{{mail.created | formatDate:'lll'}}</td>
-                        <td>{{mail.status}}</td>
+                        <td>{{mail.status | lowercase}}</td>
                         <td>{{mail.sender}}</td>
                         <td>{{firstRecipient(mail)}}</td>
                         <td>{{mail.subject}}</td>
+                        <td>
+                            <a href ng-click="openMail(mail)">
+                                <span class="glyphicon glyphicon-envelope"></span>
+                            </a>
+                        </td>
                     </tr>
                 </table>
             </div>
@@ -97,4 +103,71 @@
     </div>
 
 </admin-page>
+
+
+<!-- ************************************************** -->
+<!-- Dialog for displaying the details of an email      -->
+<!-- ************************************************** -->
+<script type="text/ng-template" id="mailDetailsDialog.html">
+    <div class="modal-header">
+        <h4 class="modal-title">Mail {{mail.id}} ({{mail.status | lowercase}})</h4>
+    </div>
+    <div class="modal-body">
+
+        <div class="container-fluid">
+
+            <div class="row">
+                <div class="col-sm-12">
+                    <table class="scheduled-mail-details-table">
+                        <tr>
+                            <th>From</th>
+                            <td>{{mail.sender}}</td>
+                        </tr>
+                        <tr ng-if="to.length > 0">
+                            <th>To</th>
+                            <td><span ng-repeat="r in to"><span ng-if="!$first">, </span>{{r.address}}</span></td>
+                        </tr>
+                        <tr ng-if="cc.length > 0">
+                            <th>CC</th>
+                            <td><span ng-repeat="r in cc"><span ng-if="!$first">, </span>{{r.address}}</span></td>
+                        </tr>
+                        <tr ng-if="bcc.length > 0">
+                            <th>BCC</th>
+                            <td><span ng-repeat="r in bcc"><span ng-if="!$first">, </span>{{r.address}}</span></td>
+                        </tr>
+                        <tr>
+                            <th>Created</th>
+                            <td>{{mail.created | formatDate:'lll'}}</td>
+                        </tr>
+                        <tr>
+                            <th>Sent</th>
+                            <td>{{mail.sendDate | formatDate:'lll'}}</td>
+                        </tr>
+                        <tr ng-if="mail.lastError">
+                            <th>Error</th>
+                            <td>
+                                <span style="color:red">{{mail.lastError}}</span>
+                                <span style="color:lightgray">({{mail.attempts}} attempts)</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th style="padding-top: 10px; padding-bottom: 10px;">Subject</th>
+                            <td style="padding-top: 10px; padding-bottom: 10px;">
+                                <strong>{{mail.subject}}</strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Details</th>
+                            <td class="scheduled-mail-details" ng-bind-html="mail.contents | toTrusted"></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-default" ng-click="$dismiss('aborted')">Close</button>
+    </div>
+</script>
 
