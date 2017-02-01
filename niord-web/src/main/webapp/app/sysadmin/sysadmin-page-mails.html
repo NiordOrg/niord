@@ -46,6 +46,20 @@
                     <label class="btn btn-default btn-sm" ng-model="params.status" uib-btn-radio="'ERROR'">Error</label>
                 </div>
             </div>
+
+            <!-- Dates -->
+            <div class="col-xs-12 col-sm-6 col-md-4 scheduled-mails-filter">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <date-time-picker id="fromDate" ng-model="params.fromDate" placeholder="From date"
+                                          time="'00:00:00'" format="'l'"></date-time-picker>
+                    </div>
+                    <div class="col-sm-6">
+                        <date-time-picker id="toDate" ng-model="params.toDate" placeholder="To date"
+                                          time="'23:59:59'" format="'l'"></date-time-picker>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="row" style="padding-top: 20px;">

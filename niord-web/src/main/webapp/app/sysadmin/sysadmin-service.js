@@ -252,6 +252,12 @@ angular.module('niord.admin')
                 if (params.status && params.status.length > 0) {
                     p += '&status=' + encodeURIComponent(params.status);
                 }
+                if (params.fromDate) {
+                    p += '&from=' + params.fromDate.valueOf();
+                }
+                if (params.toDate) {
+                    p += '&to=' + params.toDate.valueOf();
+                }
                 return $http.get('/rest/scheduled-mails/search?' + p);
             },
 

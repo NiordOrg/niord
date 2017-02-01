@@ -35,7 +35,9 @@ angular.module('niord.admin')
                 recipient: '',
                 sender: '',
                 subject: '',
-                status: ''
+                status: '',
+                fromDate: undefined,
+                toDate: undefined
             };
             $scope.pageData = {
                 page: 1,
