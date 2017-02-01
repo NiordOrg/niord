@@ -31,15 +31,22 @@ import java.util.Set;
  *     parameter, then allValid recipients are valid. Use this in production.
  * </p>
  * <p>
+ *     If the special token "LOG" is used as the {@code validMailRecipients}
+ *     parameter, then mails will only be logged, not actually sent.
+ * </p>
+ * <p>
  *     Otherwise, if an invalid recipient is encountered, the first mail address
  *     in the {@code validMailRecipients} list is used instead.
  * </p>
  */
 class ValidMailRecipients {
+
     public static final String ALL_RECIPIENTS_VALID_TOKEN = "ALL";
+    public static final String LOG_VALID_TOKEN = "LOG";
 
     private Set<String> validAddresses = new LinkedHashSet<>();
     private boolean allValid;
+    private boolean simulate;
 
     /**
      * Constructor
@@ -48,12 +55,25 @@ class ValidMailRecipients {
     public ValidMailRecipients(String validMailRecipients) {
         if (ALL_RECIPIENTS_VALID_TOKEN.equalsIgnoreCase(validMailRecipients)) {
             allValid = true;
+        } else if (LOG_VALID_TOKEN.equalsIgnoreCase(validMailRecipients)) {
+            allValid = true;
+            simulate = true;
         } else {
             for (String r : validMailRecipients.split(",")) {
                 validAddresses.add(r.trim().toLowerCase());
             }
         }
     }
+
+
+    /**
+     * Returns if sending emails should only be simulated
+     * @return if sending emails should only be simulated
+     */
+    public boolean simulate() {
+        return simulate;
+    }
+
 
     /**
      * Filters the address and ensures that it is a valid address

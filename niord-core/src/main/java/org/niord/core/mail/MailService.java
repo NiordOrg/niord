@@ -48,8 +48,8 @@ public class MailService extends BaseService {
     String mailSender;
 
     @Inject
-    @Setting(value = "mailValidRecipients", defaultValue = "niord@e-navigation.net",
-            description = "Comma-separated list of valid mail recipients, or 'ALL' for all recipients")
+    @Setting(value = "mailValidRecipients", defaultValue = "LOG",
+            description = "Comma-separated list of valid mail recipients, or 'ALL' for all recipients, or 'LOG' for simulation")
     String validRecipients;
 
     @Inject
@@ -107,17 +107,31 @@ public class MailService extends BaseService {
             }
 
             // Validate the mail recipients
-            ValidMailRecipients mailRecipientFilter = new ValidMailRecipients(validRecipients);
-            mail.filterRecipients(mailRecipientFilter);
+            ValidMailRecipients recipientHandling = new ValidMailRecipients(validRecipients);
+            mail.filterRecipients(recipientHandling);
+
+            // Check if any recipients are defined
             if (mail.getRecipients().isEmpty()) {
                 throw new MessagingException("No valid recipient");
             }
 
-            log.debug("Composing mail");
-            Message message = mail.compose(mailSession, mailAttachmentCache.getCache());
-            log.debug("Sending...");
-            Transport.send(message);
+            // Check if we only simulate sending emails
+            if (recipientHandling.simulate()) {
 
+                // Make the simulation realistic - sleep 0.5 - 1 seconds
+                try {
+                    Thread.sleep(500L + (long)(500.0 * Math.random()));
+                } catch (InterruptedException ignored) {
+                }
+
+            } else {
+                // Send the message
+                log.debug("Composing mail");
+                Message message = mail.compose(mailSession, mailAttachmentCache.getCache());
+                log.debug("Sending...");
+                Transport.send(message);
+
+            }
 
             String recipients = mail.getRecipients().stream()
                     .filter(r -> r.getAddress() != null)

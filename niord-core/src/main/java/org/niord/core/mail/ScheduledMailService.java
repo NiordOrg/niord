@@ -20,7 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.service.BaseService;
-import org.niord.core.util.CdiUtils;
+import org.niord.core.settings.annotation.Setting;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import static org.niord.core.settings.Setting.Type.Integer;
+
 /**
  * Interface for handling schedule mails
  */
@@ -52,16 +54,23 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class ScheduledMailService extends BaseService {
 
-    /** The max number of mails to process at a time **/
-    public static final int MAX_MAIL_PER_MINUTE = 10;
-
     @Inject
     Logger log;
 
     @Inject
     MailService mailService;
 
-    @Resource
+    @Inject
+    @Setting(value = "mailMaxPerMinute", defaultValue = "10", type = Integer,
+            description = "The max number of mails to send per minute")
+    Integer maxMailsPerMinute;
+
+
+    /**
+     * NB: Niord defines its own managed executor service to limit the number of threads,
+     * and thus, the number of concurrent SMTP connections.
+     */
+    @Resource(lookup = "java:jboss/ee/concurrency/executor/MailExecutorService")
     ManagedExecutorService managedExecutorService;
 
 
@@ -166,9 +175,9 @@ public class ScheduledMailService extends BaseService {
     @Lock(LockType.WRITE)
     public void sendPendingMails() {
 
-        // Send at most MAX_MAIL_PER_MINUTE mails at a time
+        // Send at most "maxMailsPerMinute" mails at a time
         List<Integer> scheduledMailIds = getPendingMails().stream()
-                .limit(MAX_MAIL_PER_MINUTE)
+                .limit(maxMailsPerMinute)
                 .map(BaseEntity::getId)
                 .collect(Collectors.toList());
 
@@ -177,7 +186,7 @@ public class ScheduledMailService extends BaseService {
             log.info("Processing " + scheduledMailIds.size() + " pending scheduled mails");
 
             List<MailSenderTask> tasks = scheduledMailIds.stream()
-                    .map(MailSenderTask::new)
+                    .map(id -> new MailSenderTask(mailService, id))
                     .collect(Collectors.toList());
 
             try {
@@ -195,9 +204,11 @@ public class ScheduledMailService extends BaseService {
     final static class MailSenderTask implements Callable<ScheduledMail> {
 
         final Integer scheduledMailId;
+        final MailService mailService;
 
         /** Constructor **/
-        public MailSenderTask(Integer scheduledMailId) {
+        public MailSenderTask(MailService mailService, Integer scheduledMailId) {
+            this.mailService = mailService;
             this.scheduledMailId = scheduledMailId;
         }
 
@@ -205,7 +216,7 @@ public class ScheduledMailService extends BaseService {
         @Override
         public ScheduledMail call() {
             try {
-                MailService mailService = CdiUtils.getBean(MailService.class);
+                //MailService mailService = CdiUtils.getBean(MailService.class);
                 return  mailService.sendScheduledMail(scheduledMailId);
             } catch (Exception e) {
                 e.printStackTrace();
