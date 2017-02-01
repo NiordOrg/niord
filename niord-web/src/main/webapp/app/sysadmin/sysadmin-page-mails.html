@@ -3,39 +3,80 @@
 
     <div ng-controller="MailsAdminCtrl">
 
-        <p>Search scheduled mails.</p>
+        <p>Displaying {{searchResult.size}}
+            of {{searchResult.total}} mails matching search criteria.</p>
 
-        <!-- Edit setting -->
-        <div style="margin-top: 20px">
-
-            <div class="row">
-                <div class="col-xs-8 col-sm-6 col-md-4">
-                    <input class="form-control input-sm col-sm-2"
-                           ng-model="params.recipient"
-                           ng-model-options="{ updateOn: 'default blur', debounce: { default: 1000, blur: 0 } }"
-                           type="text" placeholder="Recipient">
-                    <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
-                          ng-click="params.recipient = ''" ng-show="search != ''"></span>
-                </div>
+        <div class="row">
+            <!-- Recipient -->
+            <div class="col-xs-12 col-sm-6 col-md-4 scheduled-mails-filter">
+                <input class="form-control input-sm col-sm-2"
+                       ng-model="params.recipient"
+                       ng-model-options="{ updateOn: 'default blur', debounce: { default: 1000, blur: 0 } }"
+                       type="text" placeholder="Recipient">
+                <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
+                      ng-click="params.recipient = ''" ng-show="params.recipient != ''"></span>
             </div>
 
-            <div class="row" style="padding-top: 20px;">
-                <div class="col-sm-12 col-md-12">
-                    <table class='table table-condensed scheduled-mails-table'>
-                        <tr>
-                            <th>Created</th>
-                            <th>Status</th>
-                            <th>Sender</th>
-                            <th>Subject</th>
-                        </tr>
-                        <tr ng-repeat="mail in searchResult.data">
-                            <td>{{mail.created | formatDate:'lll'}}</td>
-                            <td>{{mail.status}}</td>
-                            <td>{{mail.sender}}</td>
-                            <td>{{mail.subject}}</td>
-                        </tr>
-                    </table>
+            <!-- Sender -->
+            <div class="col-xs-12 col-sm-6 col-md-4 scheduled-mails-filter">
+                <input class="form-control input-sm col-sm-2"
+                       ng-model="params.sender"
+                       ng-model-options="{ updateOn: 'default blur', debounce: { default: 1000, blur: 0 } }"
+                       type="text" placeholder="Sender">
+                <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
+                      ng-click="params.sender = ''" ng-show="params.sender != ''"></span>
+            </div>
+
+            <!-- Subject -->
+            <div class="col-xs-12 col-sm-6 col-md-4 scheduled-mails-filter">
+                <input class="form-control input-sm col-sm-2"
+                       ng-model="params.subject"
+                       ng-model-options="{ updateOn: 'default blur', debounce: { default: 1000, blur: 0 } }"
+                       type="text" placeholder="Subject">
+                <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
+                      ng-click="params.subject = ''" ng-show="params.subject != ''"></span>
+            </div>
+
+            <!-- Status -->
+            <div class="col-xs-12 col-sm-6 col-md-4 scheduled-mails-filter">
+                <div class="btn-group">
+                    <label class="btn btn-default btn-sm" ng-model="params.status" uib-btn-radio="''">All</label>
+                    <label class="btn btn-default btn-sm" ng-model="params.status" uib-btn-radio="'PENDING'">Pending</label>
+                    <label class="btn btn-default btn-sm" ng-model="params.status" uib-btn-radio="'SENT'">Sent</label>
+                    <label class="btn btn-default btn-sm" ng-model="params.status" uib-btn-radio="'ERROR'">Error</label>
                 </div>
+            </div>
+        </div>
+
+        <div class="row" style="padding-top: 20px;">
+            <div class="col-sm-12 col-md-12">
+                <table class='table table-condensed scheduled-mails-table'>
+                    <tr>
+                        <th>Created</th>
+                        <th>Status</th>
+                        <th>Sender</th>
+                        <th>Recipients</th>
+                        <th>Subject</th>
+                    </tr>
+                    <tr ng-repeat="mail in searchResult.data">
+                        <td>{{mail.created | formatDate:'lll'}}</td>
+                        <td>{{mail.status}}</td>
+                        <td>{{mail.sender}}</td>
+                        <td>{{firstRecipient(mail)}}</td>
+                        <td>{{mail.subject}}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="row">
+            <div class="col-sm-12">
+                <uib-pagination total-items="searchResult.total" items-per-page="pageData.maxSize"
+                                max-size="10" ng-model="pageData.page"
+                                class="pagination pagination-sm" previous-text="&lsaquo;"  next-text="&rsaquo;"
+                                boundary-links="true" first-text="&laquo;" last-text="&raquo;">
+                </uib-pagination>
             </div>
         </div>
 

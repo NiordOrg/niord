@@ -66,6 +66,8 @@ public class ScheduledMailRestService {
     @NoCache
     public PagedSearchResultVo<ScheduledMailVo> search(
             @QueryParam("recipient") String recipient,
+            @QueryParam("sender") String sender,
+            @QueryParam("subject") String subject,
             @QueryParam("status") ScheduledMail.Status status,
             @QueryParam("from") Long from,
             @QueryParam("to") Long to,
@@ -74,6 +76,8 @@ public class ScheduledMailRestService {
 
         ScheduledMailSearchParams params = new ScheduledMailSearchParams()
                 .recipient(recipient)
+                .sender(sender)
+                .subject(subject)
                 .status(status)
                 .from(from)
                 .to(to);

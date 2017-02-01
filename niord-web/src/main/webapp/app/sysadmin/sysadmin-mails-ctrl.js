@@ -32,9 +32,15 @@ angular.module('niord.admin')
             'use strict';
 
             $scope.params = {
-                recipient: ''
+                recipient: '',
+                sender: '',
+                subject: '',
+                status: ''
             };
-
+            $scope.pageData = {
+                page: 1,
+                maxSize: 10
+            };
             $scope.searchResult = {
                 data: [],
                 size: 0,
@@ -45,12 +51,31 @@ angular.module('niord.admin')
             /** Searches the scheduled mails */
             $scope.search = function() {
                 AdminMailsService
-                    .search($scope.params)
+                    .search($scope.params, $scope.pageData)
                     .success(function (searchResult) {
                         $scope.searchResult = searchResult;
                     });
             };
 
-            $scope.$watch("params", $scope.search, true);
+
+            /** Returns the first recipient to display in the mail list **/
+            $scope.firstRecipient = function (mail) {
+                var r = '';
+                if (mail.recipients && mail.recipients.length > 0) {
+                    r = mail.recipients[0].address;
+                    if (mail.recipients.length > 1) {
+                        r += ' + ' + (mail.recipients.length - 1) + ' others';
+                    }
+                }
+                return r;
+            };
+
+
+            // Monitor params and page
+            $scope.$watch("params", function () {
+                $scope.pageData.page = 1;
+                $scope.search();
+            }, true);
+            $scope.$watch("pageData", $scope.search, true);
 
         }]);

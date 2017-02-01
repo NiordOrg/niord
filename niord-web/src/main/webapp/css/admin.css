@@ -323,6 +323,10 @@ tr.batch-execution-row td div.progress {
 
 /** Mails admin page **/
 
+.scheduled-mails-filter {
+    margin-top: 10px;
+}
+
 .scheduled-mails-table tr td {
     font-size: 12px;
 }

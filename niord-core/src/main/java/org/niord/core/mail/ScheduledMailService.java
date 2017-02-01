@@ -36,6 +36,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.Date;
 import java.util.List;
@@ -71,42 +72,30 @@ public class ScheduledMailService extends BaseService {
      */
     public PagedSearchResultVo<ScheduledMail> search(ScheduledMailSearchParams params) {
 
+        long t0 = System.currentTimeMillis();
+
         PagedSearchResultVo<ScheduledMail> result = new PagedSearchResultVo<>();
 
         CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<ScheduledMail> query = cb.createQuery(ScheduledMail.class);
-
-        Root<ScheduledMail> mailRoot = query.from(ScheduledMail.class);
-
-        // Build the predicate
-        CriteriaHelper<ScheduledMail> criteriaHelper = new CriteriaHelper<>(cb, query);
-
-        // Match the recipient
-        if (StringUtils.isNotBlank(params.getRecipient())) {
-            Join<ScheduledMail, ScheduledMailRecipient> recipients = mailRoot.join("recipients", JoinType.LEFT);
-            criteriaHelper.like(recipients.get("address"), params.getRecipient());
-        }
-
-        // Match status
-        criteriaHelper = criteriaHelper.equals(mailRoot.get("status"), params.getStatus());
-
-        // Match date interval
-        criteriaHelper.between(mailRoot.get("created"), params.getFrom(), params.getTo());
-
 
         // First compute the total number of matching mails
-        /**
-        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class)
-                .select(cb.count(mailRoot))
-                .where(criteriaHelper.where())
-                .orderBy(cb.asc(mailRoot.get("created")));
+        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+        Root<ScheduledMail> countMailRoot = countQuery.from(ScheduledMail.class);
+
+        countQuery.select(cb.count(countMailRoot))
+                .where(buildQueryPredicates(cb, countQuery, countMailRoot, params))
+                .orderBy(cb.desc(countMailRoot.get("created")));
+
         result.setTotal(em.createQuery(countQuery).getSingleResult());
-        **/
+
 
         // Then, extract the current page of matches
+        CriteriaQuery<ScheduledMail> query = cb.createQuery(ScheduledMail.class);
+        Root<ScheduledMail> mailRoot = query.from(ScheduledMail.class);
         query.select(mailRoot)
-                .where(criteriaHelper.where())
-                .orderBy(cb.asc(mailRoot.get("created")));
+                .where(buildQueryPredicates(cb, query, mailRoot, params))
+                .orderBy(cb.desc(countMailRoot.get("created")));
+
         List<ScheduledMail> mails = em.createQuery(query)
                 .setMaxResults(params.getMaxSize())
                 .setFirstResult(params.getPage() * params.getMaxSize())
@@ -114,7 +103,38 @@ public class ScheduledMailService extends BaseService {
         result.setData(mails);
         result.updateSize();
 
+        log.info("Search [" + params + "] returned " + result.getSize() + " of " + result.getTotal() + " in "
+                + (System.currentTimeMillis() - t0) + " ms");
+
         return result;
+    }
+
+
+    /** Helper function that translates the search parameters into predicates */
+    private <T> Predicate[] buildQueryPredicates(CriteriaBuilder cb, CriteriaQuery<T> query, Root<ScheduledMail> mailRoot, ScheduledMailSearchParams params) {
+
+       // Build the predicate
+        CriteriaHelper<T> criteriaHelper = new CriteriaHelper<>(cb, query);
+
+        // Match the recipient
+        if (StringUtils.isNotBlank(params.getRecipient())) {
+            Join<ScheduledMail, ScheduledMailRecipient> recipients = mailRoot.join("recipients", JoinType.LEFT);
+            criteriaHelper.like(recipients.get("address"), params.getRecipient());
+        }
+
+        // Match sender
+        criteriaHelper.like(mailRoot.get("sender"), params.getSender());
+
+        // Match subject
+        criteriaHelper.like(mailRoot.get("subject"), params.getSubject());
+
+        // Match status
+        criteriaHelper = criteriaHelper.equals(mailRoot.get("status"), params.getStatus());
+
+        // Match date interval
+        criteriaHelper.between(mailRoot.get("created"), params.getFrom(), params.getTo());
+
+        return criteriaHelper.where();
     }
 
 

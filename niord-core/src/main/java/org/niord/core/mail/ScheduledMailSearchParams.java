@@ -32,6 +32,8 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
 public class ScheduledMailSearchParams extends PagedSearchParamsVo {
 
     String recipient;
+    String sender;
+    String subject;
     Status status;
     Date from;
     Date to;
@@ -44,6 +46,8 @@ public class ScheduledMailSearchParams extends PagedSearchParamsVo {
     public String toString() {
         List<String> desc = new ArrayList<>();
         if (isNotBlank(recipient)) { desc.add(String.format("Recipient: '%s'", recipient)); }
+        if (isNotBlank(sender)) { desc.add(String.format("Sender: '%s'", sender)); }
+        if (isNotBlank(subject)) { desc.add(String.format("Subject: '%s'", subject)); }
         if (status != null) { desc.add(String.format("Status: %s", status)); }
         if (from != null) { desc.add("From: " + from); }
         if (to != null) { desc.add("To: to"); }
@@ -61,6 +65,24 @@ public class ScheduledMailSearchParams extends PagedSearchParamsVo {
 
     public ScheduledMailSearchParams recipient(String recipient) {
         this.recipient = recipient;
+        return this;
+    }
+
+    public String getSender() {
+        return sender;
+    }
+
+    public ScheduledMailSearchParams sender(String sender) {
+        this.sender = sender;
+        return this;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public ScheduledMailSearchParams subject(String subject) {
+        this.subject = subject;
         return this;
     }
 

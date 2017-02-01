@@ -17,7 +17,6 @@
 package org.niord.core.mail;
 
 import org.apache.commons.lang.StringUtils;
-import org.niord.core.dictionary.Dictionary;
 import org.niord.core.mail.vo.ScheduledMailVo;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.util.GzipUtils;

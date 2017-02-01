@@ -238,12 +238,21 @@ angular.module('niord.admin')
         'use strict';
 
         return {
-            search: function(p) {
-                var params = 'maxSize=2';
-                if (p.recipient) {
-                    params += '&recipient=' + encodeURIComponent(p.recipient);
+            search: function(params, page) {
+                var p = 'maxSize=' + page.maxSize + '&page=' + (page.page - 1);
+                if (params.recipient && params.recipient.length > 0) {
+                    p += '&recipient=' + encodeURIComponent(params.recipient);
                 }
-                return $http.get('/rest/scheduled-mails/search?' + params);
+                if (params.sender && params.sender.length > 0) {
+                    p += '&sender=' + encodeURIComponent(params.sender);
+                }
+                if (params.subject && params.subject.length > 0) {
+                    p += '&subject=' + encodeURIComponent(params.subject);
+                }
+                if (params.status && params.status.length > 0) {
+                    p += '&status=' + encodeURIComponent(params.status);
+                }
+                return $http.get('/rest/scheduled-mails/search?' + p);
             },
 
             getMailDetails: function (id) {
