@@ -209,7 +209,11 @@ public class ScheduledMailService extends BaseService {
 
 
     /**
-     * Called every day to delete old scheduled mails
+     * Called every day to delete old scheduled mails.
+     *
+     * Note to self: It would have been faster to execute a "delete from ScheduledMail where..." statement.
+     * However, this will fail because of a missing mail - recipient "delete on cascade" FK constraint.
+     * Using JPAs CascadeType.ALL for the relation does NOT work in this case.
      */
     @Schedule(persistent=false, second="48", minute="28", hour = "05")
     @Lock(LockType.WRITE)
