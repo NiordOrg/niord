@@ -66,7 +66,9 @@ import java.util.stream.Collectors;
 @NamedQueries({
         @NamedQuery(name = "ScheduledMail.findPendingMails",
                 query = "SELECT m FROM ScheduledMail m where m.status = 'PENDING' and m.sendDate <= :date " +
-                        " order by m.sendDate asc")
+                        " order by m.sendDate asc"),
+        @NamedQuery(name = "ScheduledMail.findExpiredMails",
+                query = "SELECT m.id FROM ScheduledMail m where m.created <= :expiryDate ")
 })
 @SuppressWarnings("unused")
 public class ScheduledMail extends BaseEntity<Integer> {

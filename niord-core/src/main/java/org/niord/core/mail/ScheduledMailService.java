@@ -21,6 +21,7 @@ import org.niord.core.db.CriteriaHelper;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.annotation.Setting;
+import org.niord.core.util.TimeUtils;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
@@ -30,6 +31,8 @@ import javax.ejb.LockType;
 import javax.ejb.Schedule;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.inject.Inject;
 import javax.persistence.criteria.CriteriaBuilder;
@@ -38,6 +41,7 @@ import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -64,6 +68,12 @@ public class ScheduledMailService extends BaseService {
     @Setting(value = "mailMaxPerMinute", defaultValue = "10", type = Integer,
             description = "The max number of mails to send per minute")
     Integer maxMailsPerMinute;
+
+
+    @Inject
+    @Setting(value = "mailDeleteAfterDays", defaultValue = "300", type = Integer,
+            description = "Delete scheduled mails older than the given value. 0 means never.")
+    Integer mailDeleteAfterDays;
 
 
     /**
@@ -193,6 +203,48 @@ public class ScheduledMailService extends BaseService {
                 managedExecutorService.invokeAll(tasks);
             } catch (InterruptedException e) {
                 log.error("Error sending scheduled emails: " + scheduledMailIds, e);
+            }
+        }
+    }
+
+
+    /**
+     * Called every day to delete old scheduled mails
+     */
+    @Schedule(persistent=false, second="48", minute="28", hour = "05")
+    @Lock(LockType.WRITE)
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    private void deleteExpiredMails() {
+
+        // If expiryDate is 0, never delete mails
+        if (mailDeleteAfterDays == 0) {
+            return;
+        }
+
+        Date expiryDate = TimeUtils.add(new Date(), Calendar.DATE, -mailDeleteAfterDays);
+
+        List<Integer> ids = em.createNamedQuery("ScheduledMail.findExpiredMails", Integer.class)
+                .setParameter("expiryDate", expiryDate)
+                .getResultList();
+
+        if (!ids.isEmpty()) {
+            long t0 = System.currentTimeMillis();
+            try {
+                for (int x = 0; x < ids.size(); x++) {
+                    ScheduledMail mail = getScheduledMail(ids.get(x));
+                    if (mail != null) {
+                        em.remove(mail);
+                        if ((x % 50) == 0) {
+                            em.flush();
+                        }
+                    }
+                }
+
+                log.info("Deleted " + ids.size() + " scheduled mails older than " + expiryDate
+                            + " in " + (System.currentTimeMillis() - t0) + " ms");
+
+            } catch (Exception e) {
+                log.error("Failed deleting scheduled mails older than " + expiryDate);
             }
         }
     }
