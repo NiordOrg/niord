@@ -15,6 +15,10 @@
  */
 package org.niord.model.message;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * The type of reference
  */
@@ -23,5 +27,10 @@ public enum ReferenceType {
     REPETITION,
     REPETITION_NEW_TIME,
     CANCELLATION,
-    UPDATE
+    UPDATE;
+
+    /** Returns all statuses that will cause the referenced message to be cancelled **/
+    public static Set<ReferenceType> cancelsReferencedMessage() {
+        return new HashSet<>(Arrays.asList(REPETITION, REPETITION_NEW_TIME, CANCELLATION, UPDATE));
+    }
 }

@@ -83,7 +83,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.niord.core.message.vo.MessageTagVo.MessageTagType.PUBLIC;
-import static org.niord.model.message.ReferenceType.CANCELLATION;
 import static org.niord.model.message.Status.*;
 
 /**
@@ -449,12 +448,12 @@ public class MessageRestService  {
     public List<MessageVo> getReferencedMessages(
             @PathParam("messageId") String messageId,
             @QueryParam("status") Status status,
-            @QueryParam("referenceType") ReferenceType referenceType,
+            @QueryParam("referenceType") Set<ReferenceType> referenceTypes,
             @QueryParam("lang") String language
     ) throws Exception {
 
-        log.info("Returning referenced messages for " + messageId + ", type="
-                    + referenceType + ", status=" + status);
+        log.info("Returning referenced messages for " + messageId + ", types="
+                    + referenceTypes + ", status=" + status);
 
         Message message = messageService.resolveMessage(messageId);
         if (message == null) {
@@ -465,7 +464,7 @@ public class MessageRestService  {
         checkMessageViewingAccess(message);
 
         // Resolve the referenced messages
-        List<Message> referencedMessages = messageService.getReferencedMessages(message, referenceType, status);
+        List<Message> referencedMessages = messageService.getReferencedMessages(message, referenceTypes, status);
 
         DataFilter filter = Message.MESSAGE_DETAILS_FILTER
                 .lang(language)
@@ -579,8 +578,12 @@ public class MessageRestService  {
         // When publishing a message, check if referenced messages should be cancelled
         if (Status.valueOf(status) == PUBLISHED && cancelReferencedMessages != null && cancelReferencedMessages) {
 
-            // Get the cancel-referenced published messages that the user has edit-access to
-            List<Message> referencedMessages = messageService.getReferencedMessages(msg, CANCELLATION, PUBLISHED).stream()
+            // Get the cancellation-referenced published messages that the user has edit-access to
+            List<Message> referencedMessages = messageService.getReferencedMessages(
+                        msg,
+                        ReferenceType.cancelsReferencedMessage(),
+                        PUBLISHED
+                    ).stream()
                     .filter(m -> messageEditingAccess(m, EditOp.CHANGE_STATUS))
                     .collect(Collectors.toList());
 

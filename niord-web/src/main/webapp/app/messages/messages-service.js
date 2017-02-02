@@ -132,9 +132,14 @@ angular.module('niord.messages')
             },
 
 
-            /** Returns the referenced messages, optionally with the given type and status **/
-            referencedMessages: function (id, referenceType, status) {
-                var refParam = (referenceType) ? '&referenceType=' + referenceType : '';
+            /** Returns the referenced messages, optionally with the given types and status **/
+            referencedMessages: function (id, referenceTypes, status) {
+                var refParam = '';
+                if (referenceTypes && referenceTypes.length > 0) {
+                    angular.forEach(referenceTypes, function (referenceType) {
+                        refParam +='&referenceType=' + referenceType
+                    });
+                }
                 var statusParam = (status) ? '&status=' + status : '';
                 return $http.get('/rest/messages/referenced-messages/' + encodeURIComponent(id)
                     + '?lang=' + $rootScope.language + refParam + statusParam);

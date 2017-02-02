@@ -1431,9 +1431,12 @@ angular.module('niord.editor')
                     return;
                 }
 
-                // Check if there are any referenced cancellations of published messages
-                MessageService.referencedMessages($scope.message.id, 'CANCELLATION', 'PUBLISHED')
-                    .success(function (messages) {
+                // Check if there are any referenced published messages that should be cancelled
+                MessageService.referencedMessages(
+                        $scope.message.id,
+                        ['CANCELLATION', 'REPETITION', 'REPETITION_NEW_TIME', 'UPDATE'],
+                        'PUBLISHED'
+                    ).success(function (messages) {
 
                         var modalOptions = {
                             closeButtonText: 'Cancel',

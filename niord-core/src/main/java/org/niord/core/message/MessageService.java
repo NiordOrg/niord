@@ -248,13 +248,13 @@ public class MessageService extends BaseService {
      * Returns the list of referenced messages, optionally with the given reference type and status
      *
      * @param message the message to return referenced messages for
-     * @param referenceType optionally, the reference type
+     * @param referenceTypes optionally, the reference types
      * @param status optionally, the status of the referenced messages
      * @return the list of referenced messages
      */
-    public List<Message> getReferencedMessages(Message message, ReferenceType referenceType, Status status) {
+    public List<Message> getReferencedMessages(Message message, Set<ReferenceType> referenceTypes, Status status) {
         return message.getReferences().stream()
-                .filter(ref -> referenceType == null || referenceType == ref.getType())
+                .filter(ref -> referenceTypes == null || referenceTypes.isEmpty() || referenceTypes.contains(ref.getType()))
                 .map(ref -> resolveMessage(ref.getMessageId()))
                 .filter(Objects::nonNull)
                 .filter(msg -> status == null || status == msg.getStatus())
