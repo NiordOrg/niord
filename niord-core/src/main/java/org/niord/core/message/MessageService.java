@@ -47,10 +47,13 @@ import org.niord.model.message.Status;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
+import javax.annotation.Resource;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.inject.Inject;
+import javax.jms.JMSContext;
+import javax.jms.Topic;
 import javax.persistence.Tuple;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -67,8 +70,10 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -89,6 +94,12 @@ public class MessageService extends BaseService {
 
     @Inject
     private Logger log;
+
+    @Inject
+    JMSContext jmsContext;
+
+    @Resource(mappedName = "java:/jms/topic/MessageStatusTopic")
+    Topic messageStatusTopic;
 
     @Inject
     UserService userService;
@@ -599,6 +610,10 @@ public class MessageService extends BaseService {
         publicationService.updateRecordingPublications(message, prevStatus);
 
         message = saveMessage(message);
+
+        // Broadcast the status change to any listener
+        sendStatusUpdate(message);
+
         return message;
     }
 
@@ -618,6 +633,23 @@ public class MessageService extends BaseService {
                 return new HashSet<>(asList(Status.EXPIRED, Status.CANCELLED));
             default:
                 return Collections.emptySet();
+        }
+    }
+
+
+    /**
+     * Broadcasts a JMS message to indicate that the message status has changed
+     * @param message the message
+     */
+    private void sendStatusUpdate(Message message) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("ID", message.getId());
+        body.put("UID", message.getUid());
+        body.put("STATUS", message.getStatus().name());
+        try {
+            jmsContext.createProducer().send(messageStatusTopic, body);
+        } catch (Exception e) {
+            log.error("Failed sending JMS: " + e, e);
         }
     }
 
