@@ -612,7 +612,7 @@ public class MessageService extends BaseService {
         message = saveMessage(message);
 
         // Broadcast the status change to any listener
-        sendStatusUpdate(message);
+        sendStatusUpdate(message, prevStatus);
 
         return message;
     }
@@ -640,12 +640,14 @@ public class MessageService extends BaseService {
     /**
      * Broadcasts a JMS message to indicate that the message status has changed
      * @param message the message
+     * @param prevStatus the previous status
      */
-    private void sendStatusUpdate(Message message) {
+    private void sendStatusUpdate(Message message, Status prevStatus) {
         Map<String, Object> body = new HashMap<>();
         body.put("ID", message.getId());
         body.put("UID", message.getUid());
         body.put("STATUS", message.getStatus().name());
+        body.put("PREV_STATUS", prevStatus.name());
         try {
             jmsContext.createProducer().send(messageStatusTopic, body);
         } catch (Exception e) {
