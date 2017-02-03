@@ -13,7 +13,8 @@
 
     <#if msg.number?? && msg.number lt minMessageNo >
         <#assign minMessageNo = msg.number />
-    <#elseif msg.number?? && msg.number gt maxMessageNo >
+    </#if>
+    <#if msg.number?? && msg.number gt maxMessageNo >
         <#assign maxMessageNo = msg.number />
     </#if>
 </#list>
