@@ -22,6 +22,9 @@
 
         <dt ng-if="hasResourceRole('manage-users', 'realm-management')"><a href ui-sref="admin.users">Users</a></dt>
         <dd ng-if="hasResourceRole('manage-users', 'realm-management')">Manage users and their group membership for the current domain.</dd>
+
+        <dt><a href ui-sref="admin.templates">Templates</a></dt>
+        <dd>Manage the Freemarker templates used for message templates, print reports and mails.</dd>
     </dl>
 
 </admin-page>

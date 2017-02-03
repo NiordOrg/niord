@@ -399,4 +399,43 @@ angular.module('niord.admin')
                     + '/kc-groups/'+ encodeURIComponent(groupId));
             }
         };
+    }])
+
+
+    /**
+     * ********************************************************************************
+     * AdminTemplateService
+     * ********************************************************************************
+     * Interface for calling template related functions at the application server
+     */
+    .factory('AdminTemplateService', [ '$http', function($http) {
+        'use strict';
+
+        return {
+
+            /** Returns all templates **/
+            getTemplates: function () {
+                return $http.get('/rest/templates/all');
+            },
+
+
+            /** Creates a new template **/
+            createTemplate: function(template) {
+                return $http.post('/rest/templates/template/', template);
+            },
+
+
+            /** Updates the given template **/
+            updateTemplate: function(template) {
+                return $http.put('/rest/templates/template/' + template.id, template);
+            },
+
+
+            /** Deletes the given template **/
+            deleteTemplate: function(template) {
+                return $http['delete']('/rest/templates/template/' + template.id);
+            }
+
+        };
     }]);
+

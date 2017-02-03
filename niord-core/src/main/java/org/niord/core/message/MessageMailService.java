@@ -17,7 +17,7 @@
 package org.niord.core.message;
 
 import org.apache.commons.lang.StringUtils;
-import org.niord.core.fm.FmService;
+import org.niord.core.fm.FmReportService;
 import org.niord.core.mail.Mail.MailRecipient;
 import org.niord.core.mail.ScheduledMail;
 import org.niord.core.mail.ScheduledMailRecipient;
@@ -44,7 +44,7 @@ public class MessageMailService extends BaseService {
     Logger log;
 
     @Inject
-    FmService fmService;
+    FmReportService fmReportService;
 
     @Inject
     UserService userService;
@@ -75,7 +75,7 @@ public class MessageMailService extends BaseService {
                 }
 
                 String mailContents =
-                        fmService.newTemplateBuilder()
+                        fmReportService.newTemplateBuilder()
                                 .templatePath(mailTemplate.getTemplatePath())
                                 .data("messages", mailTemplate.getMessages())
                                 .data("areaHeadings", false)

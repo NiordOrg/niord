@@ -19,7 +19,7 @@ package org.niord.core.fm.batch;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.domain.DomainService;
 import org.niord.core.fm.FmReport;
-import org.niord.core.fm.FmService;
+import org.niord.core.fm.FmReportService;
 import org.niord.core.fm.vo.FmReportVo;
 
 import javax.inject.Inject;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class BatchReportImportProcessor extends AbstractItemHandler {
 
     @Inject
-    FmService reportService;
+    FmReportService reportService;
 
     @Inject
     DomainService domainService;

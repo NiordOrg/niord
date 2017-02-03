@@ -21,8 +21,8 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.fm.FmReport;
-import org.niord.core.fm.FmService;
-import org.niord.core.fm.FmService.ProcessFormat;
+import org.niord.core.fm.FmReportService;
+import org.niord.core.fm.FmReportService.ProcessFormat;
 import org.niord.core.fm.vo.FmReportVo;
 import org.niord.core.message.MessagePrintParams;
 import org.niord.core.message.MessageSearchParams;
@@ -76,7 +76,7 @@ public class MessageReportRestService {
     MessageSearchRestService messageSearchRestService;
 
     @Inject
-    FmService fmService;
+    FmReportService fmReportService;
 
     /***************************************/
     /** PDF Reports                       **/
@@ -93,9 +93,9 @@ public class MessageReportRestService {
     public List<FmReportVo> getReports(
             @QueryParam("expandParams") @DefaultValue("true") boolean expandParams
     ) {
-        return fmService.getReports().stream()
+        return fmReportService.getReports().stream()
                 .map(FmReport::toVo)
-                .map(r -> expandParams ? fmService.expandReportParams(r) : r)
+                .map(r -> expandParams ? fmReportService.expandReportParams(r) : r)
                 .collect(Collectors.toList());
     }
 
@@ -110,8 +110,8 @@ public class MessageReportRestService {
     @NoCache
     public List<FmReportVo> getDetailReports() {
         return Arrays.asList(
-                fmService.getStandardReport().toVo(),
-                fmService.getDraftReport().toVo()
+                fmReportService.getStandardReport().toVo(),
+                fmReportService.getDraftReport().toVo()
         );
     }
 
@@ -142,13 +142,13 @@ public class MessageReportRestService {
         MessagePrintParams printParams = MessagePrintParams.instantiate(request);
 
         try {
-            FmReport report = fmService.getReport(printParams.getReport());
+            FmReport report = fmReportService.getReport(printParams.getReport());
 
             ProcessFormat format = printParams.getDebug() ? ProcessFormat.TEXT : ProcessFormat.PDF;
 
             StreamingOutput stream = os -> {
                 try {
-                    fmService.newTemplateBuilder()
+                    fmReportService.newTemplateBuilder()
                             .templatePath(report.getTemplatePath())
                             .data("messages", Collections.singleton(message))
                             .data("areaHeadings", false)
@@ -208,13 +208,13 @@ public class MessageReportRestService {
                 result.getData().stream().map(MessageVo::getId).collect(Collectors.toSet()));
 
         try {
-            FmReport report = fmService.getReport(printParams.getReport());
+            FmReport report = fmReportService.getReport(printParams.getReport());
 
             ProcessFormat format = printParams.getDebug() ? ProcessFormat.TEXT : ProcessFormat.PDF;
 
             StreamingOutput stream = os -> {
                 try {
-                    fmService.newTemplateBuilder()
+                    fmReportService.newTemplateBuilder()
                             .templatePath(report.getTemplatePath())
                             .data("messages", result.getData())
                             .data("areaHeadings", params.sortByArea())

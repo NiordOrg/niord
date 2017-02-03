@@ -2,7 +2,7 @@ package org.niord.core.geojson;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
-import org.niord.core.fm.FmService;
+import org.niord.core.fm.FmReportService;
 import org.niord.core.message.Message;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.message.MessageVo;
@@ -19,7 +19,7 @@ import java.util.Arrays;
 public class GeometryFormatService {
 
     @Inject
-    FmService fmService;
+    FmReportService fmReportService;
 
     @Inject
     NiordApp app;
@@ -52,7 +52,7 @@ public class GeometryFormatService {
                 .forEach(f -> f.getProperties().put("language", lang));
 
         String templatePath = String.format("/templates/geometry/%s.ftl", template);
-        return fmService.newTemplateBuilder()
+        return fmReportService.newTemplateBuilder()
                 .templatePath(templatePath)
                 .data("geometry", geometry)
                 .data("format", format)

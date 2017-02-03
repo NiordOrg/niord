@@ -321,6 +321,35 @@ tr.batch-execution-row td div.progress {
     font-size: 12px;
 }
 
+/** Templates **/
+
+.fm-template-table {
+    font-size: 12px;
+    width: 100%;
+    min-height: 100px;
+    max-height: 500px;
+    overflow: hidden;
+    overflow-y: scroll;
+    border: 1px solid lightgray;
+}
+
+.fm-editor {
+    width: 100%;
+    min-height: 400px;
+    border: 1px solid lightgray;
+    box-shadow: 0 2px 4px rgba(50, 50, 50, 0.5);
+}
+
+/** ACE editor fixes **/
+
+.ace_editor {
+    font-size: 10px!important;
+}
+
+div.ace_scrollbar.ace_scrollbar-v {
+    width: auto!important;
+}
+
 /** Mails admin page **/
 
 .scheduled-mails-filter {

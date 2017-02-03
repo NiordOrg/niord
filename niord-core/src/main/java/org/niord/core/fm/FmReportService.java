@@ -56,11 +56,11 @@ import static org.niord.core.settings.Setting.Type.Boolean;
 import static org.niord.core.settings.Setting.Type.Password;
 
 /**
- * Main interface for accessing and processing Freemarker templates
+ * Main interface for accessing and processing Freemarker reports
  */
 @Stateless
 @SuppressWarnings("unused")
-public class FmService extends BaseService {
+public class FmReportService extends BaseService {
 
     public static final String LANGUAGE_PROPERTY    = "language";
     public static final String LANGUAGES_PROPERTY   = "languages";
@@ -337,14 +337,14 @@ public class FmService extends BaseService {
         Map<String, Object> data;
         String language;
         String[] dictionaryNames;
-        FmService fmService;
+        FmReportService fmReportService;
 
 
         /**
          * Should only be initialized from the FmService.newTemplateBuilder() call
          */
-        private FmTemplateBuilder(FmService fmService) {
-            this.fmService = Objects.requireNonNull(fmService);
+        private FmTemplateBuilder(FmReportService fmReportService) {
+            this.fmReportService = Objects.requireNonNull(fmReportService);
         }
 
 
@@ -364,7 +364,7 @@ public class FmService extends BaseService {
 
             // Process the Freemarker template
             try {
-                Template fmTemplate = fmService.constructFreemarkerTemplate(this);
+                Template fmTemplate = fmReportService.constructFreemarkerTemplate(this);
 
                 StringWriter result = new StringWriter();
                 fmTemplate.process(data, result);
@@ -402,9 +402,9 @@ public class FmService extends BaseService {
                 } else if (format == ProcessFormat.PDF) {
 
                     HtmlToPdfRenderer.newBuilder()
-                            .baseUri(fmService.getBaseUri())
+                            .baseUri(fmReportService.getBaseUri())
                             .html(result)
-                            .encrypt(fmService.getPDFEncryptionPassword())
+                            .encrypt(fmReportService.getPDFEncryptionPassword())
                             .pdf(out)
                             .build()
                             .render();
