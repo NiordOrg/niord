@@ -72,7 +72,7 @@ public class ScheduledMailService extends BaseService {
 
     @Inject
     @Setting(value = "mailDeleteAfterDays", defaultValue = "300", type = Integer,
-            description = "Delete scheduled mails older than the given value. 0 means never.")
+            description = "Delete scheduled mails older than the given value. A non-positive value means never.")
     Integer mailDeleteAfterDays;
 
 
@@ -220,8 +220,8 @@ public class ScheduledMailService extends BaseService {
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     private void deleteExpiredMails() {
 
-        // If expiryDate is 0, never delete mails
-        if (mailDeleteAfterDays == 0) {
+        // If expiryDate is 0 (actually, non-positive), never delete mails
+        if (mailDeleteAfterDays <= 0) {
             return;
         }
 
