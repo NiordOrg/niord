@@ -19,6 +19,7 @@ package org.niord.core.fm;
 import org.niord.core.fm.vo.FmTemplateVo;
 import org.niord.core.model.VersionedEntity;
 
+import javax.persistence.Cacheable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Lob;
@@ -31,11 +32,14 @@ import javax.validation.constraints.NotNull;
  * Represents a database-backed Freemarker template.
  */
 @Entity
+@Cacheable
 @NamedQueries({
         @NamedQuery(name="FmTemplate.findByPath",
                 query="SELECT t FROM FmTemplate t where lower(t.path) = lower(:path)"),
         @NamedQuery(name="FmTemplate.findAll",
-                query="SELECT t FROM FmTemplate t order by lower(t.path)")
+                query="SELECT t FROM FmTemplate t order by lower(t.path)"),
+        @NamedQuery(name="FmTemplate.findAllPaths",
+                query="SELECT t.path FROM FmTemplate t order by lower(t.path)")
 })
 @SuppressWarnings("unused")
 public class FmTemplate extends VersionedEntity<Integer>  {

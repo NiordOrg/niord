@@ -22,7 +22,8 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.fm.FmReport;
 import org.niord.core.fm.FmReportService;
-import org.niord.core.fm.FmReportService.ProcessFormat;
+import org.niord.core.fm.FmTemplateService;
+import org.niord.core.fm.FmTemplateService.ProcessFormat;
 import org.niord.core.fm.vo.FmReportVo;
 import org.niord.core.message.MessagePrintParams;
 import org.niord.core.message.MessageSearchParams;
@@ -77,6 +78,9 @@ public class MessageReportRestService {
 
     @Inject
     FmReportService fmReportService;
+
+    @Inject
+    FmTemplateService templateService;
 
     /***************************************/
     /** PDF Reports                       **/
@@ -148,7 +152,7 @@ public class MessageReportRestService {
 
             StreamingOutput stream = os -> {
                 try {
-                    fmReportService.newTemplateBuilder()
+                    templateService.newTemplateBuilder()
                             .templatePath(report.getTemplatePath())
                             .data("messages", Collections.singleton(message))
                             .data("areaHeadings", false)
@@ -214,7 +218,7 @@ public class MessageReportRestService {
 
             StreamingOutput stream = os -> {
                 try {
-                    fmReportService.newTemplateBuilder()
+                    templateService.newTemplateBuilder()
                             .templatePath(report.getTemplatePath())
                             .data("messages", result.getData())
                             .data("areaHeadings", params.sortByArea())

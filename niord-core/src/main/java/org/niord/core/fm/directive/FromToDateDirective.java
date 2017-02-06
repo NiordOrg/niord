@@ -33,8 +33,8 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
 
-import static org.niord.core.fm.FmReportService.BUNDLE_PROPERTY;
-import static org.niord.core.fm.FmReportService.TIME_ZONE_PROPERTY;
+import static org.niord.core.fm.FmTemplateService.BUNDLE_PROPERTY;
+import static org.niord.core.fm.FmTemplateService.TIME_ZONE_PROPERTY;
 
 /**
  * This Freemarker directive will format a DateIntervalVo or a from-to date interval
