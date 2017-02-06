@@ -350,6 +350,10 @@ div.ace_scrollbar.ace_scrollbar-v {
     width: auto!important;
 }
 
+div.ace_scrollbar.ace_scrollbar-h {
+    height: auto!important;
+}
+
 /** Mails admin page **/
 
 .scheduled-mails-filter {
