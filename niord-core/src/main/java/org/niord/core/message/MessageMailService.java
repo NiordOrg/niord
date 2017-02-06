@@ -85,7 +85,7 @@ public class MessageMailService extends BaseService {
                                 .data("mapThumbnails", false)
                                 .data("frontPage", false)
                                 .data("link", true)
-                                .dictionaryNames("web", "message", "mail", "pdf")
+                                .dictionaryNames("message", "mail")
                                 .language(mailTemplate.getLanguage())
                                 .process();
 

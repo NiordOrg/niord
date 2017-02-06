@@ -135,7 +135,7 @@
                     <#assign messageId=msg.shortId />
                 </#if>
                 <div style="margin: 1mm">
-                    <h4 id="${messageId}">${text("pdf.attachment.title", messageId)}</h4>
+                    <h4 id="${messageId}">${text("msg.attachment.title", messageId)}</h4>
                 </div>
                 <@renderAttachment att=att />
             </div>
