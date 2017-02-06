@@ -327,7 +327,7 @@ tr.batch-execution-row td div.progress {
     font-size: 12px;
     width: 100%;
     min-height: 100px;
-    max-height: 500px;
+    max-height: 480px;
     overflow: hidden;
     overflow-y: scroll;
     border: 1px solid lightgray;
@@ -335,7 +335,7 @@ tr.batch-execution-row td div.progress {
 
 .fm-editor {
     width: 100%;
-    min-height: 400px;
+    min-height: 440px;
     border: 1px solid lightgray;
     box-shadow: 0 2px 4px rgba(50, 50, 50, 0.5);
 }
