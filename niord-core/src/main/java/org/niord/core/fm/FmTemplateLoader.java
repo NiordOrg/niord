@@ -62,7 +62,6 @@ public class FmTemplateLoader implements TemplateLoader {
     /** {@inheritDoc} **/
     @Override
     public FmTemplate findTemplateSource(String path) {
-        System.out.println("XXXXXXXXXX " + path);
 
         if (existingTemplatePaths.contains(path)) {
             if (!templates.containsKey(path)) {
