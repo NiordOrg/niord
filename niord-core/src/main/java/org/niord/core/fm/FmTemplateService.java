@@ -185,6 +185,11 @@ public class FmTemplateService extends BaseService {
     }
 
 
+    /*************************/
+    /** Template execution  **/
+    /*************************/
+
+
     /**
      * If enabled, returns the PDF encryption password to use whilst generating PDF reports.
      * Otherwise, returns null.
@@ -205,24 +210,6 @@ public class FmTemplateService extends BaseService {
      */
     public FmTemplateBuilder newTemplateBuilder() {
         return new FmTemplateBuilder(this);
-    }
-
-
-    /**
-     * Executes the template with the given path
-     * @param path the path of the template to execute
-     * @param locale the locale
-     */
-    private Template resolveTemplate(String path, Locale locale) throws IOException {
-
-        FmTemplateLoader templateLoader = new FmTemplateLoader(this, true);
-
-        Configuration cfg = new Configuration(Configuration.getVersion());
-        cfg.setLocalizedLookup(true);
-        cfg.setTemplateLoader(templateLoader);
-        cfg.setObjectWrapper(new NiordAppObjectWrapper(cfg.getIncompatibleImprovements()));
-
-        return cfg.getTemplate(path, locale, "UTF-8");
     }
 
 
@@ -265,7 +252,14 @@ public class FmTemplateService extends BaseService {
 
         Locale locale = app.getLocale(templateBuilder.getLanguage());
 
-        return resolveTemplate(templateBuilder.getTemplatePath(), locale);
+        // Create the Freemarker template loader and configuration
+        FmTemplateLoader templateLoader = new FmTemplateLoader(this, true);
+        Configuration cfg = new Configuration(Configuration.getVersion());
+        cfg.setLocalizedLookup(true);
+        cfg.setTemplateLoader(templateLoader);
+        cfg.setObjectWrapper(new NiordAppObjectWrapper(cfg.getIncompatibleImprovements()));
+
+        return cfg.getTemplate(templateBuilder.getTemplatePath(), locale, "UTF-8");
     }
 
 
@@ -273,6 +267,11 @@ public class FmTemplateService extends BaseService {
     private String getBaseUri() {
         return app.getBaseUri();
     }
+
+
+    /*************************/
+    /** Template Builder    **/
+    /*************************/
 
 
     /**

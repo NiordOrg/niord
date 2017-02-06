@@ -53,6 +53,7 @@ public class FmTemplateLoader implements TemplateLoader {
         this.loadFromClassPath = loadFromClassPath;
     }
 
+
     /** {@inheritDoc} **/
     @Override
     public void closeTemplateSource(Object template) {
