@@ -26,8 +26,8 @@ angular.module('niord.admin')
      * Templates Admin Controller
      * Controller for the Admin Templates page
      */
-    .controller('TemplatesAdminCtrl', ['$scope', '$timeout', 'growl', 'AdminTemplateService', 'DialogService',
-        function ($scope, $timeout, growl, AdminTemplateService, DialogService) {
+    .controller('TemplatesAdminCtrl', ['$scope', '$timeout', '$uibModal', 'growl', 'AdminTemplateService', 'DialogService',
+        function ($scope, $timeout, $uibModal, growl, AdminTemplateService, DialogService) {
             'use strict';
 
             $scope.template = undefined; // The template being edited
@@ -150,5 +150,80 @@ angular.module('niord.admin')
                             .success($scope.loadTemplates);
                     });
             };
+
+
+            /** Display the template history **/
+            $scope.showTemplateHistory = function (template) {
+                return $uibModal.open({
+                    controller: "TemplateHistoryDialogCtrl",
+                    templateUrl: "/app/admin/template-history-dialog.html",
+                    size: 'lg',
+                    resolve: {
+                        template: function () { return template; }
+                    }
+                });
+
+            }
+
+        }])
+
+
+    /*******************************************************************
+     * TemplateHistoryDialogCtrl sub-controller that handles template history.
+     *******************************************************************/
+    .controller('TemplateHistoryDialogCtrl', ['$scope', '$rootScope', '$timeout', 'AdminTemplateService', 'template',
+        function ($scope, $rootScope, $timeout, AdminTemplateService, template) {
+            'use strict';
+
+            $scope.template = template;
+            $scope.templateHistory = [];
+            $scope.selectedHistory = [];
+            $scope.selectedTemplate = [];
+            $scope.messageDiff = '';
+
+            $scope.fmEditorOptions = {
+                useWrapMode : false,
+                showGutter: true,
+                mode: 'ftl'
+            };
+
+
+            /** Loads the template history **/
+            $scope.loadHistory = function () {
+                if ($scope.template && $scope.template.id) {
+                    AdminTemplateService.templateHistory($scope.template)
+                        .success(function (history) {
+                            $scope.templateHistory.length = 0;
+                            angular.forEach(history, function (hist) {
+                                hist.selected = false;
+                                $scope.templateHistory.push(hist);
+                            })
+                        });
+                }
+            };
+
+            // Load the template history (after the template has been loaded)
+            $timeout($scope.loadHistory, 200);
+
+
+            /** updates the history selection **/
+            $scope.updateSelection = function () {
+                $scope.selectedHistory.length = 0;
+                $scope.selectedTemplate.length = 0;
+                $scope.messageDiff = '';
+                angular.forEach($scope.templateHistory, function (hist) {
+                    if (hist.selected) {
+                        $scope.selectedHistory.unshift(hist);
+                        $scope.selectedTemplate.unshift(JSON.parse(hist.snapshot));
+                    }
+                });
+                if($scope.selectedTemplate.length == 2) {
+                    $timeout(function () {
+                        var msg1 = $('#template_0').html();
+                        var msg2 = $('#template_1').html();
+                        $scope.messageDiff = htmldiff(msg1, msg2);
+                    }, 300);
+                }
+            }
 
         }]);

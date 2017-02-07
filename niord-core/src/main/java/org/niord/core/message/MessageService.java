@@ -313,7 +313,7 @@ public class MessageService extends BaseService {
 
 
     /**
-     * Saves the message and evicts the message from the cache
+     * Saves the message
      *
      * @param message the message to save
      * @return the saved message

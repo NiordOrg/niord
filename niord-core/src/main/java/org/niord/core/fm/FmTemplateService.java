@@ -16,6 +16,8 @@
 
 package org.niord.core.fm;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import freemarker.ext.beans.ResourceBundleModel;
 import freemarker.template.Configuration;
 import freemarker.template.DefaultObjectWrapperBuilder;
@@ -28,8 +30,10 @@ import org.niord.core.dictionary.DictionaryService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.fm.pdf.HtmlToPdfRenderer;
+import org.niord.core.fm.vo.FmTemplateVo;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.annotation.Setting;
+import org.niord.core.user.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -84,10 +89,32 @@ public class FmTemplateService extends BaseService {
     DomainService domainService;
 
     @Inject
+    UserService userService;
+
+    @Inject
     NiordApp app;
 
     @Inject
     Logger log;
+
+
+    /**
+     * Saves the template
+     *
+     * @param template the template to save
+     * @return the saved template
+     */
+    public FmTemplate saveTemplate(FmTemplate template) {
+        boolean wasPersisted = template.isPersisted();
+
+        // Save the template
+        template = saveEntity(template);
+
+        // Save a FmTemplateHistory entity for the template
+        saveHistory(template);
+
+        return template;
+    }
 
 
     /**
@@ -148,7 +175,7 @@ public class FmTemplateService extends BaseService {
             throw new IllegalArgumentException("Cannot create template with duplicate path " + template.getPath());
         }
 
-        return saveEntity(template);
+        return saveTemplate(template);
     }
 
 
@@ -167,7 +194,7 @@ public class FmTemplateService extends BaseService {
         original.setPath(template.getPath());
         original.setTemplate(template.getTemplate());
 
-        return saveEntity(original);
+        return saveTemplate(original);
     }
 
 
@@ -198,7 +225,7 @@ public class FmTemplateService extends BaseService {
             if (cpTemplate != null && !Objects.equals(template.getTemplate(), cpTemplate.getTemplate())) {
                 log.info("Updating template from classpath " + template.getPath());
                 template.setTemplate(cpTemplate.getTemplate());
-                saveEntity(template);
+                saveTemplate(template);
                 updates++;
             }
         }
@@ -319,6 +346,52 @@ public class FmTemplateService extends BaseService {
     /** Returns the base URI used to access this application */
     private String getBaseUri() {
         return app.getBaseUri();
+    }
+
+
+    /***************************************/
+    /** Template History                  **/
+    /***************************************/
+
+
+    /**
+     * Saves a history entity containing a snapshot of the template
+     *
+     * @param template the template to save a snapshot for
+     */
+    public void saveHistory(FmTemplate template) {
+
+        try {
+            FmTemplateHistory hist = new FmTemplateHistory();
+            hist.setTemplate(template);
+            hist.setUser(userService.currentUser());
+            hist.setCreated(new Date());
+            hist.setVersion(template.getVersion() + 1);
+
+            // Create a snapshot of the template
+            ObjectMapper jsonMapper = new ObjectMapper();
+            jsonMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false); // Use ISO-8601 format
+            FmTemplateVo snapshot = template.toVo();
+            hist.compressSnapshot(jsonMapper.writeValueAsString(snapshot));
+
+            saveEntity(hist);
+
+        } catch (Exception e) {
+            log.error("Error saving a history entry for template " + template.getId(), e);
+            // NB: Don't propagate errors
+        }
+    }
+
+    /**
+     * Returns the template history for the given template ID
+     *
+     * @param templateId the template ID
+     * @return the template history
+     */
+    public List<FmTemplateHistory> getTemplateHistory(Integer templateId) {
+        return em.createNamedQuery("FmTemplateHistory.findByTemplateId", FmTemplateHistory.class)
+                .setParameter("templateId", templateId)
+                .getResultList();
     }
 
 

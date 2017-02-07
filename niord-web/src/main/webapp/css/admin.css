@@ -340,6 +340,23 @@ tr.batch-execution-row td div.progress {
     box-shadow: 0 2px 4px rgba(50, 50, 50, 0.5);
 }
 
+.fm-history-editor {
+    width: 100%;
+    min-height: 300px;
+    margin: 10px 0;
+    border: 1px solid lightgray;
+    box-shadow: 0 2px 4px rgba(50, 50, 50, 0.5);
+}
+
+.fm-history-view {
+    font-size: 11px;
+    font-family: "Courier New", serif;
+    max-height: 480px;
+    overflow: hidden;
+    overflow-y: scroll;
+    overflow-x: scroll;
+}
+
 /** ACE editor fixes **/
 
 .ace_editor {

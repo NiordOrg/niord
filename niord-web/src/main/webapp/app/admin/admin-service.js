@@ -440,7 +440,13 @@ angular.module('niord.admin')
             /** Reload templates from the file system **/
             reloadTemplates: function() {
                 return $http.post('/rest/templates/reload/');
+            },
+
+            /** Loads the template history for the given template **/
+            templateHistory: function(template) {
+                return $http.get('/rest/templates/template/' + template.id + '/history');
             }
+
         };
     }]);
 

@@ -75,7 +75,7 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-sm-offset-4">
+                            <div class="col-sm-12">
                                 <button type="submit" class="btn btn-default btn-sm" ng-click="loadTemplates()">
                                     Cancel
                                 </button>
@@ -83,6 +83,10 @@
                                         ng-disabled="!template.path || templateForm.$pristine">
                                     <span class="glyphicon glyphicon-floppy-disk"></span>
                                     Save Template
+                                </button>
+
+                                <button type="submit" class="btn btn-default btn-sm pull-right" ng-click="showTemplateHistory(template)">
+                                    History...
                                 </button>
                             </div>
                         </div>

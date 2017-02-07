@@ -20,7 +20,9 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.fm.FmTemplate;
+import org.niord.core.fm.FmTemplateHistory;
 import org.niord.core.fm.FmTemplateService;
+import org.niord.core.fm.vo.FmTemplateHistoryVo;
 import org.niord.core.fm.vo.FmTemplateVo;
 import org.niord.core.user.Roles;
 import org.slf4j.Logger;
@@ -37,12 +39,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * REST interface for generating PDF message reports.
+ * REST interface for accessing Freemarker templates.
  */
 @Path("/templates")
 @Stateless
@@ -55,7 +58,7 @@ public class FmTemplateRestService {
     Logger log;
 
     @Inject
-    FmTemplateService fmTemplateService;
+    FmTemplateService templateService;
 
     
     /** Returns all templates */
@@ -64,7 +67,7 @@ public class FmTemplateRestService {
     @GZIP
     @NoCache
     public List<FmTemplateVo> getTemplates() {
-        return fmTemplateService.findAll().stream()
+        return templateService.findAll().stream()
                 .map(FmTemplate::toVo)
                 .collect(Collectors.toList());
     }
@@ -79,7 +82,7 @@ public class FmTemplateRestService {
     @NoCache
     public FmTemplateVo createTemplate(FmTemplateVo template) throws Exception {
         log.info("Creating template " + template);
-        return fmTemplateService.createTemplate(new FmTemplate(template))
+        return templateService.createTemplate(new FmTemplate(template))
                 .toVo();
     }
 
@@ -97,7 +100,7 @@ public class FmTemplateRestService {
         }
 
         log.info("Updating template " + template);
-        return fmTemplateService.updateTemplate(new FmTemplate(template))
+        return templateService.updateTemplate(new FmTemplate(template))
                 .toVo();
     }
 
@@ -109,7 +112,7 @@ public class FmTemplateRestService {
     @NoCache
     public void deleteTemplate(@PathParam("id") Integer id) throws Exception {
         log.info("Deleting template " + id);
-        fmTemplateService.deleteTemplate(id);
+        templateService.deleteTemplate(id);
     }
 
 
@@ -121,7 +124,36 @@ public class FmTemplateRestService {
     @NoCache
     public Integer reloadTemplatesFromClassPath() throws Exception {
         log.info("Reloading templates from classpath");
-        return fmTemplateService.reloadTemplatesFromClassPath();
+        return templateService.reloadTemplatesFromClassPath();
+    }
+
+
+    /***************************************/
+    /** Template History methods          **/
+    /***************************************/
+
+
+    /**
+     * Returns the template history for the given template ID
+     * @param templateId the template ID or template series ID
+     * @return the template history
+     */
+    @GET
+    @Path("/template/{templateId}/history")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public List<FmTemplateHistoryVo> getTemplateHistory(@PathParam("templateId") Integer templateId) {
+
+        // Get the template id
+        FmTemplate template = templateService.findById(templateId);
+        if (template == null) {
+            return Collections.emptyList();
+        }
+
+        return templateService.getTemplateHistory(template.getId()).stream()
+                .map(FmTemplateHistory::toVo)
+                .collect(Collectors.toList());
     }
 
 }
