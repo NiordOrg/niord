@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 @Path("/templates")
 @Stateless
 @SecurityDomain("keycloak")
-@RolesAllowed(Roles.ADMIN)
+@RolesAllowed(Roles.SYSADMIN)
 @SuppressWarnings("unused")
 public class FmTemplateRestService {
 
@@ -66,6 +66,7 @@ public class FmTemplateRestService {
     @Path("/all")
     @GZIP
     @NoCache
+    @RolesAllowed(Roles.ADMIN)
     public List<FmTemplateVo> getTemplates() {
         return templateService.findAll().stream()
                 .map(FmTemplate::toVo)

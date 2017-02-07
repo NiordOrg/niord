@@ -156,7 +156,7 @@ angular.module('niord.admin')
             $scope.showTemplateHistory = function (template) {
                 return $uibModal.open({
                     controller: "TemplateHistoryDialogCtrl",
-                    templateUrl: "/app/admin/template-history-dialog.html",
+                    templateUrl: "/app/sysadmin/template-history-dialog.html",
                     size: 'lg',
                     resolve: {
                         template: function () { return template; }

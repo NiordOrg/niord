@@ -184,10 +184,6 @@ var app = angular.module('niord.admin', [
                 url: "/users",
                 templateUrl: "/app/admin/admin-page-users.html"
             })
-            .state('admin.templates', {
-                url: "/templates",
-                templateUrl: "/app/admin/admin-page-templates.html"
-            })
 
 
             /** Sysadmin **/
@@ -215,6 +211,10 @@ var app = angular.module('niord.admin', [
             .state('sysadmin.dictionaries', {
                 url: "/dictionaries",
                 templateUrl: "/app/sysadmin/sysadmin-page-dictionaries.html"
+            })
+            .state('sysadmin.templates', {
+                url: "/templates",
+                templateUrl: "/app/sysadmin/sysadmin-page-templates.html"
             })
             .state('sysadmin.mails', {
                 url: "/mails",
