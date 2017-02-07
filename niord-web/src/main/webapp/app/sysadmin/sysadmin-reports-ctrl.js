@@ -27,8 +27,10 @@ angular.module('niord.admin')
      * Reports Admin Controller
      * Controller for the Admin Reports page
      */
-    .controller('ReportsAdminCtrl', ['$scope', '$rootScope', '$uibModal', 'growl', 'AdminReportService', 'DialogService',
-        function ($scope, $rootScope, $uibModal, growl, AdminReportService, DialogService) {
+    .controller('ReportsAdminCtrl', ['$scope', '$rootScope', '$window', '$uibModal', 'growl',
+                'AdminReportService', 'MessageService', 'DialogService',
+        function ($scope, $rootScope, $window, $uibModal, growl,
+                  AdminReportService, MessageService, DialogService) {
             'use strict';
 
             $scope.reports = [];
@@ -102,4 +104,21 @@ angular.module('niord.admin')
                             .error($scope.displayError);
                     });
             };
+
+
+            $scope.testTagData = {
+                tag: undefined
+            };
+
+            /** Test the current report with the messages of the selected message tag **/
+            $scope.testReport = function (report) {
+                if (report && $scope.testTagData.tag) {
+                    MessageService.messagePrintDialog(undefined, true, report).result
+                        .then(function (printParams) {
+                            printParams += '&tag=' + encodeURIComponent($scope.testTagData.tag.tagId);
+                            $window.location = '/rest/message-reports/report.pdf?' + printParams;
+                        });
+                }
+            };
+
         }]);
