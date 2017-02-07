@@ -29,6 +29,7 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -196,6 +197,18 @@ public class DomainService extends BaseService {
                 .collect(Collectors.toList());
     }
 
+
+    /**
+     * Returns a list of persisted domains based on a list of template domains
+     * @param domains the list of charts to look up persisted charts for
+     * @return the list of corresponding persisted charts
+     */
+    public List<Domain> persistedDomains(List<Domain> domains) {
+        return domains.stream()
+                .map(c -> findByDomainId(c.getDomainId()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
 
     /**
      * Updates the domain data from the domain template

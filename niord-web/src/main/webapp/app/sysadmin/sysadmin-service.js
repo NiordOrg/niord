@@ -255,6 +255,43 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
+     * AdminReportService
+     * ********************************************************************************
+     * Interface for calling report related functions at the application server
+     */
+    .factory('AdminReportService', [ '$http', function($http) {
+        'use strict';
+
+        return {
+
+            /** Returns all reports **/
+            getReports: function () {
+                return $http.get('/rest/message-reports/all');
+            },
+
+
+            /** Creates a new report **/
+            createReport: function(report) {
+                return $http.post('/rest/message-reports/report/', report);
+            },
+
+
+            /** Updates the given report **/
+            updateReport: function(report) {
+                return $http.put('/rest/message-reports/report/' + report.reportId, report);
+            },
+
+
+            /** Deletes the given report **/
+            deleteReport: function(report) {
+                return $http['delete']('/rest/message-reports/report/' + report.reportId);
+            }
+        };
+    }])
+
+
+    /**
+     * ********************************************************************************
      * AdminSettingsService
      * ********************************************************************************
      * Interface for calling system settings-related functions at the application server

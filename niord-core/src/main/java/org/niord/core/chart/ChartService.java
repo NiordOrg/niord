@@ -20,7 +20,6 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.db.SpatialIntersectsPredicate;
 import org.niord.core.service.BaseService;
-import org.omg.CORBA.ORB;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
@@ -31,8 +30,10 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -86,7 +87,7 @@ public class ChartService extends BaseService {
                     .setParameter("term", "%" + term + "%")
                     .getResultList()
                     .stream()
-                    .sorted((c1, c2) -> Integer.compare(c1.computeSearchSortKey(term), c2.computeSearchSortKey(term)))
+                    .sorted(Comparator.comparingInt(c -> c.computeSearchSortKey(term)))
                     .limit(limit)
                     .collect(Collectors.toList());
        }
@@ -214,7 +215,7 @@ public class ChartService extends BaseService {
     public List<Chart> persistedCharts(List<Chart> charts) {
         return charts.stream()
                 .map(c -> findByChartNumber(c.getChartNumber()))
-                .filter(c -> c != null)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 

@@ -19,6 +19,7 @@ import org.niord.core.db.JpaPropertiesAttributeConverter;
 import org.niord.core.domain.Domain;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.fm.vo.FmReportVo;
+import org.niord.model.DataFilter;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -60,13 +61,17 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
     @ManyToMany
     List<Domain> domains = new ArrayList<>();
 
-    /** Fixed report-specific properties **/
-    @Column(name="properties", columnDefinition = "TEXT")
+    /**
+     * Fixed report-specific properties
+     **/
+    @Column(name = "properties", columnDefinition = "TEXT")
     @Convert(converter = JpaPropertiesAttributeConverter.class)
     Map<String, Object> properties = new HashMap<>();
 
-    /** User input parameters **/
-    @Column(name="params", columnDefinition = "TEXT")
+    /**
+     * User input parameters
+     **/
+    @Column(name = "params", columnDefinition = "TEXT")
     @Convert(converter = JpaPropertiesAttributeConverter.class)
     Map<String, Object> params = new HashMap<>();
 
@@ -85,7 +90,9 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
     }
 
 
-    /** Updates this report from the value object **/
+    /**
+     * Updates this report from the value object
+     **/
     public void updateReport(FmReportVo report) {
         this.reportId = report.getReportId();
         this.name = report.getName();
@@ -102,12 +109,23 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
 
     /** Converts this entity to a value object */
     public FmReportVo toVo() {
+        return toVo(DataFilter.get());
+    }
+
+
+    /** Converts this entity to a value object */
+    public FmReportVo toVo(DataFilter filter) {
         FmReportVo report = new FmReportVo();
         report.setReportId(reportId);
         report.setName(name);
         report.setTemplatePath(templatePath);
         report.getProperties().putAll(properties);
         report.getParams().putAll(params);
+        if (filter.includeField("domains")) {
+            report.setDomains(domains.stream()
+                .map(Domain::toVo)
+                .collect(Collectors.toList()));
+        }
         return report;
     }
 

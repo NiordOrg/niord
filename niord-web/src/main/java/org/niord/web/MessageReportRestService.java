@@ -28,18 +28,26 @@ import org.niord.core.fm.vo.FmReportVo;
 import org.niord.core.message.MessagePrintParams;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageService;
+import org.niord.core.user.Roles;
+import org.niord.model.DataFilter;
 import org.niord.model.message.MessageVo;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
@@ -48,6 +56,7 @@ import javax.ws.rs.core.StreamingOutput;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -87,8 +96,8 @@ public class MessageReportRestService {
     /***************************************/
 
     /**
-     * Returns the reports available for printing message lists
-     * @return the reports available for printing message lists
+     * Returns the reports available for printing message lists in the current domain
+     * @return the reports available for printing message lists in the current domain
      */
     @GET
     @Path("/reports")
@@ -100,6 +109,23 @@ public class MessageReportRestService {
         return fmReportService.getReports().stream()
                 .map(FmReport::toVo)
                 .map(r -> expandParams ? fmReportService.expandReportParams(r) : r)
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Returns all reports
+     * @return all reports
+     */
+    @GET
+    @Path("/all")
+    @RolesAllowed(Roles.SYSADMIN)
+    @GZIP
+    @NoCache
+    public List<FmReportVo> getAllReports() {
+        DataFilter filter = DataFilter.get().fields("domains");
+        return fmReportService.getAllReports().stream()
+                .map(r -> r.toVo(filter))
                 .collect(Collectors.toList());
     }
 
@@ -118,6 +144,50 @@ public class MessageReportRestService {
                 fmReportService.getDraftReport().toVo()
         );
     }
+
+
+    /** Creates a new report */
+    @POST
+    @Path("/report/")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public FmReportVo createReport(FmReportVo report) throws Exception {
+        log.info("Creating report " + report);
+        return fmReportService.createReport(new FmReport(report))
+                .toVo();
+    }
+
+
+    /** Updates an existing report */
+    @PUT
+    @Path("/report/{reportId}")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public FmReportVo updateReport(@PathParam("reportId") String reportId, FmReportVo report) throws Exception {
+        if (!Objects.equals(reportId, report.getReportId())) {
+            throw new WebApplicationException(400);
+        }
+
+        log.info("Updating report " + report);
+        return fmReportService.updateReport(new FmReport(report))
+                .toVo();
+    }
+
+
+    /** Deletes an existing report */
+    @DELETE
+    @Path("/report/{reportId}")
+    @GZIP
+    @NoCache
+    public void deleteReport(@PathParam("reportId") String reportId) throws Exception {
+        log.info("Deleting report " + reportId);
+        fmReportService.deleteReport(reportId);
+    }
+
 
 
     /**

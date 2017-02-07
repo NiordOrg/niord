@@ -1,5 +1,6 @@
 <div class="input-group">
-    <ui-select ng-model="domainData.domain" >
+
+    <ui-select ng-if="!multiple" ng-model="domainData.domain" >
         <ui-select-match placeholder="Select Domain">
             {{domainData.domain.name}}
         </ui-select-match>
@@ -7,11 +8,29 @@
                            refresh="refreshDomains($select.search)"
                            refresh-delay="50">
             <div>
-                <div ng-bind-html="d.name | highlight: $select.search"></div>
+                <span ng-bind-html="d.name | highlight: $select.search"></span>
+                <span class="base-data-inactive" ng-if="!d.active">(inactive)</span>
             </div>
 
         </ui-select-choices>
     </ui-select>
 
-    <span class="input-group-addon clickable" style="font-size: 12px" ng-click="removeDomain()"><span class="glyphicon glyphicon-trash"></span></span>
+    <ui-select ng-if="multiple" multiple ng-model="domainData.domains">
+        <ui-select-match placeholder="Select domains">
+            {{$item.name}}
+            <span class="base-data-inactive" ng-if="!$item.active">(inactive)</span>
+        </ui-select-match>
+        <ui-select-choices repeat="domain in domains"
+                           refresh="refreshDomains($select.search)"
+                           refresh-delay="100">
+            <div>
+                <span ng-bind-html="domain.name | highlight: $select.search"></span>
+                <span class="base-data-inactive" ng-if="!domain.active">(inactive)</span>
+            </div>
+
+        </ui-select-choices>
+    </ui-select>
+
+
+    <span class="input-group-addon clickable" style="font-size: 12px" ng-click="removeDomains()"><span class="glyphicon glyphicon-trash"></span></span>
 </div>

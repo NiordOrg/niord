@@ -160,6 +160,15 @@ public class FmReportService extends BaseService {
 
 
     /**
+     * Returns all reports
+     * @return all reports
+     */
+    public List<FmReport> getAllReports() {
+        return getAll(FmReport.class);
+    }
+
+
+    /**
      * Expand report parameter values with the format ${week}, ${year}, etc.
      * @param report the report to expand parameter values for
      * @return the updated report
@@ -196,6 +205,60 @@ public class FmReportService extends BaseService {
             return str;
         }
         return value;
+    }
+
+
+    /**
+     * Creates a new report based on the report parameter
+     * @param report the report to create
+     * @return the created report
+     */
+    public FmReport createReport(FmReport report) {
+        FmReport original = findByReportId(report.getReportId());
+        if (original != null) {
+            throw new IllegalArgumentException("Cannot create report with duplicate id " + report.getReportId());
+        }
+
+        return saveEntity(report);
+    }
+
+
+    /**
+     * Updates the report data from the report parameter
+     * @param report the report to update
+     * @return the updated report
+     */
+    public FmReport updateReport(FmReport report) {
+        FmReport original = findByReportId(report.getReportId());
+        if (original == null) {
+            throw new IllegalArgumentException("Cannot update non-existing report " + report.getReportId());
+        }
+
+        // Copy the report data
+        original.setName(report.getName());
+        original.setTemplatePath(report.getTemplatePath());
+        original.getProperties().clear();
+        original.getProperties().putAll(report.getProperties());
+        original.getParams().clear();
+        original.getParams().putAll(report.getParams());
+        original.setDomains(domainService.persistedDomains(report.getDomains()));
+
+        return saveEntity(original);
+    }
+
+
+    /**
+     * Deletes the report with the given ID
+     * @param reportId the ID of the report to delete
+     */
+    public boolean deleteReport(String reportId) {
+
+        FmReport report = findByReportId(reportId);
+        if (report != null) {
+            remove(report);
+            return true;
+        }
+        return false;
     }
 
 }

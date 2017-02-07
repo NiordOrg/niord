@@ -31,9 +31,16 @@ angular.module('niord.common')
             templateUrl: '/app/common/domain-field.html',
             replace: false,
             scope: {
-                domainData: "="
+                domainData: "=",
+                multiple:   "="
             },
             link: function(scope) {
+                scope.domainData = scope.domainData || {};
+                scope.multiple = scope.multiple || false;
+
+                if (scope.multiple && !scope.domainData.domains) {
+                    scope.domainData.domains = [];
+                }
 
                 /** Refreshes the domain selection **/
                 scope.refreshDomains = function (text) {
@@ -46,8 +53,12 @@ angular.module('niord.common')
 
 
                 /** Removes the current domain selection */
-                scope.removeDomain = function () {
-                    scope.domainData.domain = null;
+                scope.removeDomains = function () {
+                    if (scope.multiple) {
+                        scope.domainData.domains.length = 0;
+                    } else {
+                        scope.domainData.domain = undefined;
+                    }
                 }
             }
         }
