@@ -7,13 +7,26 @@
 
     <div class="modal-body print" style="padding-bottom: 0">
 
+        <div style="margin: 0 0 20px 0;">
+            <ul>
+                <li>
+                    Select single revision to see the associated template.
+                </li>
+                <li>Select two revisions to see
+                    <span style="background-color: #fcff7f">changes</span>,
+                    <span style="background-color: #8bff7f">additions</span>
+                    and <span style="background-color: #fd7f7f">deletions</span>
+                    from the oldest to the newest revision.
+                </li>
+            </ul>
+        </div>
+
         <!-- History List -->
         <div class="row">
             <div class="col-sm-12 col-md-5">
                 <table class='table table-condensed message-history-table'>
                     <tr>
-                        <th>&nbsp;</th>
-                        <th>#</th>
+                        <th colspan="2" style="text-align: right">Rev.</th>
                         <th>Date</th>
                         <th>User</th>
                     </tr>
