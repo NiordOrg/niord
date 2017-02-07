@@ -206,6 +206,9 @@ public class FmTemplateService extends BaseService {
 
         FmTemplate template = findById(id);
         if (template != null) {
+            // Delete all template history entries
+            getTemplateHistory(id).forEach(this::remove);
+            // Delete the actual template
             remove(template);
             return true;
         }
