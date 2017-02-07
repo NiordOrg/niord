@@ -219,6 +219,9 @@ public class FmReportService extends BaseService {
             throw new IllegalArgumentException("Cannot create report with duplicate id " + report.getReportId());
         }
 
+        // Replace template domains with persisted ones
+        report.setDomains(domainService.persistedDomains(report.getDomains()));
+
         return saveEntity(report);
     }
 

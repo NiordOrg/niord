@@ -32,8 +32,16 @@
                         <div class="form-group">
                             <label class="col-sm-4">Template</label>
                             <div class="col-sm-8">
-                                <input type="text" class="form-control input-sm" required
-                                       ng-model="report.templatePath" />
+                                <div class="input-group">
+                                    <input type="text" class="form-control input-sm"
+                                           pattern=".+\.(ftl|FTL)" required
+                                           ng-model="report.templatePath" />
+                                    <a class="input-group-addon clickable" style="font-size: 12px"
+                                       href target="_blank"
+                                       ui-sref="sysadmin.templates({ path: report.templatePath })">
+                                        <span class="glyphicon glyphicon-pencil"></span>
+                                    </a>
+                                </div>
                             </div>
                         </div>
 

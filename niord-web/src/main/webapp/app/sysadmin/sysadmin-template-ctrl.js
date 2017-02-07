@@ -26,8 +26,8 @@ angular.module('niord.admin')
      * Templates Admin Controller
      * Controller for the Admin Templates page
      */
-    .controller('TemplatesAdminCtrl', ['$scope', '$timeout', '$uibModal', 'growl', 'AdminTemplateService', 'DialogService',
-        function ($scope, $timeout, $uibModal, growl, AdminTemplateService, DialogService) {
+    .controller('TemplatesAdminCtrl', ['$scope', '$stateParams', '$timeout', '$uibModal', 'growl', 'AdminTemplateService', 'DialogService',
+        function ($scope, $stateParams, $timeout, $uibModal, growl, AdminTemplateService, DialogService) {
             'use strict';
 
             $scope.template = undefined; // The template being edited
@@ -46,12 +46,30 @@ angular.module('niord.admin')
 
 
             /** Loads the templates from the back-end */
-            $scope.loadTemplates = function() {
+            $scope.loadTemplates = function(checkPathParam) {
                 $scope.template = undefined;
                 AdminTemplateService
                     .getTemplates()
                     .success(function (templates) {
                         $scope.templates = templates;
+
+                        // If the page has been initialized with a "path" param, either edit the
+                        // associated template, or add a new one.
+                        var path = $stateParams.path;
+                        if (checkPathParam && path) {
+                            if (path.startsWith('/')) {
+                                path = path.substring(1);
+                            }
+                            var pathTemplates = $.grep($scope.templates, function (t) {
+                                return t.path == path;
+                            });
+                            if (pathTemplates.length == 1) {
+                                $scope.editTemplate(pathTemplates[0]);
+                            } else {
+                                $scope.addTemplate();
+                                $scope.template.path = path;
+                            }
+                        }
                     });
             };
 
