@@ -92,7 +92,7 @@ angular.module('niord.admin')
 
 
             /** Deletes the given report */
-            $scope.deleteReports = function (report) {
+            $scope.deleteReport = function (report) {
                 DialogService.showConfirmDialog(
                     "Delete report?", "Delete report ID '" + report.reportId + "'?")
                     .then(function() {
