@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.HashMap;
@@ -182,6 +183,58 @@ public class FmTemplateService extends BaseService {
             return true;
         }
         return false;
+    }
+
+
+    /**
+     * Reload all class path-based templates from the file system
+     * @return the number of templates reloaded
+     */
+    public int reloadTemplatesFromClassPath() {
+
+        int updates = 0;
+        for (FmTemplate template : findAll()) {
+            FmTemplate cpTemplate = readTemplateFromClassPath(template.getPath());
+            if (cpTemplate != null && !Objects.equals(template.getTemplate(), cpTemplate.getTemplate())) {
+                log.info("Updating template from classpath " + template.getPath());
+                template.setTemplate(cpTemplate.getTemplate());
+                saveEntity(template);
+                updates++;
+            }
+        }
+
+        return updates;
+    }
+
+
+    /**
+     * Reads, but does not persist, a template with the given path from the class path.
+     * Returns null if none are found
+     * @return the classpath template at the given path or null if not found
+     */
+    FmTemplate readTemplateFromClassPath(String path) {
+
+        String resourcePath = path;
+        if (!resourcePath.startsWith("/")) {
+            resourcePath = "/" + resourcePath;
+        }
+        if (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+
+        String template = null;
+        try (InputStream in = getClass().getResourceAsStream(resourcePath)) {
+            template = IOUtils.toString(in ,"UTF-8");
+        } catch (Exception ignored) {
+        }
+
+        if (StringUtils.isNotBlank(template)) {
+            FmTemplate fmTemplate = new FmTemplate();
+            fmTemplate.setPath(path);
+            fmTemplate.setTemplate(template);
+            return fmTemplate;
+        }
+        return null;
     }
 
 

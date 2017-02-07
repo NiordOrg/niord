@@ -434,8 +434,13 @@ angular.module('niord.admin')
             /** Deletes the given template **/
             deleteTemplate: function(template) {
                 return $http['delete']('/rest/templates/template/' + template.id);
-            }
+            },
 
+
+            /** Reload templates from the file system **/
+            reloadTemplates: function() {
+                return $http.post('/rest/templates/reload/');
+            }
         };
     }]);
 

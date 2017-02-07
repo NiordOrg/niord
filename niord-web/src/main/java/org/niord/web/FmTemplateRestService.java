@@ -112,4 +112,16 @@ public class FmTemplateRestService {
         fmTemplateService.deleteTemplate(id);
     }
 
+
+    /** Reloads templates from the class-path */
+    @POST
+    @Path("/reload/")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public Integer reloadTemplatesFromClassPath() throws Exception {
+        log.info("Reloading templates from classpath");
+        return fmTemplateService.reloadTemplatesFromClassPath();
+    }
+
 }

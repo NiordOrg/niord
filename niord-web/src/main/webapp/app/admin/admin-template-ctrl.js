@@ -138,4 +138,17 @@ angular.module('niord.admin')
                             .error($scope.displayError);
                     });
             };
+
+
+            /** Reload the templates from the file system **/
+            $scope.reloadTemplates = function () {
+                DialogService.showConfirmDialog(
+                    "Reload Templates?", "Reload templates from the file system?")
+                    .then(function() {
+                        AdminTemplateService
+                            .reloadTemplates()
+                            .success($scope.loadTemplates);
+                    });
+            };
+
         }]);

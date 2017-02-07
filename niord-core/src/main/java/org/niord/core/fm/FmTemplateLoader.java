@@ -17,8 +17,6 @@
 package org.niord.core.fm;
 
 import freemarker.cache.TemplateLoader;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 import org.niord.core.util.CdiUtils;
 
 import java.io.Reader;
@@ -69,7 +67,7 @@ public class FmTemplateLoader implements TemplateLoader {
                 templates.put(path, templateService.findByPath(path));
             }
         } else if (loadFromClassPath && !nonExistingTemplatePaths.contains(path)) {
-            checkLoadFromClassPath(path);
+            checkLoadTemplateFromClassPath(path);
         }
         return templates.get(path);
     }
@@ -79,26 +77,10 @@ public class FmTemplateLoader implements TemplateLoader {
      * Checks if the template exists in the class-path and loads it if it does
      * @param path the path to check
      */
-    private void checkLoadFromClassPath(String path) {
+    private void checkLoadTemplateFromClassPath(String path) {
 
-        String resourcePath = path;
-        if (!resourcePath.startsWith("/")) {
-            resourcePath = "/" + resourcePath;
-        }
-        if (path.startsWith("/")) {
-            path = path.substring(1);
-        }
-
-        String template = null;
-        try {
-            template = IOUtils.toString(getClass().getResourceAsStream(resourcePath),"UTF-8");
-        } catch (Exception ignored) {
-        }
-
-        if (StringUtils.isNotBlank(template)) {
-            FmTemplate fmTemplate = new FmTemplate();
-            fmTemplate.setPath(path);
-            fmTemplate.setTemplate(template);
+        FmTemplate fmTemplate = templateService.readTemplateFromClassPath(path);
+        if (fmTemplate != null) {
             try {
                 // NB: we cannot use templateService.createTemplate() since this method may be
                 // called outside the transaction where the template loader was instantiated
