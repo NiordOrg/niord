@@ -405,3 +405,10 @@ div.ace_scrollbar.ace_scrollbar-h {
     overflow: hidden;
     overflow-y: scroll;
 }
+
+/** Reports admin page **/
+
+.report-props {
+    font-size: 11px;
+    width: 100%;
+}
