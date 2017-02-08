@@ -367,7 +367,8 @@ angular.module('niord.messages')
                             if (desc && desc.source) {
                                 scope.source = desc.source;
                             }
-                            if (scope.msg.publishDateFrom) {
+                            if (scope.msg.publishDateFrom &&
+                                (scope.msg.status == 'PUBLISHED' || scope.msg.status == 'EXPIRED' || scope.msg.status == 'CANCELLED')) {
                                 if (scope.source.length > 0) {
                                     if (scope.source.charAt(scope.source.length-1) != '.') {
                                         scope.source += ".";
