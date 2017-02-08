@@ -247,6 +247,13 @@ angular.module('niord.admin')
             /** Loads the template history for the given template **/
             templateHistory: function(template) {
                 return $http.get('/rest/templates/template/' + template.id + '/history');
+            },
+
+
+            /** Returns the ticket that can be used to generate an export file that requires the given role */
+            exportTicket: function (role) {
+                var param = role ? '?role=' + role : '';
+                return $http.get('/rest/tickets/ticket' + param);
             }
 
         };

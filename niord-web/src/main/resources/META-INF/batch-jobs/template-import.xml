@@ -1,0 +1,12 @@
+<job id="template-import" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
+    <listeners>
+        <listener ref="batchJobListener"/>
+    </listeners>
+    <step id="importTemplateStep">
+        <chunk item-count="10">
+            <reader ref="batchFmTemplateImportReader" />
+            <processor ref="batchFmTemplateImportProcessor"/>
+            <writer ref="batchFmTemplateImportWriter" />
+        </chunk>
+    </step>
+</job>

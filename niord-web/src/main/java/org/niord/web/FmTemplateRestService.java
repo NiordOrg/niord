@@ -19,17 +19,21 @@ package org.niord.web;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.fm.FmTemplate;
 import org.niord.core.fm.FmTemplateHistory;
 import org.niord.core.fm.FmTemplateService;
 import org.niord.core.fm.vo.FmTemplateHistoryVo;
 import org.niord.core.fm.vo.FmTemplateVo;
 import org.niord.core.user.Roles;
+import org.niord.core.user.UserService;
 import org.slf4j.Logger;
 
+import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -39,6 +43,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -52,10 +58,13 @@ import java.util.stream.Collectors;
 @SecurityDomain("keycloak")
 @RolesAllowed(Roles.SYSADMIN)
 @SuppressWarnings("unused")
-public class FmTemplateRestService {
+public class FmTemplateRestService extends AbstractBatchableRestService {
 
     @Inject
     Logger log;
+
+    @Inject
+    UserService userService;
 
     @Inject
     FmTemplateService templateService;
@@ -64,10 +73,17 @@ public class FmTemplateRestService {
     /** Returns all templates */
     @GET
     @Path("/all")
+    @Produces("application/json;charset=UTF-8")
     @GZIP
+    @PermitAll
     @NoCache
-    @RolesAllowed(Roles.ADMIN)
     public List<FmTemplateVo> getTemplates() {
+
+        // If a ticket is defined, check if programmatically
+        if (!userService.isCallerInRole(Roles.ADMIN)) {
+            throw new WebApplicationException(403);
+        }
+
         return templateService.findAll().stream()
                 .map(FmTemplate::toVo)
                 .collect(Collectors.toList());
@@ -127,6 +143,23 @@ public class FmTemplateRestService {
         log.info("Reloading templates from classpath");
         return templateService.reloadTemplatesFromClassPath();
     }
+
+
+    /**
+     * Imports an uploaded templates json file
+     *
+     * @param request the servlet request
+     * @return a status
+     */
+    @POST
+    @Path("/upload-templates")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("text/plain")
+    @RolesAllowed(Roles.SYSADMIN)
+    public String importReports(@Context HttpServletRequest request) throws Exception {
+        return executeBatchJobFromUploadedFile(request, "template-import");
+    }
+
 
 
     /***************************************/

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Danish Maritime Authority.
+ * Copyright 2017 Danish Maritime Authority.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.niord.core.fm.batch;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.niord.core.batch.AbstractItemHandler;
-import org.niord.core.fm.vo.FmReportVo;
+import org.niord.core.fm.vo.FmTemplateVo;
 import org.niord.core.util.JsonUtils;
 
 import javax.inject.Named;
@@ -27,24 +27,22 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Reads reports from a reports.json file.
+ * Reads Freemarker templates from a templates.json file.
  * <p>
- * Please note, the actual report-import.xml job file is not placed in the META-INF/batch-jobs of this project,
+ * NB: Template IDs are ignored, and the path is used to identify which template to update.
+ * <p>
+ * Please note, the actual template-import.xml job file is not placed in the META-INF/batch-jobs of this project,
  * but rather, in the META-INF/batch-jobs folder of the niord-web project.<br>
  * This is because of a class-loading bug in the Wildfly implementation. See e.g.
  * https://issues.jboss.org/browse/WFLY-4988
  * <p>
- * Format of json file is defined by the FmReportVo class. Example:
+ * Format of json file is defined by the FmTemplateVo class. Example:
  * <pre>
  * [
  *   {
- *       "reportId": "nm-report",
- *       "name": "NM report",
- *       "templatePath": "/templates/messages/nm-report-pdf.ftl",
- *       "domains": [
- *          { "domainId": "niord-client-nm" }
- *       ],
- *       "properties": {}
+ *       "id": 111111,
+ *       "path": "templates/messages/message-list-pdf.ftl",
+ *       "template": "<#include \"message-support.ftl\"/>\n\n<html>\n..."
  *   },
  *   {
  *       etc, etc
@@ -53,10 +51,10 @@ import java.util.List;
  * </pre>
  */
 @Named
-public class BatchReportImportReader extends AbstractItemHandler {
+public class BatchFmTemplateImportReader extends AbstractItemHandler {
 
-    List<FmReportVo> reports;
-    int reportNo = 0;
+    List<FmTemplateVo> templates;
+    int templateNo = 0;
 
     /** {@inheritDoc} **/
     @Override
@@ -65,24 +63,24 @@ public class BatchReportImportReader extends AbstractItemHandler {
         // Get hold of the data file
         Path path = batchService.getBatchJobDataFile(jobContext.getInstanceId());
 
-        // Load the reports from the file
-        reports = JsonUtils.readJson(
-                new TypeReference<List<FmReportVo>>(){},
+        // Load the templates from the file
+        templates = JsonUtils.readJson(
+                new TypeReference<List<FmTemplateVo>>(){},
                 path);
 
         if (prevCheckpointInfo != null) {
-            reportNo = (Integer) prevCheckpointInfo;
+            templateNo = (Integer) prevCheckpointInfo;
         }
 
-        getLog().info("Start processing " + reports.size() + " reports from index " + reportNo);
+        getLog().info("Start processing " + templates.size() + " templates from index " + templateNo);
     }
 
     /** {@inheritDoc} **/
     @Override
     public Object readItem() throws Exception {
-        if (reportNo < reports.size()) {
-            getLog().info("Reading report no " + reportNo);
-            return reports.get(reportNo++);
+        if (templateNo < templates.size()) {
+            getLog().info("Reading template no " + templateNo);
+            return templates.get(templateNo++);
         }
         return null;
     }
@@ -90,6 +88,6 @@ public class BatchReportImportReader extends AbstractItemHandler {
     /** {@inheritDoc} **/
     @Override
     public Serializable checkpointInfo() throws Exception {
-        return reportNo;
+        return templateNo;
     }
 }

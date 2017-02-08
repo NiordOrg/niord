@@ -26,8 +26,10 @@ angular.module('niord.admin')
      * Templates Admin Controller
      * Controller for the Admin Templates page
      */
-    .controller('TemplatesAdminCtrl', ['$scope', '$stateParams', '$timeout', '$uibModal', 'growl', 'AdminTemplateService', 'DialogService',
-        function ($scope, $stateParams, $timeout, $uibModal, growl, AdminTemplateService, DialogService) {
+    .controller('TemplatesAdminCtrl', ['$scope', '$stateParams', '$timeout', '$uibModal', 'growl',
+                'AdminTemplateService', 'DialogService', 'UploadFileService',
+        function ($scope, $stateParams, $timeout, $uibModal, growl,
+                  AdminTemplateService, DialogService, UploadFileService) {
             'use strict';
 
             $scope.template = undefined; // The template being edited
@@ -167,6 +169,27 @@ angular.module('niord.admin')
                             .reloadTemplates()
                             .success($scope.loadTemplates);
                     });
+            };
+
+
+            /** Generate an export file */
+            $scope.exportTemplates = function () {
+                AdminTemplateService
+                    .exportTicket('admin')
+                    .success(function (ticket) {
+                        var link = document.createElement("a");
+                        link.href = '/rest/templates/all?ticket=' + ticket;
+                        link.click();
+                    });
+            };
+
+
+            /** Opens the upload-charts dialog **/
+            $scope.uploadTemplatesDialog = function () {
+                UploadFileService.showUploadFileDialog(
+                    'Upload Templates File',
+                    '/rest/templates/upload-templates',
+                    'json');
             };
 
 

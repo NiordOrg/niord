@@ -24,7 +24,10 @@
                             <span class="caret"></span>
                         </button>
                         <ul uib-dropdown-menu role="menu" aria-labelledby="single-button">
-                            <li role="menuitem"><a href ng-click="reloadTemplates()">Reload...</a></li>
+                            <li role="menuitem"><a href ng-click="reloadTemplates()">Reload files...</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li role="menuitem"><a href ng-click="exportTemplates()">Export...</a></li>
+                            <li role="menuitem"><a href ng-click="uploadTemplatesDialog()">Import...</a></li>
                         </ul>
                     </span>
                 </div>
