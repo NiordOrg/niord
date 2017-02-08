@@ -28,6 +28,7 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -71,6 +72,7 @@ public class FmReportService extends BaseService {
             report = new FmReport();
             report.setReportId("standard");
             report.setName("Standard");
+            report.setSortOrder(0);
             report.setTemplatePath("/templates/messages/message-list-pdf.ftl");
             try {
                 em.persist(report);
@@ -93,6 +95,7 @@ public class FmReportService extends BaseService {
             report = new FmReport();
             report.setReportId("draft");
             report.setName("Draft");
+            report.setSortOrder(1);
             report.setTemplatePath("/templates/messages/message-list-pdf.ftl");
             report.getProperties().put("draft", true);
             try {
@@ -155,6 +158,8 @@ public class FmReportService extends BaseService {
 
         }
 
+        Collections.sort(reports);
+
         return reports;
     }
 
@@ -164,7 +169,8 @@ public class FmReportService extends BaseService {
      * @return all reports
      */
     public List<FmReport> getAllReports() {
-        return getAll(FmReport.class);
+        return em.createNamedQuery("FmReport.findAll", FmReport.class)
+                .getResultList();
     }
 
 
@@ -238,6 +244,7 @@ public class FmReportService extends BaseService {
         }
 
         // Copy the report data
+        original.setSortOrder(report.getSortOrder());
         original.setName(report.getName());
         original.setTemplatePath(report.getTemplatePath());
         original.getProperties().clear();

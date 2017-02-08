@@ -41,16 +41,20 @@ import java.util.stream.Collectors;
 @NamedQueries({
         @NamedQuery(name="FmReport.findByReportId",
                 query="SELECT r FROM FmReport r where r.reportId = :reportId"),
+        @NamedQuery(name="FmReport.findAll",
+                query="SELECT r FROM FmReport r order by r.sortOrder ASC"),
         @NamedQuery(name="FmReport.findPublicReports",
-                query="SELECT r FROM FmReport r where r.domains is empty"),
+                query="SELECT r FROM FmReport r where r.domains is empty order by r.sortOrder ASC"),
         @NamedQuery(name="FmReport.findReportsByDomain",
-                query="SELECT r FROM FmReport r join r.domains d where d = :domain")
+                query="SELECT r FROM FmReport r join r.domains d where d = :domain  order by r.sortOrder ASC")
 })
 @SuppressWarnings("unused")
 public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport> {
 
     @Column(unique = true, nullable = false)
     String reportId;
+
+    Integer sortOrder;
 
     @NotNull
     String name;
@@ -95,6 +99,7 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
      **/
     public void updateReport(FmReportVo report) {
         this.reportId = report.getReportId();
+        this.sortOrder = report.getSortOrder();
         this.name = report.getName();
         this.templatePath = report.getTemplatePath();
         this.properties.putAll(report.getProperties());
@@ -117,6 +122,7 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
     public FmReportVo toVo(DataFilter filter) {
         FmReportVo report = new FmReportVo();
         report.setReportId(reportId);
+        report.setSortOrder(sortOrder);
         report.setName(name);
         report.setTemplatePath(templatePath);
         report.getProperties().putAll(properties);
@@ -134,7 +140,14 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
     @Override
     @SuppressWarnings("all")
     public int compareTo(FmReport t) {
-        return t == null ? -1 : name.toLowerCase().compareTo(t.getName().toLowerCase());
+        return t == null
+                ? -1
+                : Integer.compare(nonNullSortOrder(), t.nonNullSortOrder());
+    }
+
+
+    private int nonNullSortOrder() {
+        return sortOrder == null ? Integer.MAX_VALUE : sortOrder;
     }
 
 
@@ -148,6 +161,14 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
 
     public void setReportId(String reportId) {
         this.reportId = reportId;
+    }
+
+    public Integer getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(Integer sortOrder) {
+        this.sortOrder = sortOrder;
     }
 
     public String getName() {

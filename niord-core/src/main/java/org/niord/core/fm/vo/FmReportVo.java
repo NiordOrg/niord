@@ -29,6 +29,7 @@ import java.util.Map;
 public class FmReportVo implements IJsonSerializable {
 
     String reportId;
+    Integer sortOrder;
     String name;
     String templatePath;
     List<DomainVo> domains;
@@ -45,6 +46,14 @@ public class FmReportVo implements IJsonSerializable {
 
     public void setReportId(String reportId) {
         this.reportId = reportId;
+    }
+
+    public Integer getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(Integer sortOrder) {
+        this.sortOrder = sortOrder;
     }
 
     public String getName() {

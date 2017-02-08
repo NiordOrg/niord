@@ -56,6 +56,7 @@ angular.module('niord.admin')
                 $scope.report = {
                     reportId: '',
                     name: '',
+                    sortOrder: 10,
                     templatePath: '',
                     domains: [],
                     properties: {},
