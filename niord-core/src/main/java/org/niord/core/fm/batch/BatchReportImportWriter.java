@@ -40,7 +40,15 @@ public class BatchReportImportWriter extends AbstractItemHandler {
         for (Object i : items) {
             FmReport report = (FmReport) i;
 
-            reportService.saveEntity(report);
+            FmReport orig = reportService.findByReportId(report.getReportId());
+
+            if (orig == null) {
+                getLog().info("Persisting new report " + report.getReportId());
+                reportService.createReport(report);
+            } else {
+                getLog().info("Updating existing report " + report.getReportId());
+                reportService.updateReport(report);
+            }
         }
         getLog().info(String.format("Persisted %d reports in %d ms", items.size(), System.currentTimeMillis() - t0));
     }
