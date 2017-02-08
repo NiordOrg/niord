@@ -24,8 +24,6 @@ import org.niord.core.fm.vo.FmReportVo;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * Filters reports that need to be a added or updated
@@ -48,10 +46,7 @@ public class BatchReportImportProcessor extends AbstractItemHandler {
 
         FmReport report = new FmReport(reportVo);
         // Replace the domain with the persisted once
-        report.setDomains(report.getDomains().stream()
-                .map(d -> domainService.findByDomainId(d.getDomainId()))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList()));
+        report.setDomains(domainService.persistedDomains(report.getDomains()));
 
         // Look up any existing report
         FmReport orig = reportService.findByReportId(report.getReportId());
