@@ -982,6 +982,7 @@ angular.module('niord.messages')
                 replace: false,
                 scope: {
                     list:           "=",
+                    report:         "=",
                     printSettings:  "=",
                     reportParams:   "=",
                     expandParams:   "="
@@ -1002,29 +1003,36 @@ angular.module('niord.messages')
                     scope.printSettings.pageOrientation = scope.printSettings.pageOrientation || 'portrait';
                     scope.printSettings.mapThumbnails = scope.printSettings.mapThumbnails || false;
 
-                    // Load the message reports
-                    MessageService.printReports(scope.list, scope.expandParams)
-                        .success(function (reports) {
-                            scope.reports = reports;
-                            if (reports.length > 0 && !scope.printSettings.report) {
-                                scope.printSettings.report = reports[0].reportId;
+                    // Hardcoded report
+                    if (scope.report) {
+                        scope.printSettings.report = scope.report.reportId;
+                        scope.showMapThumbnails = scope.report.properties.mapThumbnails === undefined;
+                        angular.copy(scope.report.params, scope.reportParams);
+
+                    } else {
+                        // No hardcoded report - load all message reports
+                        MessageService.printReports(scope.list, scope.expandParams)
+                            .success(function (reports) {
+                                scope.reports = reports;
+                                if (reports.length > 0 && !scope.printSettings.report) {
+                                    scope.printSettings.report = reports[0].reportId;
+                                }
+                            });
+
+
+                        // When a new report is selected, update the report properties
+                        scope.$watch("printSettings.report", function (reportId) {
+                            scope.reportProperties = {};
+                            if (scope.reports) {
+                                angular.forEach(scope.reports, function (report) {
+                                    if (report.reportId == reportId) {
+                                        scope.showMapThumbnails = report.properties.mapThumbnails === undefined;
+                                        angular.copy(report.params, scope.reportParams);
+                                    }
+                                })
                             }
                         });
-
-
-                    // When a new report is selected, update the report properties
-                    scope.$watch("printSettings.report", function (reportId) {
-                        scope.reportProperties = {};
-                        if (scope.reports) {
-                            angular.forEach(scope.reports, function (report) {
-                                if (report.reportId == reportId) {
-                                    scope.showMapThumbnails = report.properties.mapThumbnails === undefined;
-                                    angular.copy(report.params, scope.reportParams);
-                                }
-                            })
-                        }
-                    });
-
+                    }
                 }
             };
         }]);
