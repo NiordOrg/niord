@@ -19,6 +19,7 @@ package org.niord.web;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.domain.DomainService;
 import org.niord.core.fm.FmReport;
 import org.niord.core.fm.FmReportService;
@@ -29,6 +30,7 @@ import org.niord.core.message.MessagePrintParams;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageService;
 import org.niord.core.user.Roles;
+import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MessageVo;
 import org.niord.model.search.PagedSearchResultVo;
@@ -51,6 +53,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.util.Arrays;
@@ -68,13 +71,16 @@ import java.util.stream.Collectors;
 @SecurityDomain("keycloak")
 @PermitAll
 @SuppressWarnings("unused")
-public class MessageReportRestService {
+public class MessageReportRestService extends AbstractBatchableRestService {
 
     @Inject
     Logger log;
 
     @Inject
     DomainService domainService;
+
+    @Inject
+    UserService userService;
 
     @Inject
     MessageService messageService;
@@ -119,10 +125,16 @@ public class MessageReportRestService {
      */
     @GET
     @Path("/all")
-    @RolesAllowed(Roles.SYSADMIN)
+    @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
     public List<FmReportVo> getAllReports() {
+
+        // If a ticket is defined, check if programmatically
+        if (!userService.isCallerInRole(Roles.SYSADMIN)) {
+            throw new WebApplicationException(403);
+        }
+
         DataFilter filter = DataFilter.get().fields("domains");
         return fmReportService.getAllReports().stream()
                 .map(r -> r.toVo(filter))
@@ -188,6 +200,21 @@ public class MessageReportRestService {
         fmReportService.deleteReport(reportId);
     }
 
+
+    /**
+     * Imports an uploaded reports json file
+     *
+     * @param request the servlet request
+     * @return a status
+     */
+    @POST
+    @Path("/upload-reports")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("text/plain")
+    @RolesAllowed(Roles.SYSADMIN)
+    public String importReports(@Context HttpServletRequest request) throws Exception {
+        return executeBatchJobFromUploadedFile(request, "report-import");
+    }
 
 
     /**

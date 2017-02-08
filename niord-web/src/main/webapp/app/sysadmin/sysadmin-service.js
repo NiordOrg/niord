@@ -285,6 +285,12 @@ angular.module('niord.admin')
             /** Deletes the given report **/
             deleteReport: function(report) {
                 return $http['delete']('/rest/message-reports/report/' + report.reportId);
+            },
+
+            /** Returns the ticket that can be used to generate an export file that requires the given role */
+            reportsTicket: function (role) {
+                var param = role ? '?role=' + role : '';
+                return $http.get('/rest/tickets/ticket' + param);
             }
         };
     }])

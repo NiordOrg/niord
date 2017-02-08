@@ -28,9 +28,9 @@ angular.module('niord.admin')
      * Controller for the Admin Reports page
      */
     .controller('ReportsAdminCtrl', ['$scope', '$rootScope', '$window', '$uibModal', 'growl',
-                'AdminReportService', 'MessageService', 'DialogService',
+                'AdminReportService', 'MessageService', 'DialogService', 'UploadFileService',
         function ($scope, $rootScope, $window, $uibModal, growl,
-                  AdminReportService, MessageService, DialogService) {
+                  AdminReportService, MessageService, DialogService, UploadFileService) {
             'use strict';
 
             $scope.reports = [];
@@ -103,6 +103,27 @@ angular.module('niord.admin')
                             .success($scope.loadReports)
                             .error($scope.displayError);
                     });
+            };
+
+
+            /** Generate an export file */
+            $scope.exportReports = function () {
+                AdminReportService
+                    .reportsTicket('sysadmin')
+                    .success(function (ticket) {
+                        var link = document.createElement("a");
+                        link.href = '/rest/message-reports/all?ticket=' + ticket;
+                        link.click();
+                    });
+            };
+
+
+            /** Opens the upload-charts dialog **/
+            $scope.uploadReportsDialog = function () {
+                UploadFileService.showUploadFileDialog(
+                    'Upload Reports File',
+                    '/rest/message-reports/upload-reports',
+                    'json');
             };
 
 

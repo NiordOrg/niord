@@ -118,6 +118,17 @@
                         <button type="submit" class="btn btn-primary btn-sm" ng-click="addReport()">
                             <span class="glyphicon glyphicon-plus"></span> New Report
                         </button>
+
+                        <span class="btn-group" style="margin-left: 5px;" uib-dropdown>
+                            <button id="single-button" type="button" class="btn btn-primary btn-sm" uib-dropdown-toggle>
+                                <span class="glyphicon glyphicon-cog"></span>
+                                <span class="caret"></span>
+                            </button>
+                            <ul uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                                <li role="menuitem"><a href ng-click="exportReports()">Export...</a></li>
+                                <li role="menuitem"><a href ng-click="uploadReportsDialog()">Import...</a></li>
+                            </ul>
+                        </span>
                     </div>
                 </div>
 
