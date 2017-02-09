@@ -254,6 +254,9 @@ public class MessageLuceneIndex extends BaseService {
 
             addPhraseSearchField(doc, searchField, message.getStatus());
 
+            // UID
+            addPhraseSearchField(doc, searchField, message.getUid());
+
             // Message series identifier
             addPhraseSearchField(doc, searchField, message.getShortId()); // e.g. "DK-074-14"
             if (message.getNumber() != null) {
