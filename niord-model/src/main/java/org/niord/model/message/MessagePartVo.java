@@ -31,7 +31,7 @@ import java.util.List;
  */
 @ApiModel(value = "MessagePart", description = "Main NW and NM message part class")
 @XmlType(propOrder = {
-        "indexNo", "type", "eventDates", "geometry", "descs"
+        "indexNo", "type", "eventDates", "geometry", "descs", "hideSubject"
 })
 @SuppressWarnings("unused")
 public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSerializable {
@@ -41,6 +41,7 @@ public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSeri
     List<DateIntervalVo> eventDates;
     FeatureCollectionVo geometry;
     List<MessagePartDescVo> descs;
+    Boolean hideSubject;
 
 
     /** Returns a filtered copy of this entity **/
@@ -55,6 +56,7 @@ public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSeri
                 eventDates.forEach(d  -> part.checkCreateEventDates().add(d.copy()));
             }
             part.setDescs(getDescs(compFilter));
+            part.setHideSubject(hideSubject);
         }
         if (compFilter.includeGeometry() && geometry != null) {
             // TODO: Deep-copy the Geometry
@@ -146,4 +148,11 @@ public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSeri
         this.descs = descs;
     }
 
+    public Boolean getHideSubject() {
+        return hideSubject;
+    }
+
+    public void setHideSubject(Boolean hideSubject) {
+        this.hideSubject = hideSubject;
+    }
 }

@@ -184,7 +184,7 @@
                     <div class="row" style="margin-top: 10px">
                         <div class="col-sm-12">
                             <input type="checkbox" ng-model="message.autoTitle"
-                                    tabindex="401"> Auto-generate
+                                    tabindex="401"> <span translate="editor.auto_generate"></span>
                             </input>
                         </div>
                     </div>
@@ -544,14 +544,20 @@
                     <editor-field-value-viewer>
                         <div ng-if="part.descs.length > 0">
                             {{part.descs[0].subject}}
+                            <span ng-if="part.hideSubject" class="glyphicon glyphicon-eye-close" style="color: lightgray"></span>
                         </div>
                     </editor-field-value-viewer>
 
                     <editor-field-value-editor value-class="col-sm-12">
                         <div class="row">
+                            <div class="col-sm-12" style="margin-bottom: 10px">
+                                <input type="checkbox" ng-model="part.hideSubject"
+                                       tabindex="{{1009 + part.index * 20}}"> <span translate="editor.hide_subject"></span>
+                                </input>
+                            </div>
                             <div class="col-sm-12 col-md-6" ng-repeat="desc in part.descs">
                                 <input class="form-control input-sm" placeholder="Subject" type="text"
-                                       tabindex="{{1009 + part.index * 20}}"
+                                       tabindex="{{1010 + part.index * 20}}"
                                        autocapitalize="off" autocorrect="off" autocomplete="off"
                                        ng-model="desc.subject" bg-flag="desc.lang"
                                        ng-change="adjustEditableMessage()"
@@ -567,7 +573,7 @@
                 <!-- ** Description     ** -->
                 <!-- ********************* -->
                 <editor-field edit-mode="editMode" index="part.index" field-id="description" field-title="msg.field.description"
-                              tab-index="1010 + part.index * 20">
+                              tab-index="1011 + part.index * 20">
 
                     <editor-field-value-viewer>
                         <div class="message-description" ng-if="part.descs.length > 0" ng-bind-html="part.descs[0].details | toTrusted"></div>
@@ -577,7 +583,7 @@
                         <div class="row" style="margin-top: 10px">
                             <div class="col-sm-12 col-md-6" ng-repeat="desc in part.descs"  id="tinymce-{{part.index}}-{{desc.lang}}">
                                 <textarea class="editor-description" ui-tinymce="tinymceOptions"
-                                          tabindex="{{1011 + part.index * 20}}"
+                                          tabindex="{{1012 + part.index * 20}}"
                                           ng-model="desc.details" bg-flag="desc.lang"></textarea>
                                 <flag lang="desc.lang" class="editor-description-flag"></flag>
                             </div>

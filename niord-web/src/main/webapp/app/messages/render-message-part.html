@@ -1,4 +1,4 @@
 <div ng-if="part.descs">
-    <p ng-if="subject && part.descs[0].subject"><strong>{{part.descs[0].subject}}</strong></p>
+    <p ng-if="subject && !part.hideSubject && part.descs[0].subject"><strong>{{part.descs[0].subject}}</strong></p>
     <div ng-if="part.descs[0].details" ng-bind-html="part.descs[0].details | toTrusted"></div>
 </div>

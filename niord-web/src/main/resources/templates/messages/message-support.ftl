@@ -227,7 +227,7 @@
 <!-- ***************************************  -->
 <#macro renderMessagePart part lang=language draft=draft!false >
     <#assign partDesc=descForLang(part, lang)!>
-    <#if partDesc?? && partDesc.subject??>
+    <#if !part.hideSubject!false && partDesc?? && partDesc.subject??>
         <p>
             <strong>${partDesc.subject}</strong>
             <@renderLangFlag desc=partDesc lang=lang draft=draft/>

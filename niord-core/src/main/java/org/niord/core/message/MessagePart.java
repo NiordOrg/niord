@@ -66,6 +66,10 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
     List<MessagePartDesc> descs = new ArrayList<>();
 
+    // Flags whether or not to hide the message part subject
+    Boolean hideSubject;
+
+
     /**
      * Constructor
      */
@@ -115,6 +119,7 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
                         d.setDetails(desc.getDetails());
                     });
         }
+        this.hideSubject = part.getHideSubject();
     }
 
 
@@ -133,6 +138,7 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
                     .forEach(di -> addEventDates(new DateInterval(di.toVo())));
         }
         copyDescsAndRemoveBlanks(part.getDescs());
+        this.hideSubject = part.getHideSubject();
     }
 
 
@@ -150,6 +156,7 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
             part.setGeometry(geometry.toGeoJson());
             GeoJsonUtils.setLanguage(part.getGeometry(), compFilter.getLang(), false);
         }
+        part.setHideSubject(hideSubject);
 
         return part;
     }
@@ -250,5 +257,13 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
     @Override
     public void setDescs(List<MessagePartDesc> descs) {
         this.descs = descs;
+    }
+
+    public Boolean getHideSubject() {
+        return hideSubject;
+    }
+
+    public void setHideSubject(Boolean hideSubject) {
+        this.hideSubject = hideSubject;
     }
 }

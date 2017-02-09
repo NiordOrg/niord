@@ -724,7 +724,8 @@ angular.module('niord.editor')
                 parts.splice(index, 0, {
                     type: 'DETAILS',
                     eventDates: [],
-                    descs: []
+                    descs: [],
+                    hideSubject: undefined
                 });
                 // Keep edit mode flags in sync
                 $scope.editMode['event_dates'].splice(index, 0, false);
