@@ -51,6 +51,7 @@ angular.module('niord.editor')
                 subject:        [],         // indexed by message part
                 description:    [],         // indexed by message part
                 attachments:    [ false ],
+                promulgation:   [ false ],
                 note:           [ false ],
                 publication:    [ false ],
                 source:         [ false ],

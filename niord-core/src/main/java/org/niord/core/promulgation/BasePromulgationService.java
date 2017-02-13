@@ -1,0 +1,145 @@
+/*
+ * Copyright 2017 Danish Maritime Authority.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.niord.core.promulgation;
+
+import org.niord.core.message.Message;
+import org.niord.core.promulgation.vo.PromulgationServiceDataVo;
+import org.niord.core.service.BaseService;
+import org.slf4j.Logger;
+
+import javax.inject.Inject;
+
+/**
+ * Base class for the different types of promulgation services, such as NavtexPromulgationService, etc.
+ * <p>
+ *     NB: Subclasses must annotated with @Singleton and @Startup and call registerPromulgationService() in a @PostConstruct
+ *     to properly register the promulgation service.
+ * </p>
+ */
+@SuppressWarnings("unused")
+public abstract class BasePromulgationService extends BaseService {
+
+    @Inject
+    Logger log;
+
+    @Inject
+    PromulgationManager promulgationManager;
+
+
+    /**
+     * Should be called from sub-classes in a @PostConstruct to register the promulgation service
+     * Registers the promulgation service with the promulgation manager
+     */
+    public void registerPromulgationService() {
+
+        // Loads or creates the promulgation service instance
+        PromulgationServiceData serviceData = getPromulgationServiceData(true);
+
+        promulgationManager.registerPromulgationService(serviceData.toVo(getClass()));
+    }
+
+
+    /**
+     * Returns or creates the associated promulgation service data. Give sub-classes chance to override.
+     * @return the associated promulgation service data
+     */
+    protected PromulgationServiceData getPromulgationServiceData(boolean create) {
+        PromulgationServiceData serviceData = null;
+        try {
+            serviceData = em.createNamedQuery("PromulgationServiceData.findByType", PromulgationServiceData.class)
+                    .setParameter("type", getType())
+                    .getSingleResult();
+        } catch (Exception e) {
+            if (create) {
+                serviceData = new PromulgationServiceData();
+                serviceData.setType(getType());
+                serviceData.setActive(false);
+                serviceData.setPriority(getDefaultPriority());
+                em.persist(serviceData);
+                log.info("Created new promulgation service " + serviceData.getType());
+            }
+        }
+        return serviceData;
+    }
+
+
+    /**
+     * Returns a type key for the promulgation service. Must be unique
+     * @return a type key for the promulgation service
+     */
+    public abstract String getType();
+
+
+    /**
+     * Returns a default priority of the promulgation service. Used for sorting the promulgation services.
+     * @return a default priority of the promulgation service
+     */
+    public abstract int getDefaultPriority();
+
+
+    /**
+     * Updates the new message template with a promulgation by the registered promulgation services
+     *
+     * @param message the new message template
+     */
+    public abstract void onNewTemplateMessage(Message message);
+
+
+    /**
+     * Prior to creating a new message, let the registered promulgation services check up on promulgations.
+     * Default implementation does nothing.
+     * @param message the message about to be created
+     */
+    public void onCreateMessage(Message message) {
+    }
+
+
+    /**
+     * Prior to updating an existing message, let the registered promulgation services check up on promulgations.
+     * Default implementation does nothing.
+     * @param message the message about to be updated
+     */
+    public void onUpdateMessage(Message message) {
+    }
+
+
+    /**
+     * Prior to changing status of an existing message, let the registered promulgation services check up on promulgations.
+     * Default implementation does nothing.
+     * @param message the message about to be updated
+     */
+    public void onUpdateMessageStatus(Message message) {
+    }
+
+
+    /**
+     * Updates the active status or priority of a promulgation service
+     * @return the active status or priority of a promulgation service
+     */
+    public PromulgationServiceDataVo updatePromulgationService(PromulgationServiceDataVo serviceData) {
+
+        PromulgationServiceData original = getPromulgationServiceData(false);
+        if (!original.getType().equals(serviceData.getType())) {
+            throw new IllegalArgumentException("Invalid promulgation service " + serviceData);
+        }
+
+        original.setActive(serviceData.isActive());
+        original.setPriority(serviceData.getPriority());
+        return saveEntity(original).toVo(getClass());
+    }
+
+}

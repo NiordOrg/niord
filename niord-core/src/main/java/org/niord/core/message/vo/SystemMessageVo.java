@@ -17,10 +17,13 @@ package org.niord.core.message.vo;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.message.Message;
+import org.niord.core.promulgation.vo.BasePromulgationVo;
 import org.niord.core.repo.IRepoBackedVo;
 import org.niord.core.util.UidUtils;
 import org.niord.model.message.MessageVo;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -36,6 +39,7 @@ public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
     String editRepoPath;
     Integer unackComments;
     Boolean separatePage;
+    List<BasePromulgationVo> promulgations = new ArrayList<>();
     Map<String, Boolean> editorFields;
 
 
@@ -165,5 +169,13 @@ public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
 
     public void setEditorFields(Map<String, Boolean> editorFields) {
         this.editorFields = editorFields;
+    }
+
+    public List<BasePromulgationVo> getPromulgations() {
+        return promulgations;
+    }
+
+    public void setPromulgations(List<BasePromulgationVo> promulgations) {
+        this.promulgations = promulgations;
     }
 }

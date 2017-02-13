@@ -34,6 +34,7 @@ import org.niord.core.geojson.FeatureService;
 import org.niord.core.message.MessageSearchParams.DateType;
 import org.niord.core.message.MessageSearchParams.UserType;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.promulgation.PromulgationManager;
 import org.niord.core.publication.PublicationService;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
@@ -133,6 +134,9 @@ public class MessageService extends BaseService {
 
     @Inject
     FeatureService featureService;
+
+    @Inject
+    PromulgationManager promulgationManager;
 
 
     /***************************************/
@@ -385,6 +389,9 @@ public class MessageService extends BaseService {
         // Substitute the Charts with the persisted ones
         message.setCharts(chartService.persistedCharts(message.getCharts()));
 
+        // Let promulgation services update the message promulgation data
+        promulgationManager.onCreateMessage(message);
+
         // Persist the message
         message = saveMessage(message);
         log.info("Saved message " + message.getUid());
@@ -494,6 +501,9 @@ public class MessageService extends BaseService {
         if (original.getStatus().isDraft()) {
             original.setAreaSortOrder(areaService.computeMessageAreaSortingOrder(original));
         }
+
+        // Let promulgation services update the message promulgation data
+        promulgationManager.onUpdateMessage(message);
 
         // Persist the message
         saveMessage(original);
@@ -609,6 +619,9 @@ public class MessageService extends BaseService {
         // Add or remove the message from any message-recording publication message tags
         publicationService.updateRecordingPublications(message, prevStatus);
 
+        // Let promulgation services update the message promulgation data
+        promulgationManager.onUpdateMessageStatus(message);
+
         message = saveMessage(message);
 
         // Broadcast the status change to any listener
@@ -670,6 +683,10 @@ public class MessageService extends BaseService {
         if (mainType == MainType.NM) {
             message.setOriginalInformation(true);
         }
+
+        // Let promulgators add promulgation data to the message template
+        promulgationManager.onNewTemplateMessage(message);
+
         return  message;
     }
 

@@ -306,6 +306,27 @@ div.mce-fullscreen {
     color: darkgray;
 }
 
+/** Editor -> Promulgation **/
+
+.promulgations li a {
+    padding: 5px 20px;
+}
+
+.promulgation {
+    margin-top: 10px;
+}
+
+.disabled-promulgation {
+    pointer-events: none;
+    opacity: 0.4;
+}
+
+textarea.navtex {
+    font-family: "Courier New", serif;
+    height: 120px;
+    border: 1px solid lightgray;
+    text-transform: uppercase;
+}
 
 /** Editor -> Sources **/
 

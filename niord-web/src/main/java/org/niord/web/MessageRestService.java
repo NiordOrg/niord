@@ -271,7 +271,7 @@ public class MessageRestService  {
      */
     private SystemMessageVo toSystemMessage(Message message, boolean copyToTemp) throws Exception {
 
-        DataFilter filter = Message.MESSAGE_DETAILS_FILTER
+        DataFilter filter = Message.MESSAGE_DETAILS_AND_PROMULGATIONS_FILTER
                 .user(userService.userResolver());
 
         SystemMessageVo messageVo = message.toVo(SystemMessageVo.class, filter);

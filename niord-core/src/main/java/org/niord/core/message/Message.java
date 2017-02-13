@@ -22,6 +22,8 @@ import org.niord.core.chart.Chart;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.model.DescEntity;
 import org.niord.core.model.VersionedEntity;
+import org.niord.core.promulgation.BasePromulgation;
+import org.niord.core.promulgation.vo.BasePromulgationVo;
 import org.niord.core.user.User;
 import org.niord.core.util.TimeUtils;
 import org.niord.core.util.UidUtils;
@@ -106,6 +108,8 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     public static String MESSAGE_REPO_FOLDER = "messages";
     public static final DataFilter MESSAGE_DETAILS_FILTER =
             DataFilter.get().fields("Message.details", "Message.geometry", "Area.parent", "Category.parent");
+    public static final DataFilter MESSAGE_DETAILS_AND_PROMULGATIONS_FILTER =
+            DataFilter.get().fields("Message.details", "Message.geometry", "Message.promulgations", "Area.parent", "Category.parent");
     public static final DataFilter MESSAGE_MAP_FILTER =
             DataFilter.get().fields("Message.geometry", "MessageDesc.title");
 
@@ -227,6 +231,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     // Whether to start the message on a new PDF page (for large messages)
     Boolean separatePage;
 
+    @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<BasePromulgation> promulgations = new ArrayList<>();
+
 
     /**
      * Constructor
@@ -311,6 +318,11 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             this.revision = sysMessage.getRevision();
             this.thumbnailPath = sysMessage.getThumbnailPath();
             this.separatePage = sysMessage.getSeparatePage();
+            if (sysMessage.getPromulgations() != null) {
+                sysMessage.getPromulgations().stream()
+                    .filter(BasePromulgationVo::promulgationDataDefined)
+                    .forEach(p -> promulgations.add(p.toEntity(this)));
+            }
         }
 
         updateAggregateEventDateInterval();
@@ -361,6 +373,13 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             systemMessage.setThumbnailPath(thumbnailPath);
             systemMessage.setAutoTitle(autoTitle);
             systemMessage.setSeparatePage(separatePage);
+
+            // Check if we need to include promulgations
+            if (!promulgations.isEmpty() && compFilter.includeField("promulgations")) {
+                systemMessage.setPromulgations(promulgations.stream()
+                    .map(BasePromulgation::toVo)
+                    .collect(Collectors.toList()));
+            }
 
             message.sort(filter.getLang());
 
@@ -906,5 +925,13 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     public void setSeparatePage(Boolean separatePage) {
         this.separatePage = separatePage;
+    }
+
+    public List<BasePromulgation> getPromulgations() {
+        return promulgations;
+    }
+
+    public void setPromulgations(List<BasePromulgation> promulgations) {
+        this.promulgations = promulgations;
     }
 }

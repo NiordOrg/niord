@@ -687,10 +687,45 @@
 
 
             <!-- ********************* -->
+            <!-- ** Promulgation    ** -->
+            <!-- ********************* -->
+            <editor-field edit-mode="editMode" field-id="promulgation" field-title="msg.field.promulgation"
+                          tab-index="1600">
+
+                <editor-field-value-viewer>
+                    <span ng-repeat="promulgation in message.promulgations" style="margin-right: 20px">
+                        <span class="glyphicon {{ 'glyphicon-' + (promulgation.promulgate ? 'check' : 'unchecked')}}"></span>
+                        {{promulgation.type | capitalize}}
+                    </span>
+                </editor-field-value-viewer>
+
+                <editor-field-value-editor value-class="col-sm-12">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <uib-tabset class="promulgations">
+                                <uib-tab ng-repeat="promulgation in message.promulgations">
+                                    <uib-tab-heading>
+                                        <input type="checkbox" ng-model="promulgation.promulgate"
+                                               ng-click="$event.stopPropagation()" tabindex="1601">
+                                        {{promulgation.type | capitalize}}
+                                    </uib-tab-heading>
+                                    <div class="promulgation" ng-class="{ 'disabled-promulgation' : !promulgation.promulgate }">
+                                        <ng-include src="'/app/promulgation/' + promulgation.type + '-edit.html'"></ng-include>
+                                    </div>
+                                </uib-tab>
+                            </uib-tabset>
+                        </div>
+                    </div>
+                </editor-field-value-editor>
+
+            </editor-field>
+
+
+            <!-- ********************* -->
             <!-- ** Charts          ** -->
             <!-- ********************* -->
             <editor-field edit-mode="editMode" field-id="charts" field-title="msg.field.charts"
-                          tab-index="1600">
+                          tab-index="2000">
 
                 <editor-field-value-viewer>
                     <span render-charts="message.charts"></span>
@@ -699,21 +734,21 @@
                 <editor-field-value-editor value-class="col-sm-12">
                     <div class="row">
                         <div class="col-sm-6 col-md-8">
-                            <charts-field tab-index="1601" id="charts" chart-data="message" multiple="true"></charts-field>
+                            <charts-field tab-index="2001" id="charts" chart-data="message" multiple="true"></charts-field>
                         </div>
                         <div class="col-sm-6 col-md-4">
                             <button href class="btn btn-default btn-sm" ng-disabled="message.charts && message.charts.length == 0"
-                                    tabindex="1602"
+                                    tabindex="2002"
                                     ng-click="sortCharts()">Sort</button>
                             <button href class="btn btn-default btn-sm" ng-disabled="message.geometry.features.length == 0"
-                                    tabindex="1603"
+                                    tabindex="2003"
                                     ng-click="computeCharts()">Compute from Locations</button>
                         </div>
                     </div>
                     <div class="row" style="margin-top: 10px">
                         <div class="col-sm-6 col-md-4">
                             <input type="text" class="form-control input-sm" placeholder="Horizontal Datum"
-                                   tabindex="1604"
+                                   tabindex="2004"
                                    ng-model="message.horizontalDatum" />
                         </div>
                     </div>
@@ -726,7 +761,7 @@
             <!-- ** Publication     ** -->
             <!-- ********************* -->
             <editor-field ng-if="showField('publication')" edit-mode="editMode" field-id="publication" field-title="msg.field.publication"
-                          tab-index="1700">
+                          tab-index="2100">
 
                 <editor-field-value-viewer>
                     <render-message-publication msg="message"></render-message-publication>
@@ -738,7 +773,7 @@
                         <div class="col-sm-12">External Publications</div>
                         <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs"  id="external-publication-{{desc.lang}}">
                                 <textarea class="editor-publication" ui-tinymce="publicationTinymceOptions"
-                                          tabindex="1701"
+                                          tabindex="2101"
                                           ng-model="desc.publication" bg-flag="desc.lang"></textarea>
                             <flag lang="desc.lang" class="editor-description-flag"></flag>
                         </div>
@@ -748,7 +783,7 @@
                         <div class="col-sm-12">Internal Publications</div>
                         <div class="col-sm-12 col-md-6" ng-repeat="desc in message.descs"  id="internal-publication-{{desc.lang}}">
                                 <textarea class="editor-publication" ui-tinymce="publicationTinymceOptions"
-                                          tabindex="1702"
+                                          tabindex="2102"
                                           ng-model="desc.internalPublication" bg-flag="desc.lang"></textarea>
                             <flag lang="desc.lang" class="editor-description-flag"></flag>
                         </div>
@@ -763,7 +798,7 @@
             <!-- ** Source          ** -->
             <!-- ********************* -->
             <editor-field ng-if="showField('source')" edit-mode="editMode" field-id="source" field-title="msg.field.source"
-                          tab-index="1800">
+                          tab-index="2200">
 
                 <editor-field-value-viewer>
                     <div ng-if="message.descs.length > 0">
@@ -776,13 +811,13 @@
                     <div class="row">
                         <div class="col-xs-12 col-md-sm-8 col-md-9 col-lg-10" ng-repeat="desc in message.descs">
                             <input class="form-control input-sm" placeholder="Source" type="text"
-                                   tabindex="1802"
+                                   tabindex="2202"
                                    autocapitalize="off" autocorrect="off" autocomplete="off"
                                    ng-model="desc.source" bg-flag="desc.lang"/>
                         </div>
                         <div class="col-sm-4 col-md-3 col-lg-2">
                             <button href class="btn btn-default btn-sm"
-                                    tabindex="1803"
+                                    tabindex="2203"
                                     ng-click="addSource()">Add sources...</button>
                         </div>
                     </div>
@@ -796,7 +831,7 @@
             <!-- ** Layout          ** -->
             <!-- ********************* -->
             <editor-field ng-if="showField('layout')" edit-mode="editMode" field-id="layout" field-title="msg.field.layout"
-                          tab-index="1900">
+                          tab-index="2300">
 
                 <editor-field-value-viewer>
                     <div> </div>
@@ -810,7 +845,7 @@
 
                                 <div class="editor-map-image-menu text-center">
                                     <div class="btn-group" uib-dropdown>
-                                        <button tabindex="1901" type="button" class="btn btn-sm btn-default" uib-dropdown-toggle>
+                                        <button tabindex="2301" type="button" class="btn btn-sm btn-default" uib-dropdown-toggle>
                                             <span class="glyphicon glyphicon-camera"></span>
                                             Thumbnail
                                             <span class="caret"></span>
@@ -827,7 +862,7 @@
                     </div>
                     <div class="row">
                         <div class="col-sm-12">
-                            <input type="checkbox" ng-model="message.separatePage" tabindex="1902">
+                            <input type="checkbox" ng-model="message.separatePage" tabindex="2302">
                             Start message on new page in PDF reports
                         </div>
                     </div>

@@ -19,6 +19,14 @@
  */
 angular.module('niord.common')
 
+    /** Capitalize the string **/
+    .filter('capitalize', function() {
+        return function(input) {
+            return (!!input) ? input.charAt(0).toUpperCase() + input.substr(1).toLowerCase() : '';
+        }
+    })
+
+
     /** Formats a data using moment() **/
     .filter('formatDate', [function () {
         return function(input, format) {
