@@ -16,21 +16,31 @@
 
 package org.niord.core.promulgation;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.area.Area;
+import org.niord.core.db.CriteriaHelper;
 import org.niord.core.message.Message;
 import org.niord.core.promulgation.vo.NavtexTransmitterVo;
 import org.niord.core.user.Roles;
+import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -53,6 +63,7 @@ import java.util.stream.Collectors;
 @Startup
 @Lock(LockType.READ)
 @SecurityDomain("keycloak")
+@PermitAll
 @Path("/promulgation/navtex")
 @SuppressWarnings("unused")
 public class NavtexPromulgationService extends BasePromulgationService {
@@ -95,8 +106,11 @@ public class NavtexPromulgationService extends BasePromulgationService {
     @Override
     public void onNewTemplateMessage(Message message) {
         NavtexPromulgation navtex = new NavtexPromulgation();
-        navtex.getTransmitters().put("Baltico", Boolean.FALSE);
-        navtex.getTransmitters().put("Rogaland", Boolean.FALSE);
+
+        // Add all active transmitters - by default, not selected
+        findByAreas(null, true)
+                .forEach(t -> navtex.getTransmitters().put(t.getName(), Boolean.FALSE));
+
         message.getPromulgations().add(navtex);
     }
 
@@ -119,6 +133,36 @@ public class NavtexPromulgationService extends BasePromulgationService {
     }
 
 
+    /** {@inheritDoc} */
+    @Override
+    public BasePromulgation<?> generateMessagePromulgation(Message message) {
+        NavtexPromulgation navtex = new NavtexPromulgation();
+
+        navtex.setPromulgate(true);
+
+        // Add all active transmitters - by default, not selected
+        findByAreas(null, true)
+                .forEach(t -> navtex.getTransmitters().put(t.getName(), Boolean.FALSE));
+
+        // Select transmitters associated with the current message areas
+        if (!message.getAreas().isEmpty()) {
+            findByAreas(message.getAreas(), true)
+                    .forEach(t -> navtex.getTransmitters().put(t.getName(), Boolean.TRUE));
+        }
+
+        StringBuilder text = new StringBuilder("NAVTEX:\n");
+        message.getParts().stream()
+            .flatMap(p -> p.getDescs().stream())
+            .filter(d -> d.getLang().equals("en"))
+            .filter(d -> StringUtils.isNotBlank(d.getDetails()))
+            .map(d -> TextUtils.html2txt(d.getDetails()))
+            .forEach(d -> text.append(d.toUpperCase()).append("\n"));
+        navtex.setText(text.toString());
+
+        return navtex;
+    }
+
+
     /***************************************/
     /** Transmitter Handling              **/
     /***************************************/
@@ -133,6 +177,45 @@ public class NavtexPromulgationService extends BasePromulgationService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+
+    /**
+     * Find all NAVTEX transmitters matching the given areas.
+     * @param areas the areas to match
+     * @return all NAVTEX transmitters matching the given areas.
+     */
+    @SuppressWarnings("all")
+    public List<NavtexTransmitter> findByAreas(List<Area> areas, boolean onlyActive) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+
+        CriteriaQuery<NavtexTransmitter> query = cb.createQuery(NavtexTransmitter.class);
+        Root<NavtexTransmitter> transmitterRoot = query.from(NavtexTransmitter.class);
+
+        CriteriaHelper<NavtexTransmitter> criteriaHelper = new CriteriaHelper<>(cb, query);
+
+        if (onlyActive) {
+            criteriaHelper.equals(transmitterRoot.get("active"), Boolean.TRUE);
+        }
+
+
+        if (areas != null && !areas.isEmpty()) {
+
+            // Make sure we have managed entities, not template antities
+            areas = persistedList(Area.class, areas);
+
+            Join<NavtexTransmitter, Area> areaJoin = transmitterRoot.join("areas", JoinType.LEFT);
+            Predicate[] areaMatch = areas.stream()
+                    .map(a -> cb.like(areaJoin.get("lineage"), a.getLineage() + "%"))
+                    .toArray(Predicate[]::new);
+            criteriaHelper.add(cb.or(areaMatch));
+        }
+
+        query.select(transmitterRoot)
+                .where(criteriaHelper.where())
+                .orderBy(cb.asc(cb.lower(transmitterRoot.get("name"))));
+
+        return em.createQuery(query).getResultList();
     }
 
 

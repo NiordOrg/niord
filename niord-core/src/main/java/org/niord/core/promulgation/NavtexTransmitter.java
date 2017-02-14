@@ -22,6 +22,7 @@ import org.niord.core.promulgation.vo.NavtexTransmitterVo;
 import org.niord.model.DataFilter;
 import org.niord.model.message.AreaVo;
 
+import javax.persistence.Cacheable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.ManyToMany;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
  * Defines a NAVTEX transmitter station
  */
 @Entity
+@Cacheable
 @NamedQueries({
         @NamedQuery(name="NavtexTransmitter.findByName",
                 query="SELECT t FROM NavtexTransmitter t where lower(t.name) = lower(:name)")

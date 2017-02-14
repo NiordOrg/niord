@@ -398,6 +398,12 @@ angular.module('niord.messages')
             },
 
 
+            /** Called with a promulgation-specific endpoint to generate a promulgation **/
+            generatePromulgation: function (type, message) {
+                return $http.post('/rest/promulgations/generate/' + encodeURIComponent(type), message);
+            },
+
+
             /** Returns the list of message features **/
             getMessageFeatures: function (message) {
                 var features = [];

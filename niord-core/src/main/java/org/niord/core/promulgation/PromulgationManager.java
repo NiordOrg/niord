@@ -142,6 +142,17 @@ public class PromulgationManager {
     }
 
 
+    /**
+     * Generates a message promulgation record for the given type and message
+     * @param type the type of promulgation to generate
+     * @param message the message template to generate a promulgation for
+     * @return the promulgation
+     */
+    public BasePromulgation<?> generateMessagePromulgation(String type, Message message) {
+        return instantiatePromulgationService(type).generateMessagePromulgation(message);
+    }
+
+
     /***************************************/
     /** Utility function                  **/
     /***************************************/
@@ -190,4 +201,5 @@ public class PromulgationManager {
             return null;
         }
     }
+
 }

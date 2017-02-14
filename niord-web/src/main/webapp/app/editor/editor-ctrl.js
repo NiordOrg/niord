@@ -1132,6 +1132,28 @@ angular.module('niord.editor')
 
 
             /*****************************/
+            /** Promulgation            **/
+            /*****************************/
+
+
+            // Called with a promulgation-specific endpoint to generate a promulgation
+            $scope.generatePromulgation = function(type) {
+
+                MessageService.generatePromulgation(type, $scope.message)
+                    .success(function (result) {
+                        angular.forEach($scope.message.promulgations, function(p) {
+                            if (p.type == type) {
+                                $.extend(true, p, result);
+                            }
+                        });
+                    })
+                    .error(function () {
+                        console.error("Error generating promulgation for " + type);
+                    });
+            };
+
+
+            /*****************************/
             /** Other action menu ops   **/
             /*****************************/
 

@@ -20,7 +20,11 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
+import org.niord.core.message.Message;
+import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.promulgation.BasePromulgation;
 import org.niord.core.promulgation.PromulgationManager;
+import org.niord.core.promulgation.vo.BasePromulgationVo;
 import org.niord.core.promulgation.vo.PromulgationServiceDataVo;
 import org.niord.core.user.Roles;
 import org.niord.core.user.UserService;
@@ -32,6 +36,7 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -97,4 +102,23 @@ public class PromulgationRestService extends AbstractBatchableRestService {
         return promulgationManager.updatePromulgationService(serviceData);
     }
 
+
+    /** Generates a message promulgation record for the given type and message */
+    @POST
+    @Path("/generate/{type}")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed(Roles.SYSADMIN)
+    @GZIP
+    @NoCache
+    public BasePromulgationVo<?> generateMessagePromulgation(
+            @PathParam("type") String type,
+            SystemMessageVo messageVo
+    ) throws Exception {
+
+        log.info("Updating promulgation service " + type);
+        Message message = new Message(messageVo);
+        BasePromulgation<?> promulgation = promulgationManager.generateMessagePromulgation(type, message);
+        return promulgation == null ? null : promulgation.toVo();
+    }
 }

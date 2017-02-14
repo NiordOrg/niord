@@ -61,6 +61,7 @@ public abstract class BasePromulgationService extends BaseService {
 
     /**
      * Returns or creates the associated promulgation service data. Give sub-classes chance to override.
+     *
      * @return the associated promulgation service data
      */
     protected PromulgationServiceData getPromulgationServiceData(boolean create) {
@@ -85,6 +86,7 @@ public abstract class BasePromulgationService extends BaseService {
 
     /**
      * Returns a type key for the promulgation service. Must be unique
+     *
      * @return a type key for the promulgation service
      */
     public abstract String getType();
@@ -92,6 +94,7 @@ public abstract class BasePromulgationService extends BaseService {
 
     /**
      * Returns a default priority of the promulgation service. Used for sorting the promulgation services.
+     *
      * @return a default priority of the promulgation service
      */
     public abstract int getDefaultPriority();
@@ -108,6 +111,7 @@ public abstract class BasePromulgationService extends BaseService {
     /**
      * Prior to creating a new message, let the registered promulgation services check up on promulgations.
      * Default implementation does nothing.
+     *
      * @param message the message about to be created
      */
     public void onCreateMessage(Message message) {
@@ -117,6 +121,7 @@ public abstract class BasePromulgationService extends BaseService {
     /**
      * Prior to updating an existing message, let the registered promulgation services check up on promulgations.
      * Default implementation does nothing.
+     *
      * @param message the message about to be updated
      */
     public void onUpdateMessage(Message message) {
@@ -126,6 +131,7 @@ public abstract class BasePromulgationService extends BaseService {
     /**
      * Prior to changing status of an existing message, let the registered promulgation services check up on promulgations.
      * Default implementation does nothing.
+     *
      * @param message the message about to be updated
      */
     public void onUpdateMessageStatus(Message message) {
@@ -133,7 +139,19 @@ public abstract class BasePromulgationService extends BaseService {
 
 
     /**
+     * Generates a message promulgation record for the given type and message
+     *
+     * @param message the message template to generate a promulgation for
+     * @return the promulgation
+     */
+    public BasePromulgation<?> generateMessagePromulgation(Message message) {
+        return null;
+    }
+
+
+    /**
      * Updates the active status, priority or domains of a promulgation service
+     *
      * @return the active status, priority or domains of a promulgation service
      */
     public PromulgationServiceDataVo updatePromulgationService(PromulgationServiceDataVo serviceData) {
@@ -154,5 +172,5 @@ public abstract class BasePromulgationService extends BaseService {
 
         return saveEntity(original).toVo(getClass());
     }
-
 }
+
