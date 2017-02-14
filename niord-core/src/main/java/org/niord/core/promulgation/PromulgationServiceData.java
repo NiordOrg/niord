@@ -16,13 +16,18 @@
 
 package org.niord.core.promulgation;
 
+import org.niord.core.domain.Domain;
 import org.niord.core.model.VersionedEntity;
 import org.niord.core.promulgation.vo.PromulgationServiceDataVo;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.ManyToMany;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * A value object representation of the persistent data of a promulgation service.
@@ -42,6 +47,9 @@ public class PromulgationServiceData extends VersionedEntity<Integer> {
 
     boolean active;
 
+    @ManyToMany
+    List<Domain> domains = new ArrayList<>();
+
     /** Returns the value object representation of this entity **/
     public PromulgationServiceDataVo toVo(Class<? extends BasePromulgationService> serviceClass) {
         PromulgationServiceDataVo serviceData = new PromulgationServiceDataVo();
@@ -49,6 +57,9 @@ public class PromulgationServiceData extends VersionedEntity<Integer> {
         serviceData.setServiceClass(serviceClass);
         serviceData.setPriority(priority);
         serviceData.setActive(active);
+        serviceData.setDomains(domains.stream()
+            .map(Domain::toVo)
+            .collect(Collectors.toList()));
         return serviceData;
     }
 
@@ -79,5 +90,13 @@ public class PromulgationServiceData extends VersionedEntity<Integer> {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public List<Domain> getDomains() {
+        return domains;
+    }
+
+    public void setDomains(List<Domain> domains) {
+        this.domains = domains;
     }
 }

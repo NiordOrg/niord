@@ -121,6 +121,30 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
+     * AdminPromulgationService
+     * ********************************************************************************
+     * Interface for calling promulgation related functions at the application server
+     */
+    .factory('AdminPromulgationService', [ '$http', function($http) {
+        'use strict';
+
+        return {
+
+            /** Returns all promulgations **/
+            getPromulgations: function () {
+                return $http.get('/rest/promulgations/all');
+            },
+
+
+            /** Updates the given promulgation **/
+            updatePromulgation: function(promulgation) {
+                return $http.put('/rest/promulgations/promulgation/' + encodeURIComponent(promulgation.type), promulgation);
+            }
+        };
+    }])
+
+    /**
+     * ********************************************************************************
      * AdminScheduleService
      * ********************************************************************************
      * Interface for calling firing schedule related functions at the application server

@@ -53,6 +53,9 @@ public class PromulgationManager {
 
     Map<String, PromulgationServiceDataVo> services = new ConcurrentHashMap<>();
 
+    /***************************************/
+    /** Promulgation Service Handling     **/
+    /***************************************/
 
     /**
      * Registers the promulgation service
@@ -63,6 +66,36 @@ public class PromulgationManager {
         log.info("Registered promulgation service " + serviceData.getType());
     }
 
+
+    /**
+     * Returns all promulgation service data entities
+     * @return all promulgation service data entities
+     */
+    public List<PromulgationServiceDataVo> getAllPromulgationServices() {
+        return services.values().stream()
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Updates the active status, priority or domains of a promulgation service
+     * @return the active status, priority or domains of a promulgation service
+     */
+    public PromulgationServiceDataVo updatePromulgationService(PromulgationServiceDataVo serviceData) throws Exception {
+        BasePromulgationService service = instantiatePromulgationService(serviceData.getType());
+        serviceData = service.updatePromulgationService(serviceData);
+
+        // Update the cached version
+        services.put(serviceData.getType(), serviceData);
+
+        return serviceData;
+    }
+
+
+    /***************************************/
+    /** Message Life-cycle Management     **/
+    /***************************************/
 
     /**
      * Updates the new message template with a promulgation by the registered promulgation services
@@ -103,19 +136,9 @@ public class PromulgationManager {
     }
 
 
-    /**
-     * Updates the active status or priority of a promulgation service
-     * @return the active status or priority of a promulgation service
-     */
-    public PromulgationServiceDataVo updatePromulgationService(PromulgationServiceDataVo serviceData) throws Exception {
-        BasePromulgationService service = instantiatePromulgationService(serviceData.getType());
-        serviceData = service.updatePromulgationService(serviceData);
-
-        // Update the cached version
-        services.put(serviceData.getType(), serviceData);
-
-        return serviceData;
-    }
+    /***************************************/
+    /** Utility function                  **/
+    /***************************************/
 
 
     /**

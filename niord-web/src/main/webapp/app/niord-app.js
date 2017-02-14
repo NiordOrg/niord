@@ -204,6 +204,10 @@ var app = angular.module('niord.admin', [
                 url: "/domains",
                 templateUrl: "/app/sysadmin/sysadmin-page-domains.html"
             })
+            .state('sysadmin.promulgation', {
+                url: "/promulgation",
+                templateUrl: "/app/sysadmin/sysadmin-page-promulgation.html"
+            })
             .state('sysadmin.schedules', {
                 url: "/schedules",
                 templateUrl: "/app/sysadmin/sysadmin-page-schedules.html"

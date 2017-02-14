@@ -16,8 +16,12 @@
 
 package org.niord.core.promulgation.vo;
 
+import org.niord.core.domain.vo.DomainVo;
 import org.niord.core.promulgation.BasePromulgationService;
 import org.niord.model.IJsonSerializable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Defines the persistent data of a promulgation service
@@ -27,6 +31,7 @@ public class PromulgationServiceDataVo implements IJsonSerializable, Comparable<
     String type;
     int priority;
     boolean active;
+    List<DomainVo> domains = new ArrayList<>();
     Class<? extends BasePromulgationService> serviceClass;
 
 
@@ -63,6 +68,14 @@ public class PromulgationServiceDataVo implements IJsonSerializable, Comparable<
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public List<DomainVo> getDomains() {
+        return domains;
+    }
+
+    public void setDomains(List<DomainVo> domains) {
+        this.domains = domains;
     }
 
     public Class<? extends BasePromulgationService> getServiceClass() {

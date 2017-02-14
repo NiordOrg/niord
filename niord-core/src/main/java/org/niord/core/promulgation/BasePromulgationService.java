@@ -16,12 +16,16 @@
 
 package org.niord.core.promulgation;
 
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.niord.core.message.Message;
 import org.niord.core.promulgation.vo.PromulgationServiceDataVo;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Base class for the different types of promulgation services, such as NavtexPromulgationService, etc.
@@ -39,6 +43,8 @@ public abstract class BasePromulgationService extends BaseService {
     @Inject
     PromulgationManager promulgationManager;
 
+    @Inject
+    DomainService domainService;
 
     /**
      * Should be called from sub-classes in a @PostConstruct to register the promulgation service
@@ -127,8 +133,8 @@ public abstract class BasePromulgationService extends BaseService {
 
 
     /**
-     * Updates the active status or priority of a promulgation service
-     * @return the active status or priority of a promulgation service
+     * Updates the active status, priority or domains of a promulgation service
+     * @return the active status, priority or domains of a promulgation service
      */
     public PromulgationServiceDataVo updatePromulgationService(PromulgationServiceDataVo serviceData) {
 
@@ -139,6 +145,13 @@ public abstract class BasePromulgationService extends BaseService {
 
         original.setActive(serviceData.isActive());
         original.setPriority(serviceData.getPriority());
+
+        // Update list of domains
+        List<Domain> domains = serviceData.getDomains().stream()
+                .map(Domain::new)
+                .collect(Collectors.toList());
+        original.setDomains(domainService.persistedDomains(domains));
+
         return saveEntity(original).toVo(getClass());
     }
 
