@@ -27,8 +27,8 @@ angular.module('niord.admin')
      * Promulgation Admin Controller
      * Controller for the Admin Promulgation page
      */
-    .controller('PromulgationAdminCtrl', ['$scope', 'growl', 'AdminPromulgationService',
-        function ($scope, growl, AdminPromulgationService) {
+    .controller('PromulgationAdminCtrl', ['$scope', '$uibModal', 'growl', 'AdminPromulgationService',
+        function ($scope, $uibModal, growl, AdminPromulgationService) {
             'use strict';
 
             $scope.promulgations = [];
@@ -67,5 +67,12 @@ angular.module('niord.admin')
                         .error($scope.displayError);
                 }
             };
+
+
+            $scope.openDialog = function (params) {
+                $scope.$apply(function() {
+                    $uibModal.open(params);
+                });
+            }
 
         }]);
