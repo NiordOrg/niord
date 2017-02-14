@@ -38,10 +38,10 @@ import javax.validation.constraints.NotNull;
  * NB: Since we expect a small inheritance hierarchy, we use the single table inheritance strategy.
  */
 @Entity
-@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING)
 @SuppressWarnings("unused")
-public abstract class BasePromulgation<P extends BasePromulgationVo>
+public class BasePromulgation<P extends BasePromulgationVo>
         extends VersionedEntity<Integer> {
 
     // NB: Managed by JPA
@@ -64,13 +64,16 @@ public abstract class BasePromulgation<P extends BasePromulgationVo>
     /** Constructor **/
     public BasePromulgation(P promulgation) {
         this();
+        this.id = promulgation.getId();
         this.type = promulgation.getType();
         this.promulgate = promulgation.isPromulgate();
     }
 
 
     /** Returns a value object for this entity */
-    public abstract P toVo();
+    public P toVo() {
+        return null;
+    }
 
 
     /** Returns a value object for this entity */

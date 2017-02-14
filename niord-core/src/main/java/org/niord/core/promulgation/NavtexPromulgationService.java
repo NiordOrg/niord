@@ -24,6 +24,7 @@ import org.niord.core.area.Area;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.message.Message;
 import org.niord.core.promulgation.vo.NavtexTransmitterVo;
+import org.niord.core.promulgation.vo.PromulgationServiceDataVo;
 import org.niord.core.user.Roles;
 import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
@@ -162,6 +163,12 @@ public class NavtexPromulgationService extends BasePromulgationService {
         return navtex;
     }
 
+    /** {@inheritDoc} */
+    @Override
+    public PromulgationServiceDataVo updatePromulgationService(PromulgationServiceDataVo serviceData) {
+        // NB: Override because the function is protected
+        return super.updatePromulgationService(serviceData);
+    }
 
     /***************************************/
     /** Transmitter Handling              **/

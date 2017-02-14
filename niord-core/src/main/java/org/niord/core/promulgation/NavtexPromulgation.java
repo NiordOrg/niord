@@ -16,7 +16,6 @@
 
 package org.niord.core.promulgation;
 
-import org.niord.core.message.Message;
 import org.niord.core.promulgation.vo.NavtexPromulgationVo;
 
 import javax.persistence.CollectionTable;
@@ -38,7 +37,7 @@ import java.util.Map;
 @Entity
 @DiscriminatorValue(NavtexPromulgation.TYPE)
 @SuppressWarnings("unused")
-public class NavtexPromulgation extends BaseMailPromulgation<NavtexPromulgationVo> {
+public class NavtexPromulgation extends BasePromulgation<NavtexPromulgationVo> implements IMailPromulgation {
 
     public static final String  TYPE = "navtex";
 
@@ -61,6 +60,7 @@ public class NavtexPromulgation extends BaseMailPromulgation<NavtexPromulgationV
     @CollectionTable(name="NavtexTransmitters", joinColumns=@JoinColumn(name="NavtexTransmitters_id"))
     Map<String, Boolean> transmitters = new HashMap<>();
 
+    String text;
 
     /** Constructor **/
     public NavtexPromulgation() {
@@ -75,6 +75,7 @@ public class NavtexPromulgation extends BaseMailPromulgation<NavtexPromulgationV
         this.type = TYPE;
         this.priority = promulgation.getPriority();
         this.transmitters.putAll(promulgation.getTransmitters());
+        this.text = promulgation.getText();
     }
 
 
@@ -83,6 +84,7 @@ public class NavtexPromulgation extends BaseMailPromulgation<NavtexPromulgationV
         NavtexPromulgationVo data = toVo(new NavtexPromulgationVo());
         data.setPriority(priority);
         data.getTransmitters().putAll(transmitters);
+        data.setText(text);
         return data;
     }
 
@@ -96,6 +98,7 @@ public class NavtexPromulgation extends BaseMailPromulgation<NavtexPromulgationV
             this.priority = p.getPriority();
             this.transmitters.clear();
             this.transmitters.putAll(p.getTransmitters());
+            this.text = p.getText();
         }
     }
 
@@ -119,4 +122,15 @@ public class NavtexPromulgation extends BaseMailPromulgation<NavtexPromulgationV
     public void setTransmitters(Map<String, Boolean> transmitters) {
         this.transmitters = transmitters;
     }
+
+    @Override
+    public String getText() {
+        return text;
+    }
+
+    @Override
+    public void setText(String text) {
+        this.text = text;
+    }
+
 }

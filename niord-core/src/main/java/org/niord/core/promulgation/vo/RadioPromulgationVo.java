@@ -16,14 +16,17 @@
 
 package org.niord.core.promulgation.vo;
 
-import org.niord.core.message.Message;
+import org.apache.commons.lang.StringUtils;
+import org.niord.core.promulgation.IMailPromulgation;
 import org.niord.core.promulgation.RadioPromulgation;
 
 /**
  * Defines the promulgation data associated with radio mailing list promulgation.
  * The audio text is meant to be read up on radio, and thus more verbose.
  */
-public class RadioPromulgationVo extends BaseMailPromulgationVo<RadioPromulgation> {
+public class RadioPromulgationVo extends BasePromulgationVo<RadioPromulgation> implements IMailPromulgation {
+
+    String text;
 
     /** {@inheritDoc} **/
     @Override
@@ -31,4 +34,25 @@ public class RadioPromulgationVo extends BaseMailPromulgationVo<RadioPromulgatio
         return new RadioPromulgation(this);
     }
 
+
+    /** {@inheritDoc} **/
+    @Override
+    public boolean promulgationDataDefined() {
+        return StringUtils.isNotBlank(text);
+    }
+
+
+    /*************************/
+    /** Getters and Setters **/
+    /*************************/
+
+    @Override
+    public String getText() {
+        return text;
+    }
+
+    @Override
+    public void setText(String text) {
+        this.text = text;
+    }
 }

@@ -27,9 +27,11 @@ import javax.persistence.Entity;
 @Entity
 @DiscriminatorValue(RadioPromulgation.TYPE)
 @SuppressWarnings("unused")
-public class RadioPromulgation extends BaseMailPromulgation<RadioPromulgationVo> {
+public class RadioPromulgation extends BasePromulgation<RadioPromulgationVo> implements IMailPromulgation {
 
     public static final String  TYPE = "radio";
+
+    String text;
 
     /** Constructor **/
     public RadioPromulgation() {
@@ -42,12 +44,15 @@ public class RadioPromulgation extends BaseMailPromulgation<RadioPromulgationVo>
     public RadioPromulgation(RadioPromulgationVo promulgation) {
         super(promulgation);
         this.type = TYPE;
+        this.text = promulgation.getText();
     }
 
 
     /** Returns a value object for this entity */
     public RadioPromulgationVo toVo() {
-        return toVo(new RadioPromulgationVo());
+        RadioPromulgationVo data = toVo(new RadioPromulgationVo());
+        data.setText(text);
+        return data;
     }
 
 
@@ -56,7 +61,22 @@ public class RadioPromulgation extends BaseMailPromulgation<RadioPromulgationVo>
     public void update(BasePromulgation promulgation) {
         if (promulgation instanceof RadioPromulgation) {
             super.update(promulgation);
+            RadioPromulgation p = (RadioPromulgation)promulgation;
+            p.setText(text);
         }
     }
 
+    /*************************/
+    /** Getters and Setters **/
+    /*************************/
+
+    @Override
+    public String getText() {
+        return text;
+    }
+
+    @Override
+    public void setText(String text) {
+        this.text = text;
+    }
 }

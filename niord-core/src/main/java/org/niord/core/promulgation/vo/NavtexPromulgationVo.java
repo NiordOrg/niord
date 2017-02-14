@@ -17,7 +17,7 @@
 package org.niord.core.promulgation.vo;
 
 import org.apache.commons.lang.StringUtils;
-import org.niord.core.message.Message;
+import org.niord.core.promulgation.IMailPromulgation;
 import org.niord.core.promulgation.NavtexPromulgation;
 
 import java.util.HashMap;
@@ -27,12 +27,13 @@ import java.util.Map;
  * Defines the promulgation data associated with NAVTEX mailing list promulgation
  */
 @SuppressWarnings("unused")
-public class NavtexPromulgationVo extends BaseMailPromulgationVo<NavtexPromulgation> {
+public class NavtexPromulgationVo extends BasePromulgationVo<NavtexPromulgation> implements IMailPromulgation {
 
     NavtexPromulgation.NavtexPriority priority;
 
     Map<String, Boolean> transmitters = new HashMap<>();
 
+    String text;
 
     /** {@inheritDoc} **/
     @Override
@@ -66,5 +67,15 @@ public class NavtexPromulgationVo extends BaseMailPromulgationVo<NavtexPromulgat
 
     public void setTransmitters(Map<String, Boolean> transmitters) {
         this.transmitters = transmitters;
+    }
+
+    @Override
+    public String getText() {
+        return text;
+    }
+
+    @Override
+    public void setText(String text) {
+        this.text = text;
     }
 }
