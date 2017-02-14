@@ -16,6 +16,8 @@
 
 package org.niord.core.promulgation;
 
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.niord.core.message.Message;
 import org.niord.core.promulgation.vo.PromulgationServiceDataVo;
 import org.niord.core.util.CdiUtils;
@@ -50,6 +52,10 @@ public class PromulgationManager {
 
     @Inject
     Logger log;
+
+    @Inject
+    DomainService domainService;
+
 
     Map<String, PromulgationServiceDataVo> services = new ConcurrentHashMap<>();
 
@@ -147,8 +153,13 @@ public class PromulgationManager {
      * @return the list of promulgation services
      */
     private List<BasePromulgationService> instantiatePromulgationServices(boolean onlyActive) {
+
+        Domain domain = domainService.currentDomain();
+
         return services.values().stream()
                 .filter(p -> p.isActive() || !onlyActive)
+                .filter(p -> domain == null ||
+                             p.getDomains().stream().anyMatch(d -> d.getDomainId().equals(domain.getDomainId())))
                 .sorted()
                 .map(s -> instantiatePromulgationService(s.getServiceClass()))
                 .filter(Objects::nonNull)
