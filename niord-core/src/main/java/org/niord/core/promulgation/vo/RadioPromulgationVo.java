@@ -27,8 +27,8 @@ public class RadioPromulgationVo extends BaseMailPromulgationVo<RadioPromulgatio
 
     /** {@inheritDoc} **/
     @Override
-    public RadioPromulgation toEntity(Message message) {
-        return new RadioPromulgation(this, message);
+    public RadioPromulgation toEntity() {
+        return new RadioPromulgation(this);
     }
 
 }

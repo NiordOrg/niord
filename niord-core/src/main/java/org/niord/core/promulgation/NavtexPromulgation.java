@@ -70,8 +70,9 @@ public class NavtexPromulgation extends BaseMailPromulgation<NavtexPromulgationV
 
 
     /** Constructor **/
-    public NavtexPromulgation(NavtexPromulgationVo promulgation, Message message) {
-        super(promulgation, message);
+    public NavtexPromulgation(NavtexPromulgationVo promulgation) {
+        super(promulgation);
+        this.type = TYPE;
         this.priority = promulgation.getPriority();
         this.transmitters.putAll(promulgation.getTransmitters());
     }
@@ -84,6 +85,20 @@ public class NavtexPromulgation extends BaseMailPromulgation<NavtexPromulgationV
         data.getTransmitters().putAll(transmitters);
         return data;
     }
+
+
+    /** Updates this promulgation from another promulgation **/
+    @Override
+    public void update(BasePromulgation promulgation) {
+        if (promulgation instanceof NavtexPromulgation) {
+            super.update(promulgation);
+            NavtexPromulgation p = (NavtexPromulgation)promulgation;
+            this.priority = p.getPriority();
+            this.transmitters.clear();
+            this.transmitters.putAll(p.getTransmitters());
+        }
+    }
+
 
     /*************************/
     /** Getters and Setters **/

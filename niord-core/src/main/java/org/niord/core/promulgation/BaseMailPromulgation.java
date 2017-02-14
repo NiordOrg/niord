@@ -16,7 +16,6 @@
 
 package org.niord.core.promulgation;
 
-import org.niord.core.message.Message;
 import org.niord.core.promulgation.vo.BaseMailPromulgationVo;
 
 import javax.persistence.MappedSuperclass;
@@ -37,8 +36,8 @@ public abstract class BaseMailPromulgation<P extends BaseMailPromulgationVo> ext
 
 
     /** Constructor **/
-    public BaseMailPromulgation(P promulgation, Message message) {
-        super(promulgation, message);
+    public BaseMailPromulgation(P promulgation) {
+        super(promulgation);
         setText(promulgation.getText());
     }
 
@@ -51,6 +50,16 @@ public abstract class BaseMailPromulgation<P extends BaseMailPromulgationVo> ext
         return vo;
     }
 
+
+    /** Updates this promulgation from another promulgation **/
+    @Override
+    public void update(BasePromulgation promulgation) {
+        if (promulgation instanceof BaseMailPromulgation) {
+            super.update(promulgation);
+            BaseMailPromulgation p = (BaseMailPromulgation)promulgation;
+            this.text = p.getText();
+        }
+    }
 
     /*************************/
     /** Getters and Setters **/

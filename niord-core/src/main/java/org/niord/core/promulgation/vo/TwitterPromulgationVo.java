@@ -17,7 +17,6 @@
 package org.niord.core.promulgation.vo;
 
 import org.apache.commons.lang.StringUtils;
-import org.niord.core.message.Message;
 import org.niord.core.promulgation.TwitterPromulgation;
 
 /**
@@ -30,8 +29,8 @@ public class TwitterPromulgationVo extends BasePromulgationVo<TwitterPromulgatio
 
     /** {@inheritDoc} **/
     @Override
-    public TwitterPromulgation toEntity(Message message) {
-        return new TwitterPromulgation(this, message);
+    public TwitterPromulgation toEntity() {
+        return new TwitterPromulgation(this);
     }
 
 

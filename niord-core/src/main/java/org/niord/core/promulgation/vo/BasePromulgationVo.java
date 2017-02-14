@@ -17,7 +17,6 @@
 package org.niord.core.promulgation.vo;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.niord.core.message.Message;
 import org.niord.core.promulgation.BasePromulgation;
 import org.niord.model.IJsonSerializable;
 
@@ -40,10 +39,9 @@ public abstract class BasePromulgationVo<P extends BasePromulgation> implements 
 
     /**
      * Converts this value object to an associated template entity
-     * @param message the message that the promulgation belongs to
      * @return an associated template entity
      */
-    public abstract P toEntity(Message message);
+    public abstract P toEntity();
 
 
     /**

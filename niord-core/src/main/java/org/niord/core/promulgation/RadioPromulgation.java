@@ -16,7 +16,6 @@
 
 package org.niord.core.promulgation;
 
-import org.niord.core.message.Message;
 import org.niord.core.promulgation.vo.RadioPromulgationVo;
 
 import javax.persistence.DiscriminatorValue;
@@ -40,14 +39,24 @@ public class RadioPromulgation extends BaseMailPromulgation<RadioPromulgationVo>
 
 
     /** Constructor **/
-    public RadioPromulgation(RadioPromulgationVo promulgation, Message message) {
-        super(promulgation, message);
+    public RadioPromulgation(RadioPromulgationVo promulgation) {
+        super(promulgation);
+        this.type = TYPE;
     }
 
 
     /** Returns a value object for this entity */
     public RadioPromulgationVo toVo() {
         return toVo(new RadioPromulgationVo());
+    }
+
+
+    /** Updates this promulgation from another promulgation **/
+    @Override
+    public void update(BasePromulgation promulgation) {
+        if (promulgation instanceof RadioPromulgation) {
+            super.update(promulgation);
+        }
     }
 
 }

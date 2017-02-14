@@ -321,7 +321,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             if (sysMessage.getPromulgations() != null) {
                 sysMessage.getPromulgations().stream()
                     .filter(BasePromulgationVo::promulgationDataDefined)
-                    .forEach(p -> promulgations.add(p.toEntity(this)));
+                    .forEach(p -> addPromulgation(p.toEntity()));
             }
         }
 
@@ -629,6 +629,14 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         attachment.setMessage(this);
         attachments.add(attachment);
         return attachment;
+    }
+
+
+    /** Adds a promulgation entity to this message */
+    public BasePromulgation addPromulgation(BasePromulgation promulgation) {
+        promulgation.setMessage(this);
+        promulgations.add(promulgation);
+        return promulgation;
     }
 
 

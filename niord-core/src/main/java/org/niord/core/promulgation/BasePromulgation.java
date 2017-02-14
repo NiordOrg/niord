@@ -62,9 +62,8 @@ public abstract class BasePromulgation<P extends BasePromulgationVo>
 
 
     /** Constructor **/
-    public BasePromulgation(P promulgation, Message message) {
+    public BasePromulgation(P promulgation) {
         this();
-        this.message = message;
         this.type = promulgation.getType();
         this.promulgate = promulgation.isPromulgate();
     }
@@ -81,6 +80,14 @@ public abstract class BasePromulgation<P extends BasePromulgationVo>
         vo.setPromulgate(promulgate);
         return vo;
     }
+
+
+    /** Updates this promulgation from another promulgation **/
+    public void update(BasePromulgation promulgation) {
+        this.type = promulgation.getType();
+        this.promulgate = promulgation.isPromulgate();
+    }
+
 
     /**
      * Returns whether this promulgation is properly defined or not.

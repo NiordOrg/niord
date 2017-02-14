@@ -16,7 +16,6 @@
 
 package org.niord.core.promulgation;
 
-import org.niord.core.message.Message;
 import org.niord.core.promulgation.vo.TwitterPromulgationVo;
 
 import javax.persistence.DiscriminatorValue;
@@ -42,8 +41,9 @@ public class TwitterPromulgation extends BasePromulgation<TwitterPromulgationVo>
 
 
     /** Constructor **/
-    public TwitterPromulgation(TwitterPromulgationVo promulgation, Message message) {
-        super(promulgation, message);
+    public TwitterPromulgation(TwitterPromulgationVo promulgation) {
+        super(promulgation);
+        this.type = TYPE;
         this.tweet = promulgation.getTweet();
     }
 
@@ -53,6 +53,16 @@ public class TwitterPromulgation extends BasePromulgation<TwitterPromulgationVo>
         TwitterPromulgationVo data = toVo(new TwitterPromulgationVo());
         data.setTweet(tweet);
         return data;
+    }
+
+    /** Updates this promulgation from another promulgation **/
+    @Override
+    public void update(BasePromulgation promulgation) {
+        if (promulgation instanceof TwitterPromulgation) {
+            super.update(promulgation);
+            TwitterPromulgation p = (TwitterPromulgation)promulgation;
+            this.tweet = p.getTweet();
+        }
     }
 
     /*************************/

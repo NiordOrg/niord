@@ -36,8 +36,8 @@ public class NavtexPromulgationVo extends BaseMailPromulgationVo<NavtexPromulgat
 
     /** {@inheritDoc} **/
     @Override
-    public NavtexPromulgation toEntity(Message message) {
-        return new NavtexPromulgation(this, message);
+    public NavtexPromulgation toEntity() {
+        return new NavtexPromulgation(this);
     }
 
 
