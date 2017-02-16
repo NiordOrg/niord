@@ -31,11 +31,6 @@ import javax.validation.constraints.NotNull;
 
 /**
  * Abstract super-class for all types of message promulgation data entities.
- * <p>
- * Really, this class should be annotated with @MappedSuperClass and not @Entity, but Hibernate(/JPA?) cannot
- * handle this.
- * <p>
- * NB: Since we expect a small inheritance hierarchy, we use the single table inheritance strategy.
  */
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
