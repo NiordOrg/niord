@@ -16,8 +16,12 @@
 
 package org.niord.core.promulgation;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.promulgation.vo.BasePromulgationVo;
 import org.niord.core.promulgation.vo.RadioPromulgationVo;
+import org.niord.core.util.TextUtils;
+import org.niord.model.message.MessagePartType;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Lock;
@@ -39,6 +43,10 @@ public class RadioPromulgationService extends BasePromulgationService {
 
     public static final int PRIORITY = 10;
 
+
+    /***************************************/
+    /** Promulgation Service Handling     **/
+    /***************************************/
 
     /**
      * Registers the promulgation service with the promulgation manager
@@ -63,6 +71,11 @@ public class RadioPromulgationService extends BasePromulgationService {
     }
 
 
+    /***************************************/
+    /** Message Life-cycle Management     **/
+    /***************************************/
+
+
     /** {@inheritDoc} */
     @Override
     public void onLoadSystemMessage(SystemMessageVo message) throws PromulgationException {
@@ -71,5 +84,31 @@ public class RadioPromulgationService extends BasePromulgationService {
             radio = new RadioPromulgationVo();
             message.getPromulgations().add(radio);
         }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public BasePromulgationVo generateMessagePromulgation(SystemMessageVo message) throws PromulgationException {
+        RadioPromulgationVo radio = new RadioPromulgationVo();
+
+        StringBuilder text = new StringBuilder();
+        if (message.getParts() != null) {
+            message.getParts().stream()
+                    .filter(p -> p.getType() == MessagePartType.DETAILS && p.getDescs() != null)
+                    .flatMap(p -> p.getDescs().stream())
+                    .filter(d -> d.getLang().equals("da") && StringUtils.isNotBlank(d.getDetails()))
+                    .map(d -> TextUtils.html2txt(d.getDetails()))
+                    .forEach(d -> text.append(d).append(System.lineSeparator()));
+        }
+
+        if (text.length() > 0) {
+            radio.setPromulgate(true);
+            radio.setText(text.toString());
+        } else {
+            radio.setPromulgate(false);
+        }
+
+        return radio;
     }
 }

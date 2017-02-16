@@ -16,8 +16,11 @@
 
 package org.niord.core.promulgation;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.promulgation.vo.BasePromulgationVo;
 import org.niord.core.promulgation.vo.TwitterPromulgationVo;
+import org.niord.model.message.MessageDescVo;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Lock;
@@ -36,6 +39,10 @@ public class TwitterPromulgationService extends BasePromulgationService {
 
     public static final int PRIORITY = 100;
 
+
+    /***************************************/
+    /** Promulgation Service Handling     **/
+    /***************************************/
 
     /**
      * Registers the promulgation service with the promulgation manager
@@ -60,6 +67,11 @@ public class TwitterPromulgationService extends BasePromulgationService {
     }
 
 
+    /***************************************/
+    /** Message Life-cycle Management     **/
+    /***************************************/
+
+
     /** {@inheritDoc} */
     @Override
     public void onLoadSystemMessage(SystemMessageVo message) throws PromulgationException {
@@ -69,4 +81,24 @@ public class TwitterPromulgationService extends BasePromulgationService {
             message.getPromulgations().add(twitter);
         }
     }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public BasePromulgationVo generateMessagePromulgation(SystemMessageVo message) throws PromulgationException {
+        TwitterPromulgationVo twitter = new TwitterPromulgationVo();
+
+        MessageDescVo desc = message.getDesc("en");
+        String title = desc != null ? desc.getTitle() : null;
+
+        if (StringUtils.isNotBlank(title)) {
+            twitter.setPromulgate(true);
+            twitter.setTweet(title);
+        } else {
+            twitter.setPromulgate(false);
+        }
+
+        return twitter;
+    }
+
 }

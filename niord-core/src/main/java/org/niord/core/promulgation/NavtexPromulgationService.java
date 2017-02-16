@@ -148,7 +148,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
             .filter(d -> d.getLang().equals("en"))
             .filter(d -> StringUtils.isNotBlank(d.getDetails()))
             .map(d -> TextUtils.html2txt(d.getDetails()))
-            .forEach(d -> text.append(d.toUpperCase()).append("\n"));
+            .forEach(d -> text.append(d.toUpperCase()).append(System.lineSeparator()));
         navtex.setText(text.toString());
 
         return navtex;

@@ -50,7 +50,7 @@ public class TextUtils {
         if (StringUtils.isNotBlank(html)) {
             try {
                 Document doc = Jsoup.parse(html);
-                return new HtmlToPlainText().getPlainText(doc.body());
+                return new HtmlToPlainText().getPlainText(doc.body()).trim();
             } catch (Exception ignored) {
             }
         }
