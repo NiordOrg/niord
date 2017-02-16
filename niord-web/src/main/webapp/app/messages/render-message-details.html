@@ -104,6 +104,15 @@
                 </td>
             </tr>
 
+
+            <!-- Promulgation -->
+            <tr ng-repeat="promulgation in promulgations">
+                <th>{{promulgation.type | capitalize}}</th>
+                <td>
+                    <ng-include src="'/app/promulgation/' + promulgation.type + '-view.html'"></ng-include>
+                </td>
+            </tr>
+
         </table>
 
         <!-- Attachments to be displayed below message -->

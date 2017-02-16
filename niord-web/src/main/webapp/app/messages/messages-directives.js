@@ -744,14 +744,15 @@ angular.module('niord.messages')
             templateUrl: '/app/messages/render-message-details.html',
             replace: false,
             scope: {
-                msg:            "=",
-                messageList:    "=",
-                language:       "=",
-                selection:      "=",
-                format:         "@",
-                showDetailsMenu:"@",
-                showDetails:    "&",
-                compact:        "="
+                msg:                "=",
+                messageList:        "=",
+                language:           "=",
+                selection:          "=",
+                format:             "@",
+                showDetailsMenu:    "@",
+                showDetails:        "&",
+                showPromulgation:   "@",
+                compact:            "="
             },
             link: function(scope, element, attrs) {
                 scope.language = scope.language || $rootScope.language;
@@ -759,6 +760,7 @@ angular.module('niord.messages')
                 scope.attachmentsAbove = [];
                 scope.attachmentsBelow = [];
                 scope.showAttachments = scope.compact || false;
+                scope.promulgations = [];
 
 
                 // Returns if the given message is selected or not
@@ -791,6 +793,7 @@ angular.module('niord.messages')
                 scope.initMessage = function () {
                     scope.attachmentsAbove.length = 0;
                     scope.attachmentsBelow.length = 0;
+                    scope.promulgations.length = 0;
 
                     // Extract the attachments that will displayed above and below the message data
                     if (scope.msg.attachments) {
@@ -799,6 +802,12 @@ angular.module('niord.messages')
                         });
                         scope.attachmentsBelow = $.grep(scope.msg.attachments, function (att) {
                             return att.display == 'BELOW';
+                        });
+                    }
+
+                    if (scope.msg.promulgations && scope.showPromulgation == 'true') {
+                        scope.promulgations = $.grep(scope.msg.promulgations, function (p) {
+                           return p.promulgate;
                         });
                     }
                 };

@@ -1,9 +1,2 @@
 
-<dl class="dl-horizontal" style="padding-top: 10px; margin-bottom: 0">
-
-    <dt>Audio Message</dt>
-    <dd>
-        <textarea style="width: 100%; height: 120px; border: 1px solid lightgray;" disabled>{{promulgation.text}}</textarea>
-    </dd>
-
-</dl>
+<div class="promulgation-text" ng-bind-html="promulgation.text | plain2html | toTrusted"></div>

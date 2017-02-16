@@ -328,6 +328,11 @@ textarea.navtex {
     text-transform: uppercase;
 }
 
+.promulgation-text {
+    border: 1px solid lightgray;
+    padding: 5px;
+}
+
 /** Editor -> Sources **/
 
 .editor-source-table {

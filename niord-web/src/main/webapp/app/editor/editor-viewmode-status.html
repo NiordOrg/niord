@@ -33,7 +33,12 @@
             </div>
 
             <table ng-if="message.id" class='table table-condensed'>
-                <tr render-message-details msg="previewMessage" language="previewLang" format="details" show-details-menu="false"></tr>
+                <tr render-message-details
+                    msg="previewMessage"
+                    language="previewLang"
+                    format="details"
+                    show-promulgation="true"
+                    show-details-menu="false"></tr>
             </table>
         </div>
 
