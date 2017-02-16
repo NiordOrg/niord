@@ -1144,6 +1144,7 @@ angular.module('niord.editor')
                         angular.forEach($scope.message.promulgations, function(p) {
                             if (p.type == type) {
                                 $.extend(true, p, result);
+                                $scope.setDirty();
                             }
                         });
                     })
