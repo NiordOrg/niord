@@ -19,6 +19,7 @@ package org.niord.core.promulgation;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.Message;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.vo.PromulgationServiceDataVo;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
@@ -101,11 +102,11 @@ public abstract class BasePromulgationService extends BaseService {
 
 
     /**
-     * Updates the new message template with a promulgation by the registered promulgation services
+     * Updates and adds promulgations to the message value object
      *
-     * @param message the new message template
+     * @param message the message value object
      */
-    public abstract void onNewTemplateMessage(Message message);
+    public abstract void onLoadSystemMessage(SystemMessageVo message) throws PromulgationException;
 
 
     /**
@@ -114,7 +115,7 @@ public abstract class BasePromulgationService extends BaseService {
      *
      * @param message the message about to be created
      */
-    public void onCreateMessage(Message message) {
+    public void onCreateMessage(Message message) throws PromulgationException {
     }
 
 
@@ -124,7 +125,7 @@ public abstract class BasePromulgationService extends BaseService {
      *
      * @param message the message about to be updated
      */
-    public void onUpdateMessage(Message message) {
+    public void onUpdateMessage(Message message) throws PromulgationException {
     }
 
 
@@ -134,7 +135,7 @@ public abstract class BasePromulgationService extends BaseService {
      *
      * @param message the message about to be updated
      */
-    public void onUpdateMessageStatus(Message message) {
+    public void onUpdateMessageStatus(Message message) throws PromulgationException {
     }
 
 
@@ -144,7 +145,7 @@ public abstract class BasePromulgationService extends BaseService {
      * @param message the message template to generate a promulgation for
      * @return the promulgation
      */
-    public BasePromulgation<?> generateMessagePromulgation(Message message) {
+    public BasePromulgation<?> generateMessagePromulgation(Message message) throws PromulgationException {
         return null;
     }
 

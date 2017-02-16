@@ -99,6 +99,19 @@ public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
     }
 
 
+    /**
+     * Returns the promulgation with the given type, or null if not found
+     * @param type the promulgation type
+     * @return the promulgation with the given type, or null if not found
+     */
+    @SuppressWarnings("unchecked")
+    public <P extends BasePromulgationVo> P promulgation(Class<P> clz, String type) {
+        return (P) promulgations.stream()
+                .filter(p -> p.getType().equals(type) && clz.isAssignableFrom(p.getClass()))
+                .findFirst()
+                .orElse(null);
+    }
+
     /*************************/
     /** Getters and Setters **/
     /*************************/

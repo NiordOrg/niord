@@ -35,6 +35,13 @@ public class NavtexPromulgationVo extends BasePromulgationVo<NavtexPromulgation>
 
     String text;
 
+
+    /** Constructor **/
+    public NavtexPromulgationVo() {
+        this.type = NavtexPromulgation.TYPE;
+    }
+
+
     /** {@inheritDoc} **/
     @Override
     public NavtexPromulgation toEntity() {

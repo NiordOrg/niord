@@ -16,7 +16,8 @@
 
 package org.niord.core.promulgation;
 
-import org.niord.core.message.Message;
+import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.promulgation.vo.RadioPromulgationVo;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Lock;
@@ -64,25 +65,11 @@ public class RadioPromulgationService extends BasePromulgationService {
 
     /** {@inheritDoc} */
     @Override
-    public void onNewTemplateMessage(Message message) {
-        message.getPromulgations().add(new RadioPromulgation());
-    }
-
-
-    /** {@inheritDoc} */
-    @Override
-    public void onCreateMessage(Message message) {
-    }
-
-
-    /** {@inheritDoc} */
-    @Override
-    public void onUpdateMessage(Message message) {
-    }
-
-
-    /** {@inheritDoc} */
-    @Override
-    public void onUpdateMessageStatus(Message message) {
+    public void onLoadSystemMessage(SystemMessageVo message) throws PromulgationException {
+        RadioPromulgationVo radio = message.promulgation(RadioPromulgationVo.class, getType());
+        if (radio == null) {
+            radio = new RadioPromulgationVo();
+            message.getPromulgations().add(radio);
+        }
     }
 }

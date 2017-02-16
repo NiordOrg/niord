@@ -19,6 +19,8 @@ package org.niord.core.promulgation;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.Message;
+import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.promulgation.vo.BasePromulgationVo;
 import org.niord.core.promulgation.vo.PromulgationServiceDataVo;
 import org.niord.core.util.CdiUtils;
 import org.slf4j.Logger;
@@ -29,9 +31,12 @@ import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
 import javax.naming.NamingException;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -59,9 +64,18 @@ public class PromulgationManager {
 
     Map<String, PromulgationServiceDataVo> services = new ConcurrentHashMap<>();
 
+
+    /** Returns the priority associated with the given promulgation type **/
+    public int priority(String type) {
+        PromulgationServiceDataVo p = services.get(type);
+        return p != null ? p.getPriority() : 1000000;
+    }
+
+
     /***************************************/
     /** Promulgation Service Handling     **/
     /***************************************/
+
 
     /**
      * Registers the promulgation service
@@ -103,12 +117,32 @@ public class PromulgationManager {
     /** Message Life-cycle Management     **/
     /***************************************/
 
+
     /**
-     * Updates the new message template with a promulgation by the registered promulgation services
-     * @param message the new message template
+     * Updates and adds promulgations to the message value object
+     * @param message the message value object
      */
-    public void onNewTemplateMessage(Message message) {
-        instantiatePromulgationServices(true).forEach(p -> p.onNewTemplateMessage(message));
+    public void onLoadSystemMessage(SystemMessageVo message) throws PromulgationException {
+
+        // The set of promulgation types to consider is the union between the currently active
+        // services for the current domain and the promulgations already defined for the message.
+        Set<String> types = new HashSet<>();
+        types.addAll(getActiveServiceTypes());
+        types.addAll(message.getPromulgations().stream()
+            .map(BasePromulgationVo::getType)
+            .collect(Collectors.toSet()));
+
+        // Let the associated services process the message
+        for (String type : types) {
+            BasePromulgationService service = instantiatePromulgationService(type);
+            if (service != null) {
+                service.onLoadSystemMessage(message);
+            }
+        }
+
+        // Sort the promulgations according to priority
+        message.getPromulgations()
+                .sort(Comparator.comparingInt(p -> priority(p.getType())));
     }
 
 
@@ -116,9 +150,10 @@ public class PromulgationManager {
      * Prior to creating a new message, let the registered promulgation services check up on promulgations.
      * @param message the message about to be created
      */
-    public void onCreateMessage(Message message) {
-        // Let promulgation services check up on their own promulgations
-        instantiatePromulgationServices(false).forEach(p -> p.onCreateMessage(message));
+    public void onCreateMessage(Message message) throws PromulgationException {
+        for (BasePromulgationService service : instantiatePromulgationServices(message)) {
+            service.onCreateMessage(message);
+        }
     }
 
 
@@ -126,9 +161,10 @@ public class PromulgationManager {
      * Prior to updating an existing message, let the registered promulgation services check up on promulgations.
      * @param message the message about to be updated
      */
-    public void onUpdateMessage(Message message) {
-        // Let promulgation services check up on their own promulgations
-        instantiatePromulgationServices(false).forEach(p -> p.onUpdateMessage(message));
+    public void onUpdateMessage(Message message) throws PromulgationException {
+        for (BasePromulgationService service : instantiatePromulgationServices(message)) {
+            service.onUpdateMessage(message);
+        }
     }
 
 
@@ -136,9 +172,10 @@ public class PromulgationManager {
      * Prior to changing status of an existing message, let the registered promulgation services check up on promulgations.
      * @param message the message about to be updated
      */
-    public void onUpdateMessageStatus(Message message) {
-        // Let promulgation services check up on their own promulgations
-        instantiatePromulgationServices(false).forEach(p -> p.onUpdateMessageStatus(message));
+    public void onUpdateMessageStatus(Message message) throws PromulgationException {
+        for (BasePromulgationService service : instantiatePromulgationServices(message)) {
+            service.onUpdateMessageStatus(message);
+        }
     }
 
 
@@ -148,7 +185,7 @@ public class PromulgationManager {
      * @param message the message template to generate a promulgation for
      * @return the promulgation
      */
-    public BasePromulgation<?> generateMessagePromulgation(String type, Message message) {
+    public BasePromulgation<?> generateMessagePromulgation(String type, Message message) throws PromulgationException {
         return instantiatePromulgationService(type).generateMessagePromulgation(message);
     }
 
@@ -159,20 +196,30 @@ public class PromulgationManager {
 
 
     /**
-     * Returns the list of instantiated promulgation services sorted by priority
-     * @param onlyActive whether to include all, or only active promulgation services
-     * @return the list of promulgation services
+     * Returns the list of active service types for the current domain
+     * @return the list of active service types
      */
-    private List<BasePromulgationService> instantiatePromulgationServices(boolean onlyActive) {
+    private Set<String> getActiveServiceTypes() {
 
         Domain domain = domainService.currentDomain();
 
         return services.values().stream()
-                .filter(p -> p.isActive() || !onlyActive)
+                .filter(PromulgationServiceDataVo::isActive)
                 .filter(p -> domain == null ||
                              p.getDomains().stream().anyMatch(d -> d.getDomainId().equals(domain.getDomainId())))
-                .sorted()
-                .map(s -> instantiatePromulgationService(s.getServiceClass()))
+                .map(PromulgationServiceDataVo::getType)
+                .collect(Collectors.toSet());
+    }
+
+
+    /**
+     * Returns the list of instantiated promulgation services associated with promulgations of the given message
+     * @param message the message to return promulgation services for
+     * @return the list of promulgation services
+     */
+    private List<BasePromulgationService> instantiatePromulgationServices(Message message) {
+        return message.getPromulgations().stream()
+                .map(p -> instantiatePromulgationService(p.getType()))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }

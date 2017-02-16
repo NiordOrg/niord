@@ -23,6 +23,8 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.area.Area;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.message.Message;
+import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.promulgation.vo.NavtexPromulgationVo;
 import org.niord.core.promulgation.vo.NavtexTransmitterVo;
 import org.niord.core.promulgation.vo.PromulgationServiceDataVo;
 import org.niord.core.user.Roles;
@@ -105,49 +107,36 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
     /** {@inheritDoc} */
     @Override
-    public void onNewTemplateMessage(Message message) {
-        NavtexPromulgation navtex = new NavtexPromulgation();
+    public void onLoadSystemMessage(SystemMessageVo message) throws PromulgationException {
+        NavtexPromulgationVo navtex = message.promulgation(NavtexPromulgationVo.class, getType());
+        if (navtex == null) {
+            navtex = new NavtexPromulgationVo();
+            message.getPromulgations().add(navtex);
+        }
 
-        // Add all active transmitters - by default, not selected
-        findByAreas(null, true)
-                .forEach(t -> navtex.getTransmitters().put(t.getName(), Boolean.FALSE));
-
-        message.getPromulgations().add(navtex);
+        // Add all active transmitters not already added
+        for (NavtexTransmitter transmitter : findTransmittersByAreas(null, true)) {
+            if (!navtex.getTransmitters().containsKey(transmitter.getName())) {
+                navtex.getTransmitters().put(transmitter.getName(), Boolean.FALSE);
+            }
+        }
     }
 
 
     /** {@inheritDoc} */
     @Override
-    public void onCreateMessage(Message message) {
-    }
-
-
-    /** {@inheritDoc} */
-    @Override
-    public void onUpdateMessage(Message message) {
-    }
-
-
-    /** {@inheritDoc} */
-    @Override
-    public void onUpdateMessageStatus(Message message) {
-    }
-
-
-    /** {@inheritDoc} */
-    @Override
-    public BasePromulgation<?> generateMessagePromulgation(Message message) {
+    public BasePromulgation<?> generateMessagePromulgation(Message message) throws PromulgationException {
         NavtexPromulgation navtex = new NavtexPromulgation();
 
         navtex.setPromulgate(true);
 
         // Add all active transmitters - by default, not selected
-        findByAreas(null, true)
+        findTransmittersByAreas(null, true)
                 .forEach(t -> navtex.getTransmitters().put(t.getName(), Boolean.FALSE));
 
         // Select transmitters associated with the current message areas
         if (!message.getAreas().isEmpty()) {
-            findByAreas(message.getAreas(), true)
+            findTransmittersByAreas(message.getAreas(), true)
                     .forEach(t -> navtex.getTransmitters().put(t.getName(), Boolean.TRUE));
         }
 
@@ -163,6 +152,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
         return navtex;
     }
 
+
     /** {@inheritDoc} */
     @Override
     public PromulgationServiceDataVo updatePromulgationService(PromulgationServiceDataVo serviceData) {
@@ -176,7 +166,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
 
     /** Returns the transmitter with the given name, or null if not found **/
-    public NavtexTransmitter findByName(String name) {
+    public NavtexTransmitter findTransmitterByName(String name) {
         try {
             return em.createNamedQuery("NavtexTransmitter.findByName", NavtexTransmitter.class)
                     .setParameter("name", name)
@@ -193,7 +183,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
      * @return all NAVTEX transmitters matching the given areas.
      */
     @SuppressWarnings("all")
-    public List<NavtexTransmitter> findByAreas(List<Area> areas, boolean onlyActive) {
+    public List<NavtexTransmitter> findTransmittersByAreas(List<Area> areas, boolean onlyActive) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
 
         CriteriaQuery<NavtexTransmitter> query = cb.createQuery(NavtexTransmitter.class);
@@ -271,7 +261,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
         log.info("Updating transmitter " + transmitter);
         NavtexTransmitter t = new NavtexTransmitter(transmitter);
-        NavtexTransmitter original = findByName(name);
+        NavtexTransmitter original = findTransmitterByName(name);
         original.setActive(transmitter.isActive());
         original.setAreas(persistedList(Area.class, t.getAreas()));
         return saveEntity(original).toVo(DataFilter.get());
@@ -286,7 +276,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
     @NoCache
     public void deleteTransmitter(@PathParam("name") String name) throws Exception {
         log.info("Deleting transmitter " + name);
-        NavtexTransmitter original = findByName(name);
+        NavtexTransmitter original = findTransmitterByName(name);
         remove(original);
     }
 

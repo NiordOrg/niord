@@ -27,6 +27,12 @@ public class TwitterPromulgationVo extends BasePromulgationVo<TwitterPromulgatio
 
     String tweet;
 
+    /** Constructor **/
+    public TwitterPromulgationVo() {
+        this.type = TwitterPromulgation.TYPE;
+    }
+
+
     /** {@inheritDoc} **/
     @Override
     public TwitterPromulgation toEntity() {

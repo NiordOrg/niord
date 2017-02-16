@@ -28,6 +28,13 @@ public class RadioPromulgationVo extends BasePromulgationVo<RadioPromulgation> i
 
     String text;
 
+
+    /** Constructor **/
+    public RadioPromulgationVo() {
+        this.type = RadioPromulgation.TYPE;
+    }
+
+
     /** {@inheritDoc} **/
     @Override
     public RadioPromulgation toEntity() {

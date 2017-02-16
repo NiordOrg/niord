@@ -34,6 +34,7 @@ import org.niord.core.message.MessageService;
 import org.niord.core.message.vo.MessageHistoryVo;
 import org.niord.core.message.vo.MessagePublicationVo;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.promulgation.PromulgationManager;
 import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationService;
 import org.niord.core.publication.PublicationUtils;
@@ -129,6 +130,9 @@ public class MessageRestService  {
 
     @Inject
     PublicationService publicationService;
+
+    @Inject
+    PromulgationManager promulgationManager;
 
     /***************************
      * Message access functions
@@ -275,6 +279,9 @@ public class MessageRestService  {
                 .user(userService.userResolver());
 
         SystemMessageVo messageVo = message.toVo(SystemMessageVo.class, filter);
+
+        // Let promulgation services adjust the promulgations of the message
+        promulgationManager.onLoadSystemMessage(messageVo);
 
         // Compute the default set of editor fields to display for the message
         editorFieldsService.computeEditorFields(messageVo);
@@ -429,6 +436,7 @@ public class MessageRestService  {
             editMessage.getParts()
                     .forEach(p -> p.setGeometry(featureService.copyFeatureCollection(p.getGeometry())));
         }
+        editMessage.getPromulgations().forEach(p -> p.setId(null));
 
         return editMessage;
     }

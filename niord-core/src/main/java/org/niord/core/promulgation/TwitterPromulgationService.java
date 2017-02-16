@@ -16,7 +16,8 @@
 
 package org.niord.core.promulgation;
 
-import org.niord.core.message.Message;
+import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.promulgation.vo.TwitterPromulgationVo;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Lock;
@@ -61,26 +62,11 @@ public class TwitterPromulgationService extends BasePromulgationService {
 
     /** {@inheritDoc} */
     @Override
-    public void onNewTemplateMessage(Message message) {
-        message.getPromulgations().add(new TwitterPromulgation());
-    }
-
-
-    /** {@inheritDoc} */
-    @Override
-    public void onCreateMessage(Message message) {
-        message.getPromulgations().forEach(p -> System.out.println("SAVING " + p.getType()));
-    }
-
-
-    /** {@inheritDoc} */
-    @Override
-    public void onUpdateMessage(Message message) {
-    }
-
-
-    /** {@inheritDoc} */
-    @Override
-    public void onUpdateMessageStatus(Message message) {
+    public void onLoadSystemMessage(SystemMessageVo message) throws PromulgationException {
+        TwitterPromulgationVo twitter = message.promulgation(TwitterPromulgationVo.class, getType());
+        if (twitter == null) {
+            twitter = new TwitterPromulgationVo();
+            message.getPromulgations().add(twitter);
+        }
     }
 }

@@ -703,9 +703,6 @@ public class MessageService extends BaseService {
             message.setOriginalInformation(true);
         }
 
-        // Let promulgators add promulgation data to the message template
-        promulgationManager.onNewTemplateMessage(message);
-
         return  message;
     }
 
