@@ -51,6 +51,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
     public static final int PRIORITY = 1;
 
+
     /***************************************/
     /** Promulgation Service Handling     **/
     /***************************************/
@@ -77,6 +78,13 @@ public class NavtexPromulgationService extends BasePromulgationService {
         return PRIORITY;
     }
 
+
+    /** {@inheritDoc} */
+    @Override
+    public String getLanguage() {
+        // NAVTEX is always in English
+        return "en";
+    }
 
     /***************************************/
     /** Message Life-cycle Management     **/
@@ -125,9 +133,8 @@ public class NavtexPromulgationService extends BasePromulgationService {
     /** {@inheritDoc} */
     @Override
     public BasePromulgationVo generateMessagePromulgation(SystemMessageVo message) throws PromulgationException {
-        NavtexPromulgationVo navtex = new NavtexPromulgationVo();
 
-        navtex.setPromulgate(true);
+        NavtexPromulgationVo navtex = new NavtexPromulgationVo();
 
         // Add all active transmitters - by default, not selected
         findTransmittersByAreas(null, true)
@@ -142,14 +149,21 @@ public class NavtexPromulgationService extends BasePromulgationService {
                     .forEach(t -> navtex.getTransmitters().put(t.getName(), Boolean.TRUE));
         }
 
-        StringBuilder text = new StringBuilder("NAVTEX:\n");
+        String language = getLanguage();
+        StringBuilder text = new StringBuilder();
         message.getParts().stream()
             .flatMap(p -> p.getDescs().stream())
-            .filter(d -> d.getLang().equals("en"))
+            .filter(d -> d.getLang().equals(language))
             .filter(d -> StringUtils.isNotBlank(d.getDetails()))
             .map(d -> TextUtils.html2txt(d.getDetails()))
             .forEach(d -> text.append(d.toUpperCase()).append(System.lineSeparator()));
-        navtex.setText(text.toString());
+
+        if (text.length() > 0) {
+            navtex.setPromulgate(true);
+            navtex.setText(text.toString());
+        } else {
+            navtex.setPromulgate(false);
+        }
 
         return navtex;
     }

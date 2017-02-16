@@ -92,12 +92,14 @@ public class RadioPromulgationService extends BasePromulgationService {
     public BasePromulgationVo generateMessagePromulgation(SystemMessageVo message) throws PromulgationException {
         RadioPromulgationVo radio = new RadioPromulgationVo();
 
+        String language = getLanguage();
         StringBuilder text = new StringBuilder();
         if (message.getParts() != null) {
             message.getParts().stream()
                     .filter(p -> p.getType() == MessagePartType.DETAILS && p.getDescs() != null)
                     .flatMap(p -> p.getDescs().stream())
-                    .filter(d -> d.getLang().equals("da") && StringUtils.isNotBlank(d.getDetails()))
+                    .filter(d -> d.getLang().equals(language))
+                    .filter(d -> StringUtils.isNotBlank(d.getDetails()))
                     .map(d -> TextUtils.html2txt(d.getDetails()))
                     .forEach(d -> text.append(d).append(System.lineSeparator()));
         }

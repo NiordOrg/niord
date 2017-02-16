@@ -47,6 +47,8 @@ public class PromulgationServiceData extends VersionedEntity<Integer> {
 
     boolean active;
 
+    String language;
+
     @ManyToMany
     List<Domain> domains = new ArrayList<>();
 
@@ -57,6 +59,7 @@ public class PromulgationServiceData extends VersionedEntity<Integer> {
         serviceData.setServiceClass(serviceClass);
         serviceData.setPriority(priority);
         serviceData.setActive(active);
+        serviceData.setLanguage(language);
         serviceData.setDomains(domains.stream()
             .map(Domain::toVo)
             .collect(Collectors.toList()));
@@ -90,6 +93,14 @@ public class PromulgationServiceData extends VersionedEntity<Integer> {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
     }
 
     public List<Domain> getDomains() {

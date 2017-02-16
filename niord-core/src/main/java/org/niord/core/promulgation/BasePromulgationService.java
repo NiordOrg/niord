@@ -16,6 +16,8 @@
 
 package org.niord.core.promulgation;
 
+import org.apache.commons.lang.StringUtils;
+import org.niord.core.NiordApp;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.Message;
@@ -48,6 +50,15 @@ public abstract class BasePromulgationService extends BaseService {
     @Inject
     DomainService domainService;
 
+    @Inject
+    NiordApp app;
+
+
+    /***************************************/
+    /** Promulgation Service Handling     **/
+    /***************************************/
+
+
     /**
      * Should be called from sub-classes in a @PostConstruct to register the promulgation service
      * Registers the promulgation service with the promulgation manager
@@ -63,7 +74,6 @@ public abstract class BasePromulgationService extends BaseService {
 
     /**
      * Returns or creates the associated promulgation service data. Give sub-classes chance to override.
-     *
      * @return the associated promulgation service data
      */
     protected PromulgationServiceData getPromulgationServiceData(boolean create) {
@@ -88,7 +98,6 @@ public abstract class BasePromulgationService extends BaseService {
 
     /**
      * Returns a type key for the promulgation service. Must be unique
-     *
      * @return a type key for the promulgation service
      */
     public abstract String getType();
@@ -96,65 +105,24 @@ public abstract class BasePromulgationService extends BaseService {
 
     /**
      * Returns a default priority of the promulgation service. Used for sorting the promulgation services.
-     *
      * @return a default priority of the promulgation service
      */
     public abstract int getDefaultPriority();
 
 
     /**
-     * Updates and adds promulgations to the message value object
-     *
-     * @param message the message value object
+     * Returns the language configured for the promulgation service
+     * @return the language configured for the promulgation service
      */
-    public abstract void onLoadSystemMessage(SystemMessageVo message) throws PromulgationException;
-
-
-    /**
-     * Prior to creating a new message, let the registered promulgation services check up on promulgations.
-     * Default implementation does nothing.
-     *
-     * @param message the message about to be created
-     */
-    public void onCreateMessage(Message message) throws PromulgationException {
+    public String getLanguage() {
+        String lang = getPromulgationServiceData(false).getLanguage();
+        return app.getLanguage(lang);
     }
 
 
     /**
-     * Prior to updating an existing message, let the registered promulgation services check up on promulgations.
-     * Default implementation does nothing.
-     *
-     * @param message the message about to be updated
-     */
-    public void onUpdateMessage(Message message) throws PromulgationException {
-    }
-
-
-    /**
-     * Prior to changing status of an existing message, let the registered promulgation services check up on promulgations.
-     * Default implementation does nothing.
-     *
-     * @param message the message about to be updated
-     */
-    public void onUpdateMessageStatus(Message message) throws PromulgationException {
-    }
-
-
-    /**
-     * Generates a message promulgation record for the given type and message
-     *
-     * @param message the message template to generate a promulgation for
-     * @return the promulgation
-     */
-    public BasePromulgationVo generateMessagePromulgation(SystemMessageVo message) throws PromulgationException {
-        return null;
-    }
-
-
-    /**
-     * Updates the active status, priority or domains of a promulgation service
-     *
-     * @return the active status, priority or domains of a promulgation service
+     * Updates the active status, language, priority or domains of a promulgation service
+     * @return the active status, language, priority or domains of a promulgation service
      */
     public PromulgationServiceDataVo updatePromulgationService(PromulgationServiceDataVo serviceData) {
 
@@ -165,6 +133,7 @@ public abstract class BasePromulgationService extends BaseService {
 
         original.setActive(serviceData.isActive());
         original.setPriority(serviceData.getPriority());
+        original.setLanguage(StringUtils.defaultIfBlank(serviceData.getLanguage(), null));
 
         // Update list of domains
         List<Domain> domains = serviceData.getDomains().stream()
@@ -174,5 +143,54 @@ public abstract class BasePromulgationService extends BaseService {
 
         return saveEntity(original).toVo(getClass());
     }
-}
 
+
+    /***************************************/
+    /** Message Life-cycle Management     **/
+    /***************************************/
+
+
+    /**
+     * Updates and adds promulgations to the message value object
+     * @param message the message value object
+     */
+    public abstract void onLoadSystemMessage(SystemMessageVo message) throws PromulgationException;
+
+
+    /**
+     * Prior to creating a new message, let the registered promulgation services check up on promulgations.
+     * Default implementation does nothing.
+     * @param message the message about to be created
+     */
+    public void onCreateMessage(Message message) throws PromulgationException {
+    }
+
+
+    /**
+     * Prior to updating an existing message, let the registered promulgation services check up on promulgations.
+     * Default implementation does nothing.
+     * @param message the message about to be updated
+     */
+    public void onUpdateMessage(Message message) throws PromulgationException {
+    }
+
+
+    /**
+     * Prior to changing status of an existing message, let the registered promulgation services check up on promulgations.
+     * Default implementation does nothing.
+     * @param message the message about to be updated
+     */
+    public void onUpdateMessageStatus(Message message) throws PromulgationException {
+    }
+
+
+    /**
+     * Generates a message promulgation record for the given type and message
+     * @param message the message template to generate a promulgation for
+     * @return the promulgation
+     */
+    public BasePromulgationVo generateMessagePromulgation(SystemMessageVo message) throws PromulgationException {
+        return null;
+    }
+
+}

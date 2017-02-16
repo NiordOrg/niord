@@ -31,6 +31,7 @@ public class PromulgationServiceDataVo implements IJsonSerializable, Comparable<
     String type;
     int priority;
     boolean active;
+    String language;
     List<DomainVo> domains = new ArrayList<>();
     Class<? extends BasePromulgationService> serviceClass;
 
@@ -68,6 +69,14 @@ public class PromulgationServiceDataVo implements IJsonSerializable, Comparable<
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
     }
 
     public List<DomainVo> getDomains() {

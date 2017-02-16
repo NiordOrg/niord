@@ -36,6 +36,16 @@
                         </div>
 
                         <div class="form-group">
+                            <label class="col-sm-4">Language</label>
+                            <div class="col-sm-8">
+                                <select class="form-control input-sm" ng-model="promulgation.language"
+                                        ng-options="lang for lang in languages">
+                                    <option value=""></option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
                             <label class="col-sm-4">Domains</label>
                             <div class="col-sm-8">
                                 <domain-field domain-data="promulgation" multiple="true"></domain-field>
@@ -72,6 +82,7 @@
                                 <th>Active</th>
                                 <th>Type</th>
                                 <th>Priority</th>
+                                <th>Language</th>
                                 <th>Domains</th>
                                 <th></th>
                             </tr>
@@ -79,6 +90,7 @@
                                 <td><input type="checkbox" ng-model="promulgation.active" disabled="disabled"></td>
                                 <td>{{promulgation.type}}</td>
                                 <td>{{promulgation.priority}}</td>
+                                <td>{{promulgation.language}}</td>
                                 <td>
                                     <div ng-repeat="domain in promulgation.domains">{{domain.domainId}}</div>
                                 </td>

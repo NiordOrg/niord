@@ -27,13 +27,13 @@ angular.module('niord.admin')
      * Promulgation Admin Controller
      * Controller for the Admin Promulgation page
      */
-    .controller('PromulgationAdminCtrl', ['$scope', '$uibModal', 'growl', 'AdminPromulgationService',
-        function ($scope, $uibModal, growl, AdminPromulgationService) {
+    .controller('PromulgationAdminCtrl', ['$scope', '$rootScope', '$uibModal', 'growl', 'AdminPromulgationService',
+        function ($scope, $rootScope, $uibModal, growl, AdminPromulgationService) {
             'use strict';
 
             $scope.promulgations = [];
             $scope.promulgation = undefined;  // The promulgation being edited
-
+            $scope.languages = $rootScope.modelLanguages;
 
             /** Loads the promulgation from the back-end */
             $scope.loadPromulgations = function() {

@@ -86,9 +86,10 @@ public class TwitterPromulgationService extends BasePromulgationService {
     /** {@inheritDoc} */
     @Override
     public BasePromulgationVo generateMessagePromulgation(SystemMessageVo message) throws PromulgationException {
+
         TwitterPromulgationVo twitter = new TwitterPromulgationVo();
 
-        MessageDescVo desc = message.getDesc("en");
+        MessageDescVo desc = message.getDesc(getLanguage());
         String title = desc != null ? desc.getTitle() : null;
 
         if (StringUtils.isNotBlank(title)) {
