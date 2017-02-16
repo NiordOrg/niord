@@ -1,14 +1,11 @@
 
-<div>
+<div class="promulgation-text" ng-bind-html="promulgation.text | plain2html | toTrusted"></div>
+
+<div style="font-size: 80%; margin: 5px 0">
+    Priority: {{promulgation.priority}},&nbsp;
     Transmitters:
     <span ng-repeat="(name, val) in promulgation.transmitters"
           ng-if="val">
         {{name}}
     </span>
 </div>
-
-<div>
-    Priority: {{promulgation.priority}}
-</div>
-
-<div class="promulgation-text" ng-bind-html="promulgation.text | plain2html | toTrusted"></div>
