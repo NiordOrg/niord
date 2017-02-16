@@ -18,6 +18,7 @@ package org.niord.core.promulgation;
 
 import org.niord.core.promulgation.vo.TwitterPromulgationVo;
 
+import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
@@ -31,7 +32,10 @@ public class TwitterPromulgation extends BasePromulgation<TwitterPromulgationVo>
 
     public static final String  TYPE = "twitter";
 
+    // NB: Tweets can be longer than 140 chars nowadays, if they e.g. contain multimedia links...
+    @Column(length = 512)
     String tweet;
+
 
     /** Constructor **/
     public TwitterPromulgation() {

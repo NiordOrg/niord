@@ -61,6 +61,12 @@ public class NavtexTransmitter extends BaseEntity<Integer> {
 
 
     /** Constructor **/
+    public NavtexTransmitter(String name) {
+        this.name = name;
+    }
+
+
+    /** Constructor **/
     public NavtexTransmitter(NavtexTransmitterVo transmitter) {
         this.name = transmitter.getName();
         this.active = transmitter.isActive();

@@ -185,7 +185,7 @@ public class PromulgationManager {
      * @param message the message template to generate a promulgation for
      * @return the promulgation
      */
-    public BasePromulgation<?> generateMessagePromulgation(String type, Message message) throws PromulgationException {
+    public BasePromulgationVo generateMessagePromulgation(String type, SystemMessageVo message) throws PromulgationException {
         return instantiatePromulgationService(type).generateMessagePromulgation(message);
     }
 

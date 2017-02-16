@@ -18,18 +18,17 @@ package org.niord.core.promulgation;
 
 import org.niord.core.promulgation.vo.NavtexPromulgationVo;
 
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
-import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.JoinColumn;
-import javax.persistence.MapKeyColumn;
+import javax.persistence.Lob;
+import javax.persistence.ManyToMany;
 import javax.validation.constraints.NotNull;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Defines the promulgation data associated with NAVTEX mailing list promulgation
@@ -54,12 +53,10 @@ public class NavtexPromulgation extends BasePromulgation<NavtexPromulgationVo> i
     @Enumerated(EnumType.STRING)
     NavtexPriority priority = NavtexPriority.NONE;
 
-    @ElementCollection
-    @MapKeyColumn(name="transmitter")
-    @Column(name="send")
-    @CollectionTable(name="NavtexTransmitters", joinColumns=@JoinColumn(name="NavtexTransmitters_id"))
-    Map<String, Boolean> transmitters = new HashMap<>();
+    @ManyToMany
+    List<NavtexTransmitter> transmitters = new ArrayList<>();
 
+    @Lob
     String text;
 
     /** Constructor **/
@@ -74,7 +71,10 @@ public class NavtexPromulgation extends BasePromulgation<NavtexPromulgationVo> i
         super(promulgation);
         this.type = TYPE;
         this.priority = promulgation.getPriority();
-        this.transmitters.putAll(promulgation.getTransmitters());
+        this.transmitters = promulgation.getTransmitters().entrySet().stream()
+                .filter(Map.Entry::getValue) // Only selected transmitters
+                .map(e -> new NavtexTransmitter(e.getKey()))
+                .collect(Collectors.toList());
         this.text = promulgation.getText();
     }
 
@@ -83,7 +83,8 @@ public class NavtexPromulgation extends BasePromulgation<NavtexPromulgationVo> i
     public NavtexPromulgationVo toVo() {
         NavtexPromulgationVo data = toVo(new NavtexPromulgationVo());
         data.setPriority(priority);
-        data.getTransmitters().putAll(transmitters);
+        data.setTransmitters(transmitters.stream()
+            .collect(Collectors.toMap(NavtexTransmitter::getName, t -> Boolean.TRUE)));
         data.setText(text);
         return data;
     }
@@ -97,7 +98,7 @@ public class NavtexPromulgation extends BasePromulgation<NavtexPromulgationVo> i
             NavtexPromulgation p = (NavtexPromulgation)promulgation;
             this.priority = p.getPriority();
             this.transmitters.clear();
-            this.transmitters.putAll(p.getTransmitters());
+            this.transmitters.addAll(p.getTransmitters());
             this.text = p.getText();
         }
     }
@@ -115,11 +116,11 @@ public class NavtexPromulgation extends BasePromulgation<NavtexPromulgationVo> i
         this.priority = priority;
     }
 
-    public Map<String, Boolean> getTransmitters() {
+    public List<NavtexTransmitter> getTransmitters() {
         return transmitters;
     }
 
-    public void setTransmitters(Map<String, Boolean> transmitters) {
+    public void setTransmitters(List<NavtexTransmitter> transmitters) {
         this.transmitters = transmitters;
     }
 
@@ -132,5 +133,4 @@ public class NavtexPromulgation extends BasePromulgation<NavtexPromulgationVo> i
     public void setText(String text) {
         this.text = text;
     }
-
 }

@@ -20,6 +20,7 @@ import org.niord.core.promulgation.vo.RadioPromulgationVo;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
+import javax.persistence.Lob;
 
 /**
  * Defines the promulgation data associated with NAVTEX mailing list promulgation
@@ -31,6 +32,7 @@ public class RadioPromulgation extends BasePromulgation<RadioPromulgationVo> imp
 
     public static final String  TYPE = "radio";
 
+    @Lob
     String text;
 
     /** Constructor **/

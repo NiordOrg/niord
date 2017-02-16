@@ -20,9 +20,7 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
-import org.niord.core.message.Message;
 import org.niord.core.message.vo.SystemMessageVo;
-import org.niord.core.promulgation.BasePromulgation;
 import org.niord.core.promulgation.PromulgationManager;
 import org.niord.core.promulgation.vo.BasePromulgationVo;
 import org.niord.core.promulgation.vo.PromulgationServiceDataVo;
@@ -117,8 +115,6 @@ public class PromulgationRestService extends AbstractBatchableRestService {
     ) throws Exception {
 
         log.info("Updating promulgation service " + type);
-        Message message = new Message(messageVo);
-        BasePromulgation<?> promulgation = promulgationManager.generateMessagePromulgation(type, message);
-        return promulgation == null ? null : promulgation.toVo();
+        return promulgationManager.generateMessagePromulgation(type, messageVo);
     }
 }

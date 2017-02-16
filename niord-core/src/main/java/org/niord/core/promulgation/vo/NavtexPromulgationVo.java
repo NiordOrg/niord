@@ -29,7 +29,7 @@ import java.util.Map;
 @SuppressWarnings("unused")
 public class NavtexPromulgationVo extends BasePromulgationVo<NavtexPromulgation> implements IMailPromulgation {
 
-    NavtexPromulgation.NavtexPriority priority;
+    NavtexPromulgation.NavtexPriority priority = NavtexPromulgation.NavtexPriority.NONE;
 
     Map<String, Boolean> transmitters = new HashMap<>();
 
@@ -52,7 +52,8 @@ public class NavtexPromulgationVo extends BasePromulgationVo<NavtexPromulgation>
     /** {@inheritDoc} **/
     @Override
     public boolean promulgationDataDefined() {
-        return StringUtils.isNotBlank(text) || !transmitters.isEmpty();
+        return StringUtils.isNotBlank(text)
+                || transmitters.entrySet().stream().anyMatch(Map.Entry::getValue);
     }
 
 

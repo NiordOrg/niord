@@ -21,8 +21,8 @@ import org.niord.core.area.Area;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.message.Message;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.promulgation.vo.BasePromulgationVo;
 import org.niord.core.promulgation.vo.NavtexPromulgationVo;
-import org.niord.core.promulgation.vo.NavtexTransmitterVo;
 import org.niord.core.util.TextUtils;
 
 import javax.annotation.PostConstruct;
@@ -37,6 +37,7 @@ import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -102,8 +103,29 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
     /** {@inheritDoc} */
     @Override
-    public BasePromulgation<?> generateMessagePromulgation(Message message) throws PromulgationException {
-        NavtexPromulgation navtex = new NavtexPromulgation();
+    public void onCreateMessage(Message message) throws PromulgationException {
+        checkNavtexPromulgation(message);
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public void onUpdateMessage(Message message) throws PromulgationException {
+        checkNavtexPromulgation(message);
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public void onUpdateMessageStatus(Message message) throws PromulgationException {
+        checkNavtexPromulgation(message);
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public BasePromulgationVo generateMessagePromulgation(SystemMessageVo message) throws PromulgationException {
+        NavtexPromulgationVo navtex = new NavtexPromulgationVo();
 
         navtex.setPromulgate(true);
 
@@ -113,7 +135,10 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
         // Select transmitters associated with the current message areas
         if (!message.getAreas().isEmpty()) {
-            findTransmittersByAreas(message.getAreas(), true)
+            List<Area> areas = message.getAreas().stream()
+                    .map(Area::new)
+                    .collect(Collectors.toList());
+            findTransmittersByAreas(areas, true)
                     .forEach(t -> navtex.getTransmitters().put(t.getName(), Boolean.TRUE));
         }
 
@@ -127,6 +152,19 @@ public class NavtexPromulgationService extends BasePromulgationService {
         navtex.setText(text.toString());
 
         return navtex;
+    }
+
+
+    /**
+     * Checks that the NAVTEX promulgation is valid and ready to be persisted
+     * @param message the message to check
+     */
+    private void checkNavtexPromulgation(Message message) {
+        NavtexPromulgation navtex = message.promulgation(NavtexPromulgation.class, getType());
+        if (navtex != null) {
+            // Replace the list of transmitters with the persisted entities
+            navtex.setTransmitters(persistedTransmitters(navtex.getTransmitters()));
+        }
     }
 
 
@@ -144,6 +182,15 @@ public class NavtexPromulgationService extends BasePromulgationService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+
+    /** Update the list of transmitters with the persisted entities **/
+    protected List<NavtexTransmitter> persistedTransmitters(List<NavtexTransmitter> transmitters) {
+        return transmitters.stream()
+                .map(t -> findTransmitterByName(t.getName()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
 

@@ -20,6 +20,7 @@ import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.Message;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.promulgation.vo.BasePromulgationVo;
 import org.niord.core.promulgation.vo.PromulgationServiceDataVo;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
@@ -145,7 +146,7 @@ public abstract class BasePromulgationService extends BaseService {
      * @param message the message template to generate a promulgation for
      * @return the promulgation
      */
-    public BasePromulgation<?> generateMessagePromulgation(Message message) throws PromulgationException {
+    public BasePromulgationVo generateMessagePromulgation(SystemMessageVo message) throws PromulgationException {
         return null;
     }
 
