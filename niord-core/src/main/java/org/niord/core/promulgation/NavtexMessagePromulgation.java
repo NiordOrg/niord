@@ -16,7 +16,7 @@
 
 package org.niord.core.promulgation;
 
-import org.niord.core.promulgation.vo.NavtexPromulgationVo;
+import org.niord.core.promulgation.vo.NavtexMessagePromulgationVo;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -31,12 +31,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Defines the promulgation data associated with NAVTEX mailing list promulgation
+ * Defines the message promulgation entity associated with NAVTEX mailing list promulgations
  */
 @Entity
-@DiscriminatorValue(NavtexPromulgation.TYPE)
+@DiscriminatorValue(NavtexMessagePromulgation.TYPE)
 @SuppressWarnings("unused")
-public class NavtexPromulgation extends BasePromulgation<NavtexPromulgationVo> implements IMailPromulgation {
+public class NavtexMessagePromulgation
+        extends BaseMessagePromulgation<NavtexMessagePromulgationVo>
+        implements IMailPromulgation {
 
     public static final String  TYPE = "navtex";
 
@@ -60,16 +62,15 @@ public class NavtexPromulgation extends BasePromulgation<NavtexPromulgationVo> i
     String text;
 
     /** Constructor **/
-    public NavtexPromulgation() {
+    public NavtexMessagePromulgation() {
         super();
-        this.type = TYPE;
     }
 
 
     /** Constructor **/
-    public NavtexPromulgation(NavtexPromulgationVo promulgation) {
+    public NavtexMessagePromulgation(NavtexMessagePromulgationVo promulgation) {
         super(promulgation);
-        this.type = TYPE;
+
         this.priority = promulgation.getPriority();
         this.transmitters = promulgation.getTransmitters().entrySet().stream()
                 .filter(Map.Entry::getValue) // Only selected transmitters
@@ -80,8 +81,10 @@ public class NavtexPromulgation extends BasePromulgation<NavtexPromulgationVo> i
 
 
     /** Returns a value object for this entity */
-    public NavtexPromulgationVo toVo() {
-        NavtexPromulgationVo data = toVo(new NavtexPromulgationVo());
+    public NavtexMessagePromulgationVo toVo() {
+
+        NavtexMessagePromulgationVo data = toVo(new NavtexMessagePromulgationVo());
+
         data.setPriority(priority);
         data.setTransmitters(transmitters.stream()
             .collect(Collectors.toMap(NavtexTransmitter::getName, t -> Boolean.TRUE)));
@@ -92,10 +95,11 @@ public class NavtexPromulgation extends BasePromulgation<NavtexPromulgationVo> i
 
     /** Updates this promulgation from another promulgation **/
     @Override
-    public void update(BasePromulgation promulgation) {
-        if (promulgation instanceof NavtexPromulgation) {
+    public void update(BaseMessagePromulgation promulgation) {
+        if (promulgation instanceof NavtexMessagePromulgation) {
             super.update(promulgation);
-            NavtexPromulgation p = (NavtexPromulgation)promulgation;
+
+            NavtexMessagePromulgation p = (NavtexMessagePromulgation)promulgation;
             this.priority = p.getPriority();
             this.transmitters.clear();
             this.transmitters.addAll(p.getTransmitters());

@@ -18,11 +18,9 @@ package org.niord.core.promulgation;
 
 import org.niord.core.message.Message;
 import org.niord.core.model.VersionedEntity;
-import org.niord.core.promulgation.vo.BasePromulgationVo;
+import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
+import org.niord.model.DataFilter;
 
-import javax.persistence.Column;
-import javax.persistence.DiscriminatorColumn;
-import javax.persistence.DiscriminatorType;
 import javax.persistence.Entity;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
@@ -30,37 +28,35 @@ import javax.persistence.ManyToOne;
 import javax.validation.constraints.NotNull;
 
 /**
- * Abstract super-class for all types of message promulgation data entities.
+ * Super-class for all types of message promulgation entities.
  */
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING)
 @SuppressWarnings("unused")
-public class BasePromulgation<P extends BasePromulgationVo>
+public class BaseMessagePromulgation<P extends BaseMessagePromulgationVo>
         extends VersionedEntity<Integer> {
-
-    // NB: Managed by JPA
-    @Column(name = "type", insertable = false, updatable = false)
-    @SuppressWarnings("all")
-    String type;
 
     @NotNull
     @ManyToOne
     Message message;
 
+    @NotNull
+    @ManyToOne
+    PromulgationType type;
+
     boolean promulgate;
 
 
     /** Constructor **/
-    public BasePromulgation() {
+    public BaseMessagePromulgation() {
     }
 
 
     /** Constructor **/
-    public BasePromulgation(P promulgation) {
+    public BaseMessagePromulgation(P promulgation) {
         this();
         this.id = promulgation.getId();
-        this.type = promulgation.getType();
+        this.type = new PromulgationType(promulgation.getType());
         this.promulgate = promulgation.isPromulgate();
     }
 
@@ -73,7 +69,7 @@ public class BasePromulgation<P extends BasePromulgationVo>
 
     /** Returns a value object for this entity */
     protected P toVo(P vo) {
-        vo.setType(getType());
+        vo.setType(type.toVo(DataFilter.get()));
         vo.setId(id);
         vo.setPromulgate(promulgate);
         return vo;
@@ -81,7 +77,7 @@ public class BasePromulgation<P extends BasePromulgationVo>
 
 
     /** Updates this promulgation from another promulgation **/
-    public void update(BasePromulgation promulgation) {
+    public void update(BaseMessagePromulgation promulgation) {
         this.type = promulgation.getType();
         this.promulgate = promulgation.isPromulgate();
     }
@@ -100,8 +96,12 @@ public class BasePromulgation<P extends BasePromulgationVo>
     /** Getters and Setters **/
     /*************************/
 
-    public String getType() {
+    public PromulgationType getType() {
         return type;
+    }
+
+    public void setType(PromulgationType type) {
+        this.type = type;
     }
 
     public Message getMessage() {

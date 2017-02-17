@@ -16,12 +16,11 @@
 
 package org.niord.core.promulgation;
 
-import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.Message;
 import org.niord.core.message.vo.SystemMessageVo;
-import org.niord.core.promulgation.vo.BasePromulgationVo;
-import org.niord.core.promulgation.vo.PromulgationServiceDataVo;
+import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
+import org.niord.core.promulgation.vo.PromulgationServiceVo;
 import org.niord.core.util.CdiUtils;
 import org.slf4j.Logger;
 
@@ -32,10 +31,10 @@ import javax.ejb.Startup;
 import javax.inject.Inject;
 import javax.naming.NamingException;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -43,11 +42,14 @@ import java.util.stream.Collectors;
 /**
  * Manages the list of PromulgationServices, such as MailingListPromulgationService, NavtexPromulgationService, etc.
  * <p>
- * The PromulgationManager facilitates a plug-in architecture where all promulgation services should start by
- * calling {@code registerPromulgationService()}, typically in a @PostConstruct method.
+ * The PromulgationManager facilitates a plug-in architecture where all promulgation services must register
+ * in a @PostConstruct method.
  * <p>
- * Subsequently, the PromulgationManager serves as an interface between the MessageService the list of
- * promulgation services.
+ * Each promulgation service is associated with a list of {@linkplain PromulgationType} entities.
+ * As an example, there may be "NAVTEX-DK" and "NAVTEX-GL" types managed by NAVTEX promulgation service.
+ * <p>
+ * In turn, messages are associated with a list of {@linkplain BaseMessagePromulgation}-derived entities that
+ * are each tied to a promulgation type.
  */
 @Singleton
 @Startup
@@ -61,15 +63,10 @@ public class PromulgationManager {
     @Inject
     DomainService domainService;
 
+    @Inject
+    PromulgationTypeService promulgationTypeService;
 
-    Map<String, PromulgationServiceDataVo> services = new ConcurrentHashMap<>();
-
-
-    /** Returns the priority associated with the given promulgation type **/
-    public int priority(String type) {
-        PromulgationServiceDataVo p = services.get(type);
-        return p != null ? p.getPriority() : 1000000;
-    }
+    Map<String, Class<? extends BasePromulgationService>> services = new ConcurrentHashMap<>();
 
 
     /***************************************/
@@ -79,37 +76,26 @@ public class PromulgationManager {
 
     /**
      * Registers the promulgation service
-     * @param serviceData the promulgation service to register
+     * @param service the promulgation service to register
      */
-    public void registerPromulgationService(PromulgationServiceDataVo serviceData) {
-        services.put(serviceData.getType(), serviceData);
-        log.info("Registered promulgation service " + serviceData.getType());
+    public void registerPromulgationService(BasePromulgationService service) {
+        services.put(service.getServiceId(), service.getClass());
+        log.info("Registered promulgation service " + service.getServiceId());
     }
 
 
     /**
-     * Returns all promulgation service data entities
-     * @return all promulgation service data entities
+     * Returns the registered set of promulgation services
+     * @return the registered set of promulgation services
      */
-    public List<PromulgationServiceDataVo> getAllPromulgationServices() {
-        return services.values().stream()
-                .sorted()
+    public List<PromulgationServiceVo> promulgationServices() {
+        return services.entrySet().stream()
+                .map(s -> {
+                    BasePromulgationService service = instantiatePromulgationService(s.getValue());
+                    String serviceName = service == null ? s.getKey() : service.getServiceName();
+                    return new PromulgationServiceVo(s.getKey(), serviceName);
+                })
                 .collect(Collectors.toList());
-    }
-
-
-    /**
-     * Updates the active status, priority or domains of a promulgation service
-     * @return the active status, priority or domains of a promulgation service
-     */
-    public PromulgationServiceDataVo updatePromulgationService(PromulgationServiceDataVo serviceData) throws Exception {
-        BasePromulgationService service = instantiatePromulgationService(serviceData.getType());
-        serviceData = service.updatePromulgationService(serviceData);
-
-        // Update the cached version
-        services.put(serviceData.getType(), serviceData);
-
-        return serviceData;
     }
 
 
@@ -126,23 +112,21 @@ public class PromulgationManager {
 
         // The set of promulgation types to consider is the union between the currently active
         // services for the current domain and the promulgations already defined for the message.
-        Set<String> types = new HashSet<>();
-        types.addAll(getActiveServiceTypes());
-        types.addAll(message.getPromulgations().stream()
-            .map(BasePromulgationVo::getType)
-            .collect(Collectors.toSet()));
+        Map<String, PromulgationType> types = new HashMap<>();
+        promulgationTypeService.getActivePromulgationTypes().forEach(pt -> types.put(pt.getTypeId(), pt));
+        promulgationTypeService.getPromulgationTypes(message).forEach(pt -> types.put(pt.getTypeId(), pt));
 
         // Let the associated services process the message
-        for (String type : types) {
-            BasePromulgationService service = instantiatePromulgationService(type);
+        for (PromulgationType type : types.values()) {
+            BasePromulgationService service = instantiatePromulgationService(type.getServiceId());
             if (service != null) {
-                service.onLoadSystemMessage(message);
+                service.onLoadSystemMessage(message, type);
             }
         }
 
         // Sort the promulgations according to priority
-        message.getPromulgations()
-                .sort(Comparator.comparingInt(p -> priority(p.getType())));
+        message.checkCreatePromulgations()
+                .sort(Comparator.comparingInt(p -> p.getType().getPriority()));
     }
 
 
@@ -151,8 +135,13 @@ public class PromulgationManager {
      * @param message the message about to be created
      */
     public void onCreateMessage(Message message) throws PromulgationException {
-        for (BasePromulgationService service : instantiatePromulgationServices(message)) {
-            service.onCreateMessage(message);
+        for (PromulgationType type : persistedPromulgationTypes(message)) {
+            BasePromulgationService service = instantiatePromulgationService(type.getServiceId());
+            if (service != null) {
+                service.onCreateMessage(message, type);
+            } else {
+                log.warn("Unable to instantiate promulgation service for type " + type.getTypeId());
+            }
         }
     }
 
@@ -162,8 +151,13 @@ public class PromulgationManager {
      * @param message the message about to be updated
      */
     public void onUpdateMessage(Message message) throws PromulgationException {
-        for (BasePromulgationService service : instantiatePromulgationServices(message)) {
-            service.onUpdateMessage(message);
+        for (PromulgationType type : persistedPromulgationTypes(message)) {
+            BasePromulgationService service = instantiatePromulgationService(type.getServiceId());
+            if (service != null) {
+                service.onUpdateMessage(message, type);
+            } else {
+                log.warn("Unable to instantiate promulgation service for type " + type.getTypeId());
+            }
         }
     }
 
@@ -173,56 +167,47 @@ public class PromulgationManager {
      * @param message the message about to be updated
      */
     public void onUpdateMessageStatus(Message message) throws PromulgationException {
-        for (BasePromulgationService service : instantiatePromulgationServices(message)) {
-            service.onUpdateMessageStatus(message);
+        for (PromulgationType type : persistedPromulgationTypes(message)) {
+            BasePromulgationService service = instantiatePromulgationService(type.getServiceId());
+            if (service != null) {
+                service.onUpdateMessageStatus(message, type);
+            } else {
+                log.warn("Unable to instantiate promulgation service for type " + type.getTypeId());
+            }
         }
     }
 
 
     /**
      * Generates a message promulgation record for the given type and message
-     * @param type the type of promulgation to generate
+     * @param typeId the type of promulgation to generate
      * @param message the message template to generate a promulgation for
      * @return the promulgation
      */
-    public BasePromulgationVo generateMessagePromulgation(String type, SystemMessageVo message) throws PromulgationException {
-        return instantiatePromulgationService(type).generateMessagePromulgation(message);
+    public BaseMessagePromulgationVo generateMessagePromulgation(String typeId, SystemMessageVo message) throws PromulgationException {
+        PromulgationType type = promulgationTypeService.getPromulgationType(typeId);
+        return instantiatePromulgationService(type.getServiceId()).generateMessagePromulgation(message, type);
     }
 
+
+    /**
+     * Updates all referenced promulgation types with the persisted versions and returns the set of types
+     * @param message the message to update
+     * @return the associated promulgation types
+     */
+    private Set<PromulgationType> persistedPromulgationTypes(Message message) {
+        Set<PromulgationType> types = new HashSet<>();
+        message.getPromulgations()
+                .forEach(p -> {
+                    p.setType(promulgationTypeService.getPromulgationType(p.getType().getTypeId()));
+                    types.add(p.getType());
+                });
+        return types;
+    }
 
     /***************************************/
     /** Utility function                  **/
     /***************************************/
-
-
-    /**
-     * Returns the list of active service types for the current domain
-     * @return the list of active service types
-     */
-    private Set<String> getActiveServiceTypes() {
-
-        Domain domain = domainService.currentDomain();
-
-        return services.values().stream()
-                .filter(PromulgationServiceDataVo::isActive)
-                .filter(p -> domain == null ||
-                             p.getDomains().stream().anyMatch(d -> d.getDomainId().equals(domain.getDomainId())))
-                .map(PromulgationServiceDataVo::getType)
-                .collect(Collectors.toSet());
-    }
-
-
-    /**
-     * Returns the list of instantiated promulgation services associated with promulgations of the given message
-     * @param message the message to return promulgation services for
-     * @return the list of promulgation services
-     */
-    private List<BasePromulgationService> instantiatePromulgationServices(Message message) {
-        return message.getPromulgations().stream()
-                .map(p -> instantiatePromulgationService(p.getType()))
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-    }
 
 
     /**
@@ -231,7 +216,7 @@ public class PromulgationManager {
      * @param type the promulgation service type
      */
     private BasePromulgationService instantiatePromulgationService(String type) {
-        return instantiatePromulgationService(services.get(type).getServiceClass());
+        return instantiatePromulgationService(services.get(type));
     }
 
 

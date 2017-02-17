@@ -17,7 +17,7 @@ package org.niord.core.message.vo;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.message.Message;
-import org.niord.core.promulgation.vo.BasePromulgationVo;
+import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.core.repo.IRepoBackedVo;
 import org.niord.core.util.UidUtils;
 import org.niord.model.message.MessageVo;
@@ -39,7 +39,7 @@ public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
     String editRepoPath;
     Integer unackComments;
     Boolean separatePage;
-    List<BasePromulgationVo> promulgations = new ArrayList<>();
+    List<BaseMessagePromulgationVo> promulgations;
     Map<String, Boolean> editorFields;
 
 
@@ -101,16 +101,28 @@ public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
 
     /**
      * Returns the promulgation with the given type, or null if not found
-     * @param type the promulgation type
+     * @param typeId the promulgation type
      * @return the promulgation with the given type, or null if not found
      */
     @SuppressWarnings("unchecked")
-    public <P extends BasePromulgationVo> P promulgation(Class<P> clz, String type) {
+    public <P extends BaseMessagePromulgationVo> P promulgation(Class<P> clz, String typeId) {
+        if (promulgations == null || typeId == null) {
+            return null;
+        }
         return (P) promulgations.stream()
-                .filter(p -> p.getType().equals(type) && clz.isAssignableFrom(p.getClass()))
+                .filter(p -> p.getType().getTypeId().equals(typeId) && clz.isAssignableFrom(p.getClass()))
                 .findFirst()
                 .orElse(null);
     }
+
+
+    public List<BaseMessagePromulgationVo> checkCreatePromulgations() {
+        if (promulgations == null) {
+            promulgations = new ArrayList<>();
+        }
+        return promulgations;
+    }
+
 
     /*************************/
     /** Getters and Setters **/
@@ -184,11 +196,11 @@ public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
         this.editorFields = editorFields;
     }
 
-    public List<BasePromulgationVo> getPromulgations() {
+    public List<BaseMessagePromulgationVo> getPromulgations() {
         return promulgations;
     }
 
-    public void setPromulgations(List<BasePromulgationVo> promulgations) {
+    public void setPromulgations(List<BaseMessagePromulgationVo> promulgations) {
         this.promulgations = promulgations;
     }
 }

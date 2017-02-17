@@ -31,44 +31,77 @@ angular.module('niord.admin')
         function ($scope, $rootScope, $uibModal, growl, AdminPromulgationService) {
             'use strict';
 
-            $scope.promulgations = [];
-            $scope.promulgation = undefined;  // The promulgation being edited
+            $scope.promulgationServices = [];
+            $scope.promulgationTypes = [];
+            $scope.promulgationType = undefined;  // The promulgation being edited
+            $scope.editMode = 'add';
             $scope.languages = $rootScope.modelLanguages;
 
+
+            // Load all promulgation services
+            AdminPromulgationService
+                .getPromulgationServices()
+                .success(function (promulgationServices) {
+                    $scope.promulgationServices = promulgationServices;
+                });
+
+
             /** Loads the promulgation from the back-end */
-            $scope.loadPromulgations = function() {
-                $scope.promulgation = undefined;
+            $scope.loadPromulgationTypes = function() {
+                $scope.promulgationType = undefined;
                 AdminPromulgationService
-                    .getPromulgations()
-                    .success(function (promulgations) {
-                        $scope.promulgations = promulgations;
+                    .getPromulgationTypes()
+                    .success(function (promulgationTypes) {
+                        $scope.promulgationTypes = promulgationTypes;
                     });
             };
 
 
-            /** Edits a promulgation **/
-            $scope.editPromulgation = function (promulgation) {
-                $scope.promulgation = angular.copy(promulgation);
+            /** Adds a new promulgation type **/
+            $scope.addPromulgationType = function (serviceId) {
+                $scope.editMode = 'add';
+                $scope.promulgationType = {
+                    serviceId: serviceId,
+                    typeId: '',
+                    name: '',
+                    priority: 0,
+                    active: true,
+                    language: undefined,
+                    domains: []
+                };
+            };
+
+
+            /** Edits a promulgation type **/
+            $scope.editPromulgationType = function (promulgationType) {
+                $scope.editMode = 'edit';
+                $scope.promulgationType = angular.copy(promulgationType);
             };
 
 
             /** Displays the error */
             $scope.displayError = function () {
-                growl.error("Error saving promulgation", { ttl: 5000 });
+                growl.error("Error saving promulgation type", { ttl: 5000 });
             };
 
 
-            /** Saves the current promulgation being edited */
-            $scope.savePromulgation = function () {
-                if ($scope.promulgation) {
+            /** Saves the current promulgation type being edited */
+            $scope.savePromulgationType = function () {
+                if ($scope.promulgationType && $scope.editMode == 'edit') {
                     AdminPromulgationService
-                        .updatePromulgation($scope.promulgation)
-                        .success($scope.loadPromulgations)
+                        .updatePromulgationType($scope.promulgationType)
+                        .success($scope.loadPromulgationTypes)
+                        .error($scope.displayError);
+                } else if ($scope.promulgationType && $scope.editMode == 'add') {
+                    AdminPromulgationService
+                        .createPromulgationType($scope.promulgationType)
+                        .success($scope.loadPromulgationTypes)
                         .error($scope.displayError);
                 }
             };
 
 
+            /** Utility function - opens a dialog based on the given params **/
             $scope.openDialog = function (params) {
                 $scope.$apply(function() {
                     $uibModal.open(params);

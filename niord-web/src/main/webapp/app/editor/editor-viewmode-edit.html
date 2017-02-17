@@ -695,7 +695,7 @@
                 <editor-field-value-viewer>
                     <span ng-repeat="promulgation in message.promulgations" style="margin-right: 20px">
                         <span class="glyphicon {{ 'glyphicon-' + (promulgation.promulgate ? 'check' : 'unchecked')}}"></span>
-                        {{promulgation.type | capitalize}}
+                        {{promulgation.type.name}}
                     </span>
                 </editor-field-value-viewer>
 
@@ -707,10 +707,10 @@
                                     <uib-tab-heading>
                                         <input type="checkbox" ng-model="promulgation.promulgate"
                                                ng-click="$event.stopPropagation(); setDirty();" tabindex="1601">
-                                        {{promulgation.type | capitalize}}
+                                        {{promulgation.type.name}}
                                     </uib-tab-heading>
                                     <div class="promulgation" ng-class="{ 'disabled-promulgation' : !promulgation.promulgate }">
-                                        <ng-include src="'/app/promulgation/' + promulgation.type + '-edit.html'"></ng-include>
+                                        <ng-include src="'/app/promulgation/' + promulgation.type.serviceId + '-edit.html'"></ng-include>
                                     </div>
                                 </uib-tab>
                             </uib-tabset>

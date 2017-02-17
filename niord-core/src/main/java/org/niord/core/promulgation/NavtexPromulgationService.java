@@ -21,11 +21,11 @@ import org.niord.core.area.Area;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.message.Message;
 import org.niord.core.message.vo.SystemMessageVo;
-import org.niord.core.promulgation.vo.BasePromulgationVo;
-import org.niord.core.promulgation.vo.NavtexPromulgationVo;
+import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
+import org.niord.core.promulgation.vo.NavtexMessagePromulgationVo;
 import org.niord.core.util.TextUtils;
+import org.niord.model.DataFilter;
 
-import javax.annotation.PostConstruct;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
 import javax.ejb.Singleton;
@@ -49,41 +49,22 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class NavtexPromulgationService extends BasePromulgationService {
 
-    public static final int PRIORITY = 1;
-
-
     /***************************************/
     /** Promulgation Service Handling     **/
     /***************************************/
 
-    /**
-     * Registers the promulgation service with the promulgation manager
-     */
-    @PostConstruct
-    public void init() {
-        registerPromulgationService();
+
+    /** {@inheritDoc} */
+    @Override
+    public String getServiceId() {
+        return NavtexMessagePromulgation.TYPE;
     }
 
 
     /** {@inheritDoc} */
     @Override
-    public String getType() {
-        return NavtexPromulgation.TYPE;
-    }
-
-
-    /** {@inheritDoc} */
-    @Override
-    public int getDefaultPriority() {
-        return PRIORITY;
-    }
-
-
-    /** {@inheritDoc} */
-    @Override
-    public String getLanguage() {
-        // NAVTEX is always in English
-        return "en";
+    public String getServiceName() {
+        return "NAVTEX mailing list";
     }
 
     /***************************************/
@@ -93,11 +74,11 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
     /** {@inheritDoc} */
     @Override
-    public void onLoadSystemMessage(SystemMessageVo message) throws PromulgationException {
-        NavtexPromulgationVo navtex = message.promulgation(NavtexPromulgationVo.class, getType());
+    public void onLoadSystemMessage(SystemMessageVo message, PromulgationType type) throws PromulgationException {
+        NavtexMessagePromulgationVo navtex = message.promulgation(NavtexMessagePromulgationVo.class, type.getTypeId());
         if (navtex == null) {
-            navtex = new NavtexPromulgationVo();
-            message.getPromulgations().add(navtex);
+            navtex = new NavtexMessagePromulgationVo(type.toVo(DataFilter.get()));
+            message.checkCreatePromulgations().add(navtex);
         }
 
         // Add all active transmitters not already added
@@ -111,30 +92,30 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
     /** {@inheritDoc} */
     @Override
-    public void onCreateMessage(Message message) throws PromulgationException {
-        checkNavtexPromulgation(message);
+    public void onCreateMessage(Message message, PromulgationType type) throws PromulgationException {
+        checkNavtexPromulgation(message, type);
     }
 
 
     /** {@inheritDoc} */
     @Override
-    public void onUpdateMessage(Message message) throws PromulgationException {
-        checkNavtexPromulgation(message);
+    public void onUpdateMessage(Message message, PromulgationType type) throws PromulgationException {
+        checkNavtexPromulgation(message, type);
     }
 
 
     /** {@inheritDoc} */
     @Override
-    public void onUpdateMessageStatus(Message message) throws PromulgationException {
-        checkNavtexPromulgation(message);
+    public void onUpdateMessageStatus(Message message, PromulgationType type) throws PromulgationException {
+        checkNavtexPromulgation(message, type);
     }
 
 
     /** {@inheritDoc} */
     @Override
-    public BasePromulgationVo generateMessagePromulgation(SystemMessageVo message) throws PromulgationException {
+    public BaseMessagePromulgationVo generateMessagePromulgation(SystemMessageVo message, PromulgationType type) throws PromulgationException {
 
-        NavtexPromulgationVo navtex = new NavtexPromulgationVo();
+        NavtexMessagePromulgationVo navtex = new NavtexMessagePromulgationVo();
 
         // Add all active transmitters - by default, not selected
         findTransmittersByAreas(null, true)
@@ -149,7 +130,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
                     .forEach(t -> navtex.getTransmitters().put(t.getName(), Boolean.TRUE));
         }
 
-        String language = getLanguage();
+        String language = getLanguage(type);
         StringBuilder text = new StringBuilder();
         message.getParts().stream()
             .flatMap(p -> p.getDescs().stream())
@@ -173,8 +154,8 @@ public class NavtexPromulgationService extends BasePromulgationService {
      * Checks that the NAVTEX promulgation is valid and ready to be persisted
      * @param message the message to check
      */
-    private void checkNavtexPromulgation(Message message) {
-        NavtexPromulgation navtex = message.promulgation(NavtexPromulgation.class, getType());
+    private void checkNavtexPromulgation(Message message, PromulgationType type) {
+        NavtexMessagePromulgation navtex = message.promulgation(NavtexMessagePromulgation.class, type.getTypeId());
         if (navtex != null) {
             // Replace the list of transmitters with the persisted entities
             navtex.setTransmitters(persistedTransmitters(navtex.getTransmitters()));

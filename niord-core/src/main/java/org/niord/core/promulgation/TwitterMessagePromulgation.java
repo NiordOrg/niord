@@ -16,19 +16,19 @@
 
 package org.niord.core.promulgation;
 
-import org.niord.core.promulgation.vo.TwitterPromulgationVo;
+import org.niord.core.promulgation.vo.TwitterMessagePromulgationVo;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 
 /**
- * Defines the promulgation data associated with Twitter promulgation
+ * Defines the message promulgation entity associated with Twitter promulgation
  */
 @Entity
-@DiscriminatorValue(TwitterPromulgation.TYPE)
+@DiscriminatorValue(TwitterMessagePromulgation.TYPE)
 @SuppressWarnings("unused")
-public class TwitterPromulgation extends BasePromulgation<TwitterPromulgationVo> {
+public class TwitterMessagePromulgation extends BaseMessagePromulgation<TwitterMessagePromulgationVo> {
 
     public static final String  TYPE = "twitter";
 
@@ -38,33 +38,31 @@ public class TwitterPromulgation extends BasePromulgation<TwitterPromulgationVo>
 
 
     /** Constructor **/
-    public TwitterPromulgation() {
+    public TwitterMessagePromulgation() {
         super();
-        this.type = TYPE;
     }
 
 
     /** Constructor **/
-    public TwitterPromulgation(TwitterPromulgationVo promulgation) {
+    public TwitterMessagePromulgation(TwitterMessagePromulgationVo promulgation) {
         super(promulgation);
-        this.type = TYPE;
         this.tweet = promulgation.getTweet();
     }
 
 
     /** Returns a value object for this entity */
-    public TwitterPromulgationVo toVo() {
-        TwitterPromulgationVo data = toVo(new TwitterPromulgationVo());
+    public TwitterMessagePromulgationVo toVo() {
+        TwitterMessagePromulgationVo data = toVo(new TwitterMessagePromulgationVo());
         data.setTweet(tweet);
         return data;
     }
 
     /** Updates this promulgation from another promulgation **/
     @Override
-    public void update(BasePromulgation promulgation) {
-        if (promulgation instanceof TwitterPromulgation) {
+    public void update(BaseMessagePromulgation promulgation) {
+        if (promulgation instanceof TwitterMessagePromulgation) {
             super.update(promulgation);
-            TwitterPromulgation p = (TwitterPromulgation)promulgation;
+            TwitterMessagePromulgation p = (TwitterMessagePromulgation)promulgation;
             this.tweet = p.getTweet();
         }
     }

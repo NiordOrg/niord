@@ -42,17 +42,18 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * REST interface to accessing NAVTEX-via-mailing-lists promulgations
+ * REST interface to managing NAVTEX transmitters
  */
 @Path("/promulgation/navtex")
 @Stateless
 @SecurityDomain("keycloak")
 @RolesAllowed(Roles.SYSADMIN)
 @SuppressWarnings("unused")
-public class NavtexPromulgationRestService {
+public class NavtexTransmitterRestService {
 
     @Inject
     NavtexPromulgationService navtexPromulgationService;
+
 
     /** Returns all transmitters */
     @GET

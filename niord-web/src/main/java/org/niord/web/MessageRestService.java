@@ -436,7 +436,9 @@ public class MessageRestService  {
             editMessage.getParts()
                     .forEach(p -> p.setGeometry(featureService.copyFeatureCollection(p.getGeometry())));
         }
-        editMessage.getPromulgations().forEach(p -> p.setId(null));
+        if (editMessage.getPromulgations() != null) {
+            editMessage.getPromulgations().forEach(p -> p.setId(null));
+        }
 
         return editMessage;
     }

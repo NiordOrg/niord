@@ -18,27 +18,33 @@ package org.niord.core.promulgation.vo;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.promulgation.IMailPromulgation;
-import org.niord.core.promulgation.RadioPromulgation;
+import org.niord.core.promulgation.RadioMessagePromulgation;
 
 /**
- * Defines the promulgation data associated with radio mailing list promulgation.
+ * Defines the value object data associated with radio mailing list promulgation.
  * The audio text is meant to be read up on radio, and thus more verbose.
  */
-public class RadioPromulgationVo extends BasePromulgationVo<RadioPromulgation> implements IMailPromulgation {
+public class RadioMessagePromulgationVo extends BaseMessagePromulgationVo<RadioMessagePromulgation> implements IMailPromulgation {
 
     String text;
 
 
     /** Constructor **/
-    public RadioPromulgationVo() {
-        this.type = RadioPromulgation.TYPE;
+    public RadioMessagePromulgationVo() {
+        super();
+    }
+
+
+    /** Constructor **/
+    public RadioMessagePromulgationVo(PromulgationTypeVo type) {
+        super(type);
     }
 
 
     /** {@inheritDoc} **/
     @Override
-    public RadioPromulgation toEntity() {
-        return new RadioPromulgation(this);
+    public RadioMessagePromulgation toEntity() {
+        return new RadioMessagePromulgation(this);
     }
 
 

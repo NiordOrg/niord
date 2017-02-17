@@ -22,8 +22,11 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.PromulgationManager;
-import org.niord.core.promulgation.vo.BasePromulgationVo;
-import org.niord.core.promulgation.vo.PromulgationServiceDataVo;
+import org.niord.core.promulgation.PromulgationType;
+import org.niord.core.promulgation.PromulgationTypeService;
+import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
+import org.niord.core.promulgation.vo.PromulgationServiceVo;
+import org.niord.core.promulgation.vo.PromulgationTypeVo;
 import org.niord.core.user.Roles;
 import org.niord.core.user.UserService;
 import org.slf4j.Logger;
@@ -33,6 +36,7 @@ import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -42,9 +46,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
- * REST interface for accessing Freemarker templates.
+ * REST interface for accessing and managing promulgation types.
  */
 @Path("/promulgations")
 @Stateless
@@ -56,65 +61,118 @@ public class PromulgationRestService extends AbstractBatchableRestService {
     Logger log;
 
     @Inject
+    PromulgationTypeService promulgationTypeService;
+
+    @Inject
     PromulgationManager promulgationManager;
 
     @Inject
     UserService userService;
 
-    /** Returns all templates */
+
+    /***************************************/
+    /** Promulgation Services             **/
+    /***************************************/
+
+
+    /** Returns all promulgation service IDs */
     @GET
-    @Path("/all")
+    @Path("/promulgation-services/all")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @RolesAllowed(Roles.SYSADMIN)
+    @NoCache
+    public List<PromulgationServiceVo> getPromulgationServices() {
+        return promulgationManager.promulgationServices();
+    }
+
+
+    /***************************************/
+    /** Promulgation Types                **/
+    /***************************************/
+
+    /** Returns all promulgation types */
+    @GET
+    @Path("/promulgation-types/all")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @PermitAll // NB: Checked programmatically to facilitate tickets
     @NoCache
-    public List<PromulgationServiceDataVo> getPromulgations() {
+    public List<PromulgationTypeVo> getPromulgationTypes() {
 
         // If a ticket is defined, check if programmatically
         if (!userService.isCallerInRole(Roles.SYSADMIN)) {
             throw new WebApplicationException(403);
         }
 
-        return promulgationManager.getAllPromulgationServices();
+        return promulgationTypeService.getAll().stream()
+                .map(PromulgationType::toVo)
+                .collect(Collectors.toList());
     }
 
 
-    /** Updates an existing template */
-    @PUT
-    @Path("/promulgation/{type}")
+    /** Creates a promulgation type */
+    @POST
+    @Path("/promulgation-type/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed(Roles.SYSADMIN)
     @GZIP
     @NoCache
-    public PromulgationServiceDataVo updatePromulgation(
-            @PathParam("type") String type,
-            PromulgationServiceDataVo serviceData
+    public PromulgationTypeVo createPromulgationType(PromulgationTypeVo type) throws Exception {
+        return promulgationTypeService.createPromulgationType(new PromulgationType(type)).toVo();
+    }
+
+
+    /** Updates an existing promulgation type */
+    @PUT
+    @Path("/promulgation-type/{typeId}")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed(Roles.SYSADMIN)
+    @GZIP
+    @NoCache
+    public PromulgationTypeVo updatePromulgationType(
+            @PathParam("typeId") String typeId,
+            PromulgationTypeVo type
     ) throws Exception {
 
-        if (!Objects.equals(type, serviceData.getType())) {
+        if (!Objects.equals(typeId, type.getTypeId())) {
             throw new WebApplicationException(400);
         }
 
-        log.info("Updating promulgation service " + type);
-        return promulgationManager.updatePromulgationService(serviceData);
+        return promulgationTypeService.updatePromulgationType(new PromulgationType(type)).toVo();
     }
 
 
-    /** Generates a message promulgation record for the given type and message */
+    /** Deletes an existing promulgation type */
+    @DELETE
+    @Path("/promulgation-type/{typeId}")
+    @RolesAllowed(Roles.SYSADMIN)
+    @NoCache
+    public void updatePromulgationType(@PathParam("typeId") String typeId) throws Exception {
+         promulgationTypeService.deletePromulgationType(typeId);
+    }
+
+
+    /***************************************/
+    /** Message Promulgation Management   **/
+    /***************************************/
+
+    /** Generates a message promulgation record for the given typeId and message */
     @POST
-    @Path("/generate/{type}")
+    @Path("/generate/{typeId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed(Roles.SYSADMIN)
     @GZIP
     @NoCache
-    public BasePromulgationVo<?> generateMessagePromulgation(
-            @PathParam("type") String type,
+    public BaseMessagePromulgationVo<?> generateMessagePromulgation(
+            @PathParam("typeId") String typeId,
             SystemMessageVo messageVo
     ) throws Exception {
 
-        log.info("Updating promulgation service " + type);
-        return promulgationManager.generateMessagePromulgation(type, messageVo);
+        log.info("Updating promulgation service " + typeId);
+        return promulgationManager.generateMessagePromulgation(typeId, messageVo);
     }
 }

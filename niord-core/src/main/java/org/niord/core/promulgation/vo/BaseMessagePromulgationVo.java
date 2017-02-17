@@ -17,11 +17,11 @@
 package org.niord.core.promulgation.vo;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import org.niord.core.promulgation.BasePromulgation;
+import org.niord.core.promulgation.BaseMessagePromulgation;
 import org.niord.model.IJsonSerializable;
 
 /**
- * Abstract super-class for all types of promulgation data value objects.
+ * Abstract super-class for all message promulgation value objects.
  * <p>
  * NB: We cannot use the usual @JsonSubTypes mechanism, because new promulgation types are added via a plug-in mechanism.
  * Instead, we get Jackson to stamp the fully qualified class name into the serialized JSON in order to facilitate
@@ -31,11 +31,22 @@ import org.niord.model.IJsonSerializable;
  */
 @JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, include= JsonTypeInfo.As.PROPERTY, property="@class")
 @SuppressWarnings("unused")
-public abstract class BasePromulgationVo<P extends BasePromulgation> implements IJsonSerializable {
+public abstract class BaseMessagePromulgationVo<P extends BaseMessagePromulgation> implements IJsonSerializable {
 
     Integer id;
-    String type;
+    PromulgationTypeVo type;
     boolean promulgate;
+
+
+    /** Constructor **/
+    public BaseMessagePromulgationVo() {
+    }
+
+
+    /** Constructor **/
+    public BaseMessagePromulgationVo(PromulgationTypeVo type) {
+        this.type = type;
+    }
 
     /**
      * Converts this value object to an associated template entity
@@ -63,11 +74,11 @@ public abstract class BasePromulgationVo<P extends BasePromulgation> implements 
         this.id = id;
     }
 
-    public String getType() {
+    public PromulgationTypeVo getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(PromulgationTypeVo type) {
         this.type = type;
     }
 

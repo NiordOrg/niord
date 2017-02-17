@@ -130,15 +130,35 @@ angular.module('niord.admin')
 
         return {
 
-            /** Returns all promulgations **/
-            getPromulgations: function () {
-                return $http.get('/rest/promulgations/all');
+            /** Returns all promulgation services **/
+            getPromulgationServices: function () {
+                return $http.get('/rest/promulgations/promulgation-services/all');
             },
 
 
-            /** Updates the given promulgation **/
-            updatePromulgation: function(promulgation) {
-                return $http.put('/rest/promulgations/promulgation/' + encodeURIComponent(promulgation.type), promulgation);
+            /** Returns all promulgation types **/
+            getPromulgationTypes: function () {
+                return $http.get('/rest/promulgations/promulgation-types/all');
+            },
+
+
+            /** Creates a new  promulgation type **/
+            createPromulgationType: function(promulgationType) {
+                return $http.post('/rest/promulgations/promulgation-type/', promulgationType);
+            },
+
+
+            /** Updates the given promulgation type **/
+            updatePromulgationType: function(promulgationType) {
+                return $http.put('/rest/promulgations/promulgation-type/'
+                    + encodeURIComponent(promulgationType.typeId), promulgationType);
+            },
+
+
+            /** Deletes the given promulgation type **/
+            deletePromulgationType: function(promulgationType) {
+                return $http['delete']('/rest/promulgations/promulgation-type/'
+                    + encodeURIComponent(promulgationType.typeId));
             }
         };
     }])

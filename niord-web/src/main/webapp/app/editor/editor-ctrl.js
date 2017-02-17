@@ -1137,12 +1137,12 @@ angular.module('niord.editor')
 
 
             // Called with a promulgation-specific endpoint to generate a promulgation
-            $scope.generatePromulgation = function(type) {
+            $scope.generatePromulgation = function(promulgation) {
 
-                MessageService.generatePromulgation(type, $scope.message)
+                MessageService.generatePromulgation(promulgation.type.typeId, $scope.message)
                     .success(function (result) {
                         angular.forEach($scope.message.promulgations, function(p) {
-                            if (p.type == type) {
+                            if (p.type.typeId == promulgation.type.typeId) {
                                 $.extend(true, p, result);
                                 $scope.setDirty();
                             }

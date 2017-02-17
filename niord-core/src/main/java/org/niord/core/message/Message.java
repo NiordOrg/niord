@@ -22,8 +22,8 @@ import org.niord.core.chart.Chart;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.model.DescEntity;
 import org.niord.core.model.VersionedEntity;
-import org.niord.core.promulgation.BasePromulgation;
-import org.niord.core.promulgation.vo.BasePromulgationVo;
+import org.niord.core.promulgation.BaseMessagePromulgation;
+import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.core.user.User;
 import org.niord.core.util.TimeUtils;
 import org.niord.core.util.UidUtils;
@@ -232,7 +232,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     Boolean separatePage;
 
     @OneToMany(mappedBy = "message", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<BasePromulgation> promulgations = new ArrayList<>();
+    List<BaseMessagePromulgation> promulgations = new ArrayList<>();
 
 
     /**
@@ -320,7 +320,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             this.separatePage = sysMessage.getSeparatePage();
             if (sysMessage.getPromulgations() != null) {
                 sysMessage.getPromulgations().stream()
-                    .filter(BasePromulgationVo::promulgationDataDefined)
+                    .filter(BaseMessagePromulgationVo::promulgationDataDefined)
                     .forEach(p -> addPromulgation(p.toEntity()));
             }
         }
@@ -377,7 +377,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             // Check if we need to include promulgations
             if (!promulgations.isEmpty() && compFilter.includeField("promulgations")) {
                 systemMessage.setPromulgations(promulgations.stream()
-                    .map(BasePromulgation::toVo)
+                    .map(BaseMessagePromulgation::toVo)
                     .collect(Collectors.toList()));
             }
 
@@ -589,9 +589,9 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
      * @return the promulgation with the given type, or null if not found
      */
     @SuppressWarnings("unchecked")
-    public <P extends BasePromulgation> P promulgation(Class<P> clz, String type) {
+    public <P extends BaseMessagePromulgation> P promulgation(Class<P> clz, String type) {
         return (P) promulgations.stream()
-                .filter(p -> p.getType().equals(type) && clz.isAssignableFrom(p.getClass()))
+                .filter(p -> p.getType().getTypeId().equals(type) && clz.isAssignableFrom(p.getClass()))
                 .findFirst()
                 .orElse(null);
     }
@@ -647,7 +647,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
 
     /** Adds a promulgation entity to this message */
-    public BasePromulgation addPromulgation(BasePromulgation promulgation) {
+    public BaseMessagePromulgation addPromulgation(BaseMessagePromulgation promulgation) {
         promulgation.setMessage(this);
         promulgations.add(promulgation);
         return promulgation;
@@ -949,11 +949,11 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         this.separatePage = separatePage;
     }
 
-    public List<BasePromulgation> getPromulgations() {
+    public List<BaseMessagePromulgation> getPromulgations() {
         return promulgations;
     }
 
-    public void setPromulgations(List<BasePromulgation> promulgations) {
+    public void setPromulgations(List<BaseMessagePromulgation> promulgations) {
         this.promulgations = promulgations;
     }
 }

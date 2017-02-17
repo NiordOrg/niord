@@ -17,29 +17,28 @@
 package org.niord.core.promulgation.vo;
 
 import org.niord.core.domain.vo.DomainVo;
-import org.niord.core.promulgation.BasePromulgationService;
 import org.niord.model.IJsonSerializable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Defines the persistent data of a promulgation service
+ * Defines the persistent data of a promulgation type
  */
-public class PromulgationServiceDataVo implements IJsonSerializable, Comparable<PromulgationServiceDataVo> {
+public class PromulgationTypeVo implements IJsonSerializable, Comparable<PromulgationTypeVo> {
 
-    String type;
+    String typeId;
+    String serviceId;
+    String name;
     int priority;
-    boolean active;
+    Boolean active;
     String language;
-    List<DomainVo> domains = new ArrayList<>();
-    Class<? extends BasePromulgationService> serviceClass;
+    List<DomainVo> domains;
 
 
     /** {@inheritDoc} */
     @Override
     @SuppressWarnings("all")
-    public int compareTo(PromulgationServiceDataVo p) {
+    public int compareTo(PromulgationTypeVo p) {
         return p == null ? -1 : priority - p.getPriority();
     }
 
@@ -47,12 +46,28 @@ public class PromulgationServiceDataVo implements IJsonSerializable, Comparable<
     /** Getters and Setters **/
     /*************************/
 
-    public String getType() {
-        return type;
+    public String getTypeId() {
+        return typeId;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setTypeId(String typeId) {
+        this.typeId = typeId;
+    }
+
+    public String getServiceId() {
+        return serviceId;
+    }
+
+    public void setServiceId(String serviceId) {
+        this.serviceId = serviceId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public int getPriority() {
@@ -63,11 +78,11 @@ public class PromulgationServiceDataVo implements IJsonSerializable, Comparable<
         this.priority = priority;
     }
 
-    public boolean isActive() {
+    public Boolean isActive() {
         return active;
     }
 
-    public void setActive(boolean active) {
+    public void setActive(Boolean active) {
         this.active = active;
     }
 
@@ -85,13 +100,5 @@ public class PromulgationServiceDataVo implements IJsonSerializable, Comparable<
 
     public void setDomains(List<DomainVo> domains) {
         this.domains = domains;
-    }
-
-    public Class<? extends BasePromulgationService> getServiceClass() {
-        return serviceClass;
-    }
-
-    public void setServiceClass(Class<? extends BasePromulgationService> serviceClass) {
-        this.serviceClass = serviceClass;
     }
 }

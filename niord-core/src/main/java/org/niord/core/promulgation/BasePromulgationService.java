@@ -16,29 +16,23 @@
 
 package org.niord.core.promulgation;
 
-import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
-import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.Message;
 import org.niord.core.message.vo.SystemMessageVo;
-import org.niord.core.promulgation.vo.BasePromulgationVo;
-import org.niord.core.promulgation.vo.PromulgationServiceDataVo;
+import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Base class for the different types of promulgation services, such as NavtexPromulgationService, etc.
  * <p>
- *     NB: Subclasses must annotated with @Singleton and @Startup and call registerPromulgationService() in a @PostConstruct
- *     to properly register the promulgation service.
- * </p>
+ * NB: Subclasses must annotated with @Singleton and @Startup to properly register the promulgation service
+ *     with the PromulgationManager
  */
-@SuppressWarnings("unused")
 public abstract class BasePromulgationService extends BaseService {
 
     @Inject
@@ -60,88 +54,35 @@ public abstract class BasePromulgationService extends BaseService {
 
 
     /**
-     * Should be called from sub-classes in a @PostConstruct to register the promulgation service
      * Registers the promulgation service with the promulgation manager
      */
-    public void registerPromulgationService() {
-
-        // Loads or creates the promulgation service instance
-        PromulgationServiceData serviceData = getPromulgationServiceData(true);
-
-        promulgationManager.registerPromulgationService(serviceData.toVo(getClass()));
+    @PostConstruct
+    public void init() {
+        promulgationManager.registerPromulgationService(this);
     }
 
 
     /**
-     * Returns or creates the associated promulgation service data. Give sub-classes chance to override.
-     * @return the associated promulgation service data
+     * Returns a ID of the promulgation service. Must be unique
+     * @return a ID of the promulgation service
      */
-    protected PromulgationServiceData getPromulgationServiceData(boolean create) {
-        PromulgationServiceData serviceData = null;
-        try {
-            serviceData = em.createNamedQuery("PromulgationServiceData.findByType", PromulgationServiceData.class)
-                    .setParameter("type", getType())
-                    .getSingleResult();
-        } catch (Exception e) {
-            if (create) {
-                serviceData = new PromulgationServiceData();
-                serviceData.setType(getType());
-                serviceData.setActive(false);
-                serviceData.setPriority(getDefaultPriority());
-                em.persist(serviceData);
-                log.info("Created new promulgation service " + serviceData.getType());
-            }
-        }
-        return serviceData;
-    }
+    public abstract String getServiceId();
 
 
     /**
-     * Returns a type key for the promulgation service. Must be unique
-     * @return a type key for the promulgation service
+     * Returns a name of the promulgation service
+     * @return a name of the promulgation service
      */
-    public abstract String getType();
+    public abstract String getServiceName();
 
 
     /**
-     * Returns a default priority of the promulgation service. Used for sorting the promulgation services.
-     * @return a default priority of the promulgation service
+     * Returns the language configured for the promulgation type
+     * @return the language configured for the promulgation type
      */
-    public abstract int getDefaultPriority();
-
-
-    /**
-     * Returns the language configured for the promulgation service
-     * @return the language configured for the promulgation service
-     */
-    public String getLanguage() {
-        String lang = getPromulgationServiceData(false).getLanguage();
+    public String getLanguage(PromulgationType type) {
+        String lang = type.getLanguage();
         return app.getLanguage(lang);
-    }
-
-
-    /**
-     * Updates the active status, language, priority or domains of a promulgation service
-     * @return the active status, language, priority or domains of a promulgation service
-     */
-    public PromulgationServiceDataVo updatePromulgationService(PromulgationServiceDataVo serviceData) {
-
-        PromulgationServiceData original = getPromulgationServiceData(false);
-        if (!original.getType().equals(serviceData.getType())) {
-            throw new IllegalArgumentException("Invalid promulgation service " + serviceData);
-        }
-
-        original.setActive(serviceData.isActive());
-        original.setPriority(serviceData.getPriority());
-        original.setLanguage(StringUtils.defaultIfBlank(serviceData.getLanguage(), null));
-
-        // Update list of domains
-        List<Domain> domains = serviceData.getDomains().stream()
-                .map(Domain::new)
-                .collect(Collectors.toList());
-        original.setDomains(domainService.persistedDomains(domains));
-
-        return saveEntity(original).toVo(getClass());
     }
 
 
@@ -153,16 +94,18 @@ public abstract class BasePromulgationService extends BaseService {
     /**
      * Updates and adds promulgations to the message value object
      * @param message the message value object
+     * @param type the promulgation type
      */
-    public abstract void onLoadSystemMessage(SystemMessageVo message) throws PromulgationException;
+    public abstract void onLoadSystemMessage(SystemMessageVo message, PromulgationType type) throws PromulgationException;
 
 
     /**
      * Prior to creating a new message, let the registered promulgation services check up on promulgations.
      * Default implementation does nothing.
      * @param message the message about to be created
+     * @param type the promulgation type
      */
-    public void onCreateMessage(Message message) throws PromulgationException {
+    public void onCreateMessage(Message message, PromulgationType type) throws PromulgationException {
     }
 
 
@@ -170,8 +113,9 @@ public abstract class BasePromulgationService extends BaseService {
      * Prior to updating an existing message, let the registered promulgation services check up on promulgations.
      * Default implementation does nothing.
      * @param message the message about to be updated
+     * @param type the promulgation type
      */
-    public void onUpdateMessage(Message message) throws PromulgationException {
+    public void onUpdateMessage(Message message, PromulgationType type) throws PromulgationException {
     }
 
 
@@ -179,17 +123,19 @@ public abstract class BasePromulgationService extends BaseService {
      * Prior to changing status of an existing message, let the registered promulgation services check up on promulgations.
      * Default implementation does nothing.
      * @param message the message about to be updated
+     * @param type the promulgation type
      */
-    public void onUpdateMessageStatus(Message message) throws PromulgationException {
+    public void onUpdateMessageStatus(Message message, PromulgationType type) throws PromulgationException {
     }
 
 
     /**
      * Generates a message promulgation record for the given type and message
      * @param message the message template to generate a promulgation for
+     * @param type the promulgation type
      * @return the promulgation
      */
-    public BasePromulgationVo generateMessagePromulgation(SystemMessageVo message) throws PromulgationException {
+    public BaseMessagePromulgationVo generateMessagePromulgation(SystemMessageVo message, PromulgationType type) throws PromulgationException {
         return null;
     }
 

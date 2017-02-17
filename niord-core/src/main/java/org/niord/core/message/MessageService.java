@@ -34,7 +34,7 @@ import org.niord.core.geojson.FeatureService;
 import org.niord.core.message.MessageSearchParams.DateType;
 import org.niord.core.message.MessageSearchParams.UserType;
 import org.niord.core.message.vo.SystemMessageVo;
-import org.niord.core.promulgation.BasePromulgation;
+import org.niord.core.promulgation.BaseMessagePromulgation;
 import org.niord.core.promulgation.PromulgationManager;
 import org.niord.core.publication.PublicationService;
 import org.niord.core.repo.RepositoryService;
@@ -575,11 +575,11 @@ public class MessageService extends BaseService {
 
 
     /** Called upon saving a message. Updates the promulgation **/
-    private BasePromulgation updatePromulgation(BasePromulgation promulgation) {
+    private BaseMessagePromulgation updatePromulgation(BaseMessagePromulgation promulgation) {
         if (promulgation.isNew()) {
             return promulgation;
         }
-        BasePromulgation original = getByPrimaryKey(promulgation.getClass(), promulgation.getId());
+        BaseMessagePromulgation original = getByPrimaryKey(promulgation.getClass(), promulgation.getId());
         if (original != null) {
             original.update(promulgation);
         }

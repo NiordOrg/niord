@@ -107,9 +107,9 @@
 
             <!-- Promulgation -->
             <tr ng-repeat="promulgation in promulgations">
-                <th>{{promulgation.type | capitalize}}</th>
+                <th>{{promulgation.type.name}}</th>
                 <td>
-                    <ng-include src="'/app/promulgation/' + promulgation.type + '-view.html'"></ng-include>
+                    <ng-include src="'/app/promulgation/' + promulgation.type.serviceId + '-view.html'"></ng-include>
                 </td>
             </tr>
 

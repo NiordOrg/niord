@@ -18,7 +18,7 @@ package org.niord.core.promulgation.vo;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.promulgation.IMailPromulgation;
-import org.niord.core.promulgation.NavtexPromulgation;
+import org.niord.core.promulgation.NavtexMessagePromulgation;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,9 +27,9 @@ import java.util.Map;
  * Defines the promulgation data associated with NAVTEX mailing list promulgation
  */
 @SuppressWarnings("unused")
-public class NavtexPromulgationVo extends BasePromulgationVo<NavtexPromulgation> implements IMailPromulgation {
+public class NavtexMessagePromulgationVo extends BaseMessagePromulgationVo<NavtexMessagePromulgation> implements IMailPromulgation {
 
-    NavtexPromulgation.NavtexPriority priority = NavtexPromulgation.NavtexPriority.NONE;
+    NavtexMessagePromulgation.NavtexPriority priority = NavtexMessagePromulgation.NavtexPriority.NONE;
 
     Map<String, Boolean> transmitters = new HashMap<>();
 
@@ -37,15 +37,21 @@ public class NavtexPromulgationVo extends BasePromulgationVo<NavtexPromulgation>
 
 
     /** Constructor **/
-    public NavtexPromulgationVo() {
-        this.type = NavtexPromulgation.TYPE;
+    public NavtexMessagePromulgationVo() {
+        super();
+    }
+
+
+    /** Constructor **/
+    public NavtexMessagePromulgationVo(PromulgationTypeVo type) {
+        super(type);
     }
 
 
     /** {@inheritDoc} **/
     @Override
-    public NavtexPromulgation toEntity() {
-        return new NavtexPromulgation(this);
+    public NavtexMessagePromulgation toEntity() {
+        return new NavtexMessagePromulgation(this);
     }
 
 
@@ -61,11 +67,11 @@ public class NavtexPromulgationVo extends BasePromulgationVo<NavtexPromulgation>
     /** Getters and Setters **/
     /*************************/
 
-    public NavtexPromulgation.NavtexPriority getPriority() {
+    public NavtexMessagePromulgation.NavtexPriority getPriority() {
         return priority;
     }
 
-    public void setPriority(NavtexPromulgation.NavtexPriority priority) {
+    public void setPriority(NavtexMessagePromulgation.NavtexPriority priority) {
         this.priority = priority;
     }
 

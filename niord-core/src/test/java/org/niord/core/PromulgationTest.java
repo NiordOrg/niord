@@ -19,8 +19,8 @@ package org.niord.core;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;
-import org.niord.core.promulgation.vo.BasePromulgationVo;
-import org.niord.core.promulgation.vo.TwitterPromulgationVo;
+import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
+import org.niord.core.promulgation.vo.TwitterMessagePromulgationVo;
 
 import java.io.IOException;
 
@@ -32,7 +32,7 @@ public class PromulgationTest {
     @Test
     public void testJsonDeserialization() throws IOException {
 
-        TwitterPromulgationVo data = new TwitterPromulgationVo();
+        TwitterMessagePromulgationVo data = new TwitterMessagePromulgationVo();
         data.setTweet("Stein Bagger som president!");
 
         ObjectMapper mapper = new ObjectMapper();
@@ -41,9 +41,9 @@ public class PromulgationTest {
 
         System.out.println("JSON " + json);
 
-        BasePromulgationVo result = mapper.readValue(json, BasePromulgationVo.class);
+        BaseMessagePromulgationVo result = mapper.readValue(json, BaseMessagePromulgationVo.class);
 
-        Assert.assertEquals(TwitterPromulgationVo.class, result.getClass());
+        Assert.assertEquals(TwitterMessagePromulgationVo.class, result.getClass());
     }
 
 }

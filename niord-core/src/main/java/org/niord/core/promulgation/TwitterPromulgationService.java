@@ -18,18 +18,18 @@ package org.niord.core.promulgation;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.message.vo.SystemMessageVo;
-import org.niord.core.promulgation.vo.BasePromulgationVo;
-import org.niord.core.promulgation.vo.TwitterPromulgationVo;
+import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
+import org.niord.core.promulgation.vo.TwitterMessagePromulgationVo;
+import org.niord.model.DataFilter;
 import org.niord.model.message.MessageDescVo;
 
-import javax.annotation.PostConstruct;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 
 /**
- * Manages Twitter promulgations
+ * Manages Twitter message promulgations
  */
 @Singleton
 @Startup
@@ -37,33 +37,21 @@ import javax.ejb.Startup;
 @SuppressWarnings("unused")
 public class TwitterPromulgationService extends BasePromulgationService {
 
-    public static final int PRIORITY = 100;
-
-
     /***************************************/
     /** Promulgation Service Handling     **/
     /***************************************/
 
-    /**
-     * Registers the promulgation service with the promulgation manager
-     */
-    @PostConstruct
-    public void init() {
-        registerPromulgationService();
+    /** {@inheritDoc} */
+    @Override
+    public String getServiceId() {
+        return TwitterMessagePromulgation.TYPE;
     }
 
 
     /** {@inheritDoc} */
     @Override
-    public String getType() {
-        return TwitterPromulgation.TYPE;
-    }
-
-
-    /** {@inheritDoc} */
-    @Override
-    public int getDefaultPriority() {
-        return PRIORITY;
+    public String getServiceName() {
+        return "Twitter";
     }
 
 
@@ -74,22 +62,22 @@ public class TwitterPromulgationService extends BasePromulgationService {
 
     /** {@inheritDoc} */
     @Override
-    public void onLoadSystemMessage(SystemMessageVo message) throws PromulgationException {
-        TwitterPromulgationVo twitter = message.promulgation(TwitterPromulgationVo.class, getType());
+    public void onLoadSystemMessage(SystemMessageVo message, PromulgationType type) throws PromulgationException {
+        TwitterMessagePromulgationVo twitter = message.promulgation(TwitterMessagePromulgationVo.class, type.getTypeId());
         if (twitter == null) {
-            twitter = new TwitterPromulgationVo();
-            message.getPromulgations().add(twitter);
+            twitter = new TwitterMessagePromulgationVo(type.toVo(DataFilter.get()));
+            message.checkCreatePromulgations().add(twitter);
         }
     }
 
 
     /** {@inheritDoc} */
     @Override
-    public BasePromulgationVo generateMessagePromulgation(SystemMessageVo message) throws PromulgationException {
+    public BaseMessagePromulgationVo generateMessagePromulgation(SystemMessageVo message, PromulgationType type) throws PromulgationException {
 
-        TwitterPromulgationVo twitter = new TwitterPromulgationVo();
+        TwitterMessagePromulgationVo twitter = new TwitterMessagePromulgationVo();
 
-        MessageDescVo desc = message.getDesc(getLanguage());
+        MessageDescVo desc = message.getDesc(getLanguage(type));
         String title = desc != null ? desc.getTitle() : null;
 
         if (StringUtils.isNotBlank(title)) {

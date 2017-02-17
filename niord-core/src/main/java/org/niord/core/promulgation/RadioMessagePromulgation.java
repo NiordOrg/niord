@@ -16,19 +16,22 @@
 
 package org.niord.core.promulgation;
 
-import org.niord.core.promulgation.vo.RadioPromulgationVo;
+import org.niord.core.promulgation.vo.RadioMessagePromulgationVo;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.Lob;
 
 /**
- * Defines the promulgation data associated with NAVTEX mailing list promulgation
+ * Defines the message promulgation entity associated with radio (or "audio") mailing list promulgation.
+ *
+ * Radio promulgations are verbose textual versions of the messages suitable for being read up on the radio
+ * and sent to the radio station via e-mail.
  */
 @Entity
-@DiscriminatorValue(RadioPromulgation.TYPE)
+@DiscriminatorValue(RadioMessagePromulgation.TYPE)
 @SuppressWarnings("unused")
-public class RadioPromulgation extends BasePromulgation<RadioPromulgationVo> implements IMailPromulgation {
+public class RadioMessagePromulgation extends BaseMessagePromulgation<RadioMessagePromulgationVo> implements IMailPromulgation {
 
     public static final String  TYPE = "radio";
 
@@ -36,23 +39,21 @@ public class RadioPromulgation extends BasePromulgation<RadioPromulgationVo> imp
     String text;
 
     /** Constructor **/
-    public RadioPromulgation() {
+    public RadioMessagePromulgation() {
         super();
-        this.type = TYPE;
     }
 
 
     /** Constructor **/
-    public RadioPromulgation(RadioPromulgationVo promulgation) {
+    public RadioMessagePromulgation(RadioMessagePromulgationVo promulgation) {
         super(promulgation);
-        this.type = TYPE;
         this.text = promulgation.getText();
     }
 
 
     /** Returns a value object for this entity */
-    public RadioPromulgationVo toVo() {
-        RadioPromulgationVo data = toVo(new RadioPromulgationVo());
+    public RadioMessagePromulgationVo toVo() {
+        RadioMessagePromulgationVo data = toVo(new RadioMessagePromulgationVo());
         data.setText(text);
         return data;
     }
@@ -60,10 +61,10 @@ public class RadioPromulgation extends BasePromulgation<RadioPromulgationVo> imp
 
     /** Updates this promulgation from another promulgation **/
     @Override
-    public void update(BasePromulgation promulgation) {
-        if (promulgation instanceof RadioPromulgation) {
+    public void update(BaseMessagePromulgation promulgation) {
+        if (promulgation instanceof RadioMessagePromulgation) {
             super.update(promulgation);
-            RadioPromulgation p = (RadioPromulgation)promulgation;
+            RadioMessagePromulgation p = (RadioMessagePromulgation)promulgation;
             p.setText(text);
         }
     }

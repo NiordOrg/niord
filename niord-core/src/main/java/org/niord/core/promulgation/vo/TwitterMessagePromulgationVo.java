@@ -17,26 +17,32 @@
 package org.niord.core.promulgation.vo;
 
 import org.apache.commons.lang.StringUtils;
-import org.niord.core.promulgation.TwitterPromulgation;
+import org.niord.core.promulgation.TwitterMessagePromulgation;
 
 /**
- * Defines the promulgation data associated with Twitter promulgation
+ * Defines the value object data associated with Twitter promulgation
  */
 @SuppressWarnings("unused")
-public class TwitterPromulgationVo extends BasePromulgationVo<TwitterPromulgation> {
+public class TwitterMessagePromulgationVo extends BaseMessagePromulgationVo<TwitterMessagePromulgation> {
 
     String tweet;
 
     /** Constructor **/
-    public TwitterPromulgationVo() {
-        this.type = TwitterPromulgation.TYPE;
+    public TwitterMessagePromulgationVo() {
+        super();
+    }
+
+
+    /** Constructor **/
+    public TwitterMessagePromulgationVo(PromulgationTypeVo type) {
+        super(type);
     }
 
 
     /** {@inheritDoc} **/
     @Override
-    public TwitterPromulgation toEntity() {
-        return new TwitterPromulgation(this);
+    public TwitterMessagePromulgation toEntity() {
+        return new TwitterMessagePromulgation(this);
     }
 
 
