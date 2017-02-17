@@ -85,10 +85,14 @@ public class PromulgationTypeService extends BaseService {
      * @return the list of promulgation types for the given message
      */
     public List<PromulgationType> getPromulgationTypes(SystemMessageVo message) {
-        Set<String> typeIds = message.checkCreatePromulgations().stream()
+
+        if (message.getPromulgations() == null) {
+            return Collections.emptyList();
+        }
+
+        Set<String> typeIds = message.getPromulgations().stream()
                 .map(p -> p.getType().getTypeId())
                 .collect(Collectors.toSet());
-
         if (typeIds.isEmpty()) {
             return Collections.emptyList();
         } else {

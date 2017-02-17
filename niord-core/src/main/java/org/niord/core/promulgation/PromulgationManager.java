@@ -125,8 +125,10 @@ public class PromulgationManager {
         }
 
         // Sort the promulgations according to priority
-        message.checkCreatePromulgations()
-                .sort(Comparator.comparingInt(p -> p.getType().getPriority()));
+        if (message.getPromulgations() != null) {
+            message.getPromulgations()
+                    .sort(Comparator.comparingInt(p -> p.getType().getPriority()));
+        }
     }
 
 
