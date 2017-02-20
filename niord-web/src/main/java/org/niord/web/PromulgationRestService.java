@@ -35,6 +35,7 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -44,6 +45,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -152,6 +155,22 @@ public class PromulgationRestService extends AbstractBatchableRestService {
     @NoCache
     public void updatePromulgationType(@PathParam("typeId") String typeId) throws Exception {
          promulgationTypeService.deletePromulgationType(typeId);
+    }
+
+
+    /**
+     * Imports an uploaded promulgation types json file
+     *
+     * @param request the servlet request
+     * @return a status
+     */
+    @POST
+    @Path("/upload-promulgation-types")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("text/plain")
+    @RolesAllowed(Roles.SYSADMIN)
+    public String importReports(@Context HttpServletRequest request) throws Exception {
+        return executeBatchJobFromUploadedFile(request, "promulgation-type-import");
     }
 
 

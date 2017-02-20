@@ -159,7 +159,14 @@ angular.module('niord.admin')
             deletePromulgationType: function(promulgationType) {
                 return $http['delete']('/rest/promulgations/promulgation-type/'
                     + encodeURIComponent(promulgationType.typeId));
+            },
+
+            /** Returns the ticket that can be used to generate an export file that requires the given role */
+            exportTicket: function (role) {
+                var param = role ? '?role=' + role : '';
+                return $http.get('/rest/tickets/ticket' + param);
             }
+
         };
     }])
 

@@ -1,0 +1,12 @@
+<job id="promulgation-type-import" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
+    <listeners>
+        <listener ref="batchJobListener"/>
+    </listeners>
+    <step id="importPromulgationTypeStep">
+        <chunk item-count="10">
+            <reader ref="batchPromulgationTypeImportReader" />
+            <processor ref="batchPromulgationTypeImportProcessor"/>
+            <writer ref="batchPromulgationTypeImportWriter" />
+        </chunk>
+    </step>
+</job>

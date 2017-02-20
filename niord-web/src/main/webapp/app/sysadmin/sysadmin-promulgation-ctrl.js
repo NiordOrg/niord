@@ -27,8 +27,10 @@ angular.module('niord.admin')
      * Promulgation Admin Controller
      * Controller for the Admin Promulgation page
      */
-    .controller('PromulgationAdminCtrl', ['$scope', '$rootScope', '$uibModal', 'growl', 'AdminPromulgationService',
-        function ($scope, $rootScope, $uibModal, growl, AdminPromulgationService) {
+    .controller('PromulgationAdminCtrl', ['$scope', '$rootScope', '$uibModal', 'growl',
+                'AdminPromulgationService', 'DialogService', 'UploadFileService',
+        function ($scope, $rootScope, $uibModal, growl,
+                  AdminPromulgationService, DialogService, UploadFileService) {
             'use strict';
 
             $scope.promulgationServices = [];
@@ -79,6 +81,19 @@ angular.module('niord.admin')
             };
 
 
+            /** Deletes a promulgation type **/
+            $scope.deletePromulgationType = function (promulgationType) {
+                DialogService.showConfirmDialog(
+                    "Delete Template?", "Delete promulgation type '" + promulgationType.typeId + "'?")
+                    .then(function() {
+                        AdminPromulgationService
+                            .deletePromulgationType(promulgationType)
+                            .success($scope.loadPromulgationTypes)
+                            .error($scope.displayError);
+                    });
+            };
+
+
             /** Displays the error */
             $scope.displayError = function () {
                 growl.error("Error saving promulgation type", { ttl: 5000 });
@@ -106,6 +121,27 @@ angular.module('niord.admin')
                 $scope.$apply(function() {
                     $uibModal.open(params);
                 });
-            }
+            };
+
+
+            /** Generate an export file */
+            $scope.exportPromulgationTypes = function () {
+                AdminPromulgationService
+                    .exportTicket('sysadmin')
+                    .success(function (ticket) {
+                        var link = document.createElement("a");
+                        link.href = '/rest/promulgations/promulgation-types/all?ticket=' + ticket;
+                        link.click();
+                    });
+            };
+
+
+            /** Opens the upload promulgtion types dialog **/
+            $scope.uploadPromulgationTypesDialog = function () {
+                UploadFileService.showUploadFileDialog(
+                    'Upload Promulgation Types',
+                    '/rest/promulgations/upload-promulgation-types',
+                    'json');
+            };
 
         }]);
