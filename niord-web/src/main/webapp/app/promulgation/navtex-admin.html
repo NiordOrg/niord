@@ -3,21 +3,23 @@
     <label class="col-sm-4">Transmitters</label>
     <div class="col-sm-8">
 
-        <button id="transmitters" class="btn btn-default btn-sm" onclick="editTransmitters()">Manage...</button>
+        <button id="transmitters" class="btn btn-default btn-sm"
+                onclick="editTransmitters()">Manage...</button>
 
         <script type="application/javascript">
             function editTransmitters() {
                 var scope = angular.element($("#transmitters")).scope();
                 scope.openDialog({
                     templateUrl: 'transmitters.html',
-                    controller: function ($scope, $rootScope, $modalInstance, $http, promulgation) {
+                    controller: function ($scope, $rootScope, $modalInstance, $http, typeId) {
+                        var restUrl = '/rest/promulgation/navtex/transmitters/' + encodeURIComponent(typeId);
                         $scope.editMode = 'edit';
-                        $scope.promulgation = promulgation;
+                        $scope.typeId = typeId;
                         $scope.transmitter = undefined;
                         $scope.transmitters = [];
                         $scope.loadTransmitters =  function () {
                             $scope.transmitter = undefined;
-                            $http.get('/rest/promulgation/navtex/transmitters/all?lang=' + $rootScope.language)
+                            $http.get(restUrl + '/all?lang=' + $rootScope.language)
                                 .success(function (transmitters) {
                                     $scope.transmitters = transmitters;
                                 })
@@ -27,29 +29,31 @@
                             $scope.editMode = 'edit';
                         };
                         $scope.addTransmitter = function () {
-                            $scope.transmitter = { name: '', active: true, areas: [] };
+                            $scope.transmitter = {
+                                promulgationType: { typeId: typeId },
+                                name: '',
+                                active: true,
+                                areas: [] };
                             $scope.editMode = 'add';
                         };
                         $scope.saveTransmitter = function (transmitter) {
                             if ($scope.editMode == 'add') {
-                                $http.post('/rest/promulgation/navtex/transmitters/transmitter/', transmitter)
+                                $http.post(restUrl + '/transmitter/', transmitter)
                                     .success($scope.loadTransmitters);
                             } else {
-                                $http.put('/rest/promulgation/navtex/transmitters/transmitter/'
-                                    + encodeURIComponent(transmitter.name), transmitter)
+                                $http.put(restUrl + '/transmitter/' + encodeURIComponent(transmitter.name), transmitter)
                                     .success($scope.loadTransmitters);
                             }
                         };
                         $scope.deleteTransmitter = function (transmitter) {
-                            $http.delete('/rest/promulgation/navtex/transmitters/transmitter/'
-                                + encodeURIComponent(transmitter.name))
+                            $http.delete(restUrl + '/transmitter/' + encodeURIComponent(transmitter.name))
                                 .success($scope.loadTransmitters);
                         };
                         $scope.loadTransmitters();
                     },
                     size: 'md',
                     resolve: {
-                        promulgation: function () { return scope.promulgation; }
+                        typeId: function () { return scope.promulgationType.typeId; }
                     }
                 });
             }

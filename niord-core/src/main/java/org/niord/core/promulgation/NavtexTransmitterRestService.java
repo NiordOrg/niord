@@ -57,25 +57,36 @@ public class NavtexTransmitterRestService {
 
     /** Returns all transmitters */
     @GET
-    @Path("/transmitters/all")
+    @Path("/transmitters/{typeId}/all")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<NavtexTransmitterVo> getTransmitters(@QueryParam("lang") @DefaultValue("en") String lang) {
+    public List<NavtexTransmitterVo> getTransmitters(
+            @PathParam("typeId") String typeId,
+            @QueryParam("lang") @DefaultValue("en") String lang) {
+
         DataFilter filter = DataFilter.get().lang(lang);
-        return navtexPromulgationService.getTransmitters().stream()
+        return navtexPromulgationService.getTransmitters(typeId).stream()
                 .map(t -> t.toVo(filter))
                 .collect(Collectors.toList());
     }
 
+
     /** Creates a new transmitter */
     @POST
-    @Path("/transmitters/transmitter/")
+    @Path("/transmitters/{typeId}/transmitter/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public NavtexTransmitterVo createTransmitter(NavtexTransmitterVo transmitter) throws Exception {
+    public NavtexTransmitterVo createTransmitter(
+            @PathParam("typeId") String typeId,
+            NavtexTransmitterVo transmitter) throws Exception {
+
+        if (!Objects.equals(typeId, transmitter.getPromulgationType().getTypeId())) {
+            throw new WebApplicationException(400);
+        }
+
         NavtexTransmitter t = new NavtexTransmitter(transmitter);
         return navtexPromulgationService.createTransmitter(t)
                 .toVo(DataFilter.get());
@@ -84,12 +95,19 @@ public class NavtexTransmitterRestService {
 
     /** Updates an existing transmitter */
     @PUT
-    @Path("/transmitters/transmitter/{name}")
+    @Path("/transmitters/{typeId}/transmitter/{name}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public NavtexTransmitterVo updateTransmitter(@PathParam("name") String name, NavtexTransmitterVo transmitter) throws Exception {
+    public NavtexTransmitterVo updateTransmitter(
+            @PathParam("typeId") String typeId,
+            @PathParam("name") String name,
+            NavtexTransmitterVo transmitter) throws Exception {
+
+        if (!Objects.equals(typeId, transmitter.getPromulgationType().getTypeId())) {
+            throw new WebApplicationException(400);
+        }
         if (!Objects.equals(name, transmitter.getName())) {
             throw new WebApplicationException(400);
         }
@@ -102,10 +120,13 @@ public class NavtexTransmitterRestService {
 
     /** Deletes an existing transmitter */
     @DELETE
-    @Path("/transmitters/transmitter/{name}")
+    @Path("/transmitters/{typeId}/transmitter/{name}")
     @NoCache
-    public void deleteTransmitter(@PathParam("name") String name) throws Exception {
-        navtexPromulgationService.deleteTransmitter(name);
+    public void deleteTransmitter(
+            @PathParam("typeId") String typeId,
+            @PathParam("name") String name) throws Exception {
+
+        navtexPromulgationService.deleteTransmitter(typeId, name);
     }
 
 }

@@ -26,24 +26,34 @@ import javax.persistence.Cacheable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.ManyToMany;
+import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OrderColumn;
+import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Defines a NAVTEX transmitter station
+ * Defines a NAVTEX transmitter station for a specific NAVTEX promulgation type
  */
 @Entity
 @Cacheable
 @NamedQueries({
         @NamedQuery(name="NavtexTransmitter.findByName",
-                query="SELECT t FROM NavtexTransmitter t where lower(t.name) = lower(:name)")
+                query="SELECT t FROM NavtexTransmitter t where t.promulgationType.typeId = :typeId "
+                        + " and lower(t.name) = lower(:name)"),
+        @NamedQuery(name="NavtexTransmitter.findByType",
+                query="SELECT t FROM NavtexTransmitter t where t.promulgationType.typeId = :typeId "
+                        + " order by lower(t.name) asc")
 })
 @SuppressWarnings("unused")
 public class NavtexTransmitter extends BaseEntity<Integer> {
+
+    @NotNull
+    @ManyToOne
+    PromulgationType promulgationType;
 
     @Column(unique = true, nullable = false)
     String name;
@@ -68,6 +78,7 @@ public class NavtexTransmitter extends BaseEntity<Integer> {
 
     /** Constructor **/
     public NavtexTransmitter(NavtexTransmitterVo transmitter) {
+        this.promulgationType = new PromulgationType(transmitter.getPromulgationType());
         this.name = transmitter.getName();
         this.active = transmitter.isActive();
         if (transmitter.getAreas() != null) {
@@ -81,6 +92,7 @@ public class NavtexTransmitter extends BaseEntity<Integer> {
     /** Returns a value object representation of this entity **/
     public NavtexTransmitterVo toVo(DataFilter filter) {
         NavtexTransmitterVo transmitter = new NavtexTransmitterVo();
+        transmitter.setPromulgationType(promulgationType.toVo());
         transmitter.setName(name);
         transmitter.setActive(active);
         transmitter.setAreas(areas.stream()
@@ -93,6 +105,14 @@ public class NavtexTransmitter extends BaseEntity<Integer> {
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public PromulgationType getPromulgationType() {
+        return promulgationType;
+    }
+
+    public void setPromulgationType(PromulgationType promulgationType) {
+        this.promulgationType = promulgationType;
+    }
 
     public String getName() {
         return name;

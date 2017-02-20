@@ -30,6 +30,7 @@ import javax.ejb.Lock;
 import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
+import javax.inject.Inject;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Join;
@@ -48,6 +49,9 @@ import java.util.stream.Collectors;
 @Lock(LockType.READ)
 @SuppressWarnings("unused")
 public class NavtexPromulgationService extends BasePromulgationService {
+
+    @Inject
+    PromulgationTypeService promulgationTypeService;
 
     /***************************************/
     /** Promulgation Service Handling     **/
@@ -82,7 +86,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
         }
 
         // Add all active transmitters not already added
-        for (NavtexTransmitter transmitter : findTransmittersByAreas(null, true)) {
+        for (NavtexTransmitter transmitter : findTransmittersByAreas(type.getTypeId(), null, true)) {
             if (!navtex.getTransmitters().containsKey(transmitter.getName())) {
                 navtex.getTransmitters().put(transmitter.getName(), Boolean.FALSE);
             }
@@ -118,7 +122,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
         NavtexMessagePromulgationVo navtex = new NavtexMessagePromulgationVo();
 
         // Add all active transmitters - by default, not selected
-        findTransmittersByAreas(null, true)
+        findTransmittersByAreas(type.getTypeId(), null, true)
                 .forEach(t -> navtex.getTransmitters().put(t.getName(), Boolean.FALSE));
 
         // Select transmitters associated with the current message areas
@@ -126,7 +130,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
             List<Area> areas = message.getAreas().stream()
                     .map(Area::new)
                     .collect(Collectors.toList());
-            findTransmittersByAreas(areas, true)
+            findTransmittersByAreas(type.getTypeId(), areas, true)
                     .forEach(t -> navtex.getTransmitters().put(t.getName(), Boolean.TRUE));
         }
 
@@ -158,7 +162,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
         NavtexMessagePromulgation navtex = message.promulgation(NavtexMessagePromulgation.class, type.getTypeId());
         if (navtex != null) {
             // Replace the list of transmitters with the persisted entities
-            navtex.setTransmitters(persistedTransmitters(navtex.getTransmitters()));
+            navtex.setTransmitters(persistedTransmitters(type.getTypeId(), navtex.getTransmitters()));
         }
     }
 
@@ -169,9 +173,10 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
 
     /** Returns the transmitter with the given name, or null if not found **/
-    public NavtexTransmitter findTransmitterByName(String name) {
+    public NavtexTransmitter findTransmitterByName(String typeId, String name) {
         try {
             return em.createNamedQuery("NavtexTransmitter.findByName", NavtexTransmitter.class)
+                    .setParameter("typeId", typeId)
                     .setParameter("name", name)
                     .getSingleResult();
         } catch (Exception e) {
@@ -181,9 +186,9 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
 
     /** Update the list of transmitters with the persisted entities **/
-    protected List<NavtexTransmitter> persistedTransmitters(List<NavtexTransmitter> transmitters) {
+    protected List<NavtexTransmitter> persistedTransmitters(String typeId, List<NavtexTransmitter> transmitters) {
         return transmitters.stream()
-                .map(t -> findTransmitterByName(t.getName()))
+                .map(t -> findTransmitterByName(typeId, t.getName()))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
@@ -195,7 +200,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
      * @return all NAVTEX transmitters matching the given areas.
      */
     @SuppressWarnings("all")
-    public List<NavtexTransmitter> findTransmittersByAreas(List<Area> areas, boolean onlyActive) {
+    public List<NavtexTransmitter> findTransmittersByAreas(String typeId, List<Area> areas, boolean onlyActive) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
 
         CriteriaQuery<NavtexTransmitter> query = cb.createQuery(NavtexTransmitter.class);
@@ -207,6 +212,10 @@ public class NavtexPromulgationService extends BasePromulgationService {
             criteriaHelper.equals(transmitterRoot.get("active"), Boolean.TRUE);
         }
 
+        if (StringUtils.isNotBlank(typeId)) {
+            Join<NavtexTransmitter, PromulgationType> typeJoin = transmitterRoot.join("promulgationType", JoinType.LEFT);
+            criteriaHelper.equals(typeJoin.get("typeId"), typeId);
+        }
 
         if (areas != null && !areas.isEmpty()) {
 
@@ -228,15 +237,21 @@ public class NavtexPromulgationService extends BasePromulgationService {
     }
 
 
-    /** Returns all transmitters */
-    public List<NavtexTransmitter> getTransmitters() {
-        return getAll(NavtexTransmitter.class).stream()
-                .collect(Collectors.toList());
+    /** Returns all transmitters associated with the given NAVTEX promulgation type */
+    public List<NavtexTransmitter> getTransmitters(String typeId) {
+        return em.createNamedQuery("NavtexTransmitter.findByType", NavtexTransmitter.class)
+                .setParameter("typeId", typeId)
+                .getResultList();
     }
+
 
     /** Creates a new transmitter */
     public NavtexTransmitter createTransmitter(NavtexTransmitter transmitter) {
-        log.info("Creating transmitter " + transmitter.getName());
+
+        String typeId = transmitter.getPromulgationType().getTypeId();
+        log.info("Creating transmitter " + transmitter.getName() + " for promulgation type " + typeId);
+
+        transmitter.setPromulgationType(promulgationTypeService.getPromulgationType(typeId));
         transmitter.setAreas(persistedList(Area.class, transmitter.getAreas()));
         return saveEntity(transmitter);
     }
@@ -244,8 +259,11 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
     /** Updates an existing transmitter */
     public NavtexTransmitter updateTransmitter(NavtexTransmitter transmitter) {
-        log.info("Updating transmitter " + transmitter.getName());
-        NavtexTransmitter original = findTransmitterByName(transmitter.getName());
+
+        String typeId = transmitter.getPromulgationType().getTypeId();
+        log.info("Updating transmitter " + transmitter.getName() + " for promulgation type " + typeId);
+
+        NavtexTransmitter original = findTransmitterByName(typeId, transmitter.getName());
         original.setActive(transmitter.isActive());
         original.setAreas(persistedList(Area.class, transmitter.getAreas()));
         return saveEntity(original);
@@ -253,9 +271,11 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
 
     /** Deletes an existing transmitter */
-    public boolean deleteTransmitter(String name) {
-        log.info("Deleting transmitter " + name);
-        NavtexTransmitter original = findTransmitterByName(name);
+    public boolean deleteTransmitter(String typeId, String name) {
+
+        log.info("Deleting transmitter " + name + " for promulgation type " + typeId);
+
+        NavtexTransmitter original = findTransmitterByName(typeId, name);
         if (original != null) {
             remove(original);
             return true;

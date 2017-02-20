@@ -27,6 +27,7 @@ import java.util.List;
  */
 public class NavtexTransmitterVo implements IJsonSerializable {
 
+    PromulgationTypeVo promulgationType;
     String name;
     boolean active;
     List<AreaVo> areas = new ArrayList<>();
@@ -34,6 +35,14 @@ public class NavtexTransmitterVo implements IJsonSerializable {
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public PromulgationTypeVo getPromulgationType() {
+        return promulgationType;
+    }
+
+    public void setPromulgationType(PromulgationTypeVo promulgationType) {
+        this.promulgationType = promulgationType;
+    }
 
     public String getName() {
         return name;
