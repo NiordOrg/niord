@@ -1,6 +1,4 @@
 
-<div class="promulgation-text" ng-bind-html="promulgation.text | plain2html | toTrusted"></div>
-
 <div style="font-size: 80%; margin: 5px 0">
     Priority: {{promulgation.priority}},&nbsp;
     Transmitters:
@@ -8,4 +6,9 @@
           ng-if="val">
         {{name}}
     </span>
+</div>
+
+<div class="promulgation-text"
+     style="font-family: 'Courier New', serif"
+     ng-bind-html="promulgation.text | plain2html | toTrusted">
 </div>

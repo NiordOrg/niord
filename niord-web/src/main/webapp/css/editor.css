@@ -329,7 +329,7 @@ textarea.navtex {
 }
 
 .promulgation-text {
-    border: 1px solid lightgray;
+    border-left: 5px solid #eee;
     padding: 5px;
 }
 
