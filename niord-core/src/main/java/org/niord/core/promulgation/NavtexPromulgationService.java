@@ -61,7 +61,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
     /** {@inheritDoc} */
     @Override
     public String getServiceId() {
-        return NavtexMessagePromulgation.TYPE;
+        return NavtexMessagePromulgation.SERVICE_ID;
     }
 
 

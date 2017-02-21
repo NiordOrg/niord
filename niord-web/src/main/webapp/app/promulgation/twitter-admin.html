@@ -1,0 +1,145 @@
+
+<div class="form-group">
+    <label class="col-sm-4">Settings</label>
+    <div class="col-sm-8">
+
+        <button id="settingsBtn" class="btn btn-default btn-sm"
+                onclick="updateSettings()">Update Settings...</button>
+
+        <script type="application/javascript">
+            function updateSettings() {
+                var scope = angular.element($("#settingsBtn")).scope();
+
+                scope.openDialog({
+                    templateUrl: 'twitter-settings.html',
+                    controller: function ($scope, $modalInstance, $http, typeId) {
+                        var restUrl = '/rest/promulgation/twitter-settings/';
+                        $scope.editMode = 'edit';
+                        $scope.typeId = typeId;
+                        $scope.settings = undefined;
+                        
+                        $scope.loadSettings =  function () {
+                            $scope.settings = undefined;
+
+                            $http.get(restUrl + encodeURIComponent(typeId))
+                                .success(function (settings) {
+                                    $scope.settings = settings;
+                                    $scope.editMode = 'edit';
+                                    if (!$scope.settings) {
+                                        scope.addSettings();
+                                    }
+                                })
+                                .error(scope.addSettings)
+                        };
+
+                        scope.close = function () {
+                            $scope.$close('saved');
+                        };
+
+                        scope.addSettings = function () {
+                            $scope.settings = {
+                                promulgationType: { typeId: typeId },
+                                format: undefined,
+                                includeThumbnail : true,
+                                apiKey : undefined,
+                                apiSecret : undefined,
+                                accessToken : undefined,
+                                accessTokenSecret : undefined
+                            };
+                            $scope.editMode = 'add';
+                        };
+
+                        $scope.saveSettings = function () {
+                            if ($scope.editMode == 'add') {
+                                $http.post(restUrl, $scope.settings)
+                                    .success(scope.close);
+                            } else {
+                                $http.put(restUrl + encodeURIComponent(typeId), $scope.settings)
+                                    .success(scope.close);
+                            }
+                        };
+                        $scope.loadSettings();
+                    },
+                    size: 'md',
+                    resolve: {
+                        typeId: function () { return scope.promulgationType.typeId; }
+                    }
+                });
+            }
+        </script>
+
+    </div>
+</div>
+
+<script type="text/ng-template" id="twitter-settings.html">
+    <div class="modal-header">
+        <h4 class="modal-title">OAuth Settings</h4>
+    </div>
+    <div class="modal-body">
+
+        <div class="container-fluid">
+
+            <form class="form-horizontal" name="settingsForm" id="settingsForm">
+
+                <div class="row">
+                    <div class="form-controls col-sm-12">
+
+                        <div class="form-group">
+                            <label class="col-sm-4">Format</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control input-sm"
+                                       ng-model="settings.format"/>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4">Thumbnail</label>
+                            <div class="col-sm-8">
+                                <input type="checkbox" ng-model="settings.includeThumbnail"/> Include thumbnail
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4">API Key</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control input-sm" required
+                                       ng-model="settings.apiKey"/>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4">API Secret</label>
+                            <div class="col-sm-8">
+                                <input type="password" class="form-control input-sm" required
+                                       ng-model="settings.apiSecret"/>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4">Access Token</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control input-sm" required
+                                       ng-model="settings.accessToken"/>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4">Access Token Secret</label>
+                            <div class="col-sm-8">
+                                <input type="password" class="form-control input-sm" required
+                                       ng-model="settings.accessTokenSecret"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-default" ng-click="$dismiss('aborted')">Close</button>
+        <button class="btn btn-primary" ng-click="saveSettings()"
+                ng-disabled="settingsForm.$pristine || settingsForm.$invalid">Save Settings</button>
+    </div>
+</script>

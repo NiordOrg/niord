@@ -26,11 +26,11 @@ import javax.persistence.Entity;
  * Defines the message promulgation entity associated with Twitter promulgation
  */
 @Entity
-@DiscriminatorValue(TwitterMessagePromulgation.TYPE)
+@DiscriminatorValue(TwitterMessagePromulgation.SERVICE_ID)
 @SuppressWarnings("unused")
 public class TwitterMessagePromulgation extends BaseMessagePromulgation<TwitterMessagePromulgationVo> {
 
-    public static final String  TYPE = "twitter";
+    public static final String SERVICE_ID = "twitter";
 
     // NB: Tweets can be longer than 140 chars nowadays, if they e.g. contain multimedia links...
     @Column(length = 512)

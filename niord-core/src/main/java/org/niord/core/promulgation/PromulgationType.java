@@ -57,7 +57,10 @@ import java.util.stream.Collectors;
                 query="SELECT pt FROM PromulgationType pt where pt.active = true order by pt.priority asc"),
         @NamedQuery(name= "PromulgationType.findActiveByDomain",
                 query="SELECT pt FROM PromulgationType pt join pt.domains d where pt.active = true and d.domainId = :domainId "
-                    + "order by pt.priority asc")
+                    + "order by pt.priority asc"),
+        @NamedQuery(name= "PromulgationType.findActiveByDomainsAndServiceId",
+                query="SELECT pt FROM PromulgationType pt join pt.domains d where pt.active = true "
+                        + " and pt.serviceId = :serviceId and d.domainId in (:domainIds)  order by pt.priority asc")
 })
 @SuppressWarnings("unused")
 public class PromulgationType extends VersionedEntity<Integer> {

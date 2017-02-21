@@ -48,7 +48,7 @@ public class RadioPromulgationService extends BasePromulgationService {
     /** {@inheritDoc} */
     @Override
     public String getServiceId() {
-        return RadioMessagePromulgation.TYPE;
+        return RadioMessagePromulgation.SERVICE_ID;
     }
 
 

@@ -29,11 +29,11 @@ import javax.persistence.Lob;
  * and sent to the radio station via e-mail.
  */
 @Entity
-@DiscriminatorValue(RadioMessagePromulgation.TYPE)
+@DiscriminatorValue(RadioMessagePromulgation.SERVICE_ID)
 @SuppressWarnings("unused")
 public class RadioMessagePromulgation extends BaseMessagePromulgation<RadioMessagePromulgationVo> implements IMailPromulgation {
 
-    public static final String  TYPE = "radio";
+    public static final String SERVICE_ID = "radio";
 
     @Lob
     String text;

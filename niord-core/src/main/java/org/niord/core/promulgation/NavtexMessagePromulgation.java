@@ -34,13 +34,13 @@ import java.util.stream.Collectors;
  * Defines the message promulgation entity associated with NAVTEX mailing list promulgations
  */
 @Entity
-@DiscriminatorValue(NavtexMessagePromulgation.TYPE)
+@DiscriminatorValue(NavtexMessagePromulgation.SERVICE_ID)
 @SuppressWarnings("unused")
 public class NavtexMessagePromulgation
         extends BaseMessagePromulgation<NavtexMessagePromulgationVo>
         implements IMailPromulgation {
 
-    public static final String  TYPE = "navtex";
+    public static final String SERVICE_ID = "navtex";
 
     /** Navtex Priority */
     public enum NavtexPriority {
