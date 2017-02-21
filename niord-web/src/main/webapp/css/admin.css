@@ -321,6 +321,13 @@ tr.batch-execution-row td div.progress {
     font-size: 12px;
 }
 
+.setting-json-editor {
+    width: 100%;
+    height: 150px;
+    border: 1px solid lightgray;
+    box-shadow: 0 2px 4px rgba(50, 50, 50, 0.5);
+}
+
 /** Templates **/
 
 .fm-template-table {
@@ -408,7 +415,9 @@ div.ace_scrollbar.ace_scrollbar-h {
 
 /** Reports admin page **/
 
-.report-props {
-    font-size: 11px;
+.report-json-editor {
     width: 100%;
+    height: 60px;
+    border: 1px solid lightgray;
+    box-shadow: 0 2px 4px rgba(50, 50, 50, 0.5);
 }

@@ -63,9 +63,7 @@
                             <label class="col-sm-4">Read-only Properties</label>
                             <div class="col-sm-8">
                                 <json-data data="report.properties" json="reportProperties">
-                                    <textarea class="form-control input-sm report-props" rows="3"
-                                              ng-model="reportProperties"
-                                              autocapitalize="off" autocorrect="off" autocomplete="off" ></textarea>
+                                    <div ui-ace="jsonEditorOptions" ng-model="reportProperties" class="report-json-editor"></div>
                                 </json-data>
                             </div>
                         </div>
@@ -74,9 +72,7 @@
                             <label class="col-sm-4">Parameters</label>
                             <div class="col-sm-8">
                                 <json-data data="report.params" json="reportParams">
-                                    <textarea class="form-control input-sm report-props" rows="3"
-                                              ng-model="reportParams"
-                                              autocapitalize="off" autocorrect="off" autocomplete="off" ></textarea>
+                                    <div ui-ace="jsonEditorOptions" ng-model="reportParams" class="report-json-editor"></div>
                                 </json-data>
                             </div>
                         </div>

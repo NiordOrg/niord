@@ -38,6 +38,11 @@ angular.module('niord.admin')
             $scope.editMode = 'add';
             $scope.search = '';
 
+            $scope.jsonEditorOptions = {
+                useWrapMode : true,
+                showGutter: false,
+                mode: 'json'
+            };
 
             /** Loads the report from the back-end */
             $scope.loadReports = function() {

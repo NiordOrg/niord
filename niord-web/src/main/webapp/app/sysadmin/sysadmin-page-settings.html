@@ -49,9 +49,7 @@
                                         ng-model="setting.value"
                                         autocapitalize="off" autocorrect="off" autocomplete="off" />
                                 <json-data ng-if="setting.type == 'json'" data="setting.value" json="jsonValue">
-                                    <textarea class="form-control input-sm"
-                                              ng-model="jsonValue"
-                                              autocapitalize="off" autocorrect="off" autocomplete="off" ></textarea>
+                                    <div ui-ace="jsonEditorOptions" ng-model="jsonValue" class="setting-json-editor"></div>
                                 </json-data>
                             </div>
                         </div>

@@ -35,6 +35,12 @@ angular.module('niord.admin')
             $scope.settings = [];
             $scope.setting = undefined; // The setting being edited
 
+            $scope.jsonEditorOptions = {
+                useWrapMode : true,
+                showGutter: false,
+                mode: 'json'
+            };
+
 
             /** Loads the settings from the back-end */
             $scope.loadSettings = function() {
