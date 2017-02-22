@@ -101,6 +101,7 @@ public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
 
     /**
      * Returns the promulgation with the given type, or null if not found
+     * @param clz the class the promulgation will be cast to
      * @param typeId the promulgation type
      * @return the promulgation with the given type, or null if not found
      */
@@ -116,6 +117,23 @@ public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
     }
 
 
+    /**
+     * Returns the promulgation with the given type, or null if not found
+     * @param typeId the promulgation type
+     * @return the promulgation with the given type, or null if not found
+     */
+    public BaseMessagePromulgationVo promulgation(String typeId) {
+        if (promulgations == null || typeId == null) {
+            return null;
+        }
+        return promulgations.stream()
+                .filter(p -> p.getType().getTypeId().equals(typeId))
+                .findFirst()
+                .orElse(null);
+    }
+
+
+    /** Creates the list of promulgations if it does not exist **/
     public List<BaseMessagePromulgationVo> checkCreatePromulgations() {
         if (promulgations == null) {
             promulgations = new ArrayList<>();
