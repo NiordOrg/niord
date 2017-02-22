@@ -32,7 +32,7 @@ import java.util.List;
 /**
  * Freemarker template test
  */
-public class TemplateTest {
+public class FmTemplateTest {
 
     @Test
     public void testFreemarkerTemplateInclusion() throws IOException, TemplateException {
