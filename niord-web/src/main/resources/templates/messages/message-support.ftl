@@ -260,7 +260,7 @@
     <#if msg.shortId?has_content>
         <div class="avoid-break-before-after">
             <span class="label-message-id">${msg.shortId}</span>
-            <#if msg.status == 'CANCELLED' || msg.status == 'EXPIRED'>
+            <#if msg.status == 'CANCELLED' || (msg.status == 'EXPIRED' && msg.type != 'PERMANENT_NOTICE')>
                 <span class="label-status">${text("msg.status." + msg.status)}</span>
             </#if>
             <#if msg.mainType == 'NM' && msg.type??>
