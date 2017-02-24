@@ -1337,7 +1337,7 @@ angular.module('niord.common')
                         var title = (entity.descs && entity.descs.length > 0) ? entity.descs[0].name : 'N/A';
                         var node = { key: entity.id, title: title, folder: true, children: [], level: level, entity: entity };
                         if (scope.flagInactive && !entity.active) {
-                            node.icon = '/img/inactive-folder.gif';
+                            node.icon = '/img/tree-icons/inactive-folder.gif';
                         }
                         treeData.push(node);
                         if (entity.children && entity.children.length > 0) {
