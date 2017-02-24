@@ -74,4 +74,42 @@ angular.module('niord.common')
                     size: 'lg'
                 });
             }
+        }])
+
+
+    /**
+     * Controller for the category selection dialog
+     */
+    .controller('CategoryDialogCtrl', ['$scope', '$timeout', 'AdminCategoryService',
+        function ($scope, $timeout, AdminCategoryService) {
+            'use strict';
+
+            $scope.categories = [];
+            $scope.categoryFilter = '';
+
+
+            // Set focus to the filter input field
+            $timeout(function () {
+                $('#filter').focus()
+            }, 100);
+
+
+            /** Load the categories */
+            $scope.loadCategories = function() {
+                AdminCategoryService
+                    .getCategories()
+                    .success(function (categories) {
+                        $scope.categories = categories;
+                    });
+            };
+
+
+            /** Called when an categories is selected */
+            $scope.selectCategory = function (category) {
+                $scope.$apply(function() {
+                    $scope.$close(category);
+                });
+            };
+
+
         }]);

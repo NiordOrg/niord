@@ -647,3 +647,14 @@ body > .ui-select-container {
 .base-data-inactive {
     color: #dd0000;
 }
+
+.category-selector-tree {
+    margin-top: 10px;
+    max-height: 300px;
+    overflow-y: scroll;
+    border: 1px solid lightgray;
+}
+
+.category-selector-tree ul.fancytree-container {
+    border: none;
+}

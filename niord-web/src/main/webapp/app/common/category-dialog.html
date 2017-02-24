@@ -1,0 +1,34 @@
+<div>
+
+    <div class="modal-header" style="text-align: center; padding: 5px 15px">
+        <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
+        <h4>Select Category</h4>
+    </div>
+
+    <div class="modal-body" style="padding-bottom: 0" ng-init="loadCategories()">
+
+        <div class="row">
+            <div class="col-sm-12">
+                <div style="position: relative">
+                    <input type="text" id="filter" class="form-control input-sm" placeholder="Filter Categories"
+                           ng-model="categoryFilter" autocomplete="off"/>
+                    <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
+                          ng-click="categoryFilter = ''" ng-show="categoryFilter != ''"></span>
+                </div>
+                <div entity-tree entities="categories"
+                     filter="categoryFilter"
+                     flag-inactive="true"
+                     entity-selected="selectCategory(entity)"
+                     class="category-selector-tree"></div>
+            </div>
+        </div>
+
+        <div class="row" style="margin-top: 24px;">
+            <div class="form-group col-xs-12" style="text-align: right">
+                <button class="btn btn-default btn-sm" ng-click="$dismiss('aborted')">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+

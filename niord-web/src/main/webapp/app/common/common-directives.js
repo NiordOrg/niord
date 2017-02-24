@@ -175,7 +175,8 @@ angular.module('niord.common')
      * Use "init-ids" to initialize the categories using a list of
      * category ids.
      ****************************************************************/
-    .directive('categoriesField', ['$rootScope', '$timeout', '$http', 'LangService', function($rootScope, $timeout, $http, LangService) {
+    .directive('categoriesField', ['$rootScope', '$timeout', '$http', '$uibModal', 'LangService',
+            function($rootScope, $timeout, $http, $uibModal, LangService) {
         return {
             restrict: 'E',
             replace: true,
@@ -261,6 +262,23 @@ angular.module('niord.common')
                     }
                     scope.categoryUpdated();
                 };
+
+
+                /** Opens the category selector dialog **/
+                scope.openCategoryDialog = function () {
+                    $uibModal.open({
+                        controller: "CategoryDialogCtrl",
+                        templateUrl: "/app/common/category-dialog.html",
+                        size: 'md'
+                    }).result.then(function (category) {
+                        if (scope.multiple) {
+                            scope.categoryData.categories.push(category);
+                        } else {
+                            scope.categoryData.category = category;
+                        }
+                        scope.categoryUpdated();
+                    });
+                }
             }
         }
     }])
