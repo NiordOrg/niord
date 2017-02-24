@@ -70,7 +70,8 @@ angular.module('niord.common')
      * areaData.area and for multi-area selection use areaData.areas.
      * Use "init-ids" to initialize the areas using a list of area ids.
      ****************************************************************/
-    .directive('areasField', ['$rootScope', '$timeout', '$http', 'LangService', function($rootScope, $timeout, $http, LangService) {
+    .directive('areasField', ['$rootScope', '$timeout', '$http', '$uibModal', 'LangService',
+            function($rootScope, $timeout, $http, $uibModal, LangService) {
         return {
             restrict: 'E',
             replace: true,
@@ -162,6 +163,23 @@ angular.module('niord.common')
                     }
                     scope.areaUpdated();
                 };
+
+
+                /** Opens the area selector dialog **/
+                scope.openAreaDialog = function () {
+                    $uibModal.open({
+                        controller: "AreaDialogCtrl",
+                        templateUrl: "/app/common/area-dialog.html",
+                        size: 'md'
+                    }).result.then(function (area) {
+                        if (scope.multiple) {
+                            scope.areaData.areas.push(area);
+                        } else {
+                            scope.areaData.area = area;
+                        }
+                        scope.areaUpdated();
+                    });
+                }
             }
         }
     }])

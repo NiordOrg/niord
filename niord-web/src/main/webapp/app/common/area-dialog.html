@@ -2,23 +2,23 @@
 
     <div class="modal-header" style="text-align: center; padding: 5px 15px">
         <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
-        <h4>Select Category</h4>
+        <h4>Select Area</h4>
     </div>
 
-    <div class="modal-body" style="padding-bottom: 0" ng-init="loadCategories()">
+    <div class="modal-body" style="padding-bottom: 0" ng-init="loadAreas()">
 
         <div class="row">
             <div class="col-sm-12">
                 <div style="position: relative">
-                    <input type="text" id="filter" class="form-control input-sm" placeholder="Filter Categories"
-                           ng-model="categoryFilter" autocomplete="off"/>
+                    <input type="text" id="filter" class="form-control input-sm" placeholder="Filter Areas"
+                           ng-model="areaFilter" autocomplete="off"/>
                     <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
-                          ng-click="categoryFilter = ''" ng-show="categoryFilter != ''"></span>
+                          ng-click="areaFilter = ''" ng-show="areaFilter != ''"></span>
                 </div>
-                <div entity-tree entities="categories"
-                     filter="categoryFilter"
+                <div entity-tree entities="areas"
+                     filter="areaFilter"
                      flag-inactive="true"
-                     entity-selected="selectCategory(entity)"
+                     entity-selected="selectArea(entity)"
                      class="selector-tree"></div>
             </div>
         </div>

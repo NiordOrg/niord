@@ -110,6 +110,40 @@ angular.module('niord.common')
                     $scope.$close(category);
                 });
             };
+        }])
+
+    /**
+     * Controller for the area selection dialog
+     */
+    .controller('AreaDialogCtrl', ['$scope', '$timeout', 'AdminAreaService',
+        function ($scope, $timeout, AdminAreaService) {
+            'use strict';
+
+            $scope.areas = [];
+            $scope.areaFilter = '';
 
 
+            // Set focus to the filter input field
+            $timeout(function () {
+                $('#filter').focus()
+            }, 100);
+
+
+            /** Load the areas */
+            $scope.loadAreas = function() {
+                AdminAreaService
+                    .getAreas()
+                    .success(function (areas) {
+                        $scope.areas = areas;
+                    });
+            };
+
+
+            /** Called when an areas is selected */
+            $scope.selectArea = function (area) {
+                $scope.$apply(function() {
+                    $scope.$close(area);
+                });
+            };
         }]);
+
