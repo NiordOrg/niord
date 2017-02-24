@@ -1268,42 +1268,62 @@ angular.module('niord.common')
                 scope.sort = (attrs.sort !== undefined) ? attrs.sort : false;
 
                 // Initialize the tree
-                element.fancytree({
-                    source: [],
-                    keyboard: true,
-                    extensions: ["filter", "dnd"],
-                    filter: {
-                        mode: "hide"
-                    },
-                    dnd: {
-                        autoExpandMS: 400,
-                        draggable: {
-                            zIndex: 1000,
-                            scroll: false
+                if (attrs.entityMoved) {
+                    // DnD-enabled tree
+                    element.fancytree({
+                        source: [],
+                        keyboard: true,
+                        extensions: ["filter", "dnd"],
+                        filter: {
+                            mode: "hide"
                         },
-                        preventVoidMoves: true,
-                        preventRecursiveMoves: true,
-                        dragStart: function() { return true; },
-                        dragEnter: function(node, data) {
-                            if (node.parent === data.otherNode.parent) {
-                                return ['over'];
+                        dnd: {
+                            autoExpandMS: 400,
+                            draggable: {
+                                zIndex: 1000,
+                                scroll: false
+                            },
+                            preventVoidMoves: true,
+                            preventRecursiveMoves: true,
+                            dragStart: function() { return true; },
+                            dragEnter: function(node, data) {
+                                if (node.parent === data.otherNode.parent) {
+                                    return ['over'];
+                                }
+                                return true;
+                            },
+                            dragOver: function(node, data) {},
+                            dragLeave: function(node, data) {},
+                            dragStop: function(node, data) {},
+                            dragDrop: function(node, data) {
+                                handleDragDrop(node, data);
                             }
-                            return true;
                         },
-                        dragOver: function(node, data) {},
-                        dragLeave: function(node, data) {},
-                        dragStop: function(node, data) {},
-                        dragDrop: function(node, data) {
-                            handleDragDrop(node, data);
+                        activate: function(event, data){
+                            var node = data.node;
+                            if (scope.entitySelected) {
+                                scope.entitySelected({ entity: node.data.entity });
+                            }
                         }
-                    },
-                    activate: function(event, data){
-                        var node = data.node;
-                        if (scope.entitySelected) {
-                            scope.entitySelected({ entity: node.data.entity });
+                    });
+
+                } else {
+                    // Non-DnD tree
+                    element.fancytree({
+                        source: [],
+                        keyboard: true,
+                        extensions: ["filter"],
+                        filter: {
+                            mode: "hide"
+                        },
+                        activate: function(event, data){
+                            var node = data.node;
+                            if (scope.entitySelected) {
+                                scope.entitySelected({ entity: node.data.entity });
+                            }
                         }
-                    }
-                });
+                    });
+                }
 
                 var tree = element.fancytree("getTree");
 
