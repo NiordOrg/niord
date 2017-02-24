@@ -324,7 +324,7 @@ angular.module('niord.atons')
 
                 // Create a new template message and reset the current AtoN selection
                 $rootScope.templateMessage.mainType = mainType;
-                $rootScope.templateMessage.geometry = angular.copy($scope.featureCollection);
+                $rootScope.templateMessage.parts[0].geometry = angular.copy($scope.featureCollection);
                 $scope.clearSelection();
 
                 // Navigate to the message editor page

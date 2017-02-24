@@ -117,7 +117,12 @@ angular.module('niord.auth')
             $rootScope.atonSelection = new Map();
             $rootScope.templateMessage = {
                 mainType: undefined,
-                geometry: undefined,
+                parts: [{
+                    type: 'DETAILS',
+                    geometry: undefined,
+                    eventDates: [],
+                    descs: []
+                }],
                 descs: []
             }
 
