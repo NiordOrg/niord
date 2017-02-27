@@ -1258,6 +1258,7 @@ angular.module('niord.common')
                 entities:           '=',
                 filter:             '=',
                 flagInactive:       '=',
+                flagTemplate:       '=',
                 sort :              '@',
                 entitySelected :    '&',
                 entityMoved :       '&'
@@ -1327,6 +1328,21 @@ angular.module('niord.common')
 
                 var tree = element.fancytree("getTree");
 
+
+                /** Computes the icon to display **/
+                function computeIcon(entity, node) {
+                    var showInactive = scope.flagInactive && !entity.active;
+                    var showTemplate = scope.flagTemplate && entity.hasTemplates;
+                    if (showInactive && showTemplate) {
+                        node.icon = '/img/tree-icons/inactive-folder-tmpl.gif';
+                    } else if (showInactive) {
+                        node.icon = '/img/tree-icons/inactive-folder.gif';
+                    } else if (showTemplate) {
+                        node.icon = '/img/tree-icons/folder-tmpl.gif';
+                    }
+                }
+
+
                 /**
                  * Convert the list of entities into the tree structure used by
                  * https://github.com/mar10/fancytree/
@@ -1336,15 +1352,14 @@ angular.module('niord.common')
                         var entity = entities[i];
                         var title = (entity.descs && entity.descs.length > 0) ? entity.descs[0].name : 'N/A';
                         var node = { key: entity.id, title: title, folder: true, children: [], level: level, entity: entity };
-                        if (scope.flagInactive && !entity.active) {
-                            node.icon = '/img/tree-icons/inactive-folder.gif';
-                        }
+                        computeIcon(entity, node);
                         treeData.push(node);
                         if (entity.children && entity.children.length > 0) {
                             toTreeData(entity.children, node.children, level + 1);
                         }
                     }
                 }
+
 
                 /** Called when a dragged element has been dropped */
                 function handleDragDrop(node, data) {
