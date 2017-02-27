@@ -37,9 +37,11 @@
                         <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
                               ng-click="categoryFilter = ''" ng-show="categoryFilter != ''"></span>
                     </div>
-                    <div entity-tree entities="categories"
+                    <div entity-tree
+                         entities="categories"
                          filter="categoryFilter"
                          flag-inactive="true"
+                         flag-template="true"
                          entity-selected="selectCategory(entity)"
                          entity-moved="moveCategory(entity, parent)"
                          class="category-tree"></div>

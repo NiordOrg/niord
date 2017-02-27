@@ -61,7 +61,6 @@ import static org.niord.core.settings.Setting.Type.Password;
 /**
  * Main interface for accessing and processing Freemarker report templates
  */
-@SuppressWarnings("unused")
 @Stateless
 public class FmTemplateService extends BaseService {
 
@@ -105,7 +104,6 @@ public class FmTemplateService extends BaseService {
      * @return the saved template
      */
     public FmTemplate saveFmTemplate(FmTemplate template) {
-        boolean wasPersisted = template.isPersisted();
 
         // Save the template
         template = saveEntity(template);

@@ -17,6 +17,7 @@ package org.niord.core.category;
 
 import org.niord.core.category.vo.SystemCategoryVo;
 import org.niord.core.model.VersionedEntity;
+import org.niord.core.template.Template;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.message.CategoryVo;
@@ -30,6 +31,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderColumn;
 import javax.persistence.Transient;
 import java.util.ArrayList;
 import java.util.List;
@@ -76,6 +78,10 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
 
     @ElementCollection
     List<String> editorFields = new ArrayList<>();
+
+    @OneToMany(mappedBy = "category")
+    @OrderColumn(name = "indexNo")
+    List<Template> templates = new ArrayList<>();
 
 
     /** Constructor */
@@ -162,6 +168,8 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
             if (!editorFields.isEmpty()) {
                 sysCategory.setEditorFields(new ArrayList<>(editorFields));
             }
+
+            sysCategory.setHasTemplate(!templates.isEmpty());
         }
 
         return category;
@@ -352,6 +360,14 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
 
     public void setEditorFields(List<String> editorFields) {
         this.editorFields = editorFields;
+    }
+
+    public List<Template> getTemplates() {
+        return templates;
+    }
+
+    public void setTemplates(List<Template> templates) {
+        this.templates = templates;
     }
 }
 

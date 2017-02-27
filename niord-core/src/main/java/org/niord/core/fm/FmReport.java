@@ -21,6 +21,7 @@ import org.niord.core.model.BaseEntity;
 import org.niord.core.fm.vo.FmReportVo;
 import org.niord.model.DataFilter;
 
+import javax.persistence.Cacheable;
 import javax.persistence.Column;
 import javax.persistence.Convert;
 import javax.persistence.Entity;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
  * Defines a freemarker report that generates PDF for a list of messages
  */
 @Entity
+@Cacheable
 @NamedQueries({
         @NamedQuery(name="FmReport.findByReportId",
                 query="SELECT r FROM FmReport r where r.reportId = :reportId"),

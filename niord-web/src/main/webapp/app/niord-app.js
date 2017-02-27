@@ -220,6 +220,10 @@ var app = angular.module('niord.admin', [
                 url: "/fm-templates/:path",
                 templateUrl: "/app/sysadmin/sysadmin-page-fm-templates.html"
             })
+            .state('sysadmin.templates', {
+                url: "/templates",
+                templateUrl: "/app/sysadmin/sysadmin-page-templates.html"
+            })
             .state('sysadmin.reports', {
                 url: "/reports",
                 templateUrl: "/app/sysadmin/sysadmin-page-reports.html"

@@ -1332,7 +1332,7 @@ angular.module('niord.common')
                 /** Computes the icon to display **/
                 function computeIcon(entity, node) {
                     var showInactive = scope.flagInactive && !entity.active;
-                    var showTemplate = scope.flagTemplate && entity.hasTemplates;
+                    var showTemplate = scope.flagTemplate && entity.hasTemplate;
                     if (showInactive && showTemplate) {
                         node.icon = '/img/tree-icons/inactive-folder-tmpl.gif';
                     } else if (showInactive) {

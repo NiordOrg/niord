@@ -254,8 +254,6 @@ angular.module('niord.admin')
     }])
 
 
-
-
     /**
      * ********************************************************************************
      * AdminFmTemplateService
@@ -299,6 +297,57 @@ angular.module('niord.admin')
             /** Loads the Freemarker template history for the given Freemarker template **/
             getFmTemplateHistory: function(template) {
                 return $http.get('/rest/fm-templates/fm-template/' + template.id + '/history');
+            },
+
+
+            /** Returns the ticket that can be used to generate an export file that requires the given role */
+            exportTicket: function (role) {
+                var param = role ? '?role=' + role : '';
+                return $http.get('/rest/tickets/ticket' + param);
+            }
+
+        };
+    }])
+
+
+    /**
+     * ********************************************************************************
+     * AdminTemplateService
+     * ********************************************************************************
+     * Interface for calling message template-related functions at the application server
+     */
+    .factory('AdminTemplateService', [ '$http', function($http) {
+        'use strict';
+
+        return {
+
+            /** Returns all message templates **/
+            getTemplates: function () {
+                return $http.get('/rest/templates/all');
+            },
+
+
+            /** Returns the template with the given ID **/
+            getTemplate: function (id) {
+                return $http.get('/rest/templates/template/' + id);
+            },
+
+
+            /** Creates a new message template **/
+            createTemplate: function(template) {
+                return $http.post('/rest/templates/template/', template);
+            },
+
+
+            /** Updates the given message template **/
+            updateTemplate: function(template) {
+                return $http.put('/rest/templates/template/' + template.id, template);
+            },
+
+
+            /** Deletes the given message template **/
+            deleteTemplate: function(template) {
+                return $http['delete']('/rest/templates/template/' + template.id);
             },
 
 

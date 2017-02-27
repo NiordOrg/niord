@@ -29,6 +29,7 @@ public class SystemCategoryVo extends CategoryVo {
 
     List<SystemCategoryVo> children;
     List<String> editorFields;
+    Boolean hasTemplate;
 
 
     /** Returns the list of child categories, and creates an empty list if needed */
@@ -57,5 +58,13 @@ public class SystemCategoryVo extends CategoryVo {
 
     public void setEditorFields(List<String> editorFields) {
         this.editorFields = editorFields;
+    }
+
+    public Boolean getHasTemplate() {
+        return hasTemplate;
+    }
+
+    public void setHasTemplate(Boolean hasTemplate) {
+        this.hasTemplate = hasTemplate;
     }
 }
