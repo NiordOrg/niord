@@ -178,7 +178,7 @@ angular.module('niord.admin')
                     .exportTicket('admin')
                     .success(function (ticket) {
                         var link = document.createElement("a");
-                        link.href = '/rest/templates/all?ticket=' + ticket;
+                        link.href = '/rest/fm-templates/all?ticket=' + ticket;
                         link.click();
                     });
             };
@@ -188,7 +188,7 @@ angular.module('niord.admin')
             $scope.uploadTemplatesDialog = function () {
                 UploadFileService.showUploadFileDialog(
                     'Upload Templates File',
-                    '/rest/templates/upload-templates',
+                    '/rest/fm-templates/upload-templates',
                     'json');
             };
 

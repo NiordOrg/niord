@@ -269,36 +269,36 @@ angular.module('niord.admin')
 
             /** Returns all templates **/
             getTemplates: function () {
-                return $http.get('/rest/templates/all');
+                return $http.get('/rest/fm-templates/all');
             },
 
 
             /** Creates a new template **/
             createTemplate: function(template) {
-                return $http.post('/rest/templates/template/', template);
+                return $http.post('/rest/fm-templates/fm-template/', template);
             },
 
 
             /** Updates the given template **/
             updateTemplate: function(template) {
-                return $http.put('/rest/templates/template/' + template.id, template);
+                return $http.put('/rest/fm-templates/fm-template/' + template.id, template);
             },
 
 
             /** Deletes the given template **/
             deleteTemplate: function(template) {
-                return $http['delete']('/rest/templates/template/' + template.id);
+                return $http['delete']('/rest/fm-templates/fm-template/' + template.id);
             },
 
 
             /** Reload templates from the file system **/
             reloadTemplates: function() {
-                return $http.post('/rest/templates/reload/');
+                return $http.post('/rest/fm-templates/reload/');
             },
 
             /** Loads the template history for the given template **/
             templateHistory: function(template) {
-                return $http.get('/rest/templates/template/' + template.id + '/history');
+                return $http.get('/rest/fm-templates/fm-template/' + template.id + '/history');
             },
 
 

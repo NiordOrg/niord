@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
 /**
  * REST interface for accessing Freemarker templates.
  */
-@Path("/templates")
+@Path("/fm-templates")
 @Stateless
 @SecurityDomain("keycloak")
 @RolesAllowed(Roles.SYSADMIN)
@@ -92,7 +92,7 @@ public class FmTemplateRestService extends AbstractBatchableRestService {
 
     /** Creates a new template */
     @POST
-    @Path("/template/")
+    @Path("/fm-template/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @GZIP
@@ -106,7 +106,7 @@ public class FmTemplateRestService extends AbstractBatchableRestService {
 
     /** Updates an existing template */
     @PUT
-    @Path("/template/{id}")
+    @Path("/fm-template/{id}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @GZIP
@@ -124,7 +124,7 @@ public class FmTemplateRestService extends AbstractBatchableRestService {
 
     /** Deletes an existing template */
     @DELETE
-    @Path("/template/{id}")
+    @Path("/fm-template/{id}")
     @GZIP
     @NoCache
     public void deleteTemplate(@PathParam("id") Integer id) throws Exception {
@@ -173,7 +173,7 @@ public class FmTemplateRestService extends AbstractBatchableRestService {
      * @return the template history
      */
     @GET
-    @Path("/template/{templateId}/history")
+    @Path("/fm-template/{templateId}/history")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
