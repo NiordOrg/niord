@@ -22,7 +22,7 @@ import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
-import org.niord.model.message.AreaType;
+import org.niord.core.area.AreaType;
 import org.niord.model.message.MainType;
 
 import javax.ejb.Stateless;

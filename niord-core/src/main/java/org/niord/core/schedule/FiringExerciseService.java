@@ -36,7 +36,7 @@ import org.niord.core.model.BaseEntity;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.annotation.Setting;
 import org.niord.core.util.TimeUtils;
-import org.niord.model.message.AreaType;
+import org.niord.core.area.AreaType;
 import org.niord.model.message.MainType;
 import org.niord.model.message.MessagePartType;
 import org.niord.model.message.MessageVo;

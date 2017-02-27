@@ -17,7 +17,7 @@
 package org.niord.core.area.vo;
 
 import org.niord.model.geojson.GeometryVo;
-import org.niord.model.message.AreaType;
+import org.niord.core.area.AreaType;
 import org.niord.model.message.AreaVo;
 
 import javax.xml.bind.annotation.XmlAttribute;

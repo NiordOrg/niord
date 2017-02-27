@@ -40,7 +40,7 @@ import org.niord.core.schedule.vo.FiringAreaPeriodsVo;
 import org.niord.core.service.BaseService;
 import org.niord.core.util.TimeUtils;
 import org.niord.model.DataFilter;
-import org.niord.model.message.AreaType;
+import org.niord.core.area.AreaType;
 import org.niord.model.message.MessagePartType;
 import org.niord.model.message.Status;
 import org.niord.model.message.Type;

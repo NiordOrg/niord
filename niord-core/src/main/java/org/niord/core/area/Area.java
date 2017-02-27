@@ -23,7 +23,6 @@ import org.niord.core.geojson.JtsConverter;
 import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
-import org.niord.model.message.AreaType;
 import org.niord.model.message.AreaVo;
 
 import javax.persistence.Cacheable;

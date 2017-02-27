@@ -15,7 +15,6 @@
  */
 package org.niord.core.area;
 
-import org.niord.model.message.AreaType;
 import org.niord.model.search.PagedSearchParamsVo;
 
 import java.util.ArrayList;
