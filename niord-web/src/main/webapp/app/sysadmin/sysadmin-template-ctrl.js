@@ -34,19 +34,39 @@ angular.module('niord.admin')
 
             $scope.template = undefined; // The template being edited
             $scope.editMode = 'add';
-            $scope.templates = [];
-            $scope.search = '';
+
+            $scope.params = {
+                name: '',
+                category: undefined,
+                domain: undefined
+            };
+            $scope.pageData = {
+                page: 1,
+                maxSize: 10
+            };
+            $scope.searchResult = {
+                data: [],
+                size: 0,
+                total: 0
+            };
 
 
             /** Loads the message templates from the back-end */
             $scope.loadTemplates = function() {
                 $scope.template = undefined;
                 AdminTemplateService
-                    .getTemplates()
-                    .success(function (templates) {
-                        $scope.templates = templates;
+                    .searchTemplates($scope.params, $scope.pageData)
+                    .success(function (searchResult) {
+                        $scope.searchResult = searchResult;
                     });
             };
+
+            // Monitor params and page
+            $scope.$watch("params", function () {
+                $scope.pageData.page = 1;
+                $scope.loadTemplates();
+            }, true);
+            $scope.$watch("pageData", $scope.loadTemplates, true);
 
 
             // Used to ensure that description entities have a "name" field
@@ -81,9 +101,13 @@ angular.module('niord.admin')
 
             /** Copies a message template **/
             $scope.copyTemplate = function (template) {
-                $scope.editMode = 'add';
-                $scope.template = angular.copy(template);
-                $scope.template.id = undefined;
+                AdminTemplateService.getTemplate(template.id)
+                    .success(function (tmpl) {
+                        $scope.editMode = 'add';
+                        $scope.template = tmpl;
+                        $scope.template.id = undefined;
+                        LangService.checkDescs($scope.template, ensureNameField);
+                    });
             };
 
 

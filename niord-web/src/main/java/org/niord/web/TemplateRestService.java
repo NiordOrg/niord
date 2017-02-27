@@ -20,11 +20,16 @@ import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
+import org.niord.core.domain.Domain;
+import org.niord.core.domain.DomainService;
 import org.niord.core.template.Template;
+import org.niord.core.template.TemplateSearchParams;
 import org.niord.core.template.TemplateService;
 import org.niord.core.template.vo.TemplateVo;
 import org.niord.core.user.Roles;
 import org.niord.core.user.UserService;
+import org.niord.model.DataFilter;
+import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
@@ -34,12 +39,14 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -62,6 +69,9 @@ public class TemplateRestService extends AbstractBatchableRestService {
 
     @Inject
     UserService userService;
+
+    @Inject
+    DomainService domainService;
 
     @Inject
     TemplateService templateService;
@@ -96,10 +106,47 @@ public class TemplateRestService extends AbstractBatchableRestService {
     @NoCache
     public List<TemplateVo> getTemplatesForCategory(@PathParam("categoryId") Integer categoryId) {
 
-        return templateService.findByCategoryAndCurrentDomain(categoryId).stream()
-                .map(Template::toVo)
-                .collect(Collectors.toList());
+        Domain domain = domainService.currentDomain();
+        return searchTemplates(
+                null,
+                null,
+                domain == null ? null : domain.getDomainId(),
+                categoryId,
+                false,
+                10000,
+                0).getData();
     }
+
+
+    /** Returns the paged set of templates matching the search criteria */
+    @GET
+    @Path("/search")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public PagedSearchResultVo<TemplateVo> searchTemplates(
+            @QueryParam("language") @DefaultValue("en") String language,
+            @QueryParam("name") String name,
+            @QueryParam("domainId") String domainId,
+            @QueryParam("categoryId") Integer categoryId,
+            @QueryParam("includeInactive") @DefaultValue("false") Boolean includeInactive,
+            @QueryParam("maxSize") @DefaultValue("100") int maxSize,
+            @QueryParam("page") @DefaultValue("0") int page) {
+
+        TemplateSearchParams params = new TemplateSearchParams()
+                .language(language)
+                .name(name)
+                .domain(domainId)
+                .category(categoryId)
+                .inactive(includeInactive);
+        params.maxSize(maxSize).page(page);
+
+        DataFilter dataFilter = DataFilter.get().lang(language);
+        return templateService.searchTemplates(params)
+                .map(t -> t.toVo(dataFilter));
+    }
+
+
 
 
     /** Returns the template with the given ID */

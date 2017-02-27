@@ -3,7 +3,9 @@
 
     <div ng-controller="TemplatesAdminCtrl" ng-init="loadTemplates()">
 
-        <p>Add, modify and manage templates used for generating messages.</p>
+        <p>Add, modify and manage templates used for generating messages.<br>
+            Displaying {{searchResult.size}}
+            of {{searchResult.total}} templates matching search criteria.</p>
 
         <form id="templateForm" name="templateForm" class="form-horizontal">
 
@@ -97,13 +99,20 @@
             <!-- List templates -->
             <div ng-if="template === undefined">
 
-                <div class="row">
-                    <div class="col-xs-8 col-sm-6 col-md-4">
-                        <input class="form-control input-sm col-sm-2" ng-model="search" type="text" placeholder="Filter">
+                <div class="row" style="margin-top: 20px; margin-bottom: 10px">
+                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-3">
+                        <input class="form-control input-sm col-sm-2" ng-model="params.name" type="text" placeholder="Filter"
+                               ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }">
                         <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
-                              ng-click="search = ''" ng-show="search != ''"></span>
+                              ng-click="params.name = ''" ng-show="params.name != ''"></span>
                     </div>
-                    <div class="col-xs-4 col-sm-6 col-md-8">
+                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-3">
+                        <categories-field category-data="params" multiple="false"></categories-field>
+                    </div>
+                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-3">
+                        <domain-field domain-data="params" multiple="false"></domain-field>
+                    </div>
+                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-3">
                         <button type="submit" class="btn btn-primary btn-sm" ng-click="addTemplate()">
                             <span class="glyphicon glyphicon-plus"></span> New Template
                         </button>
@@ -131,7 +140,7 @@
                                 <th>Freemarker Template</th>
                                 <th></th>
                             </tr>
-                            <tr ng-repeat="template in templates">
+                            <tr ng-repeat="template in searchResult.data">
                                 <td>{{template.category.descs[0].name}}</td>
                                 <td><span ng-if="template.descs && template.descs.length > 0">{{template.descs[0].name}}</span></td>
                                 <td>
@@ -152,6 +161,18 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- Pagination -->
+                <div class="row">
+                    <div class="col-sm-12">
+                        <uib-pagination total-items="searchResult.total" items-per-page="pageData.maxSize"
+                                        max-size="pageData.maxSize" ng-model="pageData.page"
+                                        class="pagination pagination-sm" previous-text="&lsaquo;"  next-text="&rsaquo;"
+                                        boundary-links="true" first-text="&laquo;" last-text="&raquo;">
+                        </uib-pagination>
+                    </div>
+                </div>
+
             </div>
 
         </form>

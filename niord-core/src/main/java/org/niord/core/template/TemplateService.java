@@ -16,14 +16,24 @@
 
 package org.niord.core.template;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.category.Category;
 import org.niord.core.category.CategoryService;
+import org.niord.core.db.CriteriaHelper;
+import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.service.BaseService;
+import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.util.List;
 
 /**
@@ -53,17 +63,88 @@ public class TemplateService extends BaseService {
 
 
     /**
-     * Returns the templates with the given category for the current domain
-     * @param categoryId the category ID
-     * @return the templates with the given category for the current domain
+     * Returns the paged set of templates matching the search criteria
+     * @param params the search criteria
+     * @return the paged search result
      */
-    public List<Template> findByCategoryAndCurrentDomain(Integer categoryId) {
-        return em.createNamedQuery("Template.findByCategoryAndDomain", Template.class)
-                .setParameter("categoryId", categoryId)
-                .setParameter("domain", domainService.currentDomain())
+    public PagedSearchResultVo<Template> searchTemplates(TemplateSearchParams params) {
+
+        long t0 = System.currentTimeMillis();
+
+        PagedSearchResultVo<Template> result = new PagedSearchResultVo<>();
+
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+
+        // First compute the total number of matching mails
+        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+        Root<Template> countTemplatesRoot = countQuery.from(Template.class);
+
+        countQuery.select(cb.count(countTemplatesRoot))
+                .where(buildQueryPredicates(cb, countQuery, countTemplatesRoot, params))
+                .orderBy(cb.desc(countTemplatesRoot.get("created")));
+
+        result.setTotal(em.createQuery(countQuery).getSingleResult());
+
+
+        // Then, extract the current page of matches
+        CriteriaQuery<Template> query = cb.createQuery(Template.class);
+        Root<Template> templateRoot = query.from(Template.class);
+        query.select(templateRoot)
+                .where(buildQueryPredicates(cb, query, templateRoot, params))
+                .orderBy(cb.desc(countTemplatesRoot.get("created")));
+
+        List<Template> mails = em.createQuery(query)
+                .setMaxResults(params.getMaxSize())
+                .setFirstResult(params.getPage() * params.getMaxSize())
                 .getResultList();
+        result.setData(mails);
+        result.updateSize();
+
+        log.info("Search [" + params + "] returned " + result.getSize() + " of " + result.getTotal() + " in "
+                + (System.currentTimeMillis() - t0) + " ms");
+
+        return result;
     }
 
+
+    /** Helper function that translates the search parameters into predicates */
+    @SuppressWarnings("all")
+    private <T> Predicate[] buildQueryPredicates(
+            CriteriaBuilder cb,
+            CriteriaQuery<T> query,
+            Root<Template> templateRoot,
+            TemplateSearchParams params) {
+
+        // Build the predicate
+        CriteriaHelper<T> criteriaHelper = new CriteriaHelper<>(cb, query);
+
+        // Match the name
+        if (StringUtils.isNotBlank(params.getName())) {
+            Join<Template, TemplateDesc> descs = templateRoot.join("descs", JoinType.LEFT);
+            criteriaHelper.equals(descs.get("lang"), params.getLanguage());
+            criteriaHelper.like(descs.get("name"), params.getName());
+        }
+
+        // Match category
+        if (params.getCategory() != null) {
+            Category category = categoryService.getCategoryDetails(params.getCategory());
+            if (category != null) {
+                Join<Template, Category> categories = templateRoot.join("category", JoinType.LEFT);
+                criteriaHelper.add(cb.like(categories.get("lineage"), category.getLineage() + "%"));
+            }
+        }
+
+        // Match the domain
+        if (StringUtils.isNotBlank(params.getDomain())) {
+            Domain domain = domainService.findByDomainId(params.getDomain());
+            if (domain != null) {
+                Join<Template, Domain> domains = templateRoot.join("domains", JoinType.LEFT);
+                criteriaHelper.equals(domains.get("domainId"), params.getDomain());
+            }
+        }
+
+        return criteriaHelper.where();
+    }
 
     /**
      * Returns all templates
@@ -142,5 +223,4 @@ public class TemplateService extends BaseService {
         }
         return false;
     }
-
 }

@@ -316,7 +316,7 @@ angular.module('niord.admin')
      * ********************************************************************************
      * Interface for calling message template-related functions at the application server
      */
-    .factory('AdminTemplateService', [ '$http', function($http) {
+    .factory('AdminTemplateService', [ '$http', '$rootScope', function($http, $rootScope) {
         'use strict';
 
         return {
@@ -324,6 +324,23 @@ angular.module('niord.admin')
             /** Returns all message templates **/
             getTemplates: function () {
                 return $http.get('/rest/templates/all');
+            },
+
+
+            /** Searches all message templates **/
+            searchTemplates: function (params, page) {
+                var p = 'language=' + $rootScope.language + '&inactive=true'
+                        + '&maxSize=' + page.maxSize + '&page=' + (page.page - 1);
+                if (params.name && params.name.length > 0) {
+                    p += '&name=' + params.name;
+                }
+                if (params.domain) {
+                    p += '&domainId=' + params.domain.domainId;
+                }
+                if (params.category) {
+                    p += '&categoryId=' + params.category.id;
+                }
+                return $http.get('/rest/templates/search?' + p);
             },
 
 
