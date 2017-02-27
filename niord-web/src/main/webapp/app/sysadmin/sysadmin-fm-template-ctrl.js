@@ -21,15 +21,15 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
-     * TemplatesAdminCtrl
+     * FmTemplatesAdminCtrl
      * ********************************************************************************
-     * Templates Admin Controller
-     * Controller for the Admin Templates page
+     * Freemarker Templates Admin Controller
+     * Controller for the Admin Freemarker Templates page
      */
-    .controller('TemplatesAdminCtrl', ['$scope', '$stateParams', '$timeout', '$uibModal', 'growl',
-                'AdminTemplateService', 'DialogService', 'UploadFileService',
+    .controller('FmTemplatesAdminCtrl', ['$scope', '$stateParams', '$timeout', '$uibModal', 'growl',
+                'AdminFmTemplateService', 'DialogService', 'UploadFileService',
         function ($scope, $stateParams, $timeout, $uibModal, growl,
-                  AdminTemplateService, DialogService, UploadFileService) {
+                  AdminFmTemplateService, DialogService, UploadFileService) {
             'use strict';
 
             $scope.template = undefined; // The template being edited
@@ -47,11 +47,11 @@ angular.module('niord.admin')
             };
 
 
-            /** Loads the templates from the back-end */
-            $scope.loadTemplates = function(checkPathParam) {
+            /** Loads the Freemarker templates from the back-end */
+            $scope.loadFmTemplates = function(checkPathParam) {
                 $scope.template = undefined;
-                AdminTemplateService
-                    .getTemplates()
+                AdminFmTemplateService
+                    .getFmTemplates()
                     .success(function (templates) {
                         $scope.templates = templates;
 
@@ -66,9 +66,9 @@ angular.module('niord.admin')
                                 return t.path == path;
                             });
                             if (pathTemplates.length == 1) {
-                                $scope.editTemplate(pathTemplates[0]);
+                                $scope.editFmTemplate(pathTemplates[0]);
                             } else {
-                                $scope.addTemplate();
+                                $scope.addFmTemplate();
                                 $scope.template.path = path;
                             }
                         }
@@ -76,7 +76,7 @@ angular.module('niord.admin')
             };
 
 
-            /** Focuses the template path input field **/
+            /** Focuses the Freemarker template path input field **/
             $scope.focusPath = function () {
                 $timeout(function () {
                     $('#templatePath').focus();
@@ -84,7 +84,7 @@ angular.module('niord.admin')
             };
 
 
-            /** Focuses the template path input field **/
+            /** Focuses the Freemarker template path input field **/
             $scope.focusTemplateEditor = function () {
                 $timeout(function () {
                     try { $scope.editor.focus(); } catch (e) {}
@@ -92,8 +92,8 @@ angular.module('niord.admin')
             };
 
 
-            /** Adds a new template **/
-            $scope.addTemplate = function () {
+            /** Adds a new Freemarker template **/
+            $scope.addFmTemplate = function () {
                 $scope.editMode = 'add';
                 $scope.template = {
                     path: '',
@@ -103,16 +103,16 @@ angular.module('niord.admin')
             };
 
 
-            /** Edits a template **/
-            $scope.editTemplate = function (template) {
+            /** Edits a Freemarker template **/
+            $scope.editFmTemplate = function (template) {
                 $scope.editMode = 'edit';
                 $scope.template = angular.copy(template);
                 $scope.focusTemplateEditor();
             };
 
 
-            /** Copies a template **/
-            $scope.copyTemplate = function (template) {
+            /** Copies a Freemarker template **/
+            $scope.copyFmTemplate = function (template) {
                 $scope.editMode = 'add';
                 $scope.template = angular.copy(template);
                 // Strip template name from path
@@ -126,55 +126,55 @@ angular.module('niord.admin')
 
             /** Displays the error message */
             $scope.displayError = function () {
-                growl.error("Error saving template", { ttl: 5000 });
+                growl.error("Error saving Freemarker template", { ttl: 5000 });
             };
 
 
-            /** Saves the current template being edited */
-            $scope.saveTemplate = function () {
+            /** Saves the current Freemarker template being edited */
+            $scope.saveFmTemplate = function () {
 
                 if ($scope.template && $scope.editMode == 'add') {
-                    AdminTemplateService
-                        .createTemplate($scope.template)
-                        .success($scope.loadTemplates)
+                    AdminFmTemplateService
+                        .createFmTemplate($scope.template)
+                        .success($scope.loadFmTemplates)
                         .error($scope.displayError);
                 } else if ($scope.template && $scope.editMode == 'edit') {
-                    AdminTemplateService
-                        .updateTemplate($scope.template)
-                        .success($scope.loadTemplates)
+                    AdminFmTemplateService
+                        .updateFmTemplate($scope.template)
+                        .success($scope.loadFmTemplates)
                         .error($scope.displayError);
                 }
             };
 
 
-            /** Deletes the given template */
-            $scope.deleteTemplate = function (template) {
+            /** Deletes the given Freemarker template */
+            $scope.deleteFmTemplate = function (template) {
                 DialogService.showConfirmDialog(
-                    "Delete Template?", "Delete template '" + template.path + "'?")
+                    "Delete Freemarker Template?", "Delete Freemarker template '" + template.path + "'?")
                     .then(function() {
-                        AdminTemplateService
-                            .deleteTemplate(template)
-                            .success($scope.loadTemplates)
+                        AdminFmTemplateService
+                            .deleteFmTemplate(template)
+                            .success($scope.loadFmTemplates)
                             .error($scope.displayError);
                     });
             };
 
 
-            /** Reload the templates from the file system **/
-            $scope.reloadTemplates = function () {
+            /** Reload the Freemarker templates from the file system **/
+            $scope.reloadFmTemplates = function () {
                 DialogService.showConfirmDialog(
-                    "Reload Templates?", "Reload templates from the file system?")
+                    "Reload Freemarker Templates?", "Reload Freemarker templates from the file system?")
                     .then(function() {
-                        AdminTemplateService
-                            .reloadTemplates()
-                            .success($scope.loadTemplates);
+                        AdminFmTemplateService
+                            .reloadFmTemplates()
+                            .success($scope.loadFmTemplates);
                     });
             };
 
 
             /** Generate an export file */
-            $scope.exportTemplates = function () {
-                AdminTemplateService
+            $scope.exportFmTemplates = function () {
+                AdminFmTemplateService
                     .exportTicket('admin')
                     .success(function (ticket) {
                         var link = document.createElement("a");
@@ -185,19 +185,19 @@ angular.module('niord.admin')
 
 
             /** Opens the upload-charts dialog **/
-            $scope.uploadTemplatesDialog = function () {
+            $scope.uploadFmTemplatesDialog = function () {
                 UploadFileService.showUploadFileDialog(
-                    'Upload Templates File',
+                    'Upload Freemarker Templates File',
                     '/rest/fm-templates/upload-templates',
                     'json');
             };
 
 
             /** Display the template history **/
-            $scope.showTemplateHistory = function (template) {
+            $scope.showFmTemplateHistory = function (template) {
                 return $uibModal.open({
-                    controller: "TemplateHistoryDialogCtrl",
-                    templateUrl: "/app/sysadmin/template-history-dialog.html",
+                    controller: "FmTemplateHistoryDialogCtrl",
+                    templateUrl: "/app/sysadmin/fm-template-history-dialog.html",
                     size: 'lg',
                     resolve: {
                         template: function () { return template; }
@@ -210,10 +210,10 @@ angular.module('niord.admin')
 
 
     /*******************************************************************
-     * TemplateHistoryDialogCtrl sub-controller that handles template history.
+     * FmTemplateHistoryDialogCtrl sub-controller that handles template history.
      *******************************************************************/
-    .controller('TemplateHistoryDialogCtrl', ['$scope', '$rootScope', '$timeout', 'AdminTemplateService', 'template',
-        function ($scope, $rootScope, $timeout, AdminTemplateService, template) {
+    .controller('FmTemplateHistoryDialogCtrl', ['$scope', '$rootScope', '$timeout', 'AdminFmTemplateService', 'template',
+        function ($scope, $rootScope, $timeout, AdminFmTemplateService, template) {
             'use strict';
 
             $scope.template = template;
@@ -229,10 +229,10 @@ angular.module('niord.admin')
             };
 
 
-            /** Loads the template history **/
+            /** Loads the Freemarker template history **/
             $scope.loadHistory = function () {
                 if ($scope.template && $scope.template.id) {
-                    AdminTemplateService.templateHistory($scope.template)
+                    AdminFmTemplateService.getFmTemplateHistory($scope.template)
                         .success(function (history) {
                             $scope.templateHistory.length = 0;
                             angular.forEach(history, function (hist) {

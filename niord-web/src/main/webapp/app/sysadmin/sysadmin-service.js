@@ -258,46 +258,46 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
-     * AdminTemplateService
+     * AdminFmTemplateService
      * ********************************************************************************
-     * Interface for calling template related functions at the application server
+     * Interface for calling Freemarker template-related functions at the application server
      */
-    .factory('AdminTemplateService', [ '$http', function($http) {
+    .factory('AdminFmTemplateService', [ '$http', function($http) {
         'use strict';
 
         return {
 
-            /** Returns all templates **/
-            getTemplates: function () {
+            /** Returns all Freemarker templates **/
+            getFmTemplates: function () {
                 return $http.get('/rest/fm-templates/all');
             },
 
 
-            /** Creates a new template **/
-            createTemplate: function(template) {
+            /** Creates a new Freemarker template **/
+            createFmTemplate: function(template) {
                 return $http.post('/rest/fm-templates/fm-template/', template);
             },
 
 
-            /** Updates the given template **/
-            updateTemplate: function(template) {
+            /** Updates the given Freemarker template **/
+            updateFmTemplate: function(template) {
                 return $http.put('/rest/fm-templates/fm-template/' + template.id, template);
             },
 
 
-            /** Deletes the given template **/
-            deleteTemplate: function(template) {
+            /** Deletes the given Freemarker template **/
+            deleteFmTemplate: function(template) {
                 return $http['delete']('/rest/fm-templates/fm-template/' + template.id);
             },
 
 
-            /** Reload templates from the file system **/
-            reloadTemplates: function() {
+            /** Reload Freemarker templates from the file system **/
+            reloadFmTemplates: function() {
                 return $http.post('/rest/fm-templates/reload/');
             },
 
-            /** Loads the template history for the given template **/
-            templateHistory: function(template) {
+            /** Loads the Freemarker template history for the given Freemarker template **/
+            getFmTemplateHistory: function(template) {
                 return $http.get('/rest/fm-templates/fm-template/' + template.id + '/history');
             },
 
