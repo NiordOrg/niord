@@ -70,14 +70,14 @@ public class FmTemplateRestService extends AbstractBatchableRestService {
     FmTemplateService templateService;
 
     
-    /** Returns all templates */
+    /** Returns all Freemarker templates */
     @GET
     @Path("/all")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @PermitAll
     @NoCache
-    public List<FmTemplateVo> getTemplates() {
+    public List<FmTemplateVo> getFmTemplates() {
 
         // If a ticket is defined, check if programmatically
         if (!userService.isCallerInRole(Roles.ADMIN)) {
@@ -90,63 +90,63 @@ public class FmTemplateRestService extends AbstractBatchableRestService {
     }
 
 
-    /** Creates a new template */
+    /** Creates a new Freemarker template */
     @POST
     @Path("/fm-template/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public FmTemplateVo createTemplate(FmTemplateVo template) throws Exception {
+    public FmTemplateVo createFmTemplate(FmTemplateVo template) throws Exception {
         log.info("Creating template " + template);
-        return templateService.createTemplate(new FmTemplate(template))
+        return templateService.createFmTemplate(new FmTemplate(template))
                 .toVo();
     }
 
 
-    /** Updates an existing template */
+    /** Updates an existing Freemarker template */
     @PUT
     @Path("/fm-template/{id}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public FmTemplateVo updateTemplate(@PathParam("id") Integer id, FmTemplateVo template) throws Exception {
+    public FmTemplateVo updateFmTemplate(@PathParam("id") Integer id, FmTemplateVo template) throws Exception {
         if (!Objects.equals(id, template.getId())) {
             throw new WebApplicationException(400);
         }
 
         log.info("Updating template " + template);
-        return templateService.updateTemplate(new FmTemplate(template))
+        return templateService.updateFmTemplate(new FmTemplate(template))
                 .toVo();
     }
 
 
-    /** Deletes an existing template */
+    /** Deletes an existing Freemarker template */
     @DELETE
     @Path("/fm-template/{id}")
     @GZIP
     @NoCache
-    public void deleteTemplate(@PathParam("id") Integer id) throws Exception {
+    public void deleteFmTemplate(@PathParam("id") Integer id) throws Exception {
         log.info("Deleting template " + id);
-        templateService.deleteTemplate(id);
+        templateService.deleteFmTemplate(id);
     }
 
 
-    /** Reloads templates from the class-path */
+    /** Reloads Freemarker templates from the class-path */
     @POST
     @Path("/reload/")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public Integer reloadTemplatesFromClassPath() throws Exception {
+    public Integer reloadFmTemplatesFromClassPath() throws Exception {
         log.info("Reloading templates from classpath");
-        return templateService.reloadTemplatesFromClassPath();
+        return templateService.reloadFmTemplatesFromClassPath();
     }
 
 
     /**
-     * Imports an uploaded templates json file
+     * Imports an uploaded Freemarker templates json file
      *
      * @param request the servlet request
      * @return a status
@@ -156,20 +156,20 @@ public class FmTemplateRestService extends AbstractBatchableRestService {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
     @RolesAllowed(Roles.SYSADMIN)
-    public String importReports(@Context HttpServletRequest request) throws Exception {
-        return executeBatchJobFromUploadedFile(request, "template-import");
+    public String importFmTemplates(@Context HttpServletRequest request) throws Exception {
+        return executeBatchJobFromUploadedFile(request, "fm-template-import");
     }
 
 
 
     /***************************************/
-    /** Template History methods          **/
+    /** Freemarker Template History       **/
     /***************************************/
 
 
     /**
-     * Returns the template history for the given template ID
-     * @param templateId the template ID or template series ID
+     * Returns the Freemarker template history for the given template ID
+     * @param templateId the Freemarker template ID or template series ID
      * @return the template history
      */
     @GET
@@ -177,7 +177,7 @@ public class FmTemplateRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<FmTemplateHistoryVo> getTemplateHistory(@PathParam("templateId") Integer templateId) {
+    public List<FmTemplateHistoryVo> getFmTemplateHistory(@PathParam("templateId") Integer templateId) {
 
         // Get the template id
         FmTemplate template = templateService.findById(templateId);
@@ -185,7 +185,7 @@ public class FmTemplateRestService extends AbstractBatchableRestService {
             return Collections.emptyList();
         }
 
-        return templateService.getTemplateHistory(template.getId()).stream()
+        return templateService.getFmTemplateHistory(template.getId()).stream()
                 .map(FmTemplateHistory::toVo)
                 .collect(Collectors.toList());
     }

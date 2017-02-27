@@ -79,13 +79,13 @@ public class FmTemplateLoader implements TemplateLoader {
      */
     private void checkLoadTemplateFromClassPath(String path) {
 
-        FmTemplate fmTemplate = templateService.readTemplateFromClassPath(path);
+        FmTemplate fmTemplate = templateService.readFmTemplateFromClassPath(path);
         if (fmTemplate != null) {
             try {
                 // NB: we cannot use templateService.createTemplate() since this method may be
                 // called outside the transaction where the template loader was instantiated
                 FmTemplateService ts = CdiUtils.getBean(FmTemplateService.class);
-                ts.createTemplate(fmTemplate);
+                ts.createFmTemplate(fmTemplate);
                 templates.put(path, fmTemplate);
                 existingTemplatePaths.add(path);
             } catch (Exception ignored) {

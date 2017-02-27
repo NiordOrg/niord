@@ -1,8 +1,8 @@
-<job id="template-import" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
+<job id="fm-template-import" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
     <listeners>
         <listener ref="batchJobListener"/>
     </listeners>
-    <step id="importTemplateStep">
+    <step id="importFmTemplateStep">
         <chunk item-count="10">
             <reader ref="batchFmTemplateImportReader" />
             <processor ref="batchFmTemplateImportProcessor"/>

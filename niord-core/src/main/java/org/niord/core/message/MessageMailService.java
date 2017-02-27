@@ -75,7 +75,7 @@ public class MessageMailService extends BaseService {
                 }
 
                 String mailContents =
-                        templateService.newTemplateBuilder()
+                        templateService.newFmTemplateBuilder()
                                 .templatePath(mailTemplate.getTemplatePath())
                                 .data("messages", mailTemplate.getMessages())
                                 .data("areaHeadings", false)

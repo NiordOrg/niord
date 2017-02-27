@@ -31,7 +31,7 @@ import java.util.List;
  * <p>
  * NB: Template IDs are ignored, and the path is used to identify which template to update.
  * <p>
- * Please note, the actual template-import.xml job file is not placed in the META-INF/batch-jobs of this project,
+ * Please note, the actual fm-template-import.xml job file is not placed in the META-INF/batch-jobs of this project,
  * but rather, in the META-INF/batch-jobs folder of the niord-web project.<br>
  * This is because of a class-loading bug in the Wildfly implementation. See e.g.
  * https://issues.jboss.org/browse/WFLY-4988

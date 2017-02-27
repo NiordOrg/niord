@@ -99,28 +99,28 @@ public class FmTemplateService extends BaseService {
 
 
     /**
-     * Saves the template
+     * Saves the Freemarker template
      *
-     * @param template the template to save
+     * @param template the Freemarker template to save
      * @return the saved template
      */
-    public FmTemplate saveTemplate(FmTemplate template) {
+    public FmTemplate saveFmTemplate(FmTemplate template) {
         boolean wasPersisted = template.isPersisted();
 
         // Save the template
         template = saveEntity(template);
 
         // Save a FmTemplateHistory entity for the template
-        saveHistory(template);
+        saveFmTemplateHistory(template);
 
         return template;
     }
 
 
     /**
-     * Returns the template with the given ID, or null if not found
+     * Returns the Freemarker template with the given ID, or null if not found
      * @param id the template id
-     * @return the template with the given ID, or null if not found
+     * @return the Freemarker template with the given ID, or null if not found
      */
     public FmTemplate findById(Integer id) {
         return getByPrimaryKey(FmTemplate.class, id);
@@ -128,9 +128,9 @@ public class FmTemplateService extends BaseService {
 
 
     /**
-     * Returns the template with the given path, or null if not found
-     * @param path the template path
-     * @return the template with the given path, or null if not found
+     * Returns the Freemarker template with the given path, or null if not found
+     * @param path the Freemarker template path
+     * @return the Freemarker template with the given path, or null if not found
      */
     public FmTemplate findByPath(String path) {
         try {
@@ -144,8 +144,8 @@ public class FmTemplateService extends BaseService {
 
 
     /**
-     * Returns all templates
-     * @return all templates
+     * Returns all Freemarker templates
+     * @return all Freemarker templates
      */
     public List<FmTemplate> findAll() {
         return em.createNamedQuery("FmTemplate.findAll", FmTemplate.class)
@@ -154,8 +154,8 @@ public class FmTemplateService extends BaseService {
 
 
     /**
-     * Returns all template paths
-     * @return all template paths
+     * Returns all Freemarker template paths
+     * @return all Freemarker template paths
      */
     public Set<String> findAllTemplatePaths() {
         return em.createNamedQuery("FmTemplate.findAllPaths", String.class)
@@ -165,49 +165,49 @@ public class FmTemplateService extends BaseService {
 
 
     /**
-     * Creates a new template based on the template parameter
+     * Creates a new Freemarker template based on the template parameter
      * @param template the template to create
-     * @return the created template
+     * @return the created Freemarker template
      */
-    public FmTemplate createTemplate(FmTemplate template) {
+    public FmTemplate createFmTemplate(FmTemplate template) {
         FmTemplate original = findByPath(template.getPath());
         if (original != null) {
-            throw new IllegalArgumentException("Cannot create template with duplicate path " + template.getPath());
+            throw new IllegalArgumentException("Cannot create Freemarker template with duplicate path " + template.getPath());
         }
 
-        return saveTemplate(template);
+        return saveFmTemplate(template);
     }
 
 
     /**
-     * Updates the template data from the template parameter
-     * @param template the template to update
-     * @return the updated template
+     * Updates the Freemarker template data from the template parameter
+     * @param template the Freemarker template to update
+     * @return the updated Freemarker template
      */
-    public FmTemplate updateTemplate(FmTemplate template) {
+    public FmTemplate updateFmTemplate(FmTemplate template) {
         FmTemplate original = findById(template.getId());
         if (original == null) {
-            throw new IllegalArgumentException("Cannot update non-existing template " + template.getPath());
+            throw new IllegalArgumentException("Cannot update non-existing Freemarker template " + template.getPath());
         }
 
         // Copy the template data
         original.setPath(template.getPath());
         original.setTemplate(template.getTemplate());
 
-        return saveTemplate(original);
+        return saveFmTemplate(original);
     }
 
 
     /**
-     * Deletes the template with the given path
-     * @param id the ID of the template to delete
+     * Deletes the Freemarker template with the given path
+     * @param id the ID of the Freemarker template to delete
      */
-    public boolean deleteTemplate(Integer id) {
+    public boolean deleteFmTemplate(Integer id) {
 
         FmTemplate template = findById(id);
         if (template != null) {
             // Delete all template history entries
-            getTemplateHistory(id).forEach(this::remove);
+            getFmTemplateHistory(id).forEach(this::remove);
             // Delete the actual template
             remove(template);
             return true;
@@ -217,18 +217,18 @@ public class FmTemplateService extends BaseService {
 
 
     /**
-     * Reload all class path-based templates from the file system
-     * @return the number of templates reloaded
+     * Reload all class path-based Freemarker templates from the file system
+     * @return the number of Freemarker templates reloaded
      */
-    public int reloadTemplatesFromClassPath() {
+    public int reloadFmTemplatesFromClassPath() {
 
         int updates = 0;
         for (FmTemplate template : findAll()) {
-            FmTemplate cpTemplate = readTemplateFromClassPath(template.getPath());
+            FmTemplate cpTemplate = readFmTemplateFromClassPath(template.getPath());
             if (cpTemplate != null && !Objects.equals(template.getTemplate(), cpTemplate.getTemplate())) {
-                log.info("Updating template from classpath " + template.getPath());
+                log.info("Updating Freemarker template from classpath " + template.getPath());
                 template.setTemplate(cpTemplate.getTemplate());
-                saveTemplate(template);
+                saveFmTemplate(template);
                 updates++;
             }
         }
@@ -238,11 +238,11 @@ public class FmTemplateService extends BaseService {
 
 
     /**
-     * Reads, but does not persist, a template with the given path from the class path.
+     * Reads, but does not persist, a Freemarker template with the given path from the class path.
      * Returns null if none are found
-     * @return the classpath template at the given path or null if not found
+     * @return the classpath Freemarker template at the given path or null if not found
      */
-    FmTemplate readTemplateFromClassPath(String path) {
+    FmTemplate readFmTemplateFromClassPath(String path) {
 
         String resourcePath = path;
         if (!resourcePath.startsWith("/")) {
@@ -268,9 +268,9 @@ public class FmTemplateService extends BaseService {
     }
 
 
-    /*************************/
-    /** Template execution  **/
-    /*************************/
+    /************************************/
+    /** Freemarker Template execution  **/
+    /************************************/
 
 
     /**
@@ -291,7 +291,7 @@ public class FmTemplateService extends BaseService {
      * The builder must be populated and processed within the current transaction.
      * @return a new Freemarker template builder
      */
-    public FmTemplateBuilder newTemplateBuilder() {
+    public FmTemplateBuilder newFmTemplateBuilder() {
         return new FmTemplateBuilder(this);
     }
 
@@ -301,7 +301,7 @@ public class FmTemplateService extends BaseService {
      * @param templateBuilder the template builder to construct a template from
      * @return the Freemarker Template
      */
-    private Template constructFreemarkerTemplate(FmTemplateBuilder templateBuilder) throws IOException {
+    private Template constructFmTemplate(FmTemplateBuilder templateBuilder) throws IOException {
 
         // Standard data properties
         templateBuilder.getData().put("baseUri", app.getBaseUri());
@@ -353,16 +353,16 @@ public class FmTemplateService extends BaseService {
 
 
     /***************************************/
-    /** Template History                  **/
+    /** Freemarker Template History       **/
     /***************************************/
 
 
     /**
-     * Saves a history entity containing a snapshot of the template
+     * Saves a history entity containing a snapshot of the Freemarker template
      *
      * @param template the template to save a snapshot for
      */
-    public void saveHistory(FmTemplate template) {
+    public void saveFmTemplateHistory(FmTemplate template) {
 
         try {
             FmTemplateHistory hist = new FmTemplateHistory();
@@ -386,27 +386,27 @@ public class FmTemplateService extends BaseService {
     }
 
     /**
-     * Returns the template history for the given template ID
+     * Returns the Freemarker template history for the given template ID
      *
      * @param templateId the template ID
      * @return the template history
      */
-    public List<FmTemplateHistory> getTemplateHistory(Integer templateId) {
+    public List<FmTemplateHistory> getFmTemplateHistory(Integer templateId) {
         return em.createNamedQuery("FmTemplateHistory.findByTemplateId", FmTemplateHistory.class)
                 .setParameter("templateId", templateId)
                 .getResultList();
     }
 
 
-    /*************************/
-    /** Template Builder    **/
-    /*************************/
+    /************************************/
+    /** Freemarker Template Builder    **/
+    /************************************/
 
 
     /**
      * Used by the client for building a new Freemarker Template.
      *
-     * Initialize the builder by calling FmService.newTemplateBuilder()
+     * Initialize the builder by calling FmService.newFmTemplateBuilder()
      */
     @SuppressWarnings("unused")
     public static class FmTemplateBuilder {
@@ -421,7 +421,7 @@ public class FmTemplateService extends BaseService {
 
 
         /**
-         * Should only be initialized from the FmTemplateService.newTemplateBuilder() call
+         * Should only be initialized from the FmTemplateService.newFmTemplateBuilder() call
          */
         private FmTemplateBuilder(FmTemplateService templateService) {
             this.templateService = Objects.requireNonNull(templateService);
@@ -444,7 +444,7 @@ public class FmTemplateService extends BaseService {
 
             // Process the Freemarker template
             try {
-                Template fmTemplate = templateService.constructFreemarkerTemplate(this);
+                Template fmTemplate = templateService.constructFmTemplate(this);
 
                 StringWriter result = new StringWriter();
                 fmTemplate.process(data, result);

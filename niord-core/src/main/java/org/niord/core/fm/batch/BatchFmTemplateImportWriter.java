@@ -45,13 +45,13 @@ public class BatchFmTemplateImportWriter extends AbstractItemHandler {
 
             if (orig == null) {
                 getLog().info("Persisting new template " + template.getPath());
-                templateService.createTemplate(template);
+                templateService.createFmTemplate(template);
             } else if (Objects.equals(orig.getTemplate(), template.getTemplate())) {
                 getLog().info("Ignoring unchanged template " + template.getPath());
             } else {
                 getLog().info("Updating existing template " + template.getPath());
                 orig.setTemplate(template.getTemplate());
-                templateService.updateTemplate(orig);
+                templateService.updateFmTemplate(orig);
             }
         }
         getLog().info(String.format("Persisted %d templates in %d ms", items.size(), System.currentTimeMillis() - t0));

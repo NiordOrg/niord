@@ -52,7 +52,7 @@ public class GeometryFormatService {
                 .forEach(f -> f.getProperties().put("language", lang));
 
         String templatePath = String.format("/templates/geometry/%s.ftl", template);
-        return templateService.newTemplateBuilder()
+        return templateService.newFmTemplateBuilder()
                 .templatePath(templatePath)
                 .data("geometry", geometry)
                 .data("format", format)

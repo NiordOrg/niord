@@ -29,7 +29,7 @@ import java.util.List;
 /**
  * Reads promulgation types from a promulgation-types.json file.
  * <p>
- * Please note, the actual template-import.xml job file is not placed in the META-INF/batch-jobs of this project,
+ * Please note, the actual promulgation-type-import.xml job file is not placed in the META-INF/batch-jobs of this project,
  * but rather, in the META-INF/batch-jobs folder of the niord-web project.<br>
  * This is because of a class-loading bug in the Wildfly implementation. See e.g.
  * https://issues.jboss.org/browse/WFLY-4988

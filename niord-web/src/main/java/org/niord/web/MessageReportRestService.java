@@ -249,7 +249,7 @@ public class MessageReportRestService extends AbstractBatchableRestService {
 
             StreamingOutput stream = os -> {
                 try {
-                    templateService.newTemplateBuilder()
+                    templateService.newFmTemplateBuilder()
                             .templatePath(report.getTemplatePath())
                             .data("messages", Collections.singleton(message))
                             .data("areaHeadings", false)
@@ -315,7 +315,7 @@ public class MessageReportRestService extends AbstractBatchableRestService {
 
             StreamingOutput stream = os -> {
                 try {
-                    templateService.newTemplateBuilder()
+                    templateService.newFmTemplateBuilder()
                             .templatePath(report.getTemplatePath())
                             .data("messages", result.getData())
                             .data("areaHeadings", params.sortByArea())
