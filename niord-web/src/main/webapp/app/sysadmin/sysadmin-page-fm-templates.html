@@ -45,11 +45,14 @@
                             <tr ng-repeat="template in templates | filter: { path: search }">
                                 <td>{{template.path}}</td>
                                 <td nowrap align="right">
-                                    <a href ng-click="editFmTemplate(template);" title="Edit Template"><i class="glyphicon glyphicon-pencil"></i></a>
+                                    <a href ng-click="editFmTemplate(template);" title="Edit Freemarker Template">
+                                        <i class="glyphicon glyphicon-pencil"></i></a>
                                     &nbsp;
-                                    <a href ng-click="copyFmTemplate(template);" title="Copy Template"><i class="glyphicon glyphicon-duplicate"></i></a>
+                                    <a href ng-click="copyFmTemplate(template);" title="Copy Freemarker Template">
+                                        <i class="glyphicon glyphicon-duplicate"></i></a>
                                     &nbsp;
-                                    <a href ng-click="deleteFmTemplate(template);" title="Delete Template"><i class="glyphicon glyphicon-trash"></i></a>
+                                    <a href ng-click="deleteFmTemplate(template);" title="Delete Freemarker Template">
+                                        <i class="glyphicon glyphicon-trash"></i></a>
                                 </td>
                             </tr>
                         </table>
