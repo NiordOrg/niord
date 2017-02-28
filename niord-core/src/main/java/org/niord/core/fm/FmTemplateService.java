@@ -515,19 +515,20 @@ public class FmTemplateService extends BaseService {
             return data;
         }
 
-        public FmTemplateBuilder data(Map<String, Object> data) {
+        public Map<String, Object> checkCreateData() {
             if (data == null) {
                 data = new HashMap<>();
             }
-            this.data.putAll(data);
+            return data;
+        }
+
+        public FmTemplateBuilder data(Map<String, Object> data) {
+            checkCreateData().putAll(data);
             return this;
         }
 
         public FmTemplateBuilder data(String key, Object value) {
-            if (data == null) {
-                data = new HashMap<>();
-            }
-            data.put(key, value);
+            checkCreateData().put(key, value);
             return this;
         }
 

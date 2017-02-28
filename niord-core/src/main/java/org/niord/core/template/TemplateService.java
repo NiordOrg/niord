@@ -17,13 +17,18 @@
 package org.niord.core.template;
 
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.NiordApp;
 import org.niord.core.category.Category;
 import org.niord.core.category.CategoryService;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.fm.FmTemplateService;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.service.BaseService;
+import org.niord.core.template.FieldTemplateProcessor.FieldTemplate;
+import org.niord.model.message.MessagePartType;
+import org.niord.model.message.MessagePartVo;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
@@ -35,7 +40,15 @@ import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import javax.script.Bindings;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import javax.script.SimpleBindings;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Main interface for accessing and processing message templates
@@ -49,6 +62,12 @@ public class TemplateService extends BaseService {
 
     @Inject
     DomainService domainService;
+
+    @Inject
+    FmTemplateService templateService;
+
+    @Inject
+    NiordApp app;
 
     @Inject
     Logger log;
@@ -232,9 +251,69 @@ public class TemplateService extends BaseService {
      * @param message the message to apply the template to
      * @return the resulting message
      */
-    public SystemMessageVo executeTemplate(Template template, SystemMessageVo message) {
+    public SystemMessageVo executeTemplate(Template template, SystemMessageVo message) throws Exception {
 
+        long t0 = System.currentTimeMillis();
+
+        // Ensure the presence of a DETAILS message part
+        MessagePartVo part = message.checkCreatePart(MessagePartType.DETAILS);
+
+        // Ensure that description records exists for all supported languages
+        message.checkCreateDescs(app.getLanguages());
+
+        // Create context data to use with Freemarker templates and JavaScript updates
+        Map<String, Object> contextData = new HashMap<>();
+        contextData.put("message", message);
+        contextData.put("part", part);
+        contextData.put("template", template.toVo());
+
+        // Run the associated Freemarker template to get a result in the "FieldTemplates" format
+        String fieldTemplateTxt = templateService.newFmTemplateBuilder()
+                .templatePath(template.getTemplatePath())
+                .data(contextData)
+                .dictionaryNames("message")
+                .process();
+
+        List<FieldTemplate> fieldTemplates = FieldTemplateProcessor.parse(fieldTemplateTxt);
+
+        applyFieldTemplates(fieldTemplates, contextData);
+
+        log.info("Executed template " + template.getId() + " on message " + message.getId()
+                + " in " + (System.currentTimeMillis() - t0) + " ms");
 
         return message;
     }
+
+
+    /**
+     * Updates the fields of the message using the FieldTemplate templates.
+     *
+     * A FieldTemplate field may have the format "message.promulgation('twitter').tweet"
+     * and will be assigned the body content of the field template.
+     *
+     * @param fieldTemplates the field templates to apply
+     */
+    private void applyFieldTemplates(List<FieldTemplate> fieldTemplates, Map<String, Object> contextData) {
+
+        ScriptEngine jsEngine = new ScriptEngineManager()
+                .getEngineByName("Nashorn");
+
+        // Update the JavaScript engine bindings from the context data
+        Bindings bindings = new SimpleBindings();
+        contextData.entrySet().forEach(e -> bindings.put(e.getKey(), e.getValue()));
+        jsEngine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
+
+        for (FieldTemplate fieldTemplate : fieldTemplates) {
+            bindings.put("content", fieldTemplate.getContent());
+            String script = fieldTemplate.getField() + " = content;";
+            try {
+                jsEngine.eval(script);
+            } catch (ScriptException e) {
+                // Apply the result of the field templates
+                log.error("Error applying field template " + fieldTemplate + ": " + e.getMessage());
+            }
+        }
+
+    }
+
 }

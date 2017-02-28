@@ -27,6 +27,7 @@ import javax.xml.bind.annotation.XmlType;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Value object for the {@code Message} model entity
@@ -123,32 +124,42 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
         return desc;
     }
 
+
+    /** Returns the stream of localizable entities of the message **/
+    public Stream<ILocalizable> localizableStream() {
+        List<ILocalizable> localizables = new ArrayList<>();
+        localizables.add(this);
+        if (attachments != null) {
+            localizables.addAll(attachments);
+        }
+        if (references != null) {
+            localizables.addAll(references);
+        }
+        if (parts != null) {
+            localizables.addAll(parts);
+        }
+        if (areas != null) {
+            areas.forEach(area -> {
+                while (area != null) {
+                    localizables.add(area);
+                    area = area.getParent();
+                }
+            });
+        }
+        return Stream.of(localizables.toArray(new ILocalizable[localizables.size()]));
+    }
+
+
     /**
      * Sort all entity-owned descriptor records by the given language
      * @param language the language to sort by
      */
     public void sort(String language) {
         if (StringUtils.isNotBlank(language)) {
-            sortDescs(language);
-            if (getAttachments() != null) {
-                getAttachments().forEach(att -> att.sortDescs(language));
-            }
-            if (getReferences() != null) {
-                getReferences().forEach(ref -> ref.sortDescs(language));
-            }
-            if (getParts() != null) {
-                getParts().forEach(part -> part.sortDescs(language));
-            }
-            if (getAreas() != null) {
-                getAreas().forEach(area -> {
-                    while (area != null) {
-                        area.sortDescs(language);
-                        area = area.getParent();
-                    }
-                });
-            }
+            localizableStream().forEach(l -> l.sortDescs(language));
         }
     }
+
 
     /**
      * Rewrites the attachments, thumbnail path and rich text description from one repository path to another.

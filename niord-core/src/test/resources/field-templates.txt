@@ -1,0 +1,8 @@
+<message-template>
+
+<field-template field="part.getDesc('da').subject" format="text">
+  Fyr
+  slukket
+</field-template>
+
+</message-template>

@@ -20,9 +20,12 @@ import org.niord.core.message.Message;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.core.repo.IRepoBackedVo;
 import org.niord.core.util.UidUtils;
+import org.niord.model.message.MessagePartType;
+import org.niord.model.message.MessagePartVo;
 import org.niord.model.message.MessageVo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -139,6 +142,37 @@ public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
             promulgations = new ArrayList<>();
         }
         return promulgations;
+    }
+
+
+    /** Returns the message part of the given type or null if it does not exist **/
+    public MessagePartVo part(MessagePartType type) {
+        return getParts().stream()
+                .filter(p -> p.getType() == type)
+                .findFirst()
+                .orElse(null);
+    }
+
+
+    /** Returns - and potentially creates - a message part of the given type **/
+    public MessagePartVo checkCreatePart(MessagePartType type) {
+        MessagePartVo part = part(type);
+        if (part == null) {
+            part = new MessagePartVo();
+            part.setType(type);
+            getParts().add(0, part);
+        }
+        return part;
+    }
+
+
+    /**
+     * Ensures that description records exists for all the given languages
+     * @param languages the language ensure description records exist for
+     */
+    public void checkCreateDescs(String[] languages) {
+        Arrays.stream(languages).forEach(language ->
+                localizableStream().forEach(l -> l.checkCreateDesc(language)));
     }
 
 

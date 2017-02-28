@@ -18,11 +18,14 @@ package org.niord.core;
 
 
 import jdk.nashorn.api.scripting.JSObject;
+import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.vo.PromulgationTypeVo;
 import org.niord.core.promulgation.vo.TwitterMessagePromulgationVo;
+import org.niord.core.template.FieldTemplateProcessor;
+import org.niord.core.template.FieldTemplateProcessor.FieldTemplate;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -30,6 +33,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.SimpleBindings;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -116,4 +120,24 @@ public class MessageTemplateTest {
         sourceMap.put("script", "function doubleUp(txt) { return txt + ' and ' + txt; }");
         return sourceMap;
     }
+
+
+    /**
+     * Test parsing a text in the FieldTemplate format
+     */
+    @Test
+    public void testFieldTemplates() throws Exception {
+
+        String text = IOUtils.toString(this.getClass().getResourceAsStream("/field-templates.txt"),"UTF-8");
+        List<FieldTemplate> fieldTemplates = FieldTemplateProcessor.parse(text);
+        fieldTemplates.forEach(ft -> System.out.println("Field template: " + ft));
+
+        Assert.assertEquals(1, fieldTemplates.size());
+
+        FieldTemplate ft = fieldTemplates.get(0);
+        Assert.assertEquals(ft.getContent(), "Fyr slukket");
+        Assert.assertEquals(ft.getField(), "part.getDesc('da').subject");
+        Assert.assertEquals(ft.getFormat(), "text");
+    }
+
 }
