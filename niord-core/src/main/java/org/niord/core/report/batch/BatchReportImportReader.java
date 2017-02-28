@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Danish Maritime Authority.
+ * Copyright 2017 Danish Maritime Authority.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package org.niord.core.fm.batch;
+package org.niord.core.report.batch;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.niord.core.batch.AbstractItemHandler;
-import org.niord.core.fm.vo.FmReportVo;
+import org.niord.core.report.vo.FmReportVo;
 import org.niord.core.util.JsonUtils;
 
 import javax.inject.Named;

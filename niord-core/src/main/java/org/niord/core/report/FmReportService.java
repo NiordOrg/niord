@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Danish Maritime Authority.
+ * Copyright 2017 Danish Maritime Authority.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.niord.core.fm;
+package org.niord.core.report;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
-import org.niord.core.fm.vo.FmReportVo;
+import org.niord.core.report.vo.FmReportVo;
 import org.niord.core.service.BaseService;
 import org.niord.core.util.TimeUtils;
 import org.slf4j.Logger;
