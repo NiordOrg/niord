@@ -22,6 +22,7 @@ import org.niord.core.category.CategoryService;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.service.BaseService;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
@@ -222,5 +223,18 @@ public class TemplateService extends BaseService {
             return true;
         }
         return false;
+    }
+
+
+    /**
+     * Executes a message template on the given message
+     * @param template the template to execute
+     * @param message the message to apply the template to
+     * @return the resulting message
+     */
+    public SystemMessageVo executeTemplate(Template template, SystemMessageVo message) {
+
+
+        return message;
     }
 }

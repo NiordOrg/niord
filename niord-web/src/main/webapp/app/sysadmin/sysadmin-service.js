@@ -368,6 +368,12 @@ angular.module('niord.admin')
             },
 
 
+            /** Executes the message template on the given message ID **/
+            executeTemplate: function(template, messageId) {
+                return $http.put('/rest/templates/execute?messageId=' + encodeURIComponent(messageId), template);
+            },
+
+
             /** Returns the ticket that can be used to generate an export file that requires the given role */
             exportTicket: function (role) {
                 var param = role ? '?role=' + role : '';

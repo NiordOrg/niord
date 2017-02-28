@@ -72,7 +72,7 @@
                             </div>
                             <div class="col-sm-2">
                                 <button type="submit" class="btn btn-default btn-sm" style="width: 100%"
-                                        ng-click="testTemplate(template)" ng-disabled="testMessageData.messageId === undefined">
+                                        ng-click="executeTemplate(template)" ng-disabled="testMessageData.messageId === undefined">
                                     Test...
                                 </button>
                             </div>
@@ -179,3 +179,43 @@
     </div>
 
 </admin-page>
+
+
+<!-- ************************************************** -->
+<!-- Dialog for displaying result of executing template -->
+<!-- ************************************************** -->
+<script type="text/ng-template" id="templateResultDialog.html">
+    <div class="modal-header">
+        <h4 class="modal-title">Template Result</h4>
+    </div>
+    <div class="modal-body">
+
+        <div class="container-fluid">
+
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="message-status-lang">
+                        <span ng-repeat="lang in modelLanguages" ng-click="previewLanguage(lang)"
+                              class="message-status-lang-btn pointer" ng-class="{'preview-lang-selected' : previewLang == lang}">
+                            <img ng-src="/img/flags/{{lang}}.png" height="14"/>
+                            {{'lang.' + lang | translate}}
+                        </span>
+                    </div>
+
+                    <table ng-if="message.id" class='table table-condensed'>
+                        <tr render-message-details
+                            msg="previewMessage"
+                            language="previewLang"
+                            format="details"
+                            show-promulgation="true"
+                            show-details-menu="false"></tr>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-default" ng-click="$dismiss('cancelled')">Close</button>
+    </div>
+</script>

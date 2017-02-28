@@ -300,7 +300,6 @@ public class MessageRestService  {
      * If no message exists with the given ID, null is returned.
      *
      * @param messageId the message ID
-     * @param language the language to sort the returned data by
      * @return the message or null
      */
     @GET
@@ -310,8 +309,7 @@ public class MessageRestService  {
     @NoCache
     @RolesAllowed(Roles.USER)
     public SystemMessageVo getSystemMessage(
-            @PathParam("messageId") String messageId,
-            @QueryParam("lang") String language) throws Exception {
+            @PathParam("messageId") String messageId) throws Exception {
 
         Message message = messageService.resolveMessage(messageId);
         if (message == null) {

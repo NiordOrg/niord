@@ -193,5 +193,54 @@ angular.module('niord.admin')
             };
 
 
-        }]);
+            /** Tests the current template with the specified message ID */
+            $scope.executeTemplate = function (template) {
+                if (template && $scope.testMessageData.messageId) {
+                    AdminTemplateService
+                        .executeTemplate(template, $scope.testMessageData.messageId)
+                        .success(function (message) {
+                            $uibModal.open({
+                                controller: "TemplateResultDialogCtrl",
+                                templateUrl: "templateResultDialog.html",
+                                size: 'md',
+                                resolve: {
+                                    message: function () { return message; }
+                                }
+                            }).result.then($scope.loadMessageSeries)
+                        })
+                        .error(function (data, status) {
+                            growl.error("Error executing template (code: " + status + ")", {ttl: 5000})
+                        });
+                }
+            };
 
+        }])
+
+
+    /*******************************************************************
+     * Displays the result of executing a template on a message
+     *******************************************************************/
+    .controller('TemplateResultDialogCtrl', ['$scope', '$rootScope', 'LangService', 'message',
+        function ($scope, $rootScope, LangService, message) {
+            'use strict';
+
+            $scope.message = message;
+            $scope.previewLang = $rootScope.language;
+
+            /** Create a preview message, i.e. a message sorted to the currently selected language **/
+            $scope.createPreviewMessage = function () {
+                $scope.previewMessage = undefined;
+                if ($scope.message) {
+                    $scope.previewMessage = angular.copy($scope.message);
+                    LangService.sortMessageDescs($scope.previewMessage, $scope.previewLang);
+                }
+            };
+            $scope.$watch("message", $scope.createPreviewMessage, true);
+
+
+            /** Set the preview language **/
+            $scope.previewLanguage = function (lang) {
+                $scope.previewLang = lang;
+                $scope.createPreviewMessage();
+            };
+        }]);

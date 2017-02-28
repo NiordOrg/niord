@@ -22,6 +22,7 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.template.Template;
 import org.niord.core.template.TemplateSearchParams;
 import org.niord.core.template.TemplateService;
@@ -75,6 +76,9 @@ public class TemplateRestService extends AbstractBatchableRestService {
 
     @Inject
     TemplateService templateService;
+
+    @Inject
+    MessageRestService messageRestService;
 
     
     /** Returns all templates */
@@ -219,4 +223,18 @@ public class TemplateRestService extends AbstractBatchableRestService {
         return executeBatchJobFromUploadedFile(request, "template-import");
     }
 
+
+    /** Executes a message template on the given message ID */
+    @PUT
+    @Path("/execute")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed(Roles.USER)
+    @GZIP
+    @NoCache
+    public SystemMessageVo applyTemplate(@QueryParam("messageId") String messageId, TemplateVo template) throws Exception {
+        // NB: Access to the message is checked:
+        SystemMessageVo message = messageRestService.getSystemMessage(messageId);
+        return templateService.executeTemplate(new Template(template), message);
+    }
 }
