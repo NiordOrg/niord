@@ -20,6 +20,7 @@ import org.niord.core.category.Category;
 import org.niord.core.domain.Domain;
 import org.niord.core.model.IndexedEntity;
 import org.niord.core.model.VersionedEntity;
+import org.niord.core.script.ScriptResource;
 import org.niord.core.template.vo.TemplateDescVo;
 import org.niord.core.template.vo.TemplateVo;
 import org.niord.model.DataFilter;
@@ -28,12 +29,14 @@ import org.niord.model.message.CategoryVo;
 
 import javax.persistence.Cacheable;
 import javax.persistence.CascadeType;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.OrderColumn;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +54,7 @@ import java.util.stream.Collectors;
         @NamedQuery(name  = "Template.findByCategoryAndDomain",
                 query = "select t from Template t where t.category.id = :categoryId and :domain in t.domains")
 })
+@SuppressWarnings("unused")
 public class Template extends VersionedEntity<Integer> implements ILocalizable<TemplateDesc>, IndexedEntity {
 
     @NotNull
@@ -62,8 +66,9 @@ public class Template extends VersionedEntity<Integer> implements ILocalizable<T
 
     int indexNo;
 
-    @NotNull
-    String templatePath;
+    @OrderColumn(name = "indexNo")
+    @ElementCollection
+    List<String> scriptResourcePaths = new ArrayList<>();
 
     // Example message ID
     String messageId;
@@ -80,7 +85,9 @@ public class Template extends VersionedEntity<Integer> implements ILocalizable<T
     public Template(TemplateVo template) {
         this.id = template.getId();
         this.category = new Category(template.getCategory());
-        this.templatePath = template.getTemplatePath();
+        template.getScriptResourcePaths().stream()
+                .filter(p -> ScriptResource.path2type(p) != null)
+                .forEach(p -> this.scriptResourcePaths.add(p));
         this.messageId = template.getMessageId();
         if (!template.getDomains().isEmpty()) {
             this.domains = template.getDomains().stream()
@@ -109,7 +116,7 @@ public class Template extends VersionedEntity<Integer> implements ILocalizable<T
         template.setDomains(domains.stream()
             .map(Domain::toVo)
             .collect(Collectors.toList()));
-        template.setTemplatePath(templatePath);
+        template.getScriptResourcePaths().addAll(scriptResourcePaths);
         template.setMessageId(messageId);
         if (!descs.isEmpty()) {
             template.setDescs(getDescs(filter).stream()
@@ -164,12 +171,12 @@ public class Template extends VersionedEntity<Integer> implements ILocalizable<T
         this.indexNo = indexNo;
     }
 
-    public String getTemplatePath() {
-        return templatePath;
+    public List<String> getScriptResourcePaths() {
+        return scriptResourcePaths;
     }
 
-    public void setTemplatePath(String templatePath) {
-        this.templatePath = templatePath;
+    public void setScriptResourcePaths(List<String> scriptResourcePaths) {
+        this.scriptResourcePaths = scriptResourcePaths;
     }
 
     public String getMessageId() {

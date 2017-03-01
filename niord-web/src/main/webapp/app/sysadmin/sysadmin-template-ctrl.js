@@ -82,7 +82,7 @@ angular.module('niord.admin')
                     category: undefined,
                     domains: [],
                     descs: [],
-                    templatePath: undefined
+                    scriptResourcePaths: [ '' ]
                 };
                 LangService.checkDescs($scope.template, ensureNameField);
             };
@@ -94,6 +94,9 @@ angular.module('niord.admin')
                     .success(function (tmpl) {
                         $scope.editMode = 'edit';
                         $scope.template = tmpl;
+                        if ($scope.template.scriptResourcePaths.length == 0) {
+                            $scope.template.scriptResourcePaths.push('');
+                        }
                         LangService.checkDescs($scope.template, ensureNameField);
                     });
             };
@@ -122,9 +125,9 @@ angular.module('niord.admin')
                                 if (tmplDesc && !tmplDesc.name) {
                                     tmplDesc.name = desc.name;
                                 }
-                                if (desc.lang == 'en' && !$scope.template.templatePath){
+                                if (desc.lang == 'en' && $scope.template.scriptResourcePaths.length == 0){
                                     var name = desc.name.toLowerCase().replace(/ /g, '-');
-                                    $scope.template.templatePath = 'templates/tmpl/' + name + '.ftl';
+                                    $scope.template.scriptResourcePaths.push('templates/tmpl/' + name + '.ftl');
                                 }
                             })
                         })
@@ -214,6 +217,40 @@ angular.module('niord.admin')
                 }
             };
 
+
+            /** Set the form as dirty **/
+            $scope.setDirty = function () {
+                $timeout(function () {
+                    try { angular.element($("#templateForm")).scope().templateForm.$setDirty(); } catch (err) { }
+                }, 100);
+            };
+
+            /** Script resource path DnD configuration **/
+            $scope.pathsSortableCfg = {
+                group: 'scriptResourcePaths',
+                handle: '.move-btn',
+                onEnd: $scope.setDirty
+            };
+
+
+            /** Adds a new resource path after the given index **/
+            $scope.addResourcePath = function (index) {
+                $scope.template.scriptResourcePaths.splice(index + 1, 0, '');
+                $scope.setDirty();
+                $timeout(function () {
+                    angular.element($("#path_" + (index + 1))).focus();
+                });
+            };
+
+
+            /** Removes the resource path at the given index **/
+            $scope.deleteResourcePath = function (index) {
+                $scope.template.scriptResourcePaths.splice(index, 1);
+                $scope.setDirty();
+                if ($scope.template.scriptResourcePaths.length == 0) {
+                    $scope.template.scriptResourcePaths.push('');
+                }
+            };
         }])
 
 

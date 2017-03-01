@@ -39,6 +39,7 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -164,6 +165,36 @@ public class NavtexPromulgationService extends BasePromulgationService {
             // Replace the list of transmitters with the persisted entities
             navtex.setTransmitters(persistedTransmitters(type.getTypeId(), navtex.getTransmitters()));
         }
+    }
+
+
+    /**
+     * Computes the NAVTEX transmitter status based on the message areas
+     * @param message the message to update
+     * @return the updated message
+     */
+    public SystemMessageVo computeNavtexTransmitterStatuses(SystemMessageVo message) {
+        if (message.getPromulgations() == null || message.getAreas() == null || message.getAreas().isEmpty()) {
+            return message;
+        }
+
+        List<Area> areas = message.getAreas().stream()
+                .map(Area::new)
+                .collect(Collectors.toList());
+
+        message.getPromulgations().stream()
+                .filter(p -> p instanceof NavtexMessagePromulgationVo)
+                .map(p -> (NavtexMessagePromulgationVo)p)
+                .forEach(navtex -> {
+                    String typeId = navtex.getType().getTypeId();
+                    Set<String> enabledTransmitters = findTransmittersByAreas(typeId, areas, true).stream()
+                            .map(NavtexTransmitter::getName)
+                            .collect(Collectors.toSet());
+                    navtex.getTransmitters().keySet().forEach(name ->
+                            navtex.getTransmitters().put(name, enabledTransmitters.contains(name)));
+                });
+
+        return message;
     }
 
 

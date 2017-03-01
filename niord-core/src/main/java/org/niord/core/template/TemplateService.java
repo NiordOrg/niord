@@ -16,6 +16,7 @@
 
 package org.niord.core.template;
 
+import freemarker.template.TemplateException;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.category.Category;
@@ -23,8 +24,11 @@ import org.niord.core.category.CategoryService;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
-import org.niord.core.script.FmTemplateService;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.script.FmTemplateService;
+import org.niord.core.script.JsResourceService;
+import org.niord.core.script.ScriptResource;
+import org.niord.core.script.ScriptResource.Type;
 import org.niord.core.service.BaseService;
 import org.niord.core.template.FieldTemplateProcessor.FieldTemplate;
 import org.niord.model.message.MessagePartType;
@@ -46,6 +50,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,10 +72,14 @@ public class TemplateService extends BaseService {
     FmTemplateService templateService;
 
     @Inject
+    JsResourceService javaScriptService;
+
+    @Inject
     NiordApp app;
 
     @Inject
     Logger log;
+
 
     /**
      * Returns the template with the given ID, or null if not found
@@ -210,7 +219,10 @@ public class TemplateService extends BaseService {
         }
 
         // Copy the template data
-        original.setTemplatePath(template.getTemplatePath());
+        original.getScriptResourcePaths().clear();
+        template.getScriptResourcePaths().stream()
+                .filter(p -> ScriptResource.path2type(p) != null)
+                .forEach(p -> original.getScriptResourcePaths().add(p));
         original.setMessageId(template.getMessageId());
         original.copyDescsAndRemoveBlanks(template.getDescs());
 
@@ -263,13 +275,43 @@ public class TemplateService extends BaseService {
 
         // Create context data to use with Freemarker templates and JavaScript updates
         Map<String, Object> contextData = new HashMap<>();
+        contextData.put("languages", app.getLanguages());
         contextData.put("message", message);
         contextData.put("part", part);
         contextData.put("template", template.toVo());
 
+        for (String scriptResourcePath : template.getScriptResourcePaths()) {
+            Type type = ScriptResource.path2type(scriptResourcePath);
+            if (type == Type.JS) {
+                // JavaScript update
+                evalJavaScriptResource(contextData, scriptResourcePath);
+            } else if (type == Type.FM) {
+                // Freemarker Template update
+                applyFreemarkerTemplate(contextData, scriptResourcePath);
+            }
+        }
+
+
+        log.info("Executed template " + template.getId() + " on message " + message.getId()
+                + " in " + (System.currentTimeMillis() - t0) + " ms");
+
+        return message;
+    }
+
+
+    /**
+     * Executes the Freemarker template at the given path and updates the message accordingly
+     *
+     * @param contextData the context data to use in the Freemarker template
+     * @param scriptResourcePath the path to the Freemarker template
+     */
+    private void applyFreemarkerTemplate(
+            Map<String, Object> contextData,
+            String scriptResourcePath) throws IOException, TemplateException {
+
         // Run the associated Freemarker template to get a result in the "FieldTemplates" format
         String fieldTemplateTxt = templateService.newFmTemplateBuilder()
-                .templatePath(template.getTemplatePath())
+                .templatePath(scriptResourcePath)
                 .data(contextData)
                 .dictionaryNames("message")
                 .process();
@@ -277,11 +319,6 @@ public class TemplateService extends BaseService {
         List<FieldTemplate> fieldTemplates = FieldTemplateProcessor.parse(fieldTemplateTxt);
 
         applyFieldTemplates(fieldTemplates, contextData);
-
-        log.info("Executed template " + template.getId() + " on message " + message.getId()
-                + " in " + (System.currentTimeMillis() - t0) + " ms");
-
-        return message;
     }
 
 
@@ -314,6 +351,21 @@ public class TemplateService extends BaseService {
             }
         }
 
+    }
+
+
+    /**
+     * Evaluates the JavaScript resource at the given path
+     *
+     * @param contextData the context data to use in the Freemarker template
+     * @param scriptResourcePath the path to the Freemarker template
+     */
+    private void evalJavaScriptResource(Map<String, Object> contextData, String scriptResourcePath) throws Exception {
+
+        javaScriptService.newJsResourceBuilder()
+                .resourcePath(scriptResourcePath)
+                .data(contextData)
+                .evaluate();
     }
 
 }

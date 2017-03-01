@@ -30,6 +30,9 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.validation.constraints.NotNull;
 
+import static org.niord.core.script.ScriptResource.Type.FM;
+import static org.niord.core.script.ScriptResource.Type.JS;
+
 
 /**
  * Represents a database-backed Freemarker template.
@@ -92,14 +95,22 @@ public class ScriptResource extends VersionedEntity<Integer>  {
 
     /** Updates the type from the path file extension **/
     public void updateType() {
+        type = path2type(path);
+    }
+
+
+    /** Determines the resource type from the path **/
+    public static Type path2type(String path) {
         if (StringUtils.isNotBlank(path)) {
-            if (path.trim().toLowerCase().endsWith(".ftl")) {
-                type = Type.FM;
-            } else if (path.trim().toLowerCase().endsWith(".js")) {
-                type = Type.JS;
+            if (path.toLowerCase().trim().endsWith(".js")) {
+                return JS;
+            } else if (path.toLowerCase().trim().endsWith(".ftl")) {
+                return FM;
             }
         }
+        return null;
     }
+
 
     /*************************/
     /** Getters and Setters **/

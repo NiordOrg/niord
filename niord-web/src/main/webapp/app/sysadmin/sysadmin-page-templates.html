@@ -43,17 +43,31 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="col-sm-4">Template</label>
-                            <div class="col-sm-8">
-                                <div class="input-group">
-                                    <input type="text" class="form-control input-sm"
-                                           pattern=".+\.(ftl|FTL)" required
-                                           ng-model="template.templatePath" />
-                                    <a class="input-group-addon clickable" style="font-size: 12px"
-                                       href target="_blank"
-                                       ui-sref="sysadmin.script-resources({ path: template.templatePath })">
-                                        <span class="glyphicon glyphicon-pencil"></span>
-                                    </a>
+                            <label class="col-sm-4">Script Resources</label>
+                            <div class="col-sm-8" ng-sortable="pathsSortableCfg">
+                                <div ng-repeat="path in template.scriptResourcePaths">
+                                    <div class="input-group">
+                                        <span class="input-group-addon" style="font-size: 12px">
+                                            {{$index + 1}}: <span class="glyphicon glyphicon-move move-btn"></span>
+                                        </span>
+                                        <input type="text" class="form-control input-sm"
+                                               id="path_{{$index}}"
+                                               pattern=".+\.(ftl|FTL|js|JS)" required
+                                               ng-model="template.scriptResourcePaths[$index]" />
+                                        <a class="input-group-addon clickable" style="font-size: 12px"
+                                           href target="_blank" title="Edit resource"
+                                           ui-sref="sysadmin.script-resources({ 'path': path })">
+                                            <span class="glyphicon glyphicon-pencil"></span>
+                                        </a>
+                                        <a class="input-group-addon clickable" style="font-size: 12px"
+                                            ng-click="addResourcePath($index)"  title="Add resource">
+                                            <span class="glyphicon glyphicon-plus"></span>
+                                        </a>
+                                        <a class="input-group-addon clickable" style="font-size: 12px"
+                                            ng-click="deleteResourcePath($index)"  title="Delete resource">
+                                            <span class="glyphicon glyphicon-trash"></span>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -137,7 +151,7 @@
                                 <th>Category</th>
                                 <th>Name</th>
                                 <th>Domains</th>
-                                <th>Template</th>
+                                <th>Script Resources</th>
                                 <th></th>
                             </tr>
                             <tr ng-repeat="template in searchResult.data">
@@ -146,7 +160,9 @@
                                 <td>
                                     <div ng-repeat="domain in template.domains">{{domain.name}}</div>
                                 </td>
-                                <td>{{template.templatePath}}</td>
+                                <td>
+                                    <div ng-repeat="path in template.scriptResourcePaths">{{path}}</div>
+                                </td>
                                 <td nowrap align="right">
                                     <a href ng-click="editTemplate(template);" title="Edit Template">
                                         <i class="glyphicon glyphicon-pencil"></i></a>

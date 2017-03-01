@@ -760,6 +760,25 @@ public class MessageService extends BaseService {
     }
 
 
+    /**
+     * Utility method used to update the auto-generated fields of a message
+     * @param message the message to update
+     * @return the updated message
+     */
+    public SystemMessageVo adjustMessage(SystemMessageVo message) {
+        Message msg = new Message(message);
+        updateAutoMessageFields(msg);
+        checkUpdateShortId(msg);
+        // Copy the changes back to the message
+        DataFilter filter = DataFilter.get();
+        message.setDescs(msg.getDescs().stream()
+                .map(d -> d.toVo(filter))
+                .collect(Collectors.toList()));
+        message.setShortId(msg.getShortId());
+        return message;
+    }
+
+
     /***************************************/
     /** Message Sorting                  **/
     /***************************************/

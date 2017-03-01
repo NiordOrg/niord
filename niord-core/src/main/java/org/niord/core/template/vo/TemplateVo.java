@@ -33,7 +33,7 @@ public class TemplateVo implements ILocalizable<TemplateDescVo>, IJsonSerializab
     Integer id;
     CategoryVo category;
     List<DomainVo> domains = new ArrayList<>();
-    String templatePath;
+    List<String> scriptResourcePaths = new ArrayList<>();
     String messageId;
     List<TemplateDescVo> descs;
 
@@ -76,12 +76,12 @@ public class TemplateVo implements ILocalizable<TemplateDescVo>, IJsonSerializab
         this.domains = domains;
     }
 
-    public String getTemplatePath() {
-        return templatePath;
+    public List<String> getScriptResourcePaths() {
+        return scriptResourcePaths;
     }
 
-    public void setTemplatePath(String templatePath) {
-        this.templatePath = templatePath;
+    public void setScriptResourcePaths(List<String> scriptResourcePaths) {
+        this.scriptResourcePaths = scriptResourcePaths;
     }
 
     public String getMessageId() {
