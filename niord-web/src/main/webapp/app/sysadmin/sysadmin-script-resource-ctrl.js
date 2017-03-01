@@ -26,9 +26,9 @@ angular.module('niord.admin')
      * Script Resources Admin Controller
      * Controller for the Admin script resources page
      */
-    .controller('ScriptResourcesAdminCtrl', ['$scope', '$stateParams', '$timeout', '$uibModal', 'growl',
+    .controller('ScriptResourcesAdminCtrl', ['$scope', '$stateParams', '$state', '$timeout', '$uibModal', 'growl',
                 'AdminScriptResourceService', 'DialogService', 'UploadFileService',
-        function ($scope, $stateParams, $timeout, $uibModal, growl,
+        function ($scope, $stateParams, $state, $timeout, $uibModal, growl,
                   AdminScriptResourceService, DialogService, UploadFileService) {
             'use strict';
 
@@ -63,7 +63,7 @@ angular.module('niord.admin')
                     pattern: '.+\.(ftl|FTL)'
                 },
                 'JS': {
-                    name: 'JavaScript Path',
+                    name: 'Freemarker Path',
                     placeholder: 'resources/path.js',
                     pattern: '.+\.(js|JS)'
                 }
@@ -95,6 +95,9 @@ angular.module('niord.admin')
                                 $scope.addScriptResource(type);
                                 $scope.resource.path = path;
                             }
+
+                            // Reset path
+                            $state.go('sysadmin.script-resources', { path: null }, { notify: false });
                         }
                     });
             };
