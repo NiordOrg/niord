@@ -341,7 +341,7 @@ tr.batch-execution-row td div.progress {
 }
 
 .script-resource-table table tr td.active {
-    background-color: #eee;
+    background-color: #ddd;
 }
 
 .script-resource-editor {
