@@ -26,8 +26,10 @@ import org.niord.model.message.MessageVo;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Extends the {@linkplain MessageVo} model with system-specific fields and attributes.
@@ -145,10 +147,20 @@ public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
     }
 
 
-    /** Returns the message part of the given type or null if it does not exist **/
-    public MessagePartVo part(MessagePartType type) {
+    /** Returns the message parts of the given type **/
+    public List<MessagePartVo> parts(MessagePartType type) {
+        if (getParts() == null) {
+            return Collections.emptyList();
+        }
         return getParts().stream()
                 .filter(p -> p.getType() == type)
+                .collect(Collectors.toList());
+    }
+
+
+    /** Returns the message part of the given type or null if it does not exist **/
+    public MessagePartVo part(MessagePartType type) {
+        return parts(type).stream()
                 .findFirst()
                 .orElse(null);
     }

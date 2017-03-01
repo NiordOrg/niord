@@ -85,11 +85,11 @@ angular.module('niord.admin')
                             if (path.startsWith('/')) {
                                 path = path.substring(1);
                             }
-                            var pathTemplates = $.grep($scope.resources, function (t) {
+                            var pathResources = $.grep($scope.resources, function (t) {
                                 return t.path == path;
                             });
-                            if (pathTemplates.length == 1) {
-                                $scope.editScriptResource(pathTemplates[0]);
+                            if (pathResources.length == 1) {
+                                $scope.editScriptResource(pathResources[0]);
                             } else {
                                 var type = path.toLowerCase().endsWith('.js') ? 'JS' : 'FM';
                                 $scope.addScriptResource(type);

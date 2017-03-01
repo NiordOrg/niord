@@ -18,7 +18,14 @@
  * Adjusts various message fields, such as the title field if auto-title is turned on
  */
 function adjustMessage() {
+    // Update auto-title fields, etc.
     messageService.adjustMessage(message);
+
+    // If there is only one DETAILS message part, hide the subject
+    var detailParts = message.parts(MessagePartType.DETAILS);
+    if (detailParts.length == 1) {
+        detailParts[0].hideSubject = true;
+    }
 }
 
 
@@ -29,6 +36,7 @@ function updateNavtexTransmitters() {
     var navtex = CdiUtils.getBean(org.niord.core.promulgation.NavtexPromulgationService.class);
     navtex.computeNavtexTransmitterStatuses(message);
 }
+
 
 /**
  * Updates the promulgate-state of the message promulgations
