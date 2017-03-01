@@ -124,7 +124,7 @@ angular.module('niord.admin')
                                 }
                                 if (desc.lang == 'en' && !$scope.template.templatePath){
                                     var name = desc.name.toLowerCase().replace(/ /g, '-');
-                                    $scope.template.templatePath = 'templates/message/' + name + '.ftl';
+                                    $scope.template.templatePath = 'templates/tmpl/' + name + '.ftl';
                                 }
                             })
                         })
