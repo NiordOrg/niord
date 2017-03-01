@@ -1,0 +1,120 @@
+
+<admin-page admin-page-title="Script Resources" parent-page="sysadmin" parent-page-title="Sysadmin">
+
+    <div ng-controller="ScriptResourcesAdminCtrl" ng-init="loadScriptResources(true)">
+
+        <p style="margin-bottom: 20px">Add, modify and manage script resources.<br>
+            The script resources, either Freemarker Templates or JavaScript Files, are used for print reports,
+            mails and message templates.</p>
+
+        <!-- List resources -->
+        <div>
+            <div class="row">
+                <div class="col-xs-8 col-sm-6 col-md-5">
+                    <input class="form-control input-sm col-sm-2" ng-model="search" type="text" placeholder="Filter">
+                    <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
+                          ng-click="search = ''" ng-show="search != ''"></span>
+                </div>
+                <div class="col-xs-4 col-sm-6 col-md-7">
+                    <span class="btn-group" style="margin-left: 5px;" uib-dropdown>
+                        <button id="add-btn" type="button" class="btn btn-primary btn-sm" uib-dropdown-toggle>
+                            <span class="glyphicon glyphicon-plus"></span> Add Script Resource
+                            <span class="caret"></span>
+                        </button>
+                        <ul uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                            <li role="menuitem"><a href ng-click="addScriptResource('FM')">Freemarker Template</a></li>
+                            <li role="menuitem"><a href ng-click="addScriptResource('JS')">JavaScript File</a></li>
+                        </ul>
+                    </span>
+
+                    <span class="btn-group" style="margin-left: 5px;" uib-dropdown>
+                        <button id="single-button" type="button" class="btn btn-primary btn-sm" uib-dropdown-toggle>
+                            <span class="glyphicon glyphicon-cog"></span>
+                            <span class="caret"></span>
+                        </button>
+                        <ul uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                            <li role="menuitem"><a href ng-click="reloadScriptResources()">Reload files...</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li role="menuitem"><a href ng-click="exportScriptResources()">Export...</a></li>
+                            <li role="menuitem"><a href ng-click="uploadScriptResourcesDialog()">Import...</a></li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+
+            <div class="row" style="padding-top: 20px;">
+
+                <div class="col-sm-12 col-sm-6 col-md-5">
+                    <div class="script-resource-table">
+                        <table class='table table-condensed table-hover'>
+                            <tr>
+                                <th>Path</th>
+                                <th></th>
+                            </tr>
+                            <tr ng-repeat="r in resources | filter: { path: search }">
+                                <td ng-class="{ 'active' : resource && r.id == resource.id}">{{r.path}}</td>
+                                <td ng-class="{ 'active' : resource && r.id == resource.id}" nowrap align="right">
+                                    <a href ng-click="editScriptResource(r);" title="Edit script resource">
+                                        <i class="glyphicon glyphicon-pencil"></i></a>
+                                    &nbsp;
+                                    <a href ng-click="copyScriptResource(r);" title="Copy script resource">
+                                        <i class="glyphicon glyphicon-duplicate"></i></a>
+                                    &nbsp;
+                                    <a href ng-click="deleteScriptResource(r);" title="Delete script resource">
+                                        <i class="glyphicon glyphicon-trash"></i></a>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Add/edit resource -->
+                <div ng-if="resource !== undefined" class="col-sm-12 col-sm-6 col-md-7">
+                    <form name="resourceForm">
+
+                        <div class="row">
+                            <div class="form-controls col-sm-12">
+
+                                <div class="input-group">
+                                    <span class="input-group-addon" style="font-size: 12px">{{paths[resource.type].name}}</span>
+                                    <input id="resourcePath" type="text" class="form-control input-sm"
+                                           ng-model="resource.path" placeholder="{{paths[resource.type].placeholder}}"
+                                           autocapitalize="off" autocorrect="off" autocomplete="off"
+                                           ng-pattern="paths[resource.type].pattern" required/>
+                                </div>
+
+                                <div class="form-group" style="margin-top: 10px">
+                                    <div ui-ace="fmEditorOptions[resource.type]" ng-model="resource.content" class="script-resource-editor"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-12" style="text-align: right">
+                                <button type="submit" class="btn btn-default btn-sm pull-left"
+                                        ng-disabled="!resource.id"
+                                        ng-click="showScriptResourceHistory(resource)">
+                                    History...
+                                </button>
+
+                                <button type="submit" class="btn btn-default btn-sm" ng-click="loadScriptResources()">
+                                    Cancel
+                                </button>
+                                <button type="submit" class="btn btn-primary btn-sm" ng-click="saveScriptResource(resource)"
+                                        ng-disabled="!resource.path || resourceForm.$pristine">
+                                    <span class="glyphicon glyphicon-floppy-disk"></span>
+                                    Save Resource
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+
+            </div>
+        </div>
+
+    </div>
+
+</admin-page>
+

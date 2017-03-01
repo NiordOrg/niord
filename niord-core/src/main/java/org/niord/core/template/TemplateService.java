@@ -23,7 +23,7 @@ import org.niord.core.category.CategoryService;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
-import org.niord.core.fm.FmTemplateService;
+import org.niord.core.script.FmTemplateService;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.service.BaseService;
 import org.niord.core.template.FieldTemplateProcessor.FieldTemplate;

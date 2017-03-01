@@ -216,9 +216,9 @@ var app = angular.module('niord.admin', [
                 url: "/dictionaries",
                 templateUrl: "/app/sysadmin/sysadmin-page-dictionaries.html"
             })
-            .state('sysadmin.fm-templates', {
-                url: "/fm-templates/:path",
-                templateUrl: "/app/sysadmin/sysadmin-page-fm-templates.html"
+            .state('sysadmin.script-resources', {
+                url: "/script-resources/:path",
+                templateUrl: "/app/sysadmin/sysadmin-page-script-resources.html"
             })
             .state('sysadmin.templates', {
                 url: "/templates",

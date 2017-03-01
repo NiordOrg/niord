@@ -256,47 +256,47 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
-     * AdminFmTemplateService
+     * AdminScriptResourceService
      * ********************************************************************************
-     * Interface for calling Freemarker template-related functions at the application server
+     * Interface for calling script resource-related functions at the application server
      */
-    .factory('AdminFmTemplateService', [ '$http', function($http) {
+    .factory('AdminScriptResourceService', [ '$http', function($http) {
         'use strict';
 
         return {
 
-            /** Returns all Freemarker templates **/
-            getFmTemplates: function () {
-                return $http.get('/rest/fm-templates/all');
+            /** Returns all script resources **/
+            getScriptResources: function () {
+                return $http.get('/rest/script-resources/all');
             },
 
 
-            /** Creates a new Freemarker template **/
-            createFmTemplate: function(template) {
-                return $http.post('/rest/fm-templates/fm-template/', template);
+            /** Creates a new script resource **/
+            createScriptResource: function(template) {
+                return $http.post('/rest/script-resources/script-resource/', template);
             },
 
 
-            /** Updates the given Freemarker template **/
-            updateFmTemplate: function(template) {
-                return $http.put('/rest/fm-templates/fm-template/' + template.id, template);
+            /** Updates the given script resource **/
+            updateScriptResource: function(template) {
+                return $http.put('/rest/script-resources/script-resource/' + template.id, template);
             },
 
 
-            /** Deletes the given Freemarker template **/
-            deleteFmTemplate: function(template) {
-                return $http['delete']('/rest/fm-templates/fm-template/' + template.id);
+            /** Deletes the given script resource **/
+            deleteScriptResource: function(template) {
+                return $http['delete']('/rest/script-resources/script-resource/' + template.id);
             },
 
 
-            /** Reload Freemarker templates from the file system **/
-            reloadFmTemplates: function() {
-                return $http.post('/rest/fm-templates/reload/');
+            /** Reload script resources from the file system **/
+            reloadScriptResources: function() {
+                return $http.post('/rest/script-resources/reload/');
             },
 
-            /** Loads the Freemarker template history for the given Freemarker template **/
-            getFmTemplateHistory: function(template) {
-                return $http.get('/rest/fm-templates/fm-template/' + template.id + '/history');
+            /** Loads the script resource history for the given script resource **/
+            getScriptResourceHistory: function(template) {
+                return $http.get('/rest/script-resources/script-resource/' + template.id + '/history');
             },
 
 
@@ -320,12 +320,6 @@ angular.module('niord.admin')
         'use strict';
 
         return {
-
-            /** Returns all message templates **/
-            getTemplates: function () {
-                return $http.get('/rest/templates/all');
-            },
-
 
             /** Searches all message templates **/
             searchTemplates: function (params, page) {

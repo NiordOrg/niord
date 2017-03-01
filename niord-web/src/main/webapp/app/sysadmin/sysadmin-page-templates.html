@@ -43,7 +43,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="col-sm-4">Freemarker Template</label>
+                            <label class="col-sm-4">Template</label>
                             <div class="col-sm-8">
                                 <div class="input-group">
                                     <input type="text" class="form-control input-sm"
@@ -51,7 +51,7 @@
                                            ng-model="template.templatePath" />
                                     <a class="input-group-addon clickable" style="font-size: 12px"
                                        href target="_blank"
-                                       ui-sref="sysadmin.fm-templates({ path: template.templatePath })">
+                                       ui-sref="sysadmin.script-resources({ path: template.templatePath })">
                                         <span class="glyphicon glyphicon-pencil"></span>
                                     </a>
                                 </div>
@@ -137,7 +137,7 @@
                                 <th>Category</th>
                                 <th>Name</th>
                                 <th>Domains</th>
-                                <th>Freemarker Template</th>
+                                <th>Template</th>
                                 <th></th>
                             </tr>
                             <tr ng-repeat="template in searchResult.data">

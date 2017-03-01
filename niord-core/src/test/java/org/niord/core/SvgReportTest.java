@@ -1,7 +1,7 @@
 package org.niord.core;
 
 import org.junit.Test;
-import org.niord.core.fm.pdf.HtmlToPdfRenderer;
+import org.niord.core.script.pdf.HtmlToPdfRenderer;
 
 import java.io.File;
 

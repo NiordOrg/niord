@@ -1,5 +1,5 @@
 
-<#assign formatPos = "org.niord.core.fm.directive.LatLonDirective"?new()>
+<#assign formatPos = "org.niord.core.script.directive.LatLonDirective"?new()>
 
 <#function nameColumn coordinates>
     <#list coordinates as coord>

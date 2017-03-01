@@ -2,7 +2,7 @@ package org.niord.core.geojson;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
-import org.niord.core.fm.FmTemplateService;
+import org.niord.core.script.FmTemplateService;
 import org.niord.core.message.Message;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.message.MessageVo;

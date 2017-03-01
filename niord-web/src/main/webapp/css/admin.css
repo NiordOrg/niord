@@ -328,9 +328,9 @@ tr.batch-execution-row td div.progress {
     box-shadow: 0 2px 4px rgba(50, 50, 50, 0.5);
 }
 
-/** Templates **/
+/** Script Resources **/
 
-.fm-template-table {
+.script-resource-table {
     font-size: 12px;
     width: 100%;
     min-height: 100px;
@@ -340,14 +340,18 @@ tr.batch-execution-row td div.progress {
     border: 1px solid lightgray;
 }
 
-.fm-editor {
+.script-resource-table table tr td.active {
+    background-color: #eee;
+}
+
+.script-resource-editor {
     width: 100%;
     min-height: 440px;
     border: 1px solid lightgray;
     box-shadow: 0 2px 4px rgba(50, 50, 50, 0.5);
 }
 
-.fm-history-editor {
+.script-resource-history-editor {
     width: 100%;
     min-height: 300px;
     margin: 10px 0;
@@ -355,7 +359,7 @@ tr.batch-execution-row td div.progress {
     box-shadow: 0 2px 4px rgba(50, 50, 50, 0.5);
 }
 
-.fm-history-view {
+.script-resource-history-view {
     font-size: 11px;
     font-family: "Courier New", serif;
     max-height: 480px;

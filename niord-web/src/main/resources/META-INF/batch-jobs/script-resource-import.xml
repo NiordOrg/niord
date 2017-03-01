@@ -1,0 +1,12 @@
+<job id="script-resource-import" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
+    <listeners>
+        <listener ref="batchJobListener"/>
+    </listeners>
+    <step id="importScriptResourceStep">
+        <chunk item-count="10">
+            <reader ref="batchScriptResourceImportReader" />
+            <processor ref="batchScriptResourceImportProcessor"/>
+            <writer ref="batchScriptResourceImportWriter" />
+        </chunk>
+    </step>
+</job>

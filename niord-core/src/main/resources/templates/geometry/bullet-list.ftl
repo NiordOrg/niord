@@ -1,6 +1,6 @@
 
-<#assign formatPos = "org.niord.core.fm.directive.LatLonDirective"?new()>
-<#assign trailingDot = "org.niord.core.fm.directive.TrailingDotDirective"?new()>
+<#assign formatPos = "org.niord.core.script.directive.LatLonDirective"?new()>
+<#assign trailingDot = "org.niord.core.script.directive.TrailingDotDirective"?new()>
 
 <#if geometry?has_content>
     <ul class="positions">

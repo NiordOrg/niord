@@ -17,7 +17,7 @@
 package org.niord.core.message;
 
 import org.apache.commons.lang.StringUtils;
-import org.niord.core.fm.FmTemplateService;
+import org.niord.core.script.FmTemplateService;
 import org.niord.core.mail.Mail.MailRecipient;
 import org.niord.core.mail.ScheduledMail;
 import org.niord.core.mail.ScheduledMailRecipient;
