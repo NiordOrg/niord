@@ -63,7 +63,7 @@ angular.module('niord.admin')
                     pattern: '.+\.(ftl|FTL)'
                 },
                 'JS': {
-                    name: 'Freemarker Path',
+                    name: 'JavaScript Path',
                     placeholder: 'resources/path.js',
                     pattern: '.+\.(js|JS)'
                 }
