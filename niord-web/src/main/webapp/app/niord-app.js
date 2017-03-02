@@ -221,7 +221,7 @@ var app = angular.module('niord.admin', [
                 templateUrl: "/app/sysadmin/sysadmin-page-script-resources.html"
             })
             .state('sysadmin.templates', {
-                url: "/templates",
+                url: "/templates/:template",
                 templateUrl: "/app/sysadmin/sysadmin-page-templates.html"
             })
             .state('sysadmin.reports', {

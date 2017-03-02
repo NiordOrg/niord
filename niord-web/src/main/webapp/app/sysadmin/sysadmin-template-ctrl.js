@@ -26,10 +26,10 @@ angular.module('niord.admin')
      * Message Templates Admin Controller
      * Controller for the Admin Message Templates page
      */
-    .controller('TemplatesAdminCtrl', ['$scope', '$timeout', '$uibModal', 'growl',
+    .controller('TemplatesAdminCtrl', ['$scope', '$timeout', '$stateParams', '$state', '$uibModal', 'growl',
                 'AdminTemplateService', 'AdminCategoryService', 'AdminScriptResourceService',
                 'LangService', 'DialogService', 'UploadFileService',
-        function ($scope, $timeout, $uibModal, growl,
+        function ($scope, $timeout, $stateParams, $state, $uibModal, growl,
                   AdminTemplateService, AdminCategoryService, AdminScriptResourceService,
                   LangService, DialogService, UploadFileService) {
             'use strict';
@@ -54,12 +54,20 @@ angular.module('niord.admin')
 
 
             /** Loads the message templates from the back-end */
-            $scope.loadTemplates = function() {
+            $scope.loadTemplates = function(checkTemplateParam) {
                 $scope.template = undefined;
                 AdminTemplateService
                     .searchTemplates($scope.params, $scope.pageData)
                     .success(function (searchResult) {
                         $scope.searchResult = searchResult;
+
+                        // If the page has been initialized with a "template" param, edit the template
+                        var templateId = $stateParams.template;
+                        if (checkTemplateParam && templateId) {
+                            $scope.editTemplate({ id : templateId });
+                            // Reset path
+                            $state.go('sysadmin.templates', { template: null }, { notify: false });
+                        }
                     });
             };
 

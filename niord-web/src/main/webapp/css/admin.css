@@ -222,6 +222,20 @@ tr.batch-execution-row td div.progress {
     border: none;
 }
 
+table.category-templates {
+    width: 100%;
+    font-size: 12px;
+    border: 1px solid lightgray;
+}
+
+table.category-templates tr th {
+    border-bottom: 1px solid lightgray;
+    padding: 2px 5px;
+}
+
+table.category-templates tr td {
+    padding: 2px 5px;
+}
 
 /** Users and Groups admin page **/
 

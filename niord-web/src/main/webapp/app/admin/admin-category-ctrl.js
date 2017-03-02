@@ -27,16 +27,19 @@ angular.module('niord.admin')
      * Category Admin Controller
      * Controller for the Admin Categories page
      */
-    .controller('CategoryAdminCtrl', ['$scope', 'growl', 'LangService', 'AdminCategoryService', 'DialogService', 'UploadFileService',
-        function ($scope, growl, LangService, AdminCategoryService, DialogService, UploadFileService) {
+    .controller('CategoryAdminCtrl', ['$scope', '$rootScope', 'growl',
+                'LangService', 'AdminCategoryService', 'DialogService', 'UploadFileService',
+        function ($scope, $rootScope, growl,
+                  LangService, AdminCategoryService, DialogService, UploadFileService) {
             'use strict';
 
+            $scope.hasRole = $rootScope.hasRole;
             $scope.categories = [];
             $scope.category = undefined;
             $scope.editCategory = undefined;
             $scope.action = "edit";
             $scope.categoryFilter = '';
-
+            $scope.templates = [];
 
             // Used to ensure that description entities have a "name" field
             function ensureNameField(desc) {
@@ -65,6 +68,7 @@ angular.module('niord.admin')
                         $scope.categories = categories;
                         $scope.category = undefined;
                         $scope.editCategory = undefined;
+                        $scope.templates = [];
                         $scope.setPristine();
                     })
                     .error ($scope.displayError);
@@ -78,6 +82,7 @@ angular.module('niord.admin')
                 if ($scope.category) {
                     $scope.editCategory.parent = { id: $scope.category.id };
                 }
+                $scope.templates = [];
                 $scope.setPristine();
             };
 
@@ -92,8 +97,26 @@ angular.module('niord.admin')
                         $scope.editCategory = angular.copy($scope.category);
                         $scope.setPristine();
                         $scope.$$phase || $scope.$apply();
+
+                        // Load templates for the category
+                        $scope.loadTemplates();
                     })
                     .error($scope.displayError);
+            };
+
+
+
+            /** Load the templates for the current category being edited **/
+            $scope.loadTemplates = function () {
+                $scope.templates = [];
+                if (!$scope.editCategory || !$scope.editCategory.id) {
+                    return;
+                }
+                AdminCategoryService
+                    .getTemplates($scope.editCategory)
+                    .success(function (result) {
+                        $scope.templates = result.data;
+                    })
             };
 
 

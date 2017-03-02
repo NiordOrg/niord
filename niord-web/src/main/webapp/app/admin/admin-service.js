@@ -146,7 +146,13 @@ angular.module('niord.admin')
 
             moveCategory: function(categoryId, parentId) {
                 return $http.put('/rest/categories/move-category', { categoryId: categoryId, parentId: parentId });
+            },
+
+            getTemplates: function(category) {
+                return $http.get('/rest/templates/search?includeInactive=false&categoryId=' + category.id
+                               + '&language=' + $rootScope.language);
             }
+
         };
     }])
 

@@ -95,6 +95,32 @@
                         </div>
                     </div>
 
+                    <div class="form-group" ng-if="templates.length > 0">
+                        <label class="control-label">Message Templates</label>
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <table class="category-templates">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Domains</th>
+                                        <th ng-if="hasRole('sysadmin')"></th>
+                                    </tr>
+                                    <tr ng-repeat="t in templates">
+                                        <td>{{t.descs[0].name}}</td>
+                                        <td>
+                                            <span ng-if="t.domains" ng-repeat="domain in t.domains">{{domain.name}}</span>
+                                        </td>
+                                        <td ng-if="hasRole('sysadmin')">
+                                            <a href title="Edit Templates" ui-sref="sysadmin.templates({ 'template': t.id })">
+                                                <span class="glyphicon glyphicon-pencil"></span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <button href class="btn btn-primary btn-sm" ng-click="saveCategory()" ng-disabled="categoryForm.$pristine || categoryForm.$invalid">
                             <span class="glyphicon glyphicon-floppy-disk"></span> Save
