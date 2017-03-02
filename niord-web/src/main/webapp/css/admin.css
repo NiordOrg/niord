@@ -368,6 +368,25 @@ tr.batch-execution-row td div.progress {
     overflow-x: scroll;
 }
 
+.label-script-resource-type {
+    font-size: 10px;
+    font-weight: normal!important;
+    display: inline-block;
+    margin-bottom: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.script-resource-type-JS {
+    color: white;
+    background-color: darkred;
+}
+
+.script-resource-type-FM {
+    color: white;
+    background-color: darkgreen;
+}
+
+
 /** ACE editor fixes **/
 
 .ace_editor {

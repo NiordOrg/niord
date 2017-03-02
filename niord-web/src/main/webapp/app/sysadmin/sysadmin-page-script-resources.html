@@ -48,11 +48,17 @@
                     <div class="script-resource-table">
                         <table class='table table-condensed table-hover'>
                             <tr>
+                                <th></th>
                                 <th>Path</th>
                                 <th></th>
                             </tr>
                             <tr ng-repeat="r in resources | filter: { path: search }">
-                                <td ng-class="{ 'active' : resource && r.id == resource.id}">{{r.path}}</td>
+                                <td ng-class="{ 'active' : resource && r.id == resource.id}" width="30">
+                                    <script-resource-type resource="r"></script-resource-type>
+                                </td>
+                                <td ng-class="{ 'active' : resource && r.id == resource.id}">
+                                    {{r.path}}
+                                </td>
                                 <td ng-class="{ 'active' : resource && r.id == resource.id}" nowrap align="right">
                                     <a href ng-click="editScriptResource(r);" title="Edit script resource">
                                         <i class="glyphicon glyphicon-pencil"></i></a>
