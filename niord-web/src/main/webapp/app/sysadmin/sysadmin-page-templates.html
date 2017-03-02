@@ -45,19 +45,19 @@
                         <div class="form-group">
                             <label class="col-sm-4">Script Resources</label>
                             <div class="col-sm-8" ng-sortable="pathsSortableCfg">
-                                <div ng-repeat="path in template.scriptResourcePaths">
+                                <div ng-repeat="path in template.paths">
                                     <div class="input-group">
                                         <span class="input-group-addon" style="font-size: 12px">
-                                            {{$index + 1}}: <span class="glyphicon glyphicon-move move-btn"></span>
+                                            <span class="glyphicon glyphicon-move move-btn"></span>
                                         </span>
                                         <input type="text" class="form-control input-sm"
                                                id="path_{{$index}}"
                                                pattern=".+\.(ftl|FTL|js|JS)" required
                                                autocapitalize="off" autocorrect="off" autocomplete="off"
-                                               ng-model="template.scriptResourcePaths[$index]" />
+                                               ng-model="path.path" />
                                         <a class="input-group-addon clickable" style="font-size: 12px"
                                            href target="_blank" title="Edit resource"
-                                           ui-sref="sysadmin.script-resources({ 'path': path })">
+                                           ui-sref="sysadmin.script-resources({ 'path': path.path })">
                                             <span class="glyphicon glyphicon-pencil"></span>
                                         </a>
                                         <a class="input-group-addon clickable" style="font-size: 12px"
