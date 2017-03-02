@@ -312,8 +312,8 @@ angular.module('niord.admin')
      * ********************************************************************************
      * Controller for dialog for selecting a script resource
      */
-    .controller('ScriptResourceDialogCtrl', ['$scope', '$timeout', 'AdminScriptResourceService',
-        function ($scope, $timeout, AdminScriptResourceService) {
+    .controller('ScriptResourceDialogCtrl', ['$scope', '$timeout', 'AdminScriptResourceService', 'type',
+        function ($scope, $timeout, AdminScriptResourceService, type) {
             'use strict';
 
             $scope.resources = [];
@@ -323,7 +323,7 @@ angular.module('niord.admin')
             $scope.loadScriptResources = function() {
                 $scope.resource = undefined;
                 AdminScriptResourceService
-                    .getScriptResources()
+                    .getScriptResources(type)
                     .success(function (resources) {
                         $scope.resources = resources;
                     });

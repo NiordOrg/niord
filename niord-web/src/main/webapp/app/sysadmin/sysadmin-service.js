@@ -266,8 +266,9 @@ angular.module('niord.admin')
         return {
 
             /** Returns all script resources **/
-            getScriptResources: function () {
-                return $http.get('/rest/script-resources/all');
+            getScriptResources: function (type) {
+                var params = type !== undefined ? '?type=' + type : '';
+                return $http.get('/rest/script-resources/all' + params);
             },
 
 
@@ -308,11 +309,14 @@ angular.module('niord.admin')
 
 
             /** Opens a dialog for selecting a script resource **/
-            scriptResourceDialog : function () {
+            scriptResourceDialog : function (type) {
                 return $uibModal.open({
                     controller: "ScriptResourceDialogCtrl",
                     templateUrl: "/app/sysadmin/script-resource-dialog.html",
-                    size: 'md'
+                    size: 'md',
+                    resolve: {
+                        type: function () { return type; }
+                    }
                 });
             }
 

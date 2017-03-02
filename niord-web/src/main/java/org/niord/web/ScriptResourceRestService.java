@@ -42,6 +42,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -77,11 +78,17 @@ public class ScriptResourceRestService extends AbstractBatchableRestService {
     @GZIP
     @PermitAll
     @NoCache
-    public List<ScriptResourceVo> getScriptResources() {
+    public List<ScriptResourceVo> getScriptResources(@QueryParam("type") ScriptResource.Type type) {
 
         // If a ticket is defined, check if programmatically
         if (!userService.isCallerInRole(Roles.ADMIN)) {
             throw new WebApplicationException(403);
+        }
+
+        if (type != null) {
+            return resourceService.findByTypes(type).stream()
+                    .map(ScriptResource::toVo)
+                    .collect(Collectors.toList());
         }
 
         return resourceService.findAll().stream()

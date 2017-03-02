@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -100,6 +101,21 @@ public class ScriptResourceService extends BaseService {
 
 
     /**
+     * Returns the script resources with the types
+     * @param types the script resource types
+     * @return the script resources with the given types
+     */
+    public List<ScriptResource> findByTypes(ScriptResource.Type... types) {
+
+        Set<ScriptResource.Type> typeSet = Arrays.stream(types).collect(Collectors.toSet());
+
+        return em.createNamedQuery("ScriptResource.findByTypes", ScriptResource.class)
+                .setParameter("types", typeSet)
+                .getResultList();
+    }
+
+
+    /**
      * Returns all script resources
      * @return all script resources
      */
@@ -113,7 +129,7 @@ public class ScriptResourceService extends BaseService {
      * Returns all script resource paths
      * @return all script resource paths
      */
-    public Set<String> findAllScriptResources() {
+    public Set<String> findAllScriptResourcePaths() {
         return em.createNamedQuery("ScriptResource.findAllPaths", String.class)
                 .getResultList().stream()
                 .collect(Collectors.toSet());

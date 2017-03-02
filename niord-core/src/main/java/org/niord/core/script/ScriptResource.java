@@ -42,6 +42,8 @@ import static org.niord.core.script.ScriptResource.Type.JS;
 @NamedQueries({
         @NamedQuery(name="ScriptResource.findByPath",
                 query="SELECT t FROM ScriptResource t where lower(t.path) = lower(:path)"),
+        @NamedQuery(name="ScriptResource.findByTypes",
+                query="SELECT t FROM ScriptResource t where t.type in (:types) order by lower(t.path)"),
         @NamedQuery(name="ScriptResource.findAll",
                 query="SELECT t FROM ScriptResource t order by lower(t.path)"),
         @NamedQuery(name="ScriptResource.findAllPaths",

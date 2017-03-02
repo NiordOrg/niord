@@ -122,7 +122,7 @@ angular.module('niord.admin')
 
             /** Opens a dialog for template selection **/
             $scope.selectTemplatePath = function () {
-                AdminScriptResourceService.scriptResourceDialog()
+                AdminScriptResourceService.scriptResourceDialog('FM')
                     .result.then(function (scriptResource) {
                         $scope.report.templatePath = scriptResource.path;
                         $scope.setDirty();

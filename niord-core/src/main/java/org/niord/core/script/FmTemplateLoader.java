@@ -47,7 +47,7 @@ public class FmTemplateLoader implements TemplateLoader {
     /** Constructor **/
     public FmTemplateLoader(ScriptResourceService resourceService, boolean loadFromClassPath) {
         this.resourceService = resourceService;
-        this.existingTemplatePaths = resourceService.findAllScriptResources();
+        this.existingTemplatePaths = resourceService.findAllScriptResourcePaths();
         this.loadFromClassPath = loadFromClassPath;
     }
 
