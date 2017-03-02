@@ -74,6 +74,26 @@ angular.module('niord.admin')
                 desc.name = '';
             }
 
+
+            /**
+             * Annoyingly, ng-repeat does not work properly with a list of strings (scriptResourcePaths).
+             * See: https://github.com/angular/angular.js/issues/1267
+             * So, we use this method to wrap the "scriptResourcePaths" list into a "paths" list with objects
+             */
+            function toPaths(template) {
+                template.paths = [];
+                angular.forEach(template.scriptResourcePaths, function (path) {
+                    template.paths.push({ 'path' : path })
+                })
+            }
+            function fromPaths(template) {
+                template.scriptResourcePaths.length = 0;
+                angular.forEach(template.paths, function (path) {
+                    template.scriptResourcePaths.push(path.path)
+                })
+            }
+
+
             /** Adds a new message template **/
             $scope.addTemplate = function () {
                 $scope.editMode = 'add';
@@ -85,6 +105,7 @@ angular.module('niord.admin')
                     scriptResourcePaths: [ '' ]
                 };
                 LangService.checkDescs($scope.template, ensureNameField);
+                toPaths($scope.template);
             };
 
 
@@ -98,6 +119,7 @@ angular.module('niord.admin')
                             $scope.template.scriptResourcePaths.push('');
                         }
                         LangService.checkDescs($scope.template, ensureNameField);
+                        toPaths($scope.template);
                     });
             };
 
@@ -110,6 +132,7 @@ angular.module('niord.admin')
                         $scope.template = tmpl;
                         $scope.template.id = undefined;
                         LangService.checkDescs($scope.template, ensureNameField);
+                        toPaths($scope.template);
                     });
             };
 
@@ -125,14 +148,15 @@ angular.module('niord.admin')
                                 if (tmplDesc && !tmplDesc.name) {
                                     tmplDesc.name = desc.name;
                                 }
-                                if (desc.lang == 'en' && $scope.template.scriptResourcePaths.length == 0){
+                                if (desc.lang == 'en' && $scope.template.paths.length == 0){
                                     var name = desc.name.toLowerCase().replace(/ /g, '-');
-                                    $scope.template.scriptResourcePaths.push('templates/tmpl/' + name + '.ftl');
+                                    $scope.template.paths.push({ 'path' : 'templates/tmpl/' + name + '.ftl' });
                                 }
                             })
                         })
                 }
             };
+
 
             /** Displays the error message */
             $scope.displayError = function () {
@@ -142,6 +166,8 @@ angular.module('niord.admin')
 
             /** Saves the current message template being edited */
             $scope.saveTemplate = function () {
+
+                fromPaths($scope.template);
 
                 if ($scope.template && $scope.editMode == 'add') {
                     AdminTemplateService
@@ -225,6 +251,7 @@ angular.module('niord.admin')
                 }, 100);
             };
 
+
             /** Script resource path DnD configuration **/
             $scope.pathsSortableCfg = {
                 group: 'scriptResourcePaths',
@@ -235,7 +262,7 @@ angular.module('niord.admin')
 
             /** Adds a new resource path after the given index **/
             $scope.addResourcePath = function (index) {
-                $scope.template.scriptResourcePaths.splice(index + 1, 0, '');
+                $scope.template.paths.splice(index + 1, 0, { 'path' : '' });
                 $scope.setDirty();
                 $timeout(function () {
                     angular.element($("#path_" + (index + 1))).focus();
@@ -245,10 +272,10 @@ angular.module('niord.admin')
 
             /** Removes the resource path at the given index **/
             $scope.deleteResourcePath = function (index) {
-                $scope.template.scriptResourcePaths.splice(index, 1);
+                $scope.template.paths.splice(index, 1);
                 $scope.setDirty();
-                if ($scope.template.scriptResourcePaths.length == 0) {
-                    $scope.template.scriptResourcePaths.push('');
+                if ($scope.template.paths.length == 0) {
+                    $scope.template.paths.push({ 'path' : '' });
                 }
             };
         }])
