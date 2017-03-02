@@ -140,12 +140,10 @@ tr.batch-execution-row td div.progress {
 .batch-javascript-editor {
     width: 100%;
     min-height: 300px;
-    font-size: 11px;
-    font-family: "Courier New", serif;
-    color: black;
-    overflow-wrap: normal;
-    overflow-x: scroll;
+    border: 1px solid lightgray;
+    box-shadow: 0 2px 4px rgba(50, 50, 50, 0.5);
 }
+
 
 /** Charts admin page **/
 

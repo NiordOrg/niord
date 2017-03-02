@@ -237,8 +237,19 @@ angular.module('niord.admin')
             /** Allows the user (only sysadmins!) to execute a JavaScript on the back-end **/
             $scope.executeJavaScript = function () {
                 $uibModal.open({
-                    controller: function ($scope) {
+                    controller: function ($scope, $timeout) {
                         $scope.javaScript = '';
+                        $scope.jsEditorOptions = {
+                            useWrapMode : false,
+                            showGutter: true,
+                            mode: 'javascript',
+                            onLoad: function(editor) {
+                                $scope.editor = editor;
+                            }
+                        };
+                        $timeout(function () {
+                            try { $scope.editor.focus(); } catch (e) {}
+                        }, 100)
                     },
                     templateUrl: "javaScriptBatchJobDialog.html",
                     size: 'lg'
