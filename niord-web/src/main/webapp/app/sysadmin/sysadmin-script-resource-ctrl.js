@@ -231,10 +231,10 @@ angular.module('niord.admin')
                         resource: function () { return resource; }
                     }
                 });
-
             }
 
         }])
+
 
 
     /*******************************************************************
@@ -302,4 +302,38 @@ angular.module('niord.admin')
                 }
             }
 
+        }])
+
+
+
+    /**
+     * ********************************************************************************
+     * ScriptResourceDialogCtrl
+     * ********************************************************************************
+     * Controller for dialog for selecting a script resource
+     */
+    .controller('ScriptResourceDialogCtrl', ['$scope', '$timeout', 'AdminScriptResourceService',
+        function ($scope, $timeout, AdminScriptResourceService) {
+            'use strict';
+
+            $scope.resources = [];
+            $scope.filter = '';
+
+            /** Loads the script resources from the back-end */
+            $scope.loadScriptResources = function() {
+                $scope.resource = undefined;
+                AdminScriptResourceService
+                    .getScriptResources()
+                    .success(function (resources) {
+                        $scope.resources = resources;
+                    });
+            };
+
+
+            /** Add focus to resource filter field **/
+            $timeout(function () {
+                $('#filter').focus();
+            }, 100);
+
         }]);
+

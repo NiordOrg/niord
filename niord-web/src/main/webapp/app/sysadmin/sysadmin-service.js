@@ -260,7 +260,7 @@ angular.module('niord.admin')
      * ********************************************************************************
      * Interface for calling script resource-related functions at the application server
      */
-    .factory('AdminScriptResourceService', [ '$http', function($http) {
+    .factory('AdminScriptResourceService', [ '$http', '$uibModal', function($http, $uibModal) {
         'use strict';
 
         return {
@@ -304,6 +304,16 @@ angular.module('niord.admin')
             exportTicket: function (role) {
                 var param = role ? '?role=' + role : '';
                 return $http.get('/rest/tickets/ticket' + param);
+            },
+
+
+            /** Opens a dialog for selecting a script resource **/
+            scriptResourceDialog : function () {
+                return $uibModal.open({
+                    controller: "ScriptResourceDialogCtrl",
+                    templateUrl: "/app/sysadmin/script-resource-dialog.html",
+                    size: 'md'
+                });
             }
 
         };

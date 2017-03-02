@@ -27,9 +27,11 @@ angular.module('niord.admin')
      * Controller for the Admin Message Templates page
      */
     .controller('TemplatesAdminCtrl', ['$scope', '$timeout', '$uibModal', 'growl',
-                'AdminTemplateService', 'AdminCategoryService', 'LangService', 'DialogService', 'UploadFileService',
+                'AdminTemplateService', 'AdminCategoryService', 'AdminScriptResourceService',
+                'LangService', 'DialogService', 'UploadFileService',
         function ($scope, $timeout, $uibModal, growl,
-                  AdminTemplateService, AdminCategoryService, LangService, DialogService, UploadFileService) {
+                  AdminTemplateService, AdminCategoryService, AdminScriptResourceService,
+                  LangService, DialogService, UploadFileService) {
             'use strict';
 
             $scope.template = undefined; // The template being edited
@@ -277,6 +279,16 @@ angular.module('niord.admin')
                 if ($scope.template.paths.length == 0) {
                     $scope.template.paths.push({ 'path' : '' });
                 }
+            };
+
+
+            /** Opens a dialog for script resource selection **/
+            $scope.selectResourcePath = function (index) {
+                AdminScriptResourceService.scriptResourceDialog()
+                    .result.then(function (scriptResource) {
+                        $scope.template.paths[index].path = scriptResource.path;
+                        $scope.setDirty();
+                })
             };
         }])
 

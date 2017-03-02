@@ -27,10 +27,10 @@ angular.module('niord.admin')
      * Reports Admin Controller
      * Controller for the Admin Reports page
      */
-    .controller('ReportsAdminCtrl', ['$scope', '$rootScope', '$window', '$uibModal', 'growl',
-                'AdminReportService', 'MessageService', 'DialogService', 'UploadFileService',
-        function ($scope, $rootScope, $window, $uibModal, growl,
-                  AdminReportService, MessageService, DialogService, UploadFileService) {
+    .controller('ReportsAdminCtrl', ['$scope', '$rootScope', '$window', '$timeout', '$uibModal', 'growl',
+                'AdminReportService', 'AdminScriptResourceService', 'MessageService', 'DialogService', 'UploadFileService',
+        function ($scope, $rootScope, $window, $timeout, $uibModal, growl,
+                  AdminReportService, AdminScriptResourceService, MessageService, DialogService, UploadFileService) {
             'use strict';
 
             $scope.reports = [];
@@ -83,6 +83,14 @@ angular.module('niord.admin')
             };
 
 
+            /** Set the form as dirty **/
+            $scope.setDirty = function () {
+                $timeout(function () {
+                    try { angular.element($("#reportForm")).scope().reportForm.$setDirty(); } catch (err) { }
+                }, 100);
+            };
+
+
             /** Saves the current report being edited */
             $scope.saveReport = function () {
                 if ($scope.report && $scope.editMode == 'add') {
@@ -109,6 +117,16 @@ angular.module('niord.admin')
                             .success($scope.loadReports)
                             .error($scope.displayError);
                     });
+            };
+
+
+            /** Opens a dialog for template selection **/
+            $scope.selectTemplatePath = function () {
+                AdminScriptResourceService.scriptResourceDialog()
+                    .result.then(function (scriptResource) {
+                        $scope.report.templatePath = scriptResource.path;
+                        $scope.setDirty();
+                })
             };
 
 
