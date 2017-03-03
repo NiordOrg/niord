@@ -236,6 +236,8 @@ angular.module('niord.admin')
             /** Tests the current template with the specified message ID */
             $scope.executeTemplate = function (template) {
                 if (template && $scope.testMessageData.messageId) {
+
+                    fromPaths($scope.template);
                     AdminTemplateService
                         .executeTemplate(template, $scope.testMessageData.messageId)
                         .success(function (message) {
