@@ -320,23 +320,26 @@
                     </span>
                 </editor-field-value-viewer>
 
-                <editor-field-value-editor value-class="col-sm-12 col-md-8">
+                <editor-field-value-editor value-class="col-sm-12 col-md-10">
                     <div class="row">
                         <div class="col-sm-6">
                             <areas-field id="areas" area-data="message" multiple="true" domain="domain"
                                          tab-index="701"
                                          area-changed="adjustEditableMessage()"></areas-field>
                         </div>
-                        <div class="col-sm-4">
+                        <div class="col-sm-6">
                             <button href class="btn btn-default btn-sm" ng-disabled="!message.areas || message.areas.length == 0"
                                     tabindex="702"
                                     ng-click="copyAreaLocations()">Copy Locations</button>
+                            <button href class="btn btn-default btn-sm" ng-disabled="!definesGeometry()"
+                                    tabindex="703"
+                                    ng-click="computeAreas()">Compute from Locations</button>
                         </div>
                     </div>
                     <div class="row" style="margin-top: 10px">
                         <div class="col-sm-6" ng-repeat="desc in message.descs">
                             <input class="form-control input-sm" placeholder="Vicinity" type="text"
-                                   tabindex="703"
+                                   tabindex="704"
                                    ng-model="desc.vicinity" bg-flag="desc.lang"
                                    ng-change="adjustEditableMessage()"
                                    ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }">
@@ -740,7 +743,7 @@
                             <button href class="btn btn-default btn-sm" ng-disabled="message.charts && message.charts.length == 0"
                                     tabindex="2002"
                                     ng-click="sortCharts()">Sort</button>
-                            <button href class="btn btn-default btn-sm" ng-disabled="message.geometry.features.length == 0"
+                            <button href class="btn btn-default btn-sm" ng-disabled="!definesGeometry()"
                                     tabindex="2003"
                                     ng-click="computeCharts()">Compute from Locations</button>
                         </div>

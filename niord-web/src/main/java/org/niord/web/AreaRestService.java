@@ -24,9 +24,12 @@ import org.niord.core.area.AreaSearchParams;
 import org.niord.core.area.AreaService;
 import org.niord.core.area.vo.SystemAreaVo;
 import org.niord.core.batch.AbstractBatchableRestService;
+import org.niord.core.geojson.JtsConverter;
 import org.niord.core.user.Roles;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
+import org.niord.model.geojson.FeatureCollectionVo;
+import org.niord.model.geojson.GeometryVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
@@ -292,6 +295,42 @@ public class AreaRestService extends AbstractBatchableRestService {
     @RolesAllowed(Roles.ADMIN)
     public String importAreas(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "area-import");
+    }
+
+
+    /**
+     * Returns the list of active areas intersecting with the given geometry down to the given level.
+     * The result will be pruned, so that parent areas are not included
+     * @param maxLevel the max level in the area tree. Root level is level 1.
+     * @return the list of active charts intersecting with the given geometry
+     */
+    @POST
+    @Path("/intersecting-areas")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed(Roles.EDITOR)
+    @GZIP
+    @NoCache
+    public List<SystemAreaVo> computeIntersectingAreas(
+            @QueryParam("lang") String lang,
+            @QueryParam("geometry") @DefaultValue("false") boolean geometry,
+            @QueryParam("domain") @DefaultValue("false") boolean domain,
+            @QueryParam("maxLevel") @DefaultValue("2") int maxLevel,
+            FeatureCollectionVo featureCollection) {
+
+        GeometryVo geometryVo = featureCollection.toGeometry();
+        if (geometryVo == null) {
+            return Collections.emptyList();
+        }
+
+        DataFilter f = DataFilter.get()
+                .fields(DataFilter.PARENT, DataFilter.DETAILS)
+                .lang(lang);
+        DataFilter filter = (geometry) ? f.fields(DataFilter.GEOMETRY) : f;
+
+        return areaService.getIntersectingAreas(JtsConverter.toJts(geometryVo), maxLevel, domain).stream()
+                .map(a -> a.toVo(SystemAreaVo.class, filter))
+                .collect(Collectors.toList());
     }
 
 

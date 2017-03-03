@@ -15,13 +15,16 @@
  */
 package org.niord.core.area;
 
+import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.vo.SystemAreaVo.AreaMessageSorting;
 import org.niord.core.db.CriteriaHelper;
+import org.niord.core.db.SpatialIntersectsPredicate;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.message.Message;
+import org.niord.core.model.BaseEntity;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
@@ -48,6 +51,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.niord.core.area.AreaSearchParams.TREE_SORT_ORDER;
 
@@ -660,6 +664,80 @@ public class AreaService extends BaseService {
         }
 
         return index;
+    }
+
+
+    /**
+     * Returns the list of active areas intersecting with the given geometry down to the given level.
+     * The result will be pruned, so that parent areas are not included
+     * @param geometry the geometry
+     * @param maxLevel the max level in the area tree. Root level is level 1.
+     * @return the list of active charts intersecting with the given geometry
+     */
+    public List<Area> getIntersectingAreas(Geometry geometry, int maxLevel, boolean domain) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Area> areaQuery = cb.createQuery(Area.class);
+
+        Root<Area> areaRoot = areaQuery.from(Area.class);
+
+        // Build the predicate
+        CriteriaHelper<Area> criteriaHelper = new CriteriaHelper<>(cb, areaQuery);
+
+        Predicate geomPredicate = new SpatialIntersectsPredicate(
+                cb,
+                areaRoot.get("geometry"),
+                geometry);
+        criteriaHelper.add(geomPredicate);
+
+        // Only search for active charts
+        criteriaHelper.add(cb.equal(areaRoot.get("active"), true));
+
+        // Optionally, filter by the areas associated with the specified domain
+        if (domain) {
+            Domain d = domainService.currentDomain();
+            if (d != null && d.getAreas().size() > 0) {
+                Predicate[] areaMatch = d.getAreas().stream()
+                        .map(Area::getLineage)
+                        .map(lineage -> cb.like(areaRoot.get("lineage"), lineage + "%"))
+                        .toArray(Predicate[]::new);
+                criteriaHelper.add(cb.or(areaMatch));
+            }
+        }
+
+        // Compute the sort order
+        List<Order> sortOrders = Stream.of("treeSortOrder", "siblingSortOrder", "id")
+                .map(field -> cb.asc(areaRoot.get(field)))
+                .collect(Collectors.toList());
+
+        // Complete the query
+        areaQuery.select(areaRoot)
+                .distinct(true)
+                .where(criteriaHelper.where())
+                .orderBy(sortOrders);
+
+        // Execute the query to find all intersecting areas
+        List<Area> areas = em.createQuery(areaQuery)
+                .getResultList();
+
+        // Ensure that we go no deeper than maxLevel.
+        // It is assumed that parent areas include sub-areas geometry-wise.
+        areas = areas.stream()
+                .map(a -> {
+                    List<Area> lineage = a.lineageAsList();
+                    Collections.reverse(lineage);
+                    return lineage.get(Math.min(lineage.size() - 1, maxLevel - 1));
+                })
+                .distinct()
+                .collect(Collectors.toList());
+
+        // Lastly, remove all parent areas
+        Set<Integer> parentAreaIds = areas.stream()
+                .flatMap(a -> a.parentLineageAsList().stream())
+                .map(BaseEntity::getId)
+                .collect(Collectors.toSet());
+        areas.removeIf(a -> parentAreaIds.contains(a.getId()));
+
+        return areas;
     }
 
 

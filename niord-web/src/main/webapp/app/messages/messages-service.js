@@ -222,6 +222,14 @@ angular.module('niord.messages')
             },
 
 
+            /** Computes the areas intersecting with the current message geometry **/
+            intersectingAreas: function (featureCollection, maxLevel) {
+                maxLevel = maxLevel || 2;
+                return $http.post('/rest/areas/intersecting-areas?maxLevel=' + maxLevel
+                                + '&lang=' + $rootScope.language + '&domain=true', featureCollection);
+            },
+
+
             /** Computes the charts intersecting with the current message geometry **/
             intersectingCharts: function (featureCollection) {
                 return $http.post('/rest/charts/intersecting-charts', featureCollection);

@@ -365,6 +365,18 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
         return areas;
     }
 
+
+    /**
+     * Returns the parent lineage of this area as a list, ordered with this areas parent first, and the root-most area last
+     * @return the parent lineage of this area
+     */
+    public List<Area> parentLineageAsList() {
+        return lineageAsList().stream()
+                .skip(1)
+                .collect(Collectors.toList());
+    }
+
+
     /**
      * By convention, a list of areas will be emitted top-to-bottom. So, if we have a list with:
      * [ Kattegat -> Danmark, Skagerak -> Danmark, Hamborg -> Tyskland ], the resulting title

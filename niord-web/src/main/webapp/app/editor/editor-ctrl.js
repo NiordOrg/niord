@@ -547,6 +547,32 @@ angular.module('niord.editor')
             };
 
 
+            /**
+             * Checks if any of the message parts defined a geometry
+             */
+            $scope.definesGeometry = function () {
+                return MessageService.getMessageFeatures($scope.message).length > 0;
+            };
+
+
+            /** Computes the areas intersecting with the current message geometry **/
+            $scope.computeAreas = function () {
+                // Create a combined geometry for all message parts
+                var geometry = {
+                    type: 'FeatureCollection',
+                    features: MessageService.getMessageFeatures($scope.message)
+                };
+                if (geometry.features.length > 0) {
+                    MessageService.intersectingAreas(geometry)
+                        .success(function (areas) {
+                            // Prune the returned area data
+                            $scope.message.areas = areas;
+                            $scope.setDirty();
+                        });
+                }
+            };
+
+
             /** Computes the charts intersecting with the current message geometry **/
             $scope.computeCharts = function () {
                 // Create a combined geometry for all message parts
