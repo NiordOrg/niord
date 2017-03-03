@@ -33,6 +33,7 @@ public class TemplateVo implements ILocalizable<TemplateDescVo>, IJsonSerializab
     Integer id;
     CategoryVo category;
     List<DomainVo> domains = new ArrayList<>();
+    boolean active = true;
     List<String> scriptResourcePaths = new ArrayList<>();
     String messageId;
     List<TemplateDescVo> descs;
@@ -74,6 +75,14 @@ public class TemplateVo implements ILocalizable<TemplateDescVo>, IJsonSerializab
 
     public void setDomains(List<DomainVo> domains) {
         this.domains = domains;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public List<String> getScriptResourcePaths() {

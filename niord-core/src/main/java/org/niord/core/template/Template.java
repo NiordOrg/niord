@@ -64,6 +64,8 @@ public class Template extends VersionedEntity<Integer> implements ILocalizable<T
     @ManyToMany
     List<Domain> domains = new ArrayList<>();
 
+    boolean active = true;
+
     int indexNo;
 
     @OrderColumn(name = "indexNo")
@@ -85,6 +87,7 @@ public class Template extends VersionedEntity<Integer> implements ILocalizable<T
     public Template(TemplateVo template) {
         this.id = template.getId();
         this.category = new Category(template.getCategory());
+        this.active = template.isActive();
         template.getScriptResourcePaths().stream()
                 .filter(p -> ScriptResource.path2type(p) != null)
                 .forEach(p -> this.scriptResourcePaths.add(p));
@@ -116,6 +119,7 @@ public class Template extends VersionedEntity<Integer> implements ILocalizable<T
         template.setDomains(domains.stream()
             .map(Domain::toVo)
             .collect(Collectors.toList()));
+        template.setActive(active);
         template.getScriptResourcePaths().addAll(scriptResourcePaths);
         template.setMessageId(messageId);
         if (!descs.isEmpty()) {
@@ -159,6 +163,14 @@ public class Template extends VersionedEntity<Integer> implements ILocalizable<T
 
     public void setDomains(List<Domain> domains) {
         this.domains = domains;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     @Override

@@ -337,7 +337,7 @@ angular.module('niord.admin')
 
             /** Searches all message templates **/
             searchTemplates: function (params, page) {
-                var p = 'language=' + $rootScope.language + '&inactive=true'
+                var p = 'includeInactive=true&language=' + $rootScope.language + '&inactive=true'
                         + '&maxSize=' + page.maxSize + '&page=' + (page.page - 1);
                 if (params.name && params.name.length > 0) {
                     p += '&name=' + params.name;

@@ -115,7 +115,10 @@
                                         <th ng-if="hasRole('sysadmin')"></th>
                                     </tr>
                                     <tr ng-repeat="t in templates">
-                                        <td>{{t.descs[0].name}}</td>
+                                        <td>
+                                            {{t.descs[0].name}}
+                                            <span ng-if="!t.active" class="base-data-inactive">(inactive)</span>
+                                        </td>
                                         <td>
                                             <span ng-if="t.domains" ng-repeat="domain in t.domains">{{domain.name}}</span>
                                         </td>

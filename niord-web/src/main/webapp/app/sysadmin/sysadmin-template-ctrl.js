@@ -109,6 +109,7 @@ angular.module('niord.admin')
                 $scope.editMode = 'add';
                 $scope.template = {
                     id: undefined,
+                    active: true,
                     category: undefined,
                     domains: [],
                     descs: [],

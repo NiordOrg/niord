@@ -183,6 +183,11 @@ public class TemplateService extends BaseService {
             }
         }
 
+        // Unless the "inactive" search flag is set, only include active categories.
+        if (!params.isInactive()) {
+            criteriaHelper.add(cb.equal(templateRoot.get("active"), true));
+        }
+
         return criteriaHelper.where();
     }
 
@@ -238,6 +243,7 @@ public class TemplateService extends BaseService {
         template.getScriptResourcePaths().stream()
                 .filter(p -> ScriptResource.path2type(p) != null)
                 .forEach(p -> original.getScriptResourcePaths().add(p));
+        original.setActive(template.isActive());
         original.setMessageId(template.getMessageId());
         original.copyDescsAndRemoveBlanks(template.getDescs());
 
