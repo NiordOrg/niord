@@ -27,12 +27,19 @@ import java.util.TimeZone;
  */
 public class Iso8601DateXmlAdapter extends XmlAdapter<String, Date> {
 
-    private final SimpleDateFormat format;
-
     public Iso8601DateXmlAdapter() {
-        format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-        format.setTimeZone(TimeZone.getTimeZone("GMT"));
     }
+
+    /**
+     * Important: SimpleDateFormat is NOT thread safe. Creating a single instance for the Iso8601DateXmlAdapter
+     * will cause spurious errors.
+     */
+    private SimpleDateFormat newDateFormat() {
+        SimpleDateFormat format  = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        format.setTimeZone(TimeZone.getTimeZone("GMT"));
+        return format;
+    }
+
 
     @Override
     public String marshal(Date d) throws Exception {
@@ -41,7 +48,7 @@ public class Iso8601DateXmlAdapter extends XmlAdapter<String, Date> {
         }
 
         try {
-            return format.format(d);
+            return newDateFormat().format(d);
         } catch (Exception e) {
             return null;
         }
@@ -54,7 +61,7 @@ public class Iso8601DateXmlAdapter extends XmlAdapter<String, Date> {
         }
 
         try {
-            return format.parse(d);
+            return newDateFormat().parse(d);
         } catch (ParseException e) {
             return null;
         }
