@@ -754,8 +754,8 @@ angular.module('niord.editor')
                 };
 
 
-                /** Creates the difference between two geometries **/
-                scope.difference = function () {
+                /** Compute the operation ("difference", "intersection", "union") between geometries **/
+                scope.jstsOp = function (op) {
                     var selected = scope.selection.slice();
                     if (selected.length < 2) {
                         return;
@@ -770,8 +770,18 @@ angular.module('niord.editor')
                         if (geom == null) {
                             geom = g;
                         } else {
-                            // Create the difference geometry
-                            geom = geom.difference(g);
+                            // Create the new geometry
+                            switch (op) {
+                                case "difference":
+                                    geom = geom.difference(g);
+                                    break;
+                                case "intersection":
+                                    geom = geom.intersection(g);
+                                    break;
+                                case "union":
+                                    geom = geom.union(g);
+                                    break;
+                            }
                         }
 
                         // Delete the old features
