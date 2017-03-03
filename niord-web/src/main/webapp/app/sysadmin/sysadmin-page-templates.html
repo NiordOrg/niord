@@ -162,16 +162,16 @@
                         <table class='table table-condensed table-hover'>
                             <tr>
                                 <th>Active</th>
-                                <th>Category</th>
                                 <th>Name</th>
+                                <th>Category</th>
                                 <th>Domains</th>
                                 <th>Script Resources</th>
                                 <th></th>
                             </tr>
                             <tr ng-repeat="template in searchResult.data">
                                 <td><input type="checkbox" ng-model="template.active" disabled="disabled"></td>
-                                <td>{{template.category.descs[0].name}}</td>
                                 <td><span ng-if="template.descs && template.descs.length > 0">{{template.descs[0].name}}</span></td>
+                                <td>{{template.category.descs[0].name}}</td>
                                 <td>
                                     <div ng-repeat="domain in template.domains">{{domain.name}}</div>
                                 </td>
