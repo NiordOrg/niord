@@ -29,12 +29,9 @@
             <div class="aton-btn-panel">
                 <div>
                     <span class="hidden-xs">Template&nbsp;</span>
-                    <select class="input-xs" ng-model="feature.geometry.template" style="color: #333">
+                    <select class="input-xs" ng-model="feature.geometry.template" style="color: #333"
+                            ng-options="template.id as template.descs[0].name for template in templates">
                         <option value=""></option>
-                        <option value="1">Buoy unlit</option>
-                        <option value="2">Buoy missing</option>
-                        <option value="2">Buoy off station</option>
-                        <option value="3">Buoy withdrawn</option>
                     </select>
                 </div>
                 <div style="margin-top: 10px">

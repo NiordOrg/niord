@@ -192,6 +192,7 @@ public class CategoryService extends BaseService {
         original.copyDescsAndRemoveBlanks(category.getDescs());
         original.getEditorFields().clear();
         original.getEditorFields().addAll(category.getEditorFields());
+        original.setAtonFilter(category.getAtonFilter());
 
         original.updateLineage();
         original.updateActiveFlag();

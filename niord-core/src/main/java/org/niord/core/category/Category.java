@@ -83,6 +83,8 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     @OrderColumn(name = "indexNo")
     List<Template> templates = new ArrayList<>();
 
+    String atonFilter;
+
 
     /** Constructor */
     public Category() {
@@ -130,6 +132,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
             if (sysCategory.getEditorFields() != null) {
                 editorFields.addAll(sysCategory.getEditorFields());
             }
+            this.atonFilter = sysCategory.getAtonFilter();
         }
     }
 
@@ -170,6 +173,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
             }
 
             sysCategory.setHasTemplate(!templates.isEmpty());
+            sysCategory.setAtonFilter(atonFilter);
         }
 
         return category;
@@ -189,6 +193,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
         return !Objects.equals(mrn, template.getMrn()) ||
                 !Objects.equals(active, template.isActive()) ||
                 !Objects.equals(editorFields, template.getEditorFields()) ||
+                !Objects.equals(atonFilter, template.getAtonFilter()) ||
                 descsChanged(template) ||
                 parentChanged(template);
     }
@@ -368,6 +373,14 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
 
     public void setTemplates(List<Template> templates) {
         this.templates = templates;
+    }
+
+    public String getAtonFilter() {
+        return atonFilter;
+    }
+
+    public void setAtonFilter(String atonFilter) {
+        this.atonFilter = atonFilter;
     }
 }
 

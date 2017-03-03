@@ -30,6 +30,7 @@ public class SystemCategoryVo extends CategoryVo {
     List<SystemCategoryVo> children;
     List<String> editorFields;
     Boolean hasTemplate;
+    String atonFilter;
 
 
     /** Returns the list of child categories, and creates an empty list if needed */
@@ -66,5 +67,13 @@ public class SystemCategoryVo extends CategoryVo {
 
     public void setHasTemplate(Boolean hasTemplate) {
         this.hasTemplate = hasTemplate;
+    }
+
+    public String getAtonFilter() {
+        return atonFilter;
+    }
+
+    public void setAtonFilter(String atonFilter) {
+        this.atonFilter = atonFilter;
     }
 }

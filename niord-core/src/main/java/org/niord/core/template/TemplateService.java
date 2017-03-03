@@ -19,6 +19,8 @@ package org.niord.core.template;
 import freemarker.template.TemplateException;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
+import org.niord.core.aton.AtonFilter;
+import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.core.category.Category;
 import org.niord.core.category.CategoryService;
 import org.niord.core.db.CriteriaHelper;
@@ -54,6 +56,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Main interface for accessing and processing message templates
@@ -81,8 +84,13 @@ public class TemplateService extends BaseService {
     Logger log;
 
 
+    /***************************************/
+    /** Template life cycle               **/
+    /***************************************/
+
     /**
      * Returns the template with the given ID, or null if not found
+     *
      * @param id the template id
      * @return the template with the given ID, or null if not found
      */
@@ -93,6 +101,7 @@ public class TemplateService extends BaseService {
 
     /**
      * Returns the paged set of templates matching the search criteria
+     *
      * @param params the search criteria
      * @return the paged search result
      */
@@ -136,7 +145,9 @@ public class TemplateService extends BaseService {
     }
 
 
-    /** Helper function that translates the search parameters into predicates */
+    /**
+     * Helper function that translates the search parameters into predicates
+     */
     @SuppressWarnings("all")
     private <T> Predicate[] buildQueryPredicates(
             CriteriaBuilder cb,
@@ -177,6 +188,7 @@ public class TemplateService extends BaseService {
 
     /**
      * Returns all templates
+     *
      * @return all templates
      */
     public List<Template> findAll() {
@@ -187,6 +199,7 @@ public class TemplateService extends BaseService {
 
     /**
      * Creates a new template based on the template parameter
+     *
      * @param template the template to create
      * @return the created template
      */
@@ -209,6 +222,7 @@ public class TemplateService extends BaseService {
 
     /**
      * Updates the template data from the template parameter
+     *
      * @param template the template to update
      * @return the updated template
      */
@@ -243,6 +257,7 @@ public class TemplateService extends BaseService {
 
     /**
      * Deletes the template with the given id
+     *
      * @param id the ID of the template to delete
      */
     public boolean deleteTemplate(Integer id) {
@@ -257,10 +272,16 @@ public class TemplateService extends BaseService {
     }
 
 
+    /***************************************/
+    /** Template Execution                **/
+    /***************************************/
+
+
     /**
      * Executes a message template on the given message
+     *
      * @param template the template to execute
-     * @param message the message to apply the template to
+     * @param message  the message to apply the template to
      * @return the resulting message
      */
     public SystemMessageVo executeTemplate(Template template, SystemMessageVo message) throws Exception {
@@ -302,7 +323,7 @@ public class TemplateService extends BaseService {
     /**
      * Executes the Freemarker template at the given path and updates the message accordingly
      *
-     * @param contextData the context data to use in the Freemarker template
+     * @param contextData        the context data to use in the Freemarker template
      * @param scriptResourcePath the path to the Freemarker template
      */
     private void applyFreemarkerTemplate(
@@ -324,7 +345,7 @@ public class TemplateService extends BaseService {
 
     /**
      * Updates the fields of the message using the FieldTemplate templates.
-     *
+     * <p>
      * A FieldTemplate field may have the format "message.promulgation('twitter').tweet"
      * and will be assigned the body content of the field template.
      *
@@ -357,7 +378,7 @@ public class TemplateService extends BaseService {
     /**
      * Evaluates the JavaScript resource at the given path
      *
-     * @param contextData the context data to use in the Freemarker template
+     * @param contextData        the context data to use in the Freemarker template
      * @param scriptResourcePath the path to the Freemarker template
      */
     private void evalJavaScriptResource(Map<String, Object> contextData, String scriptResourcePath) throws Exception {
@@ -368,4 +389,93 @@ public class TemplateService extends BaseService {
                 .evaluate();
     }
 
+
+    /***************************************/
+    /** AtonN functionality               **/
+    /***************************************/
+
+
+    /**
+     * Resolves all templates that matches the given AtoNs
+     * by matching the associated category and parent categories.
+     * <p>
+     * NB: This is a potentially expensive operation involving iteration of all templates and categories,
+     *     including JavaScript evaluation of AtoN filters.
+     *     However, given that there are only dozens - and not hundreds - of categories and templates,
+     *     we should be fine. Use with care though...
+     *
+     * @param atons the atons to find templates for
+     * @return the matching templates
+     */
+    public List<Template> resolveAtonTemplates(List<AtonNodeVo> atons) {
+
+        long t0 = System.currentTimeMillis();
+
+        // Start out with all active templates for the current domain
+        TemplateSearchParams params = new TemplateSearchParams()
+                .domain(domainService.currentDomain().getDomainId())
+                .inactive(false);
+        List<Template> templates = searchTemplates(params).getData();
+
+        // Resolve matching templates via associated categories. Cache the result by category ID
+        Map<Integer, Boolean> includeCategory = new HashMap<>();
+        // Preload all categories in the entity manager
+        //getAll(Category.class);
+
+        // Filter the templates
+        List<Template> result = templates.stream()
+                .filter(t -> matchesAtons(atons, t, includeCategory))
+                .collect(Collectors.toList());
+
+        log.info("Found " + result.size() + " templates matching " + atons.size() + " AtoNs in "
+            + (System.currentTimeMillis() - t0) + " ms");
+
+        return result;
+    }
+
+
+    /**
+     * Checks if all AtoNs matches the AtoN filters of the template category lineage
+     * @param atons the AtoNs to check
+     * @param template the template to test
+     * @return if all AtoNs matches the AtoN filters of the template category lineage
+     */
+    private boolean matchesAtons(List<AtonNodeVo> atons, Template template, Map<Integer, Boolean> includeCategory) {
+
+        // There must be at least one AtoN filter in the template category lineage to qualify
+        boolean atonFiltered = false;
+
+        // Check the category and all its parent categories
+        for (Category category = template.getCategory(); category != null; category = category.getParent()) {
+            if (includeCategory.containsKey(category.getId())) {
+                return includeCategory.get(category.getId());
+            }
+            if (StringUtils.isNotBlank(category.getAtonFilter())) {
+                atonFiltered = true;
+                boolean matchesAtons = matchesAtons(atons, category.getAtonFilter());
+                includeCategory.put(category.getId(), matchesAtons);
+                if (!matchesAtons) {
+                    return false;
+                }
+            }
+        }
+
+        return atonFiltered;
+    }
+
+
+    /**
+     * Checks if all AtoNs matches the AtoN filter
+     * @param atons the AtoNs to check
+     * @param atonFilter the AtoN filter to test
+     * @return if all AtoNs matches the AtoN filter
+     */
+    private boolean matchesAtons(List<AtonNodeVo> atons, String atonFilter) {
+        try {
+            AtonFilter filter = AtonFilter.getInstance(atonFilter);
+            return filter.matches(atons);
+        } catch (ScriptException e) {
+            return false;
+        }
+    }
 }

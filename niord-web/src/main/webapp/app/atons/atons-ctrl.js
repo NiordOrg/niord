@@ -76,6 +76,9 @@ angular.module('niord.atons')
             // Selected AtoNs
             $scope.selection = $rootScope.atonSelection;
 
+            // Message templates matching the selected AtoNs
+            $scope.templates = [];
+
             // The GeoJSON FeatureCollection defined by the selected AtoNs
             $scope.featureCollection = {
                 type: 'FeatureCollection',
@@ -288,8 +291,25 @@ angular.module('niord.atons')
                 });
             };
 
+
+            /** When the AtoN selection changes, update the list of templates matching the AtoNs **/
+            $scope.updateMessageTemplates = function () {
+                $scope.templates.length = 0;
+                if (!$scope.selection.isEmpty()) {
+                    var atons = $.map($scope.selection.values(), function (aton) { return aton.aton });
+                    AtonService.resolveAtonTemplates(atons)
+                        .success(function (templates) {
+                            $scope.templates = templates;
+                        })
+                }
+            };
+
+
             // Whenever the selection changes, update the feature collection
-            $scope.$watchCollection("selection.keys", $scope.updateFeatureCollection, true);
+            $scope.$watchCollection("selection.keys", function () {
+                $scope.updateFeatureCollection();
+                $scope.updateMessageTemplates();
+            }, true);
 
 
             /** Call-back function called when an AtoN has been edited **/

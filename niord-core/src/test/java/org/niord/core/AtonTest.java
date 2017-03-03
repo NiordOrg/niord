@@ -19,6 +19,7 @@ package org.niord.core;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;
+import org.niord.core.aton.AtonFilter;
 import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.core.aton.vo.AtonOsmVo;
 import org.niord.core.aton.vo.AtonTagVo;
@@ -95,6 +96,27 @@ public class AtonTest {
         AtonNodeVo aton2 = mapper.readValue(json, AtonNodeVo.class);
 
         Assert.assertEquals(aton, aton2);
+    }
+
+
+    @Test
+    public void testAtonMatching() throws Exception {
+
+        AtonNodeVo aton = createAtonNode();
+
+        Assert.assertTrue(aton.k("seamark:type"));
+        Assert.assertTrue(aton.kv("seamark:type", "ged|buoy.*"));
+    }
+
+
+    @Test
+    public void testAtonFilter() throws Exception {
+
+        AtonNodeVo aton = createAtonNode();
+
+        AtonFilter filter = AtonFilter.getInstance("aton.kv('seamark:type', 'buoy.*')");
+
+        Assert.assertTrue(filter.matches(aton));
     }
 
 

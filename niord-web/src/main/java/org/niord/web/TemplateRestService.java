@@ -19,6 +19,7 @@ package org.niord.web;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
@@ -224,6 +225,11 @@ public class TemplateRestService extends AbstractBatchableRestService {
     }
 
 
+    /***************************************/
+    /** Template Execution                **/
+    /***************************************/
+
+
     /** Executes a message template on the given message ID */
     @PUT
     @Path("/execute")
@@ -237,4 +243,36 @@ public class TemplateRestService extends AbstractBatchableRestService {
         SystemMessageVo message = messageRestService.getSystemMessage(messageId);
         return templateService.executeTemplate(new Template(template), message);
     }
+
+
+    /***************************************/
+    /** AtonN functionality               **/
+    /***************************************/
+
+
+    /**
+     * Resolves all templates that matches the given AtoNs
+     * by matching the associated category and parent categories
+     *
+     * @param atons the atons to find templates for
+     * @return the matching templates
+     */
+    @PUT
+    @Path("/matches-atons")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed(Roles.USER)
+    @GZIP
+    @NoCache
+    public List<TemplateVo>  resolveAtonTemplates(
+            @QueryParam("language") @DefaultValue("en") String language,
+            List<AtonNodeVo> atons) throws Exception {
+
+        DataFilter filter = DataFilter.get().lang(language);
+
+        return templateService.resolveAtonTemplates(atons).stream()
+                .map(t -> t.toVo(filter))
+                .collect(Collectors.toList());
+    }
+
 }

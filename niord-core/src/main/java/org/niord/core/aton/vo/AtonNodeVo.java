@@ -152,6 +152,41 @@ public class AtonNodeVo implements IJsonSerializable {
     }
 
     /*************************/
+    /** Matcher functions   **/
+    /*************************/
+
+    /**
+     * Returns if the AtoN matches the given key pattern
+     * @param keyPattern the regular expression
+     * @return if the AtoN matches the given key pattern
+     */
+    public boolean k(String keyPattern) {
+        return tags != null && Arrays.stream(tags)
+                .anyMatch(t -> t.getK().matches(keyPattern));
+    }
+
+    /**
+     * Returns if the AtoN matches the given value pattern
+     * @param valuePattern the regular expression
+     * @return if the AtoN matches the given value pattern
+     */
+    public boolean v(String valuePattern) {
+        return tags != null && Arrays.stream(tags)
+                .anyMatch(t -> t.getV().matches(valuePattern));
+    }
+
+    /**
+     * Returns if the AtoN matches the given key-value pattern
+     * @param keyPattern the regular expression
+     * @param valuePattern the regular expression
+     * @return if the AtoN matches the given key-value pattern
+     */
+    public boolean kv(String keyPattern, String valuePattern) {
+        return tags != null && Arrays.stream(tags)
+                .anyMatch(t -> t.getK().matches(keyPattern) && t.getV().matches(valuePattern));
+    }
+
+    /*************************/
     /** Getters and Setters **/
     /*************************/
 

@@ -23,7 +23,8 @@ angular.module('niord.atons')
     /**
      * Interface for calling the application server
      */
-    .factory('AtonService', [ '$http', '$uibModal', function($http, $uibModal) {
+    .factory('AtonService', [ '$rootScope', '$http', '$uibModal',
+        function($rootScope, $http, $uibModal) {
         'use strict';
 
         /** Adds a the given AtoN tag as a parameter if well-defined */
@@ -185,6 +186,12 @@ angular.module('niord.atons')
             mergeWithNodeTypes: function (aton, nodeTypeNames) {
                 var param = { aton: aton, nodeTypeNames: nodeTypeNames };
                 return $http.post('/rest/atons/defaults/merge-with-node-types', param);
+            },
+
+
+            /** Returns message templates that matches a list of AtoNs */
+            resolveAtonTemplates: function(atons) {
+                return $http.put('/rest/templates/matches-atons?language=' + $rootScope.language, atons);
             }
 
         };
