@@ -186,6 +186,7 @@ public class TemplateService extends BaseService {
         return criteriaHelper.where();
     }
 
+
     /**
      * Returns all templates
      *
@@ -419,8 +420,6 @@ public class TemplateService extends BaseService {
 
         // Resolve matching templates via associated categories. Cache the result by category ID
         Map<Integer, Boolean> includeCategory = new HashMap<>();
-        // Preload all categories in the entity manager
-        //getAll(Category.class);
 
         // Filter the templates
         List<Template> result = templates.stream()
