@@ -158,9 +158,10 @@ angular.module('niord.admin')
                                 if (tmplDesc && !tmplDesc.name) {
                                     tmplDesc.name = desc.name;
                                 }
-                                if (desc.lang == 'en' && $scope.template.paths.length == 0){
+                                if (desc.lang == 'en' && $scope.template.paths.length == 1
+                                        && $scope.template.paths[0].path == ''){
                                     var name = desc.name.toLowerCase().replace(/ /g, '-');
-                                    $scope.template.paths.push({ 'path' : 'templates/tmpl/' + name + '.ftl' });
+                                    $scope.template.paths[0].path = 'templates/tmpl/' + name + '.ftl';
                                 }
                             })
                         })
