@@ -20,9 +20,13 @@
                     <div class="script-resource-table">
                         <table class='table table-condensed table-hover'>
                             <tr>
+                                <th width="20"></th>
                                 <th>Path</th>
                             </tr>
                             <tr ng-repeat="r in resources | filter: { path: filter }">
+                                <td class="clickable" ng-click="$close(r)">
+                                    <script-resource-type resource="r"></script-resource-type>
+                                </td>
                                 <td class="clickable" ng-click="$close(r)">{{r.path}}</td>
                             </tr>
                         </table>

@@ -343,6 +343,7 @@ table.category-templates tr td {
 /** Script Resources **/
 
 .script-resource-table {
+    margin-top: 10px;
     font-size: 12px;
     width: 100%;
     min-height: 100px;
