@@ -156,7 +156,7 @@
                                 <td>{{report.sortOrder}}</td>
                                 <td>{{report.templatePath}}</td>
                                 <td>
-                                    <div ng-repeat="domain in report.domains">{{domain.domainId}}</div>
+                                    <span ng-repeat="domain in report.domains"><span ng-if="!$first">, </span>{{domain.name}}</span>
                                 </td>
                                 <td nowrap align="right">
                                     <a href ng-click="editReport(report);" title="Edit Report"><i class="glyphicon glyphicon-pencil"></i></a>

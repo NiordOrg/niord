@@ -133,7 +133,7 @@
                                 <td>{{promulgationType.priority}}</td>
                                 <td>{{promulgationType.language}}</td>
                                 <td>
-                                    <div ng-repeat="domain in promulgationType.domains">{{domain.domainId}}</div>
+                                    <span ng-repeat="domain in promulgationType.domains"><span ng-if="!$first">, </span>{{domain.name}}</span>
                                 </td>
                                 <td nowrap align="right">
                                     <a href ng-click="editPromulgationType(promulgationType);"
