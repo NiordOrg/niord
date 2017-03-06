@@ -173,7 +173,7 @@
                                 <td><span ng-if="template.descs && template.descs.length > 0">{{template.descs[0].name}}</span></td>
                                 <td>{{template.category.descs[0].name}}</td>
                                 <td>
-                                    <div ng-repeat="domain in template.domains">{{domain.name}}</div>
+                                    <span ng-repeat="domain in template.domains"><span ng-if="!$first">, </span>{{domain.name}}</span>
                                 </td>
                                 <td>
                                     {{template.scriptResourcePaths.length}}
