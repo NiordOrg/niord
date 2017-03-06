@@ -30,6 +30,7 @@ import org.niord.core.util.UidUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.geojson.FeatureCollectionVo;
+import org.niord.model.geojson.FeatureVo;
 import org.niord.model.message.AreaVo;
 import org.niord.model.message.CategoryVo;
 import org.niord.model.message.ChartVo;
@@ -58,6 +59,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -654,7 +656,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     }
 
 
-    /** Returns all container GeoJSON geometries **/
+    /** Returns all contained GeoJSON geometries **/
     public FeatureCollectionVo[] toGeoJson() {
         return parts.stream()
                 .filter(p -> p.getGeometry() != null)
@@ -662,6 +664,17 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                 .map(p -> p.getGeometry().toGeoJson())
                 .toArray(FeatureCollectionVo[]::new);
     }
+
+
+    /** Merges all contained GeoJSON geometries into a single FeatureCollectionVo **/
+    public FeatureCollectionVo toFeatureCollection() {
+        FeatureCollectionVo fc = new FeatureCollectionVo();
+        fc.setFeatures(Arrays.stream(toGeoJson())
+                .flatMap(f -> Arrays.stream(f.getFeatures()))
+                .toArray(FeatureVo[]::new));
+        return fc;
+    }
+
 
     /*************************/
     /** Getters and Setters **/
