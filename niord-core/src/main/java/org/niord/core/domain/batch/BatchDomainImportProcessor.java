@@ -63,14 +63,14 @@ public class BatchDomainImportProcessor extends AbstractItemHandler {
         if (orig == null) {
             // Make sure areas are resolved and/or created
             List<Area> areas = domain.getAreas().stream()
-                    .map(a -> areaService.findOrCreateArea(a, true))
+                    .map(a -> areaService.importArea(a, true, false))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
             domain.setAreas(areas);
 
             // Make sure categories are resolved and/or created
             List<Category> categories = domain.getCategories().stream()
-                    .map(c -> categoryService.findOrCreateCategory(c, true))
+                    .map(c -> categoryService.importCategory(c, true, false))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
             domain.setCategories(categories);

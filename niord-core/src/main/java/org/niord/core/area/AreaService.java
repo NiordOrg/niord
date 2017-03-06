@@ -252,6 +252,18 @@ public class AreaService extends BaseService {
      */
     public Area updateAreaData(Area area) {
         Area original = getByPrimaryKey(Area.class, area.getId());
+        return updateAreaData(original, area);
+    }
+
+
+    /**
+     * Updates the area data from the area template, but not the parent-child hierarchy of the area
+     *
+     * @param original the original area to update
+     * @param area the template area to update the original with
+     * @return the updated area
+     */
+    public Area updateAreaData(Area original, Area area) {
 
         original.setMrn(area.getMrn());
         original.setType(area.getType());
@@ -271,6 +283,22 @@ public class AreaService extends BaseService {
 
         original = saveEntity(original);
 
+        return original;
+    }
+
+
+    /**
+     * If there are any changes to data, updates the area data from the area template,
+     * but not the parent-child hierarchy of the area
+     *
+     * @param original the original area to update
+     * @param area the template area to update the original with
+     * @return the updated area
+     */
+    public Area checkUpdateAreaData(Area original, Area area) {
+        if (original.hasChanged(area)) {
+            return updateAreaData(original, area);
+        }
         return original;
     }
 
@@ -526,9 +554,10 @@ public class AreaService extends BaseService {
      *
      * @param templateArea the template area
      * @param create whether to create a missing area or just find it
+     * @param update whether to update an existing area or just find it
      * @return the area
      */
-    public Area findOrCreateArea(Area templateArea, boolean create) {
+    public Area importArea(Area templateArea, boolean create, boolean update) {
         // Sanity checks
         if (templateArea == null) {
             return null;
@@ -538,14 +567,14 @@ public class AreaService extends BaseService {
         if (StringUtils.isNotBlank(templateArea.getMrn())) {
             Area area = findByMrn(templateArea.getMrn());
             if (area != null) {
-                return area;
+                return update ? checkUpdateAreaData(area, templateArea) : area;
             }
         }
 
         // Recursively, resolve the parent areas
         Area parent = null;
         if (templateArea.getParent() != null) {
-            parent = findOrCreateArea(templateArea.getParent(), create);
+            parent = importArea(templateArea.getParent(), create, update);
             if (!create && parent == null) {
                 return null;
             }
@@ -562,6 +591,8 @@ public class AreaService extends BaseService {
         // Create the area if no matching area was found
         if (create && area == null) {
             area = createArea(templateArea, parentId);
+        } else if (update && area != null) {
+            area = checkUpdateAreaData(area, templateArea);
         }
         return area;
     }

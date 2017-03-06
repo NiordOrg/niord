@@ -44,6 +44,6 @@ public class BatchAreaImportProcessor extends AbstractItemHandler {
         Area area = new Area(areaVo, filter);
 
         getLog().info("Creating or updating area " + area);
-        return areaService.findOrCreateArea(area, true);
+        return areaService.importArea(area, true, true);
     }
 }

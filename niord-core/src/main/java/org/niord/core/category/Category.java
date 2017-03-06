@@ -194,8 +194,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
                 !Objects.equals(active, template.isActive()) ||
                 !Objects.equals(editorFields, template.getEditorFields()) ||
                 !Objects.equals(atonFilter, template.getAtonFilter()) ||
-                descsChanged(template) ||
-                parentChanged(template);
+                descsChanged(template);
     }
 
 
@@ -207,13 +206,6 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
                             !Objects.equals(d.getName(), template.getDesc(d.getLang()).getName()));
     }
 
-    /** Checks if the parents have changed */
-    private boolean parentChanged(Category template) {
-        return (parent == null && template.getParent() != null) ||
-                (parent != null && template.getParent() == null) ||
-                (parent != null && template.getParent() != null &&
-                        !Objects.equals(parent.getId(), template.getParent().getId()));
-    }
 
     /** {@inheritDoc} */
     @Override

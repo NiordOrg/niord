@@ -68,9 +68,9 @@ public class ChartService extends BaseService {
     /**
      * Searches for charts matching the given term
      *
-     * @param term the search term
+     * @param term     the search term
      * @param inactive whether to include inactive charts as well as active
-     * @param limit the maximum number of results
+     * @param limit    the maximum number of results
      * @return the search result
      */
     public List<Chart> searchCharts(String term, boolean inactive, int limit) {
@@ -90,13 +90,14 @@ public class ChartService extends BaseService {
                     .sorted(Comparator.comparingInt(c -> c.computeSearchSortKey(term)))
                     .limit(limit)
                     .collect(Collectors.toList());
-       }
+        }
         return Collections.emptyList();
     }
 
 
     /**
      * Returns the list of charts
+     *
      * @return the list of charts
      */
     public List<Chart> getCharts() {
@@ -106,6 +107,7 @@ public class ChartService extends BaseService {
 
     /**
      * Returns the chart with the given chart number
+     *
      * @param chartNumber the chart number
      * @return the chart with the given chart number
      */
@@ -122,6 +124,7 @@ public class ChartService extends BaseService {
 
     /**
      * Returns the charts with the given chart numbers
+     *
      * @param chartNumbers the chart numbers
      * @return the charts with the given chart numbers
      */
@@ -139,16 +142,27 @@ public class ChartService extends BaseService {
 
     /**
      * Updates the chart data from the chart template
+     *
      * @param chart the chart to update
      * @return the updated chart
      */
-    public Chart updateChartData(Chart chart) {
+    public Chart updateChart(Chart chart) {
         Chart original = findByChartNumber(chart.getChartNumber());
         if (original == null) {
-            throw new IllegalArgumentException("Cannot update non-existing chart "
-                    + chart.getChartNumber());
+            throw new IllegalArgumentException("Cannot update non-existing chart " + chart.getChartNumber());
         }
+        return updateChart(original, chart);
+    }
 
+
+    /**
+     * Updates the chart data from the chart template
+     *
+     * @param original the original chart to update
+     * @param chart    the template chart to update the original from
+     * @return the updated chart
+     */
+    public Chart updateChart(Chart original, Chart chart) {
         // Copy the chart data
         original.setInternationalNumber(chart.getInternationalNumber());
         original.setActive(chart.isActive());
@@ -158,6 +172,20 @@ public class ChartService extends BaseService {
         original.setGeometry(chart.getGeometry());
 
         return saveEntity(original);
+    }
+
+
+    /**
+     * Check if there are any changes to the chart data, and update if there are
+     * @param original the original chart to update
+     * @param chart the template chart to update the original from
+     * @return the updated chart
+     */
+    public Chart checkUpdateChart(Chart original, Chart chart) {
+        if (original.hasChanged(chart)) {
+            return updateChart(original, chart);
+        }
+        return original;
     }
 
 
@@ -181,12 +209,15 @@ public class ChartService extends BaseService {
      * Returns the chart matching the given chart template, or creates if it does not exists
      * @param chartTemplate the chart template to find or create
      * @param create whether to create a missing chart or just find it
+     * @param update whether to update an existing chart or just find it
      * @return the chart
      */
-    public Chart findOrCreateChart(Chart chartTemplate, boolean create) {
+    public Chart importChart(Chart chartTemplate, boolean create, boolean update) {
         Chart chart = findByChartNumber(chartTemplate.getChartNumber());
         if (create && chart == null) {
             chart = createChart(chartTemplate);
+        } else if (update && chart != null) {
+            chart = checkUpdateChart(chart, chartTemplate);
         }
         return chart;
     }

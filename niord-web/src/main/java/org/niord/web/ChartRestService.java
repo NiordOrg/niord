@@ -138,7 +138,7 @@ public class ChartRestService extends AbstractBatchableRestService {
         }
 
         log.info("Updating chart " + chartVo);
-        return chartService.updateChartData(new Chart(chartVo)).toVo(SystemChartVo.class);
+        return chartService.updateChart(new Chart(chartVo)).toVo(SystemChartVo.class);
     }
 
     /** Deletes an existing chart */

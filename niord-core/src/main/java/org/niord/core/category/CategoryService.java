@@ -186,6 +186,18 @@ public class CategoryService extends BaseService {
      */
     public Category updateCategoryData(Category category) {
         Category original = getByPrimaryKey(Category.class, category.getId());
+        return updateCategoryData(original, category);
+    }
+
+
+    /**
+     * Updates the category data from the category template, but not the parent-child hierarchy of the category
+     *
+     * @param original the original category to update
+     * @param category the template category to update the original with
+     * @return the updated category
+     */
+    public Category updateCategoryData(Category original, Category category) {
 
         original.setMrn(category.getMrn());
         original.setActive(category.isActive());
@@ -199,6 +211,22 @@ public class CategoryService extends BaseService {
 
         original = saveEntity(original);
 
+        return original;
+    }
+
+
+    /**
+     * If data has changed, updates the category data from the category template,
+     * but not the parent-child hierarchy of the category
+     *
+     * @param original the original category to update
+     * @param category the template category to update the original with
+     * @return the updated category
+     */
+    public Category checkUpdateCategoryData(Category original, Category category) {
+        if (original.hasChanged(category)) {
+            return updateCategoryData(original, category);
+        }
         return original;
     }
 
@@ -384,9 +412,10 @@ public class CategoryService extends BaseService {
      *
      * @param templateCategory the template category
      * @param create whether to create a missing category or just find it
+     * @param update whether to update an existing category or just find it
      * @return the category
      */
-    public Category findOrCreateCategory(Category templateCategory, boolean create) {
+    public Category importCategory(Category templateCategory, boolean create, boolean update) {
         // Sanity checks
         if (templateCategory == null) {
             return null;
@@ -396,14 +425,14 @@ public class CategoryService extends BaseService {
         if (StringUtils.isNotBlank(templateCategory.getMrn())) {
             Category category = findByMrn(templateCategory.getMrn());
             if (category != null) {
-                return category;
+                return update ? checkUpdateCategoryData(category, templateCategory) : category;
             }
         }
 
         // Recursively, resolve the parent categories
         Category parent = null;
         if (templateCategory.getParent() != null) {
-            parent = findOrCreateCategory(templateCategory.getParent(), create);
+            parent = importCategory(templateCategory.getParent(), create, update);
             if (!create && parent == null) {
                 return null;
             }
@@ -420,6 +449,8 @@ public class CategoryService extends BaseService {
         // Create the category if no matching category was found
         if (create && category == null) {
             category = createCategory(templateCategory, parentId);
+        } else if (update && category != null) {
+            category = checkUpdateCategoryData(category, templateCategory);
         }
         return category;
     }

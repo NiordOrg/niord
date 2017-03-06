@@ -221,7 +221,7 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
 
     /**
      * Checks if the values of the area has changed.
-     * Only checks relevant values, not e.g. database id, created date, etc.
+     * Only checks relevant values, not e.g. database id, created date, parent and child areas, etc.
      * Hence we do not use equals()
      *
      * @param template the template to compare with
@@ -234,7 +234,6 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
                 !Objects.equals(type, template.getType()) ||
                 !Objects.equals(active, template.isActive()) ||
                 descsChanged(template) ||
-                parentChanged(template) ||
                 geometryChanged(template);
     }
 
@@ -258,13 +257,6 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
                             !Objects.equals(d.getName(), template.getDesc(d.getLang()).getName()));
     }
 
-    /** Checks if the parents have changed */
-    private boolean parentChanged(Area template) {
-        return (parent == null && template.getParent() != null) ||
-                (parent != null && template.getParent() == null) ||
-                (parent != null && template.getParent() != null &&
-                        !Objects.equals(parent.getId(), template.getParent().getId()));
-    }
 
     /** {@inheritDoc} */
     @Override

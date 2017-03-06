@@ -175,21 +175,21 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
 
             // Make sure areas are resolved and/or created
             List<Area> areas = message.getAreas().stream()
-                    .map(a -> areaService.findOrCreateArea(a, createBaseData))
+                    .map(a -> areaService.importArea(a, createBaseData, false))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
             message.setAreas(areas);
 
             // Make sure categories are resolved and/or created
             List<Category> categories = message.getCategories().stream()
-                    .map(c -> categoryService.findOrCreateCategory(c, createBaseData))
+                    .map(c -> categoryService.importCategory(c, createBaseData, false))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
             message.setCategories(categories);
 
             // Make sure charts are resolved and/or created
             List<Chart> charts = message.getCharts().stream()
-                    .map(c -> chartService.findOrCreateChart(c, createBaseData))
+                    .map(c -> chartService.importChart(c, createBaseData, false))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
             message.setCharts(charts);
