@@ -165,7 +165,7 @@
                                 <th>Name</th>
                                 <th>Category</th>
                                 <th>Domains</th>
-                                <th>Script Resources</th>
+                                <th># Scripts</th>
                                 <th></th>
                             </tr>
                             <tr ng-repeat="template in searchResult.data">
@@ -176,7 +176,7 @@
                                     <div ng-repeat="domain in template.domains">{{domain.name}}</div>
                                 </td>
                                 <td>
-                                    <div ng-repeat="path in template.scriptResourcePaths">{{path}}</div>
+                                    {{template.scriptResourcePaths.length}}
                                 </td>
                                 <td nowrap align="right">
                                     <a href ng-click="editTemplate(template);" title="Edit Template">
