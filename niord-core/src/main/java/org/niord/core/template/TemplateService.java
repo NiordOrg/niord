@@ -237,6 +237,19 @@ public class TemplateService extends BaseService {
         if (original == null) {
             throw new IllegalArgumentException("Cannot update non-existing template " + template.getId());
         }
+        return updateTemplate(original, template);
+    }
+
+
+
+    /**
+     * Updates the template data from the template parameter
+     *
+     * @param original the template to update
+     * @param template the template to update
+     * @return the updated template
+     */
+    public Template updateTemplate(Template original, Template template) {
 
         // Copy the template data
         original.getScriptResourcePaths().clear();
@@ -276,6 +289,52 @@ public class TemplateService extends BaseService {
             return true;
         }
         return false;
+    }
+
+
+    /**
+     * Imports the template according to the parameters
+     *
+     * @param template the template to import
+     * @param create whether to create a missing template or just find it
+     * @param update whether to update an existing template or just find it
+     * @return the template
+     */
+    public Template importTemplate(Template template, boolean create, boolean update) {
+
+        // Try to look up any existing template by name
+        Template original = null;
+        for (TemplateDesc desc : template.getDescs()) {
+            TemplateSearchParams params = new TemplateSearchParams()
+                    .language(desc.getLang())
+                    .name(desc.getName())
+                    .category(template.getCategory().getId());
+            PagedSearchResultVo<Template> searchResult = searchTemplates(params);
+            if (searchResult.getSize() > 0) {
+                original = searchResult.getData().stream()
+                        .filter(t -> domainsIntersects(t.getDomains(), template.getDomains()))
+                        .findFirst()
+                        .orElse(searchResult.getData().get(0));
+                break;
+            }
+        }
+
+        if (original == null && create) {
+            original = createTemplate(template);
+        } else if (original != null && update) {
+            original = updateTemplate(original, template);
+        }
+        return original;
+    }
+
+
+    /** Returns if there area any overlaps between the two lists of domains **/
+    @SuppressWarnings("all")
+    private boolean domainsIntersects(List<Domain> domains1, List<Domain> domains2) {
+        List domainIds1 = domains1.stream().map(Domain::getDomainId).collect(Collectors.toList());
+        List domainIds2 = domains2.stream().map(Domain::getDomainId).collect(Collectors.toList());
+        domainIds1.retainAll(domainIds2);
+        return !domainIds1.isEmpty();
     }
 
 
