@@ -100,6 +100,9 @@ angular.module('niord.common')
                     .getCategories()
                     .success(function (categories) {
                         $scope.categories = categories;
+                        $timeout(function() {
+                            $scope.$broadcast('entity-tree', 'expand-all');
+                        });
                     });
             };
 

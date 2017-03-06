@@ -1329,6 +1329,19 @@ angular.module('niord.common')
                 var tree = element.fancytree("getTree");
 
 
+                /** Listens for a 'entity-tree' events **/
+                scope.$on('entity-tree', function(event, type) {
+                    switch (type) {
+                        case 'expand-all':
+                            scope.expandAll();
+                            break;
+                        case 'collapse-all':
+                            scope.collapseAll();
+                            break;
+                    }
+                });
+
+
                 /** Computes the icon to display **/
                 function computeIcon(entity, node) {
                     var showInactive = scope.flagInactive && !entity.active;
