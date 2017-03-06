@@ -26,6 +26,8 @@ import org.niord.core.category.CategoryService;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.message.MessageService;
+import org.niord.core.message.MessageService.AdjustmentType;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.script.FmTemplateService;
 import org.niord.core.script.JsResourceService;
@@ -76,6 +78,9 @@ public class TemplateService extends BaseService {
 
     @Inject
     JsResourceService javaScriptService;
+
+    @Inject
+    MessageService messageService;
 
     @Inject
     NiordApp app;
@@ -354,17 +359,14 @@ public class TemplateService extends BaseService {
 
         long t0 = System.currentTimeMillis();
 
-        // Ensure the presence of a DETAILS message part
-        MessagePartVo part = message.checkCreatePart(MessagePartType.DETAILS);
-
-        // Ensure that description records exists for all supported languages
-        message.checkCreateDescs(app.getLanguages());
+        // Adjust the message prior to executing the template
+        preExecuteTemplate(message);
 
         // Create context data to use with Freemarker templates and JavaScript updates
         Map<String, Object> contextData = new HashMap<>();
         contextData.put("languages", app.getLanguages());
         contextData.put("message", message);
-        contextData.put("part", part);
+        contextData.put("part", message.part(MessagePartType.DETAILS));
         contextData.put("template", template.toVo());
 
         for (String scriptResourcePath : template.getScriptResourcePaths()) {
@@ -378,11 +380,47 @@ public class TemplateService extends BaseService {
             }
         }
 
+        // Adjust the message after executing the template
+        postExecuteTemplate(message);
 
         log.info("Executed template " + template.getId() + " on message " + message.getId()
                 + " in " + (System.currentTimeMillis() - t0) + " ms");
 
         return message;
+    }
+
+
+    /**
+     * Adjust the message prior to executing a template
+     * @param message the message to adjust
+     */
+    private void preExecuteTemplate(SystemMessageVo message) {
+
+        // Ensure the presence of a DETAILS message part
+        message.checkCreatePart(MessagePartType.DETAILS);
+
+        // Ensure that description records exists for all supported languages
+        message.checkCreateDescs(app.getLanguages());
+
+        // If message areas are undefined, compute them from the message geometry.
+        messageService.adjustMessage(message, AdjustmentType.AREAS);
+    }
+
+
+    /**
+     * Adjust the message after executing a template
+     * @param message the message to adjust
+     */
+    private void postExecuteTemplate(SystemMessageVo message) {
+
+        // Update auto-title fields, etc.
+        messageService.adjustMessage(message, AdjustmentType.TITLE);
+
+        // If there is only one DETAILS message part, hide the subject
+        List<MessagePartVo> detailParts = message.parts(MessagePartType.DETAILS);
+        if (detailParts.size() == 1) {
+            detailParts.get(0).setHideSubject(true);
+        }
     }
 
 
