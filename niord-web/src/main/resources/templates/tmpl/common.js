@@ -19,13 +19,22 @@
  */
 function adjustMessage() {
     // Update auto-title fields, etc.
-    messageService.adjustMessage(message);
+    messageService.adjustMessage(message, AdjustmentType.TITLE);
 
     // If there is only one DETAILS message part, hide the subject
     var detailParts = message.parts(MessagePartType.DETAILS);
     if (detailParts.length == 1) {
         detailParts[0].hideSubject = true;
     }
+}
+
+
+/**
+ * Adjusts the areas of the message from the associated geometry
+ */
+function adjustAreas() {
+    // If message areas are undefined, compute them from the message geometry.
+    messageService.adjustMessage(message, AdjustmentType.AREAS);
 }
 
 

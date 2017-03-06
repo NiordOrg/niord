@@ -17,6 +17,7 @@ package org.niord.core.message;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.vividsolutions.jts.geom.Geometry;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
@@ -31,6 +32,7 @@ import org.niord.core.domain.DomainService;
 import org.niord.core.geojson.Feature;
 import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.geojson.FeatureService;
+import org.niord.core.geojson.JtsConverter;
 import org.niord.core.message.MessageSearchParams.DateType;
 import org.niord.core.message.MessageSearchParams.UserType;
 import org.niord.core.message.vo.SystemMessageVo;
@@ -42,6 +44,8 @@ import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
 import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
+import org.niord.model.geojson.FeatureCollectionVo;
+import org.niord.model.message.AreaVo;
 import org.niord.model.message.MainType;
 import org.niord.model.message.MessageVo;
 import org.niord.model.message.ReferenceType;
@@ -93,6 +97,20 @@ import static org.niord.model.search.PagedSearchParamsVo.SortOrder;
 @Stateless
 @SuppressWarnings("unused")
 public class MessageService extends BaseService {
+
+
+    /** Specifies which fields to update when adjusting a message **/
+    public enum AdjustmentType {
+        /** If auto-title is turned on, compute title from subjects and areas **/
+        TITLE,
+
+        /** If manual message series is chosen and a number is defined, compute the short ID **/
+        SHORT_ID,
+
+        /** If no areas is specifed but a geometry is defined, compute the areas **/
+        AREAS
+    }
+
 
     @Inject
     private Logger log;
@@ -765,16 +783,41 @@ public class MessageService extends BaseService {
      * @param message the message to update
      * @return the updated message
      */
-    public SystemMessageVo adjustMessage(SystemMessageVo message) {
+    public SystemMessageVo adjustMessage(SystemMessageVo message, AdjustmentType... types) {
+
+        Set<AdjustmentType> typeSet = new HashSet<>();
+        if (types != null) {
+            Arrays.stream(types).forEach(typeSet::add);
+        }
+
         Message msg = new Message(message);
+
+        if (typeSet.isEmpty() || typeSet.contains(AdjustmentType.AREAS)) {
+            if (msg.getAreas().isEmpty()) {
+                FeatureCollectionVo fc = msg.toFeatureCollection();
+                if (fc.getFeatures() != null && fc.getFeatures().length > 0) {
+                    Geometry geometry = JtsConverter.toJts(fc.toGeometry());
+                    List<Area> areas = areaService.getIntersectingAreas(geometry, 2, true);
+                    message.setAreas(areas.stream()
+                        .map(a -> a.toVo(AreaVo.class, DataFilter.get()))
+                        .collect(Collectors.toList()));
+                }
+            }
+        }
+
+        if (typeSet.isEmpty() || typeSet.contains(AdjustmentType.SHORT_ID)) {
+            checkUpdateShortId(msg);
+            message.setShortId(msg.getShortId());
+        }
+
+        if (typeSet.isEmpty() || typeSet.contains(AdjustmentType.TITLE)) {
+            updateAutoMessageFields(msg);
+            message.setDescs(msg.getDescs().stream()
+                    .map(d -> d.toVo(DataFilter.get()))
+                    .collect(Collectors.toList()));
+        }
+
         updateAutoMessageFields(msg);
-        checkUpdateShortId(msg);
-        // Copy the changes back to the message
-        DataFilter filter = DataFilter.get();
-        message.setDescs(msg.getDescs().stream()
-                .map(d -> d.toVo(filter))
-                .collect(Collectors.toList()));
-        message.setShortId(msg.getShortId());
         return message;
     }
 

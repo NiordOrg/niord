@@ -20,6 +20,7 @@ import jdk.nashorn.api.scripting.JSObject;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.message.MessageService;
+import org.niord.core.message.MessageService.AdjustmentType;
 import org.niord.core.service.BaseService;
 import org.niord.core.util.CdiUtils;
 import org.niord.model.message.MainType;
@@ -58,7 +59,7 @@ import java.util.stream.Collectors;
 public class JsResourceService extends BaseService {
 
     private static final Class<?>[] SCRIPT_CLASSES  = {
-            CdiUtils.class, Status.class, Type.class, MainType.class, MessagePartType.class
+            CdiUtils.class, Status.class, Type.class, MainType.class, MessagePartType.class, AdjustmentType.class
     };
     public static final String NIORD_LOAD_SCHEME    = "niord:";
     public static final String EM_PROPERTY          = "em";
