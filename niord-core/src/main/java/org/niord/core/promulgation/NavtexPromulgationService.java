@@ -127,7 +127,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
                 .forEach(t -> navtex.getTransmitters().put(t.getName(), Boolean.FALSE));
 
         // Select transmitters associated with the current message areas
-        if (!message.getAreas().isEmpty()) {
+        if (message.getAreas() != null && !message.getAreas().isEmpty()) {
             List<Area> areas = message.getAreas().stream()
                     .map(Area::new)
                     .collect(Collectors.toList());

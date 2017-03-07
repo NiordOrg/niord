@@ -37,8 +37,12 @@
 
                 </div>
                 <div ng-if="canCreateMessage('NW')" style="display: inline-block">
-                    <template-field class="aton-btn" template-data="message" main-type="NW"
-                                    placeholder="{{'editor.new_nw_template' | translate}}" atons="selectedAtons"></template-field>
+                    <template-field class="aton-btn"
+                                    template-data="message"
+                                    main-type="NW"
+                                    message-updated="messageTemplateExecuted(message)"
+                                    placeholder="{{'editor.new_nw_template' | translate}}"
+                                    atons="selectedAtons"></template-field>
                 </div>
                 <div ng-if="canCreateMessage('NM')">
                     <button class="btn btn-sm btn-primary aton-btn"  ng-click="createMessage('NM')"
@@ -46,8 +50,12 @@
 
                 </div>
                 <div ng-if="canCreateMessage('NM')" style="display: inline-block">
-                    <template-field class="aton-btn" template-data="message" main-type="NM"
-                                    placeholder="{{'editor.new_nm_template' | translate}}" atons="selectedAtons"></template-field>
+                    <template-field class="aton-btn"
+                                    template-data="message"
+                                    main-type="NM"
+                                    message-updated="messageTemplateExecuted(message)"
+                                    placeholder="{{'editor.new_nm_template' | translate}}"
+                                    atons="selectedAtons"></template-field>
                 </div>
             </div>
 

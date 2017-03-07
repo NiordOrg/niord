@@ -92,7 +92,13 @@
 
                 <button ng-if="operationSelected('select')" class="btn btn-primary btn-sm pull-right"
                         ng-click="selectOperation('execute')" ng-disabled="template === undefined">
-                    <span translate>template.select</span>
+                    <span class="glyphicon glyphicon-play"></span>
+                    <span translate>template.execute</span>
+                </button>
+
+                <button ng-if="operationSelected('execute')" class="btn btn-primary btn-sm pull-right"
+                        ng-click="messageSelected()">
+                    <span>OK</span>
                 </button>
             </div>
         </div>

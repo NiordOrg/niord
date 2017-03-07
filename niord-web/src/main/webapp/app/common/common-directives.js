@@ -394,7 +394,8 @@ angular.module('niord.common')
      * The directive can also be initialized with either a "main-type"
      * attribute, a list of AtoNs or a message template.
      ****************************************************************/
-    .directive('templateField', [ 'TemplateService', function (TemplateService) {
+    .directive('templateField', [ 'TemplateService', 'MessageService',
+            function (TemplateService, MessageService) {
         'use strict';
 
         return {
@@ -404,6 +405,7 @@ angular.module('niord.common')
             scope: {
                 templateData:   "=",
                 templateChanged:"&",
+                messageUpdated: "&",
                 message:        "=",
                 atons:          "=",
                 mainType:       "@",
@@ -452,16 +454,61 @@ angular.module('niord.common')
 
 
                 /** Opens the template selector/execution dialog **/
-                scope.openTemplateDialog = function (operation) {
+                function openTemplateDialog(operation, message) {
                     TemplateService.templateDialog(
-                            operation,
-                            scope.templateData.template,
-                            scope.message,
-                            scope.atons)
-                        .result.then(function (template) {
-                        scope.templateData.template = template;
-                        scope.templateUpdated();
+                        operation,
+                        scope.templateData.template,
+                        message,
+                        scope.atons
+                    ).result.then(function (message) {
+                        scope.message = message;
+                        if (attrs.messageUpdated) {
+                            scope.messageUpdated({ message: scope.message });
+                        }
+                        if (message.template) {
+                            scope.templateData.template = message.template;
+                            scope.templateUpdated();
+                        }
                     });
+                }
+
+
+                /** If AtoNs are defined, add the AtoNs as a geometry for the message **/
+                function updateGeometry(message) {
+                    if (scope.atons && scope.atons.length > 0) {
+                        var featureCollection = {
+                            type: 'FeatureCollection',
+                            features: []
+                        };
+                        angular.forEach(scope.atons, function (aton) {
+                            var feature = {
+                                type: 'Feature',
+                                properties: { aton: aton },
+                                geometry: { type: 'Point',  coordinates: [ aton.lon, aton.lat ] }
+                            };
+                            featureCollection.features.push(feature);
+                        });
+                        if (!message.parts || message.parts.length == 0) {
+                            message.parts = [{ type: 'DETAILS', eventDates: [], descs: [] }];
+                        }
+                        message.parts[0].geometry = featureCollection;
+                    }
+                    return message;
+                }
+
+
+                /** Opens the template selector/execution dialog **/
+                scope.openTemplateDialog = function (operation) {
+                    if (scope.message === undefined) {
+                        var mainType = scope.mainType || 'NW';
+                        MessageService.newMessageTemplate(mainType)
+                            .success(function (message) {
+                                updateGeometry(message);
+                                openTemplateDialog(operation, message);
+                            })
+                    } else {
+                        openTemplateDialog(operation, scope.message);
+                    }
                 }
             }
         }

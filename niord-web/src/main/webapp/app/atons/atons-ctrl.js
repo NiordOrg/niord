@@ -346,6 +346,16 @@ angular.module('niord.atons')
             };
 
 
+            /** Called when the message template dialog has been used to create a message **/
+            $scope.messageTemplateExecuted = function (message) {
+
+                $rootScope.templateMessage = message;
+                $scope.clearSelection();
+                // Navigate to the message editor page
+                $state.go('editor.template');
+            };
+
+
             /*****************************/
             /** Utility functions       **/
             /*****************************/

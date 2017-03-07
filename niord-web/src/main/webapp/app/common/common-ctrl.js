@@ -163,7 +163,7 @@ angular.module('niord.common')
             $scope.operation    = operation || 'select';
             $scope.atons        = atons || [];
             $scope.template     = template;
-            $scope.message      = message;
+            $scope.message      = angular.copy(message);
             $scope.params       = {
                 name: '',
                 category: undefined
@@ -208,6 +208,12 @@ angular.module('niord.common')
             $scope.selectTemplate = function (template) {
                 $scope.template = template;
                 $scope.createExampleMessage();
+            };
+
+
+            /** Called when the message has been updated by executing a template **/
+            $scope.messageSelected = function () {
+                $scope.$close($scope.message);
             };
 
 
