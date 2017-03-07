@@ -112,6 +112,11 @@ public class TemplateService extends BaseService {
      */
     public PagedSearchResultVo<Template> searchTemplates(TemplateSearchParams params) {
 
+        // If AtoNs have been specified, perform a special (and more expensive) search
+        if (params.getAtons() != null && !params.getAtons().isEmpty()) {
+            return searchTemplatesByAtoNs(params);
+        }
+
         long t0 = System.currentTimeMillis();
 
         PagedSearchResultVo<Template> result = new PagedSearchResultVo<>();
@@ -134,14 +139,58 @@ public class TemplateService extends BaseService {
         Root<Template> templateRoot = query.from(Template.class);
         query.select(templateRoot)
                 .where(buildQueryPredicates(cb, query, templateRoot, params))
-                .orderBy(cb.desc(countTemplatesRoot.get("created")));
+                .orderBy(cb.desc(templateRoot.get("created")));
 
-        List<Template> mails = em.createQuery(query)
+        List<Template> templates = em.createQuery(query)
                 .setMaxResults(params.getMaxSize())
                 .setFirstResult(params.getPage() * params.getMaxSize())
                 .getResultList();
-        result.setData(mails);
+
+        result.setData(templates);
         result.updateSize();
+
+        log.info("Search [" + params + "] returned " + result.getSize() + " of " + result.getTotal() + " in "
+                + (System.currentTimeMillis() - t0) + " ms");
+
+        return result;
+    }
+
+
+    /**
+     * Performs pages search for templates matching the search criteria.
+     * <p>
+     * This is an extended version of the search function that supports filtering the templates
+     * on a list of AtoNs.
+     * Beware that the function is quite expensive.
+     *
+     * @param params the search criteria
+     * @return the search result
+     */
+    public PagedSearchResultVo<Template> searchTemplatesByAtoNs(TemplateSearchParams params) {
+
+        long t0 = System.currentTimeMillis();
+
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+
+        // First, perform a full DB search
+        CriteriaQuery<Template> query = cb.createQuery(Template.class);
+        Root<Template> templateRoot = query.from(Template.class);
+        query.select(templateRoot)
+                .where(buildQueryPredicates(cb, query, templateRoot, params))
+                .orderBy(cb.desc(templateRoot.get("created")));
+
+        List<Template> templates = em.createQuery(query)
+                .setMaxResults(params.getMaxSize())
+                .setFirstResult(params.getPage() * params.getMaxSize())
+                .getResultList();
+
+        // Next, filter programmatically on AtoNs
+        if (params.getAtons() != null && !params.getAtons().isEmpty()) {
+            templates = resolveAtonTemplates(templates, params.getAtons());
+        }
+
+        // Extract the paged search result
+        PagedSearchResultVo<Template> result = PagedSearchResultVo.paginate(templates, params);
 
         log.info("Search [" + params + "] returned " + result.getSize() + " of " + result.getTotal() + " in "
                 + (System.currentTimeMillis() - t0) + " ms");
@@ -511,28 +560,15 @@ public class TemplateService extends BaseService {
      * @param atons the atons to find templates for
      * @return the matching templates
      */
-    public List<Template> resolveAtonTemplates(List<AtonNodeVo> atons) {
-
-        long t0 = System.currentTimeMillis();
-
-        // Start out with all active templates for the current domain
-        TemplateSearchParams params = new TemplateSearchParams()
-                .domain(domainService.currentDomain().getDomainId())
-                .inactive(false);
-        List<Template> templates = searchTemplates(params).getData();
+    private List<Template> resolveAtonTemplates(List<Template> templates, List<AtonNodeVo> atons) {
 
         // Resolve matching templates via associated categories. Cache the result by category ID
         Map<Integer, Boolean> includeCategory = new HashMap<>();
 
         // Filter the templates
-        List<Template> result = templates.stream()
+        return templates.stream()
                 .filter(t -> matchesAtons(atons, t, includeCategory))
                 .collect(Collectors.toList());
-
-        log.info("Found " + result.size() + " templates matching " + atons.size() + " AtoNs in "
-            + (System.currentTimeMillis() - t0) + " ms");
-
-        return result;
     }
 
 

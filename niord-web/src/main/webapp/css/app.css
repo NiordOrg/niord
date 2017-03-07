@@ -137,6 +137,10 @@ input.ng-invalid-messageId {
     background-color: #eeeeee!important;
 }
 
+.disabled {
+    color: lightgray;
+}
+
 .form-control-inline {
     min-width: 0;
     width: auto;

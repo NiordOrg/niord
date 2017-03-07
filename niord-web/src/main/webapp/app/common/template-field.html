@@ -1,0 +1,30 @@
+<div class="input-group {{class}}">
+
+    <ui-select ng-model="templateData.template" ng-change="templateUpdated()">
+        <ui-select-match placeholder="{{placeholder}}">
+            {{templateData.template.descs[0].name}}
+            <span class="base-data-inactive" ng-if="!templateData.template.active">(inactive)</span>
+        </ui-select-match>
+        <ui-select-choices repeat="template in searchResult"
+                           refresh="refreshTemplates($select.search)"
+                           refresh-delay="200">
+            <div>
+                <span ng-bind-html="template.descs[0].name | highlight: $select.search"></span>
+                <span class="base-data-inactive" ng-if="!template.active">(inactive)</span>
+            </div>
+
+        </ui-select-choices>
+    </ui-select>
+
+    <span class="input-group-addon clickable" style="font-size: 12px" ng-click="openTemplateDialog()">
+        <span class="glyphicon glyphicon-search"></span>
+    </span>
+    <span class="input-group-addon clickable" ng-class="{ 'disabled' : !templateData.template }"
+          style="font-size: 12px" ng-click="removeTemplate()">
+        <span class="glyphicon glyphicon-trash"></span>
+    </span>
+    <span class="input-group-addon" ng-class="{ 'clickable' : templateData.template, 'disabled' : !templateData.template }"
+          style="font-size: 12px" ng-click="executeTemplate()">
+        <span class="glyphicon glyphicon-play"></span>
+    </span>
+</div>

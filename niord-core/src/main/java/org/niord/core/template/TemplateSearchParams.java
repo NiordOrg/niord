@@ -16,6 +16,7 @@
 
 package org.niord.core.template;
 
+import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.model.search.PagedSearchParamsVo;
 
 import java.util.ArrayList;
@@ -35,6 +36,8 @@ public class TemplateSearchParams extends PagedSearchParamsVo {
     Integer category;       // If defined, only include templates for the category or sub-categories
     String domain;          // If defined, only include templates for the given domain
     boolean inactive;       // Include inactive templates
+    List<AtonNodeVo> atons = new ArrayList<>();
+
 
     /**
      * Returns a string representation of the search criteria
@@ -48,6 +51,7 @@ public class TemplateSearchParams extends PagedSearchParamsVo {
         if (isNotBlank(name)) { desc.add(String.format("Name: '%s'", name)); }
         if (isNotBlank(domain)) { desc.add(String.format("Domain: '%s'", domain)); }
         if (inactive) { desc.add("Include inactive: true"); }
+        if (atons != null && !atons.isEmpty()) { desc.add("#AtoNs: " + atons.size()); }
 
         return desc.stream().collect(Collectors.joining(", "));
     }
@@ -98,6 +102,15 @@ public class TemplateSearchParams extends PagedSearchParamsVo {
 
     public TemplateSearchParams inactive(boolean inactive) {
         this.inactive = inactive;
+        return this;
+    }
+
+    public List<AtonNodeVo> getAtons() {
+        return atons;
+    }
+
+    public TemplateSearchParams atons(List<AtonNodeVo> atons) {
+        this.atons = atons;
         return this;
     }
 }

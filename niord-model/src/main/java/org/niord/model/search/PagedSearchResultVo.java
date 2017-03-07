@@ -41,6 +41,17 @@ public class PagedSearchResultVo<T> implements IJsonSerializable {
     String description;
 
     /**
+     * Paginates a content list according to the page number and size specified by the search parameters
+     * @param content the list to paginate
+     * @param params the search parameters
+     * @return the paged result
+     */
+    public static <T> PagedSearchResultVo<T> paginate(List<T> content, PagedSearchParamsVo params) {
+        return paginate(content, params.getPage(), params.getMaxSize());
+    }
+
+
+    /**
      * Paginates a content list according to the page number and size
      * @param content the list to paginate
      * @param page the page number

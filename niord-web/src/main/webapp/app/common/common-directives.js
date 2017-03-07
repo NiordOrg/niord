@@ -388,6 +388,91 @@ angular.module('niord.common')
     }])
 
 
+    /****************************************************************
+     * The template-field directive supports selecting a template via
+     * the templateData.template attribute.
+     * The directive can also be initialized with either a "main-type"
+     * attribute, a list of AtoNs or a message template.
+     ****************************************************************/
+    .directive('templateField', [ '$http', '$rootScope', function ($http, $rootScope) {
+        'use strict';
+
+        return {
+            restrict: 'E',
+            templateUrl: '/app/common/template-field.html',
+            replace: false,
+            scope: {
+                templateData:   "=",
+                templateChanged:"&",
+                message:        "=",
+                atons:          "=",
+                mainType:       "@",
+                class:          "@",
+                placeholder:    "@",
+                tabIndex:       "="
+            },
+            link: function(scope, element, attrs) {
+
+                scope.templateData = scope.templateData || {};
+                scope.atons = scope.atons || [];
+                scope.class = scope.class || "";
+                scope.placeholder = scope.placeholder || "Select Template";
+
+                if (scope.tabIndex) {
+                    var input = element.find("input");
+                    input.attr('tabindex', scope.tabIndex);
+                }
+
+                /** Called whenever the template has been updated **/
+                scope.templateUpdated = function () {
+                    if (attrs.templateChanged) {
+                        scope.templateChanged();
+                    }
+                };
+
+
+                // Use for template selection
+                scope.searchResult = [];
+                scope.refreshTemplates = function (name) {
+                    if (scope.atons.length == 0 && (!name || name.length == 0)) {
+                        return;
+                    }
+                    var params =
+                        '?domain=' + $rootScope.domain.domainId +
+                        '&language=' + $rootScope.language;
+                    if (name) {
+                        params += '&name=' + encodeURIComponent(name);
+                    }
+                    $http.put('/rest/templates/search' + params, scope.atons)
+                        .success(function(response) {
+                            scope.searchResult = response.data;
+                        });
+                };
+
+
+                /** Removes the current template selection */
+                scope.removeTemplate = function () {
+                    scope.templateData.template = undefined;
+                    scope.templateUpdated();
+                };
+
+
+                /** Opens the template selector dialog **/
+                scope.openTemplateDialog = function () {
+                    $uibModal.open({
+                        controller: "TemplateDialogCtrl",
+                        templateUrl: "/app/common/template-dialog.html",
+                        size: 'md'
+                    }).result.then(function (category) {
+                        scope.templateData.template = category;
+                        scope.templateUpdated();
+                    });
+                }
+
+            }
+        }
+    }])
+
 
     /****************************************************************
      * The editor-fields-field directive supports selecting a list of

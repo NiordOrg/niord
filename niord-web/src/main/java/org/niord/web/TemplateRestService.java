@@ -138,12 +138,35 @@ public class TemplateRestService extends AbstractBatchableRestService {
             @QueryParam("maxSize") @DefaultValue("100") int maxSize,
             @QueryParam("page") @DefaultValue("0") int page) {
 
+        return searchTemplatesByAtoNs(language, name, domainId, categoryId, includeInactive, maxSize, page, null);
+    }
+
+
+    /** Extended version of the template search that additionally matches templates against AtoNs
+     * by matching the associated category and parent categories  */
+    @PUT
+    @Path("/search")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public PagedSearchResultVo<TemplateVo> searchTemplatesByAtoNs(
+            @QueryParam("language") @DefaultValue("en") String language,
+            @QueryParam("name") String name,
+            @QueryParam("domainId") String domainId,
+            @QueryParam("categoryId") Integer categoryId,
+            @QueryParam("includeInactive") @DefaultValue("false") Boolean includeInactive,
+            @QueryParam("maxSize") @DefaultValue("100") int maxSize,
+            @QueryParam("page") @DefaultValue("0") int page,
+            List<AtonNodeVo> atons) {
+
         TemplateSearchParams params = new TemplateSearchParams()
                 .language(language)
                 .name(name)
                 .domain(domainId)
                 .category(categoryId)
-                .inactive(includeInactive);
+                .inactive(includeInactive)
+                .atons(atons);
         params.maxSize(maxSize).page(page);
 
         DataFilter dataFilter = DataFilter.get().lang(language);
@@ -242,37 +265,6 @@ public class TemplateRestService extends AbstractBatchableRestService {
         // NB: Access to the message is checked:
         SystemMessageVo message = messageRestService.getSystemMessage(messageId);
         return templateService.executeTemplate(new Template(template), message);
-    }
-
-
-    /***************************************/
-    /** AtonN functionality               **/
-    /***************************************/
-
-
-    /**
-     * Resolves all templates that matches the given AtoNs
-     * by matching the associated category and parent categories
-     *
-     * @param atons the atons to find templates for
-     * @return the matching templates
-     */
-    @PUT
-    @Path("/matches-atons")
-    @Consumes("application/json;charset=UTF-8")
-    @Produces("application/json;charset=UTF-8")
-    @RolesAllowed(Roles.USER)
-    @GZIP
-    @NoCache
-    public List<TemplateVo>  resolveAtonTemplates(
-            @QueryParam("language") @DefaultValue("en") String language,
-            List<AtonNodeVo> atons) throws Exception {
-
-        DataFilter filter = DataFilter.get().lang(language);
-
-        return templateService.resolveAtonTemplates(atons).stream()
-                .map(t -> t.toVo(filter))
-                .collect(Collectors.toList());
     }
 
 }

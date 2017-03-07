@@ -98,6 +98,11 @@ div.map-extent span::first-letter {
     margin-bottom: 10px;
 }
 
+.aton-btn {
+    margin-top: 5px;
+    width: 340px
+}
+
 .aton-feature-collection-panel {
     margin: 10px 5px 5px 0;
     padding: 10px;

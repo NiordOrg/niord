@@ -28,19 +28,26 @@
 
             <div class="aton-btn-panel">
                 <div>
-                    <span class="hidden-xs">Template&nbsp;</span>
-                    <select class="input-xs" ng-model="feature.geometry.template" style="color: #333"
-                            ng-options="template.id as template.descs[0].name for template in templates">
-                        <option value=""></option>
-                    </select>
+                    <button class="btn btn-sm btn-default aton-btn" ng-click="clearSelection()"
+                            ng-disabled="selection.isEmpty()">Clear selection</button>
                 </div>
-                <div style="margin-top: 10px">
-                    <button class="btn btn-sm btn-default" ng-click="clearSelection()"
-                            ng-disabled="selection.isEmpty()">Clear selection</button>&nbsp;&nbsp;
-                    <button class="btn btn-sm btn-primary" ng-if="canCreateMessage('NW')" ng-click="createMessage('NW')"
+                <div ng-if="canCreateMessage('NW')">
+                    <button class="btn btn-sm btn-primary aton-btn"  ng-click="createMessage('NW')"
                             ng-disabled="selection.isEmpty()" translate>editor.new_nw</button>
-                    <button class="btn btn-sm btn-primary" ng-if="canCreateMessage('NM')" ng-click="createMessage('NM')"
+
+                </div>
+                <div ng-if="canCreateMessage('NW')" style="display: inline-block">
+                    <template-field class="aton-btn" template-data="message" main-type="NW"
+                                    placeholder="{{'editor.new_nw_template' | translate}}" atons="selectedAtons"></template-field>
+                </div>
+                <div ng-if="canCreateMessage('NM')">
+                    <button class="btn btn-sm btn-primary aton-btn"  ng-click="createMessage('NM')"
                             ng-disabled="selection.isEmpty()" translate>editor.new_nm</button>
+
+                </div>
+                <div ng-if="canCreateMessage('NM')" style="display: inline-block">
+                    <template-field class="aton-btn" template-data="message" main-type="NM"
+                                    placeholder="{{'editor.new_nm_template' | translate}}" atons="selectedAtons"></template-field>
                 </div>
             </div>
 

@@ -186,14 +186,7 @@ angular.module('niord.atons')
             mergeWithNodeTypes: function (aton, nodeTypeNames) {
                 var param = { aton: aton, nodeTypeNames: nodeTypeNames };
                 return $http.post('/rest/atons/defaults/merge-with-node-types', param);
-            },
-
-
-            /** Returns message templates that matches a list of AtoNs */
-            resolveAtonTemplates: function(atons) {
-                return $http.put('/rest/templates/matches-atons?language=' + $rootScope.language, atons);
             }
-
         };
     }]);
 
