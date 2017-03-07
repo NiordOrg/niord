@@ -215,7 +215,7 @@ angular.module('niord.common')
             $scope.createExampleMessage = function () {
                 $scope.exampleMessage = undefined;
                 if ($scope.template && $scope.template.messageId) {
-                    MessageService.editableDetails($scope.template.messageId)
+                    MessageService.allLangDetails($scope.template.messageId)
                         .success(function (message) {
                             $scope.exampleMessage = LangService.sortDescs(message);
                         });

@@ -255,7 +255,7 @@ angular.module('niord.common')
             this.search = function(name, category, atons) {
                 atons = atons || [];
                 var params =
-                    '?domain=' + encodeURIComponent($rootScope.domain.domainId) +
+                    '?domainId=' + encodeURIComponent($rootScope.domain.domainId) +
                     '&language=' + $rootScope.language;
                 if (name) {
                     params += '&name=' + encodeURIComponent(name);
