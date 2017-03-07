@@ -394,7 +394,7 @@ angular.module('niord.common')
      * The directive can also be initialized with either a "main-type"
      * attribute, a list of AtoNs or a message template.
      ****************************************************************/
-    .directive('templateField', [ '$http', '$rootScope', function ($http, $rootScope) {
+    .directive('templateField', [ 'TemplateService', function (TemplateService) {
         'use strict';
 
         return {
@@ -437,13 +437,7 @@ angular.module('niord.common')
                     if (scope.atons.length == 0 && (!name || name.length == 0)) {
                         return;
                     }
-                    var params =
-                        '?domain=' + $rootScope.domain.domainId +
-                        '&language=' + $rootScope.language;
-                    if (name) {
-                        params += '&name=' + encodeURIComponent(name);
-                    }
-                    $http.put('/rest/templates/search' + params, scope.atons)
+                    TemplateService.search(name, null, scope.atons)
                         .success(function(response) {
                             scope.searchResult = response.data;
                         });
@@ -457,18 +451,18 @@ angular.module('niord.common')
                 };
 
 
-                /** Opens the template selector dialog **/
-                scope.openTemplateDialog = function () {
-                    $uibModal.open({
-                        controller: "TemplateDialogCtrl",
-                        templateUrl: "/app/common/template-dialog.html",
-                        size: 'md'
-                    }).result.then(function (category) {
-                        scope.templateData.template = category;
+                /** Opens the template selector/execution dialog **/
+                scope.openTemplateDialog = function (operation) {
+                    TemplateService.templateDialog(
+                            operation,
+                            scope.templateData.template,
+                            scope.message,
+                            scope.atons)
+                        .result.then(function (template) {
+                        scope.templateData.template = template;
                         scope.templateUpdated();
                     });
                 }
-
             }
         }
     }])

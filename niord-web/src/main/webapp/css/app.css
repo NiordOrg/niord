@@ -662,3 +662,29 @@ body > .ui-select-container {
 .selector-tree ul.fancytree-container {
     border: none;
 }
+
+/** Template selection dialog **/
+
+.selected-atons-btn {
+    font-size: 12px;
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    background-color: #eee;
+    border: 1px solid lightgray;
+    padding: 6px 10px;
+    margin-top: 2px;
+}
+
+.template-table {
+    max-height: 400px;
+    overflow-y: scroll;
+    border: 1px solid lightgray;
+}
+
+.template-dialog-header {
+    font-size: 12px;
+    padding: 4px 0;
+    text-align: center;
+    background-color: gray;
+    color: white;
+}

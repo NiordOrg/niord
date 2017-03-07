@@ -16,7 +16,7 @@
         </ui-select-choices>
     </ui-select>
 
-    <span class="input-group-addon clickable" style="font-size: 12px" ng-click="openTemplateDialog()">
+    <span class="input-group-addon clickable" style="font-size: 12px" ng-click="openTemplateDialog('select')">
         <span class="glyphicon glyphicon-search"></span>
     </span>
     <span class="input-group-addon clickable" ng-class="{ 'disabled' : !templateData.template }"
@@ -24,7 +24,7 @@
         <span class="glyphicon glyphicon-trash"></span>
     </span>
     <span class="input-group-addon" ng-class="{ 'clickable' : templateData.template, 'disabled' : !templateData.template }"
-          style="font-size: 12px" ng-click="executeTemplate()">
+          style="font-size: 12px" ng-click="openTemplateDialog('execute')">
         <span class="glyphicon glyphicon-play"></span>
     </span>
 </div>

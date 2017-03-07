@@ -148,5 +148,81 @@ angular.module('niord.common')
                     $scope.$close(area);
                 });
             };
+        }])
+
+
+    /**
+     * Controller for template selection and execution dialog
+     */
+    .controller('TemplateDialogCtrl', ['$scope', 'LangService', 'TemplateService', 'MessageService',
+                'operation', 'template', 'message', 'atons',
+        function ($scope, LangService, TemplateService, MessageService,
+                  operation, template, message, atons) {
+            'use strict';
+
+            $scope.operation    = operation || 'select';
+            $scope.atons        = atons || [];
+            $scope.template     = template;
+            $scope.message      = message;
+            $scope.params       = {
+                name: '',
+                category: undefined
+            };
+            $scope.exampleMessage = undefined;
+
+
+            /** Initialize the tab-selection **/
+            $scope.selectOperation = function (operation) {
+                $scope.operation = operation;
+                $scope.executeTab   = operation == 'execute' && $scope.template !== undefined;
+                $scope.selectTab    = !$scope.executeTab;
+            };
+            $scope.selectOperation(operation);
+
+
+            /** Returns if the currently selected operation is the parameter one **/
+            $scope.operationSelected = function (operation) {
+                return $scope.operation == operation;
+            };
+
+
+            // Use for template selection
+            $scope.searchResult = [];
+            $scope.refreshTemplates = function () {
+                TemplateService.search($scope.params.name, $scope.params.category, $scope.atons)
+                    .success(function(response) {
+                        $scope.searchResult = response.data;
+                    });
+            };
+            $scope.$watch("params", $scope.refreshTemplates, true);
+
+
+            /** Clears the AtoN selection **/
+            $scope.clearAtons = function () {
+                $scope.atons.length = 0;
+                $scope.refreshTemplates();
+            };
+
+
+            /** Selects the given template **/
+            $scope.selectTemplate = function (template) {
+                $scope.template = template;
+                $scope.createExampleMessage();
+            };
+
+
+            /** Create an example message for the currently selected template **/
+            $scope.createExampleMessage = function () {
+                $scope.exampleMessage = undefined;
+                if ($scope.template && $scope.template.messageId) {
+                    MessageService.editableDetails($scope.template.messageId)
+                        .success(function (message) {
+                            $scope.exampleMessage = LangService.sortDescs(message);
+                        });
+                }
+            };
+
         }]);
+
+
 

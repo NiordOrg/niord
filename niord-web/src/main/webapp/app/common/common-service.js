@@ -26,6 +26,12 @@ angular.module('niord.common')
         function ($rootScope, $window, $translate) {
             'use strict';
 
+            /** Returns the current language **/
+            this.language = function () {
+                return $rootScope.language;
+            };
+
+
             /** Change the current language settings */
             this.changeLanguage = function(lang) {
                 $translate.use(lang);
@@ -234,6 +240,47 @@ angular.module('niord.common')
                 that.changeDomain(domain);
             };
 
+        }])
+
+
+    /**
+     * The template service is used for querying message templates.
+     */
+    .service('TemplateService', ['$rootScope', '$http', '$uibModal',
+        function ($rootScope, $http, $uibModal) {
+            'use strict';
+
+
+            /** Searches for message templates */
+            this.search = function(name, category, atons) {
+                atons = atons || [];
+                var params =
+                    '?domain=' + encodeURIComponent($rootScope.domain.domainId) +
+                    '&language=' + $rootScope.language;
+                if (name) {
+                    params += '&name=' + encodeURIComponent(name);
+                }
+                if (category) {
+                    params += '&categoryId=' + category.id;
+                }
+                return $http.put('/rest/templates/search' + params, atons);
+            };
+
+
+            /** Opens the template selector dialog **/
+            this.templateDialog = function (operation, template, message, atons) {
+                return $uibModal.open({
+                    controller: "TemplateDialogCtrl",
+                    templateUrl: "/app/common/template-dialog.html",
+                    size: 'lg',
+                    resolve: {
+                        operation: function () { return operation; },
+                        template: function () { return template; },
+                        message: function () { return message; },
+                        atons: function () { return atons; }
+                    }
+                });
+            };
         }])
 
 
