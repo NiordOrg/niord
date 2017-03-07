@@ -41,6 +41,11 @@
 
 /** Editor -> Editor **/
 
+.new-msg-btn {
+    width: 100%;
+    margin-top: 5px;
+}
+
 .editor-fields-group {
     background-color: #666;
     color: white;

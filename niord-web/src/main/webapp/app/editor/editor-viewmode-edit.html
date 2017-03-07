@@ -16,12 +16,26 @@
         </span>
     </h3>
 
-    <div ng-if="!message || !message.mainType" style="margin-top: 10px">
-        <div>
-            <button class="btn btn-sm btn-primary" ng-if="canCreateMessage('NW')" ng-click="createMessage('NW')"
-                    ng-disabled="selection.isEmpty()" translate>editor.new_nw</button>
-            <button class="btn btn-sm btn-primary" ng-if="canCreateMessage('NM')" ng-click="createMessage('NM')"
-                    ng-disabled="selection.isEmpty()" translate>editor.new_nm</button>
+    <div ng-if="!message || !message.mainType" style="margin-top: 10px;">
+        <div style="border: 1px solid lightgray; padding: 10px; width: 340px">
+            <div ng-if="canCreateMessage('NW')">
+                <button class="btn btn-sm btn-primary new-msg-btn"  ng-click="createMessage('NW')"
+                        translate>editor.new_nw</button>
+
+            </div>
+            <div ng-if="canCreateMessage('NW')" style="display: inline-block">
+                <template-field class="new-msg-btn" template-data="message" main-type="NW"
+                                placeholder="{{'editor.new_nw_template' | translate}}"></template-field>
+            </div>
+            <div ng-if="canCreateMessage('NM')">
+                <button class="btn btn-sm btn-primary new-msg-btn"  ng-click="createMessage('NM')"
+                        translate>editor.new_nm</button>
+
+            </div>
+            <div ng-if="canCreateMessage('NM')" style="display: inline-block">
+                <template-field class="new-msg-btn" template-data="message" main-type="NM"
+                                placeholder="{{'editor.new_nm_template' | translate}}"></template-field>
+            </div>
         </div>
 
         <div ng-include="'/app/editor/recently-edited-messages.html'"></div>
