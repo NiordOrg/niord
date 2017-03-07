@@ -677,6 +677,7 @@ body > .ui-select-container {
 
 .template-table {
     max-height: 400px;
+    min-height: 200px;
     overflow-y: scroll;
     border: 1px solid lightgray;
 }

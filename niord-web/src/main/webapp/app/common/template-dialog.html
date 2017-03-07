@@ -9,7 +9,8 @@
             <!-- ***** Template selection ***** -->
             <uib-tab active="selectTab" select="selectOperation('select')">
                 <tab-heading>
-                    <span class="glyphicon glyphicon-search"></span> Select Template
+                    <span class="glyphicon glyphicon-search"></span>
+                    <span translate>template.select</span>
                 </tab-heading>
 
                 <div class="row" style="margin-top: 10px">
@@ -33,9 +34,7 @@
 
                 <div class="row" style="padding-top: 20px; font-size: 11px">
                     <div class="col-sm-12 col-md-6">
-                        <div class="template-dialog-header">
-                            Templates
-                        </div>
+                        <div class="template-dialog-header" translate>template.templates</div>
                         <div class="template-table">
                             <table class='table table-condensed'>
                                 <tr>
@@ -55,9 +54,7 @@
                     </div>
 
                     <div class="col-sm-12 col-md-6">
-                        <div class="template-dialog-header">
-                            Example Message
-                        </div>
+                        <div class="template-dialog-header" translate>template.sample_message</div>
                         <div ng-if="exampleMessage">
                             <table class='table table-condensed'>
                                 <tr render-message-details
@@ -76,7 +73,8 @@
             <!-- ***** Template execution ***** -->
             <uib-tab active="executeTab" disable="template === undefined"  select="selectOperation('execute')">
                 <tab-heading>
-                    <span class="glyphicon glyphicon-play"></span> Execute Template
+                    <span class="glyphicon glyphicon-play"></span>
+                    <span translate>template.execute</span>
                 </tab-heading>
 
                 <div>
@@ -94,7 +92,7 @@
 
                 <button ng-if="operationSelected('select')" class="btn btn-primary btn-sm pull-right"
                         ng-click="selectOperation('execute')" ng-disabled="template === undefined">
-                    Select <span ng-if="template">&quot;{{template.descs[0].name}}&quot;</span>
+                    <span translate>template.select</span>
                 </button>
             </div>
         </div>
