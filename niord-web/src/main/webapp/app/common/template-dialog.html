@@ -15,7 +15,8 @@
 
                 <div class="row" style="margin-top: 10px">
                     <div class="col-xs-12 col-sm-6 col-md-6">
-                        <input class="form-control input-sm col-sm-2" ng-model="params.name" type="text" placeholder="Name"
+                        <input class="form-control input-sm col-sm-2" ng-model="params.name"
+                               type="text" id="templateFilter" placeholder="Name" tabindex="0"
                                ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }">
                         <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
                               ng-click="params.name = ''" ng-show="params.name != ''"></span>
@@ -38,7 +39,8 @@
                                     <th>Name</th>
                                     <th>Lineage</th>
                                 </tr>
-                                <tr ng-repeat="t in searchResult" ng-class="{ 'bg-primary' : template && t.id == template.id }">
+                                <tr ng-repeat="t in searchResult" ng-class="{ 'bg-primary' : template && t.id == template.id }"
+                                    class="selected-template" tabindex="0">
                                     <td style="cursor: pointer; white-space: nowrap" ng-click="selectTemplate(t)">
                                         <span ng-if="t.descs && t.descs.length > 0">{{t.descs[0].name}}</span>
                                     </td>

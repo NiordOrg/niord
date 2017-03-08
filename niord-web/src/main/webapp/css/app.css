@@ -682,6 +682,10 @@ body > .ui-select-container {
     border: 1px solid lightgray;
 }
 
+.selected-template:focus {
+    outline: 0;
+}
+
 .template-dialog-header {
     font-size: 12px;
     padding: 4px 0;

@@ -154,9 +154,9 @@ angular.module('niord.common')
     /**
      * Controller for template selection and execution dialog
      */
-    .controller('TemplateDialogCtrl', ['$scope', 'LangService', 'TemplateService', 'MessageService',
+    .controller('TemplateDialogCtrl', ['$scope', '$document', '$timeout', 'LangService', 'TemplateService', 'MessageService',
                 'operation', 'categories', 'message', 'atons',
-        function ($scope, LangService, TemplateService, MessageService,
+        function ($scope, $document, $timeout, LangService, TemplateService, MessageService,
                   operation, categories, message, atons) {
             'use strict';
 
@@ -164,6 +164,7 @@ angular.module('niord.common')
             $scope.operation      = operation || 'select';
             $scope.atons          = atons || [];
             $scope.template       = categories.length > 0 ? categories[0] : undefined;
+            $scope.searchResult   = [];
             $scope.message        = angular.copy(message);
             $scope.params         = { name: '' };
             $scope.exampleMessage = undefined;
@@ -178,6 +179,37 @@ angular.module('niord.common')
             $scope.selectOperation(operation);
 
 
+            // Hook up a key listener that can be used to navigate the template list
+            function keydownListener(evt) {
+                var focused = $('.selected-template').is(':focus');
+                if (!$scope.template || $scope.searchResult.length == 0 || !focused || evt.isDefaultPrevented()) {
+                    return evt;
+                }
+                var index = $.inArray($scope.template, $scope.searchResult);
+                if (evt.which == 38 /* up arrow */) {
+                    if (index != -1 && index > 0) {
+                        $scope.selectTemplate($scope.searchResult[index - 1]);
+                        evt.preventDefault();
+                        $scope.$$phase || $scope.$apply();
+                    }
+                } else if (evt.which == 40 /* down arrow */) {
+                    if (index != -1 && index < $scope.searchResult.length - 1) {
+                        $scope.selectTemplate($scope.searchResult[index + 1]);
+                        evt.preventDefault();
+                        $scope.$$phase || $scope.$apply();
+                    }
+                }
+            }
+            $document.on('keydown', keydownListener);
+            $scope.$on('$destroy', function() {
+                $document.off('keydown', keydownListener);
+            });
+
+
+            $timeout(function () {
+                $('#templateFilter').focus();
+            }, 100);
+
             /** Returns if the currently selected operation is the parameter one **/
             $scope.operationSelected = function (operation) {
                 return $scope.operation == operation;
@@ -185,7 +217,6 @@ angular.module('niord.common')
 
 
             // Use for template selection
-            $scope.searchResult = [];
             $scope.refreshTemplates = function () {
                 TemplateService.search($scope.params.name, 'TEMPLATE', $scope.atons)
                     .success(function(response) {
