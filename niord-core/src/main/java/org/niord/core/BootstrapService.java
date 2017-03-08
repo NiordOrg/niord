@@ -50,6 +50,26 @@ public class BootstrapService extends BaseService {
             em.persist(domain);
             log.info("Created Master domain");
         }
+
+        handleUpgrade();
     }
 
+    /**
+     * Use for e.g. DB updates. Once all systems have been updated, this method should be empty
+     */
+    @SuppressWarnings("all")
+    private void handleUpgrade() {
+
+        try {
+
+            int updates = em.createNativeQuery(
+                    "update Category c set c.type = 'CATEGORY' where c.type is null or c.type = ''")
+                .executeUpdate();
+            em.flush();
+            log.info("*** UPDATED TYPE OF " + updates + " CATEGORIES");
+
+        } catch (Exception e) {
+            log.error("Error executing SQL ", e);
+        }
+    }
 }

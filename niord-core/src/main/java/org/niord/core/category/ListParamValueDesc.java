@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.niord.core.template;
+package org.niord.core.category;
 
 import org.niord.core.model.DescEntity;
-import org.niord.core.template.vo.ListParamValueDescVo;
+import org.niord.core.category.vo.ListParamValueDescVo;
 import org.niord.model.ILocalizedDesc;
 
 import javax.persistence.Entity;

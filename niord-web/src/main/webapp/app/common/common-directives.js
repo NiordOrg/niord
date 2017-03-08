@@ -394,8 +394,8 @@ angular.module('niord.common')
      * The directive can also be initialized with either a "main-type"
      * attribute, a list of AtoNs or a message template.
      ****************************************************************/
-    .directive('templateField', [ 'TemplateService', 'MessageService',
-            function (TemplateService, MessageService) {
+    .directive('templateField', [ 'TemplateService', 'MessageService', 'LangService',
+            function (TemplateService, MessageService, LangService) {
         'use strict';
 
         return {
@@ -415,10 +415,15 @@ angular.module('niord.common')
             },
             link: function(scope, element, attrs) {
 
+                scope.formatParents = LangService.formatParents;
                 scope.templateData = scope.templateData || {};
                 scope.atons = scope.atons || [];
                 scope.class = scope.class || "";
                 scope.placeholder = scope.placeholder || "Select Template";
+
+                if (!scope.templateData.categories) {
+                    scope.templateData.categories = [];
+                }
 
                 if (scope.tabIndex) {
                     var input = element.find("input");
@@ -439,16 +444,16 @@ angular.module('niord.common')
                     if (scope.atons.length == 0 && (!name || name.length == 0)) {
                         return;
                     }
-                    TemplateService.search(name, null, scope.atons)
+                    TemplateService.search(name, 'TEMPLATE', scope.atons)
                         .success(function(response) {
-                            scope.searchResult = response.data;
+                            scope.searchResult = response;
                         });
                 };
 
 
                 /** Removes the current template selection */
                 scope.removeTemplate = function () {
-                    scope.templateData.template = undefined;
+                    scope.templateData.categories.length = 0;
                     scope.templateUpdated();
                 };
 
@@ -457,7 +462,7 @@ angular.module('niord.common')
                 function openTemplateDialog(operation, message) {
                     TemplateService.templateDialog(
                         operation,
-                        scope.templateData.template,
+                        scope.templateData.categories,
                         message,
                         scope.atons
                     ).result.then(function (message) {
@@ -1471,7 +1476,7 @@ angular.module('niord.common')
                 /** Computes the icon to display **/
                 function computeIcon(entity, node) {
                     var showInactive = scope.flagInactive && !entity.active;
-                    var showTemplate = scope.flagTemplate && entity.hasTemplate;
+                    var showTemplate = scope.flagTemplate && entity.type == 'TEMPLATE';
                     if (showInactive && showTemplate) {
                         node.icon = '/img/tree-icons/inactive-folder-tmpl.gif';
                     } else if (showInactive) {

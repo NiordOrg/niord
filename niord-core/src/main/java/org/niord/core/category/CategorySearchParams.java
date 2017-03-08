@@ -16,6 +16,7 @@
 
 package org.niord.core.category;
 
+import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.model.search.PagedSearchParamsVo;
 
 import java.util.ArrayList;
@@ -33,9 +34,11 @@ public class CategorySearchParams extends PagedSearchParamsVo {
     Integer parentId;
     String language;
     String name;
+    CategoryType type;
     String domain;          // If defined, only include categories for the given domain
     boolean exact;          // Match the name exactly (though case insensitive) rather than a substring match
     boolean inactive;       // Include inactive categories
+    List<AtonNodeVo> atons = new ArrayList<>();
 
     /**
      * Returns a string representation of the search criteria
@@ -45,11 +48,13 @@ public class CategorySearchParams extends PagedSearchParamsVo {
     public String toString() {
         List<String> desc = new ArrayList<>();
         if (parentId != null) { desc.add(String.format("Parent: %s", parentId)); }
+        if (type != null) { desc.add(String.format("Type: %s", type)); }
         if (isNotBlank(language)) { desc.add(String.format("Language: %s", language)); }
         if (isNotBlank(name)) { desc.add(String.format("Name: '%s'", name)); }
         if (isNotBlank(domain)) { desc.add(String.format("Domain: '%s'", domain)); }
         if (exact) { desc.add("Exact: true"); }
         if (inactive) { desc.add("Include inactive: true"); }
+        if (atons != null && !atons.isEmpty()) { desc.add("#AtoNs: " + atons.size()); }
 
         return desc.stream().collect(Collectors.joining(", "));
     }
@@ -57,6 +62,15 @@ public class CategorySearchParams extends PagedSearchParamsVo {
     /*******************************************/
     /** Method chaining Getters and Setters   **/
     /*******************************************/
+
+    public CategoryType getType() {
+        return type;
+    }
+
+    public CategorySearchParams type(CategoryType type) {
+        this.type = type;
+        return this;
+    }
 
     public Integer getParentId() {
         return parentId;
@@ -109,6 +123,15 @@ public class CategorySearchParams extends PagedSearchParamsVo {
 
     public CategorySearchParams inactive(boolean inactive) {
         this.inactive = inactive;
+        return this;
+    }
+
+    public List<AtonNodeVo> getAtons() {
+        return atons;
+    }
+
+    public CategorySearchParams atons(List<AtonNodeVo> atons) {
+        this.atons = atons;
         return this;
     }
 }

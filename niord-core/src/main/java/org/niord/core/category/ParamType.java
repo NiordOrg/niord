@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.niord.core.template;
+package org.niord.core.category;
 
 import org.niord.core.model.BaseEntity;
-import org.niord.core.template.vo.ParamTypeVo;
+import org.niord.core.category.vo.ParamTypeVo;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;

@@ -16,9 +16,13 @@
 package org.niord.core.category;
 
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.NiordApp;
+import org.niord.core.aton.AtonFilter;
+import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.script.ScriptResource;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
@@ -31,8 +35,11 @@ import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import javax.script.ScriptException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -49,6 +56,8 @@ public class CategoryService extends BaseService {
     @Inject
     DomainService domainService;
 
+    @Inject
+    NiordApp app;
 
     /**
      * Returns the category with the given legacy id
@@ -92,6 +101,9 @@ public class CategoryService extends BaseService {
             criteriaHelper.like(descs.get("name"), params.getName());
         }
 
+        // Optionally, filter by type
+        criteriaHelper.equals(categoryRoot.get("type"), params.getType());
+
         // Optionally, match the language
         if (StringUtils.isNotBlank(params.getLanguage())) {
             criteriaHelper.equals(descs.get("lang"), params.getLanguage());
@@ -104,14 +116,26 @@ public class CategoryService extends BaseService {
             criteriaHelper.equals(parent.get("id"), params.getParentId());
         }
 
-        // Optionally, filter by the domains associated with the current domain
+        // Optionally, filter by domain
         if (StringUtils.isNotBlank(params.getDomain())) {
+
             Domain d = domainService.findByDomainId(params.getDomain());
+
+            // First, filter by categories associated with the current domain
             if (d != null && d.getCategories().size() > 0) {
                 Predicate[] categoryMatch = d.getCategories().stream()
                         .map(c -> cb.like(categoryRoot.get("lineage"), c.getLineage() + "%"))
                         .toArray(Predicate[]::new);
                 criteriaHelper.add(cb.or(categoryMatch));
+            }
+
+            // Next, filter template messages by their associated list of domains
+            if (d != null) {
+                Join<Category, Domain> domains = categoryRoot.join("domains", JoinType.LEFT);
+                criteriaHelper.add(cb.or(
+                        cb.isEmpty(categoryRoot.get("domains")), // Either no domains specified
+                        cb.equal(domains.get("domainId"), d.getDomainId()) // or domain in domain list
+                ));
             }
         }
 
@@ -127,9 +151,18 @@ public class CategoryService extends BaseService {
                 //.orderBy(cb.asc(cb.locate(cb.lower(descs.get("name")), name.toLowerCase())));
 
         // Execute the query and update the search result
-        return em.createQuery(categoryQuery)
-                .setMaxResults(params.getMaxSize())
+        List<Category> categories = em.createQuery(categoryQuery)
                 .getResultList();
+
+        // Optionally, filter on AtoNs
+        // NB: Expensive!
+        if (params.getAtons() != null && !params.getAtons().isEmpty()) {
+            categories = resolveAtonCategories(categories, params.getAtons());
+        }
+
+        return categories.stream()
+                .limit(params.getMaxSize())
+                .collect(Collectors.toList());
     }
 
 
@@ -199,6 +232,7 @@ public class CategoryService extends BaseService {
      */
     public Category updateCategoryData(Category original, Category category) {
 
+        original.setType(category.getType());
         original.setMrn(category.getMrn());
         original.setActive(category.isActive());
         original.copyDescsAndRemoveBlanks(category.getDescs());
@@ -209,9 +243,16 @@ public class CategoryService extends BaseService {
         original.updateLineage();
         original.updateActiveFlag();
 
-        original = saveEntity(original);
+        original.getScriptResourcePaths().clear();
+        category.getScriptResourcePaths().stream()
+                .filter(p -> ScriptResource.path2type(p) != null)
+                .forEach(p -> original.getScriptResourcePaths().add(p));
+        original.setMessageId(category.getMessageId());
 
-        return original;
+       // Replace domains with persisted entities
+        original.setDomains(domainService.persistedDomains(category.getDomains()));
+
+        return saveEntity(original);
     }
 
 
@@ -243,6 +284,9 @@ public class CategoryService extends BaseService {
             Category parent = getByPrimaryKey(Category.class, parentId);
             parent.addChild(category);
         }
+
+        // Replace domains with persisted entities
+        category.setDomains(domainService.persistedDomains(category.getDomains()));
 
         category = saveEntity(category);
 
@@ -466,5 +510,79 @@ public class CategoryService extends BaseService {
      */
     public Category getFiringExercisesCategory() {
         return findByName("Firing Exercises", "en", null);
+    }
+
+
+    /***************************************/
+    /** AtonN functionality               **/
+    /***************************************/
+
+
+    /**
+     * Resolves all categories that matches the given AtoNs
+     * <p>
+     * NB: This is a potentially expensive operation involving iteration of category lineages,
+     *     including JavaScript evaluation of AtoN filters.
+     *     However, given that there are only dozens - and not hundreds - of categories,
+     *     we should be fine. Use with care though...
+     *
+     * @param atons the atons to find templates for
+     * @return the matching template categories
+     */
+    private List<Category> resolveAtonCategories(List<Category> categories, List<AtonNodeVo> atons) {
+
+        // Resolve matching categories via associated categories. Cache the result by category ID
+        Map<Integer, Boolean> includeCategory = new HashMap<>();
+
+        // Filter the templates
+        return categories.stream()
+                .filter(t -> matchesAtons(atons, t, includeCategory))
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Checks if all AtoNs matches the AtoN filters of the template category lineage
+     * @param atons the AtoNs to check
+     * @param category the template category to test
+     * @return if all AtoNs matches the AtoN filters of the template category lineage
+     */
+    private boolean matchesAtons(List<AtonNodeVo> atons, Category category, Map<Integer, Boolean> includeCategory) {
+
+        // There must be at least one AtoN filter in the template category lineage to qualify
+        boolean atonFiltered = false;
+
+        // Check the category and all its parent categories
+        for (Category cat = category; cat != null; cat = cat.getParent()) {
+            if (includeCategory.containsKey(cat.getId())) {
+                return includeCategory.get(cat.getId());
+            }
+            if (StringUtils.isNotBlank(cat.getAtonFilter())) {
+                atonFiltered = true;
+                boolean matchesAtons = matchesAtons(atons, cat.getAtonFilter());
+                includeCategory.put(cat.getId(), matchesAtons);
+                if (!matchesAtons) {
+                    return false;
+                }
+            }
+        }
+
+        return atonFiltered;
+    }
+
+
+    /**
+     * Checks if all AtoNs matches the AtoN filter
+     * @param atons the AtoNs to check
+     * @param atonFilter the AtoN filter to test
+     * @return if all AtoNs matches the AtoN filter
+     */
+    private boolean matchesAtons(List<AtonNodeVo> atons, String atonFilter) {
+        try {
+            AtonFilter filter = AtonFilter.getInstance(atonFilter);
+            return filter.matches(atons);
+        } catch (ScriptException e) {
+            return false;
+        }
     }
 }

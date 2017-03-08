@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package org.niord.core.template;
+package org.niord.core.category;
 
 import org.niord.core.model.BaseEntity;
 import org.niord.core.model.IndexedEntity;
-import org.niord.core.template.vo.ListParamValueDescVo;
-import org.niord.core.template.vo.ListParamValueVo;
+import org.niord.core.category.vo.ListParamValueDescVo;
+import org.niord.core.category.vo.ListParamValueVo;
 import org.niord.model.ILocalizable;
 
 import javax.persistence.CascadeType;

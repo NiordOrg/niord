@@ -168,10 +168,6 @@ var app = angular.module('niord.admin', [
                 url: "/areas",
                 templateUrl: "/app/admin/admin-page-areas.html"
             })
-            .state('admin.categories', {
-                url: "/categories",
-                templateUrl: "/app/admin/admin-page-categories.html"
-            })
             .state('admin.publications', {
                 url: "/publications",
                 templateUrl: "/app/admin/admin-page-publications.html"
@@ -220,9 +216,9 @@ var app = angular.module('niord.admin', [
                 url: "/script-resources/:path",
                 templateUrl: "/app/sysadmin/sysadmin-page-script-resources.html"
             })
-            .state('sysadmin.templates', {
-                url: "/templates/:template",
-                templateUrl: "/app/sysadmin/sysadmin-page-templates.html"
+            .state('sysadmin.categories', {
+                url: "/categories",
+                templateUrl: "/app/sysadmin/sysadmin-page-categories.html"
             })
             .state('sysadmin.reports', {
                 url: "/reports",

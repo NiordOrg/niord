@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.niord.core.template;
+package org.niord.core.category;
 
 import org.apache.commons.lang.StringUtils;
 

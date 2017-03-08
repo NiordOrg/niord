@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package org.niord.core.template;
+package org.niord.core.category;
 
-import org.niord.core.template.vo.ListParamTypeVo;
+import org.niord.core.category.vo.ListParamTypeVo;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;

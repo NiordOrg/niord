@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.niord.core.template.vo;
+package org.niord.core.category.vo;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 

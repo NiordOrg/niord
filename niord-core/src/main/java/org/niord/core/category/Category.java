@@ -16,8 +16,9 @@
 package org.niord.core.category;
 
 import org.niord.core.category.vo.SystemCategoryVo;
+import org.niord.core.domain.Domain;
 import org.niord.core.model.VersionedEntity;
-import org.niord.core.template.Template;
+import org.niord.core.script.ScriptResource;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.message.CategoryVo;
@@ -27,6 +28,9 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -39,7 +43,10 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * Represents a specific named category, part of an category-hierarchy
+ * Represents a specific named category, part of an category-hierarchy.
+ * <p>
+ * Categories come in two types, base categories and template categories.
+ * The latter type defines the templates used for creating standardized messages.
  */
 @Entity
 @Cacheable
@@ -57,6 +64,9 @@ import java.util.stream.Collectors;
 })
 @SuppressWarnings("unused")
 public class Category extends VersionedEntity<Integer> implements ILocalizable<CategoryDesc> {
+
+    @Enumerated(EnumType.STRING)
+    CategoryType type = CategoryType.CATEGORY;
 
     String legacyId;
 
@@ -79,11 +89,17 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     @ElementCollection
     List<String> editorFields = new ArrayList<>();
 
-    @OneToMany(mappedBy = "category")
-    @OrderColumn(name = "indexNo")
-    List<Template> templates = new ArrayList<>();
-
     String atonFilter;
+
+    @ManyToMany
+    List<Domain> domains = new ArrayList<>();
+
+    @OrderColumn(name = "indexNo")
+    @ElementCollection
+    List<String> scriptResourcePaths = new ArrayList<>();
+
+    // Example message ID
+    String messageId;
 
 
     /** Constructor */
@@ -124,6 +140,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
         if (category instanceof SystemCategoryVo) {
             SystemCategoryVo sysCategory = (SystemCategoryVo)category;
 
+            this.type = sysCategory.getType();
             if (compFilter.includeChildren() && sysCategory.getChildren() != null) {
                 sysCategory.getChildren().stream()
                         .map(a -> new Category(a, filter))
@@ -133,6 +150,16 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
                 editorFields.addAll(sysCategory.getEditorFields());
             }
             this.atonFilter = sysCategory.getAtonFilter();
+            sysCategory.getScriptResourcePaths().stream()
+                    .filter(p -> ScriptResource.path2type(p) != null)
+                    .forEach(p -> this.scriptResourcePaths.add(p));
+            this.messageId = sysCategory.getMessageId();
+            if (!sysCategory.getDomains().isEmpty()) {
+                this.domains = sysCategory.getDomains().stream()
+                        .map(Domain::new)
+                        .collect(Collectors.toList());
+            }
+
         }
     }
 
@@ -164,6 +191,8 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
         if (category instanceof SystemCategoryVo) {
             SystemCategoryVo sysCategory = (SystemCategoryVo)category;
 
+            sysCategory.setType(type);
+
             if (compFilter.includeChildren()) {
                 children.forEach(child -> sysCategory.checkCreateChildren().add(child.toVo(SystemCategoryVo.class, compFilter)));
             }
@@ -172,8 +201,12 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
                 sysCategory.setEditorFields(new ArrayList<>(editorFields));
             }
 
-            sysCategory.setHasTemplate(!templates.isEmpty());
             sysCategory.setAtonFilter(atonFilter);
+            sysCategory.setDomains(domains.stream()
+                    .map(Domain::toVo)
+                    .collect(Collectors.toList()));
+            sysCategory.getScriptResourcePaths().addAll(scriptResourcePaths);
+            sysCategory.setMessageId(messageId);
         }
 
         return category;
@@ -190,20 +223,33 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
      */
     @Transient
     public boolean hasChanged(Category template) {
-        return !Objects.equals(mrn, template.getMrn()) ||
+        return !Objects.equals(type, template.getType()) ||
+                !Objects.equals(mrn, template.getMrn()) ||
                 !Objects.equals(active, template.isActive()) ||
                 !Objects.equals(editorFields, template.getEditorFields()) ||
                 !Objects.equals(atonFilter, template.getAtonFilter()) ||
+                !Objects.equals(messageId, template.getMessageId()) ||
+                !Objects.equals(scriptResourcePaths, template.getScriptResourcePaths()) ||
+                domainsChanged(template) ||
                 descsChanged(template);
     }
 
 
-    /** Checks if the geometry has changed */
+    /** Checks if the description has changed */
     private boolean descsChanged(Category template) {
         return descs.size() != template.getDescs().size() ||
                 descs.stream()
                     .anyMatch(d -> template.getDesc(d.getLang()) == null ||
                             !Objects.equals(d.getName(), template.getDesc(d.getLang()).getName()));
+    }
+
+
+    /** Checks if the domains have changed */
+    private boolean domainsChanged(Category template) {
+        return domains.size() != template.getDomains().size() ||
+                domains.stream()
+                    .anyMatch(d -> template.getDomains()
+                            .stream().noneMatch(td -> Objects.equals(td.getDomainId(), d.getDomainId())));
     }
 
 
@@ -293,6 +339,14 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     /** Getters and Setters **/
     /*************************/
 
+    public CategoryType getType() {
+        return type;
+    }
+
+    public void setType(CategoryType type) {
+        this.type = type;
+    }
+
     public String getLegacyId() {
         return legacyId;
     }
@@ -359,20 +413,36 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
         this.editorFields = editorFields;
     }
 
-    public List<Template> getTemplates() {
-        return templates;
-    }
-
-    public void setTemplates(List<Template> templates) {
-        this.templates = templates;
-    }
-
     public String getAtonFilter() {
         return atonFilter;
     }
 
     public void setAtonFilter(String atonFilter) {
         this.atonFilter = atonFilter;
+    }
+
+    public List<Domain> getDomains() {
+        return domains;
+    }
+
+    public void setDomains(List<Domain> domains) {
+        this.domains = domains;
+    }
+
+    public List<String> getScriptResourcePaths() {
+        return scriptResourcePaths;
+    }
+
+    public void setScriptResourcePaths(List<String> scriptResourcePaths) {
+        this.scriptResourcePaths = scriptResourcePaths;
+    }
+
+    public String getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(String messageId) {
+        this.messageId = messageId;
     }
 }
 

@@ -13,46 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.niord.core.template.vo;
 
+package org.niord.core.category.vo;
+
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.niord.model.IJsonSerializable;
-import org.niord.model.ILocalizedDesc;
-
-import javax.xml.bind.annotation.XmlAttribute;
 
 /**
- * The entity description VO
+ * Abstract value object super class for the {@code ParamType} derived model entity
  */
-public class TemplateDescVo implements ILocalizedDesc, IJsonSerializable {
+@JsonTypeInfo(use= JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "kind")
+@JsonSubTypes({
+        //@JsonSubTypes.Type(value=BaseParamTypeVo.class, name="BASE"),
+        //@JsonSubTypes.Type(value=CompositeParamTypeVo.class, name="COMPOSITE"),
+        @JsonSubTypes.Type(value=ListParamTypeVo.class, name="LIST")
+})
+public abstract class ParamTypeVo implements IJsonSerializable {
 
-    String lang;
+    Integer id;
     String name;
 
-    /** {@inheritDoc} */
-    @Override
-    public boolean descDefined() {
-        return ILocalizedDesc.fieldsDefined(name);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    public void copyDesc(ILocalizedDesc desc) {
-        this.name = ((TemplateDescVo)desc).getName();
+    /**
+     * Constructor
+     */
+    public ParamTypeVo() {
     }
 
     /*************************/
     /** Getters and Setters **/
     /*************************/
 
-    @XmlAttribute
-    @Override
-    public String getLang() {
-        return lang;
+    public Integer getId() {
+        return id;
     }
 
-    @Override
-    public void setLang(String lang) {
-        this.lang = lang;
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getName() {

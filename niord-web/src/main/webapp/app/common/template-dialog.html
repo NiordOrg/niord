@@ -14,16 +14,13 @@
                 </tab-heading>
 
                 <div class="row" style="margin-top: 10px">
-                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
+                    <div class="col-xs-12 col-sm-6 col-md-6">
                         <input class="form-control input-sm col-sm-2" ng-model="params.name" type="text" placeholder="Name"
                                ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }">
                         <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
                               ng-click="params.name = ''" ng-show="params.name != ''"></span>
                     </div>
-                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-4">
-                        <categories-field category-data="params" multiple="false"></categories-field>
-                    </div>
-                    <div class="col-xs-12 col-sm-6 col-md-6 col-lg-4" ng-if="atons.length > 0">
+                    <div class="col-xs-12 col-sm-6 col-md-6" ng-if="atons.length > 0">
                         <span class="selected-atons-btn">
                             {{atons.length}} {{'menu.atons' | translate}} &nbsp;
                             <span class="glyphicon glyphicon-remove" style="cursor: pointer;"
@@ -32,21 +29,21 @@
                     </div>
                 </div>
 
-                <div class="row" style="padding-top: 20px; font-size: 11px">
+                <div class="row" style="padding-top: 10px; font-size: 11px">
                     <div class="col-sm-12 col-md-6">
                         <div class="template-dialog-header" translate>template.templates</div>
                         <div class="template-table">
                             <table class='table table-condensed'>
                                 <tr>
                                     <th>Name</th>
-                                    <th>Category</th>
+                                    <th>Lineage</th>
                                 </tr>
                                 <tr ng-repeat="t in searchResult" ng-class="{ 'bg-primary' : template && t.id == template.id }">
-                                    <td style="cursor: pointer" ng-click="selectTemplate(t)">
+                                    <td style="cursor: pointer; white-space: nowrap" ng-click="selectTemplate(t)">
                                         <span ng-if="t.descs && t.descs.length > 0">{{t.descs[0].name}}</span>
                                     </td>
-                                    <td style="cursor: pointer" ng-click="selectTemplate(t)">
-                                        {{t.category.descs[0].name}}
+                                    <td style="cursor: pointer; white-space: nowrap; overflow-x: hidden" ng-click="selectTemplate(t)">
+                                        <span ng-if="t.parent">{{formatParents(t.parent)}}</span>
                                     </td>
                                 </tr>
                             </table>

@@ -90,7 +90,7 @@ public class AreaRestService extends AbstractBatchableRestService {
     public List<SystemAreaVo> searchAreas(
             @QueryParam("lang") String lang,
             @QueryParam("name") String name,
-            @QueryParam("domain") @DefaultValue("false") String domain,
+            @QueryParam("domain") String domain,
             @QueryParam("geometry") @DefaultValue("false") boolean geometry,
             @QueryParam("messageSorting") @DefaultValue("false") boolean messageSorting,
             @QueryParam("inactive") @DefaultValue("false") boolean inactive,

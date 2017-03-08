@@ -244,7 +244,7 @@ angular.module('niord.common')
 
 
     /**
-     * The template service is used for querying message templates.
+     * The template service is used for querying executable category templates.
      */
     .service('TemplateService', ['$rootScope', '$http', '$uibModal',
         function ($rootScope, $http, $uibModal) {
@@ -252,30 +252,30 @@ angular.module('niord.common')
 
 
             /** Searches for message templates */
-            this.search = function(name, category, atons) {
+            this.search = function(name, type, atons) {
                 atons = atons || [];
                 var params =
-                    '?domainId=' + encodeURIComponent($rootScope.domain.domainId) +
-                    '&language=' + $rootScope.language;
+                    '?domain=' + encodeURIComponent($rootScope.domain.domainId) +
+                    '&lang=' + $rootScope.language;
                 if (name) {
                     params += '&name=' + encodeURIComponent(name);
                 }
-                if (category) {
-                    params += '&categoryId=' + category.id;
+                if (type) {
+                    params += '&type=' + type;
                 }
-                return $http.put('/rest/templates/search' + params, atons);
+                return $http.put('/rest/categories/search' + params, atons);
             };
 
 
             /** Opens the template selector dialog **/
-            this.templateDialog = function (operation, template, message, atons) {
+            this.templateDialog = function (operation, categories, message, atons) {
                 return $uibModal.open({
                     controller: "TemplateDialogCtrl",
                     templateUrl: "/app/common/template-dialog.html",
                     size: 'lg',
                     resolve: {
                         operation: function () { return operation; },
-                        template: function () { return template; },
+                        categories: function () { return categories; },
                         message: function () { return message; },
                         atons: function () { return atons; }
                     }

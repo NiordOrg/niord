@@ -24,8 +24,8 @@ import org.junit.Test;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.vo.PromulgationTypeVo;
 import org.niord.core.promulgation.vo.TwitterMessagePromulgationVo;
-import org.niord.core.template.FieldTemplateProcessor;
-import org.niord.core.template.FieldTemplateProcessor.FieldTemplate;
+import org.niord.core.category.FieldTemplateProcessor;
+import org.niord.core.category.FieldTemplateProcessor.FieldTemplate;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;

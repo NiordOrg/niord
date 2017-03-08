@@ -27,9 +27,9 @@ angular.module('niord.admin')
      * Category Admin Controller
      * Controller for the Admin Categories page
      */
-    .controller('CategoryAdminCtrl', ['$scope', '$rootScope', 'growl',
+    .controller('CategoryAdminCtrl', ['$scope', '$rootScope', '$timeout', '$uibModal', 'growl',
                 'LangService', 'AdminCategoryService', 'DialogService', 'UploadFileService',
-        function ($scope, $rootScope, growl,
+        function ($scope, $rootScope, $timeout, $uibModal, growl,
                   LangService, AdminCategoryService, DialogService, UploadFileService) {
             'use strict';
 
@@ -39,7 +39,6 @@ angular.module('niord.admin')
             $scope.editCategory = undefined;
             $scope.action = "edit";
             $scope.categoryFilter = '';
-            $scope.templates = [];
 
             // Used to ensure that description entities have a "name" field
             function ensureNameField(desc) {
@@ -60,6 +59,34 @@ angular.module('niord.admin')
                 }
             };
 
+
+            /** Set the form as dirty **/
+            $scope.setDirty = function () {
+                if ($scope.categoryForm) {
+                    $scope.categoryForm.$setDirty();
+                }
+            };
+
+
+            /**
+             * Annoyingly, ng-repeat does not work properly with a list of strings (scriptResourcePaths).
+             * See: https://github.com/angular/angular.js/issues/1267
+             * So, we use this method to wrap the "scriptResourcePaths" list into a "paths" list with objects
+             */
+            function toPaths(category) {
+                category.paths = [];
+                angular.forEach(category.scriptResourcePaths, function (path) {
+                    category.paths.push({ 'path' : path })
+                })
+            }
+            function fromPaths(category) {
+                category.scriptResourcePaths.length = 0;
+                angular.forEach(category.paths, function (path) {
+                    category.scriptResourcePaths.push(path.path)
+                })
+            }
+
+
             /** Load the categories */
             $scope.loadCategories = function() {
                 AdminCategoryService
@@ -68,7 +95,6 @@ angular.module('niord.admin')
                         $scope.categories = categories;
                         $scope.category = undefined;
                         $scope.editCategory = undefined;
-                        $scope.templates = [];
                         $scope.setPristine();
                     })
                     .error ($scope.displayError);
@@ -78,11 +104,17 @@ angular.module('niord.admin')
             /** Creates a new category */
             $scope.newCategory = function() {
                 $scope.action = "add";
-                $scope.editCategory = LangService.checkDescs({ active: true }, ensureNameField);
+                $scope.editCategory = LangService.checkDescs({
+                    active: true,
+                    type: 'CATEGORY',
+                    domains: [],
+                    scriptResourcePaths: [ '' ],
+                    messageId: undefined
+                    }, ensureNameField);
                 if ($scope.category) {
                     $scope.editCategory.parent = { id: $scope.category.id };
                 }
-                $scope.templates = [];
+                toPaths($scope.editCategory);
                 $scope.setPristine();
             };
 
@@ -95,29 +127,16 @@ angular.module('niord.admin')
                         $scope.action = "edit";
                         $scope.category = LangService.checkDescs(data, ensureNameField);
                         $scope.editCategory = angular.copy($scope.category);
+                        if ($scope.editCategory.scriptResourcePaths.length == 0) {
+                            $scope.editCategory.scriptResourcePaths.push('');
+                        }
+                        toPaths($scope.editCategory);
                         $scope.setPristine();
                         $scope.$$phase || $scope.$apply();
-
-                        // Load templates for the category
-                        $scope.loadTemplates();
                     })
                     .error($scope.displayError);
             };
 
-
-
-            /** Load the templates for the current category being edited **/
-            $scope.loadTemplates = function () {
-                $scope.templates = [];
-                if (!$scope.editCategory || !$scope.editCategory.id) {
-                    return;
-                }
-                AdminCategoryService
-                    .getTemplates($scope.editCategory)
-                    .success(function (result) {
-                        $scope.templates = result.data;
-                    })
-            };
 
 
             /** Called when an category has been dragged to a new parent category */
@@ -137,6 +156,9 @@ angular.module('niord.admin')
 
             /** Saves the current category */
             $scope.saveCategory = function () {
+
+                fromPaths($scope.editCategory);
+
                 if ($scope.action == 'add') {
                     AdminCategoryService
                         .createCategory($scope.editCategory)
@@ -173,5 +195,95 @@ angular.module('niord.admin')
                     'Upload Category JSON File',
                     '/rest/categories/upload-categories',
                     'json');
+            };
+
+
+            /** Tests the current template with the specified message ID */
+            $scope.executeTemplate = function (template) {
+                if ($scope.editCategory.messageId) {
+
+                    fromPaths($scope.editCategory);
+                    AdminCategoryService
+                        .executeCategoryTemplate(template, $scope.editCategory.messageId)
+                        .success(function (message) {
+                            $uibModal.open({
+                                controller: "TemplateCategoryResultDialogCtrl",
+                                templateUrl: "templateCategoryResultDialog.html",
+                                size: 'md',
+                                resolve: {
+                                    message: function () { return message; }
+                                }
+                            })
+                        })
+                        .error(function (data, status) {
+                            growl.error("Error executing template (code: " + status + ")", {ttl: 5000})
+                        });
+                }
+            };
+
+            /** Script resource path DnD configuration **/
+            $scope.pathsSortableCfg = {
+                group: 'scriptResourcePaths',
+                handle: '.move-btn',
+                onEnd: $scope.setDirty
+            };
+
+
+            /** Adds a new resource path after the given index **/
+            $scope.addResourcePath = function (index) {
+                $scope.editCategory.paths.splice(index + 1, 0, { 'path' : '' });
+                $scope.setDirty();
+                $timeout(function () {
+                    angular.element($("#path_" + (index + 1))).focus();
+                });
+            };
+
+
+            /** Removes the resource path at the given index **/
+            $scope.deleteResourcePath = function (index) {
+                $scope.editCategory.paths.splice(index, 1);
+                $scope.setDirty();
+                if ($scope.editCategory.paths.length == 0) {
+                    $scope.editCategory.paths.push({ 'path' : '' });
+                }
+            };
+
+
+            /** Opens a dialog for script resource selection **/
+            $scope.selectResourcePath = function (index) {
+                AdminCategoryService.scriptResourceDialog()
+                    .result.then(function (scriptResource) {
+                    $scope.editCategory.paths[index].path = scriptResource.path;
+                    $scope.setDirty();
+                })
+            };
+        }])
+
+
+    /*******************************************************************
+     * Displays the result of executing a template on a message
+     *******************************************************************/
+    .controller('TemplateCategoryResultDialogCtrl', ['$scope', '$rootScope', 'LangService', 'message',
+        function ($scope, $rootScope, LangService, message) {
+            'use strict';
+
+            $scope.message = message;
+            $scope.previewLang = $rootScope.language;
+
+            /** Create a preview message, i.e. a message sorted to the currently selected language **/
+            $scope.createPreviewMessage = function () {
+                $scope.previewMessage = undefined;
+                if ($scope.message) {
+                    $scope.previewMessage = angular.copy($scope.message);
+                    LangService.sortMessageDescs($scope.previewMessage, $scope.previewLang);
+                }
+            };
+            $scope.$watch("message", $scope.createPreviewMessage, true);
+
+
+            /** Set the preview language **/
+            $scope.previewLanguage = function (lang) {
+                $scope.previewLang = lang;
+                $scope.createPreviewMessage();
             };
         }]);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.niord.core.template.vo;
+package org.niord.core.category.vo;
 
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;

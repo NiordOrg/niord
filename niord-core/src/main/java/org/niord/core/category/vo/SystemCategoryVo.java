@@ -16,6 +16,8 @@
 
 package org.niord.core.category.vo;
 
+import org.niord.core.category.CategoryType;
+import org.niord.core.domain.vo.DomainVo;
 import org.niord.model.message.CategoryVo;
 
 import java.util.ArrayList;
@@ -27,10 +29,13 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class SystemCategoryVo extends CategoryVo {
 
+    CategoryType type = CategoryType.CATEGORY;
     List<SystemCategoryVo> children;
     List<String> editorFields;
-    Boolean hasTemplate;
     String atonFilter;
+    List<DomainVo> domains = new ArrayList<>();
+    List<String> scriptResourcePaths = new ArrayList<>();
+    String messageId;
 
 
     /** Returns the list of child categories, and creates an empty list if needed */
@@ -44,6 +49,14 @@ public class SystemCategoryVo extends CategoryVo {
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public CategoryType getType() {
+        return type;
+    }
+
+    public void setType(CategoryType type) {
+        this.type = type;
+    }
 
     public List<SystemCategoryVo> getChildren() {
         return children;
@@ -61,19 +74,35 @@ public class SystemCategoryVo extends CategoryVo {
         this.editorFields = editorFields;
     }
 
-    public Boolean getHasTemplate() {
-        return hasTemplate;
-    }
-
-    public void setHasTemplate(Boolean hasTemplate) {
-        this.hasTemplate = hasTemplate;
-    }
-
     public String getAtonFilter() {
         return atonFilter;
     }
 
     public void setAtonFilter(String atonFilter) {
         this.atonFilter = atonFilter;
+    }
+
+    public List<DomainVo> getDomains() {
+        return domains;
+    }
+
+    public void setDomains(List<DomainVo> domains) {
+        this.domains = domains;
+    }
+
+    public List<String> getScriptResourcePaths() {
+        return scriptResourcePaths;
+    }
+
+    public void setScriptResourcePaths(List<String> scriptResourcePaths) {
+        this.scriptResourcePaths = scriptResourcePaths;
+    }
+
+    public String getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(String messageId) {
+        this.messageId = messageId;
     }
 }

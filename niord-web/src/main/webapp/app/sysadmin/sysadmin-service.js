@@ -326,66 +326,53 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
-     * AdminTemplateService
+     * AdminCategoryService
      * ********************************************************************************
-     * Interface for calling message template-related functions at the application server
+     * Interface for calling category-related functions at the application server
      */
-    .factory('AdminTemplateService', [ '$http', '$rootScope', function($http, $rootScope) {
+    .factory('AdminCategoryService', [ '$http', '$rootScope', '$uibModal', function($http, $rootScope, $uibModal) {
         'use strict';
 
         return {
-
-            /** Searches all message templates **/
-            searchTemplates: function (params, page) {
-                var p = 'includeInactive=true&language=' + $rootScope.language + '&inactive=true'
-                        + '&maxSize=' + page.maxSize + '&page=' + (page.page - 1);
-                if (params.name && params.name.length > 0) {
-                    p += '&name=' + params.name;
-                }
-                if (params.domain) {
-                    p += '&domainId=' + params.domain.domainId;
-                }
-                if (params.category) {
-                    p += '&categoryId=' + params.category.id;
-                }
-                return $http.get('/rest/templates/search?' + p);
+            getCategories: function() {
+                return $http.get('/rest/categories/category-roots?lang=' + $rootScope.language);
             },
 
-
-            /** Returns the template with the given ID **/
-            getTemplate: function (id) {
-                return $http.get('/rest/templates/template/' + id);
+            getCategory: function(category) {
+                return $http.get('/rest/categories/category/' + category.id);
             },
 
-
-            /** Creates a new message template **/
-            createTemplate: function(template) {
-                return $http.post('/rest/templates/template/', template);
+            createCategory: function(category) {
+                return $http.post('/rest/categories/category/', category);
             },
 
-
-            /** Updates the given message template **/
-            updateTemplate: function(template) {
-                return $http.put('/rest/templates/template/' + template.id, template);
+            updateCategory: function(category) {
+                return $http.put('/rest/categories/category/' + category.id, category);
             },
 
-
-            /** Deletes the given message template **/
-            deleteTemplate: function(template) {
-                return $http['delete']('/rest/templates/template/' + template.id);
+            deleteCategory: function(category) {
+                return $http['delete']('/rest/categories/category/' + category.id);
             },
 
+            moveCategory: function(categoryId, parentId) {
+                return $http.put('/rest/categories/move-category', { categoryId: categoryId, parentId: parentId });
+            },
 
             /** Executes the message template on the given message ID **/
-            executeTemplate: function(template, messageId) {
-                return $http.put('/rest/templates/execute?messageId=' + encodeURIComponent(messageId), template);
+            executeCategoryTemplate: function(category, messageId) {
+                return $http.put('/rest/categories/execute?messageId=' + encodeURIComponent(messageId), category);
             },
 
-
-            /** Returns the ticket that can be used to generate an export file that requires the given role */
-            exportTicket: function (role) {
-                var param = role ? '?role=' + role : '';
-                return $http.get('/rest/tickets/ticket' + param);
+            /** Opens a dialog for selecting a script resource **/
+            scriptResourceDialog : function (type) {
+                return $uibModal.open({
+                    controller: "ScriptResourceDialogCtrl",
+                    templateUrl: "/app/sysadmin/script-resource-dialog.html",
+                    size: 'md',
+                    resolve: {
+                        type: function () { return type; }
+                    }
+                });
             }
 
         };

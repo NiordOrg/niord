@@ -15,15 +15,18 @@
  */
 package org.niord.web;
 
-import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.category.Category;
 import org.niord.core.category.CategorySearchParams;
 import org.niord.core.category.CategoryService;
+import org.niord.core.category.CategoryType;
+import org.niord.core.category.TemplateExecutionService;
 import org.niord.core.category.vo.SystemCategoryVo;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.user.Roles;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
@@ -48,7 +51,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -69,6 +71,12 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Inject
     CategoryService categoryService;
 
+    @Inject
+    TemplateExecutionService templateExecutionService;
+
+    @Inject
+    MessageRestService messageRestService;
+
 
     /**
      * Searches for categories matching the given name in the given language
@@ -87,13 +95,41 @@ public class CategoryRestService extends AbstractBatchableRestService {
     public List<SystemCategoryVo> searchCategories(
             @QueryParam("lang") String lang,
             @QueryParam("name") String name,
+            @QueryParam("type") CategoryType type,
             @QueryParam("domain") @DefaultValue("false") String domain,
             @QueryParam("inactive") @DefaultValue("false") boolean inactive,
-            @QueryParam("limit") int limit) {
+            @QueryParam("limit") @DefaultValue("100") int limit) {
 
-        if (StringUtils.isBlank(name)) {
-            return Collections.emptyList();
-        }
+        return searchCategories(lang, name, type, domain, inactive, limit, null);
+    }
+
+
+    /**
+     * Searches for categories matching the given name in the given language.
+     *
+     * This version of the search function extends the functionality with support
+     * for filtering by AtoNs
+     *
+     * @param lang  the language
+     * @param name  the search name
+     * @param domain  if defined, restricts the search to the categories of the given domain
+     * @param limit the maximum number of results
+     * @return the search result
+     */
+    @PUT
+    @Path("/search")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public List<SystemCategoryVo> searchCategories(
+            @QueryParam("lang") String lang,
+            @QueryParam("name") String name,
+            @QueryParam("type") CategoryType type,
+            @QueryParam("domain") String domain,
+            @QueryParam("inactive") @DefaultValue("false") boolean inactive,
+            @QueryParam("limit") @DefaultValue("100") int limit,
+            List<AtonNodeVo> atons) {
 
         DataFilter filter = DataFilter.get()
                 .fields(DataFilter.PARENT)
@@ -101,12 +137,14 @@ public class CategoryRestService extends AbstractBatchableRestService {
 
         CategorySearchParams params = new CategorySearchParams();
         params.language(lang)
+                .type(type)
                 .name(name)
                 .domain(domain)
                 .inactive(inactive)
+                .atons(atons)
                 .maxSize(limit);
 
-        log.debug(String.format("Searching for categories %s", params));
+        log.info(String.format("Searching for categories %s", params));
 
         return categoryService.searchCategories(params).stream()
                 .map(c -> c.toVo(SystemCategoryVo.class, filter))
@@ -189,12 +227,13 @@ public class CategoryRestService extends AbstractBatchableRestService {
         return category == null ? null : category.toVo(SystemCategoryVo.class, DataFilter.get());
     }
 
+
     /** Creates a new category */
     @POST
     @Path("/category/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed(Roles.ADMIN)
+    @RolesAllowed(Roles.SYSADMIN)
     public SystemCategoryVo createCategory(SystemCategoryVo categoryVo) throws Exception {
         Category category = new Category(categoryVo);
         log.info("Creating category " + category);
@@ -208,7 +247,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Path("/category/{categoryId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed(Roles.ADMIN)
+    @RolesAllowed(Roles.SYSADMIN)
     public SystemCategoryVo updateCategory(@PathParam("categoryId") Integer categoryId, SystemCategoryVo categoryVo) throws Exception {
         if (!Objects.equals(categoryId, categoryVo.getId())) {
             throw new WebApplicationException(400);
@@ -222,7 +261,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
     /** Deletes the given category */
     @DELETE
     @Path("/category/{categoryId}")
-    @RolesAllowed(Roles.ADMIN)
+    @RolesAllowed(Roles.SYSADMIN)
     public boolean deleteCategory(@PathParam("categoryId") Integer categoryId) throws Exception {
         log.info("Deleting category " + categoryId);
         return categoryService.deleteCategory(categoryId);
@@ -233,7 +272,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @PUT
     @Path("/move-category")
     @Consumes("application/json;charset=UTF-8")
-    @RolesAllowed(Roles.ADMIN)
+    @RolesAllowed(Roles.SYSADMIN)
     public boolean moveCategory(MoveCategoryVo moveCategoryVo) throws Exception {
         log.info("Moving category " + moveCategoryVo.getCategoryId() + " to " + moveCategoryVo.getParentId());
         return categoryService.moveCategory(moveCategoryVo.getCategoryId(), moveCategoryVo.getParentId());
@@ -250,9 +289,30 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Path("/upload-categories")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
-    @RolesAllowed(Roles.ADMIN)
+    @RolesAllowed(Roles.SYSADMIN)
     public String importCategories(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "category-import");
+    }
+
+
+
+    /***************************************/
+    /** Template Execution                **/
+    /***************************************/
+
+
+    /** Executes a message template category on the given message ID */
+    @PUT
+    @Path("/execute")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed(Roles.USER)
+    @GZIP
+    @NoCache
+    public SystemMessageVo applyTemplate(@QueryParam("messageId") String messageId, SystemCategoryVo category) throws Exception {
+        // NB: Access to the message is checked:
+        SystemMessageVo message = messageRestService.getSystemMessage(messageId);
+        return templateExecutionService.executeTemplate(new Category(category), message);
     }
 
 
