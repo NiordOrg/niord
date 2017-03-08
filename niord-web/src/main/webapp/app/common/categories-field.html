@@ -1,7 +1,7 @@
 <div class="input-group">
 
     <ui-select ng-if="!multiple" ng-model="categoryData.category" ng-change="categoryUpdated()">
-        <ui-select-match placeholder="Select category">
+        <ui-select-match placeholder="{{placeholder}}">
             <span>
                 {{categoryData.category.descs[0].name}}
                 <span ng-if="categoryData.category.type == 'TEMPLATE'" class="glyphicon glyphicon-play"></span>
@@ -23,7 +23,7 @@
 
 
     <ui-select ng-if="multiple" multiple ng-model="categoryData.categories" ng-change="categoryUpdated()">
-        <ui-select-match placeholder="Select category">
+        <ui-select-match placeholder="{{placeholder}}">
             {{$item.descs[0].name}}
             <span ng-if="$item.type == 'TEMPLATE'" class="glyphicon glyphicon-play"></span>
             <span class="base-data-inactive" ng-if="!$item.active">(inactive)</span>

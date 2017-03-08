@@ -155,18 +155,19 @@ angular.module('niord.common')
      * Controller for template selection and execution dialog
      */
     .controller('TemplateDialogCtrl', ['$scope', '$document', '$timeout', 'LangService', 'TemplateService', 'MessageService',
-                'operation', 'categories', 'message', 'atons',
+                'operation', 'type', 'categories', 'message', 'atons',
         function ($scope, $document, $timeout, LangService, TemplateService, MessageService,
-                  operation, categories, message, atons) {
+                  operation, type, categories, message, atons) {
             'use strict';
 
             $scope.formatParents  = LangService.formatParents;
             $scope.operation      = operation || 'select';
+            $scope.type           = type;
             $scope.atons          = atons || [];
             $scope.template       = categories.length > 0 ? categories[0] : undefined;
             $scope.searchResult   = [];
             $scope.message        = angular.copy(message);
-            $scope.params         = { name: '' };
+            $scope.params         = { name: '', category: undefined };
             $scope.exampleMessage = undefined;
 
 
@@ -218,7 +219,7 @@ angular.module('niord.common')
 
             // Use for template selection
             $scope.refreshTemplates = function () {
-                TemplateService.search($scope.params.name, 'TEMPLATE', $scope.atons)
+                TemplateService.search($scope.params.name, $scope.type, $scope.params.category, $scope.atons)
                     .success(function(response) {
                         $scope.searchResult = response;
                     });

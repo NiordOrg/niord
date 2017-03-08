@@ -31,7 +31,8 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
 @SuppressWarnings("unused")
 public class CategorySearchParams extends PagedSearchParamsVo {
 
-    Integer parentId;
+    Integer parentId;       // Direct parent
+    Integer ancestorId;     // Any ancestor
     String language;
     String name;
     CategoryType type;
@@ -48,6 +49,7 @@ public class CategorySearchParams extends PagedSearchParamsVo {
     public String toString() {
         List<String> desc = new ArrayList<>();
         if (parentId != null) { desc.add(String.format("Parent: %s", parentId)); }
+        if (ancestorId != null) { desc.add(String.format("Ancestor: %s", ancestorId)); }
         if (type != null) { desc.add(String.format("Type: %s", type)); }
         if (isNotBlank(language)) { desc.add(String.format("Language: %s", language)); }
         if (isNotBlank(name)) { desc.add(String.format("Name: '%s'", name)); }
@@ -78,6 +80,15 @@ public class CategorySearchParams extends PagedSearchParamsVo {
 
     public CategorySearchParams parentId(Integer parentId) {
         this.parentId = parentId;
+        return this;
+    }
+
+    public Integer getAncestorId() {
+        return ancestorId;
+    }
+
+    public CategorySearchParams ancestorId(Integer ancestorId) {
+        this.ancestorId = ancestorId;
         return this;
     }
 

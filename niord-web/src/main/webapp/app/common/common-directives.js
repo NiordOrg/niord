@@ -205,12 +205,14 @@ angular.module('niord.common')
                 initIds:         "=",
                 domain:          "=",
                 multiple:        "=",
+                placeholder:     "@",
                 tabIndex:        "="
             },
             link: function(scope, element, attrs) {
 
                 scope.formatParents = LangService.formatParents;
                 scope.categoryData = scope.categoryData || {};
+                scope.placeholder = scope.placeholder || "Select Category";
 
                 // Category search parameters
                 scope.multiple = scope.multiple || false;
@@ -409,6 +411,7 @@ angular.module('niord.common')
                 message:        "=",
                 atons:          "=",
                 mainType:       "@",
+                type:           "@",
                 class:          "@",
                 placeholder:    "@",
                 tabIndex:       "="
@@ -444,7 +447,7 @@ angular.module('niord.common')
                     if (scope.atons.length == 0 && (!name || name.length == 0)) {
                         return;
                     }
-                    TemplateService.search(name, 'TEMPLATE', scope.atons)
+                    TemplateService.search(name, scope.type, null, scope.atons)
                         .success(function(response) {
                             scope.searchResult = response;
                         });
@@ -462,6 +465,7 @@ angular.module('niord.common')
                 function openTemplateDialog(operation, message) {
                     TemplateService.templateDialog(
                         operation,
+                        scope.type,
                         scope.templateData.categories,
                         message,
                         scope.atons

@@ -96,11 +96,12 @@ public class CategoryRestService extends AbstractBatchableRestService {
             @QueryParam("lang") String lang,
             @QueryParam("name") String name,
             @QueryParam("type") CategoryType type,
+            @QueryParam("ancestorId") Integer ancestorId,
             @QueryParam("domain") @DefaultValue("false") String domain,
             @QueryParam("inactive") @DefaultValue("false") boolean inactive,
             @QueryParam("limit") @DefaultValue("100") int limit) {
 
-        return searchCategories(lang, name, type, domain, inactive, limit, null);
+        return searchCategories(lang, name, type, ancestorId, domain, inactive, limit, null);
     }
 
 
@@ -126,6 +127,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
             @QueryParam("lang") String lang,
             @QueryParam("name") String name,
             @QueryParam("type") CategoryType type,
+            @QueryParam("ancestorId") Integer ancestorId,
             @QueryParam("domain") String domain,
             @QueryParam("inactive") @DefaultValue("false") boolean inactive,
             @QueryParam("limit") @DefaultValue("100") int limit,
@@ -139,6 +141,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
         params.language(lang)
                 .type(type)
                 .name(name)
+                .ancestorId(ancestorId)
                 .domain(domain)
                 .inactive(inactive)
                 .atons(atons)

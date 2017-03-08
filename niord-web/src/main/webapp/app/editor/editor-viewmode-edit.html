@@ -24,7 +24,7 @@
 
             </div>
             <div ng-if="canCreateMessage('NW')" style="display: inline-block">
-                <template-field class="new-msg-btn" template-data="message" main-type="NW"
+                <template-field class="new-msg-btn" template-data="message" main-type="NW" type="TEMPLATE"
                                 placeholder="{{'editor.new_nw_template' | translate}}"></template-field>
             </div>
             <div ng-if="canCreateMessage('NM')">
@@ -33,7 +33,7 @@
 
             </div>
             <div ng-if="canCreateMessage('NM')" style="display: inline-block">
-                <template-field class="new-msg-btn" template-data="message" main-type="NM"
+                <template-field class="new-msg-btn" template-data="message" main-type="NM" type="TEMPLATE"
                                 placeholder="{{'editor.new_nm_template' | translate}}"></template-field>
             </div>
         </div>
@@ -375,8 +375,8 @@
                 </editor-field-value-viewer>
 
                 <editor-field-value-editor value-class="col-sm-12 col-md-6">
-                    <categories-field id="categories" category-data="message" multiple="true" domain="domain" category-changed="adjustEditableMessage()"
-                                    tab-index="901"></categories-field>
+                    <template-field id="categories" template-data="message" message="message" tab-index="901"
+                                    placeholder="{{'msg.field.categories' | translate}}" template-changed="adjustEditableMessage()"></template-field>
                 </editor-field-value-editor>
 
             </editor-field>

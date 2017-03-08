@@ -116,6 +116,14 @@ public class CategoryService extends BaseService {
             criteriaHelper.equals(parent.get("id"), params.getParentId());
         }
 
+        // Optionally, match any ancestor
+        if (params.getAncestorId() != null) {
+            Category ancestor = getCategoryDetails(params.getAncestorId());
+            if (ancestor != null) {
+                criteriaHelper.add(cb.like(categoryRoot.get("lineage"), ancestor.getLineage() + "%/"));
+            }
+        }
+
         // Optionally, filter by domain
         if (StringUtils.isNotBlank(params.getDomain())) {
 
