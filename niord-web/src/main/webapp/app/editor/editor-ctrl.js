@@ -567,6 +567,7 @@ angular.module('niord.editor')
                         .success(function (areas) {
                             // Prune the returned area data
                             $scope.message.areas = areas;
+                            $scope.adjustEditableMessage();
                             $scope.setDirty();
                         });
                 }
