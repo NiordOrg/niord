@@ -3,7 +3,6 @@
     <ui-select multiple ng-model="templateData.categories" ng-change="templateUpdated()">
         <ui-select-match placeholder="{{placeholder}}">
             {{$item.descs[0].name}}
-            <span ng-if="$item.type == 'TEMPLATE'" class="glyphicon glyphicon-play"></span>
             <span class="base-data-inactive" ng-if="!$item.active">(inactive)</span>
         </ui-select-match>
         <ui-select-choices repeat="category in searchResult"
