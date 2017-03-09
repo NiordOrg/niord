@@ -36,35 +36,87 @@
                 </div>
 
                 <div class="row" style="font-size: 11px">
+
                     <div class="col-sm-12 col-md-6">
                         <div class="template-dialog-header" translate>template.categories</div>
                         <div class="template-table">
-                            <table class='table table-condensed'>
-                                <tr>
+                            <table class='table table-condensed' style="margin-bottom: 0">
+                                <tr style="background-color: #eee">
                                     <th translate>term.name</th>
-                                    <th width="20"><span class="glyphicon glyphicon-play"></span></th>
+                                    <th width="20"><span class="glyphicon glyphicon-play text-success"></span></th>
                                     <th translate>template.parent_category</th>
                                 </tr>
-                                <tr ng-repeat="t in searchResult" ng-class="{ 'bg-primary' : template && t.id == template.id }"
+                                <tr ng-repeat="t in searchResult" ng-class="{ 'bg-primary' : focusedCategory && t.id == focusedCategory.id }"
                                     class="selected-template" tabindex="0">
-                                    <td style="cursor: pointer; white-space: nowrap" ng-click="selectTemplate(t)">
+                                    <td style="cursor: pointer; white-space: nowrap" ng-click="focusCategory(t)">
                                         <span ng-if="t.descs && t.descs.length > 0">{{t.descs[0].name}}</span>
                                     </td>
-                                    <td>
-                                        <span ng-if="t.type == 'TEMPLATE'" class="glyphicon glyphicon-play"></span>
+                                    <td ng-click="focusCategory(t)">
+                                        <span ng-if="t.type == 'TEMPLATE'" class="glyphicon glyphicon-play text-success"></span>
                                     </td>
-                                    <td style="cursor: pointer; white-space: nowrap; overflow-x: hidden" ng-click="selectTemplate(t)">
-                                        <span ng-if="t.parent">({{formatParents(t.parent)}})</span>
+                                    <td style="cursor: pointer; white-space: nowrap; overflow-x: hidden" ng-click="focusCategory(t)">
+                                        <span ng-if="t.parent" style="color: darkgray">({{formatParents(t.parent)}})</span>
                                     </td>
                                 </tr>
                             </table>
                         </div>
+                        <div class="template-buttons">
+                            <button class="btn btn-default btn-xs"
+                                    ng-click="selectCategory(focusedCategory)"
+                                    ng-disabled="!categoryFocused() || categorySelected(focusedCategory)">
+                                <span translate>term.add_selected</span>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="col-sm-12 col-md-6">
-                        <div class="template-dialog-header" translate>template.sample_message</div>
-                        <div ng-if="exampleMessage">
-                            <table class='table table-condensed'>
+                        <div class="template-dialog-header" translate>template.selected_categories</div>
+                        <div class="selected-template-table">
+                            <table class='table table-condensed' style="margin-bottom: 0">
+                                <tr style="background-color: #eee">
+                                    <th width="20"></th>
+                                    <th translate>term.name</th>
+                                    <th width="20"><span class="glyphicon glyphicon-play text-success"></span></th>
+                                    <th translate>template.parent_category</th>
+                                </tr>
+                                <tbody ng-sortable="categorySortableCfg">
+                                    <tr ng-repeat="t in message.categories" ng-class="{ 'bg-primary' : focusedCategory && t.id == focusedCategory.id }"
+                                        class="selected-template" tabindex="0">
+                                        <td>
+                                            <span class="glyphicon glyphicon-move move-btn"></span>
+                                        </td>
+                                        <td style="cursor: pointer; white-space: nowrap" ng-click="focusCategory(t)">
+                                            <span ng-if="t.descs && t.descs.length > 0">{{t.descs[0].name}}</span>
+                                        </td>
+                                        <td ng-click="focusCategory(t)">
+                                            <span ng-if="t.type == 'TEMPLATE'" class="glyphicon glyphicon-play text-success"></span>
+                                        </td>
+                                        <td style="cursor: pointer; white-space: nowrap; overflow-x: hidden" ng-click="focusCategory(t)">
+                                            <span ng-if="t.parent" style="color: darkgray">({{formatParents(t.parent)}})</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="template-buttons">
+                            <button class="btn btn-default btn-xs"
+                                    ng-click="unselectCategory(focusedCategory)"
+                                    ng-disabled="!categoryFocused() || !categorySelected(focusedCategory)">
+                                <span translate>term.remove_selected</span>
+                            </button>
+                            <button class="btn btn-default btn-xs"
+                                    ng-click="clearCategorySelection()" ng-disabled="!categoriesSelected()">
+                                <span translate>term.remove_all</span>
+                            </button>
+                        </div>
+
+
+                        <div ng-if="exampleMessage" class="template-dialog-header" style="margin-top: 30px">
+                            <span translate>template.sample_message</span>
+                            <span ng-if="focusedCategory !== undefined">({{focusedCategory.descs[0].name}})</span>
+                        </div>
+                        <div ng-if="exampleMessage" style="border: 1px solid lightgray">
+                            <table class='table table-condensed' style="margin-bottom: 0">
                                 <tr render-message-details
                                     msg="exampleMessage"
                                     format="details"
@@ -79,7 +131,7 @@
 
 
             <!-- ***** Template execution ***** -->
-            <uib-tab active="executeTab" disable="template === undefined"  select="selectOperation('execute')">
+            <uib-tab active="executeTab" disable="focusedCategory === undefined"  select="selectOperation('execute')">
                 <tab-heading>
                     <span class="glyphicon glyphicon-play"></span>
                     <span translate>template.execute</span>
@@ -94,20 +146,27 @@
 
         </uib-tabset>
 
-        <div class="row" style="margin-top: 10px;">
-            <div class="form-group col-xs-12">
-                <button class="btn btn-default btn-sm" ng-click="$dismiss('aborted')" translate>term.cancel</button>
+        <div ng-if="operationSelected('select')" class="row" style="margin-top: 10px;">
+            <div class="form-group col-xs-12" style="text-align: right;">
+                <button class="btn btn-default btn-sm pull-left" ng-click="$dismiss('aborted')" translate>term.cancel</button>
 
-                <button ng-if="operationSelected('select')" class="btn btn-primary btn-sm pull-right"
-                        ng-click="selectOperation('execute')" ng-disabled="template === undefined">
+                <button class="btn btn-primary btn-sm" style="width: 100px"
+                        ng-click="useSelectedCategories()">OK</button>
+
+                <button class="btn btn-success btn-sm"
+                        ng-click="selectOperation('execute')" ng-disabled="!categoriesSelected()">
                     <span class="glyphicon glyphicon-play"></span>
                     <span translate>template.execute</span>
                 </button>
+            </div>
+        </div>
 
-                <button ng-if="operationSelected('execute')" class="btn btn-primary btn-sm pull-right"
-                        ng-click="messageSelected()">
-                    <span>OK</span>
-                </button>
+        <div ng-if="operationSelected('execute')" class="row" style="margin-top: 10px;">
+            <div class="form-group col-xs-12" style="text-align: right;">
+                <button class="btn btn-default btn-sm pull-left" ng-click="$dismiss('aborted')" translate>term.cancel</button>
+
+                <button class="btn btn-primary btn-sm" style="width: 100px"
+                        ng-click="messageSelected()">OK</button>
             </div>
         </div>
     </div>

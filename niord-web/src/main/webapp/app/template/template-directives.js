@@ -38,28 +38,26 @@ angular.module('niord.template')
             templateUrl: '/app/template/template-field.html',
             replace: false,
             scope: {
-                templateData:   "=",
-                templateChanged:"&",
-                messageUpdated: "&",
-                message:        "=",
-                atons:          "=",
-                mainType:       "@",
-                type:           "@",
-                class:          "@",
-                placeholder:    "@",
-                multiple:       "=",
-                tabIndex:       "="
+                message:            "=",
+                categoriesUpdated:  "&",
+                messageUpdated:     "&",
+                atons:              "=",
+                mainType:           "@",
+                type:               "@",
+                class:              "@",
+                placeholder:        "@",
+                tabIndex:           "="
             },
             link: function(scope, element, attrs) {
 
                 scope.formatParents = LangService.formatParents;
-                scope.templateData = scope.templateData || {};
+                scope.message = scope.message || {};
                 scope.atons = scope.atons || [];
                 scope.class = scope.class || "";
-                scope.placeholder = scope.placeholder || "Select Template";
+                scope.placeholder = scope.placeholder || "Select Templates";
 
-                if (scope.multiple && !scope.templateData.categories) {
-                    scope.templateData.categories = [];
+                if (!scope.message.categories) {
+                    scope.message.categories = [];
                 }
 
                 if (scope.tabIndex) {
@@ -67,19 +65,18 @@ angular.module('niord.template')
                     input.attr('tabindex', scope.tabIndex);
                 }
 
-                /** Called whenever the template has been updated **/
-                scope.templateUpdated = function () {
-                    if (attrs.templateChanged) {
-                        scope.templateChanged();
+
+                /** Called whenever the categories have been updated, but not the message at large **/
+                scope.flagCategoriesUpdated = function () {
+                    if (attrs.categoriesUpdated) {
+                        scope.categoriesUpdated();
                     }
                 };
 
 
                 /** Returns if a category has been defined **/
-                scope.templateDefined = function () {
-                    return scope.multiple
-                        ? scope.templateData.categories.length > 0
-                        : scope.templateData.category !== undefined;
+                scope.categoriesDefined = function () {
+                    return scope.message.categories.length > 0;
                 };
 
 
@@ -96,37 +93,32 @@ angular.module('niord.template')
                 };
 
 
-                /** Removes the current template selection */
-                scope.removeTemplate = function () {
-                    if (scope.multiple) {
-                        scope.templateData.categories.length = 0;
-                    } else {
-                        scope.templateData.category = undefined;
-                    }
-                    scope.templateUpdated();
+                /** Removes the current category selection */
+                scope.clearCategories = function () {
+                    scope.message.categories.length = 0;
+                    scope.flagCategoriesUpdated();
                 };
 
 
                 /** Opens the template selector/execution dialog **/
                 function openTemplateDialog(operation, message) {
-                    var templates = (scope.multiple)
-                        ? scope.templateData.categories
-                        : [scope.templateData.category];
-
                     TemplateService.templateDialog(
                         operation,
                         scope.type,
-                        templates,
                         message,
                         scope.atons
-                    ).result.then(function (message) {
-                        scope.message = message;
-                        if (attrs.messageUpdated) {
-                            scope.messageUpdated({ message: scope.message });
-                        }
-                        if (message.template) {
-                            scope.templateData.template = message.template;
-                            scope.templateUpdated();
+                    ).result.then(function (result) {
+                        if (result.type = 'category') {
+                            scope.message.categories.length = 0;
+                            angular.forEach(result.message.categories, function (category) {
+                                scope.message.categories.push(category);
+                            });
+                            scope.flagCategoriesUpdated();
+                        } else if (result.type = 'message') {
+                            scope.message = result.message;
+                            if (attrs.messageUpdated) {
+                                scope.messageUpdated({ message: scope.message });
+                            }
                         }
                     });
                 }

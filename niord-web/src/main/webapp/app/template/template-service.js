@@ -51,7 +51,7 @@ angular.module('niord.template')
 
 
             /** Opens the template selector dialog **/
-            this.templateDialog = function (operation, type, categories, message, atons) {
+            this.templateDialog = function (operation, type, message, atons) {
                 return $uibModal.open({
                     controller: "TemplateDialogCtrl",
                     templateUrl: "/app/template/template-dialog.html",
@@ -59,7 +59,6 @@ angular.module('niord.template')
                     resolve: {
                         operation: function () { return operation; },
                         type: function () { return type; },
-                        categories: function () { return categories; },
                         message: function () { return message; },
                         atons: function () { return atons; }
                     }

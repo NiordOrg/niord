@@ -27,51 +27,66 @@ angular.module('niord.template')
      * Controller for template selection and execution dialog
      */
     .controller('TemplateDialogCtrl', ['$scope', '$document', '$timeout', 'LangService', 'TemplateService', 'MessageService',
-                'operation', 'type', 'categories', 'message', 'atons',
+                'operation', 'type', 'message', 'atons',
         function ($scope, $document, $timeout, LangService, TemplateService, MessageService,
-                  operation, type, categories, message, atons) {
+                  operation, type, message, atons) {
             'use strict';
 
-            $scope.formatParents  = LangService.formatParents;
-            $scope.operation      = operation || 'select';
-            $scope.type           = type;
-            $scope.atons          = atons || [];
-            $scope.template       = categories.length > 0 ? categories[0] : undefined;
-            $scope.searchResult   = [];
-            $scope.message        = angular.copy(message);
-            $scope.params         = { name: '', category: undefined };
-            $scope.exampleMessage = undefined;
+            $scope.formatParents    = LangService.formatParents;
+            $scope.operation        = operation || 'select';
+            $scope.type             = type;
+            $scope.atons            = atons || [];
+            $scope.focusedCategory  = undefined;
+            $scope.searchResult     = [];
+            $scope.message          = angular.copy(message);
+            $scope.params           = { name: '', category: undefined };
+            $scope.exampleMessage   = undefined;
 
 
             /** Initialize the tab-selection **/
             $scope.selectOperation = function (operation) {
                 $scope.operation = operation;
-                $scope.executeTab   = operation == 'execute' && $scope.template !== undefined;
+                $scope.executeTab   = operation == 'execute' && $scope.message.categories.length > 0;
                 $scope.selectTab    = !$scope.executeTab;
             };
             $scope.selectOperation(operation);
 
 
+            /** Script resource path DnD configuration **/
+            $scope.categorySortableCfg = {
+                group: 'selectedCategories',
+                handle: '.move-btn'
+            };
+
+
             // Hook up a key listener that can be used to navigate the template list
             function keydownListener(evt) {
                 var focused = $('.selected-template').is(':focus');
-                if (!$scope.template || $scope.searchResult.length == 0 || !focused || evt.isDefaultPrevented()) {
+                if (!$scope.focusedCategory || !focused || evt.isDefaultPrevented()) {
                     return evt;
                 }
-                var index = $.inArray($scope.template, $scope.searchResult);
-                if (evt.which == 38 /* up arrow */) {
-                    if (index != -1 && index > 0) {
-                        $scope.selectTemplate($scope.searchResult[index - 1]);
-                        evt.preventDefault();
-                        $scope.$$phase || $scope.$apply();
-                    }
-                } else if (evt.which == 40 /* down arrow */) {
-                    if (index != -1 && index < $scope.searchResult.length - 1) {
-                        $scope.selectTemplate($scope.searchResult[index + 1]);
-                        evt.preventDefault();
-                        $scope.$$phase || $scope.$apply();
+                var cats = $scope.searchResult;
+                var index = $.inArray($scope.focusedCategory, cats);
+                if (index == -1) {
+                    cats = $scope.message.categories;
+                    index = $.inArray($scope.focusedCategory, cats);
+                }
+                if (index == -1) {
+                    return evt;
+                }
+                if (evt.which == 38 /* up arrow */  && index > 0) {
+                    $scope.focusCategory(cats[index - 1]);
+                } else if (evt.which == 40 /* down arrow */ && index < cats.length - 1) {
+                    $scope.focusCategory(cats[index + 1]);
+                } else if ((evt.which == 13 /* return */ || evt.which == 32 /* space */) && $scope.focusedCategory !== undefined) {
+                    if ($scope.categorySelected($scope.focusedCategory)) {
+                        $scope.unselectCategory($scope.focusedCategory);
+                    } else {
+                        $scope.selectCategory($scope.focusedCategory);
                     }
                 }
+                evt.preventDefault();
+                $scope.$$phase || $scope.$apply();
             }
             $document.on('keydown', keydownListener);
             $scope.$on('$destroy', function() {
@@ -83,47 +98,114 @@ angular.module('niord.template')
                 $('#templateFilter').focus();
             }, 100);
 
+            
             /** Returns if the currently selected operation is the parameter one **/
             $scope.operationSelected = function (operation) {
                 return $scope.operation == operation;
             };
 
 
-            // Use for template selection
-            $scope.refreshTemplates = function () {
+            /** Updates the category search result **/
+            $scope.refreshCategories = function () {
+
+                $scope.focusedCategory = undefined;
+
                 TemplateService.search($scope.params.name, $scope.type, $scope.params.category, $scope.atons)
-                    .success(function(response) {
-                        $scope.searchResult = response;
+                    .success(function(categories) {
+                        // Remove categories already selected
+                        var selCatIds = {};
+                        angular.forEach($scope.message.categories, function (cat) {
+                            selCatIds[cat.id] = true;
+                        });
+                        $scope.searchResult.length = 0;
+                        angular.forEach(categories, function (cat) {
+                            if (!selCatIds[cat.id]) {
+                                $scope.searchResult.push(cat);
+                            }
+                        })
                     });
             };
-            $scope.$watch("params", $scope.refreshTemplates, true);
+            $scope.$watch("params", $scope.refreshCategories, true);
 
 
             /** Clears the AtoN selection **/
             $scope.clearAtons = function () {
                 $scope.atons.length = 0;
-                $scope.refreshTemplates();
+                $scope.refreshCategories();
             };
 
 
-            /** Selects the given template **/
-            $scope.selectTemplate = function (template) {
-                $scope.template = template;
+            /** Returns if any category has been selected **/
+            $scope.categoriesSelected = function () {
+                return $scope.message.categories.length > 0;
+            };
+
+
+            /** Returns if any category has been selected **/
+            $scope.categorySelected = function (cat) {
+                return cat !== undefined &&
+                    $.grep($scope.message.categories, function (c) { return c.id == cat.id; }).length > 0;
+            };
+
+
+            /** Selects the given category **/
+            $scope.selectCategory = function (cat) {
+                if (cat && !$scope.categorySelected(cat)) {
+                    $scope.message.categories.push(cat);
+                    $scope.refreshCategories();
+                }
+            };
+
+
+            /** Unselects the given category **/
+            $scope.unselectCategory = function (cat) {
+                if (cat && $scope.categorySelected(cat)) {
+                    var idx = $scope.message.categories.indexOf(cat);
+                    if (idx !== -1) {
+                        $scope.message.categories.splice(idx, 1);
+                        $scope.refreshCategories();
+                    }
+                }
+            };
+
+
+            /** Removes all selected cagtegories **/
+            $scope.clearCategorySelection = function () {
+                $scope.message.categories.length = 0;
+                $scope.refreshCategories();
+            };
+
+
+            /** Returns if any category is currently focused **/
+            $scope.categoryFocused = function () {
+                return $scope.focusedCategory !== undefined;
+            };
+
+
+            /** Selects the given category **/
+            $scope.focusCategory = function (category) {
+                $scope.focusedCategory = category;
                 $scope.createExampleMessage();
             };
 
 
             /** Called when the message has been updated by executing a template **/
             $scope.messageSelected = function () {
-                $scope.$close($scope.message);
+                $scope.$close({ type: 'category', message: $scope.message });
+            };
+
+
+            /** Called when the user clicks the OK button **/
+            $scope.useSelectedCategories = function () {
+                $scope.$close({ type: 'message', message: $scope.message });
             };
 
 
             /** Create an example message for the currently selected template **/
             $scope.createExampleMessage = function () {
                 $scope.exampleMessage = undefined;
-                if ($scope.template && $scope.template.messageId) {
-                    MessageService.allLangDetails($scope.template.messageId)
+                if ($scope.focusedCategory && $scope.focusedCategory.messageId) {
+                    MessageService.allLangDetails($scope.focusedCategory.messageId)
                         .success(function (message) {
                             $scope.exampleMessage = LangService.sortDescs(message);
                         });

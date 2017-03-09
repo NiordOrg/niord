@@ -12,7 +12,7 @@
                            refresh-delay="100">
             <div>
                 <span ng-bind-html="category.descs[0].name | highlight: $select.search"></span>
-                <span ng-if="category.type == 'TEMPLATE'" class="glyphicon glyphicon-play"></span>
+                <span ng-if="category.type == 'TEMPLATE'" class="glyphicon glyphicon-play text-success"></span>
                 <small ng-if="category.parent">({{formatParents(category.parent)}})</small>
                 <span class="base-data-inactive" ng-if="!category.active">(inactive)</span>
             </div>

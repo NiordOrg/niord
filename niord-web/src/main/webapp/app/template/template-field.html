@@ -1,25 +1,6 @@
 <div class="input-group {{class}}" style="text-align: left">
 
-    <ui-select ng-if="!multiple" ng-model="templateData.category" ng-change="templateUpdated()">
-        <ui-select-match placeholder="{{placeholder}}">
-            {{templateData.category.descs[0].name}}
-            <span class="base-data-inactive" ng-if="!templateData.category.active">(inactive)</span>
-        </ui-select-match>
-        <ui-select-choices repeat="category in searchResult"
-                           refresh="refreshTemplates($select.search)"
-                           refresh-delay="200">
-            <div>
-                <span ng-bind-html="category.descs[0].name | highlight: $select.search"></span>
-                <span ng-if="category.type == 'TEMPLATE'" class="glyphicon glyphicon-play"></span>
-                <small ng-if="category.parent">({{formatParents(category.parent)}})</small>
-                <span class="base-data-inactive" ng-if="!category.active">(inactive)</span>
-            </div>
-
-        </ui-select-choices>
-    </ui-select>
-
-
-    <ui-select ng-if="multiple" multiple ng-model="templateData.categories" ng-change="templateUpdated()">
+    <ui-select multiple ng-model="message.categories" ng-change="categoriesUpdated()">
         <ui-select-match placeholder="{{placeholder}}">
             {{$item.descs[0].name}}
             <span class="base-data-inactive" ng-if="!$item.active">(inactive)</span>
@@ -29,7 +10,7 @@
                            refresh-delay="200">
             <div>
                 <span ng-bind-html="category.descs[0].name | highlight: $select.search"></span>
-                <span ng-if="category.type == 'TEMPLATE'" class="glyphicon glyphicon-play"></span>
+                <span ng-if="category.type == 'TEMPLATE'" class="glyphicon glyphicon-play text-success"></span>
                 <small ng-if="category.parent">({{formatParents(category.parent)}})</small>
                 <span class="base-data-inactive" ng-if="!category.active">(inactive)</span>
             </div>
@@ -42,12 +23,12 @@
         <span class="glyphicon glyphicon-search"></span>
     </span>
     <span class="input-group-addon clickable"
-          ng-class="{ 'disabled' : !templateDefined() }"
-          style="font-size: 12px" ng-click="removeTemplate()">
+          ng-class="{ 'disabled' : !categoriesDefined() }"
+          style="font-size: 12px" ng-click="clearCategories()">
         <span class="glyphicon glyphicon-trash"></span>
     </span>
     <span class="input-group-addon clickable"
-          ng-class="{ 'disabled' : !templateDefined() }"
+          ng-class="{ 'disabled' : !categoriesDefined() }"
           style="font-size: 12px" ng-click="openTemplateDialog('execute')">
         <span class="glyphicon glyphicon-play"></span>
     </span>

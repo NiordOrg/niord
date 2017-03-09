@@ -676,10 +676,24 @@ body > .ui-select-container {
 }
 
 .template-table {
-    max-height: 400px;
+    max-height: 300px;
     min-height: 200px;
     overflow-y: scroll;
     border: 1px solid lightgray;
+}
+
+.selected-template-table {
+    border: 1px solid lightgray;
+    overflow-x: hidden;
+}
+
+.template-buttons {
+    padding: 5px 0;
+    text-align: center;
+    border-left: 1px solid lightgray;
+    border-right: 1px solid lightgray;
+    border-bottom: 1px solid lightgray;
+    background-color: #eee;
 }
 
 .selected-template:focus {
