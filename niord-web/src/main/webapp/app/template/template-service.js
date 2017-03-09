@@ -50,6 +50,13 @@ angular.module('niord.template')
             };
 
 
+            /** Refreshes the categories against the backend **/
+            this.refreshCategories = function (categories) {
+                var catIds = categories.map(function (cat) { return cat.id }).join(',');
+                return $http.get('/rest/categories/search/' + catIds + '?lang=' + $rootScope.language)
+            };
+
+
             /** Opens the template selector dialog **/
             this.templateDialog = function (operation, type, message, atons) {
                 return $uibModal.open({

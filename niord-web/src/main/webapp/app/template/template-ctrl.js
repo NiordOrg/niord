@@ -105,6 +105,15 @@ angular.module('niord.template')
             };
 
 
+            // Start by refreshing the selected categories. This is to ensure
+            // that we get e.g. the category.type flag along.
+            TemplateService.refreshCategories($scope.message.categories)
+                .success(function (categories) {
+                    $scope.message.categories = categories;
+                    $scope.refreshCategories();
+                });
+
+
             /** Updates the category search result **/
             $scope.refreshCategories = function () {
 
