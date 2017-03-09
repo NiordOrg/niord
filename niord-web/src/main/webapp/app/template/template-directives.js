@@ -47,6 +47,7 @@ angular.module('niord.template')
                 type:           "@",
                 class:          "@",
                 placeholder:    "@",
+                multiple:       "=",
                 tabIndex:       "="
             },
             link: function(scope, element, attrs) {
@@ -57,7 +58,7 @@ angular.module('niord.template')
                 scope.class = scope.class || "";
                 scope.placeholder = scope.placeholder || "Select Template";
 
-                if (!scope.templateData.categories) {
+                if (scope.multiple && !scope.templateData.categories) {
                     scope.templateData.categories = [];
                 }
 
@@ -89,17 +90,25 @@ angular.module('niord.template')
 
                 /** Removes the current template selection */
                 scope.removeTemplate = function () {
-                    scope.templateData.categories.length = 0;
+                    if (scope.multiple) {
+                        scope.templateData.categories.length = 0;
+                    } else {
+                        scope.templateData.category = undefined;
+                    }
                     scope.templateUpdated();
                 };
 
 
                 /** Opens the template selector/execution dialog **/
                 function openTemplateDialog(operation, message) {
+                    var templates = (scope.multiple)
+                        ? scope.templateData.categories
+                        : [scope.templateData.category];
+
                     TemplateService.templateDialog(
                         operation,
                         scope.type,
-                        scope.templateData.categories,
+                        templates,
                         message,
                         scope.atons
                     ).result.then(function (message) {

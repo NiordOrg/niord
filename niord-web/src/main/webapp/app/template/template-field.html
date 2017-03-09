@@ -1,6 +1,25 @@
 <div class="input-group {{class}}" style="text-align: left">
 
-    <ui-select multiple ng-model="templateData.categories" ng-change="templateUpdated()">
+    <ui-select ng-if="!multiple" ng-model="templateData.category" ng-change="templateUpdated()">
+        <ui-select-match placeholder="{{placeholder}}">
+            {{templateData.category.descs[0].name}}
+            <span class="base-data-inactive" ng-if="!templateData.category.active">(inactive)</span>
+        </ui-select-match>
+        <ui-select-choices repeat="category in searchResult"
+                           refresh="refreshTemplates($select.search)"
+                           refresh-delay="200">
+            <div>
+                <span ng-bind-html="category.descs[0].name | highlight: $select.search"></span>
+                <span ng-if="category.type == 'TEMPLATE'" class="glyphicon glyphicon-play"></span>
+                <small ng-if="category.parent">({{formatParents(category.parent)}})</small>
+                <span class="base-data-inactive" ng-if="!category.active">(inactive)</span>
+            </div>
+
+        </ui-select-choices>
+    </ui-select>
+
+
+    <ui-select ng-if="multiple" multiple ng-model="templateData.categories" ng-change="templateUpdated()">
         <ui-select-match placeholder="{{placeholder}}">
             {{$item.descs[0].name}}
             <span class="base-data-inactive" ng-if="!$item.active">(inactive)</span>
