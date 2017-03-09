@@ -42,12 +42,12 @@
         <span class="glyphicon glyphicon-search"></span>
     </span>
     <span class="input-group-addon clickable"
-          ng-class="{ 'disabled' : templateData.categories.length == 0 }"
+          ng-class="{ 'disabled' : !templateDefined() }"
           style="font-size: 12px" ng-click="removeTemplate()">
         <span class="glyphicon glyphicon-trash"></span>
     </span>
     <span class="input-group-addon clickable"
-          ng-class="{ 'disabled' : templateData.categories.length == 0 }"
+          ng-class="{ 'disabled' : !templateDefined() }"
           style="font-size: 12px" ng-click="openTemplateDialog('execute')">
         <span class="glyphicon glyphicon-play"></span>
     </span>

@@ -75,6 +75,14 @@ angular.module('niord.template')
                 };
 
 
+                /** Returns if a category has been defined **/
+                scope.templateDefined = function () {
+                    return scope.multiple
+                        ? scope.templateData.categories.length > 0
+                        : scope.templateData.category !== undefined;
+                };
+
+
                 // Use for template selection
                 scope.searchResult = [];
                 scope.refreshTemplates = function (name) {

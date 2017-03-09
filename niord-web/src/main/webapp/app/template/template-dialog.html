@@ -10,10 +10,11 @@
             <uib-tab active="selectTab" select="selectOperation('select')">
                 <tab-heading>
                     <span class="glyphicon glyphicon-search"></span>
-                    <span translate>template.select</span>
+                    <span translate ng-if="type == 'TEMPLATE'">template.select_template</span>
+                    <span translate ng-if="type != 'TEMPLATE'">template.select_category</span>
                 </tab-heading>
 
-                <div class="row" style="margin-top: 10px">
+                <div class="row" style="margin-top: 10px; margin-bottom: 20px">
                     <div class="col-xs-12 col-sm-6 col-md-4">
                         <input class="form-control input-sm col-sm-2" ng-model="params.name"
                                type="text" id="templateFilter" placeholder="{{'term.name' | translate}}" tabindex="0"
@@ -34,7 +35,7 @@
                     </div>
                 </div>
 
-                <div class="row" style="padding-top: 20px; font-size: 11px">
+                <div class="row" style="font-size: 11px">
                     <div class="col-sm-12 col-md-6">
                         <div class="template-dialog-header" translate>template.categories</div>
                         <div class="template-table">
