@@ -108,15 +108,16 @@ angular.module('niord.template')
                         message,
                         scope.atons
                     ).result.then(function (result) {
-                        if (result.type = 'category') {
+
+                        if (result.type == 'category') {
                             scope.message.categories.length = 0;
                             angular.forEach(result.message.categories, function (category) {
                                 scope.message.categories.push(category);
                             });
                             scope.flagCategoriesUpdated();
-                        } else if (result.type = 'message') {
+                        } else if (result.type == 'message') {
                             scope.message = result.message;
-                            if (attrs.messageUpdated) {
+                            if (scope.messageUpdated) {
                                 scope.messageUpdated({ message: scope.message });
                             }
                         }
@@ -150,10 +151,11 @@ angular.module('niord.template')
 
                 /** Opens the template selector/execution dialog **/
                 scope.openTemplateDialog = function (operation) {
-                    if (scope.message === undefined) {
+                    if (scope.message.mainType === undefined) {
                         var mainType = scope.mainType || 'NW';
                         MessageService.newMessageTemplate(mainType)
                             .success(function (message) {
+                                message.categories = scope.message.categories;
                                 updateGeometry(message);
                                 openTemplateDialog(operation, message);
                             })

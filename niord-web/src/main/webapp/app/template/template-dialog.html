@@ -6,7 +6,9 @@
         <uib-tabset class="framed-tabs">
 
 
+            <!-- ****************************** -->
             <!-- ***** Template selection ***** -->
+            <!-- ****************************** -->
             <uib-tab active="selectTab" select="selectOperation('select')">
                 <tab-heading>
                     <span class="glyphicon glyphicon-search"></span>
@@ -61,7 +63,7 @@
                             </table>
                         </div>
                         <div class="template-buttons">
-                            <button class="btn btn-default btn-xs"
+                            <button class="btn btn-primary btn-xs"
                                     ng-click="selectCategory(focusedCategory)"
                                     ng-disabled="!categoryFocused() || categorySelected(focusedCategory)">
                                 <span translate>term.add_selected</span>
@@ -130,8 +132,11 @@
             </uib-tab>
 
 
+
+            <!-- ****************************** -->
             <!-- ***** Template execution ***** -->
-            <uib-tab active="executeTab" disable="focusedCategory === undefined"  select="selectOperation('execute')">
+            <!-- ****************************** -->
+            <uib-tab active="executeTab" disable="!categoriesSelected()"  select="selectOperation('execute')">
                 <tab-heading>
                     <span class="glyphicon glyphicon-play"></span>
                     <span translate>template.execute</span>
@@ -139,12 +144,50 @@
 
                 <div>
 
+                    <div class="row">
+
+                        <div class="col-sm-12 col-md-6">
+
+                            <button class="btn btn-primary btn-sm"
+                                    ng-click="executeTemplate()">Execute Template</button>
+                        </div>
+
+                        <div class="col-sm-12 col-md-6">
+                            <div class="message-status-lang" style="text-align: center">
+                                <span style="text-align: left">
+                                    Preview &nbsp;
+                                    <span ng-repeat="lang in modelLanguages" ng-click="previewLanguage(lang)"
+                                          class="message-status-lang-btn pointer"
+                                          ng-class="{'preview-lang-selected' : previewLang == lang}">
+                                        <img ng-src="/img/flags/{{lang}}.png" height="14"/>
+                                        {{'lang.' + lang | translate}}
+                                    </span>
+                                </span>
+                            </div>
+
+                            <table ng-if="previewMessage" class='table table-condensed'>
+                                <tr render-message-details
+                                    msg="previewMessage"
+                                    language="previewLang"
+                                    format="details"
+                                    show-promulgation="true"
+                                    show-details-menu="false"></tr>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
 
             </uib-tab>
 
 
         </uib-tabset>
+
+
+
+        <!-- ****************************** -->
+        <!-- ***** Button Panel       ***** -->
+        <!-- ****************************** -->
 
         <div ng-if="operationSelected('select')" class="row" style="margin-top: 10px;">
             <div class="form-group col-xs-12" style="text-align: right;">

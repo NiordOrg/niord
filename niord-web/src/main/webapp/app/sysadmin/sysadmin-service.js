@@ -360,7 +360,7 @@ angular.module('niord.admin')
 
             /** Executes the message template on the given message ID **/
             executeCategoryTemplate: function(category, messageId) {
-                return $http.put('/rest/categories/execute?messageId=' + encodeURIComponent(messageId), category);
+                return $http.put('/rest/categories/execute', { messageId: encodeURIComponent(messageId), category: category });
             },
 
             /** Opens a dialog for selecting a script resource **/

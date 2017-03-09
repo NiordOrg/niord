@@ -26,9 +26,9 @@ angular.module('niord.template')
     /**
      * Controller for template selection and execution dialog
      */
-    .controller('TemplateDialogCtrl', ['$scope', '$document', '$timeout', 'LangService', 'TemplateService', 'MessageService',
+    .controller('TemplateDialogCtrl', ['$scope', '$document', '$timeout', 'growl', 'LangService', 'TemplateService', 'MessageService',
                 'operation', 'type', 'message', 'atons',
-        function ($scope, $document, $timeout, LangService, TemplateService, MessageService,
+        function ($scope, $document, $timeout, growl, LangService, TemplateService, MessageService,
                   operation, type, message, atons) {
             'use strict';
 
@@ -41,6 +41,7 @@ angular.module('niord.template')
             $scope.message          = angular.copy(message);
             $scope.params           = { name: '', category: undefined };
             $scope.exampleMessage   = undefined;
+            $scope.previewLang      = LangService.language();
 
 
             /** Initialize the tab-selection **/
@@ -105,13 +106,24 @@ angular.module('niord.template')
             };
 
 
-            // Start by refreshing the selected categories. This is to ensure
-            // that we get e.g. the category.type flag along.
-            TemplateService.refreshCategories($scope.message.categories)
-                .success(function (categories) {
-                    $scope.message.categories = categories;
-                    $scope.refreshCategories();
-                });
+            /** Initialize the message **/
+            $scope.initMessage = function () {
+                // Refresh the categories associated with the message.
+                // This is to ensure that we get e.g. the category.type flag along.
+                if ($scope.message.categories.length > 0) {
+                    TemplateService.refreshCategories($scope.message.categories)
+                        .success(function (categories) {
+                            $scope.message.categories = categories;
+                            $scope.refreshCategories();
+                        });
+                }
+            };
+            $scope.initMessage();
+
+
+            /** ****************************** **/
+            /** Template Selection             **/
+            /** ****************************** **/
 
 
             /** Updates the category search result **/
@@ -198,15 +210,9 @@ angular.module('niord.template')
             };
 
 
-            /** Called when the message has been updated by executing a template **/
-            $scope.messageSelected = function () {
-                $scope.$close({ type: 'category', message: $scope.message });
-            };
-
-
             /** Called when the user clicks the OK button **/
             $scope.useSelectedCategories = function () {
-                $scope.$close({ type: 'message', message: $scope.message });
+                $scope.$close({ type: 'category', message: $scope.message });
             };
 
 
@@ -220,6 +226,60 @@ angular.module('niord.template')
                         });
                 }
             };
+
+
+            /** ****************************** **/
+            /** Template Execution             **/
+            /** ****************************** **/
+
+
+            $scope.executeTemplate = function () {
+
+                var templates = $.grep($scope.message.categories, function (cat) {
+                    return cat.type == 'TEMPLATE' && cat.scriptResourcePaths !== undefined
+                });
+                var template = templates.length > 0 ? templates[0] : null;
+
+                if (template) {
+                    TemplateService
+                        .executeCategoryTemplate(template, $scope.message)
+                        .success(function (message) {
+                            $scope.message = message;
+                            $scope.initMessage();
+                        })
+                        .error(function (data, status) {
+                            growl.error("Error executing template (code: " + status + ")", {ttl: 5000})
+                        });
+                }
+            };
+
+
+            /** Set the preview language **/
+            $scope.previewLanguage = function (lang) {
+                $scope.previewLang = lang;
+                $scope.createPreviewMessage();
+            };
+
+
+            /** Create a preview message, i.e. a message sorted to the currently selected language **/
+            $scope.createPreviewMessage = function () {
+                $scope.previewMessage = undefined;
+                if ($scope.operation == 'execute') {
+                    if ($scope.message) {
+                        $scope.previewMessage = angular.copy($scope.message);
+                        LangService.sortMessageDescs($scope.previewMessage, $scope.previewLang);
+                    }
+                }
+            };
+            $scope.$watch("message", $scope.createPreviewMessage, true);
+            $scope.$watch("operation", $scope.createPreviewMessage, true);
+
+
+            /** Called when the message has been updated by executing a template **/
+            $scope.messageSelected = function () {
+                $scope.$close({ type: 'message', message: $scope.message });
+            };
+
 
         }]);
 

@@ -15,6 +15,7 @@
  */
 package org.niord.web;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
@@ -312,10 +313,21 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @RolesAllowed(Roles.USER)
     @GZIP
     @NoCache
-    public SystemMessageVo applyTemplate(@QueryParam("messageId") String messageId, SystemCategoryVo category) throws Exception {
-        // NB: Access to the message is checked:
-        SystemMessageVo message = messageRestService.getSystemMessage(messageId);
-        return templateExecutionService.executeTemplate(new Category(category), message);
+    public SystemMessageVo applyTemplate(ExecuteTemplateVo executeTemplate) throws Exception {
+
+
+        SystemMessageVo message = executeTemplate.getMessage();
+        if (message == null) {
+            if (StringUtils.isBlank(executeTemplate.getMessageId())) {
+                throw new WebApplicationException("No message specified", 400);
+            }
+
+            // NB: Access to the message is checked:
+            message = messageRestService.getSystemMessage(executeTemplate.getMessageId());
+        }
+        return templateExecutionService.executeTemplate(
+                new Category(executeTemplate.getCategory()),
+                message);
     }
 
 
@@ -346,4 +358,38 @@ public class CategoryRestService extends AbstractBatchableRestService {
             this.parentId = parentId;
         }
     }
+
+
+    /** Encapsulates the parameters used for moving an category to a new parent category */
+    @SuppressWarnings("unused")
+    public static class ExecuteTemplateVo implements IJsonSerializable {
+        SystemMessageVo message;
+        String messageId;
+        SystemCategoryVo category;
+
+        public SystemMessageVo getMessage() {
+            return message;
+        }
+
+        public void setMessage(SystemMessageVo message) {
+            this.message = message;
+        }
+
+        public String getMessageId() {
+            return messageId;
+        }
+
+        public void setMessageId(String messageId) {
+            this.messageId = messageId;
+        }
+
+        public SystemCategoryVo getCategory() {
+            return category;
+        }
+
+        public void setCategory(SystemCategoryVo category) {
+            this.category = category;
+        }
+    }
 }
+
