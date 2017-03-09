@@ -244,51 +244,6 @@ angular.module('niord.common')
 
 
     /**
-     * The template service is used for querying executable category templates.
-     */
-    .service('TemplateService', ['$rootScope', '$http', '$uibModal',
-        function ($rootScope, $http, $uibModal) {
-            'use strict';
-
-
-            /** Searches for message templates */
-            this.search = function(name, type, parentCategory, atons) {
-                atons = atons || [];
-                var params =
-                    '?domain=' + encodeURIComponent($rootScope.domain.domainId) +
-                    '&lang=' + $rootScope.language;
-                if (name) {
-                    params += '&name=' + encodeURIComponent(name);
-                }
-                if (parentCategory) {
-                    params += '&ancestorId=' + parentCategory.id;
-                }
-                if (type) {
-                    params += '&type=' + type;
-                }
-                return $http.put('/rest/categories/search' + params, atons);
-            };
-
-
-            /** Opens the template selector dialog **/
-            this.templateDialog = function (operation, type, categories, message, atons) {
-                return $uibModal.open({
-                    controller: "TemplateDialogCtrl",
-                    templateUrl: "/app/common/template-dialog.html",
-                    size: 'lg',
-                    resolve: {
-                        operation: function () { return operation; },
-                        type: function () { return type; },
-                        categories: function () { return categories; },
-                        message: function () { return message; },
-                        atons: function () { return atons; }
-                    }
-                });
-            };
-        }])
-
-
-    /**
      * Interface for logging to Google Analytics
      */
     .factory('AnalyticsService', [ '$rootScope', '$window', '$location',

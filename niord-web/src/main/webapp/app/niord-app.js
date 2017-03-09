@@ -22,6 +22,7 @@ angular.module('niord.auth', []);
 angular.module('niord.admin', []);
 angular.module('niord.atons', []);
 angular.module('niord.messages', []);
+angular.module('niord.template', []);
 angular.module('niord.common', []);
 angular.module('niord.conf', []);
 angular.module('niord.map', []);
@@ -33,7 +34,7 @@ angular.module('niord.home', []);
 var app = angular.module('niord.admin', [
         'ngSanitize', 'ui.bootstrap', 'ui.select', 'ui.router', 'ui.tinymce', 'ui.mask', 'ui.ace',
         'pascalprecht.translate', 'angular-growl', 'ng-sortable', 'angularFileUpload','jlareau.bowser',
-        'niord.common', 'niord.auth', 'niord.admin', 'niord.atons', 'niord.messages',
+        'niord.common', 'niord.auth', 'niord.admin', 'niord.atons', 'niord.messages', 'niord.template',
         'niord.conf', 'niord.map', 'niord.editor', 'niord.schedule', 'niord.home' ])
 
     .config(['$stateProvider', '$urlRouterProvider', '$httpProvider', function ($stateProvider, $urlRouterProvider, $httpProvider) {
