@@ -72,6 +72,14 @@
     "editable"    : true
   },
   {
+    "key"         : "stdTemplateFields",
+    "description" : "The possible set of standard message fields to display when executing a template",
+    "value"       : [ "type", "id", "publish_date", "areas", "positions", "event_dates" ],
+    "type"        : "json",
+    "web"         : true,
+    "editable"    : true
+  },
+  {
     "key"         : "frontPageMessageSeries",
     "description" : "The list of message series IDs to display on the front page when not logged in",
     "value"       : [],

@@ -34,6 +34,7 @@ public class SystemCategoryVo extends CategoryVo {
     List<String> editorFields;
     String atonFilter;
     List<DomainVo> domains = new ArrayList<>();
+    List<String> stdTemplateFields = new ArrayList<>();
     List<String> scriptResourcePaths = new ArrayList<>();
     String messageId;
 
@@ -88,6 +89,14 @@ public class SystemCategoryVo extends CategoryVo {
 
     public void setDomains(List<DomainVo> domains) {
         this.domains = domains;
+    }
+
+    public List<String> getStdTemplateFields() {
+        return stdTemplateFields;
+    }
+
+    public void setStdTemplateFields(List<String> stdTemplateFields) {
+        this.stdTemplateFields = stdTemplateFields;
     }
 
     public List<String> getScriptResourcePaths() {

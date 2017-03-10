@@ -1,0 +1,15 @@
+<div class="input-group">
+
+    <ui-select multiple ng-model="templateData.stdTemplateFields">
+        <ui-select-match placeholder="{{placeholder}}">
+            {{$item}}
+        </ui-select-match>
+        <ui-select-choices repeat="field in searchResult"
+                           refresh="refreshTemplateFields($select.search)"
+                           refresh-delay="100">
+            {{field}}
+        </ui-select-choices>
+    </ui-select>
+
+    <span class="input-group-addon clickable" style="font-size: 12px" ng-click="removeTemplateFields()"><span class="glyphicon glyphicon-trash"></span></span>
+</div>

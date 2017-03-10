@@ -133,6 +133,15 @@
                     </div>
 
                     <div class="form-group" ng-if="editCategory.type == 'TEMPLATE'">
+                        <label class="control-label">Standard Template Fields</label>
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <std-template-fields-field template-data="editCategory"></std-template-fields-field>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" ng-if="editCategory.type == 'TEMPLATE'">
                         <label class="control-label">Script Resources</label>
                         <div class="row">
                             <div class="col-sm-12" ng-sortable="pathsSortableCfg">

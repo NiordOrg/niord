@@ -59,6 +59,12 @@ public class CategoryService extends BaseService {
     @Inject
     NiordApp app;
 
+
+    /***************************************/
+    /** Category look-up                  **/
+    /***************************************/
+
+
     /**
      * Returns the category with the given legacy id
      *
@@ -165,7 +171,7 @@ public class CategoryService extends BaseService {
         // Optionally, filter on AtoNs
         // NB: Expensive!
         if (params.getAtons() != null && !params.getAtons().isEmpty()) {
-            categories = resolveAtonCategories(categories, params.getAtons());
+            categories = resolveAtonCategories(categories, params.getAtons(), params.getMaxSize());
         }
 
         return categories.stream()
@@ -219,6 +225,11 @@ public class CategoryService extends BaseService {
     }
 
 
+    /***************************************/
+    /** Category life-cycles              **/
+    /***************************************/
+
+
     /**
      * Updates the category data from the category template, but not the parent-child hierarchy of the category
      *
@@ -259,6 +270,9 @@ public class CategoryService extends BaseService {
 
        // Replace domains with persisted entities
         original.setDomains(domainService.persistedDomains(category.getDomains()));
+
+        original.getStdTemplateFields().clear();
+        original.getStdTemplateFields().addAll(category.getStdTemplateFields());
 
         return saveEntity(original);
     }
@@ -534,10 +548,12 @@ public class CategoryService extends BaseService {
      *     However, given that there are only dozens - and not hundreds - of categories,
      *     we should be fine. Use with care though...
      *
+     * @param categories the gross set of template categories to filter by AtoNs
      * @param atons the atons to find templates for
+     * @param limit the max number of category templates to return
      * @return the matching template categories
      */
-    private List<Category> resolveAtonCategories(List<Category> categories, List<AtonNodeVo> atons) {
+    private List<Category> resolveAtonCategories(List<Category> categories, List<AtonNodeVo> atons, int limit) {
 
         // Resolve matching categories via associated categories. Cache the result by category ID
         Map<Integer, Boolean> includeCategory = new HashMap<>();
@@ -545,6 +561,7 @@ public class CategoryService extends BaseService {
         // Filter the templates
         return categories.stream()
                 .filter(t -> matchesAtons(atons, t, includeCategory))
+                .limit(limit)
                 .collect(Collectors.toList());
     }
 

@@ -108,6 +108,7 @@ angular.module('niord.admin')
                     active: true,
                     type: 'CATEGORY',
                     domains: [],
+                    stdTemplateFields: [],
                     scriptResourcePaths: [ '' ],
                     messageId: undefined
                     }, ensureNameField);

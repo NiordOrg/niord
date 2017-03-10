@@ -394,7 +394,7 @@ angular.module('niord.common')
      * The editor-fields-field directive supports selecting a list of
      * editor fields via the editorData.editorFields attribute.
      ****************************************************************/
-    .directive('editorFieldsField', ['$rootScope', '$http', function($rootScope, $http) {
+    .directive('editorFieldsField', ['$rootScope', function($rootScope) {
         return {
             restrict: 'E',
             replace: true,

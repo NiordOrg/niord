@@ -165,9 +165,52 @@ angular.module('niord.template')
                 }
             }
         }
+    }])
+
+
+    /****************************************************************
+     * The std-template-fields-field directive supports selecting a list of
+     * standard message input parameter fields during template execution.
+     ****************************************************************/
+    .directive('stdTemplateFieldsField', ['$rootScope', function($rootScope) {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: '/app/template/std-template-fields-field.html',
+            scope: {
+                templateData:   "=",
+                placeholder:    "@"
+            },
+            link: function(scope) {
+
+                scope.placeholder = scope.placeholder || "Standard template fields";
+                scope.templateData = scope.templateData || {};
+                scope.templateData.stdTemplateFields = scope.templateData.stdTemplateFields || [];
+
+                /** Refreshes the template field search result */
+                scope.searchResult = [];
+                scope.refreshTemplateFields = function(name) {
+                    if (!name || name.length == 0) {
+                        return [];
+                    }
+                    scope.searchResult.length = 0;
+                    angular.forEach($rootScope.stdTemplateFields, function (field) {
+                        // Add it to the search result, if:
+                        // 1) The typed name is a substring match
+                        // 2) It is not already selected
+                        if (field.toUpperCase().indexOf(name.toUpperCase()) !== -1 &&
+                            $.inArray(field, scope.templateData.stdTemplateFields) == -1) {
+                            scope.searchResult.push(field);
+                        }
+                    });
+                };
+
+
+                /** Removes the current template fields selection */
+                scope.removeTemplateFields = function () {
+                    scope.templateData.stdTemplateFields.length = 0;
+                };
+            }
+        }
     }]);
-
-
-
-
 

@@ -91,14 +91,20 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
 
     String atonFilter;
 
+    /** The domains. Used for template categories **/
     @ManyToMany
     List<Domain> domains = new ArrayList<>();
 
+    /** Standard fields (e.g. "type", "areas", etc) to when executing this template category **/
+    @ElementCollection
+    List<String> stdTemplateFields = new ArrayList<>();
+
+    /** The script resources to execute. Used for template categories **/
     @OrderColumn(name = "indexNo")
     @ElementCollection
     List<String> scriptResourcePaths = new ArrayList<>();
 
-    // Example message ID
+    /** Example message ID. Used for template categories **/
     String messageId;
 
 
@@ -159,6 +165,9 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
                         .map(Domain::new)
                         .collect(Collectors.toList());
             }
+            if (sysCategory.getStdTemplateFields() != null) {
+                stdTemplateFields.addAll(sysCategory.getStdTemplateFields());
+            }
 
         }
     }
@@ -205,6 +214,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
             sysCategory.setDomains(domains.stream()
                     .map(Domain::toVo)
                     .collect(Collectors.toList()));
+            sysCategory.getStdTemplateFields().addAll(stdTemplateFields);
             sysCategory.getScriptResourcePaths().addAll(scriptResourcePaths);
             sysCategory.setMessageId(messageId);
         }
@@ -427,6 +437,14 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
 
     public void setDomains(List<Domain> domains) {
         this.domains = domains;
+    }
+
+    public List<String> getStdTemplateFields() {
+        return stdTemplateFields;
+    }
+
+    public void setStdTemplateFields(List<String> stdTemplateFields) {
+        this.stdTemplateFields = stdTemplateFields;
     }
 
     public List<String> getScriptResourcePaths() {
