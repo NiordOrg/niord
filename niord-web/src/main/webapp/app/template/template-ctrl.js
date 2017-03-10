@@ -24,24 +24,21 @@ angular.module('niord.template')
 
 
     /**
-     * Controller for template selection and execution dialog
+     * ******************************************************************
+     * Controller for template selection and execution dialog.
+     * Most of the actual functionality is handled by sub-controllers.
+     * ******************************************************************
      */
-    .controller('TemplateDialogCtrl', ['$scope', '$document', '$timeout', 'growl', 'LangService', 'TemplateService', 'MessageService',
+    .controller('TemplateDialogCtrl', ['$scope', 'TemplateService',
                 'operation', 'type', 'message', 'atons',
-        function ($scope, $document, $timeout, growl, LangService, TemplateService, MessageService,
+        function ($scope, TemplateService,
                   operation, type, message, atons) {
             'use strict';
 
-            $scope.formatParents    = LangService.formatParents;
             $scope.operation        = operation || 'select';
             $scope.type             = type;
             $scope.atons            = atons || [];
-            $scope.focusedCategory  = undefined;
-            $scope.searchResult     = [];
             $scope.message          = angular.copy(message);
-            $scope.params           = { name: '', category: undefined };
-            $scope.exampleMessage   = undefined;
-            $scope.previewLang      = LangService.language();
 
 
             /** Initialize the tab-selection **/
@@ -51,6 +48,66 @@ angular.module('niord.template')
                 $scope.selectTab    = !$scope.executeTab;
             };
             $scope.selectOperation(operation);
+
+
+            /** Returns if the currently selected operation is the parameter one **/
+            $scope.operationSelected = function (operation) {
+                return $scope.operation == operation;
+            };
+
+
+            /** Initialize the message **/
+            $scope.initMessage = function (message) {
+                if (message !== undefined) {
+                    // Allows sub-controller to override message of this parent controller
+                    $scope.message = message;
+                }
+
+                // Refresh the categories associated with the message.
+                // This is to ensure that we get e.g. the category.type flag along.
+                if ($scope.message.categories.length > 0) {
+                    TemplateService.refreshCategories($scope.message.categories)
+                        .success(function (categories) {
+                            $scope.message.categories = categories;
+                        });
+                }
+            };
+            $scope.initMessage();
+
+
+            /** Returns if any category has been selected **/
+            $scope.categoriesSelected = function () {
+                return $scope.message.categories.length > 0;
+            };
+
+
+            /** Called when the user clicks the OK button **/
+            $scope.useSelectedCategories = function () {
+                $scope.$close({ type: 'category', message: $scope.message });
+            };
+
+
+            /** Called when the message has been updated by executing a template **/
+            $scope.messageSelected = function () {
+                $scope.$close({ type: 'message', message: $scope.message });
+            };
+        }])
+
+
+    /**
+     * ******************************************************************
+     * TemplateDialogCtrl Sub-controller for template selection
+     * ******************************************************************
+     */
+    .controller('TemplateSelectionDialogCtrl', ['$scope', '$document', '$timeout', 'LangService', 'TemplateService', 'MessageService',
+        function ($scope, $document, $timeout, LangService, TemplateService, MessageService) {
+            'use strict';
+
+            $scope.formatParents    = LangService.formatParents;
+            $scope.focusedCategory  = undefined;
+            $scope.searchResult     = [];
+            $scope.params           = { name: '', category: undefined };
+            $scope.exampleMessage   = undefined;
 
 
             /** Script resource path DnD configuration **/
@@ -99,32 +156,6 @@ angular.module('niord.template')
                 $('#templateFilter').focus();
             }, 100);
 
-            
-            /** Returns if the currently selected operation is the parameter one **/
-            $scope.operationSelected = function (operation) {
-                return $scope.operation == operation;
-            };
-
-
-            /** Initialize the message **/
-            $scope.initMessage = function () {
-                // Refresh the categories associated with the message.
-                // This is to ensure that we get e.g. the category.type flag along.
-                if ($scope.message.categories.length > 0) {
-                    TemplateService.refreshCategories($scope.message.categories)
-                        .success(function (categories) {
-                            $scope.message.categories = categories;
-                            $scope.refreshCategories();
-                        });
-                }
-            };
-            $scope.initMessage();
-
-
-            /** ****************************** **/
-            /** Template Selection             **/
-            /** ****************************** **/
-
 
             /** Updates the category search result **/
             $scope.refreshCategories = function () {
@@ -147,18 +178,13 @@ angular.module('niord.template')
                     });
             };
             $scope.$watch("params", $scope.refreshCategories, true);
+            $scope.$watchCollection("message.categories", $scope.refreshCategories);
 
 
             /** Clears the AtoN selection **/
             $scope.clearAtons = function () {
                 $scope.atons.length = 0;
                 $scope.refreshCategories();
-            };
-
-
-            /** Returns if any category has been selected **/
-            $scope.categoriesSelected = function () {
-                return $scope.message.categories.length > 0;
             };
 
 
@@ -173,7 +199,6 @@ angular.module('niord.template')
             $scope.selectCategory = function (cat) {
                 if (cat && !$scope.categorySelected(cat)) {
                     $scope.message.categories.push(cat);
-                    $scope.refreshCategories();
                 }
             };
 
@@ -184,7 +209,6 @@ angular.module('niord.template')
                     var idx = $scope.message.categories.indexOf(cat);
                     if (idx !== -1) {
                         $scope.message.categories.splice(idx, 1);
-                        $scope.refreshCategories();
                     }
                 }
             };
@@ -193,7 +217,6 @@ angular.module('niord.template')
             /** Removes all selected cagtegories **/
             $scope.clearCategorySelection = function () {
                 $scope.message.categories.length = 0;
-                $scope.refreshCategories();
             };
 
 
@@ -210,12 +233,6 @@ angular.module('niord.template')
             };
 
 
-            /** Called when the user clicks the OK button **/
-            $scope.useSelectedCategories = function () {
-                $scope.$close({ type: 'category', message: $scope.message });
-            };
-
-
             /** Create an example message for the currently selected template **/
             $scope.createExampleMessage = function () {
                 $scope.exampleMessage = undefined;
@@ -227,12 +244,22 @@ angular.module('niord.template')
                 }
             };
 
-
-            /** ****************************** **/
-            /** Template Execution             **/
-            /** ****************************** **/
+        }])
 
 
+    /**
+     * ******************************************************************
+     * TemplateDialogCtrl Sub-controller for template execution
+     * ******************************************************************
+     */
+    .controller('TemplateExecutionDialogCtrl', ['$scope', 'growl', 'LangService', 'TemplateService',
+        function ($scope, growl, LangService, TemplateService) {
+            'use strict';
+
+            $scope.previewLang      = LangService.language();
+
+
+            /** Executes the message template **/
             $scope.executeTemplate = function () {
 
                 var templates = $.grep($scope.message.categories, function (cat) {
@@ -244,8 +271,8 @@ angular.module('niord.template')
                     TemplateService
                         .executeCategoryTemplate(template, $scope.message)
                         .success(function (message) {
-                            $scope.message = message;
-                            $scope.initMessage();
+                            //$scope.message = message;
+                            $scope.initMessage(message);
                         })
                         .error(function (data, status) {
                             growl.error("Error executing template (code: " + status + ")", {ttl: 5000})
@@ -274,14 +301,5 @@ angular.module('niord.template')
             $scope.$watch("message", $scope.createPreviewMessage, true);
             $scope.$watch("operation", $scope.createPreviewMessage, true);
 
-
-            /** Called when the message has been updated by executing a template **/
-            $scope.messageSelected = function () {
-                $scope.$close({ type: 'message', message: $scope.message });
-            };
-
-
         }]);
-
-
 
