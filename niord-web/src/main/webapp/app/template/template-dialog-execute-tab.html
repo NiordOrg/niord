@@ -1,0 +1,38 @@
+
+<div class="row">
+
+    <div class="col-sm-12 col-md-6">
+
+        <button class="btn btn-primary btn-sm"
+                ng-click="executeTemplate()">Execute Template</button>
+    </div>
+
+    <div class="col-sm-12 col-md-6">
+        <div class="message-status-lang" style="text-align: center">
+                            <span style="text-align: left">
+                                Preview &nbsp;
+                                <span ng-repeat="lang in modelLanguages" ng-click="previewLanguage(lang)"
+                                      class="message-status-lang-btn pointer"
+                                      ng-class="{'preview-lang-selected' : previewLang == lang}">
+                                    <img ng-src="/img/flags/{{lang}}.png" height="14"/>
+                                    {{'lang.' + lang | translate}}
+                                </span>
+                            </span>
+        </div>
+
+        <ol-map ng-if="previewMessage" class="template-message-map">
+            <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
+            <map-message-details-layer name="Message" visible="true" message="previewMessage"
+                                       max-zoom="8" fit-extent="true"></map-message-details-layer>
+        </ol-map>
+
+        <table ng-if="previewMessage" class='table table-condensed'>
+            <tr render-message-details
+                msg="previewMessage"
+                language="previewLang"
+                format="details"
+                show-promulgation="true"
+                show-details-menu="false"></tr>
+        </table>
+    </div>
+</div>
