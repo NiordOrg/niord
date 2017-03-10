@@ -209,6 +209,13 @@ angular.module('niord.editor')
             };
 
 
+            /** Called when the message has been updated by executing a category template **/
+            $scope.templateExecuted = function (message) {
+                $scope.message = message;
+                $scope.initMessage(false);
+            };
+
+
             /*****************************/
             /** Editor functionality    **/
             /*****************************/

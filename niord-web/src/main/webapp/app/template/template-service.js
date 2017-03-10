@@ -59,7 +59,7 @@ angular.module('niord.template')
 
             /** Executes the message template on the given message ID **/
             this.executeCategoryTemplate = function(category, message) {
-                return $http.put('/rest/categories/execute', { message: message, category: category });
+                return $http.put('/rest/categories/execute', { message: message, categoryId: category.id });
             };
 
 
@@ -68,7 +68,7 @@ angular.module('niord.template')
                 return $uibModal.open({
                     controller: "TemplateDialogCtrl",
                     templateUrl: "/app/template/template-dialog.html",
-                    size: 'lg',
+                    size: 'xl',
                     resolve: {
                         operation: function () { return operation; },
                         type: function () { return type; },

@@ -315,19 +315,24 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @NoCache
     public SystemMessageVo applyTemplate(ExecuteTemplateVo executeTemplate) throws Exception {
 
+        if (!executeTemplate.valid()) {
+            throw new WebApplicationException("No proper message or category specified", 400);
+        }
 
+        // Resolve the message to use
         SystemMessageVo message = executeTemplate.getMessage();
         if (message == null) {
-            if (StringUtils.isBlank(executeTemplate.getMessageId())) {
-                throw new WebApplicationException("No message specified", 400);
-            }
-
             // NB: Access to the message is checked:
             message = messageRestService.getSystemMessage(executeTemplate.getMessageId());
         }
-        return templateExecutionService.executeTemplate(
-                new Category(executeTemplate.getCategory()),
-                message);
+
+        // Resolve the category to use
+        Category category = (executeTemplate.getCategory() != null) ? new Category(executeTemplate.getCategory()) : null;
+        if (category == null) {
+            category = categoryService.getCategoryDetails(executeTemplate.getCategoryId());
+        }
+
+        return templateExecutionService.executeTemplate(category, message);
     }
 
 
@@ -366,6 +371,12 @@ public class CategoryRestService extends AbstractBatchableRestService {
         SystemMessageVo message;
         String messageId;
         SystemCategoryVo category;
+        Integer categoryId;
+
+        public boolean valid() {
+            return (message != null || StringUtils.isNotBlank(messageId)) &&
+                    (category != null || categoryId != null);
+        }
 
         public SystemMessageVo getMessage() {
             return message;
@@ -389,6 +400,14 @@ public class CategoryRestService extends AbstractBatchableRestService {
 
         public void setCategory(SystemCategoryVo category) {
             this.category = category;
+        }
+
+        public Integer getCategoryId() {
+            return categoryId;
+        }
+
+        public void setCategoryId(Integer categoryId) {
+            this.categoryId = categoryId;
         }
     }
 }

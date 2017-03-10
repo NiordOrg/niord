@@ -165,6 +165,12 @@
                                 </span>
                             </div>
 
+                            <ol-map ng-if="previewMessage" class="template-message-map">
+                                <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
+                                <map-message-details-layer name="Message" visible="true" message="previewMessage"
+                                                           max-zoom="8" fit-extent="true"></map-message-details-layer>
+                            </ol-map>
+
                             <table ng-if="previewMessage" class='table table-condensed'>
                                 <tr render-message-details
                                     msg="previewMessage"
