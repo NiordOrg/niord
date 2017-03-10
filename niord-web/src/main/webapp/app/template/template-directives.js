@@ -153,7 +153,7 @@ angular.module('niord.template')
                 scope.openTemplateDialog = function (operation) {
                     if (scope.message.mainType === undefined) {
                         var mainType = scope.mainType || 'NW';
-                        MessageService.newMessageTemplate(mainType)
+                        MessageService.newMessageTemplate(mainType, true)
                             .success(function (message) {
                                 message.categories = scope.message.categories;
                                 updateGeometry(message);

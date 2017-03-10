@@ -50,6 +50,9 @@ import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.geojson.GeoJsonVo;
 import org.niord.model.message.AttachmentVo;
 import org.niord.model.message.MainType;
+import org.niord.model.message.MessagePartType;
+import org.niord.model.message.MessagePartVo;
+import org.niord.model.message.MessageSeriesVo;
 import org.niord.model.message.MessageVo;
 import org.niord.model.message.ReferenceType;
 import org.niord.model.message.ReferenceVo;
@@ -335,7 +338,9 @@ public class MessageRestService  {
     @GZIP
     @NoCache
     @RolesAllowed(Roles.EDITOR)
-    public SystemMessageVo newTemplateMessage(@QueryParam("mainType") MainType mainType) throws Exception {
+    public SystemMessageVo newTemplateMessage(
+            @QueryParam("mainType") MainType mainType,
+            @QueryParam("populate") @DefaultValue("false") boolean populate) throws Exception {
 
         log.info("Creating new message template");
 
@@ -357,7 +362,24 @@ public class MessageRestService  {
             message.setMessageSeries(messageSeries.get(0));
         }
 
-        return toSystemMessage(message, false);
+        SystemMessageVo messageVo = toSystemMessage(message, false);
+
+        // Check if we need to populate with empty description records
+        if (populate) {
+            messageVo.checkCreateDescs(app.getLanguages());
+            MessagePartVo part = messageVo.checkCreatePart(MessagePartType.DETAILS);
+            Arrays.stream(app.getLanguages()).forEach(part::checkCreateDesc);
+
+            // If there is only on message series for the current domain, assign it
+            List<MessageSeriesVo> series = domainService.currentDomain().getMessageSeries().stream()
+                    .filter(ms -> ms.getMainType() == mainType)
+                    .map(ms -> ms.toVo(MessageSeriesVo.class))
+                    .collect(Collectors.toList());
+            if (series.size() == 1) {
+                messageVo.setMessageSeries(series.get(0));
+            }
+        }
+        return messageVo;
     }
 
 

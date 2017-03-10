@@ -113,11 +113,6 @@ angular.module('niord.editor')
 
                 $scope.setEditorFields(msg.editorFields, true);
 
-                // Ensure that the list of date intervals is defined
-                if (!msg.dateIntervals) {
-                    msg.dateIntervals = [];
-                }
-
                 // Ensure that localized desc fields are defined for all languages
                 LangService.checkDescs(msg, initMessageDescField, undefined, $rootScope.modelLanguages);
 
@@ -333,15 +328,6 @@ angular.module('niord.editor')
                 } else if (msg.publishDateFrom && msg.publishDateTo && msg.publishDateFrom > msg.publishDateTo) {
                     growl.error("Invalid publish date interval", {ttl: 5000});
                     return;
-                }
-                if (msg.dateIntervals) {
-                    for (var x = 0; x < msg.dateIntervals.length; x++) {
-                        var di = msg.dateIntervals[x];
-                        if (di.toDate && !di.fromDate) {
-                            growl.error("Please specify date interval from-date before saving", {ttl: 5000});
-                            return;
-                        }
-                    }
                 }
 
                 // Prevent double-submissions
@@ -931,8 +917,7 @@ angular.module('niord.editor')
                         .then(function (result) {
                             $("#mce-modal-block").show();
                             $(".mce-window").show();
-                            var file = "/rest/repo/file/" + result.attachment.path;
-                            win.document.getElementById(field_name).value = file;
+                            win.document.getElementById(field_name).value = "/rest/repo/file/" + result.attachment.path;
                         });
                 });
             };

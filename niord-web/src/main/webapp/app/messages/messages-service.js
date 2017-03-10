@@ -118,8 +118,12 @@ angular.module('niord.messages')
 
 
             /** Returns a new draft message template */
-            newMessageTemplate: function (mainType) {
-                return $http.get('/rest/messages/new-message-template?mainType=' + mainType);
+            newMessageTemplate: function (mainType, populate) {
+                var params = 'mainType=' + mainType;
+                if (populate) {
+                    params += '&populate=true';
+                }
+                return $http.get('/rest/messages/new-message-template?' + params);
             },
 
 
