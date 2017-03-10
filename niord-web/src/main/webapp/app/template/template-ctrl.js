@@ -252,26 +252,60 @@ angular.module('niord.template')
      * TemplateDialogCtrl Sub-controller for template execution
      * ******************************************************************
      */
-    .controller('TemplateExecutionDialogCtrl', ['$scope', 'growl', 'LangService', 'TemplateService',
-        function ($scope, growl, LangService, TemplateService) {
+    .controller('TemplateExecutionDialogCtrl', ['$scope', '$rootScope', 'growl', 'LangService', 'TemplateService',
+        function ($scope, $rootScope, growl, LangService, TemplateService) {
             'use strict';
 
             $scope.previewLang      = LangService.language();
+            $scope.editMode = {};
+            $scope.showStdTemplateField = {};
+
+            // Compute the template categories
+            $scope.templates = $.grep($scope.message.categories, function (cat) {
+                return cat.type == 'TEMPLATE' && cat.scriptResourcePaths !== undefined
+            });
+
+            // Compute the editor fields to display
+            angular.forEach($rootScope.stdTemplateFields, function (field) {
+                $scope.editMode[field] = [ false ];
+
+                var show = false;
+                angular.forEach($scope.templates, function (template) {
+                    show = show || $.inArray(field, template.stdTemplateFields) != -1;
+                });
+               $scope.showStdTemplateField[field] = show;
+            });
+
+
+            // Determine the message series for the current domain and message mainType
+            $scope.messageSeries = [];
+            if ($rootScope.domain && $rootScope.domain.messageSeries) {
+                angular.forEach($rootScope.domain.messageSeries, function (series) {
+                    if (series.mainType == $scope.message.mainType) {
+                        if ($scope.message.messageSeries && $scope.message.messageSeries.seriesId == series.seriesId) {
+                            $scope.messageSeries.push($scope.message.messageSeries);
+                        } else {
+                            $scope.messageSeries.push(series);
+                        }
+                    }
+                });
+            }
+            if ($scope.messageSeries.length == 1 && !$scope.message.messageSeries) {
+                $scope.message.messageSeries = $scope.messageSeries[0];
+            }
 
 
             /** Executes the message template **/
             $scope.executeTemplate = function () {
 
-                var templates = $.grep($scope.message.categories, function (cat) {
-                    return cat.type == 'TEMPLATE' && cat.scriptResourcePaths !== undefined
-                });
-                var template = templates.length > 0 ? templates[0] : null;
+                var template = $scope.templates.length > 0 ? $scope.templates[0] : null;
 
                 if (template) {
                     TemplateService
                         .executeCategoryTemplate(template, $scope.message)
                         .success(function (message) {
-                            //$scope.message = message;
+                            LangService.sortMessageDescs(message);
+                            $scope.message = message;
                             $scope.initMessage(message);
                         })
                         .error(function (data, status) {

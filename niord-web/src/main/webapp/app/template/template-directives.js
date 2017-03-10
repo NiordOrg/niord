@@ -155,6 +155,7 @@ angular.module('niord.template')
                         var mainType = scope.mainType || 'NW';
                         MessageService.newMessageTemplate(mainType, true)
                             .success(function (message) {
+                                LangService.sortMessageDescs(message);
                                 message.categories = scope.message.categories;
                                 updateGeometry(message);
                                 openTemplateDialog(operation, message);

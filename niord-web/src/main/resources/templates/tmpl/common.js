@@ -58,3 +58,59 @@ function updatePromulgations() {
         }
     }
 }
+
+
+/**
+ * Resets all Geometry IDs. Can be used if, say, the parts of a message is
+ * copied to a new message. Subsequently reset the IDs of the copied geometry
+ */
+function resetGeometryIds(msg) {
+    if (msg && msg.parts) {
+        for (var x = 0; x < msg.parts.length; x++) {
+            var part = msg.parts[x];
+            if (part.geometry) {
+                part.geometry.id = null;
+                if (part.geometry.features) {
+                    for (var y = 0; y < part.geometry.features.length; y++) {
+                        part.geometry.features[y].id = null;
+                    }
+                }
+            }
+        }
+    }
+    return msg;
+}
+
+
+/**
+ * Returns the description entity from the list with the given language.
+ * Returns null if not found;
+ */
+function descForLang(descs, lang) {
+    if (descs !== undefined && lang !== undefined) {
+        for (var x = 0; x < descs.length; x++) {
+            if (descs[x].lang == lang) {
+                return descs[x];
+            }
+        }
+    }
+    return null;
+}
+
+
+/**
+ * Copies the specified field from one list of description entities
+ * to another
+ */
+function copyDescField(fromDescs, toDescs, field) {
+    // Copy "vicinity" back to the message
+    if (fromDescs !== undefined && toDescs !== undefined && field !== undefined) {
+        for (var x = 0; x < fromDescs.length; x++) {
+            var fromDesc = fromDescs[x];
+            var toDesc = descForLang(toDescs, fromDesc.lang);
+            if (toDesc !== undefined) {
+                toDesc[field] = fromDesc[field];
+            }
+        }
+    }
+}
