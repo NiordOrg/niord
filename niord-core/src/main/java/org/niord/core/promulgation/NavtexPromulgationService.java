@@ -255,7 +255,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
             Join<NavtexTransmitter, Area> areaJoin = transmitterRoot.join("areas", JoinType.LEFT);
             Predicate[] areaMatch = areas.stream()
-                    .map(a -> cb.like(areaJoin.get("lineage"), a.getLineage() + "%"))
+                    .map(a -> cb.equal(cb.locate(cb.literal(a.getLineage()), areaJoin.get("lineage")), 1))
                     .toArray(Predicate[]::new);
             criteriaHelper.add(cb.or(areaMatch));
         }
