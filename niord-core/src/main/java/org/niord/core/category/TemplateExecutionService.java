@@ -91,10 +91,11 @@ public class TemplateExecutionService extends BaseService {
         Map<String, Object> contextData = new HashMap<>();
         contextData.put("languages", app.getLanguages());
         contextData.put("message", message);
-        contextData.put("part", message.part(MessagePartType.DETAILS));
         contextData.put("template", templateCategory.toVo(SystemCategoryVo.class, DataFilter.get()));
 
         for (String scriptResourcePath : templateCategory.getScriptResourcePaths()) {
+            contextData.put("part", message.part(MessagePartType.DETAILS));
+
             ScriptResource.Type type = ScriptResource.path2type(scriptResourcePath);
             if (type == ScriptResource.Type.JS) {
                 // JavaScript update
