@@ -83,13 +83,19 @@ angular.module('niord.template')
 
             /** Called when the user clicks the OK button **/
             $scope.useSelectedCategories = function () {
-                $scope.$close({ type: 'category', message: $scope.message });
+                $scope.$broadcast('useSelectedCategories', {});
             };
 
 
             /** Called when the message has been updated by executing a template **/
             $scope.messageSelected = function () {
-                $scope.$close({ type: 'message', message: $scope.message });
+                $scope.$broadcast('messageSelected', {});
+            };
+
+
+            /** Called to refresh the preview message by applying the selected template **/
+            $scope.refreshPreviewMessage = function () {
+                $scope.$broadcast('refreshMessage', {});
             };
         }])
 
@@ -115,6 +121,12 @@ angular.module('niord.template')
                 group: 'selectedCategories',
                 handle: '.move-btn'
             };
+
+
+            // Called when OK is clicked in the selection tab
+            $scope.$on('useSelectedCategories', function () {
+                $scope.$close({ type: 'category', message: $scope.message });
+            });
 
 
             // Hook up a key listener that can be used to navigate the template list
@@ -159,24 +171,26 @@ angular.module('niord.template')
 
             /** Updates the category search result **/
             $scope.refreshCategories = function () {
+                if ($scope.operation == "select") {
+                    $scope.focusedCategory = undefined;
 
-                $scope.focusedCategory = undefined;
-
-                TemplateService.search($scope.params.name, $scope.type, $scope.params.category, $scope.atons)
-                    .success(function(categories) {
-                        // Remove categories already selected
-                        var selCatIds = {};
-                        angular.forEach($scope.message.categories, function (cat) {
-                            selCatIds[cat.id] = true;
+                    TemplateService.search($scope.params.name, $scope.type, $scope.params.category, $scope.atons)
+                        .success(function(categories) {
+                            // Remove categories already selected
+                            var selCatIds = {};
+                            angular.forEach($scope.message.categories, function (cat) {
+                                selCatIds[cat.id] = true;
+                            });
+                            $scope.searchResult.length = 0;
+                            angular.forEach(categories, function (cat) {
+                                if (!selCatIds[cat.id]) {
+                                    $scope.searchResult.push(cat);
+                                }
+                            })
                         });
-                        $scope.searchResult.length = 0;
-                        angular.forEach(categories, function (cat) {
-                            if (!selCatIds[cat.id]) {
-                                $scope.searchResult.push(cat);
-                            }
-                        })
-                    });
+                }
             };
+            $scope.$watch("operation", $scope.refreshCategories, true);
             $scope.$watch("params", $scope.refreshCategories, true);
             $scope.$watchCollection("message.categories", $scope.refreshCategories);
 
@@ -252,64 +266,137 @@ angular.module('niord.template')
      * TemplateDialogCtrl Sub-controller for template execution
      * ******************************************************************
      */
-    .controller('TemplateExecutionDialogCtrl', ['$scope', '$rootScope', 'growl', 'LangService', 'TemplateService',
-        function ($scope, $rootScope, growl, LangService, TemplateService) {
+    .controller('TemplateExecutionDialogCtrl', ['$scope', '$rootScope', '$timeout', 'growl',
+                'LangService', 'TemplateService', 'MessageService',
+        function ($scope, $rootScope, $timeout, growl,
+                  LangService, TemplateService, MessageService) {
             'use strict';
 
-            $scope.previewLang      = LangService.language();
-            $scope.editMode = {};
+            $scope.previewLang          = LangService.language();
             $scope.showStdTemplateField = {};
+            var executeTemplatesTimer   = undefined;
 
-            // Compute the template categories
-            $scope.templates = $.grep($scope.message.categories, function (cat) {
-                return cat.type == 'TEMPLATE' && cat.scriptResourcePaths !== undefined
+
+            // Cancel up any pending times
+            $scope.$on('$destroy', function() {
+                if (executeTemplatesTimer !== undefined) {
+                    $timeout.cancel(executeTemplatesTimer);
+                }
             });
 
-            // Compute the editor fields to display
-            angular.forEach($rootScope.stdTemplateFields, function (field) {
-                $scope.editMode[field] = [ false ];
 
-                var show = false;
-                angular.forEach($scope.templates, function (template) {
-                    show = show || $.inArray(field, template.stdTemplateFields) != -1;
+            // Called when OK is clicked in the execute tab
+            $scope.$on('messageSelected', function () {
+                $scope.executeTemplates(true);
+            });
+
+
+            // Called when Refresh is clicked in the execute tab
+            $scope.$on('refreshMessage', function () {
+                $scope.executeTemplates();
+            });
+
+
+            // When entering execution mode, update the message to match the selected templates
+            $scope.enterExecutionMode = function () {
+
+                if ($scope.operation != 'execute') {
+                    return;
+                }
+
+                // Compute the template categories
+                $scope.templates = $.grep($scope.message.categories, function (cat) {
+                    return cat.type == 'TEMPLATE' && cat.scriptResourcePaths !== undefined
                 });
-               $scope.showStdTemplateField[field] = show;
-            });
+
+                // Ensure the presence of a message part for each template
+                for (var x = 0; x < $scope.templates.length; x++) {
+                    if ($scope.message.parts.length <= x) {
+                        $scope.message.parts.push({
+                            type: 'DETAILS'
+                        })
+                    }
+                }
 
 
-            // Determine the message series for the current domain and message mainType
-            $scope.messageSeries = [];
-            if ($rootScope.domain && $rootScope.domain.messageSeries) {
-                angular.forEach($rootScope.domain.messageSeries, function (series) {
-                    if (series.mainType == $scope.message.mainType) {
-                        if ($scope.message.messageSeries && $scope.message.messageSeries.seriesId == series.seriesId) {
-                            $scope.messageSeries.push($scope.message.messageSeries);
-                        } else {
-                            $scope.messageSeries.push(series);
-                        }
+                // Ensure that all message parts have a well-defined geometry
+                angular.forEach($scope.message.parts, function (part) {
+                    if (!part.geometry) {
+                        part.geometry = { type: 'FeatureCollection', features: [] }
                     }
                 });
-            }
-            if ($scope.messageSeries.length == 1 && !$scope.message.messageSeries) {
-                $scope.message.messageSeries = $scope.messageSeries[0];
-            }
+
+
+                // Compute the editor fields to display
+                angular.forEach($rootScope.stdTemplateFields, function (field) {
+                    var show = false;
+                    angular.forEach($scope.templates, function (template) {
+                        show = show || $.inArray(field, template.stdTemplateFields) != -1;
+                    });
+                    $scope.showStdTemplateField[field] = show;
+                });
+
+
+                // Determine the message series for the current domain and message mainType
+                $scope.messageSeries = [];
+                if ($rootScope.domain && $rootScope.domain.messageSeries) {
+                    angular.forEach($rootScope.domain.messageSeries, function (series) {
+                        if (series.mainType == $scope.message.mainType) {
+                            if ($scope.message.messageSeries && $scope.message.messageSeries.seriesId == series.seriesId) {
+                                $scope.messageSeries.push($scope.message.messageSeries);
+                            } else {
+                                $scope.messageSeries.push(series);
+                            }
+                        }
+                    });
+                }
+                if ($scope.messageSeries.length == 1 && !$scope.message.messageSeries) {
+                    $scope.message.messageSeries = $scope.messageSeries[0];
+                }
+
+                // Check if we can update areas from a geometry
+                $scope.computeAreas();
+            };
 
 
             /** Executes the message template **/
-            $scope.executeTemplate = function () {
+            $scope.executeTemplates = function (selectMessage) {
+                executeTemplatesTimer = undefined;
 
-                var template = $scope.templates.length > 0 ? $scope.templates[0] : null;
+                if ($scope.operation == 'execute') {
+                    var template = $scope.templates.length > 0 ? $scope.templates[0] : null;
 
-                if (template) {
-                    TemplateService
-                        .executeCategoryTemplate(template, $scope.message)
-                        .success(function (message) {
-                            LangService.sortMessageDescs(message);
-                            $scope.message = message;
-                            $scope.initMessage(message);
-                        })
-                        .error(function (data, status) {
-                            growl.error("Error executing template (code: " + status + ")", {ttl: 5000})
+                    if (template) {
+                        TemplateService
+                            .executeCategoryTemplate(template, $scope.message)
+                            .success(function (message) {
+                                LangService.sortMessageDescs(message);
+                                $scope.message = message;
+                                if (selectMessage) {
+                                    $scope.$close({ type: 'message', message: $scope.message });
+                                } else {
+                                    $scope.initMessage(message);
+                                }
+                            })
+                            .error(function (data, status) {
+                                growl.error("Error executing template (code: " + status + ")", {ttl: 5000})
+                            });
+                    }
+                }
+            };
+
+
+            /** Computes the areas intersecting with the current message geometry **/
+            $scope.computeAreas = function () {
+                // Create a combined geometry for all message parts
+                var geometry = {
+                    type: 'FeatureCollection',
+                    features: MessageService.getMessageFeatures($scope.message)
+                };
+                if (geometry.features.length > 0) {
+                    MessageService.intersectingAreas(geometry)
+                        .success(function (areas) {
+                            $scope.message.areas = areas;
                         });
                 }
             };
@@ -318,22 +405,24 @@ angular.module('niord.template')
             /** Set the preview language **/
             $scope.previewLanguage = function (lang) {
                 $scope.previewLang = lang;
-                $scope.createPreviewMessage();
+                $scope.updatePreviewMessage();
             };
 
 
             /** Create a preview message, i.e. a message sorted to the currently selected language **/
-            $scope.createPreviewMessage = function () {
+            $scope.updatePreviewMessage = function () {
                 $scope.previewMessage = undefined;
-                if ($scope.operation == 'execute') {
-                    if ($scope.message) {
-                        $scope.previewMessage = angular.copy($scope.message);
-                        LangService.sortMessageDescs($scope.previewMessage, $scope.previewLang);
-                    }
+                if ($scope.message) {
+                    $scope.previewMessage = angular.copy($scope.message);
+                    LangService.sortMessageDescs($scope.previewMessage, $scope.previewLang);
                 }
             };
-            $scope.$watch("message", $scope.createPreviewMessage, true);
-            $scope.$watch("operation", $scope.createPreviewMessage, true);
+
+            $scope.$watch("message", $scope.updatePreviewMessage, true);
+            $scope.$watch("operation", function() {
+                $scope.enterExecutionMode();
+                $scope.updatePreviewMessage();
+            }, true);
 
         }]);
 

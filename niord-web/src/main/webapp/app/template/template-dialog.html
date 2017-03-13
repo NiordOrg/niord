@@ -46,22 +46,29 @@
 
         <div ng-if="operationSelected('select')" class="row" style="margin-top: 10px;">
             <div class="form-group col-xs-12" style="text-align: right;">
-                <button class="btn btn-default btn-sm pull-left" ng-click="$dismiss('aborted')" translate>term.cancel</button>
 
-                <button class="btn btn-primary btn-sm" style="width: 100px"
-                        ng-click="useSelectedCategories()">OK</button>
+                <button class="btn btn-default btn-sm pull-left" ng-click="$dismiss('aborted')" translate>term.cancel</button>
 
                 <button class="btn btn-success btn-sm"
                         ng-click="selectOperation('execute')" ng-disabled="!categoriesSelected()">
                     <span class="glyphicon glyphicon-play"></span>
                     <span translate>template.execute</span>
                 </button>
+
+                <button class="btn btn-primary btn-sm" style="width: 100px"
+                        ng-click="useSelectedCategories()">OK</button>
             </div>
         </div>
 
         <div ng-if="operationSelected('execute')" class="row" style="margin-top: 10px;">
             <div class="form-group col-xs-12" style="text-align: right;">
                 <button class="btn btn-default btn-sm pull-left" ng-click="$dismiss('aborted')" translate>term.cancel</button>
+
+                <button class="btn btn-success btn-sm"
+                        ng-click="refreshPreviewMessage()" ng-disabled="!categoriesSelected()">
+                    <span class="glyphicon glyphicon-refresh"></span>
+                    <span>Refresh Preview</span>
+                </button>
 
                 <button class="btn btn-primary btn-sm" style="width: 100px"
                         ng-click="messageSelected()">OK</button>

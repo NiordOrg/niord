@@ -174,11 +174,17 @@ public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
 
     /** Returns - and potentially creates - a message part of the given type **/
     public MessagePartVo checkCreatePart(MessagePartType type) {
+        return checkCreatePart(type, 0);
+    }
+
+
+    /** Returns - and potentially creates - a message part of the given type **/
+    public MessagePartVo checkCreatePart(MessagePartType type, int index) {
         MessagePartVo part = part(type);
         if (part == null) {
             part = new MessagePartVo();
             part.setType(type);
-            checkCreateParts().add(0, part);
+            checkCreateParts().add(index, part);
         }
         return part;
     }

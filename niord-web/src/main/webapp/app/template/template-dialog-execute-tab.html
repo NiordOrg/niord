@@ -10,149 +10,136 @@
                 <!-- ******************************************** -->
                 <!-- ** >>>> Message Preamble Header           ** -->
                 <!-- ******************************************** -->
-                <div class="row editor-fields-group" style="margin-top: 0">
-                    <div class="col-xs-4 col-sm-4 col-md-2">
-                        <div class="editor-field-group-label" translate>editor.section.preamble</div>
-                    </div>
+                <div class="row template-dialog-param-group" style="margin-top: 0;">
+                    <div class="col-sm-12">General</div>
                 </div>
 
                 <!-- ********************* -->
                 <!-- ** Type            ** -->
                 <!-- ********************* -->
-                <editor-field edit-mode="editMode" field-id="type" field-title="msg.field.type"
-                              ng-if="showStdTemplateField['type']" tab-index="200">
+                <template-dialog-param-field field-title="msg.field.type" ng-if="showStdTemplateField['type']">
 
-                    <editor-field-value-viewer>
-                        <span ng-if="message.type">{{'msg.type.' + message.type | translate}} {{message.mainType}}</span>
-                    </editor-field-value-viewer>
+                    <div class="btn-group" ng-if="message.mainType == 'NW'">
+                        <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'LOCAL_WARNING'"
+                                tabindex="201" translate>msg.type.LOCAL_WARNING</button>
+                        <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'COASTAL_WARNING'"
+                                tabindex="202"  translate>msg.type.COASTAL_WARNING</button>
+                        <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'SUBAREA_WARNING'"
+                                tabindex="203"  translate>msg.type.SUBAREA_WARNING</button>
+                        <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'NAVAREA_WARNING'"
+                                tabindex="204"  translate>msg.type.NAVAREA_WARNING</button>
+                    </div>
+                    <div class="btn-group" ng-if="message.mainType == 'NM'">
+                        <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'TEMPORARY_NOTICE'"
+                                tabindex="205"  translate>msg.type.TEMPORARY_NOTICE</button>
+                        <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'PRELIMINARY_NOTICE'"
+                                tabindex="206"  translate>msg.type.PRELIMINARY_NOTICE</button>
+                        <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'PERMANENT_NOTICE'"
+                                tabindex="207"  translate>msg.type.PERMANENT_NOTICE</button>
+                        <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'MISCELLANEOUS_NOTICE'"
+                                tabindex="208"  translate>msg.type.MISCELLANEOUS_NOTICE</button>
+                    </div>
+                </template-dialog-param-field>
 
-                    <editor-field-value-editor value-class="col-sm-12">
-                        <div class="btn-group" ng-if="message.mainType == 'NW'">
-                            <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'LOCAL_WARNING'"
-                                    tabindex="201" translate>msg.type.LOCAL_WARNING</button>
-                            <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'COASTAL_WARNING'"
-                                    tabindex="202"  translate>msg.type.COASTAL_WARNING</button>
-                            <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'SUBAREA_WARNING'"
-                                    tabindex="203"  translate>msg.type.SUBAREA_WARNING</button>
-                            <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'NAVAREA_WARNING'"
-                                    tabindex="204"  translate>msg.type.NAVAREA_WARNING</button>
-                        </div>
-                        <div class="btn-group" ng-if="message.mainType == 'NM'">
-                            <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'TEMPORARY_NOTICE'"
-                                    tabindex="205"  translate>msg.type.TEMPORARY_NOTICE</button>
-                            <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'PRELIMINARY_NOTICE'"
-                                    tabindex="206"  translate>msg.type.PRELIMINARY_NOTICE</button>
-                            <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'PERMANENT_NOTICE'"
-                                    tabindex="207"  translate>msg.type.PERMANENT_NOTICE</button>
-                            <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'MISCELLANEOUS_NOTICE'"
-                                    tabindex="208"  translate>msg.type.MISCELLANEOUS_NOTICE</button>
-                        </div>
-                    </editor-field-value-editor>
-
-                </editor-field>
 
                 <!-- ********************* -->
                 <!-- ** Message ID      ** -->
                 <!-- ********************* -->
-                <editor-field edit-mode="editMode" field-id="id" field-title="msg.field.id"
-                              ng-if="showStdTemplateField['id']" tab-index="300">
+                <template-dialog-param-field field-title="msg.field.id" ng-if="showStdTemplateField['id']">
 
-                    <editor-field-value-viewer>
-                        <message-id-badge msg="message"></message-id-badge>
-                    </editor-field-value-viewer>
+                    <table class="editor-field-value-table">
+                        <tr>
+                            <th>Message series</th>
+                            <td>
+                                <select class="form-control input-sm" style="width: 200px"
+                                        tabindex="301"
+                                        ng-model="message.messageSeries"
+                                        ng-options="series.seriesId for series in messageSeries">
+                                </select>
+                            </td>
+                        </tr>
+                    </table>
 
-                    <editor-field-value-editor value-class="col-sm-12">
-                        <table class="editor-field-value-table">
-                            <tr>
-                                <th>Message series</th>
-                                <td>
-                                    <select class="form-control input-sm" style="width: 200px"
-                                            tabindex="301"
-                                            ng-model="message.messageSeries"
-                                            ng-options="series.seriesId for series in messageSeries">
-                                    </select>
-                                </td>
-                            </tr>
-                        </table>
-                    </editor-field-value-editor>
-
-                </editor-field>
+                </template-dialog-param-field>
 
 
                 <!-- ********************* -->
                 <!-- ** Publish Date    ** -->
                 <!-- ********************* -->
-                <editor-field edit-mode="editMode" field-id="publish_date" field-title="msg.field.publish_date"
-                              ng-if="showStdTemplateField['publish_date']" tab-index="600">
+                <template-dialog-param-field field-title="msg.field.publish_date" ng-if="showStdTemplateField['publish_date']">
 
-                    <editor-field-value-viewer>
-                        <div ng-if="message.publishDateFrom || message.publishDateTo">
-                            <span ng-if="message.publishDateFrom">{{message.publishDateFrom | formatDate : 'lll z'}}</span>
-                            <span ng-if="message.publishDateFrom || message.publishDateTo">&nbsp;-&nbsp;</span>
-                            <span ng-if="message.publishDateTo">{{message.publishDateTo | formatDate : 'lll z'}}</span>
+                    <div class="row">
+                        <div class="col-xs-6 col-sm-6 col-md-6">
+                            <date-time-picker ng-model="message.publishDateFrom" placeholder="Publish From" format="'lll z'"
+                                              readonly="message.status != 'DRAFT' && message.status != 'VERIFIED'"
+                                              tab-index="601"></date-time-picker>
                         </div>
-                    </editor-field-value-viewer>
-
-                    <editor-field-value-editor value-class="col-sm-12">
-                        <div class="row">
-                            <div class="col-xs-6 col-sm-6 col-md-6">
-                                <date-time-picker ng-model="message.publishDateFrom" placeholder="Publish From" format="'lll z'"
-                                                  readonly="message.status != 'DRAFT' && message.status != 'VERIFIED'"
-                                                  tab-index="601"></date-time-picker>
-                            </div>
-                            <div class="col-xs-6 col-sm-6 col-md-6">
-                                <date-time-picker ng-model="message.publishDateTo" placeholder="Publish To" format="'lll z'"
-                                                  readonly="message.status != 'DRAFT' && message.status != 'VERIFIED'  && message.status != 'PUBLISHED'"
-                                                  tab-index="601"></date-time-picker>
-                            </div>
+                        <div class="col-xs-6 col-sm-6 col-md-6">
+                            <date-time-picker ng-model="message.publishDateTo" placeholder="Publish To" format="'lll z'"
+                                              readonly="message.status != 'DRAFT' && message.status != 'VERIFIED'  && message.status != 'PUBLISHED'"
+                                              tab-index="601"></date-time-picker>
                         </div>
-                    </editor-field-value-editor>
+                    </div>
 
-                </editor-field>
+                </template-dialog-param-field>
 
 
                 <!-- ********************* -->
                 <!-- ** Areas           ** -->
                 <!-- ********************* -->
-                <editor-field edit-mode="editMode" field-id="areas" field-title="msg.field.areas"
-                              ng-if="showStdTemplateField['areas']" tab-index="700">
+                <template-dialog-param-field field-title="msg.field.areas" ng-if="showStdTemplateField['areas']">
 
-                    <editor-field-value-viewer>
-                        <span ng-repeat="area in message.areas"><span ng-if="$index > 0">,</span>
-                            {{area.descs[0].name}}</span>
-                            <span ng-if="message.descs.length > 0 && message.descs[0].vicinity">
-                            <span ng-if="message.areas.length > 0">, </span>
-                            {{message.descs[0].vicinity}}
-                        </span>
-                    </editor-field-value-viewer>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <areas-field id="areas" area-data="message" multiple="true" domain="domain"></areas-field>
+                        </div>
+                    </div>
+                    <div class="row" style="margin-top: 10px">
+                        <div class="col-sm-6" ng-repeat="desc in message.descs">
+                            <input class="form-control input-sm" placeholder="Vicinity" type="text"
+                                   tabindex="704"
+                                   ng-model="desc.vicinity" bg-flag="desc.lang"
+                                   ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }">
+                        </div>
+                    </div>
 
-                    <editor-field-value-editor value-class="col-sm-12">
+                </template-dialog-param-field>
+
+
+
+                <!-- ******************************************** -->
+                <!-- ** >>>> Templates                         ** -->
+                <!-- ******************************************** -->
+                <div ng-repeat="template in templates">
+
+                    <div class="row template-dialog-param-group">
+                        <div class="col-sm-12">{{template.descs[0].name}}</div>
+                    </div>
+
+                    <!-- ********************* -->
+                    <!-- ** Positions       ** -->
+                    <!-- ********************* -->
+                    <template-dialog-param-field field-title="msg.field.positions" ng-if="showStdTemplateField['positions']">
+
                         <div class="row">
                             <div class="col-sm-12">
-                                <areas-field id="areas" area-data="message" multiple="true" domain="domain"
-                                             tab-index="701"
-                                             area-changed="adjustEditableMessage()"></areas-field>
+                                <gj-editor id="position-editor"
+                                           class="template-message-map"
+                                           edit-type="message"
+                                           feature-collection="message.parts[$index].geometry"
+                                           show-wms-layer="true"
+                                           on-save="computeAreas()"></gj-editor>
                             </div>
                         </div>
-                        <div class="row" style="margin-top: 10px">
-                            <div class="col-sm-6" ng-repeat="desc in message.descs">
-                                <input class="form-control input-sm" placeholder="Vicinity" type="text"
-                                       tabindex="704"
-                                       ng-model="desc.vicinity" bg-flag="desc.lang"
-                                       ng-change="adjustEditableMessage()"
-                                       ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }">
-                            </div>
-                        </div>
-                    </editor-field-value-editor>
 
-                </editor-field>
+                    </template-dialog-param-field>
+
+
+                </div>
+
             </div>
 
         </form>
-
-        <div style="text-align: center">
-            <button class="btn btn-primary btn-sm" ng-click="executeTemplate()">Execute Template</button>
-        </div>
 
     </div>
 
@@ -169,12 +156,6 @@
                 </span>
             </span>
         </div>
-
-        <ol-map ng-if="previewMessage" class="template-message-map">
-            <map-tile-layer name="OSM" visible="true" layer-switcher="false" source="OSM"></map-tile-layer>
-            <map-message-details-layer name="Message" visible="true" message="previewMessage"
-                                       max-zoom="8" fit-extent="true"></map-message-details-layer>
-        </ol-map>
 
         <table ng-if="previewMessage" class='table table-condensed'>
             <tr render-message-details

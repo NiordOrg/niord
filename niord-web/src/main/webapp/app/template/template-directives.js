@@ -213,5 +213,37 @@ angular.module('niord.template')
                 };
             }
         }
-    }]);
+    }])
 
+
+    /**********************************************
+     * Directives that wraps an editable template
+     * parameter field with a title.
+     **********************************************/
+    .directive('templateDialogParamField', [function () {
+        return {
+            restrict: 'E',
+            templateUrl: '/app/template/template-dialog-param-field.html',
+            replace: true,
+            transclude: true,
+            scope: {
+                fieldTitle: "@",
+                fieldValid: '&',
+                valueClass: "@"
+            },
+
+            link: function(scope, element, attrs) {
+
+                scope.valueClass = scope.valueClass || 'col-sm-12';
+
+                /** Returns if the field value is invalid */
+                scope.fieldInvalid = function () {
+                    if (attrs.fieldValid) {
+                        return !scope.fieldValid({ fieldId: scope.fieldId });
+                    } else {
+                        return false;
+                    }
+                };
+            }
+        };
+    }]);

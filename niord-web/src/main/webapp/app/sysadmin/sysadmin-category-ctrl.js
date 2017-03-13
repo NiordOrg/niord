@@ -272,19 +272,19 @@ angular.module('niord.admin')
             $scope.previewLang = $rootScope.language;
 
             /** Create a preview message, i.e. a message sorted to the currently selected language **/
-            $scope.createPreviewMessage = function () {
+            $scope.updatePreviewMessage = function () {
                 $scope.previewMessage = undefined;
                 if ($scope.message) {
                     $scope.previewMessage = angular.copy($scope.message);
                     LangService.sortMessageDescs($scope.previewMessage, $scope.previewLang);
                 }
             };
-            $scope.$watch("message", $scope.createPreviewMessage, true);
+            $scope.$watch("message", $scope.updatePreviewMessage, true);
 
 
             /** Set the preview language **/
             $scope.previewLanguage = function (lang) {
                 $scope.previewLang = lang;
-                $scope.createPreviewMessage();
+                $scope.updatePreviewMessage();
             };
         }]);

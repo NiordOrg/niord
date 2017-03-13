@@ -129,7 +129,7 @@ public class TemplateExecutionService extends BaseService {
         message.checkCreateDescs(app.getLanguages());
 
         // If message areas are undefined, compute them from the message geometry.
-        messageService.adjustMessage(message, MessageService.AdjustmentType.AREAS);
+        // messageService.adjustMessage(message, MessageService.AdjustmentType.AREAS);
     }
 
 
@@ -140,7 +140,7 @@ public class TemplateExecutionService extends BaseService {
     private void postExecuteTemplate(SystemMessageVo message) {
 
         // Update auto-title fields, etc.
-        messageService.adjustMessage(message, MessageService.AdjustmentType.TITLE);
+        messageService.adjustMessage(message, MessageService.AdjustmentType.AREAS, MessageService.AdjustmentType.TITLE);
 
         // If there is only one DETAILS message part, hide the subject
         List<MessagePartVo> detailParts = message.parts(MessagePartType.DETAILS);
