@@ -76,7 +76,7 @@ angular.module('niord.template')
 
                 /** Returns if a category has been defined **/
                 scope.categoriesDefined = function () {
-                    return scope.message.categories.length > 0;
+                    return scope.message.categories && scope.message.categories.length > 0;
                 };
 
 
