@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.message.Message;
+import org.niord.core.message.MessageDesc;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
@@ -42,6 +43,7 @@ import javax.ejb.Startup;
 import javax.inject.Inject;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -266,10 +268,12 @@ public class TwitterPromulgationService extends BasePromulgationService {
     /** Composes the tweet **/
     private String computeTweet(Message message, String format, String tweet) {
         format = StringUtils.defaultIfBlank(format, DEFAULT_TWEET_FORMAT);
-        tweet = StringUtils.abbreviate(tweet, MAX_TWEET_LENGTH);
 
         Map<String, String> params = new HashMap<>();
-        params.put("${tweet}", tweet);
+        Arrays.stream(app.getLanguages()).forEach(lang -> {
+            MessageDesc desc = message.getDesc(lang);
+            params.put("${title:" + lang + "}", desc == null ? "" : StringUtils.defaultString(desc.getTitle()));
+        });
         params.put("${uid}", message.getUid());
         params.put("${id}", message.getId().toString());
         params.put("${short-id}", message.getShortId() == null ? "" : message.getShortId());
@@ -279,6 +283,15 @@ public class TwitterPromulgationService extends BasePromulgationService {
         params.put("${main-type-lower}", message.getMainType().toString().toLowerCase());
         params.put("${base-uri}", app.getBaseUri());
 
+        // First, update the tweet
+        for (Map.Entry<String, String> e : params.entrySet()) {
+            tweet = tweet.replace(e.getKey(), e.getValue()).trim();
+        }
+
+
+        // Then update the tweet template
+        tweet = StringUtils.abbreviate(tweet, MAX_TWEET_LENGTH);
+        params.put("${tweet}", tweet);
         String result = format;
         for (Map.Entry<String, String> e : params.entrySet()) {
             result = result.replace(e.getKey(), e.getValue()).trim();

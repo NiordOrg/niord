@@ -122,6 +122,9 @@ public class TemplateExecutionService extends BaseService {
      */
     private void preExecuteTemplate(SystemMessageVo message) {
 
+        // Update base data to ensure that we have all language variants
+        message = messageService.updateBaseDate(message);
+
         // Ensure the presence of a DETAILS message part
         message.checkCreatePart(MessagePartType.DETAILS);
 
@@ -143,7 +146,7 @@ public class TemplateExecutionService extends BaseService {
         messageService.adjustMessage(message, MessageService.AdjustmentType.AREAS, MessageService.AdjustmentType.TITLE);
 
         // If there is only one DETAILS message part, hide the subject
-        List<MessagePartVo> detailParts = message.parts(MessagePartType.DETAILS);
+        List<MessagePartVo> detailParts = message.partsOfType(MessagePartType.DETAILS);
         if (detailParts.size() == 1) {
             detailParts.get(0).setHideSubject(true);
         }

@@ -46,6 +46,8 @@ import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.message.AreaVo;
+import org.niord.model.message.CategoryVo;
+import org.niord.model.message.ChartVo;
 import org.niord.model.message.MainType;
 import org.niord.model.message.MessageVo;
 import org.niord.model.message.ReferenceType;
@@ -818,6 +820,33 @@ public class MessageService extends BaseService {
         }
 
         updateAutoMessageFields(msg);
+        return message;
+    }
+
+
+    /**
+     * Replace the related based data with fresh version containing all descriptor entities
+     * @param message the message whose base data to update
+     * @return the updated message
+     */
+    public SystemMessageVo updateBaseDate(SystemMessageVo message) {
+        Message msg = new Message(message);
+        msg.setAreas(persistedList(Area.class, msg.getAreas()));
+        msg.setCategories(persistedList(Category.class, msg.getCategories()));
+        msg.setCharts(chartService.persistedCharts(msg.getCharts()));
+
+        // Copy back using an all-language data filter
+        DataFilter filter = Message.MESSAGE_DETAILS_FILTER;
+        message.setCategories(msg.getCategories().stream()
+            .map(c -> c.toVo(CategoryVo.class, filter))
+            .collect(Collectors.toList()));
+        message.setAreas(msg.getAreas().stream()
+                .map(a -> a.toVo(AreaVo.class, filter))
+                .collect(Collectors.toList()));
+        message.setCharts(msg.getCharts().stream()
+                .map(c -> c.toVo(ChartVo.class, filter))
+                .collect(Collectors.toList()));
+
         return message;
     }
 

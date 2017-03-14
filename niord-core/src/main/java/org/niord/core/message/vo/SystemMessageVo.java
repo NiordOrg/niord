@@ -148,7 +148,7 @@ public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
 
 
     /** Returns the message parts of the given type **/
-    public List<MessagePartVo> parts(MessagePartType type) {
+    public List<MessagePartVo> partsOfType(MessagePartType type) {
         if (getParts() == null) {
             return Collections.emptyList();
         }
@@ -160,7 +160,7 @@ public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
 
     /** Returns the message part of the given type or null if it does not exist **/
     public MessagePartVo part(MessagePartType type) {
-        return parts(type).stream()
+        return partsOfType(type).stream()
                 .findFirst()
                 .orElse(null);
     }
