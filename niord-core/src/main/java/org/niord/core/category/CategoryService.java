@@ -37,10 +37,10 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.script.ScriptException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -218,10 +218,12 @@ public class CategoryService extends BaseService {
      * @param ids the ids of the category
      * @return the category
      */
-    public List<Category> getCategoryDetails(Set<Integer> ids) {
+    public List<Category> getCategoryDetails(List<Integer> ids) {
         return em.createNamedQuery("Category.findCategoriesWithIds", Category.class)
                 .setParameter("ids", ids)
-                .getResultList();
+                .getResultList().stream()
+                .sorted(Comparator.comparingInt(c -> ids.indexOf(c.getId())))
+                .collect(Collectors.toList());
     }
 
 

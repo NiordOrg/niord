@@ -364,11 +364,9 @@ angular.module('niord.template')
                 executeTemplatesTimer = undefined;
 
                 if ($scope.operation == 'execute') {
-                    var template = $scope.templates.length > 0 ? $scope.templates[0] : null;
-
-                    if (template) {
+                    if ($scope.message.categories && $scope.message.categories.length > 0) {
                         TemplateService
-                            .executeCategoryTemplate(template, $scope.message)
+                            .executeCategoryTemplates($scope.message)
                             .success(function (message) {
                                 LangService.sortMessageDescs(message);
                                 $scope.message = message;

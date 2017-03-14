@@ -39,9 +39,12 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Business interface for executing template categories
@@ -66,11 +69,15 @@ public class TemplateExecutionService extends BaseService {
     MessageService messageService;
 
     @Inject
+    CategoryService categoryService;
+
+    @Inject
     NiordApp app;
 
 
     /**
-     * Executes a message template on the given message
+     * Executes a message category template on the given message.
+     * If no category template is specified, all the category template of the message are used.
      *
      * @param templateCategory the template to execute
      * @param message  the message to apply the template to
@@ -78,9 +85,22 @@ public class TemplateExecutionService extends BaseService {
      */
     public SystemMessageVo executeTemplate(Category templateCategory, SystemMessageVo message) throws Exception {
 
-        if (templateCategory.getType() != CategoryType.TEMPLATE) {
+        // Sanity check
+        if (templateCategory != null && templateCategory.getType() != CategoryType.TEMPLATE) {
             throw new IllegalArgumentException("Only categories of type TEMPLATE are executable");
         }
+
+        // Either use the specified category or the ones associated with the message
+        List<Category> templateCategories =
+                templateCategory != null
+                ? Collections.singletonList(templateCategory)
+                : message.getCategories().stream()
+                    .map(c -> categoryService.getCategoryDetails(c.getId()))
+                    .filter(Objects::nonNull)
+                    .filter(c -> c.getType() == CategoryType.TEMPLATE)
+                    .collect(Collectors.toList());
+
+        List<MessagePartVo> detailParts = checkCreateDetailParts(message, templateCategories);
 
         long t0 = System.currentTimeMillis();
 
@@ -91,28 +111,49 @@ public class TemplateExecutionService extends BaseService {
         Map<String, Object> contextData = new HashMap<>();
         contextData.put("languages", app.getLanguages());
         contextData.put("message", message);
-        contextData.put("template", templateCategory.toVo(SystemCategoryVo.class, DataFilter.get()));
 
-        for (String scriptResourcePath : templateCategory.getScriptResourcePaths()) {
-            contextData.put("part", message.part(MessagePartType.DETAILS));
+        // Apply the category templates one by one
+        for (int x = 0; x < templateCategories.size(); x++) {
+            Category template = templateCategories.get(x);
+            MessagePartVo detailPart = detailParts.get(x);
 
-            ScriptResource.Type type = ScriptResource.path2type(scriptResourcePath);
-            if (type == ScriptResource.Type.JS) {
-                // JavaScript update
-                evalJavaScriptResource(contextData, scriptResourcePath);
-            } else if (type == ScriptResource.Type.FM) {
-                // Freemarker Template update
-                applyFreemarkerTemplate(contextData, scriptResourcePath);
+            contextData.put("template", template.toVo(SystemCategoryVo.class, DataFilter.get()));
+
+            for (String scriptResourcePath : template.getScriptResourcePaths()) {
+                contextData.put("part", detailPart);
+
+                ScriptResource.Type type = ScriptResource.path2type(scriptResourcePath);
+                if (type == ScriptResource.Type.JS) {
+                    // JavaScript update
+                    evalJavaScriptResource(contextData, scriptResourcePath);
+                } else if (type == ScriptResource.Type.FM) {
+                    // Freemarker Template update
+                    applyFreemarkerTemplate(contextData, scriptResourcePath);
+                }
             }
         }
 
         // Adjust the message after executing the template
         postExecuteTemplate(message);
 
-        log.info("Executed template " + templateCategory.getId() + " on message " + message.getId()
+        log.info("Executed " + templateCategories.size() + " templates on message " + message.getId()
                 + " in " + (System.currentTimeMillis() - t0) + " ms");
 
         return message;
+    }
+
+
+    /** Ensures that we have at least 1 message part per template category of type DETAILS **/
+    private List<MessagePartVo> checkCreateDetailParts(SystemMessageVo message, List<Category> templateCategories) {
+        List<MessagePartVo> detailParts = message.partsOfType(MessagePartType.DETAILS);
+        if (detailParts.size() < templateCategories.size()) {
+            int noToAdd = templateCategories.size() - detailParts.size();
+            for (int x = 0; x < noToAdd; x++) {
+                int index = detailParts.isEmpty() ? 0 : message.getParts().size();
+                message.checkCreatePart(MessagePartType.DETAILS, index);
+            }
+        }
+        return message.partsOfType(MessagePartType.DETAILS);
     }
 
 
@@ -124,9 +165,6 @@ public class TemplateExecutionService extends BaseService {
 
         // Update base data to ensure that we have all language variants
         message = messageService.updateBaseDate(message);
-
-        // Ensure the presence of a DETAILS message part
-        message.checkCreatePart(MessagePartType.DETAILS);
 
         // Ensure that description records exists for all supported languages
         message.checkCreateDescs(app.getLanguages());

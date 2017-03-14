@@ -54,7 +54,6 @@ import javax.ws.rs.core.MediaType;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -168,9 +167,9 @@ public class CategoryRestService extends AbstractBatchableRestService {
 
         log.debug(String.format("Searching for categories ids=%s, lang=%s, limit=%d", categoryIds, lang, limit));
 
-        Set<Integer> ids = Arrays.stream(categoryIds.split(","))
+        List<Integer> ids = Arrays.stream(categoryIds.split(","))
                 .map(Integer::valueOf)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
 
         DataFilter filter = DataFilter.get()
                 .lang(lang)
@@ -316,7 +315,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
     public SystemMessageVo applyTemplate(ExecuteTemplateVo executeTemplate) throws Exception {
 
         if (!executeTemplate.valid()) {
-            throw new WebApplicationException("No proper message or category specified", 400);
+            throw new WebApplicationException("No proper message specified", 400);
         }
 
         // Resolve the message to use
@@ -328,7 +327,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
 
         // Resolve the category to use
         Category category = (executeTemplate.getCategory() != null) ? new Category(executeTemplate.getCategory()) : null;
-        if (category == null) {
+        if (category == null && executeTemplate.getCategoryId() != null) {
             category = categoryService.getCategoryDetails(executeTemplate.getCategoryId());
         }
 
@@ -374,8 +373,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
         Integer categoryId;
 
         public boolean valid() {
-            return (message != null || StringUtils.isNotBlank(messageId)) &&
-                    (category != null || categoryId != null);
+            return (message != null || StringUtils.isNotBlank(messageId));
         }
 
         public SystemMessageVo getMessage() {
