@@ -4,17 +4,63 @@
 <!-- ***************************************  -->
 <#assign formatPos = "org.niord.core.script.directive.LatLonDirective"?new()>
 <#assign line = 'org.niord.core.script.directive.LineDirective'?new()>
+<#assign trailingDot = "org.niord.core.script.directive.TrailingDotDirective"?new()>
+<#assign debug = 'org.niord.core.script.directive.DebugDirective'?new()>
+
+
+<!-- ***************************************  -->
+<!-- Returns the desc for the given language  -->
+<!-- ***************************************  -->
+<#function descForLang entity lang >
+    <#if entity.descs?has_content>
+        <#list entity.descs as desc>
+            <#if desc.lang?? && desc.lang == lang>
+                <#return desc />
+            </#if>
+        </#list>
+    </#if>
+    <#if entity.descs?has_content>
+        <#return entity.descs[0] />
+    </#if>
+</#function>
 
 
 <!-- ***************************************  -->
 <!-- Renders the parent-first area lineage    -->
 <!-- ***************************************  -->
-<#macro areaLineage area>
+<#macro renderAreaLineage area lang="en">
     <#if area??>
         <#if area.parent??>
-            <@areaLineage area=area.parent /> -
+            <@renderAreaLineage area=area.parent lang=lang />
         </#if>
-        <#if area.descs?has_content>${area.descs[0].name}</#if>
+        <#assign areaDesc=descForLang(area, lang)!>
+        <#if areaDesc?? && areaDesc.name?has_content >
+            <@trailingDot>${areaDesc.name}</@trailingDot>
+        </#if>
+    </#if>
+</#macro>
+
+
+<!-- ***************************************  -->
+<!-- Renders the message title line           -->
+<!-- ***************************************  -->
+<#macro renderTitleLine message lang="en">
+    <#if message??>
+        <#if message.areas?has_content>
+            <@renderAreaLineage area=message.areas[0] lang=lang />
+        </#if>
+        <#assign msgDesc=descForLang(message, lang)!>
+        <#if msgDesc?? && msgDesc.vicinity?has_content>
+            <@trailingDot>${msgDesc.vicinity}</@trailingDot>
+        </#if>
+        <#if message.parts?has_content>
+            <#list message.parts as part>
+                <#assign partDesc=descForLang(part, lang)!>
+                <#if partDesc?? && partDesc.subject?has_content>
+                    <@trailingDot>${partDesc.subject}</@trailingDot>
+                </#if>
+            </#list>
+        </#if>
     </#if>
 </#macro>
 
@@ -34,26 +80,10 @@
 
 
 <!-- ***************************************  -->
-<!-- Returns the desc for the given language  -->
+<!-- Renders default suject fields as the     -->
+<!-- name of the current template             -->
 <!-- ***************************************  -->
-<#function descForLang entity lang=language >
-    <#if entity.descs?has_content>
-        <#list entity.descs as desc>
-            <#if desc.lang?? && desc.lang == lang>
-                <#return desc />
-            </#if>
-        </#list>
-    </#if>
-    <#if entity.descs?has_content>
-        <#return entity.descs[0] />
-    </#if>
-</#function>
-
-
-<!-- ***************************************  -->
-<!-- Renders default title fields             -->
-<!-- ***************************************  -->
-<#macro defaultTitleFieldTemplates>
+<#macro defaultSubjectFieldTemplates>
     <#list languages as lang>
         <#assign desc=descForLang(template, lang)!>
         <#if desc?? && desc.name?has_content>
@@ -66,7 +96,7 @@
 
 
 <!-- ***************************************  -->
-<!-- Serializes the message part geometry     -->
+<!-- Serializes the message part geomtry      -->
 <!-- into a list of positions                 -->
 <!-- ***************************************  -->
 <#function toPositions part >
@@ -85,16 +115,27 @@
 
 
 <!-- ***************************************  -->
+<!-- Returns if the message part defines      -->
+<!-- multiple positions                       -->
+<!-- ***************************************  -->
+<#function multiplePositions part >
+    <#assign positions = toPositions(part) />
+    <#return positions?size gt 1/>
+</#function>
+
+
+<!-- ***************************************  -->
 <!-- Renders the geometry of message part     -->
 <!-- as a list of positions                   -->
 <!-- ***************************************  -->
-<#macro renderPositionList part format='dec'>
+<#macro renderPositionList part format='dec' lang='en'>
+    <#setting locale=lang>
     <#assign positions=toPositions(part)/>
-    <#if positions?size gt 1>between<#elseif format != 'navtex'>in</#if>
-    <#if format == 'audio'>postion<#elseif format != 'navtex'>pos.</#if>
+    <#if positions?size gt 1>${text('position.between')}<#elseif format != 'navtex'>${text('position.in')}</#if>
+    <#if format == 'audio'>${text('position.position')}<#elseif format != 'navtex'>${text('position.pos')}</#if>
     <#list positions as pos>
         <@formatPos lat=pos.coordinates[1] lon=pos.coordinates[0] format=format />
-        <#if pos_has_next> and </#if>
+        <#if pos_has_next> ${text('term.and')} </#if>
     </#list>
 </#macro>
 
