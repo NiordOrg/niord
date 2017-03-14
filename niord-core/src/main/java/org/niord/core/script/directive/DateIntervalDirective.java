@@ -17,7 +17,6 @@ package org.niord.core.script.directive;
 
 import freemarker.core.Environment;
 import freemarker.ext.beans.BeanModel;
-import freemarker.ext.beans.ResourceBundleModel;
 import freemarker.template.SimpleScalar;
 import freemarker.template.TemplateDirectiveBody;
 import freemarker.template.TemplateDirectiveModel;
@@ -56,7 +55,7 @@ public class DateIntervalDirective implements TemplateDirectiveModel {
             throws TemplateException, IOException {
 
         // Fetch the resource bundle
-        ResourceBundleModel text = (ResourceBundleModel)env.getDataModel().get(BUNDLE_PROPERTY);
+        MultiResourceBundleModel text = (MultiResourceBundleModel)env.getDataModel().get(BUNDLE_PROPERTY);
 
         // Resolve the "dateInterval" parameter
         DateIntervalVo dateInterval = null;
@@ -72,7 +71,7 @@ public class DateIntervalDirective implements TemplateDirectiveModel {
                 : TimeZone.getDefault();
 
         try {
-            String result = formatDateInterval(text.getBundle(), env.getLocale(), timeZone, dateInterval);
+            String result = formatDateInterval(text.getResourceBundle(), env.getLocale(), timeZone, dateInterval);
             env.getOut().write(result);
         } catch (Exception e) {
             // Prefer robustness over correctness

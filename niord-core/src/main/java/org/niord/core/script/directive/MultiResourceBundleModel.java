@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.niord.core.script;
+package org.niord.core.script.directive;
 
 import freemarker.core.Environment;
 import freemarker.core._DelayedJQuote;
@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
  * </pre>
  */
 @SuppressWarnings("all")
-public class FmMultiResourceBundleModel
+public class MultiResourceBundleModel
         extends
         BeanModel
         implements
@@ -72,7 +72,7 @@ public class FmMultiResourceBundleModel
 
 
     /** Constructor **/
-    public FmMultiResourceBundleModel(List<ResourceBundle> bundles, BeansWrapper wrapper) {
+    public MultiResourceBundleModel(List<ResourceBundle> bundles, BeansWrapper wrapper) {
         super(toBundleMap(bundles), wrapper);
     }
 

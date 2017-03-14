@@ -16,7 +16,6 @@
 package org.niord.core.script.directive;
 
 import freemarker.core.Environment;
-import freemarker.ext.beans.ResourceBundleModel;
 import freemarker.template.SimpleDate;
 import freemarker.template.SimpleScalar;
 import freemarker.template.TemplateDirectiveBody;
@@ -57,7 +56,7 @@ public class FromToDateDirective implements TemplateDirectiveModel {
             throws TemplateException, IOException {
 
         // Fetch the resource bundle
-        ResourceBundleModel text = (ResourceBundleModel)env.getDataModel().get(BUNDLE_PROPERTY);
+        MultiResourceBundleModel text = (MultiResourceBundleModel)env.getDataModel().get(BUNDLE_PROPERTY);
 
         Date fromDate = null;
         if (params.get(PARAM_FROM_DATE) != null) {
@@ -75,7 +74,7 @@ public class FromToDateDirective implements TemplateDirectiveModel {
                 : TimeZone.getDefault();
 
         try {
-            String result = formatFromToDates(text.getBundle(), env.getLocale(), timeZone, fromDate, toDate);
+            String result = formatFromToDates(text.getResourceBundle(), env.getLocale(), timeZone, fromDate, toDate);
             env.getOut().write(result);
         } catch (Exception e) {
             // Prefer robustness over correctness

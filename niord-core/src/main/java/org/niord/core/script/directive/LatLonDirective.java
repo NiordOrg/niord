@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.niord.core.script.FmTemplateService.BUNDLE_PROPERTY;
 import static org.niord.core.util.PositionFormatter.*;
 
 /**
@@ -47,23 +48,24 @@ public class LatLonDirective implements TemplateDirectiveModel {
 
     /**
      * Construct a format for audio positions
-     * @param locale the locale
+     * @param env the current environment
      * @return the format
      */
-    public synchronized Format getAudioFormat(Locale locale) {
+    public synchronized Format getAudioFormat(Environment env) throws TemplateModelException {
 
-        // TODO - Not implemented yet!
-
+        Locale locale = env.getLocale();
         Format format = formatterCache.get(locale);
         if (format != null) {
             return format;
         }
 
-        ResourceBundle bundle = ResourceBundle.getBundle("position-format-audio", locale);
-        String deg = bundle.getString("deg");
-        String min = bundle.getString("min");
-        String ns = bundle.getString("north") + "," + bundle.getString("south");
-        String ew = bundle.getString("east") + "," + bundle.getString("west");
+        // Fetch the resource bundle
+        MultiResourceBundleModel text = (MultiResourceBundleModel)env.getDataModel().get(BUNDLE_PROPERTY);
+        ResourceBundle bundle = text.getResourceBundle();
+        String deg = bundle.getString("position.deg");
+        String min = bundle.getString("position.min");
+        String ns = bundle.getString("position.north") + "," + bundle.getString("position.south");
+        String ew = bundle.getString("position.east") + "," + bundle.getString("position.west");
         format = new Format(
                 "DEG-F[%d] " + deg + " MIN[%.1f] " + min + " DIR[" + ns + "]",
                 "DEG-F[%d] " + deg + " MIN[%.1f] " + min + " DIR[" + ew + "]");
@@ -106,7 +108,7 @@ public class LatLonDirective implements TemplateDirectiveModel {
                     // Override separator
                     separator = " ";
                 } else if ("audio".equalsIgnoreCase(formatModel.getAsString())) {
-                    format = getAudioFormat(env.getLocale());
+                    format = getAudioFormat(env);
                     // Override separator
                     separator = " - ";
                 }

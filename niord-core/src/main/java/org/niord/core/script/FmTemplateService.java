@@ -26,6 +26,7 @@ import org.niord.core.NiordApp;
 import org.niord.core.dictionary.DictionaryService;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.script.directive.MultiResourceBundleModel;
 import org.niord.core.script.pdf.HtmlToPdfRenderer;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.annotation.Setting;
@@ -160,7 +161,7 @@ public class FmTemplateService extends BaseService {
                     .collect(Collectors.toList());
 
             if (!bundles.isEmpty()) {
-                FmMultiResourceBundleModel resourceBundleModel =  new FmMultiResourceBundleModel(
+                MultiResourceBundleModel resourceBundleModel =  new MultiResourceBundleModel(
                         bundles,
                         new DefaultObjectWrapperBuilder(Configuration.getVersion()).build());
                 templateBuilder.getData().put(BUNDLE_PROPERTY, resourceBundleModel);
