@@ -164,7 +164,7 @@ public class TemplateExecutionService extends BaseService {
         String fieldTemplateTxt = templateService.newFmTemplateBuilder()
                 .templatePath(scriptResourcePath)
                 .data(contextData)
-                .dictionaryNames("message")
+                .dictionaryNames("message", "template")
                 .process();
 
         List<FieldTemplateProcessor.FieldTemplate> fieldTemplates = FieldTemplateProcessor.parse(fieldTemplateTxt);

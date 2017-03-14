@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ResourceBundle;
@@ -50,7 +51,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class DictionaryService extends BaseService {
 
-    public static final String[] DEFAULT_BUNDLES = {"web", "message", "pdf", "mail"};
+    public static final String[] DEFAULT_BUNDLES = {"web", "message", "pdf", "mail", "template"};
 
     @Inject
     private Logger log;
@@ -272,6 +273,8 @@ public class DictionaryService extends BaseService {
         // Construct a property file with all language-specific values from all included dictionaries
         Properties langDict = getDictionariesAsProperties(names, language);
 
+        final Locale dictLocale = new Locale(language);
+
         // Convert the Properties object to a resource bundle
         return new ResourceBundle() {
 
@@ -280,6 +283,11 @@ public class DictionaryService extends BaseService {
             @SuppressWarnings("all")
             protected Object handleGetObject(String key) {
                 return langDict.getProperty(key);
+            }
+
+            /** {@inheritDoc} **/
+            public Locale getLocale() {
+                return dictLocale;
             }
 
             /** {@inheritDoc} **/

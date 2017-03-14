@@ -16,7 +16,6 @@
 
 package org.niord.core.script;
 
-import freemarker.ext.beans.ResourceBundleModel;
 import freemarker.template.Configuration;
 import freemarker.template.DefaultObjectWrapperBuilder;
 import freemarker.template.Template;
@@ -38,12 +37,16 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 import static org.niord.core.settings.Setting.Type.Boolean;
 import static org.niord.core.settings.Setting.Type.Password;
@@ -130,23 +133,40 @@ public class FmTemplateService extends BaseService {
         if (!templateBuilder.getData().containsKey("draft")) {
             templateBuilder.getData().put("draft", false);
         }
-        // More...
 
-        // Load the resource bundle with the given language and name, and save it in the "text" data property
-        ResourceBundle bundle;
+        // Load the resource bundle(s) with the given language and name, and save it in the "text" data property
+        // If a language is specified, only add the resource bundle for that language.
+        // If no language is specified, add the resource bundles for all supported languages.
         if (templateBuilder.getDictionaryNames() != null && templateBuilder.getDictionaryNames().length > 0) {
-            String  language = app.getLanguage(templateBuilder.getLanguage());
-            templateBuilder.getData().put(LANGUAGE_PROPERTY, language);
-            templateBuilder.getData().put(LANGUAGES_PROPERTY, app.getLanguages(language));
 
-            bundle = dictionaryService.getDictionariesAsResourceBundle(templateBuilder.getDictionaryNames(), language);
-            if (bundle != null) {
-                ResourceBundleModel resourceBundleModel = new ResourceBundleModel(
-                        bundle,
+            List<String> languages = new ArrayList<>();
+            if (StringUtils.isNotBlank(templateBuilder.getLanguage())) {
+                // Add resource bundle for selected language
+                languages.add(app.getLanguage(templateBuilder.getLanguage()));
+
+                String  language = app.getLanguage(templateBuilder.getLanguage());
+                templateBuilder.getData().put(LANGUAGE_PROPERTY, language);
+                templateBuilder.getData().put(LANGUAGES_PROPERTY, app.getLanguages(language));
+            } else {
+                // Add resource bundles for all supported languages
+                languages.addAll(Arrays.asList(app.getLanguages()));
+
+                templateBuilder.getData().put(LANGUAGES_PROPERTY, app.getLanguages());
+            }
+
+            List<ResourceBundle> bundles = languages.stream()
+                    .map(lang -> dictionaryService.getDictionariesAsResourceBundle(templateBuilder.getDictionaryNames(), lang))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            if (!bundles.isEmpty()) {
+                FmMultiResourceBundleModel resourceBundleModel =  new FmMultiResourceBundleModel(
+                        bundles,
                         new DefaultObjectWrapperBuilder(Configuration.getVersion()).build());
                 templateBuilder.getData().put(BUNDLE_PROPERTY, resourceBundleModel);
             }
         }
+
 
         Domain domain = domainService.currentDomain();
         String timeZone = (domain != null && StringUtils.isNotBlank(domain.getTimeZone()))
