@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
  * The field template process handles a message fields templates format, exemplified by:
  * <pre>
  *     &lt;message-template&gt;
- *         &lt;field-template field="part.getDesc('da').subject" format="text"&gt;
+ *         &lt;field-template field="part.getDesc('da').subject" format="text" update="replace"&gt;
  *             Fyr slukket
  *         &lt;/field-template&gt;
  *     &lt;/message-template&gt;
@@ -79,9 +79,11 @@ public class FieldTemplateProcessor {
 
         public static final Pattern FIELD_PATTERN = Pattern.compile("field=\"([^\"]+)");
         public static final Pattern FORMAT_PATTERN = Pattern.compile("format=\"([^\"]+)");
+        public static final Pattern UPDATE_PATTERN = Pattern.compile("update=\"([^\"]+)");
 
         String field;
         String format;
+        String update;
         Object content;
 
 
@@ -112,6 +114,11 @@ public class FieldTemplateProcessor {
                 fieldTemplate.format = formatMatcher.group(1);
             }
 
+            Matcher updateMatcher = UPDATE_PATTERN.matcher(attrs);
+            if (updateMatcher.find()) {
+                fieldTemplate.update = updateMatcher.group(1);
+            }
+
             // Update the content according to the format
             fieldTemplate.content = fieldTemplate.parseContent(content);
 
@@ -122,14 +129,14 @@ public class FieldTemplateProcessor {
         /** Update the content based on the format **/
         private Object parseContent(String content) {
             if (StringUtils.isNotBlank(content)) {
-                content = content.trim();
-                 if ("text".equalsIgnoreCase(format) || "boolean".equalsIgnoreCase(format)) {
-                     // Trim the text to a proper plain-text format
-                     content = content.replaceAll("\\s+", " ").trim();
-                 }
-                 if ("boolean".equalsIgnoreCase(format)) {
-                     return Boolean.valueOf(content);
-                 }
+                content = content.trim() + System.lineSeparator();
+                if ("text".equalsIgnoreCase(format) || "boolean".equalsIgnoreCase(format)) {
+                    // Trim the text to a proper plain-text format
+                    content = content.trim().replaceAll("\\s+", " ").trim();
+                }
+                if ("boolean".equalsIgnoreCase(format)) {
+                    return Boolean.valueOf(content);
+                }
             }
             return content;
         }
@@ -141,6 +148,7 @@ public class FieldTemplateProcessor {
             return "<field-template" +
                     (StringUtils.isNotBlank(field) ? " field=\"" + field + "\"" : "") +
                     (StringUtils.isNotBlank(format) ? " format=\"" + format + "\"" : "") +
+                    (StringUtils.isNotBlank(update) ? " update=\"" + update + "\"" : "") +
                     ">" + content + "</field-template>";
         }
 
@@ -157,6 +165,11 @@ public class FieldTemplateProcessor {
 
         public Object getContent() {
             return content;
+        }
+
+
+        public String getUpdate() {
+            return update;
         }
     }
 }

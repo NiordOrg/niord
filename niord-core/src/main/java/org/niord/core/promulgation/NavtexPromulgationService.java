@@ -155,6 +155,18 @@ public class NavtexPromulgationService extends BasePromulgationService {
     }
 
 
+    /** {@inheritDoc} */
+    @Override
+    public void resetMessagePromulgation(SystemMessageVo message, PromulgationType type) throws PromulgationException {
+        NavtexMessagePromulgationVo navtex = message.promulgation(NavtexMessagePromulgationVo.class, type.getTypeId());
+        if (navtex != null) {
+            navtex.reset();
+            findTransmittersByAreas(type.getTypeId(), null, true)
+                    .forEach(t -> navtex.getTransmitters().put(t.getName(), Boolean.FALSE));
+        }
+    }
+
+
     /**
      * Checks that the NAVTEX promulgation is valid and ready to be persisted
      * @param message the message to check

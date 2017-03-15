@@ -63,6 +63,15 @@ public class NavtexMessagePromulgationVo extends BaseMessagePromulgationVo<Navte
     }
 
 
+    /** Resets data of this message promulgation **/
+    public NavtexMessagePromulgationVo reset() {
+        transmitters.clear();
+        text = null;
+        priority = NavtexMessagePromulgation.NavtexPriority.NONE;
+        return this;
+    }
+
+
     /*************************/
     /** Getters and Setters **/
     /*************************/

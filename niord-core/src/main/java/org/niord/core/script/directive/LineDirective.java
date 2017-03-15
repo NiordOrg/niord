@@ -86,6 +86,10 @@ public class LineDirective implements TemplateDirectiveModel {
                 s = sb.toString();
             }
 
+            if (!s.endsWith("\n")) {
+                s = s + "\n";
+            }
+
             // Write the result
             BufferedWriter out = new BufferedWriter(env.getOut());
             out.write(s);

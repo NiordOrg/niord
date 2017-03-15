@@ -17,10 +17,13 @@ package org.niord.core.category;
 
 import freemarker.template.TemplateException;
 import org.niord.core.NiordApp;
+import org.niord.core.category.FieldTemplateProcessor.FieldTemplate;
 import org.niord.core.category.vo.SystemCategoryVo;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.promulgation.PromulgationException;
+import org.niord.core.promulgation.PromulgationManager;
 import org.niord.core.promulgation.PromulgationType;
 import org.niord.core.promulgation.PromulgationTypeService;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
@@ -67,6 +70,9 @@ public class TemplateExecutionService extends BaseService {
 
     @Inject
     PromulgationTypeService promulgationTypeService;
+
+    @Inject
+    PromulgationManager promulgationManager;
 
     @Inject
     JsResourceService javaScriptService;
@@ -132,21 +138,18 @@ public class TemplateExecutionService extends BaseService {
 
 
         // Next, for each associated promulgation type, execute any script resources associated with these
-        if (message.getPromulgations() != null) {
-            for (BaseMessagePromulgationVo promulgation : message.getPromulgations()) {
-                if (promulgation.getType() != null) {
-                    PromulgationType promulgationType =
-                            promulgationTypeService.getPromulgationType(promulgation.getType().getTypeId());
-                    if (!promulgationType.getScriptResourcePaths().isEmpty()) {
+        List<PromulgationType> types = promulgationTypeService.getPromulgationTypes(message).stream()
+                .filter(type -> !type.getScriptResourcePaths().isEmpty())
+                .collect(Collectors.toList());
 
-                        Map<String, Object> promulgationContextData = new HashMap<>(contextData);
-                        promulgationContextData.put("promulgation", promulgation);
-                        promulgationContextData.put("promulgationType", promulgation.getType());
+        for (PromulgationType type : types) {
+            BaseMessagePromulgationVo promulgation = message.promulgation(type.getTypeId());
 
-                        executeScriptResources(promulgationType.getScriptResourcePaths(), promulgationContextData);
-                    }
-                }
-            }
+            Map<String, Object> promulgationContextData = new HashMap<>(contextData);
+            promulgationContextData.put("promulgation", promulgation);
+            promulgationContextData.put("promulgationType", promulgation.getType());
+
+            executeScriptResources(type.getScriptResourcePaths(), promulgationContextData);
         }
 
 
@@ -198,13 +201,16 @@ public class TemplateExecutionService extends BaseService {
      * Adjust the message prior to executing a template
      * @param message the message to adjust
      */
-    private void preExecuteTemplate(SystemMessageVo message) {
+    private void preExecuteTemplate(SystemMessageVo message) throws PromulgationException {
 
         // Update base data to ensure that we have all language variants
         message = messageService.updateBaseDate(message);
 
         // Ensure that description records exists for all supported languages
         message.checkCreateDescs(app.getLanguages());
+
+        // Reset all promulgations
+        promulgationManager.resetMessagePromulgations(message);
 
         // If message areas are undefined, compute them from the message geometry.
         // messageService.adjustMessage(message, MessageService.AdjustmentType.AREAS);
@@ -245,7 +251,7 @@ public class TemplateExecutionService extends BaseService {
                 .dictionaryNames("message", "template")
                 .process();
 
-        List<FieldTemplateProcessor.FieldTemplate> fieldTemplates = FieldTemplateProcessor.parse(fieldTemplateTxt);
+        List<FieldTemplate> fieldTemplates = FieldTemplateProcessor.parse(fieldTemplateTxt);
 
         applyFieldTemplates(fieldTemplates, contextData);
     }
@@ -259,7 +265,7 @@ public class TemplateExecutionService extends BaseService {
      *
      * @param fieldTemplates the field templates to apply
      */
-    private void applyFieldTemplates(List<FieldTemplateProcessor.FieldTemplate> fieldTemplates, Map<String, Object> contextData) {
+    private void applyFieldTemplates(List<FieldTemplate> fieldTemplates, Map<String, Object> contextData) {
 
         ScriptEngine jsEngine = new ScriptEngineManager()
                 .getEngineByName("Nashorn");
@@ -269,15 +275,33 @@ public class TemplateExecutionService extends BaseService {
         contextData.entrySet().forEach(e -> bindings.put(e.getKey(), e.getValue()));
         jsEngine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
 
-        for (FieldTemplateProcessor.FieldTemplate fieldTemplate : fieldTemplates) {
+        for (FieldTemplate fieldTemplate : fieldTemplates) {
+
             bindings.put("content", fieldTemplate.getContent());
-            String script = fieldTemplate.getField() + " = content;";
+            String script = getUpdateScript(fieldTemplate);
             try {
                 jsEngine.eval(script);
             } catch (ScriptException e) {
                 // Apply the result of the field templates
                 log.error("Error applying field template " + fieldTemplate + ": " + e.getMessage());
             }
+        }
+
+    }
+
+
+    /** Returns a JavaScript that either assigns or appends the content to the field **/
+    private String getUpdateScript(FieldTemplate fieldTemplate) {
+        String field = fieldTemplate.getField();
+
+        // Either append or assign
+        if ("append".equalsIgnoreCase(fieldTemplate.getUpdate())) {
+            // Append the content variable to the field
+            return String.format("%s = (%s == null) ? content : %s + content", field, field, field);
+
+        } else {
+            // Assign the content variable to the field
+            return field + " = content;";
         }
 
     }

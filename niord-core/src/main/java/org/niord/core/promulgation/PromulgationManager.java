@@ -193,6 +193,21 @@ public class PromulgationManager {
 
 
     /**
+     * Resets the message promulgations
+     * @param message the message template to reset promulgation for
+     */
+    public void resetMessagePromulgations(SystemMessageVo message) throws PromulgationException {
+        if (message.getPromulgations() != null) {
+            for (BaseMessagePromulgationVo promulgation : message.getPromulgations()) {
+                PromulgationType type = promulgationTypeService.getPromulgationType(promulgation.getType().getTypeId());
+                instantiatePromulgationService(type.getServiceId()).resetMessagePromulgation(message, type);
+
+            }
+        }
+    }
+
+
+    /**
      * Updates all referenced promulgation types with the persisted versions and returns the set of types
      * @param message the message to update
      * @return the associated promulgation types

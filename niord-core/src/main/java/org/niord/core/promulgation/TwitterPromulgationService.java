@@ -127,6 +127,15 @@ public class TwitterPromulgationService extends BasePromulgationService {
     }
 
 
+    /** {@inheritDoc} */
+    @Override
+    public void resetMessagePromulgation(SystemMessageVo message, PromulgationType type) throws PromulgationException {
+        TwitterMessagePromulgationVo twitter = message.promulgation(TwitterMessagePromulgationVo.class, type.getTypeId());
+        if (twitter != null) {
+            twitter.reset();
+        }
+    }
+
     /***************************************/
     /** Twitter settings                  **/
     /***************************************/

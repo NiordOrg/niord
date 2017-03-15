@@ -101,4 +101,14 @@ public class RadioPromulgationService extends BasePromulgationService {
 
         return radio;
     }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public void resetMessagePromulgation(SystemMessageVo message, PromulgationType type) throws PromulgationException {
+        RadioMessagePromulgationVo radio = message.promulgation(RadioMessagePromulgationVo.class, type.getTypeId());
+        if (radio != null) {
+            radio.reset();
+        }
+    }
 }

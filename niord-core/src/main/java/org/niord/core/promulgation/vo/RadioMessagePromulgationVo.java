@@ -55,6 +55,12 @@ public class RadioMessagePromulgationVo extends BaseMessagePromulgationVo<RadioM
     }
 
 
+    /** Resets data of this message promulgation **/
+    public RadioMessagePromulgationVo reset() {
+        text = null;
+        return this;
+    }
+
     /*************************/
     /** Getters and Setters **/
     /*************************/

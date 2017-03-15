@@ -53,6 +53,12 @@ public class TwitterMessagePromulgationVo extends BaseMessagePromulgationVo<Twit
     }
 
 
+    /** Resets data of this message promulgation **/
+    public TwitterMessagePromulgationVo reset() {
+        tweet = null;
+        return this;
+    }
+
     /*************************/
     /** Getters and Setters **/
     /*************************/

@@ -139,4 +139,12 @@ public abstract class BasePromulgationService extends BaseService {
         return null;
     }
 
+
+    /**
+     * Resets the message promulgation record for the given type and message
+     * @param message the message template to reset the promulgation for
+     * @param type the promulgation type
+     */
+    public void resetMessagePromulgation(SystemMessageVo message, PromulgationType type) throws PromulgationException {
+    }
 }
