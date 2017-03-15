@@ -143,7 +143,7 @@ public class TemplateExecutionService extends BaseService {
                         promulgationContextData.put("promulgation", promulgation);
                         promulgationContextData.put("promulgationType", promulgation.getType());
 
-                        executeScriptResources(promulgationType.getScriptResourcePaths(), contextData);
+                        executeScriptResources(promulgationType.getScriptResourcePaths(), promulgationContextData);
                     }
                 }
             }
