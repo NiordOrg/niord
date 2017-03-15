@@ -68,25 +68,6 @@ angular.module('niord.admin')
             };
 
 
-            /**
-             * Annoyingly, ng-repeat does not work properly with a list of strings (scriptResourcePaths).
-             * See: https://github.com/angular/angular.js/issues/1267
-             * So, we use this method to wrap the "scriptResourcePaths" list into a "paths" list with objects
-             */
-            function toPaths(category) {
-                category.paths = [];
-                angular.forEach(category.scriptResourcePaths, function (path) {
-                    category.paths.push({ 'path' : path })
-                })
-            }
-            function fromPaths(category) {
-                category.scriptResourcePaths.length = 0;
-                angular.forEach(category.paths, function (path) {
-                    category.scriptResourcePaths.push(path.path)
-                })
-            }
-
-
             /** Load the categories */
             $scope.loadCategories = function() {
                 AdminCategoryService
@@ -115,7 +96,6 @@ angular.module('niord.admin')
                 if ($scope.category) {
                     $scope.editCategory.parent = { id: $scope.category.id };
                 }
-                toPaths($scope.editCategory);
                 $scope.setPristine();
             };
 
@@ -131,7 +111,6 @@ angular.module('niord.admin')
                         if ($scope.editCategory.scriptResourcePaths.length == 0) {
                             $scope.editCategory.scriptResourcePaths.push('');
                         }
-                        toPaths($scope.editCategory);
                         $scope.setPristine();
                         $scope.$$phase || $scope.$apply();
                     })
@@ -157,8 +136,6 @@ angular.module('niord.admin')
 
             /** Saves the current category */
             $scope.saveCategory = function () {
-
-                fromPaths($scope.editCategory);
 
                 if ($scope.action == 'add') {
                     AdminCategoryService
@@ -203,7 +180,6 @@ angular.module('niord.admin')
             $scope.executeTemplate = function (template) {
                 if ($scope.editCategory.messageId) {
 
-                    fromPaths($scope.editCategory);
                     AdminCategoryService
                         .executeCategoryTemplate(template, $scope.editCategory.messageId)
                         .success(function (message) {
@@ -220,43 +196,6 @@ angular.module('niord.admin')
                             growl.error("Error executing template (code: " + status + ")", {ttl: 5000})
                         });
                 }
-            };
-
-            /** Script resource path DnD configuration **/
-            $scope.pathsSortableCfg = {
-                group: 'scriptResourcePaths',
-                handle: '.move-btn',
-                onEnd: $scope.setDirty
-            };
-
-
-            /** Adds a new resource path after the given index **/
-            $scope.addResourcePath = function (index) {
-                $scope.editCategory.paths.splice(index + 1, 0, { 'path' : '' });
-                $scope.setDirty();
-                $timeout(function () {
-                    angular.element($("#path_" + (index + 1))).focus();
-                });
-            };
-
-
-            /** Removes the resource path at the given index **/
-            $scope.deleteResourcePath = function (index) {
-                $scope.editCategory.paths.splice(index, 1);
-                $scope.setDirty();
-                if ($scope.editCategory.paths.length == 0) {
-                    $scope.editCategory.paths.push({ 'path' : '' });
-                }
-            };
-
-
-            /** Opens a dialog for script resource selection **/
-            $scope.selectResourcePath = function (index) {
-                AdminCategoryService.scriptResourceDialog()
-                    .result.then(function (scriptResource) {
-                    $scope.editCategory.paths[index].path = scriptResource.path;
-                    $scope.setDirty();
-                })
             };
         }])
 

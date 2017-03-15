@@ -39,20 +39,11 @@
                         <div class="form-group">
                             <label class="col-sm-4">Template</label>
                             <div class="col-sm-8">
-                                <div class="input-group">
-                                    <input type="text" class="form-control input-sm"
-                                           pattern=".+\.(ftl|FTL)" required
-                                           ng-model="report.templatePath" />
-                                    <a class="input-group-addon clickable" style="font-size: 12px"
-                                       href target="_blank"
-                                       ui-sref="sysadmin.script-resources({ path: report.templatePath })">
-                                        <span class="glyphicon glyphicon-pencil"></span>
-                                    </a>
-                                    <a class="input-group-addon clickable" style="font-size: 12px"
-                                       ng-click="selectTemplatePath()"  title="Select template">
-                                        <span class="glyphicon glyphicon-search"></span>
-                                    </a>
-                                </div>
+                                <script-resources-field
+                                        path-data="report"
+                                        pattern=".+\.(ftl|FTL)"
+                                        multiple="false">
+                                </script-resources-field>
                             </div>
                         </div>
 

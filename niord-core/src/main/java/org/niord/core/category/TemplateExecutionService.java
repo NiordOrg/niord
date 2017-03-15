@@ -21,6 +21,8 @@ import org.niord.core.category.vo.SystemCategoryVo;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
+import org.niord.core.promulgation.vo.PromulgationTypeVo;
 import org.niord.core.script.FmTemplateService;
 import org.niord.core.script.JsResourceService;
 import org.niord.core.script.ScriptResource;
@@ -112,26 +114,34 @@ public class TemplateExecutionService extends BaseService {
         contextData.put("languages", app.getLanguages());
         contextData.put("message", message);
 
-        // Apply the category templates one by one
+
+        // Execute the category templates one by one
         for (int x = 0; x < templateCategories.size(); x++) {
             Category template = templateCategories.get(x);
             MessagePartVo detailPart = detailParts.get(x);
 
             contextData.put("template", template.toVo(SystemCategoryVo.class, DataFilter.get()));
+            contextData.put("part", detailPart);
 
-            for (String scriptResourcePath : template.getScriptResourcePaths()) {
-                contextData.put("part", detailPart);
+            executeScriptResources(template.getScriptResourcePaths(), contextData);
+        }
 
-                ScriptResource.Type type = ScriptResource.path2type(scriptResourcePath);
-                if (type == ScriptResource.Type.JS) {
-                    // JavaScript update
-                    evalJavaScriptResource(contextData, scriptResourcePath);
-                } else if (type == ScriptResource.Type.FM) {
-                    // Freemarker Template update
-                    applyFreemarkerTemplate(contextData, scriptResourcePath);
+
+        // Next, for each associated promulgation type, execute any script resources associated with these
+        if (message.getPromulgations() != null) {
+            for (BaseMessagePromulgationVo promulgation : message.getPromulgations()) {
+                PromulgationTypeVo promulgationType = promulgation.getType();
+                if (promulgationType != null && promulgationType.getScriptResourcePaths() != null) {
+
+                    Map<String, Object> promulgationContextData = new HashMap<>(contextData);
+                    promulgationContextData.put("promulgation", promulgation);
+                    promulgationContextData.put("promulgationType", promulgationType);
+
+                    executeScriptResources(promulgationType.getScriptResourcePaths(), contextData);
                 }
             }
         }
+
 
         // Adjust the message after executing the template
         postExecuteTemplate(message);
@@ -140,6 +150,26 @@ public class TemplateExecutionService extends BaseService {
                 + " in " + (System.currentTimeMillis() - t0) + " ms");
 
         return message;
+    }
+
+
+    /**
+     * Executes the list of script resources on the context data
+     * @param scriptResourcePaths the list of script resources
+     * @param contextData the context data, i.e. current message, part, etc.
+     */
+    private void executeScriptResources(List<String> scriptResourcePaths, Map<String, Object> contextData) throws Exception {
+        for (String scriptResourcePath : scriptResourcePaths) {
+
+            ScriptResource.Type type = ScriptResource.path2type(scriptResourcePath);
+            if (type == ScriptResource.Type.JS) {
+                // JavaScript update
+                evalJavaScriptResource(contextData, scriptResourcePath);
+            } else if (type == ScriptResource.Type.FM) {
+                // Freemarker Template update
+                applyFreemarkerTemplate(contextData, scriptResourcePath);
+            }
+        }
     }
 
 

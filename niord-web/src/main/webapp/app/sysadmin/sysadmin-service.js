@@ -330,7 +330,7 @@ angular.module('niord.admin')
      * ********************************************************************************
      * Interface for calling category-related functions at the application server
      */
-    .factory('AdminCategoryService', [ '$http', '$rootScope', '$uibModal', function($http, $rootScope, $uibModal) {
+    .factory('AdminCategoryService', [ '$http', '$rootScope', function($http, $rootScope) {
         'use strict';
 
         return {
@@ -361,20 +361,7 @@ angular.module('niord.admin')
             /** Executes the message template on the given message ID **/
             executeCategoryTemplate: function(category, messageId) {
                 return $http.put('/rest/categories/execute', { messageId: encodeURIComponent(messageId), category: category });
-            },
-
-            /** Opens a dialog for selecting a script resource **/
-            scriptResourceDialog : function (type) {
-                return $uibModal.open({
-                    controller: "ScriptResourceDialogCtrl",
-                    templateUrl: "/app/sysadmin/script-resource-dialog.html",
-                    size: 'md',
-                    resolve: {
-                        type: function () { return type; }
-                    }
-                });
             }
-
         };
     }])
 

@@ -23,10 +23,12 @@ import org.niord.model.DataFilter;
 
 import javax.persistence.Cacheable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.ManyToMany;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OrderColumn;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,6 +82,10 @@ public class PromulgationType extends VersionedEntity<Integer> {
     @ManyToMany
     List<Domain> domains = new ArrayList<>();
 
+    /** The script resources to execute as part of the process of executing a message template **/
+    @OrderColumn(name = "indexNo")
+    @ElementCollection
+    List<String> scriptResourcePaths = new ArrayList<>();
 
     /** Constructor **/
     public PromulgationType() {
@@ -98,6 +104,9 @@ public class PromulgationType extends VersionedEntity<Integer> {
             this.domains = typeVo.getDomains().stream()
                     .map(Domain::new)
                     .collect(Collectors.toList());
+        }
+        if (typeVo.getScriptResourcePaths() != null) {
+            scriptResourcePaths.addAll(typeVo.getScriptResourcePaths());
         }
     }
 
@@ -123,6 +132,9 @@ public class PromulgationType extends VersionedEntity<Integer> {
             serviceData.setDomains(domains.stream()
                     .map(Domain::toVo)
                     .collect(Collectors.toList()));
+            if (!scriptResourcePaths.isEmpty()) {
+                serviceData.setScriptResourcePaths(new ArrayList<>(scriptResourcePaths));
+            }
         }
         return serviceData;
     }
@@ -186,5 +198,13 @@ public class PromulgationType extends VersionedEntity<Integer> {
 
     public void setDomains(List<Domain> domains) {
         this.domains = domains;
+    }
+
+    public List<String> getScriptResourcePaths() {
+        return scriptResourcePaths;
+    }
+
+    public void setScriptResourcePaths(List<String> scriptResourcePaths) {
+        this.scriptResourcePaths = scriptResourcePaths;
     }
 }

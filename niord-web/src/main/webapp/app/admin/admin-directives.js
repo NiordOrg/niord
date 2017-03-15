@@ -70,31 +70,5 @@ angular.module('niord.common')
 
             }
         }
-    }])
-
-
-    /*************************************
-     * Script resource type badge
-     *************************************/
-    .directive('scriptResourceType', [ function () {
-        'use strict';
-
-        return {
-            restrict: 'E',
-            template: '<span class="label label-script-resource-type" ng-class="typeClass">{{typeName}}</span>',
-            scope: {
-                resource:  "="
-            },
-            link: function(scope) {
-
-                /** Updates the script resource type badge **/
-                function updateTypeBadge() {
-                    scope.typeClass = 'script-resource-type-' + scope.resource.type;
-                    scope.typeName = scope.resource.type.toLowerCase();
-                }
-
-                scope.$watch('resource', updateTypeBadge, true);
-            }
-        }
     }]);
 

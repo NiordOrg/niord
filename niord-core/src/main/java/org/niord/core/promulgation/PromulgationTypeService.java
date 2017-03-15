@@ -161,6 +161,9 @@ public class PromulgationTypeService extends BaseService {
         // Update the domain references with the persisted ones
         original.setDomains(domainService.persistedDomains(type.getDomains()));
 
+        original.getScriptResourcePaths().clear();
+        original.getScriptResourcePaths().addAll(type.getScriptResourcePaths());
+
         return saveEntity(original);
     }
 

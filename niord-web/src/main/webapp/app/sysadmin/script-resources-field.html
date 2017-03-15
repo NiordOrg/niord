@@ -1,0 +1,61 @@
+
+<div>
+    <div ng-if="multiple" ng-sortable="pathsSortableCfg">
+        <div ng-repeat="path in scriptResourcePaths">
+            <div class="input-group">
+
+            <span class="input-group-addon" style="font-size: 12px">
+                <span class="glyphicon glyphicon-move move-btn"></span>
+            </span>
+
+                <input type="text" class="form-control input-sm"
+                       id="path_{{$index}}"
+                       ng-pattern="pattern"
+                       autocapitalize="off" autocorrect="off" autocomplete="off"
+                       ng-model="path.path" />
+
+                <a class="input-group-addon clickable" style="font-size: 12px"
+                   href target="_blank" title="Edit resource"
+                   ui-sref="sysadmin.script-resources({ 'path': path.path })">
+                    <span class="glyphicon glyphicon-pencil"></span>
+                </a>
+
+                <a class="input-group-addon clickable" style="font-size: 12px"
+                   ng-click="selectResourcePath($index)"  title="Select resource">
+                    <span class="glyphicon glyphicon-search"></span>
+                </a>
+
+                <a class="input-group-addon clickable" style="font-size: 12px"
+                   ng-click="addResourcePath($index)"  title="Add resource">
+                    <span class="glyphicon glyphicon-plus"></span>
+                </a>
+
+                <a class="input-group-addon clickable" style="font-size: 12px"
+                   ng-click="deleteResourcePath($index)"  title="Delete resource">
+                    <span class="glyphicon glyphicon-trash"></span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+
+    <div ng-if="!multiple" class="input-group">
+
+        <input type="text"
+               class="form-control input-sm"
+               ng-pattern="pattern"
+               required
+               ng-model="pathData.templatePath" />
+
+        <a class="input-group-addon clickable" style="font-size: 12px"
+           href target="_blank"
+           ui-sref="sysadmin.script-resources({ path: pathData.templatePath })">
+            <span class="glyphicon glyphicon-pencil"></span>
+        </a>
+
+        <a class="input-group-addon clickable" style="font-size: 12px"
+           ng-click="selectTemplatePath()"  title="Select template">
+            <span class="glyphicon glyphicon-search"></span>
+        </a>
+    </div>
+</div>

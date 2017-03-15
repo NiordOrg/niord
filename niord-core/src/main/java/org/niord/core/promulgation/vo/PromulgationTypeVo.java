@@ -33,6 +33,7 @@ public class PromulgationTypeVo implements IJsonSerializable, Comparable<Promulg
     Boolean active;
     String language;
     List<DomainVo> domains;
+    List<String> scriptResourcePaths;
 
 
     /** {@inheritDoc} */
@@ -100,5 +101,13 @@ public class PromulgationTypeVo implements IJsonSerializable, Comparable<Promulg
 
     public void setDomains(List<DomainVo> domains) {
         this.domains = domains;
+    }
+
+    public List<String> getScriptResourcePaths() {
+        return scriptResourcePaths;
+    }
+
+    public void setScriptResourcePaths(List<String> scriptResourcePaths) {
+        this.scriptResourcePaths = scriptResourcePaths;
     }
 }
