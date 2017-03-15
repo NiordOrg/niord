@@ -702,6 +702,7 @@ body > .ui-select-container {
 
 .template-dialog-header {
     font-size: 12px;
+    font-weight: bold;
     padding: 4px 0;
     text-align: center;
     background-color: gray;
@@ -713,6 +714,7 @@ body > .ui-select-container {
     background-color: #666;
     color: white;
     text-align: center;
+    font-weight: bold;
     margin-top: 10px;
     margin-bottom: 10px;
     margin-left: 0;
