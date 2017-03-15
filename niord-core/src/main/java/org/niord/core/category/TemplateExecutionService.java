@@ -21,8 +21,9 @@ import org.niord.core.category.vo.SystemCategoryVo;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.promulgation.PromulgationType;
+import org.niord.core.promulgation.PromulgationTypeService;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
-import org.niord.core.promulgation.vo.PromulgationTypeVo;
 import org.niord.core.script.FmTemplateService;
 import org.niord.core.script.JsResourceService;
 import org.niord.core.script.ScriptResource;
@@ -63,6 +64,9 @@ public class TemplateExecutionService extends BaseService {
 
     @Inject
     FmTemplateService templateService;
+
+    @Inject
+    PromulgationTypeService promulgationTypeService;
 
     @Inject
     JsResourceService javaScriptService;
@@ -130,14 +134,17 @@ public class TemplateExecutionService extends BaseService {
         // Next, for each associated promulgation type, execute any script resources associated with these
         if (message.getPromulgations() != null) {
             for (BaseMessagePromulgationVo promulgation : message.getPromulgations()) {
-                PromulgationTypeVo promulgationType = promulgation.getType();
-                if (promulgationType != null && promulgationType.getScriptResourcePaths() != null) {
+                if (promulgation.getType() != null) {
+                    PromulgationType promulgationType =
+                            promulgationTypeService.getPromulgationType(promulgation.getType().getTypeId());
+                    if (!promulgationType.getScriptResourcePaths().isEmpty()) {
 
-                    Map<String, Object> promulgationContextData = new HashMap<>(contextData);
-                    promulgationContextData.put("promulgation", promulgation);
-                    promulgationContextData.put("promulgationType", promulgationType);
+                        Map<String, Object> promulgationContextData = new HashMap<>(contextData);
+                        promulgationContextData.put("promulgation", promulgation);
+                        promulgationContextData.put("promulgationType", promulgation.getType());
 
-                    executeScriptResources(promulgationType.getScriptResourcePaths(), contextData);
+                        executeScriptResources(promulgationType.getScriptResourcePaths(), contextData);
+                    }
                 }
             }
         }
