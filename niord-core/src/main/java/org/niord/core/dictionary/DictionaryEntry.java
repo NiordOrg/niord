@@ -79,7 +79,7 @@ public class DictionaryEntry extends BaseEntity<Integer> implements ILocalizable
 
         this.key = entry.getKey();
         if (entry.getDescs() != null) {
-            entry.getDescs().stream()
+            entry.getDescs()
                     .forEach(desc -> createDesc(desc.getLang()).setValue(desc.getValue()));
         }
     }
