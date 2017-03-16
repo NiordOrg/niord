@@ -99,15 +99,20 @@ public class LatLonDirective implements TemplateDirectiveModel {
             Format format = LATLON_DEC;
             SimpleScalar formatModel = (SimpleScalar) params.get(PARAM_FORMAT);
             if (formatModel != null) {
-                if ("dec".equalsIgnoreCase(formatModel.getAsString())) {
+                String code = formatModel.getAsString().toLowerCase();
+                if ("dec".equals(code) || "dec-3".equals(code)) {
                     format = LATLON_DEC;
-                } else if ("sec".equalsIgnoreCase(formatModel.getAsString())) {
+                } else if ("dec-1".equals(code)) {
+                    format = LATLON_DEC_1;
+                } else if ("dec-2".equals(code)) {
+                    format = LATLON_DEC_2;
+                } else if ("sec".equals(code)) {
                     format = LATLON_SEC;
-                } else if ("navtex".equalsIgnoreCase(formatModel.getAsString())) {
+                } else if ("navtex".equals(code)) {
                     format = LATLON_NAVTEX;
                     // Override separator
                     separator = " ";
-                } else if ("audio".equalsIgnoreCase(formatModel.getAsString())) {
+                } else if ("audio".equals(code)) {
                     format = getAudioFormat(env);
                     // Override separator
                     separator = " - ";
