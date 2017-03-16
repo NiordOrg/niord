@@ -210,7 +210,7 @@ angular.module('niord.atons')
                                         orig: aton
                                     });
                                 }
-                                scope.$$phase || scope.$apply();
+                                scope.$$phase || $rootScope.$$phase || scope.$apply();
                             };
 
                             var select = new ol.interaction.Select({
@@ -220,8 +220,13 @@ angular.module('niord.atons')
                             });
 
                             select.on('select', function (e) {
-                                if (e.selected) {
-                                    angular.forEach(e.selected, scope.updateFeatureSelection);
+                                if (e.selected && e.selected.length > 0) {
+                                    var feature = e.selected[0];
+                                    var aton = feature.get('aton');
+                                    AtonService.atonDetailsDialog(aton, true)
+                                        .result.then(function() {
+                                            scope.updateFeatureSelection(feature);
+                                        });
                                 }
                             });
                             select.setActive(true);

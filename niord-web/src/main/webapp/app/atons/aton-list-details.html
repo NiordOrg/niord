@@ -24,6 +24,9 @@
                         ng-class="{'changed' : changed()}">
                     <span class="glyphicon glyphicon-pencil"></span>
                 </button>
+                <button ng-if="!showEditBtn" ng-click="viewAton()" class="btn btn-xs aton-edit-btn">
+                    <span class="glyphicon glyphicon-info-sign"></span>
+                </button>
             </td>
             <td ng-if="showSelectBtn" width="30" class="select-btn"
                 ng-click="toggleSelectAton()" ng-class="{'aton-selected' : isSelected()}">

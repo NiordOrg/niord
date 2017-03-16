@@ -108,6 +108,13 @@ angular.module('niord.atons')
                         }
                     };
 
+                    // Views the attributes of the AtoN
+                    scope.viewAton = function () {
+                        AtonService.atonDetailsDialog(scope.aton, true)
+                            .result.then(scope.selectAton);
+                    };
+
+
                     // Returns if the given attribute is changed compared with the original
                     scope.changed = function (attr) {
                         var atonCtx = scope.getAtonCtx();
