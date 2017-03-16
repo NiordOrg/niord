@@ -96,97 +96,100 @@
                 </div>
             </div>
 
-            <div ng-if="showFeatureData" class="feature-collection-panel" ng-sortable="featureSortableCfg">
+            <div ng-if="showFeatureData" class="feature-collection-panel">
 
-                <div ng-repeat="featureCtx in featureContexts" class="feature-panel">
+                <div ng-sortable="featureSortableCfg">
+                    <div ng-repeat="featureCtx in featureContexts" class="feature-panel">
 
-                    <div ng-if="!featureCtx.parentFeatureIds" class="feature-panel-header">
+                        <div ng-if="!featureCtx.parentFeatureIds" class="feature-panel-header">
                         <span>
                             <input type="checkbox" ng-model="featureCtx.selected" ng-change="selectionUpdated(featureCtx)">
                             Location #{{$index + 1}} &nbsp;
                             <a href ng-click="zoomFeature(featureCtx.id)"><i class="glyphicon glyphicon-arrow-right"></i></a>
                         </span>
-                        <span class="pull-right">
+                            <span class="pull-right">
                             <a href ng-click="deleteFeature(featureCtx.id)"><i class="glyphicon glyphicon-trash"></i></a>&nbsp;
                             <span class="glyphicon glyphicon-move move-feature-btn"></span>
                         </span>
-                    </div>
-                    <div ng-if="featureCtx.parentFeatureIds" class="buffer-feature-panel-header">
+                        </div>
+                        <div ng-if="featureCtx.parentFeatureIds" class="buffer-feature-panel-header">
                         <span>
                             <span class="glyphicon glyphicon-lock"></span>
                             Affected area #{{$index + 1}} &nbsp;
                         </span>
-                        <span class="pull-right">
+                            <span class="pull-right">
                             <a href ng-click="deleteFeature(featureCtx.id)"><i class="glyphicon glyphicon-trash"></i></a>&nbsp;
                             <span class="glyphicon glyphicon-move move-btn"></span>
                         </span>
-                    </div>
-
-                    <div class="feature-panel-info" ng-if="editType == 'message'">
-                        <div style="text-align: center; font-size: 11px; padding: 5px 0 5px 0;">
-                            <div class="btn-group btn-group-justified">
-                                <label class="btn btn-default btn-xs" ng-model="featureCtx.showName" uib-btn-checkbox >Name</label>
-                                <label ng-if="featureCtx.parentFeatureIds"  class="btn btn-default btn-xs" ng-model="featureCtx.showRadius" uib-btn-checkbox >Radius</label>
-                                <label class="btn btn-default btn-xs" ng-model="featureCtx.showRestriction" uib-btn-checkbox >Restriction</label>
-                                <label ng-if="featureCtx.type == 'Point'" class="btn btn-default btn-xs" ng-model="featureCtx.showAton" uib-btn-checkbox >AtoN</label>
-                            </div>
                         </div>
-                        <table>
-                            <tr ng-show="featureCtx.showName">
-                                <td width="60">Name</td>
-                                <td width="*">
-                                    <div ng-repeat="lang in languages">
-                                        <input type="text" bg-flag="lang" ng-model="featureCtx['name:' + lang]" ng-change='nameUpdated(featureCtx)'
+
+                        <div class="feature-panel-info" ng-if="editType == 'message'">
+                            <div style="text-align: center; font-size: 11px; padding: 5px 0 5px 0;">
+                                <div class="btn-group btn-group-justified">
+                                    <label class="btn btn-default btn-xs" ng-model="featureCtx.showName" uib-btn-checkbox >Name</label>
+                                    <label ng-if="featureCtx.parentFeatureIds"  class="btn btn-default btn-xs" ng-model="featureCtx.showRadius" uib-btn-checkbox >Radius</label>
+                                    <label class="btn btn-default btn-xs" ng-model="featureCtx.showRestriction" uib-btn-checkbox >Restriction</label>
+                                    <label ng-if="featureCtx.type == 'Point'" class="btn btn-default btn-xs" ng-model="featureCtx.showAton" uib-btn-checkbox >AtoN</label>
+                                </div>
+                            </div>
+                            <table>
+                                <tr ng-show="featureCtx.showName">
+                                    <td width="60">Name</td>
+                                    <td width="*">
+                                        <div ng-repeat="lang in languages">
+                                            <input type="text" bg-flag="lang" ng-model="featureCtx['name:' + lang]" ng-change='nameUpdated(featureCtx)'
+                                                   ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"
+                                                   autocomplete="off" spellcheck="false" placeholder="Name">
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr ng-show="featureCtx.showRadius">
+                                    <td width="60">Radius</td>
+                                    <td width="*">
+                                        <input type="number" step="any" ng-model="featureCtx.bufferRadius" ng-change='radiusUpdated(featureCtx)'
                                                ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"
-                                               autocomplete="off" spellcheck="false" placeholder="Name">
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr ng-show="featureCtx.showRadius">
-                                <td width="60">Radius</td>
-                                <td width="*">
-                                    <input type="number" step="any" ng-model="featureCtx.bufferRadius" ng-change='radiusUpdated(featureCtx)'
-                                           ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }"
-                                           placeholder="Radius" style="width: 80px;">
-                                    <span class="btn-group">
+                                               placeholder="Radius" style="width: 80px;">
+                                        <span class="btn-group">
                                         <label class="btn btn-default btn-xs" ng-model="featureCtx.bufferRadiusType" ng-change='radiusUpdated(featureCtx)' uib-btn-radio="'nm'">nm</label>
                                         <label class="btn btn-default btn-xs" ng-model="featureCtx.bufferRadiusType" ng-change='radiusUpdated(featureCtx)' uib-btn-radio="'km'">km</label>
                                         <label class="btn btn-default btn-xs" ng-model="featureCtx.bufferRadiusType" ng-change='radiusUpdated(featureCtx)' uib-btn-radio="'m'">m</label>
                                     </span>
-                                </td>
-                            </tr>
-                            <tr ng-show="featureCtx.showRestriction">
-                                <td width="60" style="padding-top: 10px">Restriction</td>
-                                <td width="*">
-                                    <select class="form-control input-sm" ng-model="featureCtx.restriction"  ng-change='restrictionUpdated(featureCtx)'>
-                                        <option value=""></option>
-                                        <option value="affected">Affected</option>
-                                        <option value="restricted">Restricted</option>
-                                        <option value="speed-restricted">Speed restricted</option>
-                                        <option value="prohibited">Prohibited</option>
-                                        <option value="stopping-prohibited">Stopping prohibited</option>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr ng-show="featureCtx.showAton">
-                                <td colspan="2">
+                                    </td>
+                                </tr>
+                                <tr ng-show="featureCtx.showRestriction">
+                                    <td width="60" style="padding-top: 10px">Restriction</td>
+                                    <td width="*">
+                                        <select class="form-control input-sm" ng-model="featureCtx.restriction"  ng-change='restrictionUpdated(featureCtx)'>
+                                            <option value=""></option>
+                                            <option value="affected">Affected</option>
+                                            <option value="restricted">Restricted</option>
+                                            <option value="speed-restricted">Speed restricted</option>
+                                            <option value="prohibited">Prohibited</option>
+                                            <option value="stopping-prohibited">Stopping prohibited</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr ng-show="featureCtx.showAton">
+                                    <td colspan="2">
                                     <span ng-if="featureCtx.aton"  class="feature-aton">
                                         <aton-list-details aton="featureCtx.aton" orig-aton="featureCtx.origAton"
                                                            aton-edited="atonEdited(aton, userData)" user-data="featureCtx"
                                                            editable="true" selectable="false"></aton-list-details>
                                     </span>
-                                    <span ng-if="!featureCtx.aton">
+                                        <span ng-if="!featureCtx.aton">
                                         <button type="btn btn-xs" ng-click="createAton(featureCtx)">Create AtoN...</button>
                                     </span>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
 
-                    <div class="feature-geometry-tree">
-                        <ol-editor-tree feature="features[$index]" edit-type="{{editType}}" tabindex="-1"></ol-editor-tree>
+                        <div class="feature-geometry-tree">
+                            <ol-editor-tree feature="features[$index]" edit-type="{{editType}}" tabindex="-1"></ol-editor-tree>
+                        </div>
                     </div>
                 </div>
+
             </div>
 
         </div>
