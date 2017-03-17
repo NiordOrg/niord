@@ -17,30 +17,26 @@
 package org.niord.core.category;
 
 import org.niord.core.category.vo.ListParamTypeVo;
+import org.niord.core.dictionary.DictionaryEntry;
+import org.niord.model.DataFilter;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderColumn;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Entity class for the list-based template parameter type
  */
 @Entity
-@NamedQueries({
-        @NamedQuery(name  = "ListParamType.findAll",
-                query = "select t from ListParamType t order by lower(t.name) asc")
-})
 @SuppressWarnings("unused")
 public class ListParamType extends ParamType {
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "listParamType", orphanRemoval = true)
+    @OneToMany
     @OrderColumn(name = "indexNo")
-    List<ListParamValue> values = new ArrayList<>();
+    List<DictionaryEntry> values = new ArrayList<>();
 
 
     /** Constructor **/
@@ -51,19 +47,32 @@ public class ListParamType extends ParamType {
     /** Constructor **/
     public ListParamType(ListParamTypeVo type) {
         super(type);
-        type.getValues().forEach(v -> values.add(new ListParamValue(v)));
+        this.id = type.getId();
+        type.getValues().forEach(v -> values.add(new DictionaryEntry(v)));
     }
 
+
+    /** {@inheritDoc} **/
+    @Override
+    public ListParamTypeVo toVo(DataFilter filter) {
+        ListParamTypeVo paramType = new ListParamTypeVo();
+        paramType.setId(id);
+        paramType.setName(name);
+        paramType.setValues(values.stream()
+            .map(v -> v.toVo(filter))
+            .collect(Collectors.toList()));
+        return paramType;
+    }
 
     /*************************/
     /** Getters and Setters **/
     /*************************/
 
-    public List<ListParamValue> getValues() {
+    public List<DictionaryEntry> getValues() {
         return values;
     }
 
-    public void setValues(List<ListParamValue> values) {
+    public void setValues(List<DictionaryEntry> values) {
         this.values = values;
     }
 

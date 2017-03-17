@@ -20,6 +20,7 @@ import org.niord.core.model.DescEntity;
 import org.niord.model.ILocalizedDesc;
 
 import javax.persistence.Cacheable;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.validation.constraints.NotNull;
 
@@ -32,7 +33,12 @@ import javax.validation.constraints.NotNull;
 public class DictionaryEntryDesc extends DescEntity<DictionaryEntry> {
 
     @NotNull
+    @Column(length = 1000)
     private String value;
+
+    @Column(length = 1000)
+    private String longValue;
+
 
     /** Constructor */
     public DictionaryEntryDesc() {
@@ -43,6 +49,7 @@ public class DictionaryEntryDesc extends DescEntity<DictionaryEntry> {
     public DictionaryEntryDesc(DictionaryEntryDescVo desc) {
         super(desc);
         this.value = desc.getValue();
+        this.longValue = desc.getLongValue();
     }
 
 
@@ -51,6 +58,7 @@ public class DictionaryEntryDesc extends DescEntity<DictionaryEntry> {
         DictionaryEntryDescVo desc = new DictionaryEntryDescVo();
         desc.setLang(lang);
         desc.setValue(value);
+        desc.setLongValue(longValue);
         return desc;
     }
 
@@ -64,7 +72,9 @@ public class DictionaryEntryDesc extends DescEntity<DictionaryEntry> {
     /** {@inheritDoc} */
     @Override
     public void copyDesc(ILocalizedDesc desc) {
-        this.value = ((DictionaryEntryDesc)desc).getValue();
+        DictionaryEntryDesc d = (DictionaryEntryDesc)desc;
+        this.value = d.getValue();
+        this.longValue = d.getLongValue();
     }
 
     /*************************/
@@ -79,4 +89,11 @@ public class DictionaryEntryDesc extends DescEntity<DictionaryEntry> {
         this.value = value;
     }
 
+    public String getLongValue() {
+        return longValue;
+    }
+
+    public void setLongValue(String longValue) {
+        this.longValue = longValue;
+    }
 }

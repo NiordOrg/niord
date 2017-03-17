@@ -58,6 +58,14 @@ public class Dictionary extends BaseEntity<Integer> {
     }
 
 
+    /** Constructor */
+    public Dictionary(DictionaryVo dict) {
+        this.name = dict.getName();
+        dict.getEntries().values().forEach(entry ->
+                createEntry(entry.getKey()).updateDictionaryEntry(new DictionaryEntry(entry)));
+    }
+
+
     /** Converts this dictionary to a value object */
     public DictionaryVo toVo(DataFilter filter) {
 

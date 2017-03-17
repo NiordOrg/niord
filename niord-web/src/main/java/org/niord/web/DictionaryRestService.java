@@ -19,10 +19,12 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.dictionary.DictionaryEntry;
 import org.niord.core.dictionary.DictionaryService;
 import org.niord.core.dictionary.vo.DictionaryEntryVo;
 import org.niord.core.dictionary.vo.DictionaryVo;
+import org.niord.core.dictionary.vo.ExportedDictionaryVo;
 import org.niord.core.user.Roles;
 import org.niord.model.DataFilter;
 import org.slf4j.Logger;
@@ -31,6 +33,7 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -40,6 +43,9 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -52,7 +58,7 @@ import java.util.stream.Collectors;
 @Stateless
 @SecurityDomain("keycloak")
 @PermitAll
-public class DictionaryRestService {
+public class DictionaryRestService extends AbstractBatchableRestService {
 
     @Inject
     Logger log;
@@ -127,6 +133,22 @@ public class DictionaryRestService {
     }
 
 
+    /** Exports the dictionaries with the comma-separated names as a JSON file */
+    @GET
+    @Path("/dictionary/{names}.json")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public List<ExportedDictionaryVo> exportDictionary(@PathParam("names") String names) {
+
+        return Arrays.stream(names.split(","))
+                .map(name -> dictionaryService.getCachedDictionary(name))
+                .filter(Objects::nonNull)
+                .map(ExportedDictionaryVo::new)
+                .collect(Collectors.toList());
+    }
+
+
     /** Encodes the value as a property file value **/
     private String encodeValue(String value) {
         return StringEscapeUtils.escapeEcmaScript(value);
@@ -139,7 +161,7 @@ public class DictionaryRestService {
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed(Roles.SYSADMIN)
-    public DictionaryEntryVo createDictionary(@PathParam("name") String name, DictionaryEntryVo entryVo) throws Exception {
+    public DictionaryEntryVo createDictionaryEntry(@PathParam("name") String name, DictionaryEntryVo entryVo) throws Exception {
         DictionaryEntry entry = new DictionaryEntry(entryVo);
         log.info("Creating dictionary entry " + entryVo);
         return dictionaryService.createEntry(name, entry).toVo(DataFilter.get());
@@ -152,7 +174,7 @@ public class DictionaryRestService {
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @RolesAllowed(Roles.SYSADMIN)
-    public DictionaryEntryVo updateDictionary(@PathParam("name") String name, @PathParam("key") String key, DictionaryEntryVo entryVo) throws Exception {
+    public DictionaryEntryVo updateDictionaryEntry(@PathParam("name") String name, @PathParam("key") String key, DictionaryEntryVo entryVo) throws Exception {
         if (!Objects.equals(key, entryVo.getKey())) {
             throw new WebApplicationException(400);
         }
@@ -166,7 +188,7 @@ public class DictionaryRestService {
     @DELETE
     @Path("/dictionary/{name}/{key}")
     @RolesAllowed(Roles.SYSADMIN)
-    public boolean deleteDictionary(@PathParam("name") String name, @PathParam("key") String key) throws Exception {
+    public boolean deleteDictionaryEntry(@PathParam("name") String name, @PathParam("key") String key) throws Exception {
         log.info("Deleting dictionary entry " + key);
         return dictionaryService.deleteEntry(name, key);
     }
@@ -187,5 +209,20 @@ public class DictionaryRestService {
         return String.format("Resource bundles loaded in %d ms", (System.currentTimeMillis() - t0));
     }
 
+
+    /**
+     * Imports an uploaded dictionary json file
+     *
+     * @param request the servlet request
+     * @return a status
+     */
+    @POST
+    @Path("/upload-dictionaries")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("text/plain")
+    @RolesAllowed(Roles.ADMIN)
+    public String importDictionaries(@Context HttpServletRequest request) throws Exception {
+        return executeBatchJobFromUploadedFile(request, "dictionary-import");
+    }
 
 }

@@ -16,9 +16,11 @@
 package org.niord.core.category;
 
 import freemarker.template.TemplateException;
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.category.FieldTemplateProcessor.FieldTemplate;
 import org.niord.core.category.vo.SystemCategoryVo;
+import org.niord.core.dictionary.DictionaryEntry;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.vo.SystemMessageVo;
@@ -85,6 +87,125 @@ public class TemplateExecutionService extends BaseService {
 
     @Inject
     NiordApp app;
+
+
+    /**
+     * *******************************************
+     * parameter types functionality
+     * *******************************************
+     */
+
+    /**
+     * Returns the parameter types
+     * @return the parameter types
+     */
+    public List<ParamType> getParamTypes() {
+
+        return em.createNamedQuery("ParamType.findAll", ParamType.class)
+                .getResultList()
+                .stream()
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Returns the parameter type with the given id. Returns null if the parameter type does not exist.
+     * @param id the id
+     * @return the parameter type with the given id
+     */
+    public ParamType getParamType(Integer id) {
+        return getByPrimaryKey(ParamType.class, id);
+    }
+
+
+    /**
+     * Returns the parameter type with the given name. Returns null if the parameter type does not exist.
+     * @param name the name
+     * @return the parameter type with the given name
+     */
+    public ParamType getParamTypeByName(String name) {
+        try {
+            return em.createNamedQuery("ParamType.findByName", ParamType.class)
+                    .getSingleResult();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
+    /**
+     * Creates a new parameter type from the given template
+     * @param type the parameter type value object
+     * @return the new entity
+     */
+    public ParamType createParamType(ParamType type) {
+
+        // Ensure validity of the type name
+        if (StringUtils.isBlank(type.getName())) {
+            throw new IllegalArgumentException("Invalid parameter type name: " + type.getName());
+        }
+
+        // Replace the dictionary entry values with the persisted once
+        updatePersistedValues(type, type);
+
+        type = saveEntity(type);
+        log.info("Created parameter type " + type);
+
+        return type;
+    }
+
+    /**
+     * Updates an existing parameter type from the given template
+     * @param type the parameter type value object
+     * @return the updated entity
+     */
+    public ParamType updateParamType(ParamType type) {
+
+        ParamType original = getParamType(type.getId());
+
+        original.setName(type.getName());
+
+        // Replace the dictionary entry values with the persisted once
+        updatePersistedValues(type, original);
+
+        original = saveEntity(original);
+        log.info("Updated parameter type " + original);
+
+        return original;
+    }
+
+
+    /**
+     * Deletes the parameter type with the given id
+     * @param id the id of the parameter type to delete
+     */
+    public boolean deleteParamType(Integer id) {
+
+        ParamType type = getByPrimaryKey(ParamType.class, id);
+        if (type != null) {
+            remove(type);
+            log.info("Deleted parameter type " + id);
+            return true;
+        }
+        return false;
+    }
+
+
+    /** Updates the persisted values of the parameter type **/
+    private void updatePersistedValues(ParamType source, ParamType dest) {
+        if (source != null && source instanceof ListParamType && dest != null && dest instanceof ListParamType) {
+            ListParamType srclistParamType = (ListParamType)source;
+            ListParamType dstlistParamType = (ListParamType)dest;
+            dstlistParamType.setValues(persistedList(DictionaryEntry.class, srclistParamType.getValues()));
+        }
+    }
+
+
+    /**
+     * *******************************************
+     * Template Execution
+     * *******************************************
+     */
 
 
     /**

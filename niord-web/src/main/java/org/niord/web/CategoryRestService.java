@@ -15,7 +15,6 @@
  */
 package org.niord.web;
 
-import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
@@ -25,9 +24,7 @@ import org.niord.core.category.Category;
 import org.niord.core.category.CategorySearchParams;
 import org.niord.core.category.CategoryService;
 import org.niord.core.category.CategoryType;
-import org.niord.core.category.TemplateExecutionService;
 import org.niord.core.category.vo.SystemCategoryVo;
-import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.user.Roles;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
@@ -70,12 +67,6 @@ public class CategoryRestService extends AbstractBatchableRestService {
 
     @Inject
     CategoryService categoryService;
-
-    @Inject
-    TemplateExecutionService templateExecutionService;
-
-    @Inject
-    MessageRestService messageRestService;
 
 
     /**
@@ -298,43 +289,6 @@ public class CategoryRestService extends AbstractBatchableRestService {
     }
 
 
-
-    /***************************************/
-    /** Template Execution                **/
-    /***************************************/
-
-
-    /** Executes a message template category on the given message ID */
-    @PUT
-    @Path("/execute")
-    @Consumes("application/json;charset=UTF-8")
-    @Produces("application/json;charset=UTF-8")
-    @RolesAllowed(Roles.USER)
-    @GZIP
-    @NoCache
-    public SystemMessageVo applyTemplate(ExecuteTemplateVo executeTemplate) throws Exception {
-
-        if (!executeTemplate.valid()) {
-            throw new WebApplicationException("No proper message specified", 400);
-        }
-
-        // Resolve the message to use
-        SystemMessageVo message = executeTemplate.getMessage();
-        if (message == null) {
-            // NB: Access to the message is checked:
-            message = messageRestService.getSystemMessage(executeTemplate.getMessageId());
-        }
-
-        // Resolve the category to use
-        Category category = (executeTemplate.getCategory() != null) ? new Category(executeTemplate.getCategory()) : null;
-        if (category == null && executeTemplate.getCategoryId() != null) {
-            category = categoryService.getCategoryDetails(executeTemplate.getCategoryId());
-        }
-
-        return templateExecutionService.executeTemplate(category, message);
-    }
-
-
     /**
      * ******************
      * Helper classes
@@ -363,50 +317,5 @@ public class CategoryRestService extends AbstractBatchableRestService {
         }
     }
 
-
-    /** Encapsulates the parameters used for moving an category to a new parent category */
-    @SuppressWarnings("unused")
-    public static class ExecuteTemplateVo implements IJsonSerializable {
-        SystemMessageVo message;
-        String messageId;
-        SystemCategoryVo category;
-        Integer categoryId;
-
-        public boolean valid() {
-            return (message != null || StringUtils.isNotBlank(messageId));
-        }
-
-        public SystemMessageVo getMessage() {
-            return message;
-        }
-
-        public void setMessage(SystemMessageVo message) {
-            this.message = message;
-        }
-
-        public String getMessageId() {
-            return messageId;
-        }
-
-        public void setMessageId(String messageId) {
-            this.messageId = messageId;
-        }
-
-        public SystemCategoryVo getCategory() {
-            return category;
-        }
-
-        public void setCategory(SystemCategoryVo category) {
-            this.category = category;
-        }
-
-        public Integer getCategoryId() {
-            return categoryId;
-        }
-
-        public void setCategoryId(Integer categoryId) {
-            this.categoryId = categoryId;
-        }
-    }
 }
 

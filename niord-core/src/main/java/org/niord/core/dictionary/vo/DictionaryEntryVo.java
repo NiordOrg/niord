@@ -23,11 +23,13 @@ import java.util.List;
 /**
  * Models a named dictionary entry
  */
-
+@SuppressWarnings("unused")
 public class DictionaryEntryVo implements ILocalizable<DictionaryEntryDescVo>, IJsonSerializable {
 
+    Integer id;
     String key;
     List<DictionaryEntryDescVo> descs;
+    String atonFilter;
 
     /** {@inheritDoc} */
     @Override
@@ -41,6 +43,14 @@ public class DictionaryEntryVo implements ILocalizable<DictionaryEntryDescVo>, I
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
     public String getKey() {
         return key;
@@ -57,5 +67,13 @@ public class DictionaryEntryVo implements ILocalizable<DictionaryEntryDescVo>, I
 
     public void setDescs(List<DictionaryEntryDescVo> descs) {
         this.descs = descs;
+    }
+
+    public String getAtonFilter() {
+        return atonFilter;
+    }
+
+    public void setAtonFilter(String atonFilter) {
+        this.atonFilter = atonFilter;
     }
 }

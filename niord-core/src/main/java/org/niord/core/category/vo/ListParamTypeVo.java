@@ -17,6 +17,7 @@
 package org.niord.core.category.vo;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import org.niord.core.dictionary.vo.DictionaryEntryVo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,13 +29,13 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class ListParamTypeVo extends ParamTypeVo {
 
-    List<ListParamValueVo> values = new ArrayList<>();
+    List<DictionaryEntryVo> values = new ArrayList<>();
 
     /**
      * Returns or creates the list of values
      * @return the list of values
      */
-    public List<ListParamValueVo> checkCreateValues() {
+    public List<DictionaryEntryVo> checkCreateValues() {
         if (values == null) {
             values = new ArrayList<>();
         }
@@ -45,11 +46,11 @@ public class ListParamTypeVo extends ParamTypeVo {
     /** Getters and Setters **/
     /*************************/
 
-    public List<ListParamValueVo> getValues() {
+    public List<DictionaryEntryVo> getValues() {
         return values;
     }
 
-    public void setValues(List<ListParamValueVo> values) {
+    public void setValues(List<DictionaryEntryVo> values) {
         this.values = values;
     }
 }

@@ -457,3 +457,31 @@ div.ace_scrollbar.ace_scrollbar-h {
     border: 1px solid lightgray;
     box-shadow: 0 2px 4px rgba(50, 50, 50, 0.5);
 }
+
+/** Template Parameter Types **/
+
+.list-param-panel {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    background-color: #eee;
+    border: 1px solid lightgray;
+    padding: 6px 10px;
+}
+
+.list-param-panel-header {
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.list-param-sub-panel {
+    margin-top: 5px;
+}
+
+.list-param-values {
+    font-size: 12px;
+    height: 400px;
+    background-color: white;
+    overflow-y: scroll;
+    border: 1px solid lightgray;
+}
+

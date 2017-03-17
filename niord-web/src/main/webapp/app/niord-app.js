@@ -217,6 +217,10 @@ var app = angular.module('niord.admin', [
                 url: "/script-resources/:path",
                 templateUrl: "/app/sysadmin/sysadmin-page-script-resources.html"
             })
+            .state('sysadmin.param-types', {
+                url: "/param-types",
+                templateUrl: "/app/sysadmin/sysadmin-page-param-types.html"
+            })
             .state('sysadmin.categories', {
                 url: "/categories",
                 templateUrl: "/app/sysadmin/sysadmin-page-categories.html"

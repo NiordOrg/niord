@@ -326,6 +326,49 @@ angular.module('niord.admin')
 
     /**
      * ********************************************************************************
+     * AdminParamTypeService
+     * ********************************************************************************
+     * Interface for calling domain related functions at the application server
+     */
+    .factory('AdminParamTypesService', [ '$http', '$rootScope', function($http, $rootScope) {
+        'use strict';
+
+        return {
+
+            /** Returns all parameter types **/
+            getParamTypes: function () {
+                return $http.get('/rest/templates/parameter-types?lang=' + $rootScope.language);
+            },
+
+
+            /** Returns the parameter type details for the given ID **/
+            getParamTypeDetails: function (id) {
+                return $http.get('/rest/templates/parameter-type/' + id);
+            },
+
+
+            /** Creates a new parameter types **/
+            createParamType: function(paramType) {
+                return $http.post('/rest/templates/parameter-type/', paramType);
+            },
+
+
+            /** Updates the given parameter types **/
+            updateParamType: function(paramType) {
+                return $http.put('/rest/templates/parameter-type/' + paramType.id, paramType);
+            },
+
+
+            /** Deletes the given parameter types **/
+            deleteParamType: function(paramType) {
+                return $http['delete']('/rest/templates/parameter-type/' + paramType.id);
+            }
+        };
+    }])
+
+
+    /**
+     * ********************************************************************************
      * AdminCategoryService
      * ********************************************************************************
      * Interface for calling category-related functions at the application server
@@ -360,7 +403,7 @@ angular.module('niord.admin')
 
             /** Executes the message template on the given message ID **/
             executeCategoryTemplate: function(category, messageId) {
-                return $http.put('/rest/categories/execute', { messageId: encodeURIComponent(messageId), category: category });
+                return $http.put('/rest/templates/execute', { messageId: encodeURIComponent(messageId), category: category });
             }
         };
     }])

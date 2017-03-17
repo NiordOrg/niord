@@ -18,8 +18,6 @@ package org.niord.core.dictionary.vo;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizedDesc;
 
-import javax.persistence.Column;
-
 /**
  * Localized contents for the DictionaryEntry entity
  */
@@ -28,8 +26,9 @@ public class DictionaryEntryDescVo implements ILocalizedDesc, IJsonSerializable 
 
     String lang;
 
-    @Column(length = 1000)
     String value;
+
+    String longValue;
 
     /** {@inheritDoc} */
     @Override
@@ -65,4 +64,11 @@ public class DictionaryEntryDescVo implements ILocalizedDesc, IJsonSerializable 
         this.value = value;
     }
 
+    public String getLongValue() {
+        return longValue;
+    }
+
+    public void setLongValue(String longValue) {
+        this.longValue = longValue;
+    }
 }

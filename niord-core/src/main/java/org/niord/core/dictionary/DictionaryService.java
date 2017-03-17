@@ -165,6 +165,7 @@ public class DictionaryService extends BaseService {
             throw new IllegalArgumentException("Non-existing dictionary entry: " + entry.getKey());
         }
 
+        original.setAtonFilter(entry.getAtonFilter());
         original.copyDescsAndRemoveBlanks(entry.getDescs());
         original.getDescs().forEach(e -> e.setEntity(original));
 
@@ -426,6 +427,53 @@ public class DictionaryService extends BaseService {
 
         log.info(String.format("Persisted %d '%s' dictionary entries in %d ms",
                 properties.size(), name, System.currentTimeMillis() - t0));
+    }
+
+
+    /**
+     * Imports a dictionary from the given template
+     * @param dictionary the dictionary to import
+     */
+    public Dictionary importDictionary(Dictionary dictionary) {
+        long t0 = System.currentTimeMillis();
+
+        // Update the underlying dictionary
+        Dictionary original = findByName(dictionary.getName());
+
+        // If the dictionary did not exist, create it
+        if (original == null) {
+            original = new Dictionary();
+            original.setName(dictionary.getName());
+            em.persist(original);
+        }
+
+        for (DictionaryEntry entry : dictionary.getEntries().values()) {
+            updateEntry(original, entry);
+        }
+
+        saveEntity(original);
+
+        // Remove the cached dictionary
+        cachedDictionaries.remove(dictionary.getName());
+
+        log.info(String.format("Persisted and updated %d '%s' dictionary entries in %d ms",
+                dictionary.getEntries().size(), dictionary.getName(), System.currentTimeMillis() - t0));
+
+        return original;
+    }
+
+
+    /**
+     * Creates or updates the given dictionary entry
+     * @param dict the dictionary
+     * @param entry the entry to update with
+     */
+    private void updateEntry(Dictionary dict, DictionaryEntry entry) {
+        DictionaryEntry origEntry = dict.getEntries().get(entry.getKey());
+        if (origEntry == null) {
+            origEntry = dict.createEntry(entry.getKey());
+        }
+        origEntry.updateDictionaryEntry(entry);
     }
 
 

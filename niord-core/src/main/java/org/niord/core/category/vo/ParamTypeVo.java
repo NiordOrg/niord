@@ -18,12 +18,14 @@ package org.niord.core.category.vo;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.niord.core.category.ListParamType;
+import org.niord.core.category.ParamType;
 import org.niord.model.IJsonSerializable;
 
 /**
  * Abstract value object super class for the {@code ParamType} derived model entity
  */
-@JsonTypeInfo(use= JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "kind")
+@JsonTypeInfo(use= JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
         //@JsonSubTypes.Type(value=BaseParamTypeVo.class, name="BASE"),
         //@JsonSubTypes.Type(value=CompositeParamTypeVo.class, name="COMPOSITE"),
@@ -38,6 +40,18 @@ public abstract class ParamTypeVo implements IJsonSerializable {
      * Constructor
      */
     public ParamTypeVo() {
+    }
+
+
+    /**
+     * Returns the entity associated with this value object
+     */
+    public ParamType toEntity() {
+        ParamType paramType = null;
+        if (this instanceof ListParamTypeVo) {
+            paramType = new ListParamType((ListParamTypeVo)this);
+        }
+        return paramType;
     }
 
     /*************************/

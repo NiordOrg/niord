@@ -1,0 +1,108 @@
+
+<admin-page admin-page-title="Parameter Types" parent-page="sysadmin" parent-page-title="Sysadmin">
+
+    <div ng-controller="ParamTypesAdminCtrl" ng-init="loadParamTypes()">
+
+        <p>Add, modify and manage parameter types used when executing message templates.</p>
+
+        <!-- Add/edit paramType -->
+        <div ng-if="paramType !== undefined" style="margin-top: 20px">
+            <form name="edit_form" class="form-horizontal">
+
+                <div class="row">
+                    <div class="form-controls col-sm-12">
+
+                        <div class="form-group row">
+                            <label for="name" class="col-sm-2">Name</label>
+                            <div class="col-sm-4">
+                                <input type="text" id="name" name="name" class="form-control input-sm"
+                                       ng-model="paramType.name" required
+                                       autocapitalize="off" autocorrect="off" autocomplete="off"/>
+                            </div>
+                        </div>
+
+                        <div ng-include="'/app/sysadmin/sysadmin-page-param-types-list.html'"></div>
+
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;" class="row">
+                    <div class="col-sm-offset-4">
+                        <button type="submit" class="btn btn-default btn-sm" ng-click="loadParamTypes()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary btn-sm" ng-click="saveParamType(paramType)">
+                            <span class="glyphicon glyphicon-floppy-disk"></span>
+                            Save Parameter Type
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+
+        <!-- List parameter types -->
+        <div ng-show="paramType === undefined">
+            <div class="row">
+                <div class="col-xs-8 col-sm-6 col-md-4">
+                    <input class="form-control input-sm col-sm-2" ng-model="search" type="text" placeholder="Filter">
+                    <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
+                          ng-click="search = ''" ng-show="search != ''"></span>
+                </div>
+                <div class="col-xs-4 col-sm-6 col-md-8">
+                    <span class="btn-group" uib-dropdown>
+                        <button id="add-btn" type="button" class="btn btn-primary btn-sm" uib-dropdown-toggle>
+                            <span class="glyphicon glyphicon-plus"></span> New Parameter Type
+                            <span class="caret"></span>
+                        </button>
+                        <ul uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                            <li role="menuitem"><a href ng-click="addParamType('LIST')">List Param Type</a></li>
+                            <li role="menuitem"><a href ng-click="addParamType('COMPOSITE')">Composite Param Type</a></li>
+                        </ul>
+                    </span>
+
+                    <span class="btn-group" style="margin-left: 5px;" uib-dropdown>
+                        <button id="single-button" type="button" class="btn btn-primary btn-sm" uib-dropdown-toggle>
+                            <span class="glyphicon glyphicon-cog"></span>
+                            <span class="caret"></span>
+                        </button>
+                        <ul uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                            <li role="menuitem"><a href="/rest/paramTypes/all" target="_blank">Export...</a></li>
+                            <li role="menuitem"><a href ng-click="uploadParamTypesDialog()">Import...</a></li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+
+            <div class="row" style="padding-top: 20px;">
+                <div class="col-sm-12 col-md-8 col-lg-8">
+                    <table class='table table-condensed table-hover'>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Values</th>
+                            <th></th>
+                        </tr>
+                        <tr ng-repeat="paramType in paramTypes | filter: { name: search }">
+                            <td>{{paramType.name}}</td>
+                            <td>{{paramType.type}}</td>
+                            <td>
+                                <div ng-repeat="value in paramType.values">{{value.descs[0].value}}</div>
+                            </td>
+                            <td nowrap align="right">
+                                <a href ng-click="editParamType(paramType);" title="Edit Parameter Type"><i class="glyphicon glyphicon-pencil"></i></a>
+                                &nbsp;
+                                <a href ng-click="copyParamType(paramType);" title="Copy Parameter Type"><i class="glyphicon glyphicon-duplicate"></i></a>
+                                &nbsp;
+                                <a href ng-click="deleteParamType(paramType);" title="Delete Parameter Type"><i class="glyphicon glyphicon-trash"></i></a>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</admin-page>
+

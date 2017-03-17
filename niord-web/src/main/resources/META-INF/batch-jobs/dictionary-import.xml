@@ -1,0 +1,12 @@
+<job id="dictionary-import" xmlns="http://xmlns.jcp.org/xml/ns/javaee" version="1.0">
+    <listeners>
+        <listener ref="batchJobListener"/>
+    </listeners>
+    <step id="importDictionariesStep">
+        <chunk item-count="1">
+            <reader ref="batchDictionaryImportReader" />
+            <processor ref="batchDictionaryImportProcessor"/>
+            <writer ref="batchDictionaryImportWriter" />
+        </chunk>
+    </step>
+</job>

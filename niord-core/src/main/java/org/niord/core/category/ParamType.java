@@ -16,18 +16,27 @@
 
 package org.niord.core.category;
 
-import org.niord.core.model.BaseEntity;
 import org.niord.core.category.vo.ParamTypeVo;
+import org.niord.core.model.BaseEntity;
+import org.niord.model.DataFilter;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 
 /**
  * Base class for the template list parameter type and composite parameter type
  */
 @Entity
+@NamedQueries({
+        @NamedQuery(name  = "ParamType.findAll",
+                query = "select t from ParamType t order by lower(t.name) asc"),
+        @NamedQuery(name  = "ParamType.findByName",
+                query = "select t from ParamType t where t.name = :name")
+})
 @Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public abstract class ParamType extends BaseEntity<Integer> {
 
@@ -43,6 +52,10 @@ public abstract class ParamType extends BaseEntity<Integer> {
     public ParamType(ParamTypeVo type) {
         this.name = type.getName();
     }
+
+    /** Returns a value object representation of this entity **/
+    public abstract ParamTypeVo toVo(DataFilter filter);
+
 
     /*************************/
     /** Getters and Setters **/

@@ -26,8 +26,10 @@ angular.module('niord.admin')
      * Dictionaries Admin Controller
      * Controller for the Dictionaries settings page
      */
-    .controller('DictionariesAdminCtrl', ['$scope', 'growl', 'LangService', 'DialogService', 'AdminDictionariesService',
-        function ($scope, growl, LangService, DialogService, AdminDictionariesService) {
+    .controller('DictionariesAdminCtrl', ['$scope', '$rootScope', 'growl', 'LangService',
+                'DialogService', 'AdminDictionariesService', 'UploadFileService',
+        function ($scope, $rootScope, growl, LangService,
+                  DialogService, AdminDictionariesService, UploadFileService) {
             'use strict';
 
             $scope.search = '';
@@ -131,6 +133,15 @@ angular.module('niord.admin')
             };
 
 
+            /** Opens the upload-dictionaries dialog **/
+            $scope.uploadDictionariesDialog = function () {
+                UploadFileService.showUploadFileDialog(
+                    'Upload Dictionary JSON File',
+                    '/rest/dictionaries/upload-dictionaries',
+                    'json');
+            };
+
+
             /** Reloads dictionaries from resource bundles **/
             $scope.reloadDictionaries = function () {
                 DialogService.showConfirmDialog(
@@ -142,6 +153,11 @@ angular.module('niord.admin')
                             .error($scope.displayError);
                     });
 
+            };
+
+
+            $scope.updateShowExtended = function () {
+                $rootScope.showExtended = $scope.showExtended;
             }
         }]);
 

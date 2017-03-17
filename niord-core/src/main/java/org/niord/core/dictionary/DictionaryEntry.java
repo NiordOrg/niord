@@ -55,6 +55,7 @@ public class DictionaryEntry extends BaseEntity<Integer> implements ILocalizable
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
     List<DictionaryEntryDesc> descs = new ArrayList<>();
 
+    String atonFilter;
 
     /** Constructor */
     public DictionaryEntry() {
@@ -62,26 +63,27 @@ public class DictionaryEntry extends BaseEntity<Integer> implements ILocalizable
 
     /** Constructor */
     public DictionaryEntry(DictionaryEntryVo entry) {
-        this(entry, DataFilter.get());
-    }
-
-
-    /** Constructor */
-    public DictionaryEntry(DictionaryEntryVo entry, DataFilter filter) {
-        updateDictionaryEntry(entry, filter);
-    }
-
-
-    /** Updates this entry from the given entry */
-    public void updateDictionaryEntry(DictionaryEntryVo entry, DataFilter filter) {
-
-        DataFilter compFilter = filter.forComponent(DictionaryEntry.class);
-
+        this.id = entry.getId();
         this.key = entry.getKey();
+        this.atonFilter = entry.getAtonFilter();
         if (entry.getDescs() != null) {
             entry.getDescs()
-                    .forEach(desc -> createDesc(desc.getLang()).setValue(desc.getValue()));
+                    .forEach(desc -> createDesc(desc.getLang()).copyDesc(new DictionaryEntryDesc(desc)));
         }
+    }
+
+
+    /** Updates this entry from another **/
+    public void updateDictionaryEntry(DictionaryEntry entry) {
+        this.key = entry.getKey();
+        this.atonFilter = entry.getAtonFilter();
+        entry.getDescs().forEach(desc -> {
+            DictionaryEntryDesc origDesc = getDesc(desc.getLang());
+            if (origDesc == null) {
+                origDesc = createDesc(desc.getLang());
+            }
+            origDesc.copyDesc(desc);
+        });
     }
 
 
@@ -91,7 +93,9 @@ public class DictionaryEntry extends BaseEntity<Integer> implements ILocalizable
         DataFilter compFilter = filter.forComponent(DictionaryEntry.class);
 
         DictionaryEntryVo entry = new DictionaryEntryVo();
+        entry.setId(id);
         entry.setKey(key);
+        entry.setAtonFilter(atonFilter);
         if (!descs.isEmpty()) {
             entry.setDescs(getDescs(filter).stream()
                     .map(DictionaryEntryDesc::toVo)
@@ -142,4 +146,11 @@ public class DictionaryEntry extends BaseEntity<Integer> implements ILocalizable
     }
 
 
+    public String getAtonFilter() {
+        return atonFilter;
+    }
+
+    public void setAtonFilter(String atonFilter) {
+        this.atonFilter = atonFilter;
+    }
 }

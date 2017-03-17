@@ -13,23 +13,40 @@
                     <div class="form-controls col-sm-12 col-md-6 col-lg-8">
 
                         <div class="form-group">
-                            <label for="dictKey" class="col-sm-4 col-md-3 col-lg-2">Key</label>
-                            <div class="col-sm-8 col-md-9 col-lg-10">
+                            <label for="dictKey" class="col-sm-4 col-md-3">Key</label>
+                            <div class="col-sm-8 col-md-9">
                                 <input type="text" id="dictKey" name="dictKey" class="form-control input-sm"
                                        ng-model="entry.key" ng-disabled="editMode == 'edit'" required/>
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label class="col-sm-4 col-md-3 col-lg-2">Values</label>
-                            <div class="col-sm-8 col-md-9 col-lg-10">
+                            <label class="col-sm-4 col-md-3">Values</label>
+                            <div class="col-sm-8 col-md-9">
                                 <div ng-repeat="desc in entry.descs"  style="margin-bottom: 10px">
-                                    <textarea class="form-control input-sm" placeholder="Value" rows="3" ng-model="desc.value"
+                                    <textarea class="form-control input-sm" placeholder="Value" rows="2" ng-model="desc.value"
                                            bg-flag="desc.lang"></textarea>
                                 </div>
                             </div>
                         </div>
 
+                        <div class="form-group" ng-if="showExtended">
+                            <label class="col-sm-4 col-md-3">Long Version</label>
+                            <div class="col-sm-8 col-md-9">
+                                <div ng-repeat="desc in entry.descs"  style="margin-bottom: 10px">
+                                    <textarea class="form-control input-sm" placeholder="Long Value" rows="2" ng-model="desc.longValue"
+                                           bg-flag="desc.lang"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group" ng-if="showExtended">
+                            <label class="col-sm-4 col-md-3">AtoN filter</label>
+                            <div class="col-sm-8 col-md-9">
+                                <input class="form-control input-sm" placeholder="AtoN filter" type="text"
+                                       ng-model="entry.atonFilter">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -59,6 +76,10 @@
                             ng-change="loadDictionaryEntries()">
                     </select>
                 </div>
+
+                <span class="col-xs-4">
+                    <input type="checkbox" ng-model="showExtended" ng-change="updateShowExtended()"> Show Extended
+                </span>
             </div>
 
             <div class="row">
@@ -78,10 +99,11 @@
                             <span class="caret"></span>
                         </button>
                         <ul uib-dropdown-menu role="menu" aria-labelledby="single-button">
-                            <li role="menuitem"><a href="/rest/dictionaries/dictionary/{{currentDictionaryName}}_{{language}}.properties"
+                            <li role="menuitem"><a href="/rest/dictionaries/dictionary/{{currentDictionaryName}}.json"
                                                    target="_blank">Export...</a></li>
+                            <li role="menuitem"><a href ng-click="uploadDictionariesDialog()">Import...</a></li>
                             <li role="separator" class="divider"></li>
-                            <li role="menuitem"><a href ng-click="reloadDictionaries()">Reload Dictionaries...</a></li>
+                            <li role="menuitem"><a href ng-click="reloadDictionaries()">Reload from system...</a></li>
                         </ul>
                     </span>
                 </div>
@@ -93,14 +115,21 @@
                         <tr>
                             <th>Key</th>
                             <th>Value</th>
+                            <th ng-if="showExtended">Long Value</th>
                             <th></th>
                         </tr>
                         <tr ng-repeat="entry in entries | filter: { key: search }">
                             <td>{{entry.key}}</td>
-                            <td ng-if="setting.type != 'Password'">
+                            <td>
                                 <div ng-repeat="desc in entry.descs">
                                     <flag lang="desc.lang" style="height: 12px;" style="opacity: 0.5;"></flag>
                                     &nbsp;{{desc.value}}
+                                </div>
+                            </td>
+                            <td ng-if="showExtended">
+                                <div ng-repeat="desc in entry.descs">
+                                    <flag lang="desc.lang" style="height: 12px;" style="opacity: 0.5;"></flag>
+                                    &nbsp;{{desc.longValue}}
                                 </div>
                             </td>
                             <td nowrap align="right">
