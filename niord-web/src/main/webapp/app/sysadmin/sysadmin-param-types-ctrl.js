@@ -77,6 +77,13 @@ angular.module('niord.admin')
             };
 
 
+            /** Parameter list value DnD configuration **/
+            $scope.paramListValueSortableCfg = {
+                group: 'paramListValue',
+                handle: '.move-btn'
+            };
+
+
             /** Adds the dictionary entry to the list parameter values **/
             $scope.addParamListValue = function (paramType, value) {
                 $scope.dictionaryEntries.splice( $.inArray(value, $scope.dictionaryEntries), 1 );

@@ -1,81 +1,88 @@
 
 
 <div class="row">
-    <div class="col-xs-12 col-sm-6 list-param-panel">
-
-        <div class="row list-param-panel-header">
-            <div class="col-sm-12">Unselected Entries</div>
-        </div>
-
-        <div class="row list-param-sub-panel">
-            <div class="col-sm-6">
-                <input class="form-control input-sm col-sm-2" ng-model="dictSearch" type="text" placeholder="Filter">
-                <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
-                      ng-click="dictSearch = ''" ng-show="dictSearch != ''"></span>
+    <div class="col-xs-12 col-sm-6">
+        <div class="list-param-panel">
+            <div class="row list-param-panel-header">
+                <div class="col-sm-12">Available Values</div>
             </div>
-            <div class="col-sm-6">
-                <select id="dictName" name="dictName" class="form-control input-sm"
-                        ng-model="currentDictionaryName" ng-options="name for name in dictionaryNames"
-                        ng-change="loadDictionaryEntries(currentDictionaryName)">
-                </select>
+
+            <div class="row list-param-sub-panel">
+                <div class="col-sm-6">
+                    <input class="form-control input-sm col-sm-2" ng-model="dictSearch" type="text" placeholder="Filter">
+                    <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
+                          ng-click="dictSearch = ''" ng-show="dictSearch != ''"></span>
+                </div>
+                <div class="col-sm-6">
+                    <select id="dictName" name="dictName" class="form-control input-sm"
+                            ng-model="currentDictionaryName" ng-options="name for name in dictionaryNames"
+                            ng-change="loadDictionaryEntries(currentDictionaryName)">
+                    </select>
+                </div>
+            </div>
+
+            <div class="list-param-values list-param-sub-panel">
+                <table class='table table-condensed'>
+                    <tr>
+                        <th>Key</th>
+                        <th>Value</th>
+                        <th></th>
+                    </tr>
+                    <tr ng-repeat="entry in dictionaryEntries | filter: { key: dictSearch }">
+                        <td>{{entry.key}}</td>
+                        <td>
+                            {{entry.descs[0].value}}
+                        </td>
+                        <td nowrap align="right">
+                            <a href ng-click="addParamListValue(paramType, entry);"><i class="glyphicon glyphicon-plus"></i></a>
+                            &nbsp;
+                        </td>
+                    </tr>
+                </table>
             </div>
         </div>
-
-        <div class="list-param-values list-param-sub-panel">
-            <table class='table table-condensed'>
-                <tr>
-                    <th>Key</th>
-                    <th>Value</th>
-                    <th></th>
-                </tr>
-                <tr ng-repeat="entry in dictionaryEntries | filter: { key: dictSearch }">
-                    <td>{{entry.key}}</td>
-                    <td>
-                        {{entry.descs[0].value}}
-                    </td>
-                    <td nowrap align="right">
-                        <a href ng-click="addParamListValue(paramType, entry);"><i class="glyphicon glyphicon-plus"></i></a>
-                        &nbsp;
-                    </td>
-                </tr>
-            </table>
-        </div>
-
     </div>
 
-    <div class="col-xs-12 col-sm-6 list-param-panel">
 
-        <div class="row list-param-panel-header">
-            <div class="col-sm-12">Selected Entries</div>
-        </div>
+    <div class="col-xs-12 col-sm-6">
+        <div class="list-param-panel">
+            <div class="row list-param-panel-header">
+                <div class="col-sm-12">Selected Values</div>
+            </div>
 
-        <div class="row list-param-sub-panel">
-            <div class="col-sm-12">
-                <button type="submit" class="btn btn-default btn-sm" ng-click="clearParamListValues(paramType)">
-                    Clear All
-                </button>
+            <div class="row list-param-sub-panel">
+                <div class="col-sm-12">
+                    <button type="submit" class="btn btn-default btn-sm" ng-click="clearParamListValues(paramType)">
+                        Clear All
+                    </button>
+                </div>
+            </div>
+
+            <div class="list-param-values list-param-sub-panel">
+                <table class='table table-condensed'>
+                    <tr>
+                        <th></th>
+                        <th>Key</th>
+                        <th>Value</th>
+                        <th></th>
+                    </tr>
+                    <tbody ng-sortable="paramListValueSortableCfg">
+                    <tr ng-repeat="entry in paramType.values">
+                        <td>
+                            <span class="glyphicon glyphicon-move move-btn"></span>
+                        </td>
+                        <td>{{entry.key}}</td>
+                        <td>
+                            {{entry.descs[0].value}}
+                        </td>
+                        <td nowrap align="right">
+                            <a href ng-click="removeParamListValue(paramType, entry);"><i class="glyphicon glyphicon-trash"></i></a>
+                            &nbsp;
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-
-        <div class="list-param-values list-param-sub-panel">
-            <table class='table table-condensed'>
-                <tr>
-                    <th>Key</th>
-                    <th>Value</th>
-                    <th></th>
-                </tr>
-                <tr ng-repeat="entry in paramType.values">
-                    <td>{{entry.key}}</td>
-                    <td>
-                        {{entry.descs[0].value}}
-                    </td>
-                    <td nowrap align="right">
-                        <a href ng-click="removeParamListValue(paramType, entry);"><i class="glyphicon glyphicon-trash"></i></a>
-                        &nbsp;
-                    </td>
-                </tr>
-            </table>
-        </div>
-
     </div>
 </div>
