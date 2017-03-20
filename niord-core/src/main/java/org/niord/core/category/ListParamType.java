@@ -21,7 +21,7 @@ import org.niord.core.dictionary.DictionaryEntry;
 import org.niord.model.DataFilter;
 
 import javax.persistence.Entity;
-import javax.persistence.OneToMany;
+import javax.persistence.ManyToMany;
 import javax.persistence.OrderColumn;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class ListParamType extends ParamType {
 
-    @OneToMany
+    @ManyToMany
     @OrderColumn(name = "indexNo")
     List<DictionaryEntry> values = new ArrayList<>();
 
