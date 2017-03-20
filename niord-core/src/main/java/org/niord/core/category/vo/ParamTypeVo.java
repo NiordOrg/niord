@@ -51,6 +51,8 @@ public abstract class ParamTypeVo implements IJsonSerializable {
         ParamType paramType = null;
         if (this instanceof ListParamTypeVo) {
             paramType = new ListParamType((ListParamTypeVo)this);
+        } else if (this instanceof StandardParamTypeVo) {
+            paramType = new StandardParamType((StandardParamTypeVo) this);
         }
         return paramType;
     }
