@@ -20,8 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.category.FieldTemplateProcessor.FieldTemplate;
 import org.niord.core.category.vo.SystemCategoryVo;
-import org.niord.core.dictionary.DictionaryEntry;
-import org.niord.core.domain.DomainService;
+import org.niord.core.dictionary.DictionaryService;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.PromulgationException;
@@ -65,9 +64,6 @@ public class TemplateExecutionService extends BaseService {
     private Logger log;
 
     @Inject
-    DomainService domainService;
-
-    @Inject
     FmTemplateService templateService;
 
     @Inject
@@ -84,6 +80,9 @@ public class TemplateExecutionService extends BaseService {
 
     @Inject
     CategoryService categoryService;
+
+    @Inject
+    DictionaryService dictionaryService;
 
     @Inject
     NiordApp app;
@@ -196,7 +195,7 @@ public class TemplateExecutionService extends BaseService {
         if (source != null && source instanceof ListParamType && dest != null && dest instanceof ListParamType) {
             ListParamType srclistParamType = (ListParamType)source;
             ListParamType dstlistParamType = (ListParamType)dest;
-            dstlistParamType.setValues(persistedList(DictionaryEntry.class, srclistParamType.getValues()));
+            dstlistParamType.setValues(dictionaryService.persistedList(srclistParamType.getValues()));
         }
     }
 

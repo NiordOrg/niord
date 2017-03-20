@@ -30,6 +30,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -491,6 +492,40 @@ public class DictionaryService extends BaseService {
         }
         DictionaryEntryDesc desc = entry.checkCreateDesc(lang);
         desc.setValue(value);
+    }
+
+
+    /**
+     * Returns a list of persisted dictionary entries directly from the DB, i.e. not cached version.
+     * The entries are looked up either by ID, or by key.
+     * Used e.g. for import of template parameter lists.
+     * @param entries the list of dictionary entries to look up persisted entities for
+     * @return the list of corresponding persisted entries
+     */
+    public List<DictionaryEntry> persistedList(List<DictionaryEntry> entries) {
+        List<DictionaryEntry> result = new ArrayList<>();
+        for (DictionaryEntry entry : entries) {
+            DictionaryEntry original = null;
+
+            // First, look up the entry by ID
+            if (entry.getId() != null) {
+                original = getByPrimaryKey(DictionaryEntry.class, entry.getId());
+            }
+
+            // If not defined by ID, look up by key
+            if (original == null) {
+                original = em.createNamedQuery("DictionaryEntry.findByKey", DictionaryEntry.class)
+                        .setParameter("key", entry.getKey())
+                        .getResultList().stream()
+                        .findFirst()
+                        .orElse(null);
+            }
+
+            if (original != null) {
+                result.add(original);
+            }
+        }
+        return result;
     }
 
 }

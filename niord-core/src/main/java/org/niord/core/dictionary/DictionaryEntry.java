@@ -40,7 +40,9 @@ import java.util.stream.Collectors;
 @Cacheable
 @NamedQueries({
         @NamedQuery(name  = "DictionaryEntry.loadWithDescs",
-                query = "select distinct de from DictionaryEntry de left join fetch de.descs")
+                query = "select distinct de from DictionaryEntry de left join fetch de.descs"),
+        @NamedQuery(name  = "DictionaryEntry.findByKey",
+                query = "select de from DictionaryEntry de where de.key = :key")
 })
 @SuppressWarnings("unused")
 public class DictionaryEntry extends BaseEntity<Integer> implements ILocalizable<DictionaryEntryDesc> {
