@@ -222,18 +222,19 @@ tr.batch-execution-row td div.progress {
     border: none;
 }
 
-table.category-templates {
+table.category-template-params {
     width: 100%;
     font-size: 12px;
     border: 1px solid lightgray;
 }
 
-table.category-templates tr th {
+table.category-template-params tr th {
+    font-weight: normal;
     border-bottom: 1px solid lightgray;
     padding: 2px 5px;
 }
 
-table.category-templates tr td {
+table.category-template-params tr td {
     padding: 2px 5px;
 }
 

@@ -35,6 +35,7 @@ public class SystemCategoryVo extends CategoryVo {
     String atonFilter;
     List<DomainVo> domains = new ArrayList<>();
     List<String> stdTemplateFields = new ArrayList<>();
+    List<TemplateParamVo> templateParams = new ArrayList<>();
     List<String> scriptResourcePaths = new ArrayList<>();
     String messageId;
 
@@ -97,6 +98,14 @@ public class SystemCategoryVo extends CategoryVo {
 
     public void setStdTemplateFields(List<String> stdTemplateFields) {
         this.stdTemplateFields = stdTemplateFields;
+    }
+
+    public List<TemplateParamVo> getTemplateParams() {
+        return templateParams;
+    }
+
+    public void setTemplateParams(List<TemplateParamVo> templateParams) {
+        this.templateParams = templateParams;
     }
 
     public List<String> getScriptResourcePaths() {

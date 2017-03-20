@@ -99,6 +99,10 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     @ElementCollection
     List<String> stdTemplateFields = new ArrayList<>();
 
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "category", orphanRemoval = true)
+    @OrderColumn(name = "indexNo")
+    List<TemplateParam> templateParams = new ArrayList<>();
+
     /** The script resources to execute. Used for template categories **/
     @OrderColumn(name = "indexNo")
     @ElementCollection
@@ -168,10 +172,14 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
             if (sysCategory.getStdTemplateFields() != null) {
                 stdTemplateFields.addAll(sysCategory.getStdTemplateFields());
             }
+            if (sysCategory.getTemplateParams() != null) {
+                sysCategory.getTemplateParams().stream()
+                        .map(TemplateParam::new)
+                        .forEach(this::addTemplateParam);
+            }
 
         }
     }
-
 
     /** Converts this entity to a value object */
     public <C extends  CategoryVo> C toVo(Class<C> clz, DataFilter filter) {
@@ -215,6 +223,11 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
                     .map(Domain::toVo)
                     .collect(Collectors.toList()));
             sysCategory.getStdTemplateFields().addAll(stdTemplateFields);
+            if (!templateParams.isEmpty()) {
+                sysCategory.setTemplateParams(templateParams.stream()
+                    .map(p -> p.toVo(compFilter))
+                    .collect(Collectors.toList()));
+            }
             sysCategory.getScriptResourcePaths().addAll(scriptResourcePaths);
             sysCategory.setMessageId(messageId);
         }
@@ -241,6 +254,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
                 !Objects.equals(messageId, template.getMessageId()) ||
                 !Objects.equals(scriptResourcePaths, template.getScriptResourcePaths()) ||
                 domainsChanged(template) ||
+                templateParamsChanged(template) ||
                 descsChanged(template);
     }
 
@@ -263,6 +277,15 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     }
 
 
+    /** Checks if the template params have changed */
+    private boolean templateParamsChanged(Category template) {
+        return templateParams.size() != template.getTemplateParams().size() ||
+                templateParams.stream()
+                    .anyMatch(tp -> template.getTemplateParams()
+                            .stream().allMatch(tp::hasChanged));
+    }
+
+
     /** {@inheritDoc} */
     @Override
     public CategoryDesc createDesc(String lang) {
@@ -282,6 +305,13 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     public void addChild(Category category) {
         children.add(category);
         category.setParent(this);
+    }
+
+
+    /** Adds a template parameter entity to this category **/
+    public void addTemplateParam(TemplateParam param) {
+        param.setCategory(this);
+        templateParams.add(param);
     }
 
 
@@ -445,6 +475,14 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
 
     public void setStdTemplateFields(List<String> stdTemplateFields) {
         this.stdTemplateFields = stdTemplateFields;
+    }
+
+    public List<TemplateParam> getTemplateParams() {
+        return templateParams;
+    }
+
+    public void setTemplateParams(List<TemplateParam> templateParams) {
+        this.templateParams = templateParams;
     }
 
     public List<String> getScriptResourcePaths() {

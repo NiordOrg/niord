@@ -47,7 +47,6 @@ public class ListParamType extends ParamType {
     /** Constructor **/
     public ListParamType(ListParamTypeVo type) {
         super(type);
-        this.id = type.getId();
         type.getValues().forEach(v -> values.add(new DictionaryEntry(v)));
     }
 

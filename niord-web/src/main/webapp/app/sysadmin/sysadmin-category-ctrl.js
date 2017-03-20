@@ -27,9 +27,9 @@ angular.module('niord.admin')
      * Category Admin Controller
      * Controller for the Admin Categories page
      */
-    .controller('CategoryAdminCtrl', ['$scope', '$rootScope', '$timeout', '$uibModal', 'growl',
+    .controller('CategoryAdminCtrl', ['$scope', '$rootScope', '$timeout', 'growl',
                 'LangService', 'AdminCategoryService', 'DialogService', 'UploadFileService',
-        function ($scope, $rootScope, $timeout, $uibModal, growl,
+        function ($scope, $rootScope, $timeout, growl,
                   LangService, AdminCategoryService, DialogService, UploadFileService) {
             'use strict';
 
@@ -90,6 +90,7 @@ angular.module('niord.admin')
                     type: 'CATEGORY',
                     domains: [],
                     stdTemplateFields: [],
+                    templateParams: [],
                     scriptResourcePaths: [ '' ],
                     messageId: undefined
                     }, ensureNameField);
@@ -107,6 +108,11 @@ angular.module('niord.admin')
                     .success(function (data) {
                         $scope.action = "edit";
                         $scope.category = LangService.checkDescs(data, ensureNameField);
+                        if ($scope.category.templateParams) {
+                            angular.forEach($scope.category.templateParams, function (param) {
+                                LangService.checkDescs(param, ensureNameField);
+                            })
+                        }
                         $scope.editCategory = angular.copy($scope.category);
                         if ($scope.editCategory.scriptResourcePaths.length == 0) {
                             $scope.editCategory.scriptResourcePaths.push('');
@@ -176,6 +182,50 @@ angular.module('niord.admin')
             };
 
 
+            /** Template params DnD configuration **/
+            $scope.paramsSortableCfg = {
+                group: 'templateParams',
+                handle: '.move-btn',
+                onEnd: $scope.setDirty
+            };
+
+
+            /** Adds a new template parameter to the executable category */
+            $scope.addTemplateParam = function () {
+                var param =  LangService.checkDescs({
+                    paramId: undefined,
+                    type: 'text',
+                    mandatory: false,
+                    list: false,
+                    descs: []
+                }, ensureNameField);
+                AdminCategoryService
+                    .editTemplateParam(param)
+                    .result.then(function (updatedParam) {
+                        $scope.editCategory.templateParams.push(updatedParam);
+                        $scope.setDirty();
+                    });
+            };
+
+
+            /** Edits the given template parameter */
+            $scope.editTemplateParam = function (param) {
+                AdminCategoryService
+                    .editTemplateParam(param)
+                    .result.then(function (updatedParam) {
+                        angular.copy(updatedParam, param);
+                        $scope.setDirty();
+                    });
+            };
+
+
+            /** Removes the given template parameter */
+            $scope.deleteTemplateParam = function (index) {
+                $scope.editCategory.templateParams.splice(index, 1);
+                $scope.setDirty();
+            };
+
+
             /** Tests the current template with the specified message ID */
             $scope.executeTemplate = function (template) {
                 if ($scope.editCategory.messageId) {
@@ -183,20 +233,30 @@ angular.module('niord.admin')
                     AdminCategoryService
                         .executeCategoryTemplate(template, $scope.editCategory.messageId)
                         .success(function (message) {
-                            $uibModal.open({
-                                controller: "TemplateCategoryResultDialogCtrl",
-                                templateUrl: "templateCategoryResultDialog.html",
-                                size: 'md',
-                                resolve: {
-                                    message: function () { return message; }
-                                }
-                            })
+                            AdminCategoryService.showCategoryTemplateResult(message);
                         })
                         .error(function (data, status) {
                             growl.error("Error executing template (code: " + status + ")", {ttl: 5000})
                         });
                 }
             };
+        }])
+
+
+    /*******************************************************************
+     * Edits a template parameter
+     *******************************************************************/
+    .controller('EditTemplateParamDialogCtrl', ['$scope', '$rootScope', 'AdminCategoryService', 'param',
+        function ($scope, $rootScope, AdminCategoryService, param) {
+            'use strict';
+
+            $scope.param = angular.copy(param);
+            $scope.paramTypes = [];
+
+            AdminCategoryService.templateParameterTypes()
+                .success(function (paramTypes) {
+                    $scope.paramTypes = paramTypes;
+                })
         }])
 
 

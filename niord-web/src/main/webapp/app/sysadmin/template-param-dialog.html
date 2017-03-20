@@ -1,0 +1,70 @@
+
+<div>
+    <div class="modal-header">
+        <h4 class="modal-title">Template Parameter</h4>
+    </div>
+    <div class="modal-body">
+
+        <div class="container-fluid">
+
+            <div class="row">
+                <div class="col-sm-12">
+
+                    <div class="form-group">
+                        <label class="control-label">Parameter ID</label>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <input class="form-control input-sm" placeholder="ID" type="text"
+                                       ng-model="param.paramId" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="control-label">Name</label>
+                        <div class="row">
+                            <div class="col-sm-6" ng-repeat="desc in param.descs">
+                                <input class="form-control input-sm" placeholder="Name" type="text"
+                                       ng-model="desc.name" ng-required="$first"
+                                       bg-flag="desc.lang">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="control-label">Type</label>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <select class="form-control input-sm" required
+                                        ng-model="param.type"
+                                        ng-options="paramType.name as paramType.name for paramType in paramTypes">
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <input type="checkbox" ng-model="param.mandatory">&nbsp;&nbsp;Mandatory
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <input type="checkbox" ng-model="param.list">&nbsp;&nbsp;List
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-default" ng-click="$dismiss('cancelled')">Close</button>
+        <button class="btn btn-primary" ng-click="$close(param)">Save</button>
+    </div>
+</div>

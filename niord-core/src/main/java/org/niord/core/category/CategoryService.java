@@ -270,11 +270,14 @@ public class CategoryService extends BaseService {
                 .forEach(p -> original.getScriptResourcePaths().add(p));
         original.setMessageId(category.getMessageId());
 
-       // Replace domains with persisted entities
+        // Replace domains with persisted entities
         original.setDomains(domainService.persistedDomains(category.getDomains()));
 
         original.getStdTemplateFields().clear();
         original.getStdTemplateFields().addAll(category.getStdTemplateFields());
+
+        original.getTemplateParams().clear();
+        category.getTemplateParams().forEach(original::addTemplateParam);
 
         return saveEntity(original);
     }

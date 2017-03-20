@@ -22,8 +22,10 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.category.Category;
 import org.niord.core.category.CategoryService;
+import org.niord.core.category.StandardParamType;
 import org.niord.core.category.TemplateExecutionService;
 import org.niord.core.category.vo.ParamTypeVo;
+import org.niord.core.category.vo.StandardParamTypeVo;
 import org.niord.core.category.vo.SystemCategoryVo;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.user.Roles;
@@ -125,6 +127,9 @@ public class TemplateExecutionRestService extends AbstractBatchableRestService {
     @GZIP
     @NoCache
     public ParamTypeVo createParamType(ParamTypeVo paramType) throws Exception {
+        if (paramType instanceof StandardParamTypeVo) {
+            throw new WebApplicationException("Illegal parameter type", 400);
+        }
         log.info("Creating parameter type " + paramType);
         return templateExecutionService.createParamType(paramType.toEntity())
                 .toVo(DataFilter.get());
@@ -143,6 +148,9 @@ public class TemplateExecutionRestService extends AbstractBatchableRestService {
         if (!Objects.equals(id, paramType.getId())) {
             throw new WebApplicationException(400);
         }
+        if (paramType instanceof StandardParamTypeVo) {
+            throw new WebApplicationException("Illegal parameter type", 400);
+        }
 
         log.info("Updating parameter type " + paramType);
         return templateExecutionService.updateParamType(paramType.toEntity())
@@ -158,6 +166,9 @@ public class TemplateExecutionRestService extends AbstractBatchableRestService {
     @GZIP
     @NoCache
     public void deleteParamType(@PathParam("id") Integer id) throws Exception {
+        if (templateExecutionService.getParamType(id) instanceof StandardParamType) {
+            throw new WebApplicationException("Illegal parameter type", 400);
+        }
         log.info("Deleting parameter type " + id);
         templateExecutionService.deleteParamType(id);
     }

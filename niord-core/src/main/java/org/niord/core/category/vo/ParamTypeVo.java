@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.niord.core.category.ListParamType;
 import org.niord.core.category.ParamType;
+import org.niord.core.category.StandardParamType;
 import org.niord.model.IJsonSerializable;
 
 /**
@@ -27,9 +28,9 @@ import org.niord.model.IJsonSerializable;
  */
 @JsonTypeInfo(use= JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
-        //@JsonSubTypes.Type(value=BaseParamTypeVo.class, name="BASE"),
-        //@JsonSubTypes.Type(value=CompositeParamTypeVo.class, name="COMPOSITE"),
+        @JsonSubTypes.Type(value=StandardParamType.class, name="STANDARD"),
         @JsonSubTypes.Type(value=ListParamTypeVo.class, name="LIST")
+        //@JsonSubTypes.Type(value=CompositeParamTypeVo.class, name="COMPOSITE"),
 })
 public abstract class ParamTypeVo implements IJsonSerializable {
 

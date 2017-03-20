@@ -373,7 +373,8 @@ angular.module('niord.admin')
      * ********************************************************************************
      * Interface for calling category-related functions at the application server
      */
-    .factory('AdminCategoryService', [ '$http', '$rootScope', function($http, $rootScope) {
+    .factory('AdminCategoryService', [ '$http', '$rootScope', '$uibModal',
+        function($http, $rootScope, $uibModal) {
         'use strict';
 
         return {
@@ -401,10 +402,38 @@ angular.module('niord.admin')
                 return $http.put('/rest/categories/move-category', { categoryId: categoryId, parentId: parentId });
             },
 
+            templateParameterTypes: function() {
+                return $http.get('/rest/templates/parameter-types');
+            },
+
+            editTemplateParam: function (param) {
+                return $uibModal.open({
+                    controller: "EditTemplateParamDialogCtrl",
+                    templateUrl: "/app/sysadmin/template-param-dialog.html",
+                    size: 'md',
+                    resolve: {
+                        param: function () { return param; }
+                    }
+                });
+            },
+
             /** Executes the message template on the given message ID **/
             executeCategoryTemplate: function(category, messageId) {
                 return $http.put('/rest/templates/execute', { messageId: encodeURIComponent(messageId), category: category });
+            },
+
+            /** Shows the message result after executing a template **/
+            showCategoryTemplateResult: function(message) {
+                return $uibModal.open({
+                    controller: "TemplateCategoryResultDialogCtrl",
+                    templateUrl: "templateCategoryResultDialog.html",
+                    size: 'md',
+                    resolve: {
+                        message: function () { return message; }
+                    }
+                })
             }
+
         };
     }])
 

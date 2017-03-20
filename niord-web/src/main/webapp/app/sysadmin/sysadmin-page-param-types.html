@@ -90,11 +90,13 @@
                                 <div ng-repeat="value in paramType.values">{{value.descs[0].value}}</div>
                             </td>
                             <td nowrap align="right">
-                                <a href ng-click="editParamType(paramType);" title="Edit Parameter Type"><i class="glyphicon glyphicon-pencil"></i></a>
-                                &nbsp;
-                                <a href ng-click="copyParamType(paramType);" title="Copy Parameter Type"><i class="glyphicon glyphicon-duplicate"></i></a>
-                                &nbsp;
-                                <a href ng-click="deleteParamType(paramType);" title="Delete Parameter Type"><i class="glyphicon glyphicon-trash"></i></a>
+                                <span ng-if="paramType.type != 'STANDARD'">
+                                    <a href ng-click="editParamType(paramType);" title="Edit Parameter Type"><i class="glyphicon glyphicon-pencil"></i></a>
+                                    &nbsp;
+                                    <a href ng-click="copyParamType(paramType);" title="Copy Parameter Type"><i class="glyphicon glyphicon-duplicate"></i></a>
+                                    &nbsp;
+                                    <a href ng-click="deleteParamType(paramType);" title="Delete Parameter Type"><i class="glyphicon glyphicon-trash"></i></a>
+                                </span>
                             </td>
                         </tr>
                     </table>

@@ -37,7 +37,7 @@ import javax.persistence.NamedQuery;
         @NamedQuery(name  = "ParamType.findByName",
                 query = "select t from ParamType t where t.name = :name")
 })
-@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 public abstract class ParamType extends BaseEntity<Integer> {
 
     @Column(unique=true)
@@ -50,6 +50,7 @@ public abstract class ParamType extends BaseEntity<Integer> {
 
     /** Constructor **/
     public ParamType(ParamTypeVo type) {
+        this.id = type.getId();
         this.name = type.getName();
     }
 
