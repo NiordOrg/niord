@@ -227,9 +227,10 @@ angular.module('niord.template')
             replace: true,
             transclude: true,
             scope: {
-                fieldTitle: "@",
-                fieldValid: '&',
-                valueClass: "@"
+                fieldTitleKey:  "@",
+                fieldTitle:     "@",
+                fieldValid:     '&',
+                valueClass:     "@"
             },
 
             link: function(scope, element, attrs) {

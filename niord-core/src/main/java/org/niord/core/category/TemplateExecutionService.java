@@ -125,6 +125,7 @@ public class TemplateExecutionService extends BaseService {
     public ParamType getParamTypeByName(String name) {
         try {
             return em.createNamedQuery("ParamType.findByName", ParamType.class)
+                    .setParameter("name", name)
                     .getSingleResult();
         } catch (Exception e) {
             return null;
@@ -213,9 +214,10 @@ public class TemplateExecutionService extends BaseService {
      *
      * @param templateCategory the template to execute
      * @param message  the message to apply the template to
+     * @param templateParams the template-specific parameters
      * @return the resulting message
      */
-    public SystemMessageVo executeTemplate(Category templateCategory, SystemMessageVo message) throws Exception {
+    public SystemMessageVo executeTemplate(Category templateCategory, SystemMessageVo message, List templateParams) throws Exception {
 
         // Sanity check
         if (templateCategory != null && templateCategory.getType() != CategoryType.TEMPLATE) {
@@ -250,8 +252,13 @@ public class TemplateExecutionService extends BaseService {
             Category template = templateCategories.get(x);
             MessagePartVo detailPart = detailParts.get(x);
 
+            Object params = templateParams != null && x < templateParams.size()
+                    ? templateParams.get(x)
+                    : new HashMap<>();
+
             contextData.put("template", template.toVo(SystemCategoryVo.class, DataFilter.get()));
             contextData.put("part", detailPart);
+            contextData.put("params", params);
 
             executeScriptResources(template.getScriptResourcePaths(), contextData);
         }

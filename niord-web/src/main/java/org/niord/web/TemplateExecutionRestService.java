@@ -207,7 +207,7 @@ public class TemplateExecutionRestService extends AbstractBatchableRestService {
             category = categoryService.getCategoryDetails(executeTemplate.getCategoryId());
         }
 
-        return templateExecutionService.executeTemplate(category, message);
+        return templateExecutionService.executeTemplate(category, message, executeTemplate.getTemplateParams());
     }
 
 
@@ -224,6 +224,7 @@ public class TemplateExecutionRestService extends AbstractBatchableRestService {
         String messageId;
         SystemCategoryVo category;
         Integer categoryId;
+        List templateParams;
 
         public boolean valid() {
             return (message != null || StringUtils.isNotBlank(messageId));
@@ -259,6 +260,14 @@ public class TemplateExecutionRestService extends AbstractBatchableRestService {
 
         public void setCategoryId(Integer categoryId) {
             this.categoryId = categoryId;
+        }
+
+        public List getTemplateParams() {
+            return templateParams;
+        }
+
+        public void setTemplateParams(List templateParams) {
+            this.templateParams = templateParams;
         }
     }
 }

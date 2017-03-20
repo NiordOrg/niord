@@ -58,8 +58,8 @@ angular.module('niord.template')
 
 
             /** Executes all category templates of the message **/
-            this.executeCategoryTemplates = function(message) {
-                return $http.put('/rest/templates/execute', { message: message });
+            this.executeCategoryTemplates = function(message, params) {
+                return $http.put('/rest/templates/execute', { message: message, templateParams: params });
             };
 
 

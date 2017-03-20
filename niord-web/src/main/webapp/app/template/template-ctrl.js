@@ -274,15 +274,7 @@ angular.module('niord.template')
 
             $scope.previewLang          = LangService.language();
             $scope.showStdTemplateField = {};
-            var executeTemplatesTimer   = undefined;
-
-
-            // Cancel up any pending times
-            $scope.$on('$destroy', function() {
-                if (executeTemplatesTimer !== undefined) {
-                    $timeout.cancel(executeTemplatesTimer);
-                }
-            });
+            $scope.templateParams       = [];
 
 
             // Called when OK is clicked in the execute tab
@@ -310,12 +302,14 @@ angular.module('niord.template')
                 });
 
                 // Ensure the presence of a message part for each template
+                $scope.templateParams.length = 0;
                 for (var x = 0; x < $scope.templates.length; x++) {
                     if ($scope.message.parts.length <= x) {
                         $scope.message.parts.push({
                             type: 'DETAILS'
                         })
                     }
+                    $scope.templateParams.push({});
                 }
 
 
@@ -361,12 +355,10 @@ angular.module('niord.template')
 
             /** Executes the message template **/
             $scope.executeTemplates = function (selectMessage) {
-                executeTemplatesTimer = undefined;
-
                 if ($scope.operation == 'execute') {
                     if ($scope.message.categories && $scope.message.categories.length > 0) {
                         TemplateService
-                            .executeCategoryTemplates($scope.message)
+                            .executeCategoryTemplates($scope.message, $scope.templateParams)
                             .success(function (message) {
                                 LangService.sortMessageDescs(message);
                                 $scope.message = message;
