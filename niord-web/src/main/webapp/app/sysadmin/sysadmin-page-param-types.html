@@ -85,7 +85,7 @@
                         </tr>
                         <tr ng-repeat="paramType in paramTypes | filter: { name: search }">
                             <td>{{paramType.name}}</td>
-                            <td>{{paramType.type}}</td>
+                            <td>{{paramType.type | lowercase }}</td>
                             <td>
                                 <div ng-repeat="value in paramType.values">{{value.descs[0].value}}</div>
                             </td>
