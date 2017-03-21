@@ -18,6 +18,7 @@ package org.niord.core.category.vo;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.niord.core.category.CompositeParamType;
 import org.niord.core.category.ListParamType;
 import org.niord.core.category.ParamType;
 import org.niord.core.category.StandardParamType;
@@ -29,8 +30,8 @@ import org.niord.model.IJsonSerializable;
 @JsonTypeInfo(use= JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
         @JsonSubTypes.Type(value=StandardParamType.class, name="STANDARD"),
-        @JsonSubTypes.Type(value=ListParamTypeVo.class, name="LIST")
-        //@JsonSubTypes.Type(value=CompositeParamTypeVo.class, name="COMPOSITE"),
+        @JsonSubTypes.Type(value=ListParamTypeVo.class, name="LIST"),
+        @JsonSubTypes.Type(value=CompositeParamTypeVo.class, name="COMPOSITE"),
 })
 public abstract class ParamTypeVo implements IJsonSerializable {
 
@@ -51,6 +52,8 @@ public abstract class ParamTypeVo implements IJsonSerializable {
         ParamType paramType = null;
         if (this instanceof ListParamTypeVo) {
             paramType = new ListParamType((ListParamTypeVo)this);
+        } else if (this instanceof CompositeParamTypeVo) {
+            paramType = new CompositeParamType((CompositeParamTypeVo) this);
         } else if (this instanceof StandardParamTypeVo) {
             paramType = new StandardParamType((StandardParamTypeVo) this);
         }

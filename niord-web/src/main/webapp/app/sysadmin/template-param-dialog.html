@@ -37,7 +37,7 @@
                             <div class="col-sm-6">
                                 <select class="form-control input-sm" required
                                         ng-model="param.type"
-                                        ng-options="paramType.name as paramType.name for paramType in paramTypes">
+                                        ng-options="paramType.name as formatParamType(paramType) for paramType in paramTypes">
                                 </select>
                             </div>
                         </div>
@@ -64,7 +64,7 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-default" ng-click="$dismiss('cancelled')">Close</button>
-        <button class="btn btn-primary" ng-click="$close(param)">Save</button>
+        <button class="btn btn-default" ng-click="$dismiss('cancelled')">Cancel</button>
+        <button class="btn btn-primary" ng-click="$close(param)">OK</button>
     </div>
 </div>

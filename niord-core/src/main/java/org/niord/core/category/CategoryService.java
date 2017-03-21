@@ -277,7 +277,7 @@ public class CategoryService extends BaseService {
         original.getStdTemplateFields().addAll(category.getStdTemplateFields());
 
         original.getTemplateParams().clear();
-        category.getTemplateParams().forEach(original::addTemplateParam);
+        original.getTemplateParams().addAll(category.getTemplateParams());
 
         return saveEntity(original);
     }

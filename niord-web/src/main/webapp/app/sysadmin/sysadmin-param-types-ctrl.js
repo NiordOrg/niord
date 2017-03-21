@@ -144,7 +144,7 @@ angular.module('niord.admin')
 
             /** Edits a parameter type **/
             $scope.editParamType = function (paramType) {
-                if (paramType == 'STANDARD') {
+                if (paramType.type == 'STANDARD') {
                     return;
                 }
                 AdminParamTypesService.getParamTypeDetails(paramType.id)
@@ -164,7 +164,7 @@ angular.module('niord.admin')
 
             /** Saves the current parameter type being edited */
             $scope.saveParamType = function () {
-                if (paramType == 'STANDARD') {
+                if ($scope.paramType.type == 'STANDARD') {
                     return;
                 }
 
@@ -184,7 +184,7 @@ angular.module('niord.admin')
 
             /** Deletes the given parameter type */
             $scope.deleteParamType = function (paramType) {
-                if (paramType == 'STANDARD') {
+                if (paramType.type == 'STANDARD') {
                     return;
                 }
 

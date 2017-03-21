@@ -99,7 +99,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     @ElementCollection
     List<String> stdTemplateFields = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "category", orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderColumn(name = "indexNo")
     List<TemplateParam> templateParams = new ArrayList<>();
 
@@ -173,9 +173,9 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
                 stdTemplateFields.addAll(sysCategory.getStdTemplateFields());
             }
             if (sysCategory.getTemplateParams() != null) {
-                sysCategory.getTemplateParams().stream()
+                setTemplateParams(sysCategory.getTemplateParams().stream()
                         .map(TemplateParam::new)
-                        .forEach(this::addTemplateParam);
+                        .collect(Collectors.toList()));
             }
 
         }
@@ -305,13 +305,6 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     public void addChild(Category category) {
         children.add(category);
         category.setParent(this);
-    }
-
-
-    /** Adds a template parameter entity to this category **/
-    public void addTemplateParam(TemplateParam param) {
-        param.setCategory(this);
-        templateParams.add(param);
     }
 
 

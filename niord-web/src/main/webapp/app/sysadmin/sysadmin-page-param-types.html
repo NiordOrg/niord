@@ -21,13 +21,14 @@
                             </div>
                         </div>
 
-                        <div ng-include="'/app/sysadmin/sysadmin-page-param-types-list.html'"></div>
+                        <div ng-if="paramType.type == 'LIST'" ng-include="'/app/sysadmin/sysadmin-page-param-types-list.html'"></div>
+                        <div ng-if="paramType.type == 'COMPOSITE'" ng-include="'/app/sysadmin/sysadmin-page-param-types-composite.html'"></div>
 
                     </div>
                 </div>
 
                 <div style="margin-top: 20px;" class="row">
-                    <div class="col-sm-offset-4">
+                    <div class="col-sm-offset-2">
                         <button type="submit" class="btn btn-default btn-sm" ng-click="loadParamTypes()">
                             Cancel
                         </button>
@@ -87,7 +88,8 @@
                             <td>{{paramType.name}}</td>
                             <td>{{paramType.type | lowercase }}</td>
                             <td>
-                                <div ng-repeat="value in paramType.values">{{value.descs[0].value}}</div>
+                                <div ng-if="paramType.type == 'LIST'" ng-repeat="value in paramType.values">{{value.descs[0].value}}</div>
+                                <div ng-if="paramType.type == 'COMPOSITE'" ng-repeat="param in paramType.templateParams">{{param.descs[0].name}}</div>
                             </td>
                             <td nowrap align="right">
                                 <span ng-if="paramType.type != 'STANDARD'">

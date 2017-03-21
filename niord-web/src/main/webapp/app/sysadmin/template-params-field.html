@@ -2,9 +2,9 @@
 <table class="category-template-params">
     <tr>
         <th>&nbsp;</th>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Type</th>
+        <th>Param ID</th>
+        <th>Param Name</th>
+        <th>Param Type</th>
         <th>
             <div class="pull-right">
                 <button ng-click="addTemplateParam()" class="btn btn-default btn-xs">
@@ -18,7 +18,7 @@
         <td><span class="glyphicon glyphicon-move move-btn"></span></td>
         <td>{{param.paramId}}</td>
         <td>{{param.descs[0].name}}</td>
-        <td>{{param.type}}</td>
+        <td>{{param.type}} ({{paramType(param)}})</td>
         <td align="right">
             <a href title="Edit parameter"
                ng-click="editTemplateParam(param)">

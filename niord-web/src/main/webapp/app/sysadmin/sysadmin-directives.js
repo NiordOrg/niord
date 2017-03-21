@@ -168,8 +168,8 @@ angular.module('niord.common')
      * The template-params-field directive manages a list of
      * template parameters.
      ****************************************************************/
-    .directive('templateParamsField', ['$uibModal', 'LangService',
-        function($uibModal, LangService) {
+    .directive('templateParamsField', ['$uibModal', 'LangService', 'AdminCategoryService',
+        function($uibModal, LangService, AdminCategoryService) {
 
             return {
                 restrict: 'E',
@@ -177,12 +177,30 @@ angular.module('niord.common')
                 templateUrl: '/app/sysadmin/template-params-field.html',
                 scope: {
                     paramData:      "=",
-                    paramsChanged:  "&"
+                    paramsChanged:  "&",
+                    types:          "@"
                 },
                 link: function(scope, element, attrs) {
 
                     scope.paramData = scope.paramData || {};
                     scope.paramData.templateParams = scope.paramData.templateParams || [];
+                    scope.paramTypes = [];
+                    scope.editableParamTypes = [];
+                    scope.paramTypeMap = {};
+                    scope.types = scope.types || 'STANDARD,LIST,COMPOSITE';
+
+                    // Look up the list of parameter types
+                    AdminCategoryService.templateParameterTypes()
+                        .success(function (paramTypes) {
+                            scope.paramTypes = paramTypes;
+                            scope.editableParamTypes = $.grep(paramTypes, function (paramType) {
+                                return scope.types.indexOf(paramType.type) != -1;
+                            });
+                            angular.forEach(paramTypes, function (paramType) {
+                                scope.paramTypeMap[paramType.name] = paramType;
+                            })
+                        });
+
 
                     /** Called whenever the params have been updated **/
                     scope.paramsUpdated = function () {
@@ -197,6 +215,15 @@ angular.module('niord.common')
                     }
 
 
+                    /** Returns the param type prefix, either "list", "standard" or "composite" **/
+                    scope.paramType = function(param) {
+                        if (scope.paramTypeMap[param.type]) {
+                            return scope.paramTypeMap[param.type].type.toLowerCase();
+                        }
+                        return '';
+                    };
+
+
                     /** Template params DnD configuration **/
                     scope.paramsSortableCfg = {
                         group: 'templateParams',
@@ -208,19 +235,18 @@ angular.module('niord.common')
                     /** Open a dialog for editing the given template parameter **/
                     scope.editTemplateParamDialog = function (param) {
                         return $uibModal.open({
-                            controller: function ($scope, AdminCategoryService, param) {
+                            controller: function ($scope, param, paramTypes) {
                                 $scope.param = angular.copy(param);
-                                $scope.paramTypes = [];
-
-                                AdminCategoryService.templateParameterTypes()
-                                    .success(function (paramTypes) {
-                                        $scope.paramTypes = paramTypes;
-                                    })
+                                $scope.paramTypes = paramTypes;
+                                $scope.formatParamType = function(paramType) {
+                                    return paramType.name  + ' (' + paramType.type.toLowerCase() + ')';
+                                }
                             },
                             templateUrl: "/app/sysadmin/template-param-dialog.html",
                             size: 'md',
                             resolve: {
-                                param: function () { return param; }
+                                param: function () { return param; },
+                                paramTypes: function () { return scope.editableParamTypes; }
                             }
                         });
                     };

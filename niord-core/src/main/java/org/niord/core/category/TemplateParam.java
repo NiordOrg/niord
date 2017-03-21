@@ -24,7 +24,6 @@ import org.niord.model.ILocalizable;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
@@ -39,10 +38,6 @@ import java.util.stream.Collectors;
 @Entity
 @SuppressWarnings("unused")
 public class TemplateParam extends BaseEntity<Integer> implements ILocalizable<TemplateParamDesc>, IndexedEntity {
-
-    @NotNull
-    @ManyToOne
-    Category category;
 
     int indexNo;
 
@@ -141,14 +136,6 @@ public class TemplateParam extends BaseEntity<Integer> implements ILocalizable<T
     /*************************/
     /** Getters and Setters **/
     /*************************/
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
-    }
 
     @Override
     public int getIndexNo() {

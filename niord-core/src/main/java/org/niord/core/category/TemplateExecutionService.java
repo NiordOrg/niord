@@ -168,6 +168,13 @@ public class TemplateExecutionService extends BaseService {
         // Replace the dictionary entry values with the persisted once
         updatePersistedValues(type, original);
 
+        if (original instanceof CompositeParamType && type instanceof CompositeParamType) {
+            CompositeParamType from = (CompositeParamType)type;
+            CompositeParamType to = (CompositeParamType)original;
+            to.getTemplateParams().clear();
+            to.getTemplateParams().addAll(from.getTemplateParams());
+        }
+
         original = saveEntity(original);
         log.info("Updated parameter type " + original);
 
