@@ -24,6 +24,7 @@ import org.niord.core.category.Category;
 import org.niord.core.category.CategoryService;
 import org.niord.core.category.StandardParamType;
 import org.niord.core.category.TemplateExecutionService;
+import org.niord.core.category.vo.ListParamTypeVo;
 import org.niord.core.category.vo.ParamTypeVo;
 import org.niord.core.category.vo.StandardParamTypeVo;
 import org.niord.core.category.vo.SystemCategoryVo;
@@ -37,6 +38,7 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -48,6 +50,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -91,7 +95,6 @@ public class TemplateExecutionRestService extends AbstractBatchableRestService {
     @GET
     @Path("/parameter-types")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed(Roles.USER)
     @GZIP
     @NoCache
     public List<ParamTypeVo> getParamTypes(@QueryParam("lang") @DefaultValue("en") String lang) {
@@ -104,11 +107,63 @@ public class TemplateExecutionRestService extends AbstractBatchableRestService {
     }
 
 
+    /**
+     * Returns the parameter types with a few changes:
+     * <ul>
+     *     <li>Resets all IDs to make them suitable for export/import</li>
+     *     <li>Removes standard parameter types, as these are managed by the system</li>
+     * </ul>
+     *
+     * @return the parameter types
+     */
+    @GET
+    @Path("/parameter-types/export")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public List<ParamTypeVo> exportParamTypes() {
+
+        List<ParamTypeVo> result = getParamTypes(null);
+
+        // Remove standard parameter types
+        result.removeIf(pt -> pt instanceof StandardParamTypeVo);
+
+        // Reset all IDs
+        result.forEach(pt -> pt.setId(null));
+        result.stream()
+            .filter(pt -> pt instanceof ListParamTypeVo)
+            .map(pt -> (ListParamTypeVo)pt)
+            .flatMap(pt -> pt.getValues().stream())
+            .forEach(v -> {
+                v.setId(null);
+                v.setDescs(null);
+                v.setAtonFilter(null);
+            });
+
+        return result;
+    }
+
+
+    /**
+     * Imports an uploaded parameter types json file
+     *
+     * @param request the servlet request
+     * @return a status
+     */
+    @POST
+    @Path("/upload-param-types")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("text/plain")
+    @RolesAllowed(Roles.SYSADMIN)
+    public String importParameterTypes(@Context HttpServletRequest request) throws Exception {
+        return executeBatchJobFromUploadedFile(request, "param-type-import");
+    }
+
+
     /** Returns the parameter type with the given id */
     @GET
     @Path("/parameter-type/{id}")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed(Roles.USER)
     @GZIP
     @NoCache
     public ParamTypeVo getParamType(@PathParam("id") Integer id) {

@@ -189,6 +189,10 @@ angular.module('niord.common')
                     scope.paramTypeMap = {};
                     scope.types = scope.types || 'STANDARD,LIST,COMPOSITE';
 
+                    angular.forEach(scope.paramData.templateParams, function (param) {
+                        LangService.sortDescs(param);
+                    });
+
                     // Look up the list of parameter types
                     AdminCategoryService.templateParameterTypes()
                         .success(function (paramTypes) {
