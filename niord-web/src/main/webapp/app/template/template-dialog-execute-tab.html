@@ -138,25 +138,20 @@
                     <!-- ** Template Params ** -->
                     <!-- ********************* -->
                     <template-dialog-param-field ng-repeat="param in template.templateParams"
-                                                 field-title="{{param.descs[0].name}}">
+                                                 field-title="{{param.descs[0].name}}"
+                                                 mandatory="param.mandatory">
 
                         <div class="row">
                             <div class="col-sm-12">
-                                <div ng-switch="param.type">
-                                    <input ng-switch-when="text"
-                                           type="text"
-                                           class="form-control input-sm"
-                                           ng-model="templateParams[templateIndex][param.paramId]">
-                                    <input ng-switch-when="number"
-                                           type="number"
-                                           class="form-control input-sm"
-                                           ng-model="templateParams[templateIndex][param.paramId]">
-                                    <input ng-switch-when="boolean"
-                                           type="checkbox"
-                                           class="form-control input-sm"
-                                           ng-model="templateParams[templateIndex][param.paramId]">
-                                    <span ng-switch-default>{{param.name}}</span>
-                                </div>
+
+                                <template-input-field
+                                        template-param="param"
+                                        template-data="templateParams"
+                                        index="templateIndex"
+                                        param-type-map="paramTypeMap"
+                                        nested="false">
+                                </template-input-field>
+
                             </div>
                         </div>
 

@@ -1,0 +1,57 @@
+
+<div ng-if="paramType" class="row" ng-class="{ 'template-dialog-nested-params' : nested }">
+    <div ng-if="paramType.type == 'STANDARD'">
+
+        <div ng-switch="paramType.name" ng-class="{ 'col-sm-12' : nested, 'col-sm-6' : !nested }">
+
+            <input ng-switch-when="text"
+                   type="text"
+                   class="form-control input-sm"
+                   ng-model="templateData[index][templateParam.paramId]">
+
+            <input ng-switch-when="number"
+                   type="number"
+                   class="form-control input-sm"
+                   ng-model="templateData[index][templateParam.paramId]">
+
+            <input ng-switch-when="boolean"
+                   type="checkbox"
+                   class="form-control input-sm"
+                   ng-model="templateData[index][templateParam.paramId]">
+        </div>
+    </div>
+
+    <div ng-if="paramType.type == 'LIST'">
+
+        <div ng-class="{ 'col-sm-12' : nested, 'col-sm-6' : !nested }">
+            <select class="form-control input-sm"
+                    ng-model="templateData[index][templateParam.paramId]"
+                    ng-options="val as val.descs[0].value for val in paramType.values"></select>
+        </div>
+
+    </div>
+
+    <div ng-if="!nested && paramType.type == 'COMPOSITE'">
+
+        <div class="col-sm-12">
+            <div ng-repeat="param in paramType.templateParams" class="row">
+                <div class="col-sm-4 template-dialog-nested-params">
+                    {{param.descs[0].name}}
+                    <span ng-if="param.mandatory" class="template-param-mandatory">*</span>
+                </div>
+
+                <div class="col-sm-8">
+                    <template-input-field
+                            template-param="param"
+                            template-data="templateData"
+                            index="$index"
+                            nested="true"
+                            param-type-map="paramTypeMap">
+                    </template-input-field>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>

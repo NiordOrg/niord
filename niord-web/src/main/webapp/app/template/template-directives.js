@@ -230,7 +230,8 @@ angular.module('niord.template')
                 fieldTitleKey:  "@",
                 fieldTitle:     "@",
                 fieldValid:     '&',
-                valueClass:     "@"
+                valueClass:     "@",
+                mandatory:      "="
             },
 
             link: function(scope, element, attrs) {
@@ -245,6 +246,37 @@ angular.module('niord.template')
                         return false;
                     }
                 };
+            }
+        };
+    }])
+
+
+    /**********************************************
+     * Creates input fields based on the template
+     * parameters.
+     **********************************************/
+    .directive('templateInputField', [function () {
+        return {
+            restrict: 'E',
+            templateUrl: '/app/template/template-input-field.html',
+            scope: {
+                templateParam:  "=",
+                templateData:   "=",
+                index:          "=",
+                nested:         "=",
+                paramTypeMap:   "="
+            },
+
+            link: function(scope, element, attrs) {
+
+                scope.paramType = undefined;
+
+                scope.$watch("paramTypeMap", function () {
+                    if (scope.paramTypeMap) {
+                        scope.paramType = scope.paramTypeMap[scope.templateParam.type];
+                    }
+                }, true);
+
             }
         };
     }]);

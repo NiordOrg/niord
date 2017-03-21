@@ -50,6 +50,12 @@ angular.module('niord.template')
             };
 
 
+            /** Returns the template parameter types **/
+            this.templateParameterTypes = function() {
+                return $http.get('/rest/templates/parameter-types');
+            };
+
+
             /** Refreshes the categories against the backend **/
             this.refreshCategories = function (categories) {
                 var catIds = categories.map(function (cat) { return cat.id }).join(',');

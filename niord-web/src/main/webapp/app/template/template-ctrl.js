@@ -277,6 +277,18 @@ angular.module('niord.template')
             $scope.templateParams       = [];
 
 
+            // Look up the list of parameter types
+            $scope.paramTypes = [];
+            $scope.paramTypeMap = {};
+            TemplateService.templateParameterTypes()
+                .success(function (paramTypes) {
+                    $scope.paramTypes = paramTypes;
+                    angular.forEach(paramTypes, function (paramType) {
+                        $scope.paramTypeMap[paramType.name] = paramType;
+                    })
+                });
+
+
             // Called when OK is clicked in the execute tab
             $scope.$on('messageSelected', function () {
                 $scope.executeTemplates(true);

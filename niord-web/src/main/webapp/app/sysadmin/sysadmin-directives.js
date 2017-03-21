@@ -168,8 +168,8 @@ angular.module('niord.common')
      * The template-params-field directive manages a list of
      * template parameters.
      ****************************************************************/
-    .directive('templateParamsField', ['$uibModal', 'LangService', 'AdminCategoryService',
-        function($uibModal, LangService, AdminCategoryService) {
+    .directive('templateParamsField', ['$uibModal', 'LangService', 'TemplateService',
+        function($uibModal, LangService, TemplateService) {
 
             return {
                 restrict: 'E',
@@ -194,7 +194,7 @@ angular.module('niord.common')
                     });
 
                     // Look up the list of parameter types
-                    AdminCategoryService.templateParameterTypes()
+                    TemplateService.templateParameterTypes()
                         .success(function (paramTypes) {
                             scope.paramTypes = paramTypes;
                             scope.editableParamTypes = $.grep(paramTypes, function (paramType) {

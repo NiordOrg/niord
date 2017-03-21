@@ -752,3 +752,11 @@ body > .ui-select-container {
     height: 150px;
     border: 1px solid lightgray;
 }
+
+.template-dialog-nested-params {
+    padding-top: 5px;
+}
+
+.template-param-mandatory {
+    color: red;
+}

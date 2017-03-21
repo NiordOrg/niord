@@ -402,10 +402,6 @@ angular.module('niord.admin')
                 return $http.put('/rest/categories/move-category', { categoryId: categoryId, parentId: parentId });
             },
 
-            templateParameterTypes: function() {
-                return $http.get('/rest/templates/parameter-types');
-            },
-
             /** Executes the message template on the given message ID **/
             executeCategoryTemplate: function(category, messageId) {
                 return $http.put('/rest/templates/execute', { messageId: encodeURIComponent(messageId), category: category });
