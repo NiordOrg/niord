@@ -145,39 +145,7 @@
                         <label class="control-label">Template Parameters</label>
                         <div class="row">
                             <div class="col-sm-12">
-                                <table class="category-template-params">
-                                    <tr>
-                                        <th>&nbsp;</th>
-                                        <th>ID</th>
-                                        <th>Name</th>
-                                        <th>Type</th>
-                                        <th>
-                                            <div class="pull-right">
-                                                <button ng-click="addTemplateParam()" class="btn btn-default btn-xs">
-                                                    <span class="glyphicon glyphicon-plus"></span> Add
-                                                </button>
-                                            </div>
-                                        </th>
-                                    </tr>
-                                    <tbody ng-sortable="paramsSortableCfg">
-                                        <tr ng-repeat="param in editCategory.templateParams">
-                                            <td><span class="glyphicon glyphicon-move move-btn"></span></td>
-                                            <td>{{param.paramId}}</td>
-                                            <td>{{param.descs[0].name}}</td>
-                                            <td>{{param.type}}</td>
-                                            <td align="right">
-                                                <a href title="Edit parameter"
-                                                   ng-click="editTemplateParam(param)">
-                                                    <span class="glyphicon glyphicon-pencil"></span></a>
-                                                &nbsp;
-                                                <a href  title="Delete parameter"
-                                                   ng-click="deleteTemplateParam($index)">
-                                                    <span class="glyphicon glyphicon-trash"></span></a>
-                                                &nbsp;
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                <template-params-field param-data="editCategory" params-changed="setDirty()"></template-params-field>
                             </div>
                         </div>
                     </div>

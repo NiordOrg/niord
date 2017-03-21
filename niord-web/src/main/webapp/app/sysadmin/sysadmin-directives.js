@@ -160,4 +160,106 @@ angular.module('niord.common')
 
                 }
             }
+        }])
+
+
+
+   /****************************************************************
+     * The template-params-field directive manages a list of
+     * template parameters.
+     ****************************************************************/
+    .directive('templateParamsField', ['$uibModal', 'LangService',
+        function($uibModal, LangService) {
+
+            return {
+                restrict: 'E',
+                replace: true,
+                templateUrl: '/app/sysadmin/template-params-field.html',
+                scope: {
+                    paramData:      "=",
+                    paramsChanged:  "&"
+                },
+                link: function(scope, element, attrs) {
+
+                    scope.paramData = scope.paramData || {};
+                    scope.paramData.templateParams = scope.paramData.templateParams || [];
+
+                    /** Called whenever the params have been updated **/
+                    scope.paramsUpdated = function () {
+                        if (attrs.paramsChanged) {
+                            scope.paramsChanged();
+                        }
+                    };
+
+                    // Used to ensure that description entities have a "name" field
+                    function ensureNameField(desc) {
+                        desc.name = '';
+                    }
+
+
+                    /** Template params DnD configuration **/
+                    scope.paramsSortableCfg = {
+                        group: 'templateParams',
+                        handle: '.move-btn',
+                        onEnd: scope.paramsUpdated
+                    };
+
+
+                    /** Open a dialog for editing the given template parameter **/
+                    scope.editTemplateParamDialog = function (param) {
+                        return $uibModal.open({
+                            controller: function ($scope, AdminCategoryService, param) {
+                                $scope.param = angular.copy(param);
+                                $scope.paramTypes = [];
+
+                                AdminCategoryService.templateParameterTypes()
+                                    .success(function (paramTypes) {
+                                        $scope.paramTypes = paramTypes;
+                                    })
+                            },
+                            templateUrl: "/app/sysadmin/template-param-dialog.html",
+                            size: 'md',
+                            resolve: {
+                                param: function () { return param; }
+                            }
+                        });
+                    };
+
+
+                    /** Adds a new template parameter to the executable category */
+                    scope.addTemplateParam = function () {
+                        var param =  LangService.checkDescs({
+                            paramId: undefined,
+                            type: 'text',
+                            mandatory: false,
+                            list: false,
+                            descs: []
+                        }, ensureNameField);
+                        scope.editTemplateParamDialog(param)
+                            .result.then(function (updatedParam) {
+                            scope.paramData.templateParams.push(updatedParam);
+                            scope.paramsUpdated();
+                        });
+                    };
+
+
+                    /** Edits the given template parameter */
+                    scope.editTemplateParam = function (param) {
+                        scope.editTemplateParamDialog(param)
+                            .result.then(function (updatedParam) {
+                            angular.copy(updatedParam, param);
+                            scope.paramsUpdated();
+                        });
+                    };
+
+
+                    /** Removes the given template parameter */
+                    scope.deleteTemplateParam = function (index) {
+                        scope.paramData.templateParams.splice(index, 1);
+                        scope.paramsUpdated();
+                    };
+
+                }
+            }
         }]);
+

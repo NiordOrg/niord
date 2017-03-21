@@ -182,49 +182,6 @@ angular.module('niord.admin')
             };
 
 
-            /** Template params DnD configuration **/
-            $scope.paramsSortableCfg = {
-                group: 'templateParams',
-                handle: '.move-btn',
-                onEnd: $scope.setDirty
-            };
-
-
-            /** Adds a new template parameter to the executable category */
-            $scope.addTemplateParam = function () {
-                var param =  LangService.checkDescs({
-                    paramId: undefined,
-                    type: 'text',
-                    mandatory: false,
-                    list: false,
-                    descs: []
-                }, ensureNameField);
-                AdminCategoryService
-                    .editTemplateParam(param)
-                    .result.then(function (updatedParam) {
-                        $scope.editCategory.templateParams.push(updatedParam);
-                        $scope.setDirty();
-                    });
-            };
-
-
-            /** Edits the given template parameter */
-            $scope.editTemplateParam = function (param) {
-                AdminCategoryService
-                    .editTemplateParam(param)
-                    .result.then(function (updatedParam) {
-                        angular.copy(updatedParam, param);
-                        $scope.setDirty();
-                    });
-            };
-
-
-            /** Removes the given template parameter */
-            $scope.deleteTemplateParam = function (index) {
-                $scope.editCategory.templateParams.splice(index, 1);
-                $scope.setDirty();
-            };
-
 
             /** Tests the current template with the specified message ID */
             $scope.executeTemplate = function (template) {
@@ -240,23 +197,6 @@ angular.module('niord.admin')
                         });
                 }
             };
-        }])
-
-
-    /*******************************************************************
-     * Edits a template parameter
-     *******************************************************************/
-    .controller('EditTemplateParamDialogCtrl', ['$scope', '$rootScope', 'AdminCategoryService', 'param',
-        function ($scope, $rootScope, AdminCategoryService, param) {
-            'use strict';
-
-            $scope.param = angular.copy(param);
-            $scope.paramTypes = [];
-
-            AdminCategoryService.templateParameterTypes()
-                .success(function (paramTypes) {
-                    $scope.paramTypes = paramTypes;
-                })
         }])
 
 

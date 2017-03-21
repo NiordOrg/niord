@@ -406,17 +406,6 @@ angular.module('niord.admin')
                 return $http.get('/rest/templates/parameter-types');
             },
 
-            editTemplateParam: function (param) {
-                return $uibModal.open({
-                    controller: "EditTemplateParamDialogCtrl",
-                    templateUrl: "/app/sysadmin/template-param-dialog.html",
-                    size: 'md',
-                    resolve: {
-                        param: function () { return param; }
-                    }
-                });
-            },
-
             /** Executes the message template on the given message ID **/
             executeCategoryTemplate: function(category, messageId) {
                 return $http.put('/rest/templates/execute', { messageId: encodeURIComponent(messageId), category: category });
