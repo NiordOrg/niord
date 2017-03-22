@@ -255,7 +255,7 @@ angular.module('niord.template')
      * Creates input fields based on the template
      * parameters.
      **********************************************/
-    .directive('templateInputField', [function () {
+    .directive('templateInputField', ['TemplateService', function (TemplateService) {
         return {
             restrict: 'E',
             templateUrl: '/app/template/template-input-field.html',
@@ -263,11 +263,12 @@ angular.module('niord.template')
                 templateParam:  "=",
                 templateData:   "=",
                 index:          "=",
+                message:        "=",
                 nested:         "=",
                 paramTypeMap:   "="
             },
 
-            link: function(scope, element, attrs) {
+            link: function(scope) {
 
                 scope.paramType = undefined;
 
@@ -276,6 +277,36 @@ angular.module('niord.template')
                         scope.paramType = scope.paramTypeMap[scope.templateParam.type];
                     }
                 }, true);
+
+
+                /** Attempts to initialize the text field from any AtoN associated with the message part **/
+                scope.checkInitTextField = function(paramType, model, paramId) {
+                    var geom = scope.message.parts[scope.index].geometry;
+                    var feature = geom.features.length > 0 ? geom.features[0] : undefined;
+                    if (feature && feature.properties.aton && paramId == 'aton_name') {
+                        var aton = feature.properties.aton;
+                        if (aton.tags['seamark:name']) {
+                            model[paramId] = aton.tags['seamark:name'];
+                        }
+                    }
+                };
+
+                /** Attempts to initialize the list from any AtoN associated with the message part **/
+                scope.checkInitList = function(paramType, model, paramId) {
+                    var geom = scope.message.parts[scope.index].geometry;
+                    var feature = geom.features.length > 0 ? geom.features[0] : undefined;
+                    var atonValues = $.grep(paramType.values, function (val) { return val.atonFilter !== undefined; });
+                    if (feature && feature.properties.aton && atonValues.length > 0) {
+                         TemplateService.matchAtonToList(paramType.values, feature.properties.aton)
+                             .success(function (result) {
+                                 angular.forEach(paramType.values, function (value) {
+                                     if (result.key == value.key) {
+                                        model[paramId] = value;
+                                     }
+                                 })
+                             })
+                    }
+                };
 
             }
         };

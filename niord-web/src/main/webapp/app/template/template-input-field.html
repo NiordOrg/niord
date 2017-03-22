@@ -7,7 +7,8 @@
             <input ng-switch-when="text"
                    type="text"
                    class="form-control input-sm"
-                   ng-model="templateData[index][templateParam.paramId]">
+                   ng-model="templateData[index][templateParam.paramId]"
+                   ng-init="checkInitTextField(paramType, templateData[index], templateParam.paramId)">
 
             <input ng-switch-when="number"
                    type="number"
@@ -26,7 +27,8 @@
         <div ng-class="{ 'col-sm-12' : nested, 'col-sm-6' : !nested }">
             <select class="form-control input-sm"
                     ng-model="templateData[index][templateParam.paramId]"
-                    ng-options="val as val.descs[0].value for val in paramType.values"></select>
+                    ng-options="val as val.descs[0].value for val in paramType.values"
+                    ng-init="checkInitList(paramType, templateData[index], templateParam.paramId)"></select>
         </div>
 
     </div>
@@ -44,7 +46,8 @@
                     <template-input-field
                             template-param="param"
                             template-data="templateData"
-                            index="$index"
+                            index="index"
+                            message="message"
                             nested="true"
                             param-type-map="paramTypeMap">
                     </template-input-field>

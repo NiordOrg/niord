@@ -70,7 +70,7 @@ angular.module('niord.template')
                             LangService.sortDescs(param);
                         })
                     }
-                })
+                });
                 return paramTypes;
             };
 
@@ -85,6 +85,12 @@ angular.module('niord.template')
             /** Executes all category templates of the message **/
             this.executeCategoryTemplates = function(message, params) {
                 return $http.put('/rest/templates/execute', { message: message, templateParams: params });
+            };
+
+
+            /** Check if any of the dictionary values matches the given aton **/
+            this.matchAtonToList = function (values, aton) {
+                return $http.put('/rest/dictionaries/matches-aton', { values: values, aton : aton });
             };
 
 

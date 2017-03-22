@@ -15,7 +15,11 @@
  */
 package org.niord.core.dictionary;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
+import org.niord.core.aton.AtonFilter;
+import org.niord.core.aton.vo.AtonNodeVo;
+import org.niord.core.dictionary.vo.DictionaryEntryVo;
 import org.niord.core.dictionary.vo.DictionaryVo;
 import org.niord.core.service.BaseService;
 import org.niord.model.DataFilter;
@@ -27,6 +31,7 @@ import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
+import javax.script.ScriptException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -528,4 +533,31 @@ public class DictionaryService extends BaseService {
         return result;
     }
 
+
+    /**
+     * *******************************************
+     * AtoN matching
+     * *******************************************
+     */
+
+
+    /**
+     * Returns the first dictionary list entry that matches the AtoN
+     * @param aton the AtoN to match
+     * @param values the list of dictionary values to check
+     * @return the first dictionary list entry that matches the AtoN
+     */
+    public DictionaryEntryVo matchesAton(AtonNodeVo aton, List<DictionaryEntryVo> values) {
+        return values.stream()
+                .filter(e -> StringUtils.isNotBlank(e.getAtonFilter()))
+                .filter(e -> {
+                    try {
+                        return AtonFilter.getInstance(e.getAtonFilter()).matches(aton);
+                    } catch (ScriptException e1) {
+                        return false;
+                    }
+                })
+                .findFirst()
+                .orElse(null);
+    }
 }

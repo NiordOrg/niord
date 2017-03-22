@@ -15,10 +15,12 @@
  */
 package org.niord.web;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.dictionary.DictionaryEntry;
 import org.niord.core.dictionary.DictionaryService;
@@ -27,6 +29,7 @@ import org.niord.core.dictionary.vo.DictionaryVo;
 import org.niord.core.dictionary.vo.ExportedDictionaryVo;
 import org.niord.core.user.Roles;
 import org.niord.model.DataFilter;
+import org.niord.model.IJsonSerializable;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
@@ -225,4 +228,62 @@ public class DictionaryRestService extends AbstractBatchableRestService {
         return executeBatchJobFromUploadedFile(request, "dictionary-import");
     }
 
+
+    /**
+     * *******************************************
+     * AtoN matching
+     * *******************************************
+     */
+
+
+    /** Matches an AtoN against a list of dictionary entries */
+    @PUT
+    @Path("/matches-aton")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed(Roles.USER)
+    @GZIP
+    @NoCache
+    public DictionaryEntryVo matchesAton(AtonDictEntryListVo params) throws Exception {
+
+        if (params.getAton() == null || params.getValues() == null) {
+            throw new WebApplicationException("No proper message specified", 400);
+        }
+
+        if (params.getValues().stream().noneMatch(d -> StringUtils.isNotBlank(d.getAtonFilter()))) {
+            return null;
+        }
+
+        return dictionaryService.matchesAton(params.getAton(), params.getValues());
+    }
+
+
+    /**
+     * ******************
+     * Helper classes
+     * *******************
+     */
+
+    /** Encapsulates the parameters used for matching an AtoN against a list of dictionary entries */
+    @SuppressWarnings("unused")
+    public static class AtonDictEntryListVo implements IJsonSerializable {
+        AtonNodeVo aton;
+        List<DictionaryEntryVo> values;
+
+        public AtonNodeVo getAton() {
+            return aton;
+        }
+
+        public void setAton(AtonNodeVo aton) {
+            this.aton = aton;
+        }
+
+        public List<DictionaryEntryVo> getValues() {
+            return values;
+        }
+
+        public void setValues(List<DictionaryEntryVo> values) {
+            this.values = values;
+        }
+    }
 }
