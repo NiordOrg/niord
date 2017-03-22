@@ -6,7 +6,8 @@
 <#assign line = 'org.niord.core.script.directive.LineDirective'?new()>
 <#assign trailingDot = "org.niord.core.script.directive.TrailingDotDirective"?new()>
 <#assign debug = 'org.niord.core.script.directive.DebugDirective'?new()>
-
+<#assign navtexDateFormat = 'org.niord.core.script.directive.NavtexDateFormatDirective'?new()>
+<#assign posFormat = 'dec-3'> <#-- 3 decimals in message details -->
 
 <!-- ***************************************  -->
 <!-- Returns the desc for the given language  -->
@@ -128,7 +129,7 @@
 <!-- Renders the geometry of message part     -->
 <!-- as a list of positions                   -->
 <!-- ***************************************  -->
-<#macro renderPositionList part format='dec' lang='en'>
+<#macro renderPositionList part format=posFormat lang='en'>
     <#setting locale=lang>
     <#assign positions=toPositions(part)/>
     <#if positions?size gt 1>${text('position.between')}<#elseif format != 'navtex'>${text('position.in')}</#if>
@@ -139,3 +140,24 @@
     </#list>
 </#macro>
 
+<!-- ***************************************  -->
+<!-- Renders the AtoN given by the aton_type  -->
+<!-- parameter                                -->
+<!-- ***************************************  -->
+<#macro renderAton defaultName format='long' lang='en'>
+    <#if params?has_content && params?has_content && params.aton_type?has_content>
+        <#assign desc=descForLang(params.aton_type, lang)!>
+        <#if desc?? && format == 'long'>
+        ${desc.longValue?cap_first}
+        <#elseif desc??>
+        ${desc.value?cap_first}
+        <#else>
+        ${defaultName}
+        </#if>
+    <#else>
+    ${defaultName}
+    </#if>
+    <#if params?has_content && params?has_content && params.aton_name?has_content>
+    ${params.aton_name}
+    </#if>
+</#macro>
