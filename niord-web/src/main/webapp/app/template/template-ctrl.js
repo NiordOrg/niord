@@ -274,15 +274,15 @@ angular.module('niord.template')
 
             $scope.previewLang          = LangService.language();
             $scope.showStdTemplateField = {};
-            $scope.templateParams       = [];
+            $scope.templateData         = [];
 
 
             // Look up the list of parameter types
             $scope.paramTypes = [];
             $scope.paramTypeMap = {};
-            TemplateService.templateParameterTypes($rootScope.language)
+            TemplateService.templateParameterTypes()
                 .success(function (paramTypes) {
-                    $scope.paramTypes = paramTypes;
+                    $scope.paramTypes = TemplateService.sortParameterTypes(paramTypes);
                     angular.forEach($scope.paramTypes, function (paramType) {
                         $scope.paramTypeMap[paramType.name] = paramType;
                     })
@@ -314,14 +314,14 @@ angular.module('niord.template')
                 });
 
                 // Ensure the presence of a message part for each template
-                $scope.templateParams.length = 0;
+                $scope.templateData.length = 0;
                 for (var x = 0; x < $scope.templates.length; x++) {
                     if ($scope.message.parts.length <= x) {
                         $scope.message.parts.push({
                             type: 'DETAILS'
                         })
                     }
-                    $scope.templateParams.push({});
+                    $scope.templateData.push({});
                 }
 
 
@@ -370,7 +370,7 @@ angular.module('niord.template')
                 if ($scope.operation == 'execute') {
                     if ($scope.message.categories && $scope.message.categories.length > 0) {
                         TemplateService
-                            .executeCategoryTemplates($scope.message, $scope.templateParams)
+                            .executeCategoryTemplates($scope.message, $scope.templateData)
                             .success(function (message) {
                                 LangService.sortMessageDescs(message);
                                 $scope.message = message;
