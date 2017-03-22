@@ -116,6 +116,57 @@
                         <div class="col-sm-12">{{template.descs[0].name}}</div>
                     </div>
 
+
+                    <!-- ********************* -->
+                    <!-- ** Event dates     ** -->
+                    <!-- ********************* -->
+                    <template-dialog-param-field field-title-key="msg.field.event_dates" ng-if="showStdTemplateField['event_dates']">
+
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <table class="table table-condensed editor-date-interval-table">
+                                    <tr>
+                                        <th>All-day</th>
+                                        <th>Start</th>
+                                        <th>End</th>
+                                        <th>
+                                            <div class="pull-right">
+                                                <button ng-click="addPartEventDate(message.parts[templateIndex])" class="btn btn-default btn-xs">
+                                                    <span class="glyphicon glyphicon-plus"></span> Add
+                                                </button>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                    <tr ng-repeat="di in message.parts[templateIndex].eventDates" class="evt-date" >
+                                        <td width="60" style="padding-top: 10px" align="center">
+                                            <input type="checkbox" ng-model="di.allDay">
+                                        </td>
+                                        <td width="220">
+                                            <date-time-picker ng-model="di.fromDate" placeholder="From date"
+                                                              time="di.allDay ? '00:00:00' : undefined" format="di.allDay ? 'll' : 'lll z'"></date-time-picker>
+                                        </td>
+                                        <td width="220">
+                                            <date-time-picker ng-model="di.toDate" placeholder="To date"
+                                                              time="di.allDay ? '23:59:59' : undefined" format="di.allDay ? 'll' : 'lll z'"></date-time-picker>
+                                        </td>
+                                        <td width="*" style="padding-top: 12px" nowrap>
+                                            <a href ng-click="deletePartEventDate(message.parts[templateIndex], di);"
+                                               title="Delete Interval"><span class="glyphicon glyphicon-trash"></span></a>
+                                            &nbsp;
+                                            <a href ng-click="copyPartEventDate(message.parts[templateIndex], di, 0);"
+                                               title="Duplicate Interval"><span class="glyphicon glyphicon-duplicate"></span></a>
+                                            &nbsp;
+                                            <a href ng-click="copyPartEventDate(message.parts[templateIndex], di, 1);"
+                                               title="Duplicate Interval + 1 day"><span class="glyphicon glyphicon-duplicate">+</span></a>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                    </template-dialog-param-field>
+
+
                     <!-- ********************* -->
                     <!-- ** Positions       ** -->
                     <!-- ********************* -->

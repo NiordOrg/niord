@@ -330,6 +330,9 @@ angular.module('niord.template')
                     if (!part.geometry) {
                         part.geometry = { type: 'FeatureCollection', features: [] }
                     }
+                    if (!part.eventDates) {
+                        part.eventDates = [];
+                    }
                 });
 
 
@@ -401,6 +404,39 @@ angular.module('niord.template')
                             $scope.message.areas = areas;
                         });
                 }
+            };
+
+
+            /** Adds a new date interval to the list of message date intervals */
+            $scope.addPartEventDate = function (part) {
+                part.eventDates.push({ allDay: true, fromDate: undefined, toDate: undefined });
+                $timeout(function () {
+                    $('.evt-date:last').find('input:first').focus();
+                }, 100)
+
+            };
+
+
+            /** Deletes the given date interval from the list of message date intervals **/
+            $scope.deletePartEventDate = function (part, dateInterval) {
+                if ($.inArray(dateInterval, part.eventDates) > -1) {
+                    part.eventDates.splice( $.inArray(dateInterval, part.eventDates), 1 );
+                }
+            };
+
+
+            /** Adds a copy of the given date interval to the list with the given date offset */
+            $scope.copyPartEventDate = function (part, dateInterval, offset) {
+                var di = angular.copy(dateInterval);
+                if (offset && offset > 0) {
+                    if (di.fromDate) {
+                        di.fromDate = moment(di.fromDate).add(1, "days").valueOf();
+                    }
+                    if (di.toDate) {
+                        di.toDate = moment(di.toDate).add(1, "days").valueOf();
+                    }
+                }
+                part.eventDates.push(di);
             };
 
 
