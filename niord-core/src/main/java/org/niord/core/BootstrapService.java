@@ -71,5 +71,17 @@ public class BootstrapService extends BaseService {
         } catch (Exception e) {
             log.error("Error executing SQL ", e);
         }
+
+        try {
+
+            int updates = em.createNativeQuery(
+                    "update Message m set m.type = 'COASTAL_WARNING' where m.type = 'SUBAREA_WARNING'")
+                .executeUpdate();
+            em.flush();
+            log.info("*** UPDATED TYPE OF " + updates + " MESSAGES");
+
+        } catch (Exception e) {
+            log.error("Error executing SQL ", e);
+        }
     }
 }
