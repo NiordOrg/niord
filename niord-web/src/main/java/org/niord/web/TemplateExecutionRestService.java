@@ -97,7 +97,7 @@ public class TemplateExecutionRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<ParamTypeVo> getParamTypes(@QueryParam("lang") @DefaultValue("en") String lang) {
+    public List<ParamTypeVo> getParamTypes(@QueryParam("lang") String lang) {
 
         DataFilter filter = DataFilter.get().lang(lang);
 

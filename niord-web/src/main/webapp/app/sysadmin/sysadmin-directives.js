@@ -196,11 +196,11 @@ angular.module('niord.common')
                     // Look up the list of parameter types
                     TemplateService.templateParameterTypes()
                         .success(function (paramTypes) {
-                            scope.paramTypes = paramTypes;
-                            scope.editableParamTypes = $.grep(paramTypes, function (paramType) {
+                            scope.paramTypes = TemplateService.sortParameterTypes(paramTypes);
+                            scope.editableParamTypes = $.grep(scope.paramTypes, function (paramType) {
                                 return scope.types.indexOf(paramType.type) != -1;
                             });
-                            angular.forEach(paramTypes, function (paramType) {
+                            angular.forEach(scope.paramTypes, function (paramType) {
                                 scope.paramTypeMap[paramType.name] = paramType;
                             })
                         });

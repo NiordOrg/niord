@@ -26,8 +26,8 @@ angular.module('niord.template')
     /**
      * The template service is used for querying executable category templates.
      */
-    .service('TemplateService', ['$rootScope', '$http', '$uibModal',
-        function ($rootScope, $http, $uibModal) {
+    .service('TemplateService', ['$rootScope', '$http', '$uibModal', 'LangService',
+        function ($rootScope, $http, $uibModal, LangService) {
             'use strict';
 
 
@@ -51,8 +51,27 @@ angular.module('niord.template')
 
 
             /** Returns the template parameter types **/
-            this.templateParameterTypes = function() {
-                return $http.get('/rest/templates/parameter-types');
+            this.templateParameterTypes = function(lang) {
+                var params = (lang !== undefined) ? '?lang=' + lang : '';
+                return $http.get('/rest/templates/parameter-types' + params);
+            };
+
+
+            /** Sorts all parameter types incl. nested values according to the current language **/
+            this.sortParameterTypes = function (paramTypes) {
+                angular.forEach(paramTypes, function (paramType) {
+                    LangService.sortDescs(paramType);
+                    if (paramType.type == 'LIST' && paramType.values) {
+                        angular.forEach(paramType.values, function (val) {
+                            LangService.sortDescs(val);
+                        })
+                    } else if (paramType.type == 'COMPOSITE' && paramType.templateParams) {
+                        angular.forEach(paramType.templateParams, function (param) {
+                            LangService.sortDescs(param);
+                        })
+                    }
+                })
+                return paramTypes;
             };
 
 

@@ -280,10 +280,10 @@ angular.module('niord.template')
             // Look up the list of parameter types
             $scope.paramTypes = [];
             $scope.paramTypeMap = {};
-            TemplateService.templateParameterTypes()
+            TemplateService.templateParameterTypes($rootScope.language)
                 .success(function (paramTypes) {
                     $scope.paramTypes = paramTypes;
-                    angular.forEach(paramTypes, function (paramType) {
+                    angular.forEach($scope.paramTypes, function (paramType) {
                         $scope.paramTypeMap[paramType.name] = paramType;
                     })
                 });
