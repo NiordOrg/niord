@@ -42,20 +42,28 @@
                 <label class="btn btn-default btn-sm" ng-model="state.type.mainType" uib-btn-radio="'NM'">NM</label>
             </div>
             <div class="btn-group" ng-if="state.type.mainType == 'NW' || supportsNw(true)">
-                <label class="btn btn-default btn-sm" ng-model="state.type.LOCAL_WARNING" uib-btn-checkbox>Local</label>
-                <label class="btn btn-default btn-sm" ng-model="state.type.COASTAL_WARNING" uib-btn-checkbox>Coastal</label>
-                <label class="btn btn-default btn-sm" ng-model="state.type.SUBAREA_WARNING" uib-btn-checkbox>Subarea</label>
-                <label class="btn btn-default btn-sm" ng-model="state.type.NAVAREA_WARNING" uib-btn-checkbox>Navarea</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.LOCAL_WARNING"
+                       uib-btn-checkbox translate>msg.type.LOCAL_WARNING</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.COASTAL_WARNING"
+                       uib-btn-checkbox translate>msg.type.COASTAL_WARNING</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.SUBAREA_WARNING"
+                       uib-btn-checkbox translate>msg.type.SUBAREA_WARNING</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.NAVAREA_WARNING"
+                       uib-btn-checkbox translate>msg.type.NAVAREA_WARNING</label>
                 <span class="small-link">
                     <a href ng-click="updateTypeFilter('NW', true)" translate>msg.filter.all</a> /
                     <a href  ng-click="updateTypeFilter('NW', false)" translate>msg.filter.reset</a>
                 </span>
             </div>
             <div class="btn-group" ng-if="state.type.mainType == 'NM' || supportsNm(true)">
-                <label class="btn btn-default btn-sm" ng-model="state.type.TEMPORARY_NOTICE" uib-btn-checkbox>Temp.</label>
-                <label class="btn btn-default btn-sm" ng-model="state.type.PRELIMINARY_NOTICE" uib-btn-checkbox>Prelim.</label>
-                <label class="btn btn-default btn-sm" ng-model="state.type.PERMANENT_NOTICE" uib-btn-checkbox>Perm.</label>
-                <label class="btn btn-default btn-sm" ng-model="state.type.MISCELLANEOUS_NOTICE" uib-btn-checkbox>Misc.</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.TEMPORARY_NOTICE"
+                       uib-btn-checkbox translate>msg.type.TEMPORARY_NOTICE</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.PRELIMINARY_NOTICE"
+                       uib-btn-checkbox translate>msg.type.PRELIMINARY_NOTICE</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.PERMANENT_NOTICE"
+                       uib-btn-checkbox translate>msg.type.PERMANENT_NOTICE</label>
+                <label class="btn btn-default btn-sm" ng-model="state.type.MISCELLANEOUS_NOTICE"
+                       uib-btn-checkbox translate>msg.type.MISCELLANEOUS_NOTICE</label>
                 <span class="small-link">
                     <a href ng-click="updateTypeFilter('NM', true)" translate>msg.filter.all</a> /
                     <a href  ng-click="updateTypeFilter('NM', false)" translate>msg.filter.reset</a>

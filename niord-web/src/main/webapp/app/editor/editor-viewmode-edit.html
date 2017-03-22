@@ -98,7 +98,7 @@
                     <span ng-if="message.type">{{'msg.type.' + message.type | translate}} {{message.mainType}}</span>
                 </editor-field-value-viewer>
 
-                <editor-field-value-editor value-class="col-sm-12 col-md-6 col-lg-4">
+                <editor-field-value-editor value-class="col-sm-12 col-md-8 col-lg-6">
                     <div class="btn-group" ng-if="message.mainType == 'NW' || supportsNw(true)">
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'LOCAL_WARNING'"
                                tabindex="201" translate>msg.type.LOCAL_WARNING</button>
