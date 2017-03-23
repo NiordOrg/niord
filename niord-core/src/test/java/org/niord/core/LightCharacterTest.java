@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * Unit tests for the light character parser service
  */
@@ -46,6 +48,14 @@ public class LightCharacterTest  {
         );
 
     LightCharacterParser parser = LightCharacterParser.getInstance();
+
+
+    @Test
+    public void callSignTest() throws Exception {
+        assertEquals(
+                "Oscar Uniform X-ray Romeo Two",
+                LightCharacterParser.getInstance().getTelephonyCode("OUXR2"));
+    }
 
 
     @Test
