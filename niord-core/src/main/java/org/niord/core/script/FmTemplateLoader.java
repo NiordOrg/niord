@@ -105,7 +105,7 @@ public class FmTemplateLoader implements TemplateLoader {
 
     /** {@inheritDoc} **/
     @Override
-    public Reader getReader(Object temlplate, String encoding) {
-        return new StringReader(((ScriptResource)temlplate).getContent());
+    public Reader getReader(Object template, String encoding) {
+        return new StringReader(((ScriptResource)template).getContent());
     }
 }
