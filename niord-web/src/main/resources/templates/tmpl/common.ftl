@@ -7,6 +7,8 @@
 <#assign trailingDot = "org.niord.core.script.directive.TrailingDotDirective"?new()>
 <#assign debug = 'org.niord.core.script.directive.DebugDirective'?new()>
 <#assign navtexDateFormat = 'org.niord.core.script.directive.NavtexDateFormatDirective'?new()>
+<#assign lightCharacterFormat = 'org.niord.core.script.directive.LightCharacterDirective'?new()>
+<#assign callSignFormat = 'org.niord.core.script.directive.CallSignDirective'?new()>
 <#assign posFormat = 'dec-3'> <#-- 3 decimals in message details -->
 
 <!-- ***************************************  -->
@@ -88,9 +90,9 @@
     <#list languages as lang>
         <#assign desc=descForLang(template, lang)!>
         <#if desc?? && desc.name?has_content>
-        <field-template field="message.part('DETAILS').getDesc('${lang}').subject" format="text">
-        ${desc.name}
-        </field-template>
+            <field-template field="message.part('DETAILS').getDesc('${lang}').subject" format="text">
+                ${desc.name}
+            </field-template>
         </#if>
     </#list>
 </#macro>
@@ -148,16 +150,16 @@
     <#if params?has_content && params?has_content && params.aton_type?has_content>
         <#assign desc=descForLang(params.aton_type, lang)!>
         <#if desc?? && format == 'long'>
-        ${desc.longValue?cap_first}
+            ${desc.longValue?cap_first}
         <#elseif desc??>
-        ${desc.value?cap_first}
+            ${desc.value?cap_first}
         <#else>
-        ${defaultName}
+            ${defaultName}
         </#if>
     <#else>
-    ${defaultName}
+        ${defaultName}
     </#if>
     <#if params?has_content && params?has_content && params.aton_name?has_content>
-    ${params.aton_name}
+        ${params.aton_name}
     </#if>
 </#macro>
