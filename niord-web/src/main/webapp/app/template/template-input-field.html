@@ -27,6 +27,14 @@
                    ng-remote-validate="/rest/templates/validate-light-character"
                    ng-remote-method="POST">
 
+            <input ng-switch-when="call_sign"
+                   type="text"
+                   class="form-control input-sm"
+                   style="text-transform:uppercase"
+                   ng-model="templateData[index][templateParam.paramId]"
+                   ng-remote-validate="/rest/templates/validate-call-sign"
+                   ng-remote-method="POST">
+
         </div>
     </div>
 

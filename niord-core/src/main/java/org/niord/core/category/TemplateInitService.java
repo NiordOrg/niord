@@ -33,7 +33,13 @@ import java.util.Arrays;
 @SuppressWarnings("unused")
 public class TemplateInitService extends BaseService {
 
-    public static final String[] STANDARD_PARAM_TYPES = { "text", "number", "boolean", "light_character" };
+    public static final String[] STANDARD_PARAM_TYPES = {
+            "text",             // Generic text
+            "number",           // Numbers
+            "boolean",          // Booleans
+            "light_character",  // Validated light character field (e.g. "Fl(2+1) R 10s"
+            "call_sign"         // Validated vessel call sign
+    };
 
     @Inject
     Logger log;

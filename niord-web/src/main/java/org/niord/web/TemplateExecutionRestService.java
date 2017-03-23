@@ -273,14 +273,14 @@ public class TemplateExecutionRestService extends AbstractBatchableRestService {
      */
 
 
-    /** Validate the input light character */
+    /** Validate the light character */
     @POST
     @Path("/validate-light-character")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public NgRemoveValidateResponse applyTemplate(NgRemoveValidateParam param) throws Exception {
+    public NgRemoveValidateResponse validateLightCharacter(NgRemoveValidateParam param) throws Exception {
         NgRemoveValidateResponse response = new NgRemoveValidateResponse();
         response.setValue(param.getValue());
         try {
@@ -289,6 +289,21 @@ public class TemplateExecutionRestService extends AbstractBatchableRestService {
         } catch (Exception e) {
             response.setIsValid(false);
         }
+        return response;
+    }
+
+
+    /** Validate the call sign */
+    @POST
+    @Path("/validate-call-sign")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public NgRemoveValidateResponse validateCallSign(NgRemoveValidateParam param) throws Exception {
+        NgRemoveValidateResponse response = new NgRemoveValidateResponse();
+        response.setValue(param.getValue().toUpperCase());
+        response.setIsValid(LightCharacterParser.getInstance().telephonyCodeValid(param.getValue()));
         return response;
     }
 

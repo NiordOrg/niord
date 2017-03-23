@@ -22,11 +22,13 @@ import org.niord.core.aton.LightCharacterModel.LightGroup;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Parses a light characteristic string into a LightModel and
  * formats the LightModel into a human readable text for a specific language.
  */
+@SuppressWarnings("unused")
 public class LightCharacterParser {
 
     public static String LIGHT_PHASES = "FFl|LFl|Fl|F|IVQ|VQ|IQ|IUQ|UQ|Q|Iso|Oc|Al|Mo|Gr";
@@ -134,7 +136,8 @@ public class LightCharacterParser {
                 // Group
                 if (StringUtils.isNotBlank(groupSpec)) {
                     if ("Mo".equalsIgnoreCase(phaseSpec)) {
-                        lightGroup.setMorseCode(groupSpec);
+                        String morseCode = getTelephonyCode(groupSpec);
+                        lightGroup.setMorseCode(morseCode);
                     } else {
                         lightGroup.setGrouped(true);
                         Arrays.stream(groupSpec.split("\\+"))
@@ -185,6 +188,79 @@ public class LightCharacterParser {
         String result = text.substring(0, matcher.start())
                 + text.substring(matcher.end());
         return result.trim();
+    }
+
+
+    /**
+     * Returns the telephony code for the given character
+     * @param c the character. Valid intervals: a-z and 0-9
+     * @return the telephony code or a blank string if invalid
+     */
+    public String getTelephonyCode(char c) {
+        switch (Character.toUpperCase(c)) {
+            case 'A': return "Alpha";
+            case 'B': return "Bravo";
+            case 'C': return "Charlie";
+            case 'D': return "Delta";
+            case 'E': return "Echo";
+            case 'F': return "Foxtrot";
+            case 'G': return "Golf";
+            case 'H': return "Hotel";
+            case 'I': return "India";
+            case 'J': return "Juliet";
+            case 'K': return "Kilo";
+            case 'L': return "Lima";
+            case 'M': return "Mike";
+            case 'N': return "November";
+            case 'O': return "Oscar";
+            case 'P': return "Papa";
+            case 'Q': return "Quebec";
+            case 'R': return "Romeo";
+            case 'S': return "Sierra";
+            case 'T': return "Tango";
+            case 'U': return "Uniform";
+            case 'V': return "Victor";
+            case 'W': return "Whiskey";
+            case 'X': return "X-ray";
+            case 'Y': return "Yankee";
+            case 'Z': return "Zulu";
+            case '1': return "One";
+            case '2': return "Two";
+            case '3': return "Three";
+            case '4': return "Four";
+            case '5': return "Five";
+            case '6': return "Six";
+            case '7': return "Seven";
+            case '8': return "Eight";
+            case '9': return "Nine";
+            case '0': return "Zero";
+        }
+        return "";
+    }
+
+
+    /**
+     * Returns the telephony code for the given string
+     * @param text the string to return a telephony code for. Valid intervals: a-z and 0-9
+     * @return the telephony code or a blank string if invalid
+     */
+    public String getTelephonyCode(String text) {
+        return text.chars()
+                .mapToObj(c -> (char)c)
+                .map(this::getTelephonyCode)
+                .collect(Collectors.joining(" "));
+    }
+
+
+    /**
+     * Returns if the telephony code for the given string is valid
+     * @param text the string to validate. Valid intervals: a-z and 0-9
+     * @return if the telephony code for the given string is valid
+     */
+    public boolean telephonyCodeValid(String text) {
+        return text.chars()
+                .mapToObj(c -> (char)c)
+                .allMatch(c -> StringUtils.isNotBlank(getTelephonyCode(c)));
     }
 
 }
