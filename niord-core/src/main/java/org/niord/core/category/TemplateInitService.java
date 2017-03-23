@@ -33,7 +33,7 @@ import java.util.Arrays;
 @SuppressWarnings("unused")
 public class TemplateInitService extends BaseService {
 
-    public static final String[] STANDARD_PARAM_TYPES = { "text", "number", "boolean" };
+    public static final String[] STANDARD_PARAM_TYPES = { "text", "number", "boolean", "light_character" };
 
     @Inject
     Logger log;

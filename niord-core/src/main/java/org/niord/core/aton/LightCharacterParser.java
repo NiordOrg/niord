@@ -155,21 +155,36 @@ public class LightCharacterParser {
         Matcher m = ELEVATION.matcher(lc);
         if (m.find()) {
             lightModel.setElevation(Integer.valueOf(m.group(1)));
+            lc = removeMatch(lc, m);
         }
 
         // Extract period
         m = PERIOD.matcher(lc);
         if (m.find()) {
             lightModel.setPeriod(Integer.valueOf(m.group(1)));
+            lc = removeMatch(lc, m);
         }
 
         // Extract range
         m = RANGE.matcher(lc);
         if (m.find()) {
             lightModel.setRange(Integer.valueOf(m.group(1)));
+            lc = removeMatch(lc, m);
+        }
+
+        if (StringUtils.isNotBlank(lc)) {
+            throw new Exception("Invalid light character format: " + lightCharacter + ". Unknown part " + lc);
         }
 
         return lightModel;
+    }
+
+
+    /** Removes a regex match from the string **/
+    private String removeMatch(String text, Matcher matcher) {
+        String result = text.substring(0, matcher.start())
+                + text.substring(matcher.end());
+        return result.trim();
     }
 
 }

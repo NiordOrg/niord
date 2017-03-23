@@ -19,6 +19,14 @@
                    type="checkbox"
                    class="form-control input-sm"
                    ng-model="templateData[index][templateParam.paramId]">
+
+            <input ng-switch-when="light_character"
+                   type="text"
+                   class="form-control input-sm"
+                   ng-model="templateData[index][templateParam.paramId]"
+                   ng-remote-validate="/rest/templates/validate-light-character"
+                   ng-remote-method="POST">
+
         </div>
     </div>
 

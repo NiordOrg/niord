@@ -33,7 +33,7 @@ angular.module('niord.home', []);
 
 var app = angular.module('niord.admin', [
         'ngSanitize', 'ui.bootstrap', 'ui.select', 'ui.router', 'ui.tinymce', 'ui.mask', 'ui.ace',
-        'pascalprecht.translate', 'angular-growl', 'ng-sortable', 'angularFileUpload','jlareau.bowser',
+        'pascalprecht.translate', 'angular-growl', 'ng-sortable', 'angularFileUpload','jlareau.bowser', 'remoteValidation',
         'niord.common', 'niord.auth', 'niord.admin', 'niord.atons', 'niord.messages', 'niord.template',
         'niord.conf', 'niord.map', 'niord.editor', 'niord.schedule', 'niord.home' ])
 

@@ -19,6 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.aton.LightCharacterParser;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.category.Category;
 import org.niord.core.category.CategoryService;
@@ -266,6 +267,33 @@ public class TemplateExecutionRestService extends AbstractBatchableRestService {
 
 
     /**
+     * *******************************************
+     * Field Validation
+     * *******************************************
+     */
+
+
+    /** Validate the input light character */
+    @POST
+    @Path("/validate-light-character")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public NgRemoveValidateResponse applyTemplate(NgRemoveValidateParam param) throws Exception {
+        NgRemoveValidateResponse response = new NgRemoveValidateResponse();
+        response.setValue(param.getValue());
+        try {
+            LightCharacterParser.getInstance().parse(param.getValue());
+            response.setIsValid(true);
+        } catch (Exception e) {
+            response.setIsValid(false);
+        }
+        return response;
+    }
+
+
+    /**
      * ******************
      * Helper classes
      * *******************
@@ -322,6 +350,43 @@ public class TemplateExecutionRestService extends AbstractBatchableRestService {
 
         public void setTemplateParams(List templateParams) {
             this.templateParams = templateParams;
+        }
+    }
+
+
+    /** Parameter class used by the generic ng-remove-validate directive */
+    public static class NgRemoveValidateParam implements IJsonSerializable {
+        String value;
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
+    }
+
+
+    /** Response class used by the generic ng-remove-validate directive */
+    public static class NgRemoveValidateResponse implements IJsonSerializable {
+        String value;
+        boolean valid;
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
+
+        public boolean getIsValid() {
+            return valid;
+        }
+
+        public void setIsValid(boolean valid) {
+            this.valid = valid;
         }
     }
 }
