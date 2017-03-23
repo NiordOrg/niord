@@ -789,7 +789,7 @@ public class MessageService extends BaseService {
 
         Set<AdjustmentType> typeSet = new HashSet<>();
         if (types != null) {
-            Arrays.stream(types).forEach(typeSet::add);
+            typeSet.addAll(Arrays.asList(types));
         }
 
         Message msg = new Message(message);
