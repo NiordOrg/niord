@@ -16,44 +16,44 @@
 
 package org.niord.core.promulgation;
 
-import org.niord.core.promulgation.vo.RadioMessagePromulgationVo;
+import org.niord.core.promulgation.vo.AudioMessagePromulgationVo;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.Lob;
 
 /**
- * Defines the message promulgation entity associated with radio (or "audio") mailing list promulgation.
+ * Defines the message promulgation entity associated with audio mailing list promulgation.
  *
- * Radio promulgations are verbose textual versions of the messages suitable for being read up on the radio
+ * Audio promulgations are verbose textual versions of the messages suitable for being read up on the radio
  * and sent to the radio station via e-mail.
  */
 @Entity
-@DiscriminatorValue(RadioMessagePromulgation.SERVICE_ID)
+@DiscriminatorValue(AudioMessagePromulgation.SERVICE_ID)
 @SuppressWarnings("unused")
-public class RadioMessagePromulgation extends BaseMessagePromulgation<RadioMessagePromulgationVo> implements IMailPromulgation {
+public class AudioMessagePromulgation extends BaseMessagePromulgation<AudioMessagePromulgationVo> implements IMailPromulgation {
 
-    public static final String SERVICE_ID = "radio";
+    public static final String SERVICE_ID = "audio";
 
     @Lob
     String text;
 
     /** Constructor **/
-    public RadioMessagePromulgation() {
+    public AudioMessagePromulgation() {
         super();
     }
 
 
     /** Constructor **/
-    public RadioMessagePromulgation(RadioMessagePromulgationVo promulgation) {
+    public AudioMessagePromulgation(AudioMessagePromulgationVo promulgation) {
         super(promulgation);
         this.text = promulgation.getText();
     }
 
 
     /** Returns a value object for this entity */
-    public RadioMessagePromulgationVo toVo() {
-        RadioMessagePromulgationVo data = toVo(new RadioMessagePromulgationVo());
+    public AudioMessagePromulgationVo toVo() {
+        AudioMessagePromulgationVo data = toVo(new AudioMessagePromulgationVo());
         data.setText(text);
         return data;
     }
@@ -62,9 +62,9 @@ public class RadioMessagePromulgation extends BaseMessagePromulgation<RadioMessa
     /** Updates this promulgation from another promulgation **/
     @Override
     public void update(BaseMessagePromulgation promulgation) {
-        if (promulgation instanceof RadioMessagePromulgation) {
+        if (promulgation instanceof AudioMessagePromulgation) {
             super.update(promulgation);
-            RadioMessagePromulgation p = (RadioMessagePromulgation)promulgation;
+            AudioMessagePromulgation p = (AudioMessagePromulgation)promulgation;
             p.setText(text);
         }
     }

@@ -19,7 +19,7 @@ package org.niord.core.promulgation;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
-import org.niord.core.promulgation.vo.RadioMessagePromulgationVo;
+import org.niord.core.promulgation.vo.AudioMessagePromulgationVo;
 import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MessagePartType;
@@ -30,16 +30,16 @@ import javax.ejb.Singleton;
 import javax.ejb.Startup;
 
 /**
- * Manages radio promulgations.
+ * Manages audio promulgations.
  *
- * Radio promulgations are verbose textual versions of the messages suitable for being read up on the radio
+ * Audio promulgations are verbose textual versions of the messages suitable for being read up on the radio
  * and sent to the radio station via e-mail.
  */
 @Singleton
 @Startup
 @Lock(LockType.READ)
 @SuppressWarnings("unused")
-public class RadioPromulgationService extends BasePromulgationService {
+public class AudioPromulgationService extends BasePromulgationService {
 
     /***************************************/
     /** Promulgation Service Handling     **/
@@ -48,14 +48,14 @@ public class RadioPromulgationService extends BasePromulgationService {
     /** {@inheritDoc} */
     @Override
     public String getServiceId() {
-        return RadioMessagePromulgation.SERVICE_ID;
+        return AudioMessagePromulgation.SERVICE_ID;
     }
 
 
     /** {@inheritDoc} */
     @Override
     public String getServiceName() {
-        return "Radio mailing list";
+        return "Audio mailing list";
     }
 
 
@@ -67,10 +67,10 @@ public class RadioPromulgationService extends BasePromulgationService {
     /** {@inheritDoc} */
     @Override
     public void onLoadSystemMessage(SystemMessageVo message, PromulgationType type) throws PromulgationException {
-        RadioMessagePromulgationVo radio = message.promulgation(RadioMessagePromulgationVo.class, type.getTypeId());
-        if (radio == null) {
-            radio = new RadioMessagePromulgationVo(type.toVo(DataFilter.get()));
-            message.checkCreatePromulgations().add(radio);
+        AudioMessagePromulgationVo audio = message.promulgation(AudioMessagePromulgationVo.class, type.getTypeId());
+        if (audio == null) {
+            audio = new AudioMessagePromulgationVo(type.toVo(DataFilter.get()));
+            message.checkCreatePromulgations().add(audio);
         }
     }
 
@@ -78,7 +78,7 @@ public class RadioPromulgationService extends BasePromulgationService {
     /** {@inheritDoc} */
     @Override
     public BaseMessagePromulgationVo generateMessagePromulgation(SystemMessageVo message, PromulgationType type) throws PromulgationException {
-        RadioMessagePromulgationVo radio = new RadioMessagePromulgationVo();
+        AudioMessagePromulgationVo audio = new AudioMessagePromulgationVo();
 
         String language = getLanguage(type);
         StringBuilder text = new StringBuilder();
@@ -93,22 +93,22 @@ public class RadioPromulgationService extends BasePromulgationService {
         }
 
         if (text.length() > 0) {
-            radio.setPromulgate(true);
-            radio.setText(text.toString());
+            audio.setPromulgate(true);
+            audio.setText(text.toString());
         } else {
-            radio.setPromulgate(false);
+            audio.setPromulgate(false);
         }
 
-        return radio;
+        return audio;
     }
 
 
     /** {@inheritDoc} */
     @Override
     public void resetMessagePromulgation(SystemMessageVo message, PromulgationType type) throws PromulgationException {
-        RadioMessagePromulgationVo radio = message.promulgation(RadioMessagePromulgationVo.class, type.getTypeId());
-        if (radio != null) {
-            radio.reset();
+        AudioMessagePromulgationVo audio = message.promulgation(AudioMessagePromulgationVo.class, type.getTypeId());
+        if (audio != null) {
+            audio.reset();
         }
     }
 }
