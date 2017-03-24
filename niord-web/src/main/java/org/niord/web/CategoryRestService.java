@@ -273,6 +273,27 @@ public class CategoryRestService extends AbstractBatchableRestService {
     }
 
 
+    /** Changes sort order of an category in the category tree by moving it up or down among siblings */
+    @PUT
+    @Path("/change-sort-order")
+    @Consumes("application/json;charset=UTF-8")
+    @RolesAllowed(Roles.SYSADMIN)
+    public boolean changeSortOrder(ChangeSortOrderVo changeSortOrderVo) throws Exception {
+        log.info("Changing sort-order of category " + changeSortOrderVo.getCategoryId()
+                + " moving " + (changeSortOrderVo.isMoveUp() ? "up" : "down"));
+        return categoryService.changeSortOrder(changeSortOrderVo.getCategoryId(), changeSortOrderVo.isMoveUp());
+    }
+
+
+    /** Re-computes the sort order of the category tree */
+    @PUT
+    @Path("/recompute-tree-sort-order")
+    @RolesAllowed(Roles.SYSADMIN)
+    public boolean recomputeTreeSortOrder() {
+        return categoryService.recomputeTreeSortOrder();
+    }
+
+
     /**
      * Imports an uploaded Categories json file
      *
@@ -317,5 +338,28 @@ public class CategoryRestService extends AbstractBatchableRestService {
         }
     }
 
+
+    /** Encapsulates the parameters used for moving a category up or down among sibling categories */
+    @SuppressWarnings("unused")
+    public static class ChangeSortOrderVo implements IJsonSerializable {
+        Integer categoryId;
+        boolean moveUp;
+
+        public Integer getCategoryId() {
+            return categoryId;
+        }
+
+        public void setCategoryId(Integer categoryId) {
+            this.categoryId = categoryId;
+        }
+
+        public boolean isMoveUp() {
+            return moveUp;
+        }
+
+        public void setMoveUp(boolean moveUp) {
+            this.moveUp = moveUp;
+        }
+    }
 }
 

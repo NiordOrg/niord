@@ -17,7 +17,7 @@ package org.niord.core.category;
 
 import org.niord.core.category.vo.SystemCategoryVo;
 import org.niord.core.domain.Domain;
-import org.niord.core.model.VersionedEntity;
+import org.niord.core.model.TreeBaseEntity;
 import org.niord.core.script.ScriptResource;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
@@ -25,13 +25,11 @@ import org.niord.model.message.CategoryVo;
 
 import javax.persistence.Cacheable;
 import javax.persistence.CascadeType;
-import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
@@ -54,16 +52,18 @@ import java.util.stream.Collectors;
         @NamedQuery(name="Category.findByLegacyId",
                 query = "select c FROM Category c where c.legacyId = :legacyId"),
         @NamedQuery(name  = "Category.findRootCategories",
-                query = "select distinct c from Category c left join fetch c.children where c.parent is null"),
+                query = "select distinct c from Category c left join fetch c.children where c.parent is null order by c.siblingSortOrder"),
         @NamedQuery(name  = "Category.findCategoriesWithDescs",
-                query = "select distinct c from Category c left join fetch c.descs"),
+                query = "select distinct c from Category c left join fetch c.descs  order by c.parent, c.siblingSortOrder"),
         @NamedQuery(name  = "Category.findCategoriesWithIds",
                 query = "select distinct c from Category c left join fetch c.descs where c.id in (:ids)"),
         @NamedQuery(name  = "Category.findByMrn",
                 query = "select c from Category c left join fetch c.descs where c.mrn = :mrn"),
+        @NamedQuery(name  = "Category.findLastUpdated",
+                query = "select max(c.updated) from Category c")
 })
 @SuppressWarnings("unused")
-public class Category extends VersionedEntity<Integer> implements ILocalizable<CategoryDesc> {
+public class Category extends TreeBaseEntity<Category> implements ILocalizable<CategoryDesc> {
 
     @Enumerated(EnumType.STRING)
     CategoryType type = CategoryType.CATEGORY;
@@ -72,19 +72,8 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
 
     String mrn;
 
-    boolean active = true;
-
-    @ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE, CascadeType.DETACH })
-    private Category parent;
-
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
-    private List<Category> children = new ArrayList<>();
-
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
     List<CategoryDesc> descs = new ArrayList<>();
-
-    @Column(length = 256)
-    String lineage;
 
     @ElementCollection
     List<String> editorFields = new ArrayList<>();
@@ -129,6 +118,13 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     }
 
 
+    /** {@inheritDoc} **/
+    @Override
+    public Category asEntity() {
+        return this;
+    }
+
+
     /** Updates this category from the given category */
     public void updateCategory(CategoryVo category, DataFilter filter) {
 
@@ -151,6 +147,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
             SystemCategoryVo sysCategory = (SystemCategoryVo)category;
 
             this.type = sysCategory.getType();
+            this.siblingSortOrder = sysCategory.getSiblingSortOrder() == null ? 0 : sysCategory.getSiblingSortOrder();
             if (compFilter.includeChildren() && sysCategory.getChildren() != null) {
                 sysCategory.getChildren().stream()
                         .map(a -> new Category(a, filter))
@@ -209,6 +206,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
             SystemCategoryVo sysCategory = (SystemCategoryVo)category;
 
             sysCategory.setType(type);
+            sysCategory.setSiblingSortOrder(siblingSortOrder);
 
             if (compFilter.includeChildren()) {
                 children.forEach(child -> sysCategory.checkCreateChildren().add(child.toVo(SystemCategoryVo.class, compFilter)));
@@ -247,6 +245,7 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     @Transient
     public boolean hasChanged(Category template) {
         return !Objects.equals(type, template.getType()) ||
+                !Objects.equals(siblingSortOrder, template.getSiblingSortOrder()) ||
                 !Objects.equals(mrn, template.getMrn()) ||
                 !Objects.equals(active, template.isActive()) ||
                 !Objects.equals(editorFields, template.getEditorFields()) ||
@@ -297,77 +296,6 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     }
 
 
-    /**
-     * Adds a child category, and ensures that all references are properly updated
-     *
-     * @param category the category to add
-     */
-    public void addChild(Category category) {
-        children.add(category);
-        category.setParent(this);
-    }
-
-
-    /**
-     * Update the lineage to have the format "/root-id/.../parent-id/id"
-     * @return if the lineage was updated
-     */
-    public boolean updateLineage() {
-        String oldLineage = lineage;
-        lineage = getParent() == null
-                ? "/" + id + "/"
-                : getParent().getLineage() + id + "/";
-        return !lineage.equals(oldLineage);
-    }
-
-
-    /**
-     * If the category is active, ensure that parent categories are active.
-     * If the category is inactive, ensure that child categories are inactive.
-     */
-    @SuppressWarnings("all")
-    public void updateActiveFlag() {
-        if (active) {
-            // Ensure that parent categories are active
-            if (getParent() != null && !getParent().isActive()) {
-                getParent().setActive(true);
-                getParent().updateActiveFlag();
-            }
-        } else {
-            // Ensure that child categories are inactive
-            getChildren().stream()
-                    .filter(Category::isActive)
-                    .forEach(child -> {
-                        child.setActive(false);
-                        child.updateActiveFlag();
-                    });
-        }
-    }
-
-    /**
-     * Checks if this is a root category
-     *
-     * @return if this is a root category
-     */
-    @Transient
-    public boolean isRootCategory() {
-        return parent == null;
-    }
-
-
-    /**
-     * Returns the lineage of this category as a list, ordered with this category first, and the root-most category last
-     * @return the lineage of this category
-     */
-    public List<Category> lineageAsList() {
-        List<Category> categories = new ArrayList<>();
-        for (Category c = this; c != null; c = c.getParent()) {
-            categories.add(c);
-        }
-        return categories;
-    }
-
-
     /*************************/
     /** Getters and Setters **/
     /*************************/
@@ -396,14 +324,6 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
         this.mrn = mrn;
     }
 
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
     @Override
     public List<CategoryDesc> getDescs() {
         return descs;
@@ -412,30 +332,6 @@ public class Category extends VersionedEntity<Integer> implements ILocalizable<C
     @Override
     public void setDescs(List<CategoryDesc> descs) {
         this.descs = descs;
-    }
-
-    public Category getParent() {
-        return parent;
-    }
-
-    public void setParent(Category parent) {
-        this.parent = parent;
-    }
-
-    public List<Category> getChildren() {
-        return children;
-    }
-
-    public void setChildren(List<Category> children) {
-        this.children = children;
-    }
-
-    public String getLineage() {
-        return lineage;
-    }
-
-    public void setLineage(String lineage) {
-        this.lineage = lineage;
     }
 
     public List<String> getEditorFields() {

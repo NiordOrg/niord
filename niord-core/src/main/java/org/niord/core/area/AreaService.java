@@ -25,8 +25,7 @@ import org.niord.core.domain.DomainService;
 import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.message.Message;
 import org.niord.core.model.BaseEntity;
-import org.niord.core.service.BaseService;
-import org.niord.core.settings.Setting;
+import org.niord.core.service.TreeBaseService;
 import org.niord.core.settings.SettingsService;
 import org.niord.model.search.PagedSearchParamsVo;
 import org.slf4j.Logger;
@@ -60,7 +59,7 @@ import static org.niord.core.area.AreaSearchParams.TREE_SORT_ORDER;
  */
 @Stateless
 @SuppressWarnings("unused")
-public class AreaService extends BaseService {
+public class AreaService extends TreeBaseService<Area> {
 
     public static final String SETTING_AREA_LAST_UPDATED = "areaLastUpdate";
 
@@ -205,18 +204,15 @@ public class AreaService extends BaseService {
      * @return the hierarchical list of root areas
      */
     public List<Area> getAreaTree() {
+        return getTree(Area.class, "Area.findAreasWithDescs");
+    }
 
-        // Get all areas along with their AreaDesc records
-        // Will ensure that all Area entities are cached in the entity manager before organizing the result
-        List<Area> areas = em
-                .createNamedQuery("Area.findAreasWithDescs", Area.class)
+
+    /** {@inheritDoc} **/
+    @Override
+    public List<Area> getRootEntities() {
+        return em.createNamedQuery("Area.findRootAreas", Area.class)
                 .getResultList();
-
-        // Extract the roots
-        return areas.stream()
-                .filter(Area::isRootArea)
-                .sorted()
-                .collect(Collectors.toList());
     }
 
 
@@ -335,32 +331,7 @@ public class AreaService extends BaseService {
      * @return if the area was moved
      */
     public boolean moveArea(Integer areaId, Integer parentId) {
-        Area area = getByPrimaryKey(Area.class, areaId);
-
-        if (area.getParent() != null && area.getParent().getId().equals(parentId)) {
-            return false;
-        }
-
-        if (area.getParent() != null) {
-            area.getParent().getChildren().remove(area);
-        }
-
-        if (parentId == null) {
-            area.setParent(null);
-        } else {
-            Area parent = getByPrimaryKey(Area.class, parentId);
-            parent.addChild(area);
-        }
-
-        // Save the entity
-        saveEntity(area);
-        em.flush();
-
-        // Update all lineages
-        updateLineages();
-        area.updateActiveFlag();
-
-        return true;
+        return moveEntity(Area.class, areaId, parentId);
     }
 
     /**
@@ -374,103 +345,7 @@ public class AreaService extends BaseService {
      * @return if the area was moved
      */
     public boolean changeSortOrder(Integer areaId, boolean moveUp) {
-        Area area = getByPrimaryKey(Area.class, areaId);
-        boolean updated = false;
-
-        List<Area> siblings;
-        if (area.getParent() != null) {
-            siblings = area.getParent().getChildren();
-        } else {
-            siblings = em
-                    .createNamedQuery("Area.findRootAreas", Area.class)
-                    .getResultList();
-        }
-        Collections.sort(siblings);
-
-        int index = siblings.indexOf(area);
-
-
-        // As a bootstrap issue, some sibling areas may have the same sibling sort order, e.g. 0.0.
-        // If that is the case, simply re-assign new values
-        if (siblings.stream().map(Area::getSiblingSortOrder).distinct().count() != siblings.size()) {
-            for (int x = 0; x < siblings.size(); x++) {
-                Area a = siblings.get(x);
-                a.setSiblingSortOrder(x);
-                saveEntity(a);
-            }
-        }
-
-
-        if (moveUp) {
-            if (index == 1) {
-                area.setSiblingSortOrder(siblings.get(0).getSiblingSortOrder() - 10.0);
-                updated = true;
-            } else if (index > 1) {
-                double so1 =  siblings.get(index - 1).getSiblingSortOrder();
-                double so2 =  siblings.get(index - 2).getSiblingSortOrder();
-                area.setSiblingSortOrder((so1 + so2) / 2.0);
-                updated = true;
-            }
-
-        } else {
-            if (index == siblings.size() - 2) {
-                area.setSiblingSortOrder(siblings.get(siblings.size() - 1).getSiblingSortOrder() + 10.0);
-                updated = true;
-            } else if (index < siblings.size() - 2) {
-                double so1 =  siblings.get(index + 1).getSiblingSortOrder();
-                double so2 =  siblings.get(index + 2).getSiblingSortOrder();
-                area.setSiblingSortOrder((so1 + so2) / 2.0);
-                updated = true;
-            }
-
-        }
-
-        if (updated) {
-            log.info("Updates sort order for area " + area.getId() + " to " + area.getSiblingSortOrder());
-            // Save the entity
-            saveEntity(area);
-        }
-
-        return updated;
-    }
-
-
-    /**
-     * Update lineages for all areas
-     */
-    public void updateLineages() {
-
-        log.info("Update area lineages");
-
-        // Get root areas
-        List<Area> roots = getAll(Area.class).stream()
-            .filter(Area::isRootArea)
-            .collect(Collectors.toList());
-
-        // Update each root subtree
-        List<Area> updated = new ArrayList<>();
-        roots.forEach(area -> updateLineages(area, updated));
-
-        // Persist the changes
-        updated.forEach(this::saveEntity);
-        em.flush();
-    }
-
-
-    /**
-     * Recursively updates the lineages of areas rooted at the given area
-     * @param area the area whose sub-tree should be updated
-     * @param areas the list of updated areas
-     * @return if the lineage was updated
-     */
-    private boolean updateLineages(Area area, List<Area> areas) {
-
-        boolean updated = area.updateLineage();
-        if (updated) {
-            areas.add(area);
-        }
-        area.getChildren().forEach(childArea -> updateLineages(childArea, areas));
-        return updated;
+        return changeSortOrder(Area.class, areaId, moveUp);
     }
 
 
@@ -602,6 +477,7 @@ public class AreaService extends BaseService {
      * Returns the last change date for areas or null if no area exists
      * @return the last change date for areas
      */
+    @Override
     public Date getLastUpdated() {
         try {
             return em.createNamedQuery("Area.findLastUpdated", Date.class).getSingleResult();
@@ -609,6 +485,7 @@ public class AreaService extends BaseService {
             return null;
         }
     }
+
 
     /**
      * Called periodically every hour to re-sort the area tree
@@ -620,45 +497,22 @@ public class AreaService extends BaseService {
      */
     @Schedule(persistent = false, second = "3", minute = "13", hour = "*")
     public boolean recomputeTreeSortOrder() {
-        long t0 = System.currentTimeMillis();
+        return recomputeTreeSortOrder(SETTING_AREA_LAST_UPDATED);
+    }
 
-        // Compare the last area update date and the last processed date
-        Date lastAreaUpdate = getLastUpdated();
-        if (lastAreaUpdate == null) {
-            // No areas
-            return false;
-        }
 
-        Date lastProcessedUpdate = settingsService.getDate(new Setting(SETTING_AREA_LAST_UPDATED, null, false));
-        if (lastProcessedUpdate == null) {
-            lastProcessedUpdate = new Date(0);
-        }
-
-        if (!lastAreaUpdate.after(lastProcessedUpdate)) {
-            log.debug("No area tree changes since last execution of recomputeTreeSortOrder()");
-            return false;
-        }
-
-        // Get root areas (sorted)
-        List<Area> roots = em
-                .createNamedQuery("Area.findRootAreas", Area.class)
-                .getResultList();
-
-        // Re-compute the tree sort order
-        List<Area> updated = new ArrayList<>();
-        recomputeTreeSortOrder(roots, 0, updated, false, false);
-
-        // Persist changed areas
-        updated.forEach(this::saveEntity);
-
-        em.flush();
-
-        // Update the last processed date
-        settingsService.setDate(SETTING_AREA_LAST_UPDATED, lastAreaUpdate);
-
-        log.info("Recomputed tree sort order in " + (System.currentTimeMillis() - t0) + " ms");
-
-        return updated.size() > 0;
+    /**
+     * For areas, override default tree sort order function to take message sorting into account
+     *
+     * @param areas the list of areas to update
+     * @param index the current area index
+     * @param updatedAreas the list of updated areas given by sub-tree roots.
+     * @param ancestorUpdated if an ancestor area has been updated
+     * @return the index after processing the list of areas.
+     */
+    @Override
+    protected int recomputeTreeSortOrder(List<Area> areas, int index, List<Area> updatedAreas, boolean ancestorUpdated) {
+        return recomputeTreeSortOrder(areas, index, updatedAreas, ancestorUpdated, false);
     }
 
 
@@ -674,6 +528,7 @@ public class AreaService extends BaseService {
      * @param messageSorting whether this sub-tree is ordered via the "messageSorting" parameter or not
      * @return the index after processing the list of areas.
      */
+    @SuppressWarnings("all")
     private int recomputeTreeSortOrder(List<Area> areas, int index, List<Area> updatedAreas, boolean ancestorUpdated, boolean messageSorting) {
 
         for (Area area : areas) {

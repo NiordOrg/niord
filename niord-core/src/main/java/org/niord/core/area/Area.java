@@ -20,7 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.vo.SystemAreaVo;
 import org.niord.core.area.vo.SystemAreaVo.AreaMessageSorting;
 import org.niord.core.geojson.JtsConverter;
-import org.niord.core.model.VersionedEntity;
+import org.niord.core.model.TreeBaseEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.message.AreaVo;
@@ -30,11 +30,9 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
-import javax.persistence.OrderBy;
 import javax.persistence.Transient;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,22 +62,13 @@ import java.util.stream.Collectors;
                 query = "select max(a.updated) from Area a")
 })
 @SuppressWarnings("unused")
-public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaDesc>, Comparable<Area> {
+public class Area extends TreeBaseEntity<Area> implements ILocalizable<AreaDesc> {
 
     String legacyId;
 
     String mrn;
 
     AreaType type;
-
-    boolean active = true;
-
-    @ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE, CascadeType.DETACH })
-    private Area parent;
-
-    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
-    @OrderBy("siblingSortOrder ASC")
-    private List<Area> children = new ArrayList<>();
 
     @Column(columnDefinition = "GEOMETRY")
     Geometry geometry;
@@ -89,15 +78,6 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
 
     @Column(length = 256)
     String lineage;
-
-    // The sortOrder is used to sort this area among siblings, and exposed via the Admin UI
-    @Column(columnDefinition="DOUBLE default 0.0")
-    double siblingSortOrder;
-
-    // The treeSortOrder is re-computed at regular intervals by the system and designates
-    // the index of the area in an entire sorted area tree. Used for area sorting.
-    @Column(columnDefinition="INT default 0")
-    int treeSortOrder;
 
     AreaMessageSorting messageSorting;
     Float originLatitude;   // For CW and CCW message sorting
@@ -122,6 +102,13 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
     /** Constructor */
     public Area(AreaVo area, DataFilter filter) {
         updateArea(area, filter);
+    }
+
+
+    /** {@inheritDoc} **/
+    @Override
+    public Area asEntity() {
+        return this;
     }
 
 
@@ -270,106 +257,6 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
 
 
     /**
-     * Adds a child area, and ensures that all references are properly updated
-     *
-     * @param area the area to add
-     */
-    public void addChild(Area area) {
-        // Add the area to the end of the children list
-        Area lastChild = children.isEmpty() ? null : children.get(children.size() - 1);
-
-        // Give it initial tree sort order. Won't really be correct until the tree sort order has
-        // been re-computed for the entire tree.
-        area.setTreeSortOrder(lastChild == null ? treeSortOrder : lastChild.getTreeSortOrder());
-
-        children.add(area);
-        area.setParent(this);
-    }
-
-
-    /**
-     * Update the lineage to have the format "/root-id/.../parent-id/id"
-     * @return if the lineage was updated
-     */
-    public boolean updateLineage() {
-        String oldLineage = lineage;
-        lineage = getParent() == null
-                ? "/" + id + "/"
-                : getParent().getLineage() + id + "/";
-        return !lineage.equals(oldLineage);
-    }
-
-
-    /**
-     * If the area is active, ensure that parent areas are active.
-     * If the area is inactive, ensure that child areas are inactive.
-     */
-    @SuppressWarnings("all")
-    public void updateActiveFlag() {
-        if (active) {
-            // Ensure that parent areas are active
-            if (getParent() != null && !getParent().isActive()) {
-                getParent().setActive(true);
-                getParent().updateActiveFlag();
-            }
-        } else {
-            // Ensure that child areas are inactive
-            getChildren().stream()
-                    .filter(Area::isActive)
-                    .forEach(child -> {
-                child.setActive(false);
-                child.updateActiveFlag();
-            });
-        }
-    }
-
-
-    /** {@inheritDoc} */
-    @Override
-    @SuppressWarnings("all")
-    public int compareTo(Area area) {
-        return (area == null || siblingSortOrder == area.getSiblingSortOrder())
-                ? 0
-                : (siblingSortOrder < area.getSiblingSortOrder() ? -1 : 1);
-    }
-
-
-    /**
-     * Checks if this is a root area
-     *
-     * @return if this is a root area
-     */
-    @Transient
-    public boolean isRootArea() {
-        return parent == null;
-    }
-
-
-    /**
-     * Returns the lineage of this area as a list, ordered with this area first, and the root-most area last
-     * @return the lineage of this area
-     */
-    public List<Area> lineageAsList() {
-        List<Area> areas = new ArrayList<>();
-        for (Area a = this; a != null; a = a.getParent()) {
-            areas.add(a);
-        }
-        return areas;
-    }
-
-
-    /**
-     * Returns the parent lineage of this area as a list, ordered with this areas parent first, and the root-most area last
-     * @return the parent lineage of this area
-     */
-    public List<Area> parentLineageAsList() {
-        return lineageAsList().stream()
-                .skip(1)
-                .collect(Collectors.toList());
-    }
-
-
-    /**
      * By convention, a list of areas will be emitted top-to-bottom. So, if we have a list with:
      * [ Kattegat -> Danmark, Skagerak -> Danmark, Hamborg -> Tyskland ], the resulting title
      * line should be: "Danmark. Tyskland. Kattegat. Skagerak. Hamborg."
@@ -442,14 +329,6 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
         this.type = type;
     }
 
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
     @Override
     public List<AreaDesc> getDescs() {
         return descs;
@@ -460,52 +339,12 @@ public class Area extends VersionedEntity<Integer> implements ILocalizable<AreaD
         this.descs = descs;
     }
 
-    public Area getParent() {
-        return parent;
-    }
-
-    public void setParent(Area parent) {
-        this.parent = parent;
-    }
-
-    public List<Area> getChildren() {
-        return children;
-    }
-
-    public void setChildren(List<Area> children) {
-        this.children = children;
-    }
-
     public Geometry getGeometry() {
         return geometry;
     }
 
     public void setGeometry(Geometry geometry) {
         this.geometry = geometry;
-    }
-
-    public String getLineage() {
-        return lineage;
-    }
-
-    public void setLineage(String lineage) {
-        this.lineage = lineage;
-    }
-
-    public double getSiblingSortOrder() {
-        return siblingSortOrder;
-    }
-
-    public void setSiblingSortOrder(double sortOrder) {
-        this.siblingSortOrder = sortOrder;
-    }
-
-    public int getTreeSortOrder() {
-        return treeSortOrder;
-    }
-
-    public void setTreeSortOrder(int treeSortOrder) {
-        this.treeSortOrder = treeSortOrder;
     }
 
     public AreaMessageSorting getMessageSorting() {

@@ -21,16 +21,18 @@ import org.niord.core.domain.vo.DomainVo;
 import org.niord.model.message.CategoryVo;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * Extends the {@linkplain CategoryVo} model with system-specific fields and attributes.
  */
 @SuppressWarnings("unused")
-public class SystemCategoryVo extends CategoryVo {
+public class SystemCategoryVo extends CategoryVo implements Comparable<SystemCategoryVo> {
 
     CategoryType type = CategoryType.CATEGORY;
     List<SystemCategoryVo> children;
+    Double siblingSortOrder;
     List<String> editorFields;
     String atonFilter;
     List<DomainVo> domains = new ArrayList<>();
@@ -40,12 +42,30 @@ public class SystemCategoryVo extends CategoryVo {
     String messageId;
 
 
+    /** {@inheritDoc} */
+    @Override
+    @SuppressWarnings("all")
+    public int compareTo(SystemCategoryVo category) {
+        return (category == null || siblingSortOrder == category.getSiblingSortOrder()) ? 0 : (siblingSortOrder < category.getSiblingSortOrder() ? -1 : 1);
+    }
+
+
     /** Returns the list of child categories, and creates an empty list if needed */
     public List<SystemCategoryVo> checkCreateChildren() {
         if (children == null) {
             children = new ArrayList<>();
         }
         return children;
+    }
+
+    /**
+     * Recursively sorts the children
+     */
+    public void sortChildren() {
+        if (children != null) {
+            Collections.sort(children);
+            children.forEach(SystemCategoryVo::sortChildren);
+        }
     }
 
     /*************************/
@@ -66,6 +86,14 @@ public class SystemCategoryVo extends CategoryVo {
 
     public void setChildren(List<SystemCategoryVo> children) {
         this.children = children;
+    }
+
+    public Double getSiblingSortOrder() {
+        return siblingSortOrder;
+    }
+
+    public void setSiblingSortOrder(Double siblingSortOrder) {
+        this.siblingSortOrder = siblingSortOrder;
     }
 
     public List<String> getEditorFields() {

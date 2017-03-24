@@ -31,6 +31,8 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
 @SuppressWarnings("unused")
 public class CategorySearchParams extends PagedSearchParamsVo {
 
+    public static final String TREE_SORT_ORDER = "TREE_ORDER";
+
     Integer parentId;       // Direct parent
     Integer ancestorId;     // Any ancestor
     String language;

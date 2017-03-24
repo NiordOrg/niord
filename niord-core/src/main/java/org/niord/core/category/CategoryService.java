@@ -23,21 +23,26 @@ import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.script.ScriptResource;
-import org.niord.core.service.BaseService;
+import org.niord.core.service.TreeBaseService;
+import org.niord.model.search.PagedSearchParamsVo;
 import org.slf4j.Logger;
 
+import javax.ejb.Schedule;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Path;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.script.ScriptException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +53,9 @@ import java.util.stream.Collectors;
  */
 @Stateless
 @SuppressWarnings("unused")
-public class CategoryService extends BaseService {
+public class CategoryService extends TreeBaseService<Category> {
+
+    public static final String SETTING_CATEGORY_LAST_UPDATED = "categoryLastUpdate";
 
     @Inject
     private Logger log;
@@ -158,11 +165,24 @@ public class CategoryService extends BaseService {
             criteriaHelper.add(cb.equal(categoryRoot.get("active"), true));
         }
 
+        // Compute the sort order
+        List<Order> sortOrders = new ArrayList<>();
+        if (params.TREE_SORT_ORDER.equals(params.getSortBy())) {
+            Arrays.asList("treeSortOrder", "siblingSortOrder", "id")
+                    .forEach(field -> {
+                        if (params.getSortOrder() == PagedSearchParamsVo.SortOrder.ASC) {
+                            sortOrders.add(cb.asc(categoryRoot.get(field)));
+                        } else {
+                            sortOrders.add(cb.desc(categoryRoot.get(field)));
+                        }
+                    });
+        }
+
         // Complete the query
         categoryQuery.select(categoryRoot)
                 .distinct(true)
-                .where(criteriaHelper.where());
-                //.orderBy(cb.asc(cb.locate(cb.lower(descs.get("name")), name.toLowerCase())));
+                .where(criteriaHelper.where())
+                .orderBy(sortOrders);
 
         // Execute the query and update the search result
         List<Category> categories = em.createQuery(categoryQuery)
@@ -186,18 +206,15 @@ public class CategoryService extends BaseService {
      * @return the hierarchical list of root categories
      */
     public List<Category> getCategoryTree() {
+        return getTree(Category.class, "Category.findCategoriesWithDescs");
+    }
 
-        // Get all categories along with their CategoryDesc records
-        // Will ensure that all Category entities are cached in the entity manager before organizing the result
-        List<Category> categories = em
-                .createNamedQuery("Category.findCategoriesWithDescs", Category.class)
+
+    /** {@inheritDoc} **/
+    @Override
+    public List<Category> getRootEntities() {
+        return em.createNamedQuery("Category.findRootCategories", Category.class)
                 .getResultList();
-
-        // Extract the roots
-        return categories.stream()
-                .filter(Category::isRootCategory)
-                // TODO .sorted()
-                .collect(Collectors.toList());
     }
 
 
@@ -256,6 +273,7 @@ public class CategoryService extends BaseService {
         original.setType(category.getType());
         original.setMrn(category.getMrn());
         original.setActive(category.isActive());
+        original.setSiblingSortOrder(category.getSiblingSortOrder());
         original.copyDescsAndRemoveBlanks(category.getDescs());
         original.getEditorFields().clear();
         original.getEditorFields().addAll(category.getEditorFields());
@@ -334,71 +352,22 @@ public class CategoryService extends BaseService {
      * @return if the category was moved
      */
     public boolean moveCategory(Integer categoryId, Integer parentId) {
-        Category category = getByPrimaryKey(Category.class, categoryId);
-
-        if (category.getParent() != null && category.getParent().getId().equals(parentId)) {
-            return false;
-        }
-
-        if (category.getParent() != null) {
-            category.getParent().getChildren().remove(category);
-        }
-
-        if (parentId == null) {
-            category.setParent(null);
-        } else {
-            Category parent = getByPrimaryKey(Category.class, parentId);
-            parent.addChild(category);
-        }
-
-        // Save the entity
-        saveEntity(category);
-        em.flush();
-
-        // Update all lineages
-        updateLineages();
-        category.updateActiveFlag();
-
-        return true;
+        return moveEntity(Category.class, categoryId, parentId);
     }
 
 
     /**
-     * Update lineages for all categories
+     * Changes the sort order of an category, by moving it up or down compared to siblings.
+     * <p>
+     * Please note that by moving "up" we mean in a geographical tree structure,
+     * i.e. a smaller sortOrder value.
+     *
+     * @param categoryId the id of the category to move
+     * @param moveUp whether to move the category up or down
+     * @return if the category was moved
      */
-    public void updateLineages() {
-
-        log.info("Update category lineages");
-
-        // Get root categories
-        List<Category> roots = getAll(Category.class).stream()
-            .filter(Category::isRootCategory)
-            .collect(Collectors.toList());
-
-        // Update each root subtree
-        List<Category> updated = new ArrayList<>();
-        roots.forEach(category -> updateLineages(category, updated));
-
-        // Persist the changes
-        updated.forEach(this::saveEntity);
-        em.flush();
-    }
-
-
-    /**
-     * Recursively updates the lineages of categories rooted at the given category
-     * @param category the category whose sub-tree should be updated
-     * @param categories the list of updated categories
-     * @return if the lineage was updated
-     */
-    private boolean updateLineages(Category category, List<Category> categories) {
-
-        boolean updated = category.updateLineage();
-        if (updated) {
-            categories.add(category);
-        }
-        category.getChildren().forEach(childCategory -> updateLineages(childCategory, categories));
-        return updated;
+    public boolean changeSortOrder(Integer categoryId, boolean moveUp) {
+        return changeSortOrder(Category.class, categoryId, moveUp);
     }
 
 
@@ -436,7 +405,7 @@ public class CategoryService extends BaseService {
         CategorySearchParams params = new CategorySearchParams();
         params.parentId(parentId)
                 .language(lang)
-                .inactive(true) // Also search inactive areas
+                .inactive(true) // Also search inactive categorys
                 .name(name)
                 .exact(true) // Not substring matches
                 .maxSize(1);
@@ -492,7 +461,7 @@ public class CategoryService extends BaseService {
             return null;
         }
 
-        // Check if we can find the area by MRN
+        // Check if we can find the category by MRN
         if (StringUtils.isNotBlank(templateCategory.getMrn())) {
             Category category = findByMrn(templateCategory.getMrn());
             if (category != null) {
@@ -537,6 +506,34 @@ public class CategoryService extends BaseService {
      */
     public Category getFiringExercisesCategory() {
         return findByName("Firing Exercises", "en", null);
+    }
+
+
+    /**
+     * Returns the last change date for categories or null if no category exists
+     * @return the last change date for categories
+     */
+    @Override
+    public Date getLastUpdated() {
+        try {
+            return em.createNamedQuery("Category.findLastUpdated", Date.class).getSingleResult();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
+    /**
+     * Called periodically every hour to re-sort the category tree
+     *
+     * Potentially, a heavy-duty function that scans the entire category tree,
+     * sorts it and update the treeSortOrder. Use with care.
+     *
+     * @return if the sort order was updated
+     */
+    @Schedule(persistent = false, second = "13", minute = "23", hour = "*")
+    public boolean recomputeTreeSortOrder() {
+        return recomputeTreeSortOrder(SETTING_CATEGORY_LAST_UPDATED);
     }
 
 

@@ -402,6 +402,14 @@ angular.module('niord.admin')
                 return $http.put('/rest/categories/move-category', { categoryId: categoryId, parentId: parentId });
             },
 
+            changeSortOrder: function(categoryId, moveUp) {
+                return $http.put('/rest/categories/change-sort-order', { categoryId: categoryId, moveUp: moveUp });
+            },
+
+            recomputeTreeSortOrder: function() {
+                return $http.put('/rest/categories/recompute-tree-sort-order');
+            },
+
             /** Executes the message template on the given message ID **/
             executeCategoryTemplate: function(category, messageId) {
                 return $http.put('/rest/templates/execute', { messageId: encodeURIComponent(messageId), category: category });

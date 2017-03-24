@@ -140,6 +140,26 @@ angular.module('niord.admin')
             };
 
 
+            /** Called when the sibling category sort order has changed for the currently selected category */
+            $scope.changeSiblingSortOrder = function (moveUp) {
+                AdminCategoryService
+                    .changeSortOrder($scope.category.id, moveUp)
+                    .success($scope.loadCategories)
+                    .error($scope.displayError);
+            };
+
+
+            /** Will query the back-end to recompute the tree sort order */
+            $scope.recomputeTreeSortOrder = function () {
+                AdminCategoryService
+                    .recomputeTreeSortOrder()
+                    .success(function () {
+                        growl.info('Tree Sort Order Updated', { ttl: 3000 });
+                    })
+                    .error($scope.displayError);
+            };
+
+
             /** Saves the current category */
             $scope.saveCategory = function () {
 
