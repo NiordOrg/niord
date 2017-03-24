@@ -142,6 +142,26 @@
     </#list>
 </#macro>
 
+
+<!-- ***************************************  -->
+<!-- Renders the given list value             -->
+<!-- ***************************************  -->
+<#macro renderListValue value defaultValue format='long' lang='en'>
+    <#if value?has_content>
+        <#assign desc=descForLang(value, lang)!>
+        <#if desc?? && format == 'long'>
+            ${desc.longValue}
+        <#elseif desc??>
+            ${desc.value}
+        <#elseif defaultValue>
+            ${defaultValue}
+        </#if>
+    <#else>
+        ${defaultValue}
+    </#if>
+</#macro>
+
+
 <!-- ***************************************  -->
 <!-- Renders the AtoN given by the aton_type  -->
 <!-- parameter                                -->

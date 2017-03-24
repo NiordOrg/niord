@@ -74,7 +74,7 @@
   {
     "key"         : "stdTemplateFields",
     "description" : "The possible set of standard message fields to display when executing a template",
-    "value"       : [ "type", "id", "publish_date", "areas", "positions", "event_dates" ],
+    "value"       : [ "type", "id", "publish_date", "areas", "positions", "event_dates", "markings" ],
     "type"        : "json",
     "web"         : true,
     "editable"    : true

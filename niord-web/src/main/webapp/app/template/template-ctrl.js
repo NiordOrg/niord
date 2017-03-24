@@ -440,6 +440,20 @@ angular.module('niord.template')
             };
 
 
+            /** Adds a marking to the list of markings */
+            $scope.addMarking = function (markings) {
+                markings.push({ markingType: undefined, lightCharacter: undefined, distance: undefined, bearing: undefined });
+            };
+
+
+            /** Deletes the given marking from the list of markings **/
+            $scope.deleteMarking = function (markings, marking) {
+                if ($.inArray(marking, markings) > -1) {
+                    markings.splice( $.inArray(marking, markings), 1 );
+                }
+            };
+
+
             /** Set the preview language **/
             $scope.previewLanguage = function (lang) {
                 $scope.previewLang = lang;

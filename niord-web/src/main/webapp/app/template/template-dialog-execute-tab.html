@@ -209,6 +209,66 @@
 
                     </template-dialog-param-field>
 
+                    <!-- ********************* -->
+                    <!-- ** Markings        ** -->
+                    <!-- ********************* -->
+                    <template-dialog-param-field field-title="Markings"
+                                                 ng-if="showStdTemplateField['markings'] && paramTypeMap['marking_type_list'] && paramTypeMap['marking_bearing']">
+
+                        <div class="row" ng-init="templateData[templateIndex].markings = []">
+                            <div class="col-sm-12">
+                                <table class="table table-condensed editor-date-interval-table">
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Light Char.</th>
+                                        <th>
+                                            Dist. (m)
+                                        </th>
+                                        <th colspan="2">
+                                            Bearing
+                                            <div class="pull-right">
+                                                <button ng-click="addMarking(templateData[templateIndex].markings)" class="btn btn-default btn-xs">
+                                                    <span class="glyphicon glyphicon-plus"></span> Add
+                                                </button>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                    <tr ng-repeat="m in templateData[templateIndex].markings">
+                                        <td>
+                                            <select class="form-control input-sm"
+                                                    ng-model="m.type"
+                                                    ng-options="val as val.descs[0].value for val in paramTypeMap['marking_type_list'].values"
+                                                    required>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control input-sm" style="width: 100px"
+                                                   ng-model="m.lightCharacter"
+                                                   ng-remote-validate="/rest/templates/validate-light-character"
+                                                   ng-remote-method="POST"
+                                                   ng-disabled="!m.type || m.type.key.indexOf('light') == -1">
+                                        </td>
+                                        <td>
+                                            <input type="number" class="form-control input-sm" style="width: 60px"
+                                                   ng-model="m.distance">
+                                        </td>
+                                        <td>
+                                            <select class="form-control input-sm"  style="width: 40px"
+                                                    ng-model="m.bearing"
+                                                    ng-options="val as val.descs[0].value for val in paramTypeMap['marking_bearing'].values">
+                                            </select>
+                                        </td>
+                                        <td width="*" style="padding-top: 12px">
+                                            <a href ng-click="deleteMarking(templateData[templateIndex].markings, m);"
+                                               title="Delete Interval"><span class="glyphicon glyphicon-trash"></span></a>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                    </template-dialog-param-field>
+
                 </div>
 
             </div>
