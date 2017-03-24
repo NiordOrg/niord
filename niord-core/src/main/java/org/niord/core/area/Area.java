@@ -76,9 +76,6 @@ public class Area extends TreeBaseEntity<Area> implements ILocalizable<AreaDesc>
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
     List<AreaDesc> descs = new ArrayList<>();
 
-    @Column(length = 256)
-    String lineage;
-
     AreaMessageSorting messageSorting;
     Float originLatitude;   // For CW and CCW message sorting
     Float originLongitude;  // For CW and CCW message sorting
