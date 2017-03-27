@@ -176,7 +176,12 @@
                             </tr>
                             <tr ng-repeat="series in messageSeries | filter: { seriesId: search }">
                                 <td>{{series.seriesId}}</td>
-                                <td>{{series.mainType}}</td>
+                                <td>
+                                    {{series.mainType}}
+                                    <span ng-if="series.types" ng-repeat="t in series.types">
+                                        (<small translate="{{'msg.type.' + t}}"></small><span ng-if="!$last">, </span>)
+                                    </span>
+                                </td>
                                 <td>{{series.numberSequenceType | lowercase}}</td>
                                 <td>{{series.shortFormat}}</td>
                                 <td><span ng-if="numberAssigned(series)">{{series.nextMessageNumber}}</span></td>
