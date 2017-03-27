@@ -276,6 +276,10 @@ angular.module('niord.template')
             $scope.showStdTemplateField = {};
             $scope.templateData         = [];
 
+            $scope.validTypes = {
+                NW: { LOCAL_WARNING: false, COASTAL_WARNING: false, SUBAREA_WARNING: false, NAVAREA_WARNING: false },
+                NM: { TEMPORARY_NOTICE: false, PRELIMINARY_NOTICE: false, PERMANENT_NOTICE: false, MISCELLANEOUS_NOTICE: false }
+            };
 
             // Look up the list of parameter types
             $scope.paramTypes = [];
@@ -348,14 +352,19 @@ angular.module('niord.template')
 
                 // Determine the message series for the current domain and message mainType
                 $scope.messageSeries = [];
+                var msg = $scope.message;
                 if ($rootScope.domain && $rootScope.domain.messageSeries) {
                     angular.forEach($rootScope.domain.messageSeries, function (series) {
-                        if (series.mainType === $scope.message.mainType) {
-                            if ($scope.message.messageSeries && $scope.message.messageSeries.seriesId === series.seriesId) {
-                                $scope.messageSeries.push($scope.message.messageSeries);
-                            } else {
-                                $scope.messageSeries.push(series);
+                        if (series.mainType === msg.mainType) {
+                            $scope.messageSeries.push(series);
+                            if (msg.messageSeries && msg.messageSeries.seriesId === series.seriesId) {
+                                msg.messageSeries = series;
                             }
+                            // Compute the valid types for the message
+                            Object.keys($scope.validTypes[msg.mainType]).forEach(function (key) {
+                                $scope.validTypes[msg.mainType][key] |= series.types === undefined
+                                    || series.types.length === 0 || ($.inArray(key, series.types) !== -1);
+                            });
                         }
                     });
                 }
@@ -365,6 +374,20 @@ angular.module('niord.template')
 
                 // Check if we can update areas from a geometry
                 $scope.computeAreas();
+            };
+
+
+            /** Called when the message type is updated. See if we can deduce the message series from the type **/
+            $scope.typeSelected = function () {
+                var type = $scope.message.type;
+
+                // Find matching message series
+                var series = $.grep($scope.messageSeries, function (s) {
+                    return s.types === undefined || s.types.length === 0 || ($.inArray(type, s.types) !== -1);
+                });
+                if (series.length === 1) {
+                    $scope.message.messageSeries = series[0];
+                }
             };
 
 

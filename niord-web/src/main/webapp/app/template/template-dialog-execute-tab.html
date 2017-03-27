@@ -21,22 +21,30 @@
 
                     <div class="btn-group" ng-if="message.mainType == 'NW'">
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'LOCAL_WARNING'"
+                                ng-if="validTypes['NW']['LOCAL_WARNING']" ng-change="typeSelected()"
                                 translate>msg.type.LOCAL_WARNING</button>
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'COASTAL_WARNING'"
+                                ng-if="validTypes['NW']['COASTAL_WARNING']" ng-change="typeSelected()"
                                 translate>msg.type.COASTAL_WARNING</button>
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'SUBAREA_WARNING'"
+                                ng-if="validTypes['NW']['SUBAREA_WARNING']" ng-change="typeSelected()"
                                 translate>msg.type.SUBAREA_WARNING</button>
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'NAVAREA_WARNING'"
+                                ng-if="validTypes['NW']['NAVAREA_WARNING']" ng-change="typeSelected()"
                                 translate>msg.type.NAVAREA_WARNING</button>
                     </div>
                     <div class="btn-group" ng-if="message.mainType == 'NM'">
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'TEMPORARY_NOTICE'"
+                                ng-if="validTypes['NM']['TEMPORARY_NOTICE']" ng-change="typeSelected()"
                                 translate>msg.type.TEMPORARY_NOTICE</button>
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'PRELIMINARY_NOTICE'"
+                                ng-if="validTypes['NM']['PRELIMINARY_NOTICE']" ng-change="typeSelected()"
                                 translate>msg.type.PRELIMINARY_NOTICE</button>
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'PERMANENT_NOTICE'"
+                                ng-if="validTypes['NM']['PERMANENT_NOTICE']" ng-change="typeSelected()"
                                 translate>msg.type.PERMANENT_NOTICE</button>
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'MISCELLANEOUS_NOTICE'"
+                                ng-if="validTypes['NM']['MISCELLANEOUS_NOTICE']" ng-change="typeSelected()"
                                 translate>msg.type.MISCELLANEOUS_NOTICE</button>
                     </div>
                 </template-dialog-param-field>
