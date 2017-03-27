@@ -149,7 +149,7 @@ angular.module('niord.map')
 
                 // Whenever the map extent is changed, record the new extent in the mapState
                 if (isDefined(scope.mapState)) {
-                    scope.mapChanged = function (evt) {
+                    scope.mapChanged = function () {
                         var extent = view.calculateExtent(map.getSize());
                         scope.mapState['zoom'] = view.getZoom();
                         scope.mapState['center'] = MapService.round(MapService.toLonLat(view.getCenter()), 4);
@@ -265,7 +265,7 @@ angular.module('niord.map')
 
                     // Function called when displayInLayerSwitcher changes
                     scope.displayInLayerSwitcherChanged = function (evt) {
-                        if (evt.key == 'displayInLayerSwitcher') {
+                        if (evt.key === 'displayInLayerSwitcher') {
                             scope.updateLayerSwitcher();
                         }
                     };
@@ -596,13 +596,12 @@ angular.module('niord.map')
                             });
                         }
 
-                        if (scope.fitExtent == 'true' && olLayer.getSource().getFeatures().length > 0) {
-                            map.getView().fit(olLayer.getSource().getExtent(), map.getSize(), {
+                        if (scope.fitExtent === 'true' && olLayer.getSource().getFeatures().length > 0) {
+                            map.getView().fit(olLayer.getSource().getExtent(), {
                                 padding: [20, 20, 20, 20],
+                                size: map.getSize(),
                                 maxZoom: maxZoom
                             });
-                            // Temporary fix for OL 4.0.1 bug #6640
-                            map.getView().setZoom(Math.min(maxZoom, map.getView().getZoom()));
                         }
 
                     };
@@ -715,13 +714,12 @@ angular.module('niord.map')
                             });
                         }
 
-                        if (scope.fitExtent == 'true' && olLayer.getSource().getFeatures().length > 0) {
-                            map.getView().fit(olLayer.getSource().getExtent(), map.getSize(), {
+                        if (scope.fitExtent === 'true' && olLayer.getSource().getFeatures().length > 0) {
+                            map.getView().fit(olLayer.getSource().getExtent(), {
                                 padding: [20, 20, 20, 20],
+                                size: map.getSize(),
                                 maxZoom: maxZoom
                             });
-                            // Temporary fix for OL 4.0.1 bug #6640
-                            map.getView().setZoom(Math.min(maxZoom, map.getView().getZoom()));
                         }
                     };
 

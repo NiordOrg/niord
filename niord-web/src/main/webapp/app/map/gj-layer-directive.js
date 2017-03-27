@@ -119,16 +119,15 @@ angular.module('niord.map')
                                 olLayer.getSource().addFeature(olFeature);
                             });
 
-                            if (scope.fitExtent == 'true') {
-                                map.getView().fit(olLayer.getSource().getExtent(), map.getSize(), {
+                            if (scope.fitExtent === 'true') {
+                                map.getView().fit(olLayer.getSource().getExtent(), {
                                     padding: [5, 5, 5, 5],
+                                    size: map.getSize(),
                                     maxZoom: maxZoom
                                 });
-                                // Temporary fix for OL 4.0.1 bug #6640
-                                map.getView().setZoom(Math.min(maxZoom, map.getView().getZoom()));
                             }
 
-                        } else if (scope.fitExtent == 'true') {
+                        } else if (scope.fitExtent === 'true') {
                             map.getView().setCenter(MapService.fromLonLat(MapService.defaultCenterLonLat()));
                             map.getView().setZoom(MapService.defaultZoomLevel());
                         }

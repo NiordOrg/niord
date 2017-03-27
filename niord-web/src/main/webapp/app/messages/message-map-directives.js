@@ -116,13 +116,13 @@ angular.module('niord.messages')
                         }),
                         style: function(feature) {
                             var featureStyle;
-                            if (scope.showOutline == 'true') {
+                            if (scope.showOutline === 'true') {
                                 featureStyle = outlineStyle;
                             } else if (feature.get('parentFeatureIds')) {
                                 featureStyle = bufferedStyle;
                             } else {
                                 var message = feature.get('message');
-                                featureStyle = message.mainType == 'NW' ? nwStyle : nmStyle;
+                                featureStyle = message.mainType === 'NW' ? nwStyle : nmStyle;
                             }
                             return [ featureStyle ];
                         }
@@ -150,7 +150,7 @@ angular.module('niord.messages')
                                             shortId : message.shortId,
                                             descs : message.descs
                                         });
-                                        if (scope.showOutline == 'true') {
+                                        if (scope.showOutline === 'true') {
                                             var point = MapService.getGeometryCenter(olFeature.getGeometry());
                                             if (point) {
                                                 olFeature.setGeometry(new ol.geom.Point(point));
@@ -158,17 +158,16 @@ angular.module('niord.messages')
                                         }
                                         olLayer.getSource().addFeature(olFeature);
                                     });
-                                } else if (scope.showNoPos == 'true') {
+                                } else if (scope.showNoPos === 'true') {
                                     scope.noPosMessages.push(message);
                                 }
                             });
-                            if (scope.fitExtent == 'true') {
-                                map.getView().fit(olLayer.getSource().getExtent(), map.getSize(), {
+                            if (scope.fitExtent === 'true') {
+                                map.getView().fit(olLayer.getSource().getExtent(), {
                                     padding: [5, 5, 5, 5],
+                                    size: map.getSize(),
                                     maxZoom: maxZoom
                                 });
-                                // Temporary fix for OL 4.0.1 bug #6640
-                                map.getView().setZoom(Math.min(maxZoom, map.getView().getZoom()));
                             }
                         }
                     };
@@ -187,7 +186,7 @@ angular.module('niord.messages')
                         var messages = [];
                         map.forEachFeatureAtPixel(pixel, function(feature, layer) {
                             var msg = feature.get('message');
-                            if (layer  == olLayer && msg && messageIds[msg.id] === undefined) {
+                            if (layer  === olLayer && msg && messageIds[msg.id] === undefined) {
                                 messages.push(msg);
                                 messageIds[msg.id] = msg.id;
                             }
@@ -380,7 +379,7 @@ angular.module('niord.messages')
                         }),
                         style: function(feature) {
                             var featureStyle;
-                            if (scope.showOutline == 'true') {
+                            if (scope.showOutline === 'true') {
                                 featureStyle = outlineStyle;
                             } else if (feature.get('parentFeatureIds')) {
                                 featureStyle = bufferedStyle;
@@ -417,7 +416,7 @@ angular.module('niord.messages')
 
                             angular.forEach(features, function (gjFeature) {
                                 var olFeature = MapService.gjToOlFeature(gjFeature);
-                                if (scope.showOutline == 'true') {
+                                if (scope.showOutline === 'true') {
                                     var point = MapService.getGeometryCenter(olFeature.getGeometry());
                                     if (point) {
                                         olFeature.setGeometry(new ol.geom.Point(point));
@@ -427,13 +426,12 @@ angular.module('niord.messages')
                             });
                         }
 
-                        if (scope.fitExtent == 'true' && olLayer.getSource().getFeatures().length > 0) {
-                            map.getView().fit(olLayer.getSource().getExtent(), map.getSize(), {
+                        if (scope.fitExtent === 'true' && olLayer.getSource().getFeatures().length > 0) {
+                            map.getView().fit(olLayer.getSource().getExtent(), {
                                 padding: [20, 20, 20, 20],
+                                size: map.getSize(),
                                 maxZoom: maxZoom
                             });
-                            // Temporary fix for OL 4.0.1 bug #6640
-                            map.getView().setZoom(Math.min(maxZoom, map.getView().getZoom()));
                         }
                     };
 
@@ -454,7 +452,7 @@ angular.module('niord.messages')
                         var msgs = [];
                         map.forEachFeatureAtPixel(pixel, function(feature, layer) {
                             // test
-                            if (layer  == olLayer) {
+                            if (layer  === olLayer) {
                                 msgs.push(feature);
                             }
                         });

@@ -389,12 +389,11 @@ angular.module('niord.editor')
                     /** Fits the view to the features **/
                     scope.fitExtent = function () {
                         if (scope.features.length > 0) {
-                            map.getView().fit(olLayer.getSource().getExtent(), map.getSize(), {
+                            map.getView().fit(olLayer.getSource().getExtent(), {
                                 padding: [20, 20, 20, 20],
+                                size: map.getSize(),
                                 maxZoom: 12
                             });
-                            // Temporary fix for OL 4.0.1 bug #6640
-                            map.getView().setZoom(Math.min(12, map.getView().getZoom()));
                         }
                     };
 
@@ -403,12 +402,11 @@ angular.module('niord.editor')
                     scope.zoomFeature = function (id) {
                         var feature = olLayer.getSource().getFeatureById(id);
                         if (feature) {
-                            map.getView().fit(feature.getGeometry().getExtent(), map.getSize(), {
+                            map.getView().fit(feature.getGeometry().getExtent(), {
                                 padding: [20, 20, 20, 20],
+                                size: map.getSize(),
                                 maxZoom: 12
                             });
-                            // Temporary fix for OL 4.0.1 bug #6640
-                            map.getView().setZoom(Math.min(12, map.getView().getZoom()));
 
                             select.getFeatures().clear();
                             select.getFeatures().push(feature);

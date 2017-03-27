@@ -215,7 +215,7 @@ angular.module('niord.atons')
 
                             var select = new ol.interaction.Select({
                                 filter: function (feature, layer) {
-                                    return layer == atonVectorLayer;
+                                    return layer === atonVectorLayer;
                                 }
                             });
 
@@ -271,7 +271,7 @@ angular.module('niord.atons')
                                 // Load at most scope.maxAtonNo AtoN's
                                 AtonService.searchAtonsByExtent(extent, maxAtonNo).success(
                                     function (result) {
-                                        if (result.data != null) {
+                                        if (result.data !== null) {
                                             scope.updateAtonVectorLayer(result.data);
                                         } else {
                                             if (result.total > 0) {
@@ -330,7 +330,7 @@ angular.module('niord.atons')
                         scope.getAtonsForPixel = function (pixel) {
                             var atons = [];
                             map.forEachFeatureAtPixel(pixel, function(feature, layer) {
-                                if (layer  == atonVectorLayer && feature.get('aton')) {
+                                if (layer  === atonVectorLayer && feature.get('aton')) {
                                     atons.push(feature.get('aton'));
                                 }
                             });
@@ -428,12 +428,11 @@ angular.module('niord.atons')
                         /** Listens for a 'zoom-to-aton' event **/
                         scope.$on('zoom-to-aton', function(event, msg) {
                             var point = new ol.geom.Point(MapService.fromLonLat([msg.lon, msg.lat]));
-                            map.getView().fit(point, map.getSize(), {
+                            map.getView().fit(point, {
                                 padding: [20, 20, 20, 20],
+                                size: map.getSize(),
                                 maxZoom: 12
                             });
-                            // Temporary fix for OL 4.0.1 bug #6640
-                            map.getView().setZoom(Math.min(12, map.getView().getZoom()));
                         });
 
                     });
