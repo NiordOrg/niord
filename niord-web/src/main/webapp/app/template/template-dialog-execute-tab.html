@@ -21,23 +21,23 @@
 
                     <div class="btn-group" ng-if="message.mainType == 'NW'">
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'LOCAL_WARNING'"
-                                tabindex="201" translate>msg.type.LOCAL_WARNING</button>
+                                translate>msg.type.LOCAL_WARNING</button>
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'COASTAL_WARNING'"
-                                tabindex="202"  translate>msg.type.COASTAL_WARNING</button>
+                                translate>msg.type.COASTAL_WARNING</button>
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'SUBAREA_WARNING'"
-                                tabindex="203"  translate>msg.type.SUBAREA_WARNING</button>
+                                translate>msg.type.SUBAREA_WARNING</button>
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'NAVAREA_WARNING'"
-                                tabindex="204"  translate>msg.type.NAVAREA_WARNING</button>
+                                translate>msg.type.NAVAREA_WARNING</button>
                     </div>
                     <div class="btn-group" ng-if="message.mainType == 'NM'">
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'TEMPORARY_NOTICE'"
-                                tabindex="205"  translate>msg.type.TEMPORARY_NOTICE</button>
+                                translate>msg.type.TEMPORARY_NOTICE</button>
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'PRELIMINARY_NOTICE'"
-                                tabindex="206"  translate>msg.type.PRELIMINARY_NOTICE</button>
+                                translate>msg.type.PRELIMINARY_NOTICE</button>
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'PERMANENT_NOTICE'"
-                                tabindex="207"  translate>msg.type.PERMANENT_NOTICE</button>
+                                translate>msg.type.PERMANENT_NOTICE</button>
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'MISCELLANEOUS_NOTICE'"
-                                tabindex="208"  translate>msg.type.MISCELLANEOUS_NOTICE</button>
+                                translate>msg.type.MISCELLANEOUS_NOTICE</button>
                     </div>
                 </template-dialog-param-field>
 
@@ -52,7 +52,6 @@
                             <th>Message series</th>
                             <td>
                                 <select class="form-control input-sm" style="width: 200px"
-                                        tabindex="301"
                                         ng-model="message.messageSeries"
                                         ng-options="series.seriesId for series in messageSeries">
                                 </select>
@@ -71,13 +70,13 @@
                     <div class="row">
                         <div class="col-xs-6 col-sm-6 col-md-6">
                             <date-time-picker ng-model="message.publishDateFrom" placeholder="Publish From" format="'lll z'"
-                                              readonly="message.status != 'DRAFT' && message.status != 'VERIFIED'"
-                                              tab-index="601"></date-time-picker>
+                                              readonly="message.status != 'DRAFT' && message.status != 'VERIFIED'">
+                            </date-time-picker>
                         </div>
                         <div class="col-xs-6 col-sm-6 col-md-6">
                             <date-time-picker ng-model="message.publishDateTo" placeholder="Publish To" format="'lll z'"
-                                              readonly="message.status != 'DRAFT' && message.status != 'VERIFIED'  && message.status != 'PUBLISHED'"
-                                              tab-index="601"></date-time-picker>
+                                              readonly="message.status != 'DRAFT' && message.status != 'VERIFIED'  && message.status != 'PUBLISHED'">
+                            </date-time-picker>
                         </div>
                     </div>
 
@@ -97,7 +96,6 @@
                     <div class="row" style="margin-top: 10px">
                         <div class="col-sm-6" ng-repeat="desc in message.descs">
                             <input class="form-control input-sm" placeholder="Vicinity" type="text"
-                                   tabindex="704"
                                    ng-model="desc.vicinity" bg-flag="desc.lang"
                                    ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }">
                         </div>
