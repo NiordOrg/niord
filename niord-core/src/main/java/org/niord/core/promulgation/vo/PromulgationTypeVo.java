@@ -18,8 +18,10 @@ package org.niord.core.promulgation.vo;
 
 import org.niord.core.domain.vo.DomainVo;
 import org.niord.model.IJsonSerializable;
+import org.niord.model.message.Type;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Defines the persistent data of a promulgation type
@@ -33,6 +35,7 @@ public class PromulgationTypeVo implements IJsonSerializable, Comparable<Promulg
     Boolean active;
     String language;
     List<DomainVo> domains;
+    Set<Type> messageTypes;    // If defined, can be limit which sub-types to use the promulgation type for
     List<String> scriptResourcePaths;
 
 
@@ -101,6 +104,14 @@ public class PromulgationTypeVo implements IJsonSerializable, Comparable<Promulg
 
     public void setDomains(List<DomainVo> domains) {
         this.domains = domains;
+    }
+
+    public Set<Type> getMessageTypes() {
+        return messageTypes;
+    }
+
+    public void setMessageTypes(Set<Type> messageTypes) {
+        this.messageTypes = messageTypes;
     }
 
     public List<String> getScriptResourcePaths() {

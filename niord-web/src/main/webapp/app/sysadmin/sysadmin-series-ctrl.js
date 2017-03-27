@@ -89,10 +89,10 @@ angular.module('niord.admin')
             /** Called when the main type of the edited message series is changed **/
             $scope.updateMainType = function () {
                 Object.keys($scope.types['NW']).forEach(function (key) {
-                    $scope.types['NW'][key] = $scope.series !== undefined && ($.inArray(key, $scope.series.types) !== -1);
+                    $scope.types['NW'][key] = $scope.series.types !== undefined && ($.inArray(key, $scope.series.types) !== -1);
                 });
                 Object.keys($scope.types['NM']).forEach(function (key) {
-                    $scope.types['NM'][key] = $scope.series !== undefined && ($.inArray(key, $scope.series.types) !== -1);
+                    $scope.types['NM'][key] = $scope.series.types !== undefined && ($.inArray(key, $scope.series.types) !== -1);
                 });
                 $scope.updateShortFormat();
             };

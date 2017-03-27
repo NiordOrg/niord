@@ -20,18 +20,23 @@ import org.niord.core.domain.Domain;
 import org.niord.core.model.VersionedEntity;
 import org.niord.core.promulgation.vo.PromulgationTypeVo;
 import org.niord.model.DataFilter;
+import org.niord.model.message.Type;
 
 import javax.persistence.Cacheable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.ManyToMany;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OrderColumn;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -82,6 +87,10 @@ public class PromulgationType extends VersionedEntity<Integer> {
     @ManyToMany
     List<Domain> domains = new ArrayList<>();
 
+    @ElementCollection(targetClass = Type.class)
+    @Enumerated(EnumType.STRING)
+    Set<Type> messageTypes = new HashSet<>();
+
     /** The script resources to execute as part of the process of executing a message template **/
     @OrderColumn(name = "indexNo")
     @ElementCollection
@@ -105,6 +114,9 @@ public class PromulgationType extends VersionedEntity<Integer> {
                     .map(Domain::new)
                     .collect(Collectors.toList());
         }
+        if (typeVo.getMessageTypes() != null) {
+            this.messageTypes.addAll(typeVo.getMessageTypes());
+        }
         if (typeVo.getScriptResourcePaths() != null) {
             scriptResourcePaths.addAll(typeVo.getScriptResourcePaths());
         }
@@ -121,22 +133,25 @@ public class PromulgationType extends VersionedEntity<Integer> {
 
         DataFilter compFilter = filter.forComponent(PromulgationType.class);
 
-        PromulgationTypeVo serviceData = new PromulgationTypeVo();
-        serviceData.setTypeId(typeId);
-        serviceData.setServiceId(serviceId);
-        serviceData.setName(name);
-        serviceData.setPriority(priority);
+        PromulgationTypeVo typeVo = new PromulgationTypeVo();
+        typeVo.setTypeId(typeId);
+        typeVo.setServiceId(serviceId);
+        typeVo.setName(name);
+        typeVo.setPriority(priority);
         if (compFilter.includeDetails()) {
-            serviceData.setActive(active);
-            serviceData.setLanguage(language);
-            serviceData.setDomains(domains.stream()
+            typeVo.setActive(active);
+            typeVo.setLanguage(language);
+            typeVo.setDomains(domains.stream()
                     .map(Domain::toVo)
                     .collect(Collectors.toList()));
+            if (!messageTypes.isEmpty()) {
+                typeVo.setMessageTypes(new HashSet<>(messageTypes));
+            }
             if (!scriptResourcePaths.isEmpty()) {
-                serviceData.setScriptResourcePaths(new ArrayList<>(scriptResourcePaths));
+                typeVo.setScriptResourcePaths(new ArrayList<>(scriptResourcePaths));
             }
         }
-        return serviceData;
+        return typeVo;
     }
 
 
@@ -198,6 +213,14 @@ public class PromulgationType extends VersionedEntity<Integer> {
 
     public void setDomains(List<Domain> domains) {
         this.domains = domains;
+    }
+
+    public Set<Type> getMessageTypes() {
+        return messageTypes;
+    }
+
+    public void setMessageTypes(Set<Type> messageTypes) {
+        this.messageTypes = messageTypes;
     }
 
     public List<String> getScriptResourcePaths() {

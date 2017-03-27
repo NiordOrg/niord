@@ -161,6 +161,9 @@ public class PromulgationTypeService extends BaseService {
         // Update the domain references with the persisted ones
         original.setDomains(domainService.persistedDomains(type.getDomains()));
 
+        original.getMessageTypes().clear();
+        original.getMessageTypes().addAll(type.getMessageTypes());
+
         original.getScriptResourcePaths().clear();
         original.getScriptResourcePaths().addAll(type.getScriptResourcePaths());
 
@@ -172,6 +175,7 @@ public class PromulgationTypeService extends BaseService {
      * Deletes theh promulgation type with the given ID
      * @param typeId the ID of the promulgation type to delete
      * @return if the promulgation type was deleted
+     * @noinspection all
      */
     public boolean deletePromulgationType(String typeId) {
         PromulgationType original = getPromulgationType(typeId);

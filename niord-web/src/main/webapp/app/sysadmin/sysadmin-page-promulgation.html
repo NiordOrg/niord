@@ -56,7 +56,39 @@
                         <div class="form-group">
                             <label class="col-sm-4">Domains</label>
                             <div class="col-sm-8">
-                                <domain-field domain-data="promulgationType" multiple="true"></domain-field>
+                                <domain-field
+                                        domain-data="promulgationType"
+                                        domain-changed="domainsUpdated()"
+                                        multiple="true">
+                                </domain-field>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4">Restrict Types</label>
+                            <div class="col-sm-8">
+                                <div ng-if="supportsMainType('NW')" class="btn-group input-group">
+                                    <span class="input-group-addon" style="font-size: 12px">NW types: </span>
+                                    <label class="btn btn-default btn-sm" ng-model="messageTypes['NW'].LOCAL_WARNING"
+                                           uib-btn-checkbox translate>msg.type.LOCAL_WARNING</label>
+                                    <label class="btn btn-default btn-sm" ng-model="messageTypes['NW'].COASTAL_WARNING"
+                                           uib-btn-checkbox translate>msg.type.COASTAL_WARNING</label>
+                                    <label class="btn btn-default btn-sm" ng-model="messageTypes['NW'].SUBAREA_WARNING"
+                                           uib-btn-checkbox translate>msg.type.SUBAREA_WARNING</label>
+                                    <label class="btn btn-default btn-sm" ng-model="messageTypes['NW'].NAVAREA_WARNING"
+                                           uib-btn-checkbox translate>msg.type.NAVAREA_WARNING</label>
+                                </div>
+                                <div ng-if="supportsMainType('NM')" class="btn-group input-group" style="margin-top: 5px">
+                                    <span class="input-group-addon" style="font-size: 12px">NM types: </span>
+                                    <label class="btn btn-default btn-sm" ng-model="messageTypes['NM'].TEMPORARY_NOTICE"
+                                           uib-btn-checkbox translate>msg.type.TEMPORARY_NOTICE</label>
+                                    <label class="btn btn-default btn-sm" ng-model="messageTypes['NM'].PRELIMINARY_NOTICE"
+                                           uib-btn-checkbox translate>msg.type.PRELIMINARY_NOTICE</label>
+                                    <label class="btn btn-default btn-sm" ng-model="messageTypes['NM'].PERMANENT_NOTICE"
+                                           uib-btn-checkbox translate>msg.type.PERMANENT_NOTICE</label>
+                                    <label class="btn btn-default btn-sm" ng-model="messageTypes['NM'].MISCELLANEOUS_NOTICE"
+                                           uib-btn-checkbox translate>msg.type.MISCELLANEOUS_NOTICE</label>
+                                </div>
                             </div>
                         </div>
 
@@ -120,7 +152,7 @@
 
 
                 <div class="row" style="padding-top: 20px;">
-                    <div class="col-sm-12 col-md-10 col-lg-8">
+                    <div class="col-sm-12 col-md-12 col-lg-10">
                         <table class='table table-condensed table-hover'>
                             <tr>
                                 <th>Active</th>
@@ -130,6 +162,7 @@
                                 <th>Priority</th>
                                 <th>Language</th>
                                 <th>Domains</th>
+                                <th>Types</th>
                                 <th></th>
                             </tr>
                             <tr ng-repeat="promulgationType in promulgationTypes">
@@ -141,6 +174,11 @@
                                 <td>{{promulgationType.language}}</td>
                                 <td>
                                     <span ng-repeat="domain in promulgationType.domains"><span ng-if="!$first">, </span>{{domain.name}}</span>
+                                </td>
+                                <td>
+                                    <div ng-if="promulgationType.messageTypes" ng-repeat="type in promulgationType.messageTypes"
+                                        translate="{{'msg.type.' + type}}">
+                                    </div>
                                 </td>
                                 <td nowrap align="right">
                                     <a href ng-click="editPromulgationType(promulgationType);"

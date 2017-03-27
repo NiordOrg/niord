@@ -39,6 +39,11 @@ angular.module('niord.admin')
             $scope.editMode = 'add';
             $scope.languages = $rootScope.modelLanguages;
 
+            $scope.messageTypes = {
+                NW: { LOCAL_WARNING: false, COASTAL_WARNING: false, SUBAREA_WARNING: false, NAVAREA_WARNING: false },
+                NM: { TEMPORARY_NOTICE: false, PRELIMINARY_NOTICE: false, PERMANENT_NOTICE: false, MISCELLANEOUS_NOTICE: false }
+            };
+
 
             // Load all promulgation services
             AdminPromulgationService
@@ -59,6 +64,35 @@ angular.module('niord.admin')
             };
 
 
+            /** Returns if the current domain selection includes message series associated with the given main type **/
+            $scope.supportsMainType = function (mainType) {
+                var type = $scope.promulgationType;
+                var supported = type.domains === undefined || type.domains.length === 0;
+                angular.forEach(type.domains, function (domain) {
+                    supported |= domain.messageSeries !== undefined && $.grep(domain.messageSeries, function (ms) {
+                            return ms.mainType === mainType;
+                        }).length > 0;
+                });
+                return supported;
+            };
+
+
+            /** Called when the domain selection has changed **/
+            $scope.domainsUpdated = function () {
+                var type = $scope.promulgationType;
+                if (type !== undefined) {
+                    var supportsNw = $scope.supportsMainType('NW');
+                    var supportsNm = $scope.supportsMainType('NM');
+                    Object.keys($scope.messageTypes['NW']).forEach(function (key) {
+                        $scope.messageTypes['NW'][key] = supportsNw && type.messageTypes && ($.inArray(key, type.messageTypes) !== -1);
+                    });
+                    Object.keys($scope.messageTypes['NM']).forEach(function (key) {
+                        $scope.messageTypes['NM'][key] = supportsNm && type.messageTypes && ($.inArray(key, type.messageTypes) !== -1);
+                    });
+                }
+            };
+
+
             /** Adds a new promulgation type **/
             $scope.addPromulgationType = function (serviceId) {
                 $scope.editMode = 'add';
@@ -71,6 +105,7 @@ angular.module('niord.admin')
                     language: undefined,
                     domains: []
                 };
+                $scope.domainsUpdated();
             };
 
 
@@ -78,6 +113,7 @@ angular.module('niord.admin')
             $scope.editPromulgationType = function (promulgationType) {
                 $scope.editMode = 'edit';
                 $scope.promulgationType = angular.copy(promulgationType);
+                $scope.domainsUpdated();
             };
 
 
@@ -102,12 +138,25 @@ angular.module('niord.admin')
 
             /** Saves the current promulgation type being edited */
             $scope.savePromulgationType = function () {
-                if ($scope.promulgationType && $scope.editMode == 'edit') {
+                $scope.promulgationType.messageTypes = $scope.promulgationType.messageTypes || [];
+                $scope.promulgationType.messageTypes.length = 0;
+                Object.keys($scope.messageTypes['NW']).forEach(function (key) {
+                    if ($scope.messageTypes['NW'][key]) {
+                        $scope.promulgationType.messageTypes.push(key);
+                    }
+                });
+                Object.keys($scope.messageTypes['NM']).forEach(function (key) {
+                    if ($scope.messageTypes['NM'][key]) {
+                        $scope.promulgationType.messageTypes.push(key);
+                    }
+                });
+
+                if ($scope.promulgationType && $scope.editMode === 'edit') {
                     AdminPromulgationService
                         .updatePromulgationType($scope.promulgationType)
                         .success($scope.loadPromulgationTypes)
                         .error($scope.displayError);
-                } else if ($scope.promulgationType && $scope.editMode == 'add') {
+                } else if ($scope.promulgationType && $scope.editMode === 'add') {
                     AdminPromulgationService
                         .createPromulgationType($scope.promulgationType)
                         .success($scope.loadPromulgationTypes)

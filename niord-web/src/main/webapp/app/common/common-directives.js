@@ -31,16 +31,24 @@ angular.module('niord.common')
             templateUrl: '/app/common/domain-field.html',
             replace: false,
             scope: {
-                domainData: "=",
-                multiple:   "="
+                domainData:     "=",
+                domainChanged:  "&",
+                multiple:       "="
             },
-            link: function(scope) {
+            link: function(scope, element, attrs) {
                 scope.domainData = scope.domainData || {};
                 scope.multiple = scope.multiple || false;
 
                 if (scope.multiple && !scope.domainData.domains) {
                     scope.domainData.domains = [];
                 }
+
+                /** Called whenever the domain has been updated **/
+                scope.domainUpdated = function () {
+                    if (attrs.domainChanged) {
+                        scope.domainChanged();
+                    }
+                };
 
                 /** Refreshes the domain selection **/
                 scope.refreshDomains = function (text) {
@@ -59,10 +67,12 @@ angular.module('niord.common')
                     } else {
                         scope.domainData.domain = undefined;
                     }
+                    scope.domainUpdated();
                 }
             }
         }
     }])
+
 
     /****************************************************************
      * The areas-field directive supports selecting either a
@@ -137,7 +147,7 @@ angular.module('niord.common')
                 /** Refreshes the areas search result */
                 scope.searchResult = [];
                 scope.refreshAreas = function(name) {
-                    if (!name || name.length == 0) {
+                    if (!name || name.length === 0) {
                         return [];
                     }
                     var domainParam = scope.domain ? '&domain=' + encodeURIComponent(scope.domain.domainId) : '';
@@ -258,7 +268,7 @@ angular.module('niord.common')
                 /** Refreshes the categories search result */
                 scope.searchResult = [];
                 scope.refreshCategories = function(name) {
-                    if (!name || name.length == 0) {
+                    if (!name || name.length === 0) {
                         return [];
                     }
                     var domainParam = scope.domain ? '&domain=' + encodeURIComponent(scope.domain.domainId) : '';
@@ -363,7 +373,7 @@ angular.module('niord.common')
                 /** Refreshes the chart search result */
                 scope.searchResult = [];
                 scope.refreshCharts = function(name) {
-                    if (!name || name.length == 0) {
+                    if (!name || name.length === 0) {
                         return [];
                     }
                     return $http.get(
@@ -413,7 +423,7 @@ angular.module('niord.common')
                 /** Refreshes the chart search result */
                 scope.searchResult = [];
                 scope.refreshEditorFields = function(name) {
-                    if (!name || name.length == 0) {
+                    if (!name || name.length === 0) {
                         return [];
                     }
                     scope.searchResult.length = 0;
@@ -424,7 +434,7 @@ angular.module('niord.common')
                         // 3) It is not already selected
                         if ((!value || scope.includeAll) &&
                             key.toUpperCase().indexOf(name.toUpperCase()) !== -1 &&
-                            $.inArray(key, scope.editorData.editorFields) == -1) {
+                            $.inArray(key, scope.editorData.editorFields) === -1) {
                             scope.searchResult.push(key);
                         }
                     });
@@ -651,7 +661,7 @@ angular.module('niord.common')
      *   http://stackoverflow.com/questions/16199418/how-do-i-implement-the-bootstrap-navbar-active-class-with-angular-js
      * - but changed quite a bit.
      */
-    .directive('checkActive', [ '$location', '$window', function ($location, $window) {
+    .directive('checkActive', [ '$location', function ($location) {
         'use strict';
 
         return {
@@ -659,12 +669,12 @@ angular.module('niord.common')
             scope: {
                 checkActive: "@"
             },
-            link: function (scope, element, attrs) {
+            link: function (scope, element) {
 
                 // Watch for the $location
                 scope.$watch(function () {
                     return $location.path();
-                }, function (newValue, oldValue) {
+                }, function (newValue) {
 
                     var locMask = scope.checkActive.split("*").join(".*");
                     var regexp = new RegExp('^' + locMask + '$', ['i']);
@@ -693,7 +703,7 @@ angular.module('niord.common')
                 lang: "=",
                 style: "@"
             },
-            link: function(scope, element, attrs) {
+            link: function(scope, element) {
                 scope.$watch(function() {
                         return scope.lang;
                     },
@@ -813,14 +823,14 @@ angular.module('niord.common')
                          **/
                         function parse(val, lat) {
                             var degLen = lat ? 2 : 3;
-                            if (val == undefined || val.length != degLen + 2 + scope.decimals + 1) {
+                            if (val === undefined || val.length !== degLen + 2 + scope.decimals + 1) {
                                 return undefined;
                             }
                             val = val.toUpperCase();
                             var degreeStr = val.substr(0, degLen);
                             var minuteStr = val.substr(degLen, 2 + scope.decimals);
                             var direction = val.substr(val.length - 1);
-                            var sign = direction == 'N' || direction == 'E' ? 1 : -1;
+                            var sign = direction === 'N' || direction === 'E' ? 1 : -1;
 
                             return sign * (
                                     parseInt(degreeStr)
@@ -853,7 +863,7 @@ angular.module('niord.common')
 
 
                         // Watch for changes to the underlying position model
-                        scope.$watch("[lat,lon]", function (value) {
+                        scope.$watch("[lat,lon]", function () {
                             var latSpec = format(scope.lat, true);
                             var lonSpec = format(scope.lon, false);
                             scope.latlon = latSpec !== undefined && lonSpec !== undefined ? latSpec + lonSpec : undefined;
@@ -862,7 +872,7 @@ angular.module('niord.common')
 
                         // Watch for changes to the input field value
                         scope.$watch("latlon", function (latlon, oldLatlon) {
-                            if (latlon == oldLatlon) {
+                            if (latlon === oldLatlon) {
                                 return;
                             }
                             var latSpec = undefined;
@@ -967,7 +977,7 @@ angular.module('niord.common')
             link: function(scope) {
                 scope.closable = scope.closable || 'true';
                 scope.close = function () {
-                    if (scope.closable == 'true' && scope.clearFilter) {
+                    if (scope.closable === 'true' && scope.clearFilter) {
                         scope.clearFilter({name: scope.filterName})
                     }
                 }
@@ -1055,7 +1065,7 @@ angular.module('niord.common')
                 });
 
 
-                ctrl.$parsers.push(function (viewValue) {
+                ctrl.$parsers.push(function () {
                     if (!picker.date()) {
                         return null;
                     }
@@ -1071,14 +1081,14 @@ angular.module('niord.common')
                         millis = date.valueOf();
                         if (scope.time && scope.time.length > 0) {
                             var hms = scope.time.split(":");
-                            if (hms.length == 3) {
+                            if (hms.length === 3) {
                                 date.set({
                                     'hour': parseInt(hms[0]),
                                     'minute': parseInt(hms[1]),
                                     'second': parseInt(hms[2]),
                                     'millisecond': 0
                                 });
-                                if (millis != date.valueOf()) {
+                                if (millis !== date.valueOf()) {
                                     picker.date(date);
                                     millis = date.valueOf();
                                 }
@@ -1090,7 +1100,7 @@ angular.module('niord.common')
 
                 scope.$watch("time", adjustTime, true);
 
-                element.bind('dp.change dp.hide', function(ev) {
+                element.bind('dp.change dp.hide', function() {
                     var millis = adjustTime();
 
                     ctrl.$setViewValue(millis);
@@ -1146,7 +1156,7 @@ angular.module('niord.common')
 
             compile: function(element, attrs) {
 
-                if (attrs.dropText == undefined) {
+                if (attrs.dropText === undefined) {
                     attrs.$set("dropText", (attrs.multiple) ? 'or drop files here' : 'or drop file here');
                 }
 
@@ -1187,7 +1197,7 @@ angular.module('niord.common')
                         if (scope.fileTypes) {
                             scope.uploader.filters.push({
                                 name: 'filterName',
-                                fn: function (item, options) {
+                                fn: function (item) {
                                     var ext = scope.extension(item.name).toLowerCase();
                                     return (ext && $.inArray(ext, scope.fileTypes.toLowerCase().split(",")) > -1);
                                 }});
@@ -1227,14 +1237,14 @@ angular.module('niord.common')
 
                         // Success call-back
                         if (scope.success) {
-                            scope.uploader.onSuccessItem = function (item, response, status, headers) {
+                            scope.uploader.onSuccessItem = function (item, response) {
                                 scope.success({ result: response});
                             };
                         }
 
                         // Error call-back
                         if (scope.error) {
-                            scope.uploader.onErrorItem = function (item, response, status, headers) {
+                            scope.uploader.onErrorItem = function (item, response, status) {
                                 scope.error({ status: status, statusText: response.statusText });
                             };
                         }
@@ -1346,7 +1356,7 @@ angular.module('niord.common')
                 /** Computes the icon to display **/
                 function computeIcon(entity, node) {
                     var showInactive = scope.flagInactive && !entity.active;
-                    var showTemplate = scope.flagTemplate && entity.type == 'TEMPLATE';
+                    var showTemplate = scope.flagTemplate && entity.type === 'TEMPLATE';
                     if (showInactive && showTemplate) {
                         node.icon = '/img/tree-icons/inactive-folder-tmpl.gif';
                     } else if (showInactive) {
@@ -1380,9 +1390,9 @@ angular.module('niord.common')
                     if (scope.entityMoved) {
                         var entity = data.otherNode.data.entity;
                         var parent = undefined;
-                        if (data.hitMode == 'before' || data.hitMode == 'after') {
+                        if (data.hitMode === 'before' || data.hitMode === 'after') {
                             parent = (node.parent.data.entity) ? node.parent.data.entity : undefined;
-                        } else if (data.hitMode == 'over') {
+                        } else if (data.hitMode === 'over') {
                             parent = node.data.entity;
                         }
                         scope.entityMoved({ entity: entity, parent: parent });
@@ -1423,7 +1433,7 @@ angular.module('niord.common')
                         return scope.filter
                     }, function (newValue) {
                         var val = newValue || '';
-                        if (val != '') {
+                        if (val !== '') {
                             tree.filterNodes(val);
                             scope.expandAll();
                         } else {
@@ -1431,7 +1441,7 @@ angular.module('niord.common')
                             scope.collapseAll();
                         }
                     }, true);
-                };
+                }
 
 
                 /** Stores the current expanded state */
@@ -1462,7 +1472,7 @@ angular.module('niord.common')
                 /** Collapses all tree nodes except the root node */
                 scope.collapseAll = function() {
                     tree.visit(function(node){
-                        node.setExpanded(node.data.level == 0);
+                        node.setExpanded(node.data.level === 0);
                     });
 
                 };

@@ -1,6 +1,6 @@
 <div class="input-group">
 
-    <ui-select ng-if="!multiple" ng-model="domainData.domain" >
+    <ui-select ng-if="!multiple" ng-model="domainData.domain" ng-change="domainUpdated()">
         <ui-select-match placeholder="Select Domain">
             {{domainData.domain.name}}
         </ui-select-match>
@@ -15,7 +15,7 @@
         </ui-select-choices>
     </ui-select>
 
-    <ui-select ng-if="multiple" multiple ng-model="domainData.domains">
+    <ui-select ng-if="multiple" multiple ng-model="domainData.domains" ng-change="domainUpdated()">
         <ui-select-match placeholder="Select domains">
             {{$item.name}}
             <span class="base-data-inactive" ng-if="!$item.active">(inactive)</span>
