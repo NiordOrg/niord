@@ -432,6 +432,8 @@ angular.module('niord.atons')
                                 padding: [20, 20, 20, 20],
                                 maxZoom: 12
                             });
+                            // Temporary fix for OL 4.0.1 bug #6640
+                            map.getView().setZoom(Math.min(12, map.getView().getZoom()));
                         });
 
                     });

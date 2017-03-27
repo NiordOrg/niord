@@ -124,6 +124,8 @@ angular.module('niord.map')
                                     padding: [5, 5, 5, 5],
                                     maxZoom: maxZoom
                                 });
+                                // Temporary fix for OL 4.0.1 bug #6640
+                                map.getView().setZoom(Math.min(maxZoom, map.getView().getZoom()));
                             }
 
                         } else if (scope.fitExtent == 'true') {

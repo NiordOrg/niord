@@ -601,6 +601,8 @@ angular.module('niord.map')
                                 padding: [20, 20, 20, 20],
                                 maxZoom: maxZoom
                             });
+                            // Temporary fix for OL 4.0.1 bug #6640
+                            map.getView().setZoom(Math.min(maxZoom, map.getView().getZoom()));
                         }
 
                     };
@@ -718,6 +720,8 @@ angular.module('niord.map')
                                 padding: [20, 20, 20, 20],
                                 maxZoom: maxZoom
                             });
+                            // Temporary fix for OL 4.0.1 bug #6640
+                            map.getView().setZoom(Math.min(maxZoom, map.getView().getZoom()));
                         }
                     };
 
