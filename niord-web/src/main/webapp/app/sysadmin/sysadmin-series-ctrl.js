@@ -37,6 +37,11 @@ angular.module('niord.admin')
             $scope.search = '';
             $scope.currentYear = new Date().getFullYear();
 
+            $scope.types = {
+                NW: { LOCAL_WARNING: false, COASTAL_WARNING: false, SUBAREA_WARNING: false, NAVAREA_WARNING: false },
+                NM: { TEMPORARY_NOTICE: false, PRELIMINARY_NOTICE: false, PERMANENT_NOTICE: false, MISCELLANEOUS_NOTICE: false }
+            };
+
 
             /** Loads the message series from the back-end */
             $scope.loadMessageSeries = function() {
@@ -52,14 +57,14 @@ angular.module('niord.admin')
             /** Returns if the message series automatically assigns a number **/
             $scope.numberAssigned = function (series) {
                 return  series && series.numberSequenceType &&
-                    series.numberSequenceType != 'MANUAL' && series.numberSequenceType != 'NONE';
+                    series.numberSequenceType !== 'MANUAL' && series.numberSequenceType !== 'NONE';
             };
 
 
             /** Returns if the message series can define a short ID format **/
             $scope.definesShortFormat = function (series) {
                 return  series && series.numberSequenceType &&
-                    series.numberSequenceType != 'NONE';
+                    series.numberSequenceType !== 'NONE';
             };
 
 
@@ -81,6 +86,18 @@ angular.module('niord.admin')
             };
 
 
+            /** Called when the main type of the edited message series is changed **/
+            $scope.updateMainType = function () {
+                Object.keys($scope.types['NW']).forEach(function (key) {
+                    $scope.types['NW'][key] = $scope.series !== undefined && ($.inArray(key, $scope.series.types) !== -1);
+                });
+                Object.keys($scope.types['NM']).forEach(function (key) {
+                    $scope.types['NM'][key] = $scope.series !== undefined && ($.inArray(key, $scope.series.types) !== -1);
+                });
+                $scope.updateShortFormat();
+            };
+
+
             /** Adds a new message series **/
             $scope.addMessageSeries = function () {
                 $scope.editMode = 'add';
@@ -88,9 +105,10 @@ angular.module('niord.admin')
                     seriesId: '',
                     mainType: 'NW',
                     numberSequenceType: 'YEARLY',
-                    shortFormat: ''
+                    shortFormat: '',
+                    types: []
                 };
-                $scope.updateShortFormat();
+                $scope.updateMainType();
                 $scope.seriesForm.$setPristine();
             };
 
@@ -107,7 +125,7 @@ angular.module('niord.admin')
             $scope.editMessageSeries = function (series) {
                 $scope.editMode = 'edit';
                 $scope.series = angular.copy(series);
-                $scope.updateShortFormat();
+                $scope.updateMainType();
                 $scope.seriesForm.$setPristine();
             };
 
@@ -120,12 +138,20 @@ angular.module('niord.admin')
 
             /** Saves the current message series being edited */
             $scope.saveMessageSeries = function () {
-                if ($scope.series && $scope.editMode == 'add') {
+                $scope.series.types = $scope.series.types || [];
+                $scope.series.types.length = 0;
+                Object.keys($scope.types[$scope.series.mainType]).forEach(function (key) {
+                    if ($scope.types[$scope.series.mainType][key]) {
+                        $scope.series.types.push(key);
+                    }
+                });
+
+                if ($scope.editMode === 'add') {
                     AdminMessageSeriesService
                         .createMessageSeries($scope.series)
                         .success($scope.loadMessageSeries)
                         .error($scope.displayError);
-                } else if ($scope.series && $scope.editMode == 'edit') {
+                } else if ($scope.editMode === 'edit') {
                     AdminMessageSeriesService
                         .updateMessageSeries($scope.series)
                         .success($scope.loadMessageSeries)

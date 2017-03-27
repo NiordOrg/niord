@@ -17,8 +17,10 @@
 package org.niord.core.message.vo;
 
 import org.niord.model.message.MessageSeriesVo;
+import org.niord.model.message.Type;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Extends the {@linkplain MessageSeriesVo} model with system-specific fields and attributes.
@@ -40,6 +42,8 @@ public class SystemMessageSeriesVo extends MessageSeriesVo {
         NONE
     }
 
+    // If defined, can be limit which sub-types be handled
+    Set<Type> types;
     String shortFormat;
     NumberSequenceType numberSequenceType;
     Integer nextMessageNumber;
@@ -48,6 +52,14 @@ public class SystemMessageSeriesVo extends MessageSeriesVo {
     /*************************/
     /** Getters and Setters **/
     /*************************/
+
+    public Set<Type> getTypes() {
+        return types;
+    }
+
+    public void setTypes(Set<Type> types) {
+        this.types = types;
+    }
 
     public String getShortFormat() {
         return shortFormat;

@@ -211,16 +211,16 @@ angular.module('niord.messages')
             /** Updates all values of the type filter to have the given selected state **/
             $scope.updateTypeFilter = function (mainType, selected) {
                 var type = $scope.state.type;
-                if (mainType == 'NW') {
-                    type.COASTAL_WARNING = selected;
-                    type.SUBAREA_WARNING = selected;
-                    type.NAVAREA_WARNING = selected;
-                    type.LOCAL_WARNING = selected;
-                } else if (mainType == 'NM') {
-                    type.PERMANENT_NOTICE = selected;
-                    type.TEMPORARY_NOTICE = selected;
-                    type.PRELIMINARY_NOTICE = selected;
-                    type.MISCELLANEOUS_NOTICE = selected;
+                if (mainType === 'NW') {
+                    type.COASTAL_WARNING = selected && supportsType('COASTAL_WARNING');
+                    type.SUBAREA_WARNING = selected && supportsType('SUBAREA_WARNING');
+                    type.NAVAREA_WARNING = selected && supportsType('NAVAREA_WARNING');
+                    type.LOCAL_WARNING = selected && supportsType('LOCAL_WARNING');
+                } else if (mainType === 'NM') {
+                    type.PERMANENT_NOTICE = selected && supportsType('PERMANENT_NOTICE');
+                    type.TEMPORARY_NOTICE = selected && supportsType('TEMPORARY_NOTICE');
+                    type.PRELIMINARY_NOTICE = selected && supportsType('PRELIMINARY_NOTICE');
+                    type.MISCELLANEOUS_NOTICE = selected && supportsType('MISCELLANEOUS_NOTICE');
                 }
             };
 
@@ -304,10 +304,10 @@ angular.module('niord.messages')
                     if (s.map.zoom) {
                         params += '&zoom=' + s.map.zoom;
                     }
-                    if (s.map.center && s.map.center.length == 2) {
+                    if (s.map.center && s.map.center.length === 2) {
                         params += '&lon=' + s.map.center[0] + '&lat=' + s.map.center[1];
                     }
-                    if (s.map.extent && s.map.extent.length == 4) {
+                    if (s.map.extent && s.map.extent.length === 4) {
                         params += '&minLon=' + s.map.extent[0] + '&minLat=' + s.map.extent[1] +
                             '&maxLon=' + s.map.extent[2] + '&maxLat=' + s.map.extent[3];
                     }
@@ -430,10 +430,10 @@ angular.module('niord.messages')
                 }
 
                 // Add sorting
-                if ($scope.state.sortBy != MessageService.defaultSortBy()) {
+                if ($scope.state.sortBy !== MessageService.defaultSortBy()) {
                     params += '&sortBy=' + $scope.state.sortBy;
                 }
-                if ($scope.state.sortOrder != MessageService.defaultSortOrder()) {
+                if ($scope.state.sortOrder !== MessageService.defaultSortOrder()) {
                     params += '&sortOrder=' + $scope.state.sortOrder;
                 }
 
@@ -462,10 +462,10 @@ angular.module('niord.messages')
                 // Handle filters
                 if (params.domain) {
                     var domains = $.grep($rootScope.domains, function (domain) {
-                        return domain.domainId == params.domain;
+                        return domain.domainId === params.domain;
                     });
-                    s.domain.enabled = domains.length == 1;
-                    s.domain.domain = domains.length == 1 ? domains[0] : undefined;
+                    s.domain.enabled = domains.length === 1;
+                    s.domain.domain = domains.length === 1 ? domains[0] : undefined;
                 }
                 if (params.query) {
                     s.text.enabled = true;
@@ -567,9 +567,9 @@ angular.module('niord.messages')
                 }
 
                 // Enforce validity of the filter selection
-                if ($scope.state.type.mainType == 'NW') {
+                if ($scope.state.type.mainType === 'NW') {
                     $scope.updateTypeFilter('NM', false);
-                } else if ($scope.state.type.mainType == 'NM') {
+                } else if ($scope.state.type.mainType === 'NM') {
                     $scope.updateTypeFilter('NW', false);
                 }
 
@@ -595,7 +595,7 @@ angular.module('niord.messages')
             // Use for AtoN selection
             $scope.atons = [];
             $scope.refreshAtons = function(name) {
-                if (!name || name.length == 0) {
+                if (!name || name.length === 0) {
                     return [];
                 }
                 return $http.get(
@@ -792,7 +792,7 @@ angular.module('niord.messages')
 
             /** Opens a dialog that allows the editor to compare two selected messages **/
             $scope.compareMessages = function () {
-                if ($scope.selectionList.length == 2) {
+                if ($scope.selectionList.length === 2) {
                     MessageService.compareMessagesDialog($scope.selectionList[0].id, $scope.selectionList[1].id);
                 }
             };
@@ -873,34 +873,46 @@ angular.module('niord.messages')
             };
 
 
-            /** Returns if the user should be allowed to select the given types for filtering */
-            $scope.supportsType = function (type) {
-                if ($scope.searchDomain) {
-                    // When a domain is selected, check if any of the domain message series has the given type
-                    var result = false;
-                    if ($scope.searchDomain.messageSeries) {
-                        for (var x = 0; x < $scope.searchDomain.messageSeries.length; x++) {
-                            result |= $scope.searchDomain.messageSeries[x].mainType == type;
-                        }
+            /** Iterates over the message series of the currently selected domain */
+            $scope.forMessageSeries = function (seriesFunc) {
+                if ($scope.searchDomain && $scope.searchDomain.messageSeries) {
+                    for (var x = 0; x < $scope.searchDomain.messageSeries.length; x++) {
+                        seriesFunc($scope.searchDomain.messageSeries[x]);
                     }
-                    return result;
                 }
-                // If no domain is selected, any type should be selectable
-                return true;
+            };
+
+
+            /** Returns if the user should be allowed to select the given main-type for filtering */
+            $scope.supportsMainType = function (mainType) {
+                var result = $scope.searchDomain === undefined;
+                $scope.forMessageSeries(function (series) {
+                    result |= series.mainType === mainType;
+                });
+                return result;
             };
 
 
             $scope.supportsNw = function (exclusively) {
-                return $scope.supportsType('NW') &&
-                    (!exclusively || !$scope.supportsType('NM'));
+                return $scope.supportsMainType('NW') &&
+                    (!exclusively || !$scope.supportsMainType('NM'));
             };
 
 
             $scope.supportsNm = function (exclusively) {
-                return $scope.supportsType('NM') &&
-                    (!exclusively || !$scope.supportsType('NW'));
+                return $scope.supportsMainType('NM') &&
+                    (!exclusively || !$scope.supportsMainType('NW'));
             };
 
+
+            $scope.supportsType = function (type) {
+                var result = $scope.searchDomain === undefined;
+                $scope.forMessageSeries(function (series) {
+                    result |= series.types === undefined || series.types.length === 0 ||
+                        $.inArray(type, series.types) !== -1;
+                });
+                return result;
+            };
 
             /*****************************/
             /** Message List Handling   **/
@@ -914,7 +926,7 @@ angular.module('niord.messages')
             $scope.checkGroupByArea = function (maxLevels) {
                 maxLevels = maxLevels || 2;
                 var lastAreaId = undefined;
-                if ($scope.messageList && $scope.messageList.length > 0 && $scope.state.sortBy == 'AREA') {
+                if ($scope.messageList && $scope.messageList.length > 0 && $scope.state.sortBy === 'AREA') {
                     for (var m = 0; m < $scope.messageList.length; m++) {
                         var msg = $scope.messageList[m];
                         if (msg.areas && msg.areas.length > 0) {
@@ -925,14 +937,14 @@ angular.module('niord.messages')
                             }
                             if (areas.length > 0) {
                                 area = areas[Math.min(areas.length - 1, maxLevels - 1)];
-                                if (!lastAreaId || area.id != lastAreaId) {
+                                if (!lastAreaId || area.id !== lastAreaId) {
                                     lastAreaId = area.id;
                                     msg.areaHeading = area;
                                 }
                             }
                         } else {
                             // Use a special "General" heading for messages without an area
-                            if (lastAreaId != -999999) {
+                            if (lastAreaId !== -999999) {
                                 lastAreaId = -999999;
                                 msg.areaHeading =  { id: -999999 };
                             }
@@ -990,8 +1002,8 @@ angular.module('niord.messages')
 
             /** Toggle the sort order of the current sort field **/
             $scope.toggleSortOrder = function(sortBy) {
-                if (sortBy == $scope.state.sortBy) {
-                    $scope.state.sortOrder = $scope.state.sortOrder == 'ASC' ? 'DESC' : 'ASC';
+                if (sortBy === $scope.state.sortBy) {
+                    $scope.state.sortOrder = $scope.state.sortOrder === 'ASC' ? 'DESC' : 'ASC';
                 } else {
                     $scope.state.sortBy = sortBy;
                     $scope.state.sortOrder = 'ASC';
@@ -1001,8 +1013,8 @@ angular.module('niord.messages')
 
             /** Returns the sort indicator to display for the given field **/
             $scope.sortIndicator = function(sortBy) {
-                if (sortBy == $scope.state.sortBy) {
-                    return $scope.state.sortOrder == 'DESC' ? '&#9650;' : '&#9660;';
+                if (sortBy === $scope.state.sortBy) {
+                    return $scope.state.sortOrder === 'DESC' ? '&#9650;' : '&#9660;';
                 }
                 return "";
             };
@@ -1022,7 +1034,7 @@ angular.module('niord.messages')
 
             /** Returns if the messages for the given area can be sorted **/
             $scope.canSortAreaMessages = function (area) {
-                return $scope.isEditor && area && area.id != -999999;
+                return $scope.isEditor && area && area.id !== -999999;
             };
 
 
@@ -1039,7 +1051,7 @@ angular.module('niord.messages')
                     var inArea = false;
                     for (var x = 0; x < $scope.messageList.length; x++) {
                         var msg = $scope.messageList[x];
-                        if (msg.areaHeading && msg.areaHeading.id == area.id) {
+                        if (msg.areaHeading && msg.areaHeading.id === area.id) {
                             inArea = true;
                         } else if (msg.areaHeading) {
                             inArea = false;
@@ -1094,7 +1106,7 @@ angular.module('niord.messages')
             /** Store the last message search url to facilitate 'back-to-list' link **/
             $scope.recordLastMessageUrl = function () {
                 var url = $location.url();
-                if (url && url.indexOf('/messages/') != -1) {
+                if (url && url.indexOf('/messages/') !== -1) {
                     $rootScope.lastMessageSearchUrl = '/#' + url;
                 }
             };
@@ -1109,7 +1121,7 @@ angular.module('niord.messages')
                     $scope.showFilter = newValue && !newValue.endsWith('/selected');
                     var isMap = $scope.state.map.enabled;
                     $scope.maxSize = isMap ? 1000 : 200;
-                    if (wasMap != isMap) {
+                    if (wasMap !== isMap) {
                         $scope.messageList.length = 0;
                     }
 

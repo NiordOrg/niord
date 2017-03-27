@@ -78,6 +78,12 @@ angular.module('niord.editor')
             $scope.messageSaving = false;
 
 
+            $scope.validTypes = {
+                NW: { LOCAL_WARNING: false, COASTAL_WARNING: false, SUBAREA_WARNING: false, NAVAREA_WARNING: false },
+                NM: { TEMPORARY_NOTICE: false, PRELIMINARY_NOTICE: false, PERMANENT_NOTICE: false, MISCELLANEOUS_NOTICE: false }
+            };
+
+
             /*****************************/
             /** Initialize the editor   **/
             /*****************************/
@@ -119,16 +125,29 @@ angular.module('niord.editor')
                 // Ensure that the message has at lease one message part
                 $scope.initMessageParts();
 
+                // Reset the valid types
+                Object.keys($scope.validTypes[msg.mainType]).forEach(function (key) {
+                    $scope.validTypes[msg.mainType][key] = false;
+                });
+
                 // Determine the message series for the current domain and message mainType
                 $scope.messageSeries.length = 0;
                 if ($rootScope.domain && $rootScope.domain.messageSeries) {
                     angular.forEach($rootScope.domain.messageSeries, function (series) {
-                        if (series.mainType == msg.mainType) {
-                            if (msg.messageSeries && msg.messageSeries.seriesId == series.seriesId) {
-                                $scope.messageSeries.push(msg.messageSeries);
-                            } else {
-                                $scope.messageSeries.push(series);
+                        if (series.mainType === msg.mainType) {
+
+                            $scope.messageSeries.push(series);
+
+                            if (msg.messageSeries && msg.messageSeries.seriesId === series.seriesId) {
+                                // The message may have been loaded with a "pruned" version of the series. Replace it:
+                                msg.messageSeries = series;
                             }
+
+                            // Compute the valid types for the message
+                            Object.keys($scope.validTypes[msg.mainType]).forEach(function (key) {
+                                $scope.validTypes[msg.mainType][key] |= series.types === undefined
+                                    || series.types.length === 0 || ($.inArray(key, series.types) !== -1);
+                            });
                         }
                     });
                 }
@@ -175,7 +194,7 @@ angular.module('niord.editor')
                     $scope.editType = 'copy';
                 }
 
-                if ($scope.editType == 'edit' && $scope.initId) {
+                if ($scope.editType === 'edit' && $scope.initId) {
                     // Case 1) The message ID may be specified
                     MessageService.editableDetails($scope.initId)
                         .success(function (message) {
@@ -186,7 +205,7 @@ angular.module('niord.editor')
                             growl.error("Error loading message (code: " + status + ")", {ttl: 5000})
                         });
 
-                } else if ($scope.editType == 'copy' && $scope.initId) {
+                } else if ($scope.editType === 'copy' && $scope.initId) {
                     // Case 2) Create a copy of a message
                     MessageService.copyMessageTemplate($scope.initId, $scope.referenceType)
                         .success(function (message) {
@@ -197,7 +216,7 @@ angular.module('niord.editor')
                             growl.error("Error copying message (code: " + status + ")", {ttl: 5000})
                         });
 
-                } else if ($scope.editType == 'template') {
+                } else if ($scope.editType === 'template') {
                     // Case 3) The editor may be based on a template message, say, from the AtoN selection page
                     $scope.createMessage($rootScope.templateMessage.mainType, $rootScope.templateMessage);
                 }
@@ -283,7 +302,7 @@ angular.module('niord.editor')
             $scope.editable = function () {
                 var msg = $scope.message;
                 return msg && msg.status &&
-                    (msg.status == 'DRAFT' || msg.status == 'VERIFIED' || $rootScope.hasRole('admin'));
+                    (msg.status === 'DRAFT' || msg.status === 'VERIFIED' || $rootScope.hasRole('admin'));
             };
 
 
@@ -401,41 +420,38 @@ angular.module('niord.editor')
             };
 
 
-            /** Returns the current message series associated with the message **/
-            $scope.currentMessageSeries = function () {
-                var msg = $scope.message;
-                // The message series associated with the message is a pruned version containing only the ID.
-                // Look up the full message series data from the current domain
-                if (msg.messageSeries && $rootScope.domain.messageSeries) {
-                    var series = $.grep($rootScope.domain.messageSeries, function (ms) {
-                        return ms.seriesId == msg.messageSeries.seriesId;
-                    });
-                    if (series != null && series.length == 1) {
-                        return series[0];
-                    }
-                }
-                return null;
-            };
-
-
             /** Returns the number sequence type of the message series **/
             $scope.numberSequenceType = function () {
-                var series = $scope.currentMessageSeries();
+                var series = $scope.message.messageSeries;
                 return (series) ? series.numberSequenceType : null;
             };
 
 
             /** Returns if the short ID is editable **/
             $scope.shortIdEditable = function () {
-                var series = $scope.currentMessageSeries();
-                return series && series.numberSequenceType == 'MANUAL' && !series.shortFormat;
+                var series = $scope.message.messageSeries;
+                return series && series.numberSequenceType === 'MANUAL' && !series.shortFormat;
             };
 
 
             /** Returns if the message number is editable **/
             $scope.messageNumberEditable = function () {
-                var series = $scope.currentMessageSeries();
-                return series && series.numberSequenceType == 'MANUAL' && series.shortFormat;
+                var series = $scope.message.messageSeries;
+                return series && series.numberSequenceType === 'MANUAL' && series.shortFormat;
+            };
+
+
+            /** Called when the message type is updated. See if we can deduce the message series from the type **/
+            $scope.typeSelected = function () {
+                var type = $scope.message.type;
+
+                // Find matching message series
+                var series = $.grep($scope.messageSeries, function (s) {
+                    return s.types === undefined || s.types.length === 0 || ($.inArray(type, s.types) !== -1);
+                });
+                if (series.length === 1) {
+                    $scope.message.messageSeries = series[0];
+                }
             };
 
 
@@ -488,7 +504,7 @@ angular.module('niord.editor')
                 // Check if the cursor is within a publication span
                 var publicationId = null;
                 var selNode = editor.selection.getNode();
-                while (selNode != null  && selNode.getAttribute && !publicationId) {
+                while (selNode !== null  && selNode.getAttribute && !publicationId) {
                     publicationId = selNode.getAttribute('publication');
                     selNode = selNode.parentNode;
                 }
@@ -706,7 +722,7 @@ angular.module('niord.editor')
                 if (!$scope.message.parts) {
                     $scope.message.parts = [];
                 }
-                if ($scope.message.parts.length == 0) {
+                if ($scope.message.parts.length === 0) {
                     $scope.addMessagePart(0);
                 }
                 var startCoordIndex = 1;
@@ -773,7 +789,7 @@ angular.module('niord.editor')
                     $scope.editMode['subject'].splice(index, 1);
                     $scope.editMode['description'].splice(index, 1);
                 }
-                if (parts.length == 0) {
+                if (parts.length === 0) {
                     $scope.addMessagePart(0);
                 }
                 $scope.initMessageParts();
@@ -816,20 +832,20 @@ angular.module('niord.editor')
 
             /** Returns if the given message part type selector (group) should be displayed **/
             $scope.showPartType = function (part, fieldId) {
-                return $scope.showField(fieldId) || part.type.toLowerCase() == fieldId;
+                return $scope.showField(fieldId) || part.type.toLowerCase() === fieldId;
             };
 
 
             /** Returns if the given message part positions field should be displayed **/
             $scope.showPartPositionField = function (part) {
-                return part.type == 'DETAILS' || part.type == 'POSITIONS' || part.type == 'SIGNALS' ||
+                return part.type === 'DETAILS' || part.type === 'POSITIONS' || part.type === 'SIGNALS' ||
                     (part.geometry && part.geometry.features.length > 0);
             };
 
 
             /** Returns if the given message part event dates field should be displayed **/
             $scope.showPartEventDatesField = function (part) {
-                return part.type == 'DETAILS' || part.type == 'TIME' || (part.eventDates && part.eventDates.length > 0);
+                return part.type === 'DETAILS' || part.type === 'TIME' || (part.eventDates && part.eventDates.length > 0);
             };
 
 
@@ -1106,7 +1122,7 @@ angular.module('niord.editor')
                             // If the current message is already associated with the last selected tag,
                             // Do not provide a link to add it again.
                             for (var x = 0; x < messageTags.length; x++) {
-                                if (tag && tag.tagId == messageTags[x].tagId) {
+                                if (tag && tag.tagId === messageTags[x].tagId) {
                                     $scope.lastSelectedMessageTag = undefined;
                                 }
                             }
@@ -1161,7 +1177,7 @@ angular.module('niord.editor')
                 MessageService.generatePromulgation(promulgation.type.typeId, $scope.message)
                     .success(function (result) {
                         angular.forEach($scope.message.promulgations, function(p) {
-                            if (p.type.typeId == promulgation.type.typeId) {
+                            if (p.type.typeId === promulgation.type.typeId) {
                                 $.extend(true, p, result);
                                 $scope.setDirty();
                             }
@@ -1276,7 +1292,7 @@ angular.module('niord.editor')
 
                     // To preserve revision history, we only delete the actual thumbnail file from the
                     // repository if it is the latest (unsaved) revision.
-                    if (thumbnailPath.indexOf($scope.message.editRepoPath + '/' + $scope.message.revision + '/') == 0) {
+                    if (thumbnailPath.indexOf($scope.message.editRepoPath + '/' + $scope.message.revision + '/') === 0) {
                         MessageService.deleteAttachmentFile(thumbnailPath)
                             .success(function () {
                                 console.log("Deleted thumbnail file " + thumbnailPath);
@@ -1325,7 +1341,7 @@ angular.module('niord.editor')
 
                     // To preserve revision history, we only delete the attachment file from the
                     // repository if it is the latest (unsaved) revision.
-                    if (attachment.path.indexOf($scope.message.editRepoPath + '/' + $scope.message.revision + '/') == 0) {
+                    if (attachment.path.indexOf($scope.message.editRepoPath + '/' + $scope.message.revision + '/') === 0) {
                         var filePath = MessageService.attachmentEditRepoPath($scope.message, attachment);
                         MessageService.deleteAttachmentFile(filePath)
                             .success(function () {
@@ -1347,7 +1363,7 @@ angular.module('niord.editor')
 
             /** Called when the display property is updated **/
             $scope.attachmentDisplayUpdated = function (att) {
-                if (att.display == '') {
+                if (att.display === '') {
                     delete att.display;
                     delete att.width;
                     delete att.height;
@@ -1439,7 +1455,7 @@ angular.module('niord.editor')
 
             /** Verify the draft message **/
             $scope.verify = function () {
-                if ($scope.message.status != 'DRAFT') {
+                if ($scope.message.status !== 'DRAFT') {
                     growl.error("Only draft messages can be verified", {ttl: 5000});
                     return;
                 }
@@ -1465,7 +1481,7 @@ angular.module('niord.editor')
             $scope.publish = function () {
 
                 // First check that the message is valid
-                if ($scope.message.status != 'VERIFIED') {
+                if ($scope.message.status !== 'VERIFIED') {
                     growl.error("Only verified draft messages can be published", {ttl: 5000});
                     return;
                 }
@@ -1511,7 +1527,7 @@ angular.module('niord.editor')
 
             /** Delete the draft message **/
             $scope.deleteDraft = function () {
-                if ($scope.message.status != 'DRAFT' && $scope.message.status != 'VERIFIED') {
+                if ($scope.message.status !== 'DRAFT' && $scope.message.status !== 'VERIFIED') {
                     growl.error("Only draft and verified messages can be deleted", {ttl: 5000});
                     return;
                 }
@@ -1545,7 +1561,7 @@ angular.module('niord.editor')
 
             /** Cancel the message **/
             $scope.cancel = function () {
-                if ($scope.message.status != 'PUBLISHED') {
+                if ($scope.message.status !== 'PUBLISHED') {
                     growl.error("Only published messages can be cancelled", {ttl: 5000});
                     return;
                 }
@@ -1624,7 +1640,7 @@ angular.module('niord.editor')
 
                 // If one message history is selected, extract its attachments
                 $scope.historyAttachments = undefined;
-                if ($scope.selectedHistory.length == 1) {
+                if ($scope.selectedHistory.length === 1) {
                     try {
                         var hist1 = JSON.parse($scope.selectedHistory[0].snapshot);
                         $scope.historyAttachments = hist1.attachments;
@@ -1703,7 +1719,7 @@ angular.module('niord.editor')
 
             /** Returns if the given comment is selected **/
             $scope.isSelected = function (comment) {
-                return comment && $scope.comment && comment.id == $scope.comment.id;
+                return comment && $scope.comment && comment.id === $scope.comment.id;
             };
 
 
@@ -1716,7 +1732,7 @@ angular.module('niord.editor')
             /** Returns if the comment can be saved (and optionally e-mailed) **/
             $scope.canSaveComment = function (sendEmail) {
                 return $scope.comment &&
-                    sendEmail == ($scope.comment.emailAddresses && $scope.comment.emailAddresses.length > 0)
+                    sendEmail === ($scope.comment.emailAddresses && $scope.comment.emailAddresses.length > 0)
             };
 
 

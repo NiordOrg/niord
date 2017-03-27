@@ -21,6 +21,7 @@ import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MainType;
 import org.niord.model.message.MessageSeriesVo;
+import org.niord.model.message.Type;
 
 import javax.persistence.Cacheable;
 import javax.persistence.Column;
@@ -32,7 +33,9 @@ import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -63,17 +66,24 @@ public class MessageSeries extends VersionedEntity<Integer> {
     @NotNull
     NumberSequenceType numberSequenceType = NumberSequenceType.YEARLY;
 
+    @ElementCollection(targetClass = Type.class)
+    @Enumerated(EnumType.STRING)
+    Set<Type> types = new HashSet<>();
+
     @ElementCollection
     List<String> editorFields = new ArrayList<>();
+
 
     /** Constructor */
     public MessageSeries() {
     }
 
+
     /** Constructor */
     public MessageSeries(String seriesId) {
         this.seriesId = seriesId;
     }
+
 
     /** Constructor */
     public MessageSeries(MessageSeriesVo series) {
@@ -83,6 +93,9 @@ public class MessageSeries extends VersionedEntity<Integer> {
         if (series instanceof SystemMessageSeriesVo) {
             SystemMessageSeriesVo sysSeries = (SystemMessageSeriesVo)series;
 
+            if (sysSeries.getTypes() != null) {
+                this.types.addAll(sysSeries.getTypes());
+            }
             this.shortFormat = sysSeries.getShortFormat();
             this.numberSequenceType = sysSeries.getNumberSequenceType() != null
                     ? sysSeries.getNumberSequenceType()
@@ -106,6 +119,9 @@ public class MessageSeries extends VersionedEntity<Integer> {
 
             if (series instanceof SystemMessageSeriesVo) {
                 SystemMessageSeriesVo sysSeries = (SystemMessageSeriesVo)series;
+                if (!types.isEmpty()) {
+                    sysSeries.setTypes(new HashSet<>(types));
+                }
                 sysSeries.setShortFormat(shortFormat);
                 sysSeries.setNumberSequenceType(numberSequenceType);
                 if (!editorFields.isEmpty()) {
@@ -121,6 +137,23 @@ public class MessageSeries extends VersionedEntity<Integer> {
     public <M extends MessageSeriesVo> M toVo(Class<M> clz) {
         return toVo(clz, DataFilter.get().fields(DataFilter.ALL));
     }
+
+
+    /**
+     * Return if the given type is valid for this message series
+     * @param type the type to check
+     * @return if the given type is valid for this message series
+     */
+    public boolean validType(Type type) {
+        return validTypes().contains(type);
+    }
+
+
+    /** Returns the set of valid types for the message series **/
+    public Set<Type> validTypes() {
+        return types.isEmpty() ? mainType.getTypes() : types;
+    }
+
 
     /*************************/
     /** Getters and Setters **/
@@ -140,6 +173,14 @@ public class MessageSeries extends VersionedEntity<Integer> {
 
     public void setMainType(MainType mainType) {
         this.mainType = mainType;
+    }
+
+    public Set<Type> getTypes() {
+        return types;
+    }
+
+    public void setTypes(Set<Type> types) {
+        this.types = types;
     }
 
     public String getShortFormat() {

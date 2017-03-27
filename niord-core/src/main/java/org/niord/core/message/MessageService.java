@@ -384,6 +384,9 @@ public class MessageService extends BaseService {
         message.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
 
         if (message.getType() != null) {
+            if (message.getMessageSeries().validType(message.getType())) {
+                throw new Exception("Invalid type for message " + message.getType());
+            }
             message.setMainType(message.getType().getMainType());
         }
         if (message.getMainType() != null && message.getMainType() != message.getMessageSeries().getMainType()) {
@@ -457,6 +460,9 @@ public class MessageService extends BaseService {
         }
 
         if (message.getType() != null) {
+            if (message.getMessageSeries().validType(message.getType())) {
+                throw new Exception("Invalid type for message " + message.getType());
+            }
             message.setMainType(message.getType().getMainType());
         }
 
@@ -748,6 +754,7 @@ public class MessageService extends BaseService {
      *
      * @param message the message template to compute auto-generated message fields for
      * @return the updated message template
+     * @noinspection all
      */
     public Message updateAutoMessageFields(Message message) {
         if (message.isAutoTitle()) {
@@ -763,6 +770,7 @@ public class MessageService extends BaseService {
      * has an associated number, then the shortId of the message is updated.
      * @param message the message to update shortId for
      * @return the update message
+     * @noinspection all
      */
     public Message checkUpdateShortId(Message message) {
         if (message.getMessageSeries() != null) {
@@ -784,6 +792,7 @@ public class MessageService extends BaseService {
      * Utility method used to update the auto-generated fields of a message
      * @param message the message to update
      * @return the updated message
+     * @noinspection all
      */
     public SystemMessageVo adjustMessage(SystemMessageVo message, AdjustmentType... types) {
 
@@ -1299,6 +1308,7 @@ public class MessageService extends BaseService {
      * @param messageId the message to find referencing messages for
      * @param levels the levels
      * @return the result
+     * @noinspection all
      */
     private Set<Integer> findReferencingMessageIds(Set<Integer> result, String messageId, int levels) {
         for (Message message : findByMessageId(messageId)) {
@@ -1342,10 +1352,10 @@ public class MessageService extends BaseService {
         if (uids == null || uids.isEmpty()) {
             return Collections.emptySet();
         }
-        return em.createNamedQuery("Message.separatePageUids", String.class)
+        return new HashSet<>(
+                em.createNamedQuery("Message.separatePageUids", String.class)
                 .setParameter("uids", uids)
-                .getResultList().stream()
-                .collect(Collectors.toSet());
+                .getResultList());
     }
 
     /***************************************/

@@ -22,16 +22,40 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="col-sm-4">Message Type</label>
+                            <label class="col-sm-4">Main Type</label>
                             <div class="btn-group col-sm-8">
                                 <label class="btn btn-default btn-sm" ng-model="series.mainType"
-                                       ng-change="updateShortFormat()" uib-btn-radio="'NW'">
+                                       ng-change="updateMainType()" uib-btn-radio="'NW'">
                                     Navigational Warnings
                                 </label>
                                 <label class="btn btn-default btn-sm" ng-model="series.mainType"
-                                       ng-change="updateShortFormat()" uib-btn-radio="'NM'">
+                                       ng-change="updateMainType()" uib-btn-radio="'NM'">
                                     Notices to Mariners
                                 </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4">Restrict Types</label>
+                            <div ng-if="series.mainType == 'NW'" class="btn-group col-sm-8">
+                                <label class="btn btn-default btn-sm" ng-model="types['NW'].LOCAL_WARNING"
+                                       uib-btn-checkbox translate>msg.type.LOCAL_WARNING</label>
+                                <label class="btn btn-default btn-sm" ng-model="types['NW'].COASTAL_WARNING"
+                                       uib-btn-checkbox translate>msg.type.COASTAL_WARNING</label>
+                                <label class="btn btn-default btn-sm" ng-model="types['NW'].SUBAREA_WARNING"
+                                       uib-btn-checkbox translate>msg.type.SUBAREA_WARNING</label>
+                                <label class="btn btn-default btn-sm" ng-model="types['NW'].NAVAREA_WARNING"
+                                       uib-btn-checkbox translate>msg.type.NAVAREA_WARNING</label>
+                            </div>
+                            <div ng-if="series.mainType == 'NM'" class="btn-group col-sm-8">
+                                <label class="btn btn-default btn-sm" ng-model="types['NM'].TEMPORARY_NOTICE"
+                                       uib-btn-checkbox translate>msg.type.TEMPORARY_NOTICE</label>
+                                <label class="btn btn-default btn-sm" ng-model="types['NM'].PRELIMINARY_NOTICE"
+                                       uib-btn-checkbox translate>msg.type.PRELIMINARY_NOTICE</label>
+                                <label class="btn btn-default btn-sm" ng-model="types['NM'].PERMANENT_NOTICE"
+                                       uib-btn-checkbox translate>msg.type.PERMANENT_NOTICE</label>
+                                <label class="btn btn-default btn-sm" ng-model="types['NM'].MISCELLANEOUS_NOTICE"
+                                       uib-btn-checkbox translate>msg.type.MISCELLANEOUS_NOTICE</label>
                             </div>
                         </div>
 

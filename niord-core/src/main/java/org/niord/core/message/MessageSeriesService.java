@@ -201,9 +201,10 @@ public class MessageSeriesService extends BaseService {
         }
 
         original.setMainType(series.getMainType());
+        original.getTypes().clear();
+        original.getTypes().addAll(series.getTypes());
         original.setShortFormat(series.getShortFormat());
-        original.setNumberSequenceType(series.getNumberSequenceType() != null
-            ? series.getNumberSequenceType() : null);
+        original.setNumberSequenceType(series.getNumberSequenceType());
         original.getEditorFields().clear();
         original.getEditorFields().addAll(series.getEditorFields());
 
@@ -216,6 +217,7 @@ public class MessageSeriesService extends BaseService {
      * Deletes the message series with the given Series ID
      * @param seriesId the message series to delete
      * @return if the message was deleted
+     * @noinspection all
      */
     public boolean deleteMessageSeries(String seriesId) {
 
