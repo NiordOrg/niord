@@ -44,7 +44,7 @@ angular.module('niord.template')
             /** Initialize the tab-selection **/
             $scope.selectOperation = function (operation) {
                 $scope.operation = operation;
-                $scope.executeTab   = operation == 'execute' && $scope.message.categories.length > 0;
+                $scope.executeTab   = operation === 'execute' && $scope.message.categories.length > 0;
                 $scope.selectTab    = !$scope.executeTab;
             };
             $scope.selectOperation(operation);
@@ -52,7 +52,7 @@ angular.module('niord.template')
 
             /** Returns if the currently selected operation is the parameter one **/
             $scope.operationSelected = function (operation) {
-                return $scope.operation == operation;
+                return $scope.operation === operation;
             };
 
 
@@ -137,18 +137,18 @@ angular.module('niord.template')
                 }
                 var cats = $scope.searchResult;
                 var index = $.inArray($scope.focusedCategory, cats);
-                if (index == -1) {
+                if (index === -1) {
                     cats = $scope.message.categories;
                     index = $.inArray($scope.focusedCategory, cats);
                 }
-                if (index == -1) {
+                if (index === -1) {
                     return evt;
                 }
-                if (evt.which == 38 /* up arrow */  && index > 0) {
+                if (evt.which === 38 /* up arrow */  && index > 0) {
                     $scope.focusCategory(cats[index - 1]);
-                } else if (evt.which == 40 /* down arrow */ && index < cats.length - 1) {
+                } else if (evt.which === 40 /* down arrow */ && index < cats.length - 1) {
                     $scope.focusCategory(cats[index + 1]);
-                } else if ((evt.which == 13 /* return */ || evt.which == 32 /* space */) && $scope.focusedCategory !== undefined) {
+                } else if ((evt.which === 13 /* return */ || evt.which === 32 /* space */) && $scope.focusedCategory !== undefined) {
                     if ($scope.categorySelected($scope.focusedCategory)) {
                         $scope.unselectCategory($scope.focusedCategory);
                     } else {
@@ -171,7 +171,7 @@ angular.module('niord.template')
 
             /** Updates the category search result **/
             $scope.refreshCategories = function () {
-                if ($scope.operation == "select") {
+                if ($scope.operation === "select") {
                     $scope.focusedCategory = undefined;
 
                     TemplateService.search($scope.params.name, $scope.type, $scope.params.category, $scope.atons)
@@ -205,7 +205,7 @@ angular.module('niord.template')
             /** Returns if any category has been selected **/
             $scope.categorySelected = function (cat) {
                 return cat !== undefined &&
-                    $.grep($scope.message.categories, function (c) { return c.id == cat.id; }).length > 0;
+                    $.grep($scope.message.categories, function (c) { return c.id === cat.id; }).length > 0;
             };
 
 
@@ -304,13 +304,13 @@ angular.module('niord.template')
             // When entering execution mode, update the message to match the selected templates
             $scope.enterExecutionMode = function () {
 
-                if ($scope.operation != 'execute') {
+                if ($scope.operation !== 'execute') {
                     return;
                 }
 
                 // Compute the template categories
                 $scope.templates = $.grep($scope.message.categories, function (cat) {
-                    return cat.type == 'TEMPLATE' && cat.scriptResourcePaths !== undefined
+                    return cat.type === 'TEMPLATE' && cat.scriptResourcePaths !== undefined
                 });
 
                 // Ensure the presence of a message part for each template
@@ -340,7 +340,7 @@ angular.module('niord.template')
                 angular.forEach($rootScope.stdTemplateFields, function (field) {
                     var show = false;
                     angular.forEach($scope.templates, function (template) {
-                        show = show || $.inArray(field, template.stdTemplateFields) != -1;
+                        show = show || $.inArray(field, template.stdTemplateFields) !== -1;
                     });
                     $scope.showStdTemplateField[field] = show;
                 });
@@ -350,8 +350,8 @@ angular.module('niord.template')
                 $scope.messageSeries = [];
                 if ($rootScope.domain && $rootScope.domain.messageSeries) {
                     angular.forEach($rootScope.domain.messageSeries, function (series) {
-                        if (series.mainType == $scope.message.mainType) {
-                            if ($scope.message.messageSeries && $scope.message.messageSeries.seriesId == series.seriesId) {
+                        if (series.mainType === $scope.message.mainType) {
+                            if ($scope.message.messageSeries && $scope.message.messageSeries.seriesId === series.seriesId) {
                                 $scope.messageSeries.push($scope.message.messageSeries);
                             } else {
                                 $scope.messageSeries.push(series);
@@ -359,7 +359,7 @@ angular.module('niord.template')
                         }
                     });
                 }
-                if ($scope.messageSeries.length == 1 && !$scope.message.messageSeries) {
+                if ($scope.messageSeries.length === 1 && !$scope.message.messageSeries) {
                     $scope.message.messageSeries = $scope.messageSeries[0];
                 }
 
@@ -370,7 +370,7 @@ angular.module('niord.template')
 
             /** Executes the message template **/
             $scope.executeTemplates = function (selectMessage) {
-                if ($scope.operation == 'execute') {
+                if ($scope.operation === 'execute') {
                     if ($scope.message.categories && $scope.message.categories.length > 0) {
                         TemplateService
                             .executeCategoryTemplates($scope.message, $scope.templateData)
