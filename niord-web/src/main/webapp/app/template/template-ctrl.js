@@ -388,6 +388,13 @@ angular.module('niord.template')
                 if (series.length === 1) {
                     $scope.message.messageSeries = series[0];
                 }
+
+                // Adjust promulgations
+                MessageService.adjustEditableMessage($scope.message)
+                    .success(function (message) {
+                        $scope.message.promulgations = message.promulgations;
+                    })
+
             };
 
 
