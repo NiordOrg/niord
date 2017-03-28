@@ -283,7 +283,7 @@ public class MessageRestService  {
         SystemMessageVo messageVo = message.toVo(SystemMessageVo.class, filter);
 
         // Let promulgation services adjust the promulgations of the message
-        promulgationManager.onLoadSystemMessage(messageVo);
+        promulgationManager.onLoadSystemMessage(messageVo, false);
 
         // Compute the default set of editor fields to display for the message
         editorFieldsService.computeEditorFields(messageVo);
@@ -856,6 +856,9 @@ public class MessageRestService  {
             messageService.checkUpdateShortId(msg);
             message.setShortId(msg.getShortId());
         }
+
+        // Let promulgation services adjust the promulgations of the message
+        promulgationManager.onLoadSystemMessage(message, true);
 
         // Prune irrelevant fields
         message.setNumber(null);

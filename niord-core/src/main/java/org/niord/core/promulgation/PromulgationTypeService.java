@@ -17,13 +17,20 @@
 package org.niord.core.promulgation;
 
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.service.BaseService;
+import org.niord.model.message.Type;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
+import javax.persistence.criteria.Root;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -63,20 +70,55 @@ public class PromulgationTypeService extends BaseService {
 
     /**
      * Returns the list of active promulgation types for the current domain
+     * @param messageType optionally specify a message type that must be matched by the promulgation types
      * @return the list of active promulgation types
      */
-    public List<PromulgationType> getActivePromulgationTypes() {
+    @SuppressWarnings("all")
+    public List<PromulgationType> getActivePromulgationTypes(Type messageType) {
 
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<PromulgationType> typeQuery = cb.createQuery(PromulgationType.class);
+        Root<PromulgationType> typeRoot = typeQuery.from(PromulgationType.class);
+        CriteriaHelper<PromulgationType> criteriaHelper = new CriteriaHelper<>(cb, typeQuery);
+
+        // Only active promulgation types
+        criteriaHelper.add(cb.equal(typeRoot.get("active"), true));
+
+        // Filter on domain
         Domain domain = domainService.currentDomain();
-
-        if (domain == null) {
-            return em.createNamedQuery("PromulgationType.findActive", PromulgationType.class)
-                    .getResultList();
-        } else {
-            return em.createNamedQuery("PromulgationType.findActiveByDomain", PromulgationType.class)
-                    .setParameter("domainId", domain.getDomainId())
-                    .getResultList();
+        if (domain != null) {
+            Join<PromulgationType, Domain> domainJoin = typeRoot.join("domains", JoinType.LEFT);
+            criteriaHelper.equals(domainJoin.get("domainId"), domain.getDomainId());
         }
+
+        // If specified, filter on message type
+        /**
+         * Hibernate seems to be buggy in its handling of element-collections, so, we filter in code. See e.g.
+         * https://hibernate.atlassian.net/browse/HHH-6686
+         *
+        if (messageType != null) {
+            Expression<Collection<Type>> types = typeRoot.get("messageTypes");
+            criteriaHelper.add(cb.or(
+                    cb.isEmpty(types),
+                    cb.isMember(messageType, types)));
+        }
+         **/
+
+        // Complete the query
+        typeQuery.select(typeRoot)
+                .distinct(true)
+                .where(criteriaHelper.where())
+                .orderBy(cb.asc(typeRoot.get("priority")));
+
+        // Execute the query and update the search result
+        return em.createQuery(typeQuery)
+                .getResultList().stream()
+
+                // See Hibernate comment above - filter on message types in code for now
+                .filter(pt -> messageType == null ||
+                        pt.getMessageTypes().isEmpty() ||
+                        pt.getMessageTypes().contains(messageType))
+                .collect(Collectors.toList());
     }
 
 

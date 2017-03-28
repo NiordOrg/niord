@@ -105,16 +105,25 @@ public class PromulgationManager {
 
 
     /**
-     * Updates and adds promulgations to the message value object
+     * Updates and adds promulgations to the message value object.
+     * If the "strict" parameter is true, all promulgation types not currently active will be removed.
+     *
      * @param message the message value object
+     * @param strict if strict is true, all promulgation types not currently active will be removed
      */
-    public void onLoadSystemMessage(SystemMessageVo message) throws PromulgationException {
+    public void onLoadSystemMessage(SystemMessageVo message, boolean strict) throws PromulgationException {
 
-        // The set of promulgation types to consider is the union between the currently active
-        // services for the current domain and the promulgations already defined for the message.
+        // The set of promulgation types to consider is the the currently active promulgation types for
+        // the current domain and message type. If strict is not true, we add all promulgation types
+        // already defined for the message.
         Map<String, PromulgationType> types = new HashMap<>();
-        promulgationTypeService.getActivePromulgationTypes().forEach(pt -> types.put(pt.getTypeId(), pt));
-        promulgationTypeService.getPromulgationTypes(message).forEach(pt -> types.put(pt.getTypeId(), pt));
+        promulgationTypeService.getActivePromulgationTypes(message.getType()).forEach(pt -> types.put(pt.getTypeId(), pt));
+
+        if (!strict) {
+            promulgationTypeService.getPromulgationTypes(message).forEach(pt -> types.put(pt.getTypeId(), pt));
+        } else {
+            message.getPromulgations().removeIf(p -> !types.containsKey(p.getType().getTypeId()));
+        }
 
         // Let the associated services process the message
         for (PromulgationType type : types.values()) {

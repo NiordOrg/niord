@@ -452,6 +452,9 @@ angular.module('niord.editor')
                 if (series.length === 1) {
                     $scope.message.messageSeries = series[0];
                 }
+
+                // Lastly, call adjustEditableMessage() to update list of promulgations
+                $scope.adjustEditableMessage(true);
             };
 
 
@@ -664,32 +667,9 @@ angular.module('niord.editor')
             /**
              * Called when relevant attributes have been changed that may affect the auto-generated message fields
              */
-            $scope.adjustEditableMessage = function () {
+            $scope.adjustEditableMessage = function (inclPromulgations) {
                 var msg = $scope.message;
-                // Construct a message template that contains attributes affecting title line and editor fields
-                var msgTemplate = {
-                    mainType: msg.mainType,
-                    messageSeries: msg.messageSeries,
-                    number: msg.number,
-                    publishDateFrom: msg.publishDateFrom,
-                    areas: msg.areas,
-                    categories: msg.categories,
-                    autoTitle: msg.autoTitle,
-                    descs: msg.descs.map(function (desc) {
-                       return { lang: desc.lang, subject: desc.subject, vicinity: desc.vicinity }
-                    }),
-                    autoSource: msg.autoSource,
-                    sources: msg.sources,
-                    parts: msg.parts.map(function (part) {
-                        return {
-                            descs: part.descs.map(function (desc) {
-                                return { lang: desc.lang, subject: desc.subject, vicinity: desc.vicinity }
-                            })
-                        }
-                    })
-
-                };
-                MessageService.adjustEditableMessage(msgTemplate)
+                MessageService.adjustEditableMessage(msg)
                     .success(function (message) {
 
                         $scope.setEditorFields(message.editorFields);
@@ -707,6 +687,10 @@ angular.module('niord.editor')
                         }
                         if ($scope.messageNumberEditable()) {
                             msg.shortId = message.shortId;
+                        }
+
+                        if (inclPromulgations) {
+                            msg.promulgations = message.promulgations;
                         }
                     })
             };
