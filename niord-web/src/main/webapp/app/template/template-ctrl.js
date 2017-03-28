@@ -438,12 +438,19 @@ angular.module('niord.template')
 
 
             /** Adds a new date interval to the list of message date intervals */
-            $scope.addPartEventDate = function (part) {
+            $scope.addPartEventDate = function (part, focus) {
                 part.eventDates.push({ allDay: true, fromDate: undefined, toDate: undefined });
-                $timeout(function () {
-                    $('.evt-date:last').find('input:first').focus();
-                }, 100)
+                if (focus) {
+                    $timeout(function () { $('.evt-date:last').find('input:first').focus(); }, 100)
+                }
+            };
 
+
+            /** Adds a new date interval to the list of message date intervals if the list is empty */
+            $scope.checkAddPartEventDate = function (part) {
+                if (part.eventDates.length === 0) {
+                    $scope.addPartEventDate(part, false);
+                }
             };
 
 

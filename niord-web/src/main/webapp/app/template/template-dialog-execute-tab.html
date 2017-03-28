@@ -128,7 +128,7 @@
                     <!-- ********************* -->
                     <template-dialog-param-field field-title-key="msg.field.event_dates" ng-if="showStdTemplateField['event_dates']">
 
-                        <div class="row" ng-init="addPartEventDate(message.parts[templateIndex])">
+                        <div class="row" ng-init="checkAddPartEventDate(message.parts[templateIndex])">
                             <div class="col-sm-12">
                                 <table class="table table-condensed editor-date-interval-table">
                                     <tr>
@@ -137,7 +137,7 @@
                                         <th>End</th>
                                         <th>
                                             <div class="pull-right">
-                                                <button ng-click="addPartEventDate(message.parts[templateIndex])" class="btn btn-default btn-xs">
+                                                <button ng-click="addPartEventDate(message.parts[templateIndex], true)" class="btn btn-default btn-xs">
                                                     <span class="glyphicon glyphicon-plus"></span> Add
                                                 </button>
                                             </div>
@@ -219,17 +219,16 @@
                     <!-- ********************* -->
                     <!-- ** Work Vessel     ** -->
                     <!-- ********************* -->
-                    <template-dialog-param-field field-title="Work Vessel"
+                    <template-dialog-param-field field-title-key="template.vessel.title"
                                                  ng-if="showStdTemplateField['work_vessel']">
 
                         <div ng-init="templateData[templateIndex].vessel = { contact: true }">
                             <div class="row">
                                 <div class="col-sm-3" style="margin-top: 5px;">
-                                    Name <span class="template-param-mandatory">*</span>
+                                    {{'term.name' | translate}} <span class="template-param-mandatory">*</span>
                                 </div>
                                 <div class="col-sm-5">
                                     <input type="text"
-                                           placeholder="Name"
                                            class="form-control input-sm"
                                            ng-model="templateData[templateIndex].vessel.name"
                                            required>
@@ -237,11 +236,10 @@
                             </div>
                             <div class="row" style="margin-top: 5px">
                                 <div class="col-sm-3" style="margin-top: 5px;">
-                                    Call Sign <span class="template-param-mandatory">*</span>
+                                    {{'term.call_sign' | translate}}  <span class="template-param-mandatory">*</span>
                                 </div>
                                 <div class="col-sm-5">
                                     <input type="text"
-                                           placeholder="Call Sign"
                                            class="form-control input-sm"
                                            style="text-transform:uppercase"
                                            required
@@ -251,11 +249,11 @@
                                 </div>
                             </div>
                             <div class="row" style="margin-top: 5px">
-                                <div class="col-sm-3" style="margin-top: 5px;">Contact</div>
+                                <div class="col-sm-3" style="margin-top: 5px;" translate>term.contact</div>
                                 <div class="col-sm-9 inline">
                                     <input type="checkbox"
                                            ng-model="templateData[templateIndex].vessel.contact">
-                                    Contact vessel on channel 16 + channel
+                                    {{'template.vessel.contact' | translate}}
                                     <input type="number"
                                            ng-disabled="!templateData[templateIndex].vessel.contact"
                                            style="width: 60px"
@@ -263,11 +261,11 @@
                                 </div>
                             </div>
                             <div class="row" style="margin-top: 5px">
-                                <div class="col-sm-3" style="margin-top: 5px;">Guard Vessels</div>
+                                <div class="col-sm-3" style="margin-top: 5px;" translate>template.vessel.guard_vessels</div>
                                 <div class="col-sm-9 inline">
                                     <input type="checkbox"
                                            ng-model="templateData[templateIndex].vessel.guardVessels">
-                                    Guard vessels in area
+                                    {{'template.vessel.guard_vessels_in_area' | translate}}
                                 </div>
                             </div>
                         </div>
@@ -277,23 +275,21 @@
                     <!-- ********************* -->
                     <!-- ** Markings        ** -->
                     <!-- ********************* -->
-                    <template-dialog-param-field field-title="Markings"
-                                                 ng-if="showStdTemplateField['markings'] && paramTypeMap['marking_type_list'] && paramTypeMap['marking_bearing']">
+                    <template-dialog-param-field field-title-key="template.markings.title"
+                                 ng-if="showStdTemplateField['markings'] && paramTypeMap['marking_type_list'] && paramTypeMap['marking_bearing']">
 
                         <div class="row" ng-init="templateData[templateIndex].markings = []">
                             <div class="col-sm-12">
                                 <table class="table table-condensed editor-date-interval-table">
                                     <tr>
-                                        <th>Type</th>
-                                        <th>Light Char.</th>
-                                        <th>
-                                            Dist. (m)
-                                        </th>
+                                        <th translate>template.aton.type</th>
+                                        <th translate>template.markings.light_char</th>
+                                        <th translate>template.markings.dist</th>
                                         <th colspan="2">
-                                            Bearing
+                                            {{'template.markings.bearing' | translate}}
                                             <div class="pull-right">
                                                 <button ng-click="addMarking(templateData[templateIndex].markings)" class="btn btn-default btn-xs">
-                                                    <span class="glyphicon glyphicon-plus"></span> Add
+                                                    <span class="glyphicon glyphicon-plus"></span> {{'term.add' | translate}}
                                                 </button>
                                             </div>
                                         </th>
@@ -318,7 +314,7 @@
                                                    ng-model="m.distance">
                                         </td>
                                         <td>
-                                            <select class="form-control input-sm"  style="width: 40px"
+                                            <select class="form-control input-sm"  style="width: 50px"
                                                     ng-model="m.bearing"
                                                     ng-options="val as val.descs[0].value for val in paramTypeMap['marking_bearing'].values">
                                             </select>
