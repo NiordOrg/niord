@@ -224,25 +224,19 @@
 
                         <div ng-init="templateData[templateIndex].vessel = { contact: true }">
                             <div class="row">
-                                <div class="col-sm-3" style="margin-top: 5px;">
-                                    {{'term.name' | translate}} <span class="template-param-mandatory">*</span>
-                                </div>
+                                <div class="col-sm-3" style="margin-top: 5px;" translate>term.name</div>
                                 <div class="col-sm-5">
                                     <input type="text"
                                            class="form-control input-sm"
-                                           ng-model="templateData[templateIndex].vessel.name"
-                                           required>
+                                           ng-model="templateData[templateIndex].vessel.name">
                                 </div>
                             </div>
                             <div class="row" style="margin-top: 5px">
-                                <div class="col-sm-3" style="margin-top: 5px;">
-                                    {{'term.call_sign' | translate}}  <span class="template-param-mandatory">*</span>
-                                </div>
+                                <div class="col-sm-3" style="margin-top: 5px;" translate>term.call_sign</div>
                                 <div class="col-sm-5">
                                     <input type="text"
                                            class="form-control input-sm"
                                            style="text-transform:uppercase"
-                                           required
                                            ng-model="templateData[templateIndex].vessel.callSign"
                                            ng-remote-validate="/rest/templates/validate-call-sign"
                                            ng-remote-method="POST">
