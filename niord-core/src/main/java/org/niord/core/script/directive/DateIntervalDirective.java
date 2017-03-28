@@ -43,6 +43,7 @@ import static org.niord.core.script.FmTemplateService.TIME_ZONE_PROPERTY;
 public class DateIntervalDirective implements TemplateDirectiveModel {
 
     private static final String PARAM_DATE_INTERVAL = "dateInterval";
+    private static final String PARAM_FORMAT        = "format";
 
     /**
      * {@inheritDoc}
@@ -65,18 +66,35 @@ public class DateIntervalDirective implements TemplateDirectiveModel {
             dateInterval = (DateIntervalVo)dateIntervalParam.getWrappedObject();
         }
 
-        SimpleScalar timeZoneId = (SimpleScalar)env.getDataModel().get(TIME_ZONE_PROPERTY);
-        TimeZone timeZone = (timeZoneId != null)
-                ? TimeZone.getTimeZone(timeZoneId.toString())
-                : TimeZone.getDefault();
+        // Get the "format" parameter
+        SimpleScalar formatModel = (SimpleScalar)params.get(PARAM_FORMAT);
+        boolean navtex = formatModel != null && "navtex".equalsIgnoreCase(formatModel.getAsString());
 
-        try {
-            String result = formatDateInterval(text.getResourceBundle(), env.getLocale(), timeZone, dateInterval);
-            env.getOut().write(result);
-        } catch (Exception e) {
-            // Prefer robustness over correctness
+        if (navtex) {
+            // NAVTEX
+            try {
+                String result = formatNavtexDateInterval(text.getResourceBundle(), env.getLocale(), dateInterval);
+                env.getOut().write(result);
+            } catch (Exception e) {
+                // Prefer robustness over correctness
+            }
+
+        } else {
+            // Non-NAVTEX case
+            SimpleScalar timeZoneId = (SimpleScalar)env.getDataModel().get(TIME_ZONE_PROPERTY);
+            TimeZone timeZone = (timeZoneId != null)
+                    ? TimeZone.getTimeZone(timeZoneId.toString())
+                    : TimeZone.getDefault();
+
+            try {
+                String result = formatDateInterval(text.getResourceBundle(), env.getLocale(), timeZone, dateInterval);
+                env.getOut().write(result);
+            } catch (Exception e) {
+                // Prefer robustness over correctness
+            }
         }
     }
+
 
     /**
      * Formats the date interval as text
@@ -155,6 +173,55 @@ public class DateIntervalDirective implements TemplateDirectiveModel {
 
         // Add the time zone
         result.append(timeZoneFormat.format(new Date()));
+
+        return result.toString();
+    }
+
+
+
+    /**
+     * Formats the date interval as text in the NAVTEX format
+     *
+     * @param text the resource bundle
+     * @param locale the current locale
+     * @param dateInterval the date interval
+     * @return the formatted date interval
+     */
+    private String formatNavtexDateInterval(ResourceBundle text, Locale locale, DateIntervalVo dateInterval) throws Exception {
+        if (dateInterval == null || (dateInterval.getFromDate() == null && dateInterval.getToDate() == null)) {
+            return text.getString("msg.time.until_further_notice");
+        }
+
+        // TODO: Optimize based on same month and year. E.g.:
+        // "3 May 2016 - 4 Jun 2016" -> "3 May - 4 Jun 2016"
+        // "3 May 2016 - 4 May 2016" -> "3 - 4 May 2016"
+
+        Date from = dateInterval.getFromDate();
+        Date to = dateInterval.getToDate();
+        boolean allDay = dateInterval.getAllDay() != null && dateInterval.getAllDay();
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("ddHHmm 'UTC' MMM yy", Locale.US);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        StringBuilder result = new StringBuilder();
+
+        if (from != null) {
+            String fromDateTxt = dateFormat.format(from);
+            if (to == null) {
+                result.append(text.getString("msg.time.from_date").replace("{{fromDate}}", fromDateTxt));
+            } else {
+                result.append(fromDateTxt).append(" - ");
+
+            }
+        }
+        if (to != null) {
+            String toDateTxt = dateFormat.format(to);
+            if (from == null) {
+                result.append(text.getString("msg.time.to_date").replace("{{toDate}}", toDateTxt));
+            } else {
+                result.append(toDateTxt);
+            }
+        }
 
         return result.toString();
     }

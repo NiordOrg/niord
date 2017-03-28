@@ -248,7 +248,7 @@ public class LightCharacterParser {
         return text.chars()
                 .mapToObj(c -> (char)c)
                 .map(this::getTelephonyCode)
-                .collect(Collectors.joining(" "));
+                .collect(Collectors.joining("-"));
     }
 
 

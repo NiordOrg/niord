@@ -74,7 +74,7 @@ public class CallSignDirective implements TemplateDirectiveModel {
                 env.getOut().write(result);
 
             } else {
-                env.getOut().write(callSign);
+                env.getOut().write(callSign.toUpperCase());
             }
         } catch (Exception e) {
             // Prefer robustness over correctness

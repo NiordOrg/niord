@@ -128,7 +128,7 @@
                     <!-- ********************* -->
                     <template-dialog-param-field field-title-key="msg.field.event_dates" ng-if="showStdTemplateField['event_dates']">
 
-                        <div class="row">
+                        <div class="row" ng-init="addPartEventDate(message.parts[templateIndex])">
                             <div class="col-sm-12">
                                 <table class="table table-condensed editor-date-interval-table">
                                     <tr>
@@ -215,6 +215,65 @@
 
                     </template-dialog-param-field>
 
+
+                    <!-- ********************* -->
+                    <!-- ** Work Vessel     ** -->
+                    <!-- ********************* -->
+                    <template-dialog-param-field field-title="Work Vessel"
+                                                 ng-if="showStdTemplateField['work_vessel']">
+
+                        <div ng-init="templateData[templateIndex].vessel = { contact: true }">
+                            <div class="row">
+                                <div class="col-sm-3" style="margin-top: 5px;">
+                                    Name <span class="template-param-mandatory">*</span>
+                                </div>
+                                <div class="col-sm-5">
+                                    <input type="text"
+                                           placeholder="Name"
+                                           class="form-control input-sm"
+                                           ng-model="templateData[templateIndex].vessel.name"
+                                           required>
+                                </div>
+                            </div>
+                            <div class="row" style="margin-top: 5px">
+                                <div class="col-sm-3" style="margin-top: 5px;">
+                                    Call Sign <span class="template-param-mandatory">*</span>
+                                </div>
+                                <div class="col-sm-5">
+                                    <input type="text"
+                                           placeholder="Call Sign"
+                                           class="form-control input-sm"
+                                           style="text-transform:uppercase"
+                                           required
+                                           ng-model="templateData[templateIndex].vessel.callSign"
+                                           ng-remote-validate="/rest/templates/validate-call-sign"
+                                           ng-remote-method="POST">
+                                </div>
+                            </div>
+                            <div class="row" style="margin-top: 5px">
+                                <div class="col-sm-3" style="margin-top: 5px;">Contact</div>
+                                <div class="col-sm-9 inline">
+                                    <input type="checkbox"
+                                           ng-model="templateData[templateIndex].vessel.contact">
+                                    Contact vessel on channel 16 + channel
+                                    <input type="number"
+                                           ng-disabled="!templateData[templateIndex].vessel.contact"
+                                           style="width: 60px"
+                                           ng-model="templateData[templateIndex].vessel.channel">
+                                </div>
+                            </div>
+                            <div class="row" style="margin-top: 5px">
+                                <div class="col-sm-3" style="margin-top: 5px;">Guard Vessels</div>
+                                <div class="col-sm-9 inline">
+                                    <input type="checkbox"
+                                           ng-model="templateData[templateIndex].vessel.guardVessels">
+                                    Guard vessels in area
+                                </div>
+                            </div>
+                        </div>
+                    </template-dialog-param-field>
+
+
                     <!-- ********************* -->
                     <!-- ** Markings        ** -->
                     <!-- ********************* -->
@@ -274,7 +333,6 @@
                         </div>
 
                     </template-dialog-param-field>
-
                 </div>
 
             </div>
