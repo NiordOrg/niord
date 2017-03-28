@@ -53,7 +53,7 @@ public class LightCharacterTest  {
     @Test
     public void callSignTest() throws Exception {
         assertEquals(
-                "Oscar Uniform X-ray Romeo Two",
+                "Oscar-Uniform-X-ray-Romeo-Two",
                 LightCharacterParser.getInstance().getTelephonyCode("OUXR2"));
     }
 
