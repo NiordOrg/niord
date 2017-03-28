@@ -384,7 +384,7 @@ public class MessageService extends BaseService {
         message.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
 
         if (message.getType() != null) {
-            if (message.getMessageSeries().validType(message.getType())) {
+            if (!message.getMessageSeries().validType(message.getType())) {
                 throw new Exception("Invalid type for message " + message.getType());
             }
             message.setMainType(message.getType().getMainType());
@@ -460,7 +460,7 @@ public class MessageService extends BaseService {
         }
 
         if (message.getType() != null) {
-            if (message.getMessageSeries().validType(message.getType())) {
+            if (!message.getMessageSeries().validType(message.getType())) {
                 throw new Exception("Invalid type for message " + message.getType());
             }
             message.setMainType(message.getType().getMainType());
