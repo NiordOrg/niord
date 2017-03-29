@@ -29,7 +29,7 @@ public class TemplateParamVo implements ILocalizable<TemplateParamDescVo>, IJson
     String paramId;
     String type;
     boolean mandatory;
-    boolean list;
+    boolean positionList;
     List<TemplateParamDescVo> descs;
 
 
@@ -70,12 +70,12 @@ public class TemplateParamVo implements ILocalizable<TemplateParamDescVo>, IJson
         this.mandatory = mandatory;
     }
 
-    public boolean isList() {
-        return list;
+    public boolean isPositionList() {
+        return positionList;
     }
 
-    public void setList(boolean list) {
-        this.list = list;
+    public void setPositionList(boolean positionList) {
+        this.positionList = positionList;
     }
 
     @Override

@@ -262,8 +262,6 @@ angular.module('niord.template')
             scope: {
                 templateParam:  "=",
                 templateData:   "=",
-                index:          "=",
-                message:        "=",
                 nested:         "=",
                 paramTypeMap:   "="
             },
@@ -280,28 +278,25 @@ angular.module('niord.template')
 
 
                 /** Attempts to initialize the text field from any AtoN associated with the message part **/
-                scope.checkInitTextField = function(paramType, model, paramId) {
-                    var geom = scope.message.parts[scope.index].geometry;
-                    var feature = geom.features.length > 0 ? geom.features[0] : undefined;
-                    if (feature && feature.properties.aton && paramId === 'aton_name') {
-                        var aton = feature.properties.aton;
+                scope.checkInitTextField = function(paramType, paramId) {
+                    if (scope.templateData.aton && paramId === 'aton_name') {
+                        var aton = scope.templateData.aton;
                         if (aton.tags['seamark:name']) {
-                            model[paramId] = aton.tags['seamark:name'];
+                            scope.templateData[paramId] = aton.tags['seamark:name'];
                         }
                     }
                 };
 
+
                 /** Attempts to initialize the list from any AtoN associated with the message part **/
-                scope.checkInitList = function(paramType, model, paramId) {
-                    var geom = scope.message.parts[scope.index].geometry;
-                    var feature = geom.features.length > 0 ? geom.features[0] : undefined;
+                scope.checkInitList = function(paramType, paramId) {
                     var atonValues = $.grep(paramType.values, function (val) { return val.atonFilter !== undefined; });
-                    if (feature && feature.properties.aton && atonValues.length > 0) {
-                         TemplateService.matchAtonToList(paramType.values, feature.properties.aton)
+                    if (scope.templateData.aton && atonValues.length > 0) {
+                         TemplateService.matchAtonToList(paramType.values, scope.templateData.aton)
                              .success(function (result) {
                                  angular.forEach(paramType.values, function (value) {
                                      if (result.key === value.key) {
-                                        model[paramId] = value;
+                                         scope.templateData[paramId] = value;
                                      }
                                  })
                              })

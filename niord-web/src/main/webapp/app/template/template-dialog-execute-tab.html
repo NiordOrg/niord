@@ -185,7 +185,7 @@
                                            edit-type="message"
                                            feature-collection="message.parts[$index].geometry"
                                            show-wms-layer="true"
-                                           on-save="computeAreas()"></gj-editor>
+                                           on-save="updateTemplatePositionData()"></gj-editor>
                             </div>
                         </div>
 
@@ -198,18 +198,31 @@
                                                  field-title="{{param.descs[0].name}}"
                                                  mandatory="param.mandatory">
 
-                        <div class="row">
+                        <div ng-if="!param.positionList" class="row">
                             <div class="col-sm-12">
-
                                 <template-input-field
                                         template-param="param"
-                                        template-data="templateData"
-                                        index="templateIndex"
-                                        message="message"
+                                        template-data="templateData[templateIndex]"
                                         param-type-map="paramTypeMap"
                                         nested="false">
                                 </template-input-field>
+                            </div>
+                        </div>
 
+                        <div ng-if="param.positionList"
+                             ng-repeat="pos in templateData[templateIndex].positions"
+                             class="row"
+                             ng-class="{ 'template-dialog-param-field-divider' : !$first }">
+                            <div class="col-sm-1" style="margin-top: 5px; color: gray">
+                                <span class="glyphicon glyphicon-map-marker"></span>{{$index + 1}}
+                            </div>
+                            <div class="col-sm-11">
+                                <template-input-field
+                                        template-param="param"
+                                        template-data="pos"
+                                        param-type-map="paramTypeMap"
+                                        nested="false">
+                                </template-input-field>
                             </div>
                         </div>
 

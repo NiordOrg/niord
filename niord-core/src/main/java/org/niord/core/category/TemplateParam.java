@@ -58,7 +58,7 @@ public class TemplateParam extends BaseEntity<Integer> implements ILocalizable<T
 
     boolean mandatory;
 
-    boolean list;
+    boolean positionList;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
     List<TemplateParamDesc> descs = new ArrayList<>();
@@ -74,7 +74,7 @@ public class TemplateParam extends BaseEntity<Integer> implements ILocalizable<T
         this.paramId = param.getParamId();
         this.type = param.getType();
         this.mandatory = param.isMandatory();
-        this.list = param.isList();
+        this.positionList = param.isPositionList();
         if (param.getDescs() != null) {
             param.getDescs()
                     .forEach(desc -> createDesc(desc.getLang()).setName(desc.getName()));
@@ -88,7 +88,7 @@ public class TemplateParam extends BaseEntity<Integer> implements ILocalizable<T
         param.setParamId(paramId);
         param.setType(type);
         param.setMandatory(mandatory);
-        param.setList(list);
+        param.setPositionList(positionList);
         if (!descs.isEmpty()) {
             param.setDescs(getDescs(filter).stream()
                     .map(TemplateParamDesc::toVo)
@@ -119,7 +119,7 @@ public class TemplateParam extends BaseEntity<Integer> implements ILocalizable<T
         return !Objects.equals(paramId, param.getParamId()) ||
                 !Objects.equals(type, param.getType()) ||
                 !Objects.equals(mandatory, param.isMandatory()) ||
-                !Objects.equals(list, param.isList()) ||
+                !Objects.equals(positionList, param.isPositionList()) ||
                 descsChanged(param);
     }
 
@@ -171,12 +171,12 @@ public class TemplateParam extends BaseEntity<Integer> implements ILocalizable<T
         this.mandatory = mandatory;
     }
 
-    public boolean isList() {
-        return list;
+    public boolean isPositionList() {
+        return positionList;
     }
 
-    public void setList(boolean list) {
-        this.list = list;
+    public void setPositionList(boolean positionList) {
+        this.positionList = positionList;
     }
 
     @Override

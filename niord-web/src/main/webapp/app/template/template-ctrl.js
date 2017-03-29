@@ -267,9 +267,9 @@ angular.module('niord.template')
      * ******************************************************************
      */
     .controller('TemplateExecutionDialogCtrl', ['$scope', '$rootScope', '$timeout', 'growl',
-                'LangService', 'TemplateService', 'MessageService',
+                'LangService', 'TemplateService', 'MessageService', 'MapService',
         function ($scope, $rootScope, $timeout, growl,
-                  LangService, TemplateService, MessageService) {
+                  LangService, TemplateService, MessageService, MapService) {
             'use strict';
 
             $scope.previewLang          = LangService.language();
@@ -325,7 +325,7 @@ angular.module('niord.template')
                             type: 'DETAILS'
                         })
                     }
-                    $scope.templateData.push({});
+                    $scope.templateData.push({ positions: [] });
                 }
 
 
@@ -372,8 +372,8 @@ angular.module('niord.template')
                     $scope.message.messageSeries = $scope.messageSeries[0];
                 }
 
-                // Check if we can update areas from a geometry
-                $scope.computeAreas();
+                // Update template position data
+                $scope.updateTemplatePositionData();
             };
 
 
@@ -431,9 +431,62 @@ angular.module('niord.template')
                 if (geometry.features.length > 0) {
                     MessageService.intersectingAreas(geometry)
                         .success(function (areas) {
-                            $scope.message.areas = areas;
+                            if (areas && areas.length > 0) {
+                                 $scope.message.areas = areas;
+                            }
                         });
                 }
+            };
+
+
+            /**
+             * Serializes the feature to a structure resembling the one produced by the GeoJsonAdapter.
+             * The GeoJsonAdapter serializes MessagePart.geometry for use in the Freemarker templates,
+             * and by adopting the same format, we can reuse Freemarker code for e.g. rendering position lists.
+             **/
+            function serializeGeometry(feature) {
+                var coords = [];
+                MapService.serializeReadableCoordinates(feature, coords);
+                return [{
+                    coordinates: coords.map( function (coord) {
+                        return { coordinates: [ coord.lon, coord.lat ] }
+                    })
+                }];
+            }
+
+
+            /**
+             * Updates the template position data. The template data associated with a
+             * specific template (and message part), will be updated to contain a "positions" array
+             * with an entry for each GeoJSON Feature of the message part geometry.
+             *
+             * The "positions" array in turn is used to create lists of positional template parameters.
+             **/
+            $scope.updateTemplatePositionData = function () {
+                for (var x = 0; x < $scope.templates.length; x++) {
+                    var featureCollection = $scope.message.parts[x].geometry;
+                    var data = $scope.templateData[x];
+
+                    // Compute the features proper
+                    var features = $.grep(featureCollection.features, function (feature) {
+                        return feature.properties.parentFeatureIds === undefined &&
+                            feature.properties.restriction !== 'affected';
+                    });
+
+                    // Sync the "pos" array with the GeoJSON features of the message part
+                    data.positions.length = features.length;
+
+                    for (var f = 0; f < features.length; f++) {
+                        var feature = features[f];
+                        data.positions[f] = data.positions[f] || {};
+                        data.positions[f].geometry = serializeGeometry(feature.geometry);
+                        data.positions[f].aton = feature.properties.aton;
+                    }
+                }
+
+                // Whenever the geometry of a message changes,
+                // re-compute message areas from the geometry
+                $scope.computeAreas();
             };
 
 

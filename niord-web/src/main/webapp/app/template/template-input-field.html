@@ -7,23 +7,23 @@
             <input ng-switch-when="text"
                    type="text"
                    class="form-control input-sm"
-                   ng-model="templateData[index][templateParam.paramId]"
-                   ng-init="checkInitTextField(paramType, templateData[index], templateParam.paramId)">
+                   ng-model="templateData[templateParam.paramId]"
+                   ng-init="checkInitTextField(paramType, templateParam.paramId)">
 
             <input ng-switch-when="number"
                    type="number"
                    class="form-control input-sm"
-                   ng-model="templateData[index][templateParam.paramId]">
+                   ng-model="templateData[templateParam.paramId]">
 
             <input ng-switch-when="boolean"
                    type="checkbox"
                    class="form-control input-sm"
-                   ng-model="templateData[index][templateParam.paramId]">
+                   ng-model="templateData[templateParam.paramId]">
 
             <input ng-switch-when="light_character"
                    type="text"
                    class="form-control input-sm"
-                   ng-model="templateData[index][templateParam.paramId]"
+                   ng-model="templateData[templateParam.paramId]"
                    ng-remote-validate="/rest/templates/validate-light-character"
                    ng-remote-method="POST">
 
@@ -31,7 +31,7 @@
                    type="text"
                    class="form-control input-sm"
                    style="text-transform:uppercase"
-                   ng-model="templateData[index][templateParam.paramId]"
+                   ng-model="templateData[templateParam.paramId]"
                    ng-remote-validate="/rest/templates/validate-call-sign"
                    ng-remote-method="POST">
 
@@ -42,9 +42,9 @@
 
         <div ng-class="{ 'col-sm-12' : nested, 'col-sm-6' : !nested }">
             <select class="form-control input-sm"
-                    ng-model="templateData[index][templateParam.paramId]"
+                    ng-model="templateData[templateParam.paramId]"
                     ng-options="val as val.descs[0].value for val in paramType.values"
-                    ng-init="checkInitList(paramType, templateData[index], templateParam.paramId)"></select>
+                    ng-init="checkInitList(paramType, templateParam.paramId)"></select>
         </div>
 
     </div>
@@ -63,8 +63,6 @@
                         <template-input-field
                                 template-param="param"
                                 template-data="templateData"
-                                index="index"
-                                message="message"
                                 nested="true"
                                 param-type-map="paramTypeMap">
                         </template-input-field>

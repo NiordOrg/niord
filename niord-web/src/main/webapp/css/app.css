@@ -747,6 +747,11 @@ body > .ui-select-container {
     margin-bottom: 5px;
 }
 
+.template-dialog-param-field-divider {
+    margin-top: 5px;
+    border-top: 1px solid #eee;
+}
+
 .template-message-map {
     width: 100%;
     height: 150px;
