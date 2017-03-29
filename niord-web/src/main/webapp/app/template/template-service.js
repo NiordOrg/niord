@@ -61,11 +61,11 @@ angular.module('niord.template')
             this.sortParameterTypes = function (paramTypes) {
                 angular.forEach(paramTypes, function (paramType) {
                     LangService.sortDescs(paramType);
-                    if (paramType.type == 'LIST' && paramType.values) {
+                    if (paramType.type === 'LIST' && paramType.values) {
                         angular.forEach(paramType.values, function (val) {
                             LangService.sortDescs(val);
                         })
-                    } else if (paramType.type == 'COMPOSITE' && paramType.templateParams) {
+                    } else if (paramType.type === 'COMPOSITE' && paramType.templateParams) {
                         angular.forEach(paramType.templateParams, function (param) {
                             LangService.sortDescs(param);
                         })

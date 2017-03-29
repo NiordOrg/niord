@@ -83,7 +83,7 @@ angular.module('niord.template')
                 // Use for template selection
                 scope.searchResult = [];
                 scope.refreshTemplates = function (name) {
-                    if (scope.atons.length == 0 && (!name || name.length == 0)) {
+                    if (scope.atons.length === 0 && (!name || name.length === 0)) {
                         return;
                     }
                     TemplateService.search(name, scope.type, null, scope.atons)
@@ -109,13 +109,13 @@ angular.module('niord.template')
                         scope.atons
                     ).result.then(function (result) {
 
-                        if (result.type == 'category') {
+                        if (result.type === 'category') {
                             scope.message.categories.length = 0;
                             angular.forEach(result.message.categories, function (category) {
                                 scope.message.categories.push(category);
                             });
                             scope.flagCategoriesUpdated();
-                        } else if (result.type == 'message') {
+                        } else if (result.type === 'message') {
                             scope.message = result.message;
                             if (scope.messageUpdated) {
                                 scope.messageUpdated({ message: scope.message });
@@ -140,7 +140,7 @@ angular.module('niord.template')
                             };
                             featureCollection.features.push(feature);
                         });
-                        if (!message.parts || message.parts.length == 0) {
+                        if (!message.parts || message.parts.length === 0) {
                             message.parts = [{ type: 'DETAILS', eventDates: [], descs: [] }];
                         }
                         message.parts[0].geometry = featureCollection;
@@ -191,7 +191,7 @@ angular.module('niord.template')
                 /** Refreshes the template field search result */
                 scope.searchResult = [];
                 scope.refreshTemplateFields = function(name) {
-                    if (!name || name.length == 0) {
+                    if (!name || name.length === 0) {
                         return [];
                     }
                     scope.searchResult.length = 0;
@@ -200,7 +200,7 @@ angular.module('niord.template')
                         // 1) The typed name is a substring match
                         // 2) It is not already selected
                         if (field.toUpperCase().indexOf(name.toUpperCase()) !== -1 &&
-                            $.inArray(field, scope.templateData.stdTemplateFields) == -1) {
+                            $.inArray(field, scope.templateData.stdTemplateFields) === -1) {
                             scope.searchResult.push(field);
                         }
                     });
@@ -283,7 +283,7 @@ angular.module('niord.template')
                 scope.checkInitTextField = function(paramType, model, paramId) {
                     var geom = scope.message.parts[scope.index].geometry;
                     var feature = geom.features.length > 0 ? geom.features[0] : undefined;
-                    if (feature && feature.properties.aton && paramId == 'aton_name') {
+                    if (feature && feature.properties.aton && paramId === 'aton_name') {
                         var aton = feature.properties.aton;
                         if (aton.tags['seamark:name']) {
                             model[paramId] = aton.tags['seamark:name'];
@@ -300,7 +300,7 @@ angular.module('niord.template')
                          TemplateService.matchAtonToList(paramType.values, feature.properties.aton)
                              .success(function (result) {
                                  angular.forEach(paramType.values, function (value) {
-                                     if (result.key == value.key) {
+                                     if (result.key === value.key) {
                                         model[paramId] = value;
                                      }
                                  })
