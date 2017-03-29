@@ -86,7 +86,7 @@ angular.module('niord.map')
 
             /** Converts lon-lat extent array to xy extent array in mercator */
             this.fromLonLatExtent = function(lonLatExtent) {
-                if (lonLatExtent && lonLatExtent.length == 4) {
+                if (lonLatExtent && lonLatExtent.length === 4) {
                     var minPos = this.fromLonLat([lonLatExtent[0], lonLatExtent[1]]);
                     var maxPos = this.fromLonLat([lonLatExtent[2], lonLatExtent[3]]);
                     return [minPos[0], minPos[1], maxPos[0], maxPos[1]];
@@ -97,7 +97,7 @@ angular.module('niord.map')
 
             /** Converts xy extent array in mercator to a lon-lat extent array */
             this.toLonLatExtent = function(xyExtent) {
-                if (xyExtent && xyExtent.length == 4) {
+                if (xyExtent && xyExtent.length === 4) {
                     var minPos = this.toLonLat([xyExtent[0], xyExtent[1]]);
                     var maxPos = this.toLonLat([xyExtent[2], xyExtent[3]]);
                     return [minPos[0], minPos[1], maxPos[0], maxPos[1]];
@@ -355,8 +355,8 @@ angular.module('niord.map')
                     if (g instanceof Array) {
                         if (g.length >= 2 && $.isNumeric(g[0])) {
                             var bufferFeature = props['parentFeatureIds'];
-                            var affectedArea = props['restriction'] == 'affected';
-                            var includeCoord = (polygonType != 'Exterior');
+                            var affectedArea = props['restriction'] === 'affected';
+                            var includeCoord = (polygonType !== 'Exterior');
                             if (includeCoord && !bufferFeature && !affectedArea) {
                                 coords.push({
                                     lon: g[0],
@@ -367,32 +367,32 @@ angular.module('niord.map')
                             }
                             index++;
                         } else {
-                            for (var x = 0; x < g.length; x++) {
-                                polygonType = (polygonType == 'Interior' && x == g.length - 1) ? 'Exterior' : polygonType;
-                                index = that.serializeReadableCoordinates(g[x], coords, props, index, polygonType);
+                            for (var x1 = 0; x1 < g.length; x1++) {
+                                polygonType = (polygonType === 'Interior' && x1 === g.length - 1) ? 'Exterior' : polygonType;
+                                index = that.serializeReadableCoordinates(g[x1], coords, props, index, polygonType);
                             }
                         }
-                    } else if (g.type == 'FeatureCollection') {
-                        for (var x = 0; g.features && x < g.features.length; x++) {
-                            index = that.serializeReadableCoordinates(g.features[x], coords);
+                    } else if (g.type === 'FeatureCollection') {
+                        for (var x2 = 0; g.features && x2 < g.features.length; x2++) {
+                            index = that.serializeReadableCoordinates(g.features[x2], coords);
                         }
-                    } else if (g.type == 'Feature') {
+                    } else if (g.type === 'Feature') {
                         index = that.serializeReadableCoordinates(g.geometry, coords, g.properties, 0);
-                    } else if (g.type == 'GeometryCollection') {
-                        for (var x = 0; g.geometries && x < g.geometries.length; x++) {
-                            index = that.serializeReadableCoordinates(g.geometries[x], coords, props, index);
+                    } else if (g.type === 'GeometryCollection') {
+                        for (var x3 = 0; g.geometries && x3 < g.geometries.length; x3++) {
+                            index = that.serializeReadableCoordinates(g.geometries[x3], coords, props, index);
                         }
-                    } else if (g.type == 'MultiPolygon') {
+                    } else if (g.type === 'MultiPolygon') {
                         for (var p = 0; p < g.coordinates.length; p++) {
                             // For polygons, do not include coordinates for interior rings
-                            for (var x = 0; x < g.coordinates[p].length; x++) {
-                                index = that.serializeReadableCoordinates(g.coordinates[p][x], coords, props, index, x == 0 ? 'Interior' : 'Exterior');
+                            for (var x4 = 0; x4 < g.coordinates[p].length; x4++) {
+                                index = that.serializeReadableCoordinates(g.coordinates[p][x4], coords, props, index, x4 === 0 ? 'Interior' : 'Exterior');
                             }
                         }
-                    } else if (g.type == 'Polygon') {
+                    } else if (g.type === 'Polygon') {
                         // For polygons, do not include coordinates for interior rings
-                        for (var x = 0; x < g.coordinates.length; x++) {
-                            index = that.serializeReadableCoordinates(g.coordinates[x], coords, props, index, x == 0 ? 'Interior' : 'Exterior');
+                        for (var x5 = 0; x5 < g.coordinates.length; x5++) {
+                            index = that.serializeReadableCoordinates(g.coordinates[x5], coords, props, index, x5 === 0 ? 'Interior' : 'Exterior');
                         }
                     } else if (g.type) {
                         index = that.serializeReadableCoordinates(g.coordinates, coords, props, index);
@@ -404,7 +404,7 @@ angular.module('niord.map')
 
             /** Converts an OL geometry to GeoJSON **/
             this.olToGjGeometry = function (g) {
-                if (g.getType() != 'GeometryCollection') {
+                if (g.getType() !== 'GeometryCollection') {
                     return geoJsonFormat.writeGeometryObject(g, {
                         dataProjection: proj4326,
                         featureProjection: projMercator
@@ -436,7 +436,7 @@ angular.module('niord.map')
 
                 // Hack to circumvent bug:
                 // ol.format.GeoJSON does not properly convert "GeometryCollection"
-                if (feature.getGeometry().getType() == 'GeometryCollection') {
+                if (feature.getGeometry().getType() === 'GeometryCollection') {
                     gjFeature.geometry = this.olToGjGeometry(feature.getGeometry());
                 }
 
@@ -552,11 +552,11 @@ function FeatureName (key, val) {
 }
 
 FeatureName.prototype.isFeatureName = function() {
-    return this.type == 'feature-name';
+    return this.type === 'feature-name';
 };
 
 FeatureName.prototype.isFeatureCoordName = function() {
-    return this.type == 'feature-coord-name';
+    return this.type === 'feature-coord-name';
 };
 
 FeatureName.prototype.isValid = function() {
