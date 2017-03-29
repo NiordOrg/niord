@@ -58,18 +58,18 @@
                     <span ng-if="param.mandatory" class="template-param-mandatory">*</span>
                 </div>
 
-                <!-- TODO
                 <div class="col-sm-8">
-                    <template-input-field
-                            template-param="param"
-                            template-data="templateData"
-                            index="index"
-                            message="message"
-                            nested="true"
-                            param-type-map="paramTypeMap">
-                    </template-input-field>
+                    <recursive>
+                        <template-input-field
+                                template-param="param"
+                                template-data="templateData"
+                                index="index"
+                                message="message"
+                                nested="true"
+                                param-type-map="paramTypeMap">
+                        </template-input-field>
+                    </recursive>
                 </div>
-                -->
 
             </div>
         </div>

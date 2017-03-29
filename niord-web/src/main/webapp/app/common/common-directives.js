@@ -651,6 +651,31 @@ angular.module('niord.common')
 
 
     /**
+     * Angular is crap for recursive directives
+     * http://stackoverflow.com/questions/14430655/recursion-in-angular-directives
+     */
+    .directive("recursive", function($compile) {
+        return {
+            restrict: "EACM",
+            priority: 100000,
+            compile: function(tElement) {
+                var contents = tElement.contents().remove();
+                var compiledContents;
+                return function(scope, iElement) {
+                    if(!compiledContents) {
+                        compiledContents = $compile(contents);
+                    }
+                    iElement.append(
+                        compiledContents(scope,
+                            function(clone) {
+                                return clone; }));
+                };
+            }
+        };
+    })
+
+
+    /**
      * Show element active/inactive depending on the current location.
      * Usage:
      * <pre>
