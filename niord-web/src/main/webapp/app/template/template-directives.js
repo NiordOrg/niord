@@ -278,8 +278,8 @@ angular.module('niord.template')
 
 
                 /** Attempts to initialize the text field from any AtoN associated with the message part **/
-                scope.checkInitTextField = function(paramType, paramId) {
-                    if (scope.templateData.aton && paramId === 'aton_name') {
+                scope.checkInitAtonNameField = function(paramType, paramId) {
+                    if (scope.templateData.aton) {
                         var aton = scope.templateData.aton;
                         if (aton.tags['seamark:name']) {
                             scope.templateData[paramId] = aton.tags['seamark:name'];
@@ -289,7 +289,7 @@ angular.module('niord.template')
 
 
                 /** Attempts to initialize the list from any AtoN associated with the message part **/
-                scope.checkInitList = function(paramType, paramId) {
+                scope.checkInitAtonList = function(paramType, paramId) {
                     var atonValues = $.grep(paramType.values, function (val) { return val.atonFilter !== undefined; });
                     if (scope.templateData.aton && atonValues.length > 0) {
                          TemplateService.matchAtonToList(paramType.values, scope.templateData.aton)

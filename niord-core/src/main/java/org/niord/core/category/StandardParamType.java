@@ -29,6 +29,16 @@ import javax.persistence.Entity;
 @SuppressWarnings("unused")
 public class StandardParamType extends ParamType {
 
+    public static final String[] STANDARD_PARAM_TYPES = {
+            "text",             // Generic text
+            "number",           // Numbers
+            "boolean",          // Booleans
+            "aton_name",        // Textual name of AtoN
+            "light_character",  // Validated light character field (e.g. "Fl(2+1) R 10s"
+            "call_sign"         // Validated vessel call sign
+    };
+
+
     /** Constructor **/
     public StandardParamType() {
     }

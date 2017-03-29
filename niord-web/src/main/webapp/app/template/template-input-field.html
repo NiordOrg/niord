@@ -7,8 +7,7 @@
             <input ng-switch-when="text"
                    type="text"
                    class="form-control input-sm"
-                   ng-model="templateData[templateParam.paramId]"
-                   ng-init="checkInitTextField(paramType, templateParam.paramId)">
+                   ng-model="templateData[templateParam.paramId]">
 
             <input ng-switch-when="number"
                    type="number"
@@ -19,6 +18,12 @@
                    type="checkbox"
                    class="form-control input-sm"
                    ng-model="templateData[templateParam.paramId]">
+
+            <input ng-switch-when="aton_name"
+                   type="text"
+                   class="form-control input-sm"
+                   ng-model="templateData[templateParam.paramId]"
+                   ng-init="checkInitAtonNameField(paramType, templateParam.paramId)">
 
             <input ng-switch-when="light_character"
                    type="text"
@@ -44,7 +49,7 @@
             <select class="form-control input-sm"
                     ng-model="templateData[templateParam.paramId]"
                     ng-options="val as val.descs[0].value for val in paramType.values"
-                    ng-init="checkInitList(paramType, templateParam.paramId)"></select>
+                    ng-init="checkInitAtonList(paramType, templateParam.paramId)"></select>
         </div>
 
     </div>

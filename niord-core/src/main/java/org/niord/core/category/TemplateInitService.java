@@ -25,6 +25,8 @@ import javax.ejb.Startup;
 import javax.inject.Inject;
 import java.util.Arrays;
 
+import static org.niord.core.category.StandardParamType.STANDARD_PARAM_TYPES;
+
 /**
  * Checks that standard parameter types have been defined
  */
@@ -32,14 +34,6 @@ import java.util.Arrays;
 @Startup
 @SuppressWarnings("unused")
 public class TemplateInitService extends BaseService {
-
-    public static final String[] STANDARD_PARAM_TYPES = {
-            "text",             // Generic text
-            "number",           // Numbers
-            "boolean",          // Booleans
-            "light_character",  // Validated light character field (e.g. "Fl(2+1) R 10s"
-            "call_sign"         // Validated vessel call sign
-    };
 
     @Inject
     Logger log;
