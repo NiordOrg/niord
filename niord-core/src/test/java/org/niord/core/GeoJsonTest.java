@@ -165,6 +165,9 @@ public class GeoJsonTest {
         fc.setFeatures(new FeatureVo[] { feature });
 
         fc = GeoJsonUtils.addAffectedRadius(fc, "affected", 1, "nm");
+        assertEquals(2, fc.getFeatures().length);
+        assertEquals("affected", fc.getFeatures()[1].getProperties().get("restriction"));
+
         System.out.println(fc);
     }
 

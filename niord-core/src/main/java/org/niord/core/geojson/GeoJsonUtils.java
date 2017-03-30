@@ -207,7 +207,7 @@ public class GeoJsonUtils {
                 if (f.getId() != null) {
                     props.put("parentFeatureIds", f.getId().toString());
                 }
-                props.put(restriction, StringUtils.defaultIfBlank(restriction, "affected"));
+                props.put("restriction", StringUtils.defaultIfBlank(restriction, "affected"));
                 props.put("bufferType", "radius");
                 props.put("bufferRadius", radius);
                 props.put("bufferRadiusType", radiusType);
