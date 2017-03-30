@@ -44,6 +44,7 @@ public class DomainVo implements IJsonSerializable {
     private Boolean firingSchedule;
     private Boolean publish;
     private Boolean atons;
+    private Boolean templates;
     private Boolean inKeycloak;
 
     /*************************/
@@ -160,6 +161,14 @@ public class DomainVo implements IJsonSerializable {
 
     public void setAtons(Boolean atons) {
         this.atons = atons;
+    }
+
+    public Boolean getTemplates() {
+        return templates;
+    }
+
+    public void setTemplates(Boolean templates) {
+        this.templates = templates;
     }
 
     public Boolean getFiringSchedule() {

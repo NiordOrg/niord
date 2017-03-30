@@ -29,9 +29,9 @@ angular.module('niord.template')
      * Most of the actual functionality is handled by sub-controllers.
      * ******************************************************************
      */
-    .controller('TemplateDialogCtrl', ['$scope', 'TemplateService',
+    .controller('TemplateDialogCtrl', ['$scope', '$rootScope', 'TemplateService',
                 'operation', 'type', 'message', 'atons',
-        function ($scope, TemplateService,
+        function ($scope, $rootScope, TemplateService,
                   operation, type, message, atons) {
             'use strict';
 
@@ -39,6 +39,7 @@ angular.module('niord.template')
             $scope.type             = type;
             $scope.atons            = atons || [];
             $scope.message          = angular.copy(message);
+            $scope.executable       = $rootScope.domain && $rootScope.domain.templates;
 
 
             /** Initialize the tab-selection **/

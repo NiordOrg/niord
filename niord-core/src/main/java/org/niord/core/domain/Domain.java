@@ -110,6 +110,11 @@ public class Domain extends BaseEntity<Integer> {
      */
     Boolean atons;
 
+    /**
+     * Defines whether this domain supports creating messages using templates
+     */
+    Boolean templates;
+
     @Transient
     Boolean inKeycloak;
 
@@ -137,6 +142,7 @@ public class Domain extends BaseEntity<Integer> {
         this.messageSortOrder = StringUtils.isBlank(domain.getMessageSortOrder()) ? null : domain.getMessageSortOrder();
         this.publish = domain.getPublish();
         this.atons = domain.getAtons();
+        this.templates = domain.getTemplates();
         this.inKeycloak = domain.getInKeycloak();
 
         this.areas.clear();
@@ -176,6 +182,7 @@ public class Domain extends BaseEntity<Integer> {
         domain.setMessageSortOrder(messageSortOrder);
         domain.setPublish(publish);
         domain.setAtons(atons);
+        domain.setTemplates(templates);
         domain.setFiringSchedule(firingSchedule != null);
         domain.setInKeycloak(inKeycloak);
 
@@ -222,6 +229,7 @@ public class Domain extends BaseEntity<Integer> {
                 !Objects.equals(messageSortOrder, template.getMessageSortOrder()) ||
                 !Objects.equals(publish, template.getPublish()) ||
                 !Objects.equals(atons, template.getAtons()) ||
+                !Objects.equals(templates, template.getTemplates()) ||
                 hasChanged(areas, template.getAreas()) ||
                 hasChanged(categories, template.getCategories()) ||
                 hasChanged(messageSeries, template.getMessageSeries());
@@ -400,6 +408,14 @@ public class Domain extends BaseEntity<Integer> {
 
     public void setAtons(Boolean atons) {
         this.atons = atons;
+    }
+
+    public Boolean getTemplates() {
+        return templates;
+    }
+
+    public void setTemplates(Boolean templates) {
+        this.templates = templates;
     }
 
     public Boolean getInKeycloak() {

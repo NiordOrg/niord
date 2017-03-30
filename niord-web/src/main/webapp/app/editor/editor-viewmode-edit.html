@@ -23,7 +23,7 @@
                         translate>editor.new_nw</button>
 
             </div>
-            <div ng-if="canCreateMessage('NW')" style="display: inline-block">
+            <div ng-if="canCreateMessage('NW') && domain.templates" style="display: inline-block">
                 <template-field class="new-msg-btn" main-type="NW" type="TEMPLATE"
                                 message-updated="templateExecuted(message)"
                                 placeholder="{{'editor.new_nw_template' | translate}}"></template-field>
@@ -33,7 +33,7 @@
                         translate>editor.new_nm</button>
 
             </div>
-            <div ng-if="canCreateMessage('NM')" style="display: inline-block">
+            <div ng-if="canCreateMessage('NM') && domain.templates" style="display: inline-block">
                 <template-field class="new-msg-btn" main-type="NM" type="TEMPLATE"
                                 message-updated="templateExecuted(message)"
                                 placeholder="{{'editor.new_nm_template' | translate}}"></template-field>

@@ -36,7 +36,7 @@
                             ng-disabled="selection.isEmpty()" translate>editor.new_nw</button>
 
                 </div>
-                <div ng-if="canCreateMessage('NW')" style="display: inline-block">
+                <div ng-if="canCreateMessage('NW') && domain.templates" style="display: inline-block">
                     <template-field class="aton-btn"
                                     message="message"
                                     main-type="NW"
@@ -50,7 +50,7 @@
                             ng-disabled="selection.isEmpty()" translate>editor.new_nm</button>
 
                 </div>
-                <div ng-if="canCreateMessage('NM')" style="display: inline-block">
+                <div ng-if="canCreateMessage('NM') && domain.templates" style="display: inline-block">
                     <template-field class="aton-btn"
                                     message="message"
                                     main-type="NM"

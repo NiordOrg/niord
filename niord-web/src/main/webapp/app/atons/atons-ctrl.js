@@ -91,7 +91,7 @@ angular.module('niord.atons')
             };
 
             // Determines whether to use domain filtering for area searches or not
-            $scope.domain = $rootScope.domain !== undefined;
+            $scope.domain = $rootScope.domain;
 
             /*****************************/
             /** Filter Handling         **/

@@ -233,6 +233,7 @@ public class DomainService extends BaseService {
         original.setMessageSortOrder(domain.getMessageSortOrder());
         original.setPublish(domain.getPublish());
         original.setAtons(domain.getAtons());
+        original.setTemplates(domain.getTemplates());
 
         // Substitute the areas with the persisted ones
         original.setAreas(persistedList(Area.class, domain.getAreas()));
@@ -286,6 +287,7 @@ public class DomainService extends BaseService {
     /**
      * Deletes the domain
      * @param domainId the ID of the domain to delete
+     * @noinspection all
      */
     public boolean deleteDomain(String domainId) {
 

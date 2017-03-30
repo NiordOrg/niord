@@ -29,8 +29,8 @@ angular.module('niord.template')
      * The directive can also be initialized with either a "main-type"
      * attribute, a list of AtoNs or a message template.
      ****************************************************************/
-    .directive('templateField', [ 'TemplateService', 'MessageService', 'LangService',
-            function (TemplateService, MessageService, LangService) {
+    .directive('templateField', [ '$rootScope', 'TemplateService', 'MessageService', 'LangService',
+            function ($rootScope, TemplateService, MessageService, LangService) {
         'use strict';
 
         return {
@@ -55,6 +55,8 @@ angular.module('niord.template')
                 scope.atons = scope.atons || [];
                 scope.class = scope.class || "";
                 scope.placeholder = scope.placeholder || "Select Templates";
+                scope.executable = $rootScope.domain && $rootScope.domain.templates;
+
 
                 if (!scope.message.categories) {
                     scope.message.categories = [];

@@ -25,7 +25,7 @@
             <!-- ****************************** -->
             <!-- ***** Template execution ***** -->
             <!-- ****************************** -->
-            <uib-tab active="executeTab" disable="!categoriesSelected()"  select="selectOperation('execute')">
+            <uib-tab ng-if="executable" active="executeTab" disable="!categoriesSelected()"  select="selectOperation('execute')">
                 <tab-heading>
                     <span class="glyphicon glyphicon-play"></span>
                     <span translate>template.execute</span>
@@ -49,7 +49,7 @@
 
                 <button class="btn btn-default btn-sm pull-left" ng-click="$dismiss('aborted')" translate>term.cancel</button>
 
-                <button class="btn btn-success btn-sm"
+                <button ng-if="executable" class="btn btn-success btn-sm"
                         ng-click="selectOperation('execute')" ng-disabled="!categoriesSelected()">
                     <span class="glyphicon glyphicon-play"></span>
                     <span translate>template.execute</span>
@@ -60,7 +60,7 @@
             </div>
         </div>
 
-        <div ng-if="operationSelected('execute')" class="row" style="margin-top: 10px;">
+        <div ng-if="executable && operationSelected('execute')" class="row" style="margin-top: 10px;">
             <div class="form-group col-xs-12" style="text-align: right;">
                 <button class="btn btn-default btn-sm pull-left" ng-click="$dismiss('aborted')" translate>term.cancel</button>
 
