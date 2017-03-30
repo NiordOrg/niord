@@ -274,7 +274,6 @@ angular.module('niord.template')
             'use strict';
 
             $scope.previewLang          = LangService.language();
-            $scope.showStdTemplateField = {};
             $scope.templateData         = [];
 
             $scope.validTypes = {
@@ -341,16 +340,6 @@ angular.module('niord.template')
                 });
 
 
-                // Compute the editor fields to display
-                angular.forEach($rootScope.stdTemplateFields, function (field) {
-                    var show = false;
-                    angular.forEach($scope.templates, function (template) {
-                        show = show || $.inArray(field, template.stdTemplateFields) !== -1;
-                    });
-                    $scope.showStdTemplateField[field] = show;
-                });
-
-
                 // Determine the message series for the current domain and message mainType
                 $scope.messageSeries = [];
                 var msg = $scope.message;
@@ -375,6 +364,20 @@ angular.module('niord.template')
 
                 // Update template position data
                 $scope.updateTemplatePositionData();
+            };
+
+
+            /** Determines if the given standard template input field should be displayed **/
+            $scope.showStdTemplateField = function (field, template) {
+                var show = false;
+                if (template) {
+                    show = $.inArray(field, template.stdTemplateFields) !== -1;
+                } else {
+                    angular.forEach($scope.templates, function (template) {
+                        show = show || $.inArray(field, template.stdTemplateFields) !== -1;
+                    });
+                }
+                return show;
             };
 
 

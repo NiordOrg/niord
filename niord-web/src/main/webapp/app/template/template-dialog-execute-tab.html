@@ -17,7 +17,7 @@
                 <!-- ********************* -->
                 <!-- ** Type            ** -->
                 <!-- ********************* -->
-                <template-dialog-param-field field-title-key="msg.field.type" ng-if="showStdTemplateField['type']">
+                <template-dialog-param-field field-title-key="msg.field.type" ng-if="showStdTemplateField('type')">
 
                     <div class="btn-group" ng-if="message.mainType == 'NW'">
                         <button class="btn btn-default btn-sm" ng-model="message.type" uib-btn-radio="'LOCAL_WARNING'"
@@ -53,7 +53,7 @@
                 <!-- ********************* -->
                 <!-- ** Message ID      ** -->
                 <!-- ********************* -->
-                <template-dialog-param-field field-title-key="msg.field.id" ng-if="showStdTemplateField['id']">
+                <template-dialog-param-field field-title-key="msg.field.id" ng-if="showStdTemplateField('id')">
 
                     <table class="editor-field-value-table">
                         <tr>
@@ -73,7 +73,7 @@
                 <!-- ********************* -->
                 <!-- ** Publish Date    ** -->
                 <!-- ********************* -->
-                <template-dialog-param-field field-title-key="msg.field.publish_date" ng-if="showStdTemplateField['publish_date']">
+                <template-dialog-param-field field-title-key="msg.field.publish_date" ng-if="showStdTemplateField('publish_date')">
 
                     <div class="row">
                         <div class="col-xs-6 col-sm-6 col-md-6">
@@ -94,7 +94,7 @@
                 <!-- ********************* -->
                 <!-- ** Areas           ** -->
                 <!-- ********************* -->
-                <template-dialog-param-field field-title-key="msg.field.areas" ng-if="showStdTemplateField['areas']">
+                <template-dialog-param-field field-title-key="msg.field.areas" ng-if="showStdTemplateField('areas')">
 
                     <div class="row">
                         <div class="col-sm-12">
@@ -126,7 +126,7 @@
                     <!-- ********************* -->
                     <!-- ** Event dates     ** -->
                     <!-- ********************* -->
-                    <template-dialog-param-field field-title-key="msg.field.event_dates" ng-if="showStdTemplateField['event_dates']">
+                    <template-dialog-param-field field-title-key="msg.field.event_dates" ng-if="showStdTemplateField('event_dates', template)">
 
                         <div class="row" ng-init="checkAddPartEventDate(message.parts[templateIndex])">
                             <div class="col-sm-12">
@@ -176,7 +176,7 @@
                     <!-- ********************* -->
                     <!-- ** Positions       ** -->
                     <!-- ********************* -->
-                    <template-dialog-param-field field-title-key="msg.field.positions" ng-if="showStdTemplateField['positions']">
+                    <template-dialog-param-field field-title-key="msg.field.positions" ng-if="showStdTemplateField('positions', template)">
 
                         <div class="row">
                             <div class="col-sm-12">
@@ -233,7 +233,7 @@
                     <!-- ** Work Vessel     ** -->
                     <!-- ********************* -->
                     <template-dialog-param-field field-title-key="template.vessel.title"
-                                                 ng-if="showStdTemplateField['work_vessel']">
+                                                 ng-if="showStdTemplateField('work_vessel', template)">
 
                         <div ng-init="templateData[templateIndex].vessel = { contact: true }">
                             <div class="row">
@@ -283,7 +283,7 @@
                     <!-- ** Markings        ** -->
                     <!-- ********************* -->
                     <template-dialog-param-field field-title-key="template.markings.title"
-                                 ng-if="showStdTemplateField['markings'] && paramTypeMap['marking_type_list'] && paramTypeMap['marking_bearing']">
+                                 ng-if="showStdTemplateField('markings', template) && paramTypeMap['marking_type_list'] && paramTypeMap['marking_bearing']">
 
                         <div class="row" ng-init="templateData[templateIndex].markings = []">
                             <div class="col-sm-12">
