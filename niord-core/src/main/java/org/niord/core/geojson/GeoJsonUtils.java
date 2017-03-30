@@ -19,6 +19,9 @@ package org.niord.core.geojson;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.operation.buffer.BufferOp;
 import org.apache.commons.lang.StringUtils;
+import org.geotools.geometry.jts.JTS;
+import org.geotools.referencing.CRS;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.geojson.FeatureVo;
 import org.niord.model.geojson.GeoJsonVo;
@@ -30,6 +33,9 @@ import org.niord.model.geojson.MultiPointVo;
 import org.niord.model.geojson.MultiPolygonVo;
 import org.niord.model.geojson.PointVo;
 import org.niord.model.geojson.PolygonVo;
+import org.opengis.referencing.FactoryException;
+import org.opengis.referencing.crs.CoordinateReferenceSystem;
+import org.opengis.referencing.operation.MathTransform;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -151,7 +157,11 @@ public class GeoJsonUtils {
 
 
     /**
-     * Adds an affected radius to the features
+     * Adds affected radius features to the features of the feature collection.
+     * <p>
+     * Important: First, all existing derived features (i.e. with a "parentFeatureIds" property) are removed.
+     * This is to ensure that we can call this function multiple times.
+     *
      * @param fc the feature collection to update
      * @return the updated feature collection
      */
@@ -161,17 +171,24 @@ public class GeoJsonUtils {
             return fc;
         }
 
+        // Get non-derived features
+        List<FeatureVo> features = Arrays.stream(fc.getFeatures())
+                .filter(f -> !f.getProperties().containsKey("parentFeatureIds")
+                            && !f.getProperties().containsKey("restriction")
+                            && !f.getProperties().containsKey("bufferType"))
+                .collect(Collectors.toList());
+
         // Create the new affected-radius features
-        List<FeatureVo> affectedFeatures = Arrays.stream(fc.getFeatures())
+        List<FeatureVo> affectedFeatures = features.stream()
                 .map(f -> createAffectedRadius(f, restriction, radius, radiusType))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
         // Merge the feature arrays
-        FeatureVo[] features = Stream
-                .concat(Arrays.stream(fc.getFeatures()), affectedFeatures.stream())
+        FeatureVo[] result = Stream
+                .concat(features.stream(), affectedFeatures.stream())
                 .toArray(FeatureVo[]::new);
-        fc.setFeatures(features);
+        fc.setFeatures(result);
 
         return fc;
     }
@@ -185,44 +202,74 @@ public class GeoJsonUtils {
     public static FeatureVo createAffectedRadius(FeatureVo f, String restriction, double radius, String radiusType) {
 
         try {
-            Map<String, Object> p = f.getProperties();
-            if (!p.containsKey("parentFeatureIds") && !p.containsKey("restriction") && !p.containsKey("bufferType")) {
-                FeatureVo feature = new FeatureVo();
-                feature.setId(UUID.randomUUID().toString());
+            FeatureVo feature = new FeatureVo();
+            feature.setId(UUID.randomUUID().toString());
 
-                double radiusMeters = radius;
-                switch (StringUtils.defaultString(radiusType, "m").toLowerCase()) {
-                    case "nm":
-                        radiusMeters *= 1852;
-                        break;
-                    case "km":
-                        radiusMeters *= 1000;
-                        break;
-                    default:
-                        radiusType = "m";
-                }
-
-                // Update properties
-                Map<String, Object> props = feature.getProperties();
-                if (f.getId() != null) {
-                    props.put("parentFeatureIds", f.getId().toString());
-                }
-                props.put("restriction", StringUtils.defaultIfBlank(restriction, "affected"));
-                props.put("bufferType", "radius");
-                props.put("bufferRadius", radius);
-                props.put("bufferRadiusType", radiusType);
-
-                // Compute the buffer geometry
-                Geometry geometry = JtsConverter.toJts(f.getGeometry());
-                double distDegs = radiusMeters / 6378137.0 / (Math.PI / 180.0); // Approximation suitable for short distances
-                geometry = BufferOp.bufferOp(geometry, distDegs);
-                feature.setGeometry(JtsConverter.fromJts(geometry));
-
-                return feature;
+            double radiusMeters = radius;
+            switch (StringUtils.defaultString(radiusType, "m").toLowerCase()) {
+                case "nm":
+                    radiusMeters *= 1852;
+                    break;
+                case "km":
+                    radiusMeters *= 1000;
+                    break;
+                default:
+                    radiusType = "m";
             }
+
+            // Update properties
+            Map<String, Object> props = feature.getProperties();
+            if (f.getId() != null) {
+                props.put("parentFeatureIds", f.getId().toString());
+            }
+            props.put("restriction", StringUtils.defaultIfBlank(restriction, "affected"));
+            props.put("bufferType", "radius");
+            props.put("bufferRadius", radius);
+            props.put("bufferRadiusType", radiusType);
+
+            // Compute the buffer geometry
+            feature.setGeometry(createBufferGeometry(f.getGeometry(), radiusMeters));
+
+            return feature;
         } catch (Exception ignored) {
         }
         return null;
+    }
+
+
+    /**
+     * We cannot use JTS's BufferOp.bufferOp() to compute the buffer, since it does not use spherical geometry.
+     * Use the ideas spelled out here instead:
+     * http://stackoverflow.com/questions/36481651/how-do-i-create-a-circle-with-latitude-longitude-and-radius-with-geotools
+     * @param geometryVo the geometry to create a buffer geometry for
+     * @param radiusMeters the radius in meters of the buffer geometry
+     * @return the buffer geometry
+     */
+    public static GeometryVo createBufferGeometry(GeometryVo geometryVo, double radiusMeters) throws Exception {
+
+        try {
+            Geometry geometry = JtsConverter.toJts(geometryVo);
+
+            // Only works at Equator:
+            //double distDegs = radiusMeters / 6378137.0 / (Math.PI / 180.0); // Approximation suitable for short distances
+            //geometry = BufferOp.bufferOp(geometry, distDegs);
+
+            double[] center = GeoJsonUtils.computeCenter(new GeometryVo[] { geometryVo });
+
+            // GeoTools provides a "pseudo" projection "AUTO42001,x,y" - a UTM projection centred at X,Y:
+            String code = "AUTO:42001," + Math.round(center[0]) + "," + Math.round(center[1]);
+            CoordinateReferenceSystem auto  = CRS.decode(code);
+
+            MathTransform toTransform = CRS.findMathTransform(DefaultGeographicCRS.WGS84, auto);
+            MathTransform fromTransform = CRS.findMathTransform(auto, DefaultGeographicCRS.WGS84);
+            geometry = JTS.transform(geometry, toTransform);
+            geometry = BufferOp.bufferOp(geometry, radiusMeters);
+            geometry = JTS.transform(geometry, fromTransform);
+
+            return JtsConverter.fromJts(geometry);
+        } catch (FactoryException e) {
+            return null;
+        }
     }
 
 
