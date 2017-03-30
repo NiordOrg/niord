@@ -23,18 +23,18 @@ import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.geojson.JtsConverter;
 import org.niord.core.geojson.PlainTextConverter;
 import org.niord.model.geojson.FeatureCollectionVo;
+import org.niord.model.geojson.FeatureVo;
 import org.niord.model.geojson.GeoJsonVo;
 import org.niord.model.geojson.GeometryVo;
 import org.niord.model.geojson.MultiPointVo;
+import org.niord.model.geojson.PointVo;
 import org.niord.model.geojson.PolygonVo;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 /**
  * Test GeoJson classes
@@ -153,6 +153,20 @@ public class GeoJsonTest {
         System.out.println("Formatted:\n" + formattedGeoJson);
     }
 
+
+    @Test
+    public void createBufferTest() {
+
+        PointVo pt = new PointVo();
+        pt.setCoordinates(new double[]{ 11.0, 56.0 });
+        FeatureVo feature = new FeatureVo();
+        feature.setGeometry(pt);
+        FeatureCollectionVo fc = new FeatureCollectionVo();
+        fc.setFeatures(new FeatureVo[] { feature });
+
+        fc = GeoJsonUtils.addAffectedRadius(fc, "affected", 1, "nm");
+        System.out.println(fc);
+    }
 
 
     class CoordCounter implements Consumer<double[]> {

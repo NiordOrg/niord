@@ -16,6 +16,8 @@
 
 package org.niord.core.geojson;
 
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.operation.buffer.BufferOp;
 import org.apache.commons.lang.StringUtils;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.geojson.FeatureVo;
@@ -35,7 +37,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Utility functions for processing GeoJson data
@@ -142,6 +148,83 @@ public class GeoJsonUtils {
         }
         return g;
     }
+
+
+    /**
+     * Adds an affected radius to the features
+     * @param fc the feature collection to update
+     * @return the updated feature collection
+     */
+    public static FeatureCollectionVo addAffectedRadius(FeatureCollectionVo fc, String restriction, double radius, String radiusType) {
+        // Sanity check
+        if (fc == null || fc.getFeatures() == null || fc.getFeatures().length == 0) {
+            return fc;
+        }
+
+        // Create the new affected-radius features
+        List<FeatureVo> affectedFeatures = Arrays.stream(fc.getFeatures())
+                .map(f -> createAffectedRadius(f, restriction, radius, radiusType))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        // Merge the feature arrays
+        FeatureVo[] features = Stream
+                .concat(Arrays.stream(fc.getFeatures()), affectedFeatures.stream())
+                .toArray(FeatureVo[]::new);
+        fc.setFeatures(features);
+
+        return fc;
+    }
+
+
+    /**
+     * Creates an affected radius feature for the given feature. Returns null if undefined.
+     * @param f the feature to ceate an affected radius feature for
+     * @return the affected radius feature or null if undefined
+     */
+    public static FeatureVo createAffectedRadius(FeatureVo f, String restriction, double radius, String radiusType) {
+
+        try {
+            Map<String, Object> p = f.getProperties();
+            if (!p.containsKey("parentFeatureIds") && !p.containsKey("restriction") && !p.containsKey("bufferType")) {
+                FeatureVo feature = new FeatureVo();
+                feature.setId(UUID.randomUUID().toString());
+
+                double radiusMeters = radius;
+                switch (StringUtils.defaultString(radiusType, "m").toLowerCase()) {
+                    case "nm":
+                        radiusMeters *= 1852;
+                        break;
+                    case "km":
+                        radiusMeters *= 1000;
+                        break;
+                    default:
+                        radiusType = "m";
+                }
+
+                // Update properties
+                Map<String, Object> props = feature.getProperties();
+                if (f.getId() != null) {
+                    props.put("parentFeatureIds", f.getId().toString());
+                }
+                props.put(restriction, StringUtils.defaultIfBlank(restriction, "affected"));
+                props.put("bufferType", "radius");
+                props.put("bufferRadius", radius);
+                props.put("bufferRadiusType", radiusType);
+
+                // Compute the buffer geometry
+                Geometry geometry = JtsConverter.toJts(f.getGeometry());
+                double distDegs = radiusMeters / 6378137.0 / (Math.PI / 180.0); // Approximation suitable for short distances
+                geometry = BufferOp.bufferOp(geometry, distDegs);
+                feature.setGeometry(JtsConverter.fromJts(geometry));
+
+                return feature;
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
 
     /**
      * Serializes the GeoJSON of the feature collection into a flat list of coordinates for each feature.
