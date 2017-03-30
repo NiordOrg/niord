@@ -170,14 +170,14 @@ angular.module('niord.admin')
                     $scope.editArea.geometry = $scope.areaFeatureCollection.features[0].geometry;
                 }
                 // Handle blank type
-                if ($scope.editArea.type == '') {
+                if ($scope.editArea.type === '') {
                     delete $scope.editArea.type;
                 }
-                if ($scope.editArea.messageSorting == '') {
+                if ($scope.editArea.messageSorting === '') {
                     delete $scope.editArea.messageSorting;
                 }
 
-                if ($scope.action == 'add') {
+                if ($scope.action === 'add') {
                     AdminAreaService
                         .createArea($scope.editArea)
                         .success($scope.loadAreas)

@@ -86,9 +86,9 @@ angular.module('niord.admin')
                                 path = path.substring(1);
                             }
                             var pathResources = $.grep($scope.resources, function (t) {
-                                return t.path == path;
+                                return t.path === path;
                             });
-                            if (pathResources.length == 1) {
+                            if (pathResources.length === 1) {
                                 $scope.editScriptResource(pathResources[0]);
                             } else {
                                 var type = path.toLowerCase().endsWith('.js') ? 'JS' : 'FM';
@@ -145,7 +145,7 @@ angular.module('niord.admin')
                 $scope.resource = angular.copy(resource);
                 // Strip resource name from path
                 var x = $scope.resource.path.lastIndexOf('/');
-                if (x != -1) {
+                if (x !== -1) {
                     $scope.resource.path = $scope.resource.path.substring(0, x + 1);
                 }
                 $scope.focusPath();
@@ -161,12 +161,12 @@ angular.module('niord.admin')
             /** Saves the current script resource being edited */
             $scope.saveScriptResource = function () {
 
-                if ($scope.resource && $scope.editMode == 'add') {
+                if ($scope.resource && $scope.editMode === 'add') {
                     AdminScriptResourceService
                         .createScriptResource($scope.resource)
                         .success($scope.loadScriptResources)
                         .error($scope.displayError);
-                } else if ($scope.resource && $scope.editMode == 'edit') {
+                } else if ($scope.resource && $scope.editMode === 'edit') {
                     AdminScriptResourceService
                         .updateScriptResource($scope.resource)
                         .success($scope.loadScriptResources)
@@ -293,7 +293,7 @@ angular.module('niord.admin')
                         $scope.selectedResource.unshift(JSON.parse(hist.snapshot));
                     }
                 });
-                if($scope.selectedResource.length == 2) {
+                if($scope.selectedResource.length === 2) {
                     $timeout(function () {
                         var msg1 = $('#resource_0').html();
                         var msg2 = $('#resource_1').html();

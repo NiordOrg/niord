@@ -69,7 +69,7 @@ angular.module('niord.schedule')
                     var fap = scope.firingAreaPeriods;
                     if (fap.editing) {
                         fap.editFiringPeriods = fap.firingPeriods ? angular.copy(fap.firingPeriods) : [];
-                        if (fap.editFiringPeriods.length == 0) {
+                        if (fap.editFiringPeriods.length === 0) {
                             scope.addTimeInterval();
                         }
                     }

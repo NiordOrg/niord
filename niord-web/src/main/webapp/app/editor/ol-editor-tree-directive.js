@@ -131,10 +131,10 @@ angular.module('niord.editor')
 
                     switch (node.data.type || '') {
                         case 'Position':
-                            return (parentType != 'Point') &&
-                                ((parentType == 'LineString' && siblingNo > 2) ||
-                                (parentType == 'Exterior' && siblingNo > 3) ||
-                                (parentType == 'Interior' && siblingNo > 3));
+                            return (parentType !== 'Point') &&
+                                ((parentType === 'LineString' && siblingNo > 2) ||
+                                (parentType === 'Exterior' && siblingNo > 3) ||
+                                (parentType === 'Interior' && siblingNo > 3));
                         case 'Polygon':
                         case 'LineString':
                         case 'MultiPolygon':
@@ -154,7 +154,7 @@ angular.module('niord.editor')
                     scope.makeVisible(node);
 
                     var html = '';
-                    if (node.data.type == 'Position' && node.parent.data.type != 'Point') {
+                    if (node.data.type === 'Position' && node.parent.data.type !== 'Point') {
                         html +=
                             "<a href ng-click='addPosition(\"" + node.key + "\")'><i class='glyphicon glyphicon-plus node-btn'></i></a>";
                     }
@@ -197,7 +197,7 @@ angular.module('niord.editor')
                                 coords.push(scope.readFeatureCoordinates(childNode));
                             });
                             // For polygons, add the first position as the last position as well
-                            if (node.data.type == 'Exterior' || node.data.type == 'Interior') {
+                            if (node.data.type === 'Exterior' || node.data.type === 'Interior') {
                                 coords.push(scope.readFeatureCoordinates(node.children[0]));
                             }
                             return coords;
@@ -253,12 +253,12 @@ angular.module('niord.editor')
                     angular.forEach(featureNames, function (name) {
                         if (name.isFeatureCoordName()) {
                             angular.forEach(updates, function (update) {
-                                if (update.type == 'offset' && name.getCoordIndex() >= update.fromIndex &&
+                                if (update.type === 'offset' && name.getCoordIndex() >= update.fromIndex &&
                                     (update.toIndex === undefined || name.getCoordIndex() < update.toIndex)) {
                                     scope.feature.unset(name.getKey());
                                     name.offset(update.offset);
                                     changedNames.push(name);
-                                } else if (update.type == 'remove' && name.getCoordIndex() >= update.fromIndex &&
+                                } else if (update.type === 'remove' && name.getCoordIndex() >= update.fromIndex &&
                                     (update.toIndex === undefined || name.getCoordIndex() < update.toIndex)) {
                                     scope.feature.unset(name.getKey());
                                 }
@@ -275,15 +275,15 @@ angular.module('niord.editor')
                 scope.editBeforeEdit = function(event, data) {
                     scope.removeActiveNodeBtns();
 
-                    return data.node.data.type == 'Position' ||
-                        data.node.data.type == 'Lang';
+                    return data.node.data.type === 'Position' ||
+                        data.node.data.type === 'Lang';
                 };
 
 
                 /** Installs a position format mask in the position editor field **/
                 scope.editInstallPositionMask = function (event, data) {
                     var node = data.node;
-                    if (node.data.type == 'Position') {
+                    if (node.data.type === 'Position') {
                         var input = data.input;
                         var decimalDelim = numeral(0.0).format('.0').substr(0, 1);
                         $(input).mask('99° 59' + decimalDelim + '999\'Y - 199° 59' + decimalDelim + '999\'X');
@@ -295,7 +295,7 @@ angular.module('niord.editor')
                 /** Called before a node editor is closed **/
                 scope.editBeforeClose = function(event, data) {
                     var node = data.node;
-                    if (node.data.type == 'Position') {
+                    if (node.data.type === 'Position') {
                         if (data.isNew && !data.dirty) {
                             return true;
                         }
@@ -311,7 +311,7 @@ angular.module('niord.editor')
                     } else {
                         // NB: By default, Fancytree will not allow you to save a blank text.
                         // Force it by setting the save flag to true
-                        if (data.input.val() == '' && data.dirty && !data.save) {
+                        if (data.input.val() === '' && data.dirty && !data.save) {
                             data.save = true;
                         }
                         // Lang
@@ -323,12 +323,11 @@ angular.module('niord.editor')
                 /** Called to save the edited changes **/
                 scope.editSave = function(event, data) {
                     var node = data.node;
-                    if (node.data.type == 'Position') {
+                    if (node.data.type === 'Position') {
                         try {
                             var posTxt = data.input.val().replace(/°/g, '').replace(/'/g, '');
                             var pos = parseLatLon(posTxt);
-                            var xy = MapService.fromLonLat([pos.lon, pos.lat]);
-                            node.data.coordinates = xy;
+                            node.data.coordinates = MapService.fromLonLat([pos.lon, pos.lat]);
                             var geometry = scope.updateFeatureGeometry(tree.rootNode.children[0]);
                             scope.feature.setGeometry(geometry);
                             if (data.isNew) {
@@ -413,15 +412,15 @@ angular.module('niord.editor')
 
                 /** Converts the list of coordinates to tree data **/
                 function coordinatesToTreeData(coords, parentType, treeData, key, coordIndex) {
-                    var hasLanguageDescs = scope.editType == 'message' &&
-                        (parentType == 'Point' || parentType == 'LineString' || parentType == 'Exterior');
-                    var isPolygon = parentType == 'Exterior' || parentType == 'Interior';
+                    var hasLanguageDescs = scope.editType === 'message' &&
+                        (parentType === 'Point' || parentType === 'LineString' || parentType === 'Exterior');
+                    var isPolygon = parentType === 'Exterior' || parentType === 'Interior';
 
                     angular.forEach(coords, function (coord, index) {
                         var posLangKey = 'name:' + coordIndex;
 
                         // For polygons, skip the last coordinate
-                        if (isPolygon && index == coords.length - 1) {
+                        if (isPolygon && index === coords.length - 1) {
                             coordIndex++;
                             return;
                         }
@@ -492,7 +491,7 @@ angular.module('niord.editor')
                                 key += ".";
                             }
                             angular.forEach(geom.getLinearRings(), function (ring, index) {
-                                var ringType = (index == 0) ? "Exterior" : "Interior";
+                                var ringType = (index === 0) ? "Exterior" : "Interior";
                                 var ringKey = key + index;
                                 var ringNode = {
                                     type: ringType,
@@ -562,7 +561,7 @@ angular.module('niord.editor')
                 /** Listens for a 'gj-editor-update' event **/
                 scope.$on('gj-editor-update', function(event, msg) {
                     // Do now process own events and only for the relevant feature
-                    if (msg.scope == scope.$id || msg.origScope == scope.$id || msg.featureId != scope.feature.getId()) {
+                    if (msg.scope === scope.$id || msg.origScope === scope.$id || msg.featureId !== scope.feature.getId()) {
                         return;
                     }
 

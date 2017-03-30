@@ -63,21 +63,21 @@ angular.module('niord.editor')
                     if (!focused || evt.isDefaultPrevented()) {
                         return evt;
                     }
-                    if (evt.which == 39 /* right arrow */
-                        || (!scope.editModeOn() && evt.which == 32 /* space */)
-                        || (!scope.editModeOn() && evt.which == 13 /* enter */)) {
+                    if (evt.which === 39 /* right arrow */
+                        || (!scope.editModeOn() && evt.which === 32 /* space */)
+                        || (!scope.editModeOn() && evt.which === 13 /* enter */)) {
                         scope.updateEditField(evt, true);
-                    } else if (evt.which == 37 /* left arrow */
-                        || (scope.editModeOn() && evt.which == 32 /* space */)
-                        || (scope.editModeOn() && evt.which == 13 /* enter */)) {
+                    } else if (evt.which === 37 /* left arrow */
+                        || (scope.editModeOn() && evt.which === 32 /* space */)
+                        || (scope.editModeOn() && evt.which === 13 /* enter */)) {
                         scope.updateEditField(evt, false);
-                    } else if (evt.which == 38 /* up arrow */) {
+                    } else if (evt.which === 38 /* up arrow */) {
                         var prev = scope.closestLabel(editorLabel.attr('tabindex'), true);
                         if (prev) {
                             prev.focus();
                             evt.preventDefault();
                         }
-                    } else if (evt.which == 40 /* down arrow */) {
+                    } else if (evt.which === 40 /* down arrow */) {
                         var next = scope.closestLabel(editorLabel.attr('tabindex'), false);
                         if (next) {
                             next.focus();
@@ -101,7 +101,7 @@ angular.module('niord.editor')
                     var index = -1;
                     var editorLabels = $('.editor-field-label');
                     editorLabels.each(function (i) {
-                        if ($(this).attr('tabindex') == tabindex) {
+                        if ($(this).attr('tabindex') === tabindex) {
                             index = i;
                         }
                     });
@@ -224,7 +224,7 @@ angular.module('niord.editor')
                 scope.$watchCollection(function () {
                         return scope.historyJsonDiff;
                     },
-                    function (newValue) {
+                    function () {
                         element.empty();
 
                         if (scope.historyJsonDiff.length > 0) {

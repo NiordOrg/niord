@@ -93,12 +93,12 @@ angular.module('niord.admin')
 
             /** Saves the current report being edited */
             $scope.saveReport = function () {
-                if ($scope.report && $scope.editMode == 'add') {
+                if ($scope.report && $scope.editMode === 'add') {
                     AdminReportService
                         .createReport($scope.report)
                         .success($scope.loadReports)
                         .error($scope.displayError);
-                } else if ($scope.report && $scope.editMode == 'edit') {
+                } else if ($scope.report && $scope.editMode === 'edit') {
                     AdminReportService
                         .updateReport($scope.report)
                         .success($scope.loadReports)

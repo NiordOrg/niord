@@ -64,7 +64,7 @@ angular.module('niord.common')
             this.descForLanguage = function(elm, lang) {
                 if (elm && elm.descs) {
                     for (var l = 0; l < elm.descs.length; l++) {
-                        if (elm.descs[l].lang == lang) {
+                        if (elm.descs[l].lang === lang) {
                             return elm.descs[l];
                         }
                     }
@@ -103,7 +103,7 @@ angular.module('niord.common')
                 if (!elm.descs) {
                     elm.descs = [];
                 }
-                if (!languages || languages.length == 0) {
+                if (!languages || languages.length === 0) {
                     languages = $rootScope.modelLanguages;
                 }
                 for (var l = 0; l < languages.length; l++) {
@@ -135,11 +135,11 @@ angular.module('niord.common')
                 lang = lang || $rootScope.language;
                 if (!desc.lang){
                     return 1000;
-                } else if (desc.lang == lang) {
+                } else if (desc.lang === lang) {
                     return -1;
                 }
                 var index = $.inArray(desc, lang);
-                return (index == -1) ? 999 : index;
+                return (index === -1) ? 999 : index;
             }
 
             
@@ -232,9 +232,9 @@ angular.module('niord.common')
                 var requestDomain = $location.search().domain;
                 var domainId = requestDomain || $window.localStorage.domain;
                 var matchingDomains = $.grep($rootScope.domains, function (domain) {
-                    return domain.domainId == domainId;
+                    return domain.domainId === domainId;
                 });
-                var domain = matchingDomains.length == 1
+                var domain = matchingDomains.length === 1
                     ? matchingDomains[0]
                     : ($rootScope.domains ? $rootScope.domains[0] : undefined);
                 that.changeDomain(domain);
@@ -395,7 +395,7 @@ angular.module('niord.common')
                             }
                         };
 
-                        $scope.fileUploadError = function(status, statusText) {
+                        $scope.fileUploadError = function(status) {
                             $scope.importResult = "Error importing charts (error " + status + ")";
                             $scope.$$phase || $scope.$apply();
                         };
@@ -466,7 +466,7 @@ function Map() {
     };
 
     this.isEmpty = function () {
-        return this.keys.length == 0;
+        return this.keys.length === 0;
     };
 
     this.size = function () {

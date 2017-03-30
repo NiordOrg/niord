@@ -106,12 +106,12 @@ angular.module('niord.admin')
 
             /** Saves the current entry being edited */
             $scope.saveEntry = function () {
-                if ($scope.entry && $scope.editMode == 'edit') {
+                if ($scope.entry && $scope.editMode === 'edit') {
                     AdminDictionariesService
                         .updateEntry($scope.currentDictionaryName, $scope.entry)
                         .success($scope.loadDictionaryEntries)
                         .error($scope.displayError);
-                } else if ($scope.entry && $scope.editMode == 'add') {
+                } else if ($scope.entry && $scope.editMode === 'add') {
                     AdminDictionariesService
                         .addEntry($scope.currentDictionaryName, $scope.entry)
                         .success($scope.loadDictionaryEntries)

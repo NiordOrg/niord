@@ -110,7 +110,7 @@ angular.module('niord.schedule')
                         }
                         if (lineage.length > 0) {
                             a = lineage[Math.min(lineage.length - 1, maxLevels - 1)];
-                            if (!lastAreaId || a.id != lastAreaId) {
+                            if (!lastAreaId || a.id !== lastAreaId) {
                                 lastAreaId = a.id;
                                 area.areaHeading = a;
                             }

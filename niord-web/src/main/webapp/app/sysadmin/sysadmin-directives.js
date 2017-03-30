@@ -87,7 +87,7 @@ angular.module('niord.common')
                                     scope.scriptResourcePaths.push({ 'path' : path })
                                 })
                             }
-                            if (scope.scriptResourcePaths.length == 0) {
+                            if (scope.scriptResourcePaths.length === 0) {
                                 scope.scriptResourcePaths.push({ path: '' });
                             }
                         }, true);
@@ -95,7 +95,7 @@ angular.module('niord.common')
                         scope.$watch("scriptResourcePaths", function () {
                             scope.pathData.scriptResourcePaths.length = 0;
                             angular.forEach(scope.scriptResourcePaths, function (path) {
-                                if (path.path && path.path != '') {
+                                if (path.path && path.path !== '') {
                                     scope.pathData.scriptResourcePaths.push(path.path)
                                 }
                             })
@@ -133,7 +133,7 @@ angular.module('niord.common')
                     scope.deleteResourcePath = function (index) {
                         scope.scriptResourcePaths.splice(index, 1);
                         scope.pathsUpdated();
-                        if (scope.scriptResourcePaths.length == 0) {
+                        if (scope.scriptResourcePaths.length === 0) {
                             scope.scriptResourcePaths.push({ 'path' : '' });
                         }
                     };
@@ -198,7 +198,7 @@ angular.module('niord.common')
                         .success(function (paramTypes) {
                             scope.paramTypes = TemplateService.sortParameterTypes(paramTypes);
                             scope.editableParamTypes = $.grep(scope.paramTypes, function (paramType) {
-                                return scope.types.indexOf(paramType.type) != -1;
+                                return scope.types.indexOf(paramType.type) !== -1;
                             });
                             angular.forEach(scope.paramTypes, function (paramType) {
                                 scope.paramTypeMap[paramType.name] = paramType;

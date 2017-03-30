@@ -118,12 +118,12 @@ angular.module('niord.admin')
             /** Saves the current source being edited */
             $scope.saveSource = function () {
 
-                if ($scope.source && $scope.editMode == 'add') {
+                if ($scope.source && $scope.editMode === 'add') {
                     AdminSourceService
                         .createSource($scope.source)
                         .success($scope.loadSources)
                         .error($scope.displayError);
-                } else if ($scope.source && $scope.editMode == 'edit') {
+                } else if ($scope.source && $scope.editMode === 'edit') {
                     AdminSourceService
                         .updateSource($scope.source)
                         .success($scope.loadSources)

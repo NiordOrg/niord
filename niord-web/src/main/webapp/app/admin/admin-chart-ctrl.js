@@ -120,12 +120,12 @@ angular.module('niord.admin')
                     $scope.chart.geometry = $scope.chartFeatureCollection.features[0].geometry;
                 }
 
-                if ($scope.chart && $scope.editMode == 'add') {
+                if ($scope.chart && $scope.editMode === 'add') {
                     AdminChartService
                         .createChart($scope.chart)
                         .success($scope.loadCharts)
                         .error($scope.displayError);
-                } else if ($scope.chart && $scope.editMode == 'edit') {
+                } else if ($scope.chart && $scope.editMode === 'edit') {
                     AdminChartService
                         .updateChart($scope.chart)
                         .success($scope.loadCharts)

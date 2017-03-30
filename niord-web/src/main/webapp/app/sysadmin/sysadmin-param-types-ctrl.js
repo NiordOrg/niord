@@ -58,7 +58,7 @@ angular.module('niord.admin')
                 if (name && $.inArray(name, $scope.dictionaryNames) > -1) {
                     $scope.currentDictionaryName = name;
                 }
-                if ($scope.paramType && $scope.paramType.type == 'LIST') {
+                if ($scope.paramType && $scope.paramType.type === 'LIST') {
                     AdminDictionariesService
                         .getDictionaryEntries($scope.currentDictionaryName)
                         .success(function (dictionary) {
@@ -144,7 +144,7 @@ angular.module('niord.admin')
 
             /** Edits a parameter type **/
             $scope.editParamType = function (paramType) {
-                if (paramType.type == 'STANDARD') {
+                if (paramType.type === 'STANDARD') {
                     return;
                 }
                 AdminParamTypesService.getParamTypeDetails(paramType.id)
@@ -164,16 +164,16 @@ angular.module('niord.admin')
 
             /** Saves the current parameter type being edited */
             $scope.saveParamType = function () {
-                if ($scope.paramType.type == 'STANDARD') {
+                if ($scope.paramType.type === 'STANDARD') {
                     return;
                 }
 
-                if ($scope.paramType && $scope.editMode == 'add') {
+                if ($scope.paramType && $scope.editMode === 'add') {
                     AdminParamTypesService
                         .createParamType($scope.paramType)
                         .success($scope.loadParamTypes)
                         .error($scope.displayError);
-                } else if ($scope.paramType && $scope.editMode == 'edit') {
+                } else if ($scope.paramType && $scope.editMode === 'edit') {
                     AdminParamTypesService
                         .updateParamType($scope.paramType)
                         .success($scope.loadParamTypes)
@@ -184,7 +184,7 @@ angular.module('niord.admin')
 
             /** Deletes the given parameter type */
             $scope.deleteParamType = function (paramType) {
-                if (paramType.type == 'STANDARD') {
+                if (paramType.type === 'STANDARD') {
                     return;
                 }
 

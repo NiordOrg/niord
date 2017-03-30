@@ -90,10 +90,10 @@ function parseLatLon(value) {
     }
     value = value.trim().toUpperCase();
     var index = value.indexOf("N");
-    if (index == -1) {
+    if (index === -1) {
         index = value.indexOf("S");
     }
-    if (index == -1) {
+    if (index === -1) {
         throw "Format exception";
     }
     return {
@@ -113,7 +113,7 @@ function parseLatitude(value) {
     value = cleanUpDegree(value);
     if (value.trim().indexOf(" ") < 0) {
         var parsed = numeral().unformat(value);
-        if (parsed == value) {
+        if (parsed === value) {
             return parsed;
         }
     }
@@ -125,7 +125,7 @@ function parseLongitude(value) {
     value = cleanUpDegree(value);
     if (value.trim().indexOf(" ") < 0) {
         var parsed = numeral().unformat(value);
-        if (parsed == value) {
+        if (parsed === value) {
             return parsed;
         }
     }
@@ -138,7 +138,7 @@ function splitFormattedPos(posStr) {
     parts[2] = posStr.substring(posStr.length - 1);
     posStr = posStr.substring(0, posStr.length - 1);
     var posParts = posStr.trim().split(" ");
-    if (posParts.length != 2) {
+    if (posParts.length !== 2) {
         throw "Format exception";
     }
     parts[0] = posParts[0];
@@ -148,7 +148,7 @@ function splitFormattedPos(posStr) {
 
 function parseString(str){
     str = str.trim();
-    if (str == null || str.length == 0) {
+    if (str === null || str.length === 0) {
         return null;
     }
     return str;
@@ -162,11 +162,11 @@ function parseLat(hours, minutes, northSouth) {
         throw "Format exception";
     }
     ns = ns.toUpperCase();
-    if (!(ns == "N") && !(ns == "S")) {
+    if (!(ns === "N") && !(ns === "S")) {
         throw "Format exception";
     }
     var lat = h + m / 60.0;
-    if (ns == "S") {
+    if (ns === "S") {
         lat *= -1;
     }
     return lat;
@@ -180,11 +180,11 @@ function parseLon(hours, minutes, eastWest) {
         throw "Format exception";
     }
     ew = ew.toUpperCase();
-    if (!(ew == "E") && !(ew == "W")) {
+    if (!(ew === "E") && !(ew === "W")) {
         throw "Format exception";
     }
     var lon = h + m / 60.0;
-    if (ew == "W") {
+    if (ew === "W") {
         lon *= -1;
     }
     return lon;
@@ -218,7 +218,7 @@ function positionDirective(directive, formatter1, parser) {
                 }
             });
 
-            element.bind('change', function(event) {
+            element.bind('change', function() {
                 if (!ctrl.$modelValue) {
                     ctrl.$viewValue = null;
                 }
@@ -282,7 +282,7 @@ angular.module('niord.map')
                     return val;
                 });
 
-                element.bind('change', function(event) {
+                element.bind('change', function() {
                     if (!ctrl.$modelValue) {
                         ctrl.$viewValue = null;
                     }

@@ -49,7 +49,7 @@ angular.module('niord.messages')
 
             // Navigate to the previous message in the message list
             $scope.selectPrev = function() {
-                if ($scope.pushedMessageIds.length == 1 && $scope.index > 0) {
+                if ($scope.pushedMessageIds.length === 1 && $scope.index > 0) {
                     $scope.index--;
                     $scope.pushedMessageIds[0] = $scope.messages[$scope.index];
                     $scope.loadMessageDetails();
@@ -58,7 +58,7 @@ angular.module('niord.messages')
 
             // Navigate to the next message in the message list
             $scope.selectNext = function() {
-                if ($scope.pushedMessageIds.length == 1 && $scope.index >= 0 && $scope.index < $scope.messages.length - 1) {
+                if ($scope.pushedMessageIds.length === 1 && $scope.index >= 0 && $scope.index < $scope.messages.length - 1) {
                     $scope.index++;
                     $scope.pushedMessageIds[0] = $scope.messages[$scope.index];
                     $scope.loadMessageDetails();
@@ -94,7 +94,7 @@ angular.module('niord.messages')
                         $scope.showMap = true;
                         if ($scope.msg.attachments) {
                             var attachmentsAbove = $.grep($scope.msg.attachments, function (att) {
-                                return att.display == 'ABOVE';
+                                return att.display === 'ABOVE';
                             });
                             if (attachmentsAbove.length > 0) {
                                 $scope.showMap = false;
@@ -186,8 +186,8 @@ angular.module('niord.messages')
 
             /** Toggle the sort order of the current sort field **/
             $scope.toggleSortOrder = function(sortBy) {
-                if (sortBy == $scope.filter.sortBy) {
-                    $scope.filter.sortOrder = $scope.filter.sortOrder == 'ASC' ? 'DESC' : 'ASC';
+                if (sortBy === $scope.filter.sortBy) {
+                    $scope.filter.sortOrder = $scope.filter.sortOrder === 'ASC' ? 'DESC' : 'ASC';
                 } else {
                     $scope.filter.sortBy = sortBy;
                     $scope.filter.sortOrder = 'ASC';
@@ -197,8 +197,8 @@ angular.module('niord.messages')
 
             /** Returns the sort indicator to display for the given field **/
             $scope.sortIndicator = function(sortBy) {
-                if (sortBy == $scope.filter.sortBy) {
-                    return $scope.filter.sortOrder == 'DESC' ? '&#9650;' : '&#9660;';
+                if (sortBy === $scope.filter.sortBy) {
+                    return $scope.filter.sortOrder === 'DESC' ? '&#9650;' : '&#9660;';
                 }
                 return "";
             };
@@ -285,12 +285,12 @@ angular.module('niord.messages')
 
             // Saves the tag being edited
             $scope.saveTag = function () {
-                if ($scope.data.editTag && $scope.data.editMode == 'add') {
+                if ($scope.data.editTag && $scope.data.editMode === 'add') {
                     MessageService
                         .createMessageTag($scope.data.editTag)
                         .success($scope.loadTags)
                         .error($scope.displayError);
-                } else if ($scope.data.editTag && $scope.data.editMode == 'edit') {
+                } else if ($scope.data.editTag && $scope.data.editMode === 'edit') {
                     MessageService
                         .updateMessageTag($scope.data.editTag)
                         .success($scope.loadTags)
@@ -417,9 +417,9 @@ angular.module('niord.messages')
             /** Sends the e-mail and closes the dialog **/
             $scope.sendMail = function () {
 
-                if ($scope.data.emailAddresses.length == 0
-                    || $scope.data.mailSubject.length == 0
-                    || messageIds.length == 0) {
+                if ($scope.data.emailAddresses.length === 0
+                    || $scope.data.mailSubject.length === 0
+                    || messageIds.length === 0) {
                     growl.error("Invalid e-mail", { ttl: 5000 });
                     return;
                 }
@@ -489,7 +489,7 @@ angular.module('niord.messages')
 
             /** Updates the sort order **/
             $scope.updateMessageSortOrder = function (evt) {
-                if (evt.newIndex == evt.oldIndex) {
+                if (evt.newIndex === evt.oldIndex) {
                     return;
                 }
 
@@ -559,7 +559,7 @@ angular.module('niord.messages')
             $scope.tags = [];
             $scope.tagData = { tag: undefined };
             $scope.refreshTags = function(name) {
-                if (!name || name.length == 0) {
+                if (!name || name.length === 0) {
                     return [];
                 }
                 return $http.get(
@@ -650,7 +650,7 @@ angular.module('niord.messages')
             /** Updates all statuses with the fromStatus to the toStatus **/
             $scope.updateStatus = function (fromStatus, toStatus) {
                 angular.forEach($scope.messageList, function (message) {
-                   if (message.status == fromStatus) {
+                   if (message.status === fromStatus) {
                        $scope.updatesStatuses[message.id] = toStatus;
                    }
                 });
@@ -668,7 +668,7 @@ angular.module('niord.messages')
                         });
                     }
                 });
-                if (updates.length == 0) {
+                if (updates.length === 0) {
                     $scope.$dismiss("cancel");
                     return;
                 }

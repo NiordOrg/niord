@@ -212,15 +212,15 @@ angular.module('niord.messages')
             $scope.updateTypeFilter = function (mainType, selected) {
                 var type = $scope.state.type;
                 if (mainType === 'NW') {
-                    type.COASTAL_WARNING = selected && supportsType('COASTAL_WARNING');
-                    type.SUBAREA_WARNING = selected && supportsType('SUBAREA_WARNING');
-                    type.NAVAREA_WARNING = selected && supportsType('NAVAREA_WARNING');
-                    type.LOCAL_WARNING = selected && supportsType('LOCAL_WARNING');
+                    type.COASTAL_WARNING = selected && $scope.supportsType('COASTAL_WARNING');
+                    type.SUBAREA_WARNING = selected && $scope.supportsType('SUBAREA_WARNING');
+                    type.NAVAREA_WARNING = selected && $scope.supportsType('NAVAREA_WARNING');
+                    type.LOCAL_WARNING = selected && $scope.supportsType('LOCAL_WARNING');
                 } else if (mainType === 'NM') {
-                    type.PERMANENT_NOTICE = selected && supportsType('PERMANENT_NOTICE');
-                    type.TEMPORARY_NOTICE = selected && supportsType('TEMPORARY_NOTICE');
-                    type.PRELIMINARY_NOTICE = selected && supportsType('PRELIMINARY_NOTICE');
-                    type.MISCELLANEOUS_NOTICE = selected && supportsType('MISCELLANEOUS_NOTICE');
+                    type.PERMANENT_NOTICE = selected && $scope.supportsType('PERMANENT_NOTICE');
+                    type.TEMPORARY_NOTICE = selected && $scope.supportsType('TEMPORARY_NOTICE');
+                    type.PRELIMINARY_NOTICE = selected && $scope.supportsType('PRELIMINARY_NOTICE');
+                    type.MISCELLANEOUS_NOTICE = selected && $scope.supportsType('MISCELLANEOUS_NOTICE');
                 }
             };
 
@@ -905,13 +905,14 @@ angular.module('niord.messages')
             };
 
 
+            /** Returns if the given message type is supported by any message series of the current domain **/
             $scope.supportsType = function (type) {
                 var result = $scope.searchDomain === undefined;
                 $scope.forMessageSeries(function (series) {
                     result |= series.types === undefined || series.types.length === 0 ||
                         $.inArray(type, series.types) !== -1;
                 });
-                return result;
+                return (result === true || result === 1);
             };
 
             /*****************************/

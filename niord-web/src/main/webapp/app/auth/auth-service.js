@@ -49,12 +49,12 @@ angular.module('niord.auth')
                 },
 
                 'responseError': function(response) {
-                    if (response.status == 401) {
+                    if (response.status === 401) {
                         console.error('session timeout?');
                         AuthService.logout();
-                    } else if (response.status == 403) {
+                    } else if (response.status === 403) {
                         console.error('Forbidden');
-                    } else if (response.status == 404) {
+                    } else if (response.status === 404) {
                         console.error('Not found');
                     } else if (response.status) {
                         if (response.data && response.data.errorMessage) {
@@ -62,7 +62,7 @@ angular.module('niord.auth')
                         } else {
                             console.error("An unexpected server error has occurred " + response.status);
                         }
-                    } else if (response == "Failed to refresh token") {
+                    } else if (response === "Failed to refresh token") {
                         AuthService.logout();
                     }
                     return $q.reject(response);
@@ -100,7 +100,7 @@ angular.module('niord.auth')
             $rootScope.supportsMainType = function(mainType) {
                 if ($rootScope.domain && $rootScope.domain.messageSeries) {
                     var mainTypeSeries = $.grep($rootScope.domain.messageSeries, function (series) {
-                        return series.mainType == mainType;
+                        return series.mainType === mainType;
                     });
                     return mainTypeSeries.length > 0;
                 }

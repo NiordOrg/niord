@@ -119,8 +119,8 @@ angular.module('niord.admin')
             /** Returns if the given editor field should be displayed **/
             $scope.showEditorField = function (field) {
                 var pub = $scope.publication;
-                var isPublication = pub.mainType == 'PUBLICATION';
-                var isTemplate = pub.mainType == 'TEMPLATE';
+                var isPublication = pub.mainType === 'PUBLICATION';
+                var isTemplate = pub.mainType === 'TEMPLATE';
                 var hasTemplate = pub.template !== undefined;
                 switch (field) {
                     case 'template':
@@ -132,13 +132,13 @@ angular.module('niord.admin')
                     case 'titleFormat':
                         return isTemplate;
                     case 'edition':
-                        return isPublication && pub.type == 'MESSAGE_REPORT';
+                        return isPublication && pub.type === 'MESSAGE_REPORT';
                     case 'messageTagFormat':
-                        return isTemplate && pub.type == 'MESSAGE_REPORT';
+                        return isTemplate && pub.type === 'MESSAGE_REPORT';
                     case 'messageTag':
-                        return isPublication && pub.type == 'MESSAGE_REPORT' && !(hasTemplate && pub.template.messageTagFormat);
+                        return isPublication && pub.type === 'MESSAGE_REPORT' && !(hasTemplate && pub.template.messageTagFormat);
                     case 'messageTagFilter':
-                        return pub.type == 'MESSAGE_REPORT' && !(hasTemplate && (pub.template.messageTagFilter || pub.template.messageTagFormat));
+                        return pub.type === 'MESSAGE_REPORT' && !(hasTemplate && (pub.template.messageTagFilter || pub.template.messageTagFormat));
                     case 'periodicalType':
                         return isTemplate;
                     case 'dates':
@@ -146,13 +146,13 @@ angular.module('niord.admin')
                     case 'type':
                         return !hasTemplate || pub.template.type === undefined;
                     case 'link':
-                        return (!hasTemplate && pub.type == 'LINK') || (hasTemplate && pub.template.type == 'LINK');
+                        return (!hasTemplate && pub.type === 'LINK') || (hasTemplate && pub.template.type === 'LINK');
                     case 'repoFileName':
-                        return (isTemplate || !hasTemplate) && pub.type == 'MESSAGE_REPORT';
+                        return (isTemplate || !hasTemplate) && pub.type === 'MESSAGE_REPORT';
                     case 'repoFile':
-                        return isPublication && (pub.type == 'REPOSITORY' || pub.type == 'MESSAGE_REPORT');
+                        return isPublication && (pub.type === 'REPOSITORY' || pub.type === 'MESSAGE_REPORT');
                     case 'report':
-                        return !hasTemplate && pub.type == 'MESSAGE_REPORT';
+                        return !hasTemplate && pub.type === 'MESSAGE_REPORT';
                     case 'messagePublication':
                         return !hasTemplate || (pub.template.messagePublication === undefined);
                 }
@@ -162,7 +162,7 @@ angular.module('niord.admin')
 
             /** For link-based publications, check that links are defined **/
             function checkLinkDefined(pub) {
-                if (pub.mainType == 'PUBLICATION' && pub.type != 'NONE') {
+                if (pub.mainType === 'PUBLICATION' && pub.type !== 'NONE') {
                     for (var x = 0; x < pub.descs.length; x++) {
                         if (!pub.descs[x].link) {
                             return false;
@@ -177,17 +177,17 @@ angular.module('niord.admin')
             $scope.canChangeStatus = function (status) {
                 var pub = $scope.publication;
                 var isSaved = pub.created;
-                var isPublication = pub.mainType == 'PUBLICATION';
+                var isPublication = pub.mainType === 'PUBLICATION';
                 var curStatus = pub.status;
                 switch (status) {
                     case 'DRAFT':
-                        return isSaved && isPublication && curStatus == 'RECORDING';
+                        return isSaved && isPublication && curStatus === 'RECORDING';
                     case 'RECORDING':
-                        return isSaved && isPublication && curStatus == 'DRAFT' && pub.type == 'MESSAGE_REPORT' && pub.messageTag;
+                        return isSaved && isPublication && curStatus === 'DRAFT' && pub.type === 'MESSAGE_REPORT' && pub.messageTag;
                     case 'ACTIVE':
-                        return isSaved && curStatus != 'ACTIVE' && checkLinkDefined(pub);
+                        return isSaved && curStatus !== 'ACTIVE' && checkLinkDefined(pub);
                     case 'INACTIVE':
-                        return isSaved && curStatus == 'ACTIVE';
+                        return isSaved && curStatus === 'ACTIVE';
                 }
                 return false;
             };
@@ -259,7 +259,7 @@ angular.module('niord.admin')
                 if (desc.link) {
                     // To preserve revision history, we only delete the linked file from the
                     // repository if it is the latest (unsaved) revision.
-                    if (desc.link.indexOf($scope.publication.editRepoPath + '/' + $scope.publication.revision + '/') != -1) {
+                    if (desc.link.indexOf($scope.publication.editRepoPath + '/' + $scope.publication.revision + '/') !== -1) {
                         AdminPublicationService.deletePublicationFile(desc.link);
                     }
                     delete desc.link;
@@ -355,7 +355,7 @@ angular.module('niord.admin')
                         $scope.publication.tag = pub.messageTag;
 
                         $scope.publicationFileUploadUrl = '/rest/publications/upload-publication-file/'
-                            + encodeURIComponent($scope.publication.editRepoPath  + '/' + $scope.publication.revision)
+                            + encodeURIComponent($scope.publication.editRepoPath  + '/' + $scope.publication.revision);
                         $scope.setPristine();
                     })
                     .error($scope.displayError);
@@ -375,7 +375,7 @@ angular.module('niord.admin')
                         $scope.publication.tag = pub.messageTag;
 
                         $scope.publicationFileUploadUrl = '/rest/publications/upload-publication-file/'
-                            + encodeURIComponent($scope.publication.editRepoPath  + '/' + $scope.publication.revision)
+                            + encodeURIComponent($scope.publication.editRepoPath  + '/' + $scope.publication.revision);
                         $scope.setDirty();
                     })
                     .error($scope.displayError);
@@ -392,23 +392,23 @@ angular.module('niord.admin')
             $scope.savePublication = function () {
                 var pub = $scope.publication;
 
-                if (pub.messagePublication == '') {
+                if (pub.messagePublication === '') {
                     delete pub.messagePublication;
                 }
-                if (pub.periodicalType == '') {
+                if (pub.periodicalType === '') {
                     delete pub.periodicalType;
                 }
                 pub.domain =
-                    (pub.type == 'MESSAGE_REPORT' || (pub.template && pub.template.type == 'MESSAGE_REPORT'))
+                    (pub.type === 'MESSAGE_REPORT' || (pub.template && pub.template.type === 'MESSAGE_REPORT'))
                         ? $rootScope.domain
                         : undefined;
 
-                if (pub && $scope.editMode == 'add') {
+                if (pub && $scope.editMode === 'add') {
                     AdminPublicationService
                         .createPublication(pub)
                         .success($scope.editPublication)
                         .error($scope.displayError);
-                } else if (pub && $scope.editMode == 'edit') {
+                } else if (pub && $scope.editMode === 'edit') {
                     AdminPublicationService
                         .updatePublication(pub)
                         .success($scope.editPublication)
@@ -419,7 +419,7 @@ angular.module('niord.admin')
 
             /** Deletes the given publication */
             $scope.deletePublication = function (publication) {
-                if (publication.status != 'DRAFT' && publication.status != 'INACTIVE') {
+                if (publication.status !== 'DRAFT' && publication.status !== 'INACTIVE') {
                     return;
                 }
                 DialogService.showConfirmDialog(
@@ -538,12 +538,12 @@ angular.module('niord.admin')
             /** Saves the current publication category being edited */
             $scope.savePublicationCategory = function () {
 
-                if ($scope.publicationCategory && $scope.editMode == 'add') {
+                if ($scope.publicationCategory && $scope.editMode === 'add') {
                     AdminPublicationService
                         .createPublicationCategory($scope.publicationCategory)
                         .success($scope.loadPublicationCategories)
                         .error($scope.displayError);
-                } else if ($scope.publicationCategory && $scope.editMode == 'edit') {
+                } else if ($scope.publicationCategory && $scope.editMode === 'edit') {
                     AdminPublicationService
                         .updatePublicationCategory($scope.publicationCategory)
                         .success($scope.loadPublicationCategories)

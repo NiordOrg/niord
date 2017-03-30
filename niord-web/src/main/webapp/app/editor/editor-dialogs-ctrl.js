@@ -68,9 +68,9 @@ angular.module('niord.editor')
 
             /** Check if the link should be editable **/
             $scope.showLink = function (pub) {
-                return pub && pub.publication && pub.publication.type == 'LINK'
+                return pub && pub.publication && pub.publication.type === 'LINK'
                     && !pub.publication.languageSpecific &&
-                    $.grep(pub.publication.descs, function (d) { return d.link !== undefined }).length == 0;
+                    $.grep(pub.publication.descs, function (d) { return d.link !== undefined }).length === 0;
             };
 
 
@@ -195,7 +195,7 @@ angular.module('niord.editor')
                         var source = $scope.selection[x];
                         var desc = LangService.descForLanguage(source, lang);
                         if (desc) {
-                            var delim = ($scope.selection.length > 1 && x == $scope.selection.length - 1)
+                            var delim = ($scope.selection.length > 1 && x === $scope.selection.length - 1)
                                 ? ' ' + LangService.translate('term.and', null, lang) + ' '
                                 : ', ';
                             text += (text.length > 0) ? delim : '';
@@ -379,7 +379,7 @@ angular.module('niord.editor')
             $scope.toggleXL = function () {
                 var prevClass = $scope.modalData.showXL ? 'modal-lg' : 'modal-xl';
                 var newClass = $scope.modalData.showXL ? 'modal-xl' : 'modal-lg';
-                $('.' + prevClass).addClass(newClass).removeClass(prevClass);
+                $("." + prevClass).addClass(newClass).removeClass(prevClass);
             }
 
         }])
@@ -429,7 +429,7 @@ angular.module('niord.editor')
                 try {
                     angular.copy(angular.fromJson($window.localStorage['formatLocationSettings']), $scope.params);
                     // "list" was renamed to "numbered-list"
-                    if ($scope.params.template == 'list') {
+                    if ($scope.params.template === 'list') {
                         $scope.params.template = 'numbered-list';
                     }
                 } catch (error) {
@@ -448,7 +448,7 @@ angular.module('niord.editor')
                 });
 
                 // Initial selection
-                if ($scope.featureCollection.features.length == 1) {
+                if ($scope.featureCollection.features.length === 1) {
                     $scope.featureCollection.features[0].selected = true;
                 }
 
@@ -535,7 +535,7 @@ angular.module('niord.editor')
                 $scope.dateIntervals = angular.copy(dateIntervals);
 
                 // Initial selection
-                if ($scope.dateIntervals.length == 1) {
+                if ($scope.dateIntervals.length === 1) {
                     $scope.dateIntervals[0].selected = true;
                 }
 
@@ -553,7 +553,7 @@ angular.module('niord.editor')
                 // Compute the result
                 $scope.data.result = '';
 
-                if ($scope.dateIntervals.length == 0) {
+                if ($scope.dateIntervals.length === 0) {
                     $scope.data.result = DateIntervalService.translateDateInterval($scope.lang, null, $scope.params.tz);
                 } else {
                     angular.forEach($scope.dateIntervals, function (di) {
@@ -583,7 +583,7 @@ angular.module('niord.editor')
 
 
             // Initial selection
-            $scope.selectTimeIntervals($scope.dateIntervals.length == 1);
+            $scope.selectTimeIntervals($scope.dateIntervals.length === 1);
         }])
 ;
 

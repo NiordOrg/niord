@@ -150,7 +150,7 @@ angular.module('niord.atons')
                 var s = $scope.state;
 
                 // Handle map
-                if (s.map.enabled && s.map.extent && s.map.extent.length == 4) {
+                if (s.map.enabled && s.map.extent && s.map.extent.length === 4) {
                     params += '&minLon=' + s.map.extent[0] + '&minLat=' + s.map.extent[1] +
                         '&maxLon=' + s.map.extent[2] + '&maxLat=' + s.map.extent[3];
                 }
@@ -312,7 +312,7 @@ angular.module('niord.atons')
                 var atonUid = AtonService.getAtonUid(aton);
                 angular.forEach($scope.featureCollection.features, function (feature) {
                     var featureAton = feature.properties.aton;
-                    if (AtonService.getAtonUid(featureAton) == atonUid) {
+                    if (AtonService.getAtonUid(featureAton) === atonUid) {
                         feature.geometry.coordinates = [ featureAton.lon, featureAton.lat ];
                     }
                 });
@@ -496,7 +496,7 @@ angular.module('niord.atons')
 
             /** Merges the current AtoN definition with the node types currently selected */
             $scope.mergeWithNodeType = function () {
-                if ($scope.selcetedNodeTypes.names.length == 0) {
+                if ($scope.selcetedNodeTypes.names.length === 0) {
                     return;
                 }
                 var names = angular.copy($scope.selcetedNodeTypes.names);

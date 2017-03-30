@@ -51,7 +51,7 @@ angular.module('niord.common')
             var truncated = false;
             text = (text || "") + "";
             // only first line
-            if (text.indexOf('\n') != -1) {
+            if (text.indexOf('\n') !== -1) {
                 text = text.substr(0, text.indexOf('\n'));
                 truncated = true;
             }

@@ -43,7 +43,7 @@ angular.module('niord.admin')
             $scope.getKeycloakUrl = function() {
                 // Template http://localhost:8080/auth/admin/master/console/#/realms/niord/clients
                 var url = AuthService.keycloak.authServerUrl;
-                if (url.charAt(url.length - 1) != '/') {
+                if (url.charAt(url.length - 1) !== '/') {
                     url += '/';
                 }
                 return url + 'admin/master/console/#/realms/niord/clients';
@@ -121,12 +121,12 @@ angular.module('niord.admin')
             /** Saves the current domain being edited */
             $scope.saveDomain = function () {
 
-                if ($scope.domain && $scope.editMode == 'add') {
+                if ($scope.domain && $scope.editMode === 'add') {
                     AdminDomainService
                         .createDomain($scope.domain)
                         .success($scope.loadDomains)
                         .error($scope.displayError);
-                } else if ($scope.domain && $scope.editMode == 'edit') {
+                } else if ($scope.domain && $scope.editMode === 'edit') {
                     AdminDomainService
                         .updateDomain($scope.domain)
                         .success($scope.loadDomains)

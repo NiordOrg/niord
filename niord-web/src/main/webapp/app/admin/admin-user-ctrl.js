@@ -49,7 +49,7 @@ angular.module('niord.admin')
                 // Computes the Keycloak URL
                 // Template: http://localhost:8080/auth/admin/master/console/#/realms/niord/clients
                 $scope.keycloakUrl = AuthService.keycloak.authServerUrl;
-                if ($scope.keycloakUrl.charAt($scope.keycloakUrl.length - 1) != '/') {
+                if ($scope.keycloakUrl.charAt($scope.keycloakUrl.length - 1) !== '/') {
                     $scope.keycloakUrl += '/';
                 }
                 $scope.keycloakUrl += 'admin/master/console/#/realms/niord/clients';
@@ -150,7 +150,7 @@ angular.module('niord.admin')
 
             /** Saves the currently edited user **/
             $scope.saveUser = function () {
-                if ($scope.user && $scope.action == 'add') {
+                if ($scope.user && $scope.action === 'add') {
                     $scope.user.keycloakActions = [];
                     angular.forEach($scope.user.action, function (value, key) {
                         if (value) {
@@ -166,7 +166,7 @@ angular.module('niord.admin')
                         .error($scope.displayError);
                 } else if ($scope.user) {
                     AdminUserService.updateUser($scope.user)
-                        .success(function (user) {
+                        .success(function () {
                             growl.info("User updated", { ttl: 3000 });
                             $scope.cancelEdit();
                         })

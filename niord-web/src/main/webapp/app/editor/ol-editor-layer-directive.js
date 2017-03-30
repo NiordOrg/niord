@@ -247,12 +247,12 @@ angular.module('niord.editor')
                         condition: ol.events.condition.platformModifierKeyOnly
                     });
 
-                    dragBox.on('boxstart', function(e) {
+                    dragBox.on('boxstart', function() {
                         select.getFeatures().clear();
                         scope.$$phase || scope.$apply();
                     });
 
-                    dragBox.on('boxend', function(e) {
+                    dragBox.on('boxend', function() {
                         var extent = dragBox.getGeometry().getExtent();
                         olLayer.getSource().forEachFeatureIntersectingExtent(extent, function(feature) {
                             select.getFeatures().push(feature);
@@ -300,7 +300,7 @@ angular.module('niord.editor')
                     scope.activateDrawControl = function (name) {
                         angular.forEach(drawControls, function (drawCtrls, key) {
                             angular.forEach(drawCtrls, function (drawCtrl) {
-                                drawCtrl.setActive(name == key);
+                                drawCtrl.setActive(name === key);
                             })
                         });
                         select.getFeatures().clear();
@@ -333,7 +333,7 @@ angular.module('niord.editor')
                     scope.featureRemoved = function (evt) {
                         var features = evt.features.getArray();
                         angular.forEach(features, function (feature) {
-                            if ($.inArray(feature, scope.features) != -1) {
+                            if ($.inArray(feature, scope.features) !== -1) {
                                 scope.features.splice( $.inArray(feature, scope.features), 1 );
                             }
                             emit('feature-removed', feature.getId());
@@ -477,10 +477,10 @@ angular.module('niord.editor')
 
                             angular.forEach(featureNames, function (name) {
 
-                                if (name.isFeatureName() && name.getLanguage() == $rootScope.language) {
+                                if (name.isFeatureName() && name.getLanguage() === $rootScope.language) {
                                     var featureNameStyle = scope.styleForFeatureName(feature, name.getValue());
                                     styles.push(featureNameStyle);
-                                } else if (name.isFeatureCoordName() && name.getLanguage() == $rootScope.language) {
+                                } else if (name.isFeatureCoordName() && name.getLanguage() === $rootScope.language) {
                                     var coord = MapService.getCoordinateAtIndex(feature, name.getCoordIndex());
                                     if (coord) {
                                         var coordNameStyle = scope.styleForFeatureCoordName(feature, name.getValue(), coord);
@@ -506,7 +506,7 @@ angular.module('niord.editor')
                     /** Listens for a 'gj-editor-update' event **/
                     scope.$on('gj-editor-update', function(event, msg) {
                         // Do now process own events
-                        if (msg.scope == scope.$id || msg.origScope == scope.$id) {
+                        if (msg.scope === scope.$id || msg.origScope === scope.$id) {
                             return;
                         }
 
@@ -548,7 +548,7 @@ angular.module('niord.editor')
                             case 'feature-unselected':
                                 var feature = olLayer.getSource().getFeatureById(msg.featureId);
                                 if (feature) {
-                                    if  (msg.type == 'feature-selected') {
+                                    if  (msg.type === 'feature-selected') {
                                         select.getFeatures().push(feature);
                                     } else {
                                         select.getFeatures().remove(feature);

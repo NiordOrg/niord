@@ -160,7 +160,7 @@ angular.module('niord.atons')
             /** Search for AtoNs within the given extent */
             searchAtonsByExtent: function(extent, maxAtonNo) {
                 var params = 'maxAtonNo=' + maxAtonNo + '&emptyOnOverflow=true';
-                if (extent && extent.length == 4) {
+                if (extent && extent.length === 4) {
                     params += '&minLon=' + extent[0] + '&minLat=' + extent[1]
                            +  '&maxLon=' + extent[2] + '&maxLat=' + extent[3];
                 }

@@ -41,10 +41,10 @@ angular.module('niord.atons')
                 },
                 link: function(scope, element, attrs) {
 
-                    scope.showZoomBtn = scope.zoomBtn == 'true';
-                    scope.showDndBtn = scope.draggable == 'true';
-                    scope.showEditBtn = scope.editable == 'true';
-                    scope.showSelectBtn = scope.selectable == 'true';
+                    scope.showZoomBtn = scope.zoomBtn === 'true';
+                    scope.showDndBtn = scope.draggable === 'true';
+                    scope.showEditBtn = scope.editable === 'true';
+                    scope.showSelectBtn = scope.selectable === 'true';
 
                     
                     // Returns the AtoN context associated with the current AtoN
@@ -128,15 +128,15 @@ angular.module('niord.atons')
                     // Returns if the icon has changed
                     scope.iconChanged = function () {
                         var atonCtx = scope.getAtonCtx();
-                        return atonCtx != null && atonCtx.orig != null && atonCtx.orig.iconUrl != atonCtx.aton.iconUrl;
+                        return atonCtx != null && atonCtx.orig != null && atonCtx.orig.iconUrl !== atonCtx.aton.iconUrl;
                     };
 
                     // Returns if the position has changed
                     scope.posChanged = function () {
                         var atonCtx = scope.getAtonCtx();
                         return atonCtx != null && atonCtx.orig != null && (
-                            (atonCtx.orig.lat != scope.aton.lat) ||
-                            (atonCtx.orig.lon != scope.aton.lon));
+                            (atonCtx.orig.lat !== scope.aton.lat) ||
+                            (atonCtx.orig.lon !== scope.aton.lon));
                     };
 
                 }
@@ -166,20 +166,20 @@ angular.module('niord.atons')
             link: function (scope, element) {
 
                 scope.mode = scope.mode || 'in-place';
-                scope.attr = scope.attr == 'k' ? 'k' : 'v';
+                scope.attr = scope.attr === 'k' ? 'k' : 'v';
                 scope.value = { val: scope.tag[scope.attr] }; // NB: Nested because of scope madness!
-                scope.editing = scope.mode != 'in-place';
+                scope.editing = scope.mode !== 'in-place';
 
                 /** "in-place" editor mode **/
-                if (scope.mode == 'in-place') {
+                if (scope.mode === 'in-place') {
 
                     // Hook up a key listener that closes the editor when Escape, Tab and Enter is pressed
                     function keydownListener(evt) {
                         if (evt.isDefaultPrevented()) {
                             return evt;
                         }
-                        if (evt.which == 27 || evt.which == 13 || evt.which == 9) {
-                            scope.endEdit(evt.which == 13 || evt.which == 9);
+                        if (evt.which === 27 || evt.which === 13 || evt.which === 9) {
+                            scope.endEdit(evt.which === 13 || evt.which === 9);
                             evt.preventDefault();
                             evt.stopPropagation();
                             scope.$$phase || scope.$apply();
@@ -227,7 +227,7 @@ angular.module('niord.atons')
                 /** Creates an auto-complete list */
                 scope.autoComplete = function (viewValue) {
                     var url = '/rest/atons/defaults/';
-                    if (scope.attr == 'v') {
+                    if (scope.attr === 'v') {
                         // We are editing a tag value
                         url += 'auto-complete-value?key=' + encodeURIComponent(scope.tag.k)
                             + '&value=' + encodeURIComponent(viewValue);

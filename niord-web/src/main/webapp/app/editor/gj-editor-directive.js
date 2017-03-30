@@ -84,12 +84,12 @@ angular.module('niord.editor')
                     'bufferRadius', 'bufferRadiusType', 'restriction', 'aton' ];
 
                 scope.showDrawControls = {
-                    point:      scope.drawControls.indexOf('point') != -1,
-                    polyline:   scope.drawControls.indexOf('polyline') != -1,
-                    polygon:    scope.drawControls.indexOf('polygon') != -1,
-                    box:        scope.drawControls.indexOf('box') != -1,
-                    select:     scope.drawControls.indexOf('select') != -1,
-                    remove:     scope.drawControls.indexOf('remove') != -1
+                    point:      scope.drawControls.indexOf('point') !== -1,
+                    polyline:   scope.drawControls.indexOf('polyline') !== -1,
+                    polygon:    scope.drawControls.indexOf('polygon') !== -1,
+                    box:        scope.drawControls.indexOf('box') !== -1,
+                    select:     scope.drawControls.indexOf('select') !== -1,
+                    remove:     scope.drawControls.indexOf('remove') !== -1
                 };
 
                 if (scope.tabIndex) {
@@ -116,7 +116,7 @@ angular.module('niord.editor')
 
                 /** Removes an element from an array **/
                 function removeFromArray(arr, val) {
-                    if (arr && val && $.inArray(val, arr) != -1) {
+                    if (arr && val && $.inArray(val, arr) !== -1) {
                         arr.splice( $.inArray(val, arr), 1 );
                     }
                 }
@@ -124,7 +124,7 @@ angular.module('niord.editor')
                 /** Finds the feature with the given ID */
                 function findFeatureById(id) {
                     for (var x = 0; x < scope.features.length; x++) {
-                        if (scope.features[x].getId() == id) {
+                        if (scope.features[x].getId() === id) {
                             return scope.features[x];
                         }
                     }
@@ -134,7 +134,7 @@ angular.module('niord.editor')
                 /** Finds the feature context with the given ID */
                 function findFeatureContextById(id) {
                     for (var x = 0; x < scope.featureContexts.length; x++) {
-                        if (scope.featureContexts[x].id == id) {
+                        if (scope.featureContexts[x].id === id) {
                             return scope.featureContexts[x];
                         }
                     }
@@ -144,7 +144,7 @@ angular.module('niord.editor')
                 /** Finds the buffered feature contexts for the feature with the given ID */
                 function findBufferedFeatureContexts(featureId) {
                     return $.grep(scope.featureContexts, function (featureCtx) {
-                        return featureCtx['parentFeatureIds'] && featureCtx['parentFeatureIds'].indexOf(featureId) != -1;
+                        return featureCtx['parentFeatureIds'] && featureCtx['parentFeatureIds'].indexOf(featureId) !== -1;
                     });
                 }
 
@@ -164,7 +164,7 @@ angular.module('niord.editor')
                 function copyPropertiesFromFeature(feature, featureCtx) {
                     angular.forEach(feature.getKeys(), function (key) {
                         angular.forEach(featureCtxPrefixes, function (prefix) {
-                            if (key.indexOf(prefix) == 0) {
+                            if (key.indexOf(prefix) === 0) {
                                 featureCtx[key] = feature.get(key);
                             }
                         });
@@ -175,7 +175,7 @@ angular.module('niord.editor')
                 function copyPropertiesToFeature(feature, featureCtx) {
                     angular.forEach(featureCtx, function (value, key) {
                         angular.forEach(featureCtxPrefixes, function (prefix) {
-                            if (key.indexOf(prefix) == 0) {
+                            if (key.indexOf(prefix) === 0) {
                                 if (value) {
                                     feature.set(key, value);
                                 } else {
@@ -273,7 +273,7 @@ angular.module('niord.editor')
                         scope.featureCollection.features.length = 0;
 
                         // Check if we need to merge all features into one
-                        if (scope.editType == 'feature') {
+                        if (scope.editType === 'feature') {
                             scope.selectAll();
                             scope.merge();
                         }
@@ -303,7 +303,7 @@ angular.module('niord.editor')
 
                     // TODO:
                     // 1) Only make option available for simple GeoJSON geometries
-                    // 2) When editType == 'feature', the result should be merged
+                    // 2) When editType === 'feature', the result should be merged
 
                     var features = scope.featureCollection.features.slice();
                     scope.openGeometryImportDialog("plain-text-editor-dialog.html", 'lg', features)
@@ -370,7 +370,7 @@ angular.module('niord.editor')
                     if (aton && aton.tags) {
                         var atonRange = 0;
                         angular.forEach(aton.tags, function (v, k) {
-                            if (k && k.match('range$') == 'range' && !isNaN(v)) {
+                            if (k && k.match('range$') === 'range' && !isNaN(v)) {
                                 atonRange = Math.max(atonRange, +v);
                             }
                         });
@@ -392,20 +392,20 @@ angular.module('niord.editor')
                     var features = findParentFeatures(parentFeatureIds);
                     var allPoints = true;
                     angular.forEach(features, function (feature) {
-                        allPoints = allPoints && feature.getGeometry() != null && feature.getGeometry().getType() == 'Point';
+                        allPoints = allPoints && feature.getGeometry() != null && feature.getGeometry().getType() === 'Point';
                     });
 
                     var geom;
-                    if (bufferType == 'radius') {
+                    if (bufferType === 'radius') {
                         geom = mergeFeatureGeometries(features);
                     } else if (allPoints) {
                         var coords = [];
                         angular.forEach(features, function (f) {
                             coords.push(f.getGeometry().getCoordinates());
                         });
-                        if (bufferType == 'path') {
+                        if (bufferType === 'path') {
                             geom = new ol.geom.LineString(coords);
-                        } else if (bufferType == 'area') {
+                        } else if (bufferType === 'area') {
                             coords.push(coords[0]);
                             geom = new ol.geom.Polygon([ coords ]);
                         }
@@ -424,16 +424,16 @@ angular.module('niord.editor')
 
                 /** Checks if the current selection can be used to add a buffered feature of the given type */
                 scope.canAddBufferedFeature = function (bufferType) {
-                    if (scope.editType == 'message' && scope.selection.length > 0) {
+                    if (scope.editType === 'message' && scope.selection.length > 0) {
                         var allPoints = true;
                         angular.forEach(scope.selection, function (feature) {
-                            allPoints = allPoints && feature.getGeometry() != null && feature.getGeometry().getType() == 'Point';
+                            allPoints = allPoints && feature.getGeometry() != null && feature.getGeometry().getType() === 'Point';
                         });
-                        if (bufferType == 'radius') {
+                        if (bufferType === 'radius') {
                             return true;
-                        } else if (bufferType == 'path' && scope.selection.length > 1 && allPoints) {
+                        } else if (bufferType === 'path' && scope.selection.length > 1 && allPoints) {
                             return true;
-                        } else if (bufferType == 'area' && scope.selection.length > 2 && allPoints) {
+                        } else if (bufferType === 'area' && scope.selection.length > 2 && allPoints) {
                             return true;
                         }
                     }
@@ -443,7 +443,7 @@ angular.module('niord.editor')
 
                 /** Creates buffered features for the current selection **/
                 scope.addBufferedFeature = function (bufferType) {
-                    if (scope.selection.length == 0) {
+                    if (scope.selection.length === 0) {
                         return;
                     }
 
@@ -455,7 +455,7 @@ angular.module('niord.editor')
                     bufferFeature.set('parentFeatureIds', featureIds.join());
                     bufferFeature.set('restriction', 'affected');
                     bufferFeature.set('bufferType', bufferType);
-                    if (bufferType == 'radius') {
+                    if (bufferType === 'radius') {
                         bufferFeature.set('bufferRadius', checkGetAtonRange(scope.selection[0], 1.0));
                         bufferFeature.set('bufferRadiusType', 'nm');
                     }
@@ -468,7 +468,7 @@ angular.module('niord.editor')
                     scope.features.push(bufferFeature);
 
                     var featureCtx = createFeatureCtxFromFeature(bufferFeature);
-                    featureCtx.showRadius = bufferType == 'radius';
+                    featureCtx.showRadius = bufferType === 'radius';
                     featureCtx.showRestriction = true;
                     scope.featureContexts.push(featureCtx);
                     broadcast('feature-added', bufferFeature.getId());
@@ -562,9 +562,9 @@ angular.module('niord.editor')
                  * Will mainly handle merging of the same type of geometries, e.g. MultiPoint + Point -> MultiPoint.
                  **/
                 function mergeGeometries(g1, g2) {
-                    if (g1.getType() == 'GeometryCollection') {
+                    if (g1.getType() === 'GeometryCollection') {
                         var geometries = g1.getGeometries() || [];
-                        var g = (g2.getType() == 'GeometryCollection') ? g2.getGeometries() : [ g2 ];
+                        var g = (g2.getType() === 'GeometryCollection') ? g2.getGeometries() : [ g2 ];
                         angular.forEach(g, function (gg) { geometries.push(gg.clone()); });
                         g1.setGeometries(geometries);
                         //g1 = new ol.geom.GeometryCollection(geometries);
@@ -573,17 +573,17 @@ angular.module('niord.editor')
                         switch (g2.getType()) {
                             case 'Point':
                             case 'MultiPoint':
-                                var points = g2.getType() == 'Point' ? [ g2 ] : g2.getPoints();
+                                var points = g2.getType() === 'Point' ? [ g2 ] : g2.getPoints();
                                 angular.forEach(points, function (pt) { g1.appendPoint(pt.clone()); });
                                 break;
                             case 'LineString':
                             case 'MultiLineString':
-                                var lineStrings = g2.getType() == 'LineString' ? [ g2 ] : g2.getLineStrings();
+                                var lineStrings = g2.getType() === 'LineString' ? [ g2 ] : g2.getLineStrings();
                                 angular.forEach(lineStrings, function (ls) { g1.appendLineString(ls.clone()); });
                                 break;
                             case 'Polygon':
                             case 'MultiPolygon':
-                                var polygons = g2.getType() == 'Polygon' ? [ g2 ] : g2.getPolygons();
+                                var polygons = g2.getType() === 'Polygon' ? [ g2 ] : g2.getPolygons();
                                 angular.forEach(polygons, function (pol) { g1.appendPolygon(pol.clone()); });
                                 break;
                         }
@@ -606,7 +606,7 @@ angular.module('niord.editor')
 
                     // Create a merged geometry
                     var geom = new ol.geom[type]();
-                    if (type == 'GeometryCollection') {
+                    if (type === 'GeometryCollection') {
                         geom.setGeometries([]);
                     }
                     angular.forEach(features, function (feature) {
@@ -646,14 +646,14 @@ angular.module('niord.editor')
 
                 /** Checks if the current geometry selection can be converted to the given type **/
                 scope.canConvert = function (toType) {
-                    if (scope.selection.length != 1) {
+                    if (scope.selection.length !== 1) {
                         return false;
                     }
                     var fromType = scope.selection[0].getGeometry().getType();
                     switch (toType) {
-                        case 'MultiPoint': return fromType == 'LineString' || fromType == 'Polygon';
-                        case 'LineString': return fromType == 'MultiPoint' || fromType == 'Polygon';
-                        case 'Polygon':    return fromType == 'MultiPoint' || fromType == 'LineString';
+                        case 'MultiPoint': return fromType === 'LineString' || fromType === 'Polygon';
+                        case 'LineString': return fromType === 'MultiPoint' || fromType === 'Polygon';
+                        case 'Polygon':    return fromType === 'MultiPoint' || fromType === 'LineString';
                     }
                     return false;
                 };
@@ -673,10 +673,10 @@ angular.module('niord.editor')
                     var coordinates = feature.getGeometry().getCoordinates();
 
                     // Convert coordinates if target type is Polygon
-                    if (toType == 'Polygon') {
+                    if (toType === 'Polygon') {
                         coordinates.push(coordinates[0]);
                         coordinates = [ coordinates ];
-                    } else if (fromType == 'Polygon') {
+                    } else if (fromType === 'Polygon') {
                         coordinates = coordinates[0];
                         coordinates.pop();
                     }
@@ -700,7 +700,7 @@ angular.module('niord.editor')
 
                     angular.forEach(selected, function (feature) {
                         var geom = feature.getGeometry();
-                        if (geom.getType() == 'Point') {
+                        if (geom.getType() === 'Point') {
                             return;
                         }
 
@@ -928,7 +928,7 @@ angular.module('niord.editor')
                 /** Creates an AtoN associated with the given point **/
                 scope.createAton = function (featureCtx) {
                     var feature = findFeatureById(featureCtx.id);
-                    if (feature && featureCtx.type == 'Point') {
+                    if (feature && featureCtx.type === 'Point') {
                         var lonLat = MapService.toLonLat(feature.getGeometry().getCoordinates());
                         var aton = {
                             lon: lonLat[0],
@@ -973,7 +973,7 @@ angular.module('niord.editor')
                     if (evt.isDefaultPrevented()) {
                         return evt;
                     }
-                    if (scope.mode == 'editor' && evt.which == 27) {
+                    if (scope.mode === 'editor' && evt.which === 27) {
                         scope.exitEditor();
                         evt.preventDefault();
                         evt.stopPropagation();
@@ -991,7 +991,7 @@ angular.module('niord.editor')
                 /** Listens for a 'gj-editor-update' event  **/
                 scope.$on('gj-editor-update', function(event, msg) {
                     // Do now process own events
-                    if (msg.scope == scope.$id || msg.origScope == scope.$id) {
+                    if (msg.scope === scope.$id || msg.origScope === scope.$id) {
                         return;
                     }
 
@@ -1044,7 +1044,7 @@ angular.module('niord.editor')
                         case 'feature-unselected':
                             featureCtx = findFeatureContextById(msg.featureId);
                             if (featureCtx) {
-                                featureCtx.selected = (msg.type == 'feature-selected');
+                                featureCtx.selected = (msg.type === 'feature-selected');
                                 recomputeFeatureSelection();
                                 scope.$$phase || $rootScope.$$phase || scope.$apply();
                             }
@@ -1056,7 +1056,7 @@ angular.module('niord.editor')
                 /** Listens for a 'gj-editor-edit' event for opening the editor **/
                 scope.$on('gj-editor-edit', function(event, msg) {
                     // Only respond to the event if the ID sent along matches the ID of the directive
-                    if (msg == attrs['id']) {
+                    if (msg === attrs['id']) {
                         scope.openEditor();
                     }
                 });

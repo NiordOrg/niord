@@ -77,7 +77,7 @@ angular.module('niord.admin')
             function filterRecipients(mail, type) {
                 if (mail && mail.recipients) {
                     return $.grep(mail.recipients, function (r) {
-                        return r.recipientType == type;
+                        return r.recipientType === type;
                     })
                 }
                 return [];

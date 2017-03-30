@@ -95,7 +95,7 @@ angular.module('niord.admin')
                 $scope.executions.length = 0;
                 angular.forEach($scope.searchResult.data, function (instance) {
                     angular.forEach(instance.executions, function (execution, index) {
-                        if (index == 0) {
+                        if (index === 0) {
                             execution.instance = instance;
                         }
                         $scope.executions.push(execution);

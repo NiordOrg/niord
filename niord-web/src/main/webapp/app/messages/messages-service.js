@@ -72,20 +72,6 @@ angular.module('niord.messages')
 
 
             /** Returns the message filters */
-            publicMessages: function() {
-                var params = 'lang=' + $rootScope.language;
-                if ($rootScope.domain) {
-                    params += '&domain=' + $rootScope.domain.domainId;
-                } else if ($rootScope.frontPageMessageSeries && $rootScope.frontPageMessageSeries.length > 0) {
-                    angular.forEach($rootScope.frontPageMessageSeries, function (messageSeries) {
-                        params += '&messageSeries=' + encodeURIComponent(messageSeries);
-                    })
-                }
-                return $http.get('/rest/public/v1/messages?' + params);
-            },
-
-
-            /** Returns the message filters */
             search: function(params, page, maxSize) {
                 page = page || 0;
                 maxSize = maxSize || 1000;
@@ -650,14 +636,14 @@ angular.module('niord.messages')
                     var toDateTxt = to.format("ll");
                     var time = '';
 
-                    if (fromDateTxt == toDateTxt) {
+                    if (fromDateTxt === toDateTxt) {
                         if (di.allDay) {
                             // Same dates
                             time = fromDateTxt;
                         } else {
                             var fromTimeTxt = from.format("lll");
                             var toTimeTxt = to.format("lll");
-                            if (fromTimeTxt == toTimeTxt) {
+                            if (fromTimeTxt === toTimeTxt) {
                                 // Same date-time
                                 time = fromTimeTxt;
                             } else {

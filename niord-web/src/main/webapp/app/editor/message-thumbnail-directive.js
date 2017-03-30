@@ -44,7 +44,7 @@ angular.module('niord.editor')
                             // The canvas size depends on the pixel ratio. Scale down to 1:1.
                             // See http://stackoverflow.com/questions/35694880/openlayers-3-export-map-to-png-image-size
                             var image;
-                            if (ol.has.DEVICE_PIXEL_RATIO == 1) {
+                            if (ol.has.DEVICE_PIXEL_RATIO === 1) {
                                 image = canvas.toDataURL('image/png');
                             } else {
                                 var targetCanvas = document.createElement('canvas');

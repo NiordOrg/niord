@@ -51,11 +51,11 @@ angular.module('niord.admin')
                 $scope.messageSeriesIds.length = 0;
                 if ($scope.schedule) {
                     angular.forEach($rootScope.domains, function (domain) {
-                        if (domain.domainId == $scope.schedule.targetDomain.domainId && domain.messageSeries) {
+                        if (domain.domainId === $scope.schedule.targetDomain.domainId && domain.messageSeries) {
                             angular.forEach(domain.messageSeries, function (series) {
                                 $scope.messageSeriesIds.push(series.seriesId);
                             });
-                            if (domain.messageSeries.length == 1) {
+                            if (domain.messageSeries.length === 1) {
                                 $scope.schedule.targetSeriesId = domain.messageSeries[0].seriesId;
                             }
                         }
@@ -107,12 +107,12 @@ angular.module('niord.admin')
             /** Saves the current firing schedule being edited */
             $scope.saveFiringSchedule = function () {
 
-                if ($scope.editMode == 'add') {
+                if ($scope.editMode === 'add') {
                     AdminScheduleService
                         .createFiringSchedule($scope.schedule)
                         .success($scope.loadFiringSchedules)
                         .error($scope.displayError);
-                } else if ($scope.editMode == 'edit') {
+                } else if ($scope.editMode === 'edit') {
                     AdminScheduleService
                         .updateFiringSchedule($scope.schedule)
                         .success($scope.loadFiringSchedules)

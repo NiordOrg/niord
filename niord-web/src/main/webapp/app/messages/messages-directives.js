@@ -39,9 +39,9 @@ angular.module('niord.messages')
 
                 function updateSuffix() {
                     var msg = scope.msg;
-                    if (msg && msg.mainType == 'NM' &&
-                        (msg.type == 'TEMPORARY_NOTICE' || msg.type == 'PRELIMINARY_NOTICE')) {
-                        scope.suffix = msg.type == 'TEMPORARY_NOTICE' ? ' (T)' : ' (P)';
+                    if (msg && msg.mainType === 'NM' &&
+                        (msg.type === 'TEMPORARY_NOTICE' || msg.type === 'PRELIMINARY_NOTICE')) {
+                        scope.suffix = msg.type === 'TEMPORARY_NOTICE' ? ' (T)' : ' (P)';
                     }
                 }
 
@@ -92,7 +92,7 @@ angular.module('niord.messages')
                     var result = '';
                     if (areas && areas.length > 0) {
                         for (var area = areas[0]; area; area = area.parent) {
-                            if (area.id == -999999) {
+                            if (area.id === -999999) {
                                 // Special "General" area used for messages without an assigned area
                                 result = prepend(LangService.translate('msg.area.general'), result);
                             } else {
@@ -159,7 +159,7 @@ angular.module('niord.messages')
             link: function(scope, element) {
 
                 function endsWithDot(str) {
-                    return str && str.length > 0 && str.charAt(str.length-1) == '.';
+                    return str && str.length > 0 && str.charAt(str.length-1) === '.';
                 }
 
                 scope.renderRefType = function () {
@@ -175,7 +175,7 @@ angular.module('niord.messages')
                     if (scope.ref.descs && scope.ref.descs.length > 0 && scope.ref.descs[0].description) {
                         result += ' - ' + scope.ref.descs[0].description;
                     }
-                    if ((result.length == 0 && !endsWithDot(scope.ref.messageId)) ||
+                    if ((result.length === 0 && !endsWithDot(scope.ref.messageId)) ||
                         (result.length > 0 && !endsWithDot(result))) {
                         result += '.';
                     }
@@ -220,7 +220,7 @@ angular.module('niord.messages')
 
                     if (scope.firstLine) {
                         var index = time.indexOf("<br>");
-                        if (index != -1) {
+                        if (index !== -1) {
                             time = time.substr(0, index) +
                                 ' <span style="color:red; cursor: pointer" title="' +
                                 time.replace(/<br>/g, '\n') + '">&hellip;</span>';
@@ -256,9 +256,9 @@ angular.module('niord.messages')
 
                 /** updates the time depending on the "type" selection **/
                 scope.updateTime = function () {
-                    if (scope.type == 'PUBLISH_DATE') {
+                    if (scope.type === 'PUBLISH_DATE') {
                         scope.updatePublishTime();
-                    } else if (scope.type == 'FOLLOW_UP_DATE') {
+                    } else if (scope.type === 'FOLLOW_UP_DATE') {
                         scope.updateFollowUpTime();
                     } else {
                         scope.updateEventTime();
@@ -368,9 +368,9 @@ angular.module('niord.messages')
                                 scope.source = desc.source;
                             }
                             if (scope.msg.publishDateFrom &&
-                                (scope.msg.status == 'PUBLISHED' || scope.msg.status == 'EXPIRED' || scope.msg.status == 'CANCELLED')) {
+                                (scope.msg.status === 'PUBLISHED' || scope.msg.status === 'EXPIRED' || scope.msg.status === 'CANCELLED')) {
                                 if (scope.source.length > 0) {
-                                    if (scope.source.charAt(scope.source.length-1) != '.') {
+                                    if (scope.source.charAt(scope.source.length-1) !== '.') {
                                         scope.source += ".";
                                     }
                                     scope.source += " ";
@@ -413,15 +413,15 @@ angular.module('niord.messages')
 
 
                 scope.imageClass = "attachment-image";
-                if (scope.imageType == "thumbnail") {
+                if (scope.imageType === "thumbnail") {
                     scope.imageClass += " size-" + scope.size;
                 }
-                if (scope.attachment.type && scope.attachment.type.toLowerCase().indexOf("image") == 0) {
+                if (scope.attachment.type && scope.attachment.type.toLowerCase().indexOf("image") === 0) {
                     scope.imageClass += " attachment-image-shadow";
                 }
                 
                 scope.sourceStyle = {};
-                if (scope.imageType == "source") {
+                if (scope.imageType === "source") {
                     scope.sourceType = (scope.attachment.type && scope.attachment.type.startsWith('video'))
                         ? "video"
                         : 'image';
@@ -437,7 +437,7 @@ angular.module('niord.messages')
                 
 
                 scope.handleClick = attrs.attachmentClicked !== undefined;
-                scope.tooltip = scope.labelType != 'caption' && scope.attachment.descs && scope.attachment.descs.length > 0
+                scope.tooltip = scope.labelType !== 'caption' && scope.attachment.descs && scope.attachment.descs.length > 0
                         ? scope.attachment.descs[0].caption
                         : '';
 
@@ -546,7 +546,7 @@ angular.module('niord.messages')
                 /** Refreshes the tags search result */
                 scope.searchResult = [];
                 scope.refreshTags = function(name) {
-                    if (!name || name.length == 0) {
+                    if (!name || name.length === 0) {
                         return [];
                     }
                     return $http.get(
@@ -634,7 +634,7 @@ angular.module('niord.messages')
                 /** Refreshes the message series search result */
                 scope.searchResult = [];
                 scope.refreshMessageSeries = function(name) {
-                    if (!name || name.length == 0) {
+                    if (!name || name.length === 0) {
                         return [];
                     }
                     var domainParam = scope.domain ? '&domain=' + encodeURIComponent(scope.domain.domainId) : '';
@@ -798,14 +798,14 @@ angular.module('niord.messages')
                     // Extract the attachments that will displayed above and below the message data
                     if (scope.msg.attachments) {
                         scope.attachmentsAbove = $.grep(scope.msg.attachments, function (att) {
-                            return att.display == 'ABOVE';
+                            return att.display === 'ABOVE';
                         });
                         scope.attachmentsBelow = $.grep(scope.msg.attachments, function (att) {
-                            return att.display == 'BELOW';
+                            return att.display === 'BELOW';
                         });
                     }
 
-                    if (scope.msg.promulgations && scope.showPromulgation == 'true') {
+                    if (scope.msg.promulgations && scope.showPromulgation === 'true') {
                         scope.promulgations = $.grep(scope.msg.promulgations, function (p) {
                            return p.promulgate;
                         });
@@ -891,7 +891,7 @@ angular.module('niord.messages')
                                     // If the current message is already associated with the last selected tag,
                                     // Do not provide a link to add it again.
                                     for (var x = 0; x < messageTags.length; x++) {
-                                        if (tag && tag.tagId == messageTags[x].tagId) {
+                                        if (tag && tag.tagId === messageTags[x].tagId) {
                                             scope.lastSelectedMessageTag = undefined;
                                         }
                                     }
@@ -946,7 +946,7 @@ angular.module('niord.messages')
                                 scope.msg && scope.msg.messageSeries &&
                                 $rootScope.domain && $rootScope.domain.messageSeries &&
                                 $.grep($rootScope.domain.messageSeries, function (ms) {
-                                    return ms.seriesId == scope.msg.messageSeries.seriesId;
+                                    return ms.seriesId === scope.msg.messageSeries.seriesId;
                                 }).length > 0;
                     };
 
@@ -1035,7 +1035,7 @@ angular.module('niord.messages')
                             scope.reportProperties = {};
                             if (scope.reports) {
                                 angular.forEach(scope.reports, function (report) {
-                                    if (report.reportId == reportId) {
+                                    if (report.reportId === reportId) {
                                         scope.showMapThumbnails = report.properties.mapThumbnails === undefined;
                                         angular.copy(report.params, scope.reportParams);
                                     }

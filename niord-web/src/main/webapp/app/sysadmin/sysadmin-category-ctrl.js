@@ -114,7 +114,7 @@ angular.module('niord.admin')
                             })
                         }
                         $scope.editCategory = angular.copy($scope.category);
-                        if ($scope.editCategory.scriptResourcePaths.length == 0) {
+                        if ($scope.editCategory.scriptResourcePaths.length === 0) {
                             $scope.editCategory.scriptResourcePaths.push('');
                         }
                         $scope.setPristine();
@@ -163,7 +163,7 @@ angular.module('niord.admin')
             /** Saves the current category */
             $scope.saveCategory = function () {
 
-                if ($scope.action == 'add') {
+                if ($scope.action === 'add') {
                     AdminCategoryService
                         .createCategory($scope.editCategory)
                         .success($scope.loadCategories)
