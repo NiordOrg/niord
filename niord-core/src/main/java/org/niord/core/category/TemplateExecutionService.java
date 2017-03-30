@@ -46,6 +46,7 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -100,10 +101,9 @@ public class TemplateExecutionService extends BaseService {
      */
     public List<ParamType> getParamTypes() {
 
-        return em.createNamedQuery("ParamType.findAll", ParamType.class)
-                .getResultList()
-                .stream()
-                .collect(Collectors.toList());
+        return new ArrayList<>(
+                em.createNamedQuery("ParamType.findAll", ParamType.class)
+                .getResultList());
     }
 
 
@@ -185,6 +185,7 @@ public class TemplateExecutionService extends BaseService {
     /**
      * Deletes the parameter type with the given id
      * @param id the id of the parameter type to delete
+     * @noinspection all
      */
     public boolean deleteParamType(Integer id) {
 
@@ -406,7 +407,7 @@ public class TemplateExecutionService extends BaseService {
 
         // Update the JavaScript engine bindings from the context data
         Bindings bindings = new SimpleBindings();
-        contextData.entrySet().forEach(e -> bindings.put(e.getKey(), e.getValue()));
+        contextData.forEach(bindings::put);
         jsEngine.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
 
         for (FieldTemplate fieldTemplate : fieldTemplates) {
