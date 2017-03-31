@@ -185,7 +185,16 @@
                                            edit-type="message"
                                            feature-collection="message.parts[$index].geometry"
                                            show-wms-layer="true"
-                                           on-save="updateTemplatePositionData()"></gj-editor>
+                                           on-save="updateTemplatePositionData()">
+
+                                    <select class="input-sm" style="margin-left: 10px; opacity: 0.7"
+                                            ng-model="templateData[templateIndex].posFormat">
+                                        <option value="dec-3">3 decimals</option>
+                                        <option value="dec-2">2 decimals</option>
+                                        <option value="dec-1">1 decimal</option>
+                                    </select>
+
+                                </gj-editor>
                             </div>
                         </div>
 

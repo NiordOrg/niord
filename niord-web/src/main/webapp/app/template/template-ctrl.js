@@ -320,7 +320,7 @@ angular.module('niord.template')
                             type: 'DETAILS'
                         })
                     }
-                    $scope.templateData.push({ positions: [] });
+                    $scope.templateData.push({ posFormat: 'dec-3', positions: [] });
                 }
 
 
