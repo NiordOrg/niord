@@ -143,6 +143,7 @@ angular.module('niord.admin')
             $scope.copyScriptResource = function (resource) {
                 $scope.editMode = 'add';
                 $scope.resource = angular.copy(resource);
+                delete $scope.resource.id;
                 // Strip resource name from path
                 var x = $scope.resource.path.lastIndexOf('/');
                 if (x !== -1) {

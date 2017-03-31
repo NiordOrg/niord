@@ -187,7 +187,7 @@
                                            show-wms-layer="true"
                                            on-save="updateTemplatePositionData()">
 
-                                    <select class="input-sm" style="margin-left: 10px; opacity: 0.7"
+                                    <select class="input-sm" style="margin-left: 10px; opacity: 0.5"
                                             ng-model="templateData[templateIndex].posFormat">
                                         <option value="dec-3">3 decimals</option>
                                         <option value="dec-2">2 decimals</option>
@@ -244,7 +244,7 @@
                     <template-dialog-param-field field-title-key="template.vessel.title"
                                                  ng-if="showStdTemplateField('work_vessel', template)">
 
-                        <div ng-init="templateData[templateIndex].vessel = { contact: true }">
+                        <div ng-init="templateData[templateIndex].vessel = { contact: true, minDistType: 'm' }">
                             <div class="row">
                                 <div class="col-sm-3" style="margin-top: 5px;" translate>term.name</div>
                                 <div class="col-sm-5">
@@ -282,6 +282,23 @@
                                     <input type="checkbox"
                                            ng-model="templateData[templateIndex].vessel.guardVessels">
                                     {{'template.vessel.guard_vessels_in_area' | translate}}
+                                </div>
+                            </div>
+                            <div class="row" style="margin-top: 5px">
+                                <div class="col-sm-3" style="margin-top: 5px;" translate>template.caution.title</div>
+                                <div class="col-sm-9 inline">
+                                    {{'template.caution.min_dist' | translate}}
+                                    <input type="number"
+                                           style="width: 60px"
+                                           ng-model="templateData[templateIndex].vessel.minDist">
+                                    <span class="btn-group">
+                                        <label class="btn btn-default btn-xs"
+                                               ng-model="templateData[templateIndex].vessel.minDistType"
+                                               uib-btn-radio="'nm'">nm</label>
+                                        <label class="btn btn-default btn-xs"
+                                               ng-model="templateData[templateIndex].vessel.minDistType"
+                                               uib-btn-radio="'m'">m</label>
+                                    </span>
                                 </div>
                             </div>
                         </div>
