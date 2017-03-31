@@ -44,33 +44,18 @@
         <!-- ***** Button Panel       ***** -->
         <!-- ****************************** -->
 
-        <div ng-if="operationSelected('select')" class="row" style="margin-top: 10px;">
+        <div class="row" style="margin-top: 10px;">
             <div class="form-group col-xs-12" style="text-align: right;">
 
-                <button class="btn btn-default btn-sm pull-left" ng-click="$dismiss('aborted')" translate>term.cancel</button>
+                <button class="btn btn-default btn-sm" style="width: 140px"
+                        ng-click="$dismiss('aborted')" translate>term.cancel</button>
 
-                <button ng-if="executable" class="btn btn-success btn-sm"
-                        ng-click="selectOperation('execute')" ng-disabled="!categoriesSelected()">
-                    <span class="glyphicon glyphicon-play"></span>
-                    <span translate>template.execute</span>
-                </button>
-
-                <button class="btn btn-primary btn-sm" style="width: 100px"
+                <button ng-if="operationSelected('select')"
+                        class="btn btn-primary btn-sm" style="width: 140px"
                         ng-click="useSelectedCategories()">OK</button>
-            </div>
-        </div>
 
-        <div ng-if="executable && operationSelected('execute')" class="row" style="margin-top: 10px;">
-            <div class="form-group col-xs-12" style="text-align: right;">
-                <button class="btn btn-default btn-sm pull-left" ng-click="$dismiss('aborted')" translate>term.cancel</button>
-
-                <button class="btn btn-success btn-sm"
-                        ng-click="refreshPreviewMessage()" ng-disabled="!categoriesSelected()">
-                    <span class="glyphicon glyphicon-refresh"></span>
-                    <span>Refresh Preview</span>
-                </button>
-
-                <button class="btn btn-primary btn-sm" style="width: 100px"
+                <button ng-if="executable && operationSelected('execute')"
+                        class="btn btn-primary btn-sm" style="width: 140px"
                         ng-click="messageSelected()">OK</button>
             </div>
         </div>

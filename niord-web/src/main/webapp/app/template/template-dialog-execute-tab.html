@@ -366,5 +366,13 @@
                 show-promulgation="true"
                 show-details-menu="false"></tr>
         </table>
+
+        <div class="template-buttons" style="border-top: 1px solid lightgray">
+            <button class="btn btn-success btn-sm"
+                    ng-click="executeTemplates()" ng-disabled="!categoriesSelected()">
+                <span class="glyphicon glyphicon-refresh"></span>
+                <span>Refresh Preview</span>
+            </button>
+        </div>
     </div>
 </div>

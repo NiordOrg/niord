@@ -93,11 +93,6 @@ angular.module('niord.template')
                 $scope.$broadcast('messageSelected', {});
             };
 
-
-            /** Called to refresh the preview message by applying the selected template **/
-            $scope.refreshPreviewMessage = function () {
-                $scope.$broadcast('refreshMessage', {});
-            };
         }])
 
 

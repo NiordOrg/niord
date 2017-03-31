@@ -14,11 +14,11 @@
                               placeholder="{{'template.parent_category' | translate}}"></categories-field>
         </div>
         <div class="col-xs-12 col-sm-6 col-md-4" ng-if="atons.length > 0">
-                            <span class="selected-atons-btn">
-                                {{atons.length}} {{'menu.atons' | translate}} &nbsp;
-                                <span class="glyphicon glyphicon-remove" style="cursor: pointer;"
-                                      ng-click="clearAtons()"></span>
-                            </span>
+            <span class="selected-atons-btn">
+                {{atons.length}} {{'menu.atons' | translate}} &nbsp;
+                <span class="glyphicon glyphicon-remove" style="cursor: pointer;"
+                      ng-click="clearAtons()"></span>
+            </span>
         </div>
     </div>
 
@@ -48,7 +48,7 @@
                 </table>
             </div>
             <div class="template-buttons">
-                <button class="btn btn-primary btn-xs"
+                <button class="btn btn-primary btn-sm"
                         ng-click="selectCategory(focusedCategory)"
                         ng-disabled="!categoryFocused() || categorySelected(focusedCategory)">
                     <span translate>term.add_selected</span>
@@ -86,14 +86,19 @@
                 </table>
             </div>
             <div class="template-buttons">
-                <button class="btn btn-default btn-xs"
+                <button class="btn btn-default btn-sm"
                         ng-click="unselectCategory(focusedCategory)"
                         ng-disabled="!categoryFocused() || !categorySelected(focusedCategory)">
                     <span translate>term.remove_selected</span>
                 </button>
-                <button class="btn btn-default btn-xs"
+                <button class="btn btn-default btn-sm"
                         ng-click="clearCategorySelection()" ng-disabled="!categoriesSelected()">
                     <span translate>term.remove_all</span>
+                </button>
+                <button ng-if="executable" class="btn btn-success btn-sm"
+                        ng-click="selectOperation('execute')" ng-disabled="!categoriesSelected()">
+                    <span class="glyphicon glyphicon-play"></span>
+                    <span translate>template.execute</span>
                 </button>
             </div>
 
