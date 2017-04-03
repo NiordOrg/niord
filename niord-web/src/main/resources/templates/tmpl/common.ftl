@@ -4,12 +4,14 @@
 <!-- ***************************************  -->
 <#assign formatPos = "org.niord.core.script.directive.LatLonDirective"?new()>
 <#assign line = 'org.niord.core.script.directive.LineDirective'?new()>
+<#assign quote = 'org.niord.core.script.directive.QuoteDirective'?new()>
 <#assign trailingDot = "org.niord.core.script.directive.TrailingDotDirective"?new()>
 <#assign debug = 'org.niord.core.script.directive.DebugDirective'?new()>
+<#assign dateIntervalFormat = 'org.niord.core.script.directive.DateIntervalDirective'?new()>
 <#assign navtexDateFormat = 'org.niord.core.script.directive.NavtexDateFormatDirective'?new()>
 <#assign lightCharacterFormat = 'org.niord.core.script.directive.LightCharacterDirective'?new()>
 <#assign callSignFormat = 'org.niord.core.script.directive.CallSignDirective'?new()>
-<#assign posFormat = 'dec-3'> <#-- 3 decimals in message details -->
+<#assign posFormat = params.posFormat!'dec-3'> <#-- 3 decimals in message details -->
 
 <!-- ***************************************  -->
 <!-- Returns the desc for the given language  -->
@@ -83,10 +85,11 @@
 
 
 <!-- ***************************************  -->
-<!-- Renders default suject fields as the     -->
-<!-- name of the current template             -->
+<!-- Renders default suject fields of the     -->
+<!-- first details message part as the name   -->
+<!-- of the current template                  -->
 <!-- ***************************************  -->
-<#macro defaultSubjectFieldTemplates>
+<#macro defaultMessageSubjectFieldTemplates>
     <#list languages as lang>
         <#assign desc=descForLang(template, lang)!>
         <#if desc?? && desc.name?has_content>
@@ -99,13 +102,30 @@
 
 
 <!-- ***************************************  -->
-<!-- Serializes the message part geomtry      -->
+<!-- Renders default suject fields of the     -->
+<!-- current message part as the name of the  -->
+<!-- current template                         -->
+<!-- ***************************************  -->
+<#macro defaultSubjectFieldTemplates>
+    <#list languages as lang>
+        <#assign desc=descForLang(template, lang)!>
+        <#if desc?? && desc.name?has_content>
+            <field-template field="part.getDesc('${lang}').subject" format="text">
+                ${desc.name}
+            </field-template>
+        </#if>
+    </#list>
+</#macro>
+
+
+<!-- ***************************************  -->
+<!-- Serializes the message geometry param    -->
 <!-- into a list of positions                 -->
 <!-- ***************************************  -->
-<#function toPositions part >
+<#function toPositions geomParam >
     <#assign positions = []/>
-    <#if part.geometry?has_content>
-        <#list part.geometry as feature>
+    <#if geomParam?? && geomParam.geometry?has_content>
+        <#list geomParam.geometry as feature>
             <#if feature.coordinates?has_content>
                 <#list feature.coordinates as coord>
                     <#assign positions = positions + [ coord ]/>
@@ -118,30 +138,58 @@
 
 
 <!-- ***************************************  -->
-<!-- Returns if the message part defines      -->
+<!-- Returns if the geometry param defines    -->
 <!-- multiple positions                       -->
 <!-- ***************************************  -->
-<#function multiplePositions part >
-    <#assign positions = toPositions(part) />
+<#function multiplePositions geomParam >
+    <#assign positions = toPositions(geomParam) />
     <#return positions?size gt 1/>
 </#function>
 
 
 <!-- ***************************************  -->
-<!-- Renders the geometry of message part     -->
+<!-- Renders the geometry parameter           -->
 <!-- as a list of positions                   -->
 <!-- ***************************************  -->
-<#macro renderPositionList part format=posFormat lang='en'>
+<#macro renderPositionList geomParam format=posFormat plural=false lang='en'>
     <#setting locale=lang>
-    <#assign positions=toPositions(part)/>
-    <#if positions?size gt 1>${text('position.between')}<#elseif format != 'navtex'>${text('position.in')}</#if>
-    <#if format == 'audio'>${text('position.position')}<#elseif format != 'navtex'>${text('position.pos')}</#if>
+    <#assign positions=toPositions(geomParam)/>
+
+    <#if positions?size gt 1>
+        <#if plural>
+            <#switch format>
+                <#case 'audio'>${text('position.in_positions')}<#break>
+                <#case 'navtex'><#break>
+                <#default>${text('position.in_pos')}
+            </#switch>
+        <#else>
+            <#switch format>
+                <#case 'audio'>${text('position.between_positions')}<#break>
+                <#case 'navtex'><#break>
+                <#default>${text('position.between_pos')}
+            </#switch>
+        </#if>
+    <#else>
+        <#switch format>
+            <#case 'audio'>${text('position.in_position')}<#break>
+            <#case 'navtex'><#break>
+            <#default>${text('position.in_pos')}
+        </#switch>
+    </#if>
+
     <#list positions as pos>
         <@formatPos lat=pos.coordinates[1] lon=pos.coordinates[0] format=format />
         <#if pos_has_next> ${text('term.and')} </#if>
     </#list>
 </#macro>
 
+<!-- ***************************************  -->
+<!-- Renders the date interval                -->
+<!-- ***************************************  -->
+<#macro renderDateInterval dateInterval format="normal" lang='en'>
+    <#setting locale=lang>
+    <@dateIntervalFormat dateInterval=dateInterval format=format/>
+</#macro>
 
 <!-- ***************************************  -->
 <!-- Renders the given list value             -->
@@ -161,14 +209,13 @@
     </#if>
 </#macro>
 
-
 <!-- ***************************************  -->
 <!-- Renders the AtoN given by the aton_type  -->
 <!-- parameter                                -->
 <!-- ***************************************  -->
-<#macro renderAton defaultName format='long' lang='en'>
-    <#if params?has_content && params?has_content && params.aton_type?has_content>
-        <#assign desc=descForLang(params.aton_type, lang)!>
+<#macro renderAtonType atonParams defaultName format='long' lang='en'>
+    <#if atonParams?has_content && atonParams.aton_type?has_content>
+        <#assign desc=descForLang(atonParams.aton_type, lang)!>
         <#if desc?? && format == 'long'>
             ${desc.longValue?cap_first}
         <#elseif desc??>
@@ -179,7 +226,7 @@
     <#else>
         ${defaultName}
     </#if>
-    <#if params?has_content && params?has_content && params.aton_name?has_content>
-        ${params.aton_name}
+    <#if atonParams?has_content && atonParams.aton_name?has_content>
+        <@quote>${atonParams.aton_name}</@quote>
     </#if>
 </#macro>
