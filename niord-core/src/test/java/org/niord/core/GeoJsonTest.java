@@ -155,7 +155,7 @@ public class GeoJsonTest {
 
 
     @Test
-    public void createBufferTest() {
+    public void createAffectedAreaTest() {
 
         PointVo pt = new PointVo();
         pt.setCoordinates(new double[]{ 11.0, 56.0 });
@@ -172,6 +172,22 @@ public class GeoJsonTest {
         // Check that the previous affected radius feature gets replaced
         fc = GeoJsonUtils.addAffectedRadius(fc, "affected", 2, "km");
         assertEquals(2, fc.getFeatures().length);
+        System.out.println(fc);
+    }
+
+
+    @Test
+    public void createAffectedAreaFromAtonTest() throws IOException {
+
+        ObjectMapper mapper = new ObjectMapper();
+        FeatureVo atonFeature = mapper.readValue(getClass().getResource("/light.json"), FeatureVo.class);
+        FeatureCollectionVo fc = new FeatureCollectionVo();
+        fc.setFeatures(new FeatureVo[] { atonFeature });
+
+        fc = GeoJsonUtils.addAtonAffectedRadius(fc, "affected");
+        assertEquals(2, fc.getFeatures().length);
+        assertEquals("affected", fc.getFeatures()[1].getProperties().get("restriction"));
+        assertEquals(3.5, fc.getFeatures()[1].getProperties().get("bufferRadius"));
         System.out.println(fc);
     }
 
