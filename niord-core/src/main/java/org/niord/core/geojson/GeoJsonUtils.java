@@ -16,12 +16,14 @@
 
 package org.niord.core.geojson;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.operation.buffer.BufferOp;
 import org.apache.commons.lang.StringUtils;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
+import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.geojson.FeatureVo;
 import org.niord.model.geojson.GeoJsonVo;
@@ -183,6 +185,63 @@ public class GeoJsonUtils {
                 .map(f -> createAffectedRadius(f, restriction, radius, radiusType))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+
+        // Merge the feature arrays
+        FeatureVo[] result = Stream
+                .concat(features.stream(), affectedFeatures.stream())
+                .toArray(FeatureVo[]::new);
+        fc.setFeatures(result);
+
+        return fc;
+    }
+
+
+    /**
+     * Adds affected radius features to the features of the feature collection that are associated with a light AtoN
+     * <p>
+     * Important: First, all existing derived features (i.e. with a "parentFeatureIds" property) are removed.
+     * This is to ensure that we can call this function multiple times.
+     *
+     * @param fc the feature collection to update
+     * @return the updated feature collection
+     */
+    public static FeatureCollectionVo addAtonAffectedRadius(FeatureCollectionVo fc, String restriction) {
+        // Sanity check
+        if (fc == null || fc.getFeatures() == null || fc.getFeatures().length == 0) {
+            return fc;
+        }
+
+        // Get non-derived features
+        List<FeatureVo> features = Arrays.stream(fc.getFeatures())
+                .filter(f -> !f.getProperties().containsKey("parentFeatureIds")
+                            && !f.getProperties().containsKey("restriction")
+                            && !f.getProperties().containsKey("bufferType"))
+                .collect(Collectors.toList());
+
+        // Get AtoN features
+        ObjectMapper mapper = new ObjectMapper();
+        List<FeatureVo> affectedFeatures = Arrays.stream(fc.getFeatures())
+                .filter(f -> f.getProperties().get("aton") != null)
+                .map(f -> {
+                    try {
+                        Object atonObj = f.getProperties().get("aton");
+                        String json = mapper.writeValueAsString(atonObj);
+                        AtonNodeVo aton = mapper.readValue(json, AtonNodeVo.class);
+                        Double maxRange = Arrays.stream(aton.getTags())
+                                .filter(t -> t.getK().matches("seamark:light.*:range"))
+                                .map(t -> Double.valueOf(t.getV()))
+                                .max(Double::compare)
+                                .orElse(null);
+                        if (maxRange != null) {
+                            return createAffectedRadius(f, restriction, maxRange, "nm");
+                        }
+                    } catch (Exception ignored) {
+                    }
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
 
         // Merge the feature arrays
         FeatureVo[] result = Stream
