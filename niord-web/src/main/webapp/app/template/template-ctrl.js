@@ -468,8 +468,8 @@ angular.module('niord.template')
 
                     // Compute the features proper
                     var features = $.grep(featureCollection.features, function (feature) {
-                        return feature.properties.parentFeatureIds === undefined &&
-                            feature.properties.restriction !== 'affected';
+                        return feature.properties['parentFeatureIds'] === undefined &&
+                            feature.properties['restriction'] !== 'affected';
                     });
 
                     // Sync the "pos" array with the GeoJSON features of the message part

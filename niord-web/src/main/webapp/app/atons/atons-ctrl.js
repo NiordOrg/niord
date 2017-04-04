@@ -26,8 +26,8 @@ angular.module('niord.atons')
     /**
      * Controller used on the AtoN page
      */
-    .controller('AtonsCtrl', ['$scope', '$rootScope', '$location', '$timeout', '$state', 'AtonService',
-        function ($scope, $rootScope, $location, $timeout, $state, AtonService) {
+    .controller('AtonsCtrl', ['$scope', '$rootScope', '$location', '$timeout', '$state', 'AtonService', 'MapService',
+        function ($scope, $rootScope, $location, $timeout, $state, AtonService, MapService) {
             'use strict';
 
             /*****************************/
@@ -275,6 +275,7 @@ angular.module('niord.atons')
                 angular.forEach(newAtonUids, function (atonUid) {
                     var aton = $scope.selection.get(atonUid).aton;
                     var feature = {
+                        id: MapService.uuid(),
                         type: 'Feature',
                         properties: {
                             aton: aton

@@ -29,8 +29,8 @@ angular.module('niord.template')
      * The directive can also be initialized with either a "main-type"
      * attribute, a list of AtoNs or a message template.
      ****************************************************************/
-    .directive('templateField', [ '$rootScope', 'TemplateService', 'MessageService', 'LangService',
-            function ($rootScope, TemplateService, MessageService, LangService) {
+    .directive('templateField', [ '$rootScope', 'TemplateService', 'MessageService', 'LangService', 'MapService',
+            function ($rootScope, TemplateService, MessageService, LangService, MapService) {
         'use strict';
 
         return {
@@ -136,6 +136,7 @@ angular.module('niord.template')
                         };
                         angular.forEach(scope.atons, function (aton) {
                             var feature = {
+                                id: MapService.uuid(),
                                 type: 'Feature',
                                 properties: { aton: aton },
                                 geometry: { type: 'Point',  coordinates: [ aton.lon, aton.lat ] }
