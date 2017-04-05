@@ -47,6 +47,21 @@ public class DomainVo implements IJsonSerializable {
     private Boolean templates;
     private Boolean inKeycloak;
 
+    /** Constructor **/
+    public DomainVo() {
+    }
+
+    /** Constructor **/
+    public DomainVo(String domainId) {
+        this.domainId = domainId;
+    }
+
+    /** Constructor **/
+    public DomainVo(String domainId, boolean active) {
+        this(domainId);
+        this.active = active;
+    }
+
     /*************************/
     /** Getters and Setters **/
     /*************************/

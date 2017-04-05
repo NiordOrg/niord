@@ -25,6 +25,7 @@ import org.niord.core.category.CategorySearchParams;
 import org.niord.core.category.CategoryService;
 import org.niord.core.category.CategoryType;
 import org.niord.core.category.vo.SystemCategoryVo;
+import org.niord.core.domain.vo.DomainVo;
 import org.niord.core.user.Roles;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
@@ -205,6 +206,35 @@ public class CategoryRestService extends AbstractBatchableRestService {
         return categoryService.getCategoryTree().stream()
                 .map(c -> c.toVo(SystemCategoryVo.class, filter))
                 .collect(Collectors.toList());
+    }
+
+
+    /** Returns all categories via a list of hierarchical root categories. Prunes the data for export purposes */
+    @GET
+    @Path("/export")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public List<SystemCategoryVo> exportCategories() {
+        return getAll().stream()
+                .map(this::exportVersion)
+                .collect(Collectors.toList());
+    }
+
+
+    /** Removes various data from the category to make it usable for export **/
+    private SystemCategoryVo exportVersion(SystemCategoryVo category) {
+        category.setId(null);
+        if (category.getDomains() != null) {
+            category.setDomains(category.getDomains().stream()
+                .map(d -> new DomainVo(d.getDomainId(), d.isActive()))
+                .collect(Collectors.toList()));
+        }
+        // Update child categories recursively
+        if (category.getChildren() != null) {
+            category.getChildren().forEach(this::exportVersion);
+        }
+        return category;
     }
 
 
