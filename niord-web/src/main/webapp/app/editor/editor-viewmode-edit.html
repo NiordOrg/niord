@@ -24,7 +24,7 @@
 
             </div>
             <div ng-if="canCreateMessage('NW') && domain.templates" style="display: inline-block">
-                <template-field class="new-msg-btn" main-type="NW" type="TEMPLATE"
+                <template-field field-class="new-msg-btn" main-type="NW" type="TEMPLATE"
                                 message-updated="templateExecuted(message)"
                                 placeholder="{{'editor.new_nw_template' | translate}}"></template-field>
             </div>
@@ -34,7 +34,7 @@
 
             </div>
             <div ng-if="canCreateMessage('NM') && domain.templates" style="display: inline-block">
-                <template-field class="new-msg-btn" main-type="NM" type="TEMPLATE"
+                <template-field field-class="new-msg-btn" main-type="NM" type="TEMPLATE"
                                 message-updated="templateExecuted(message)"
                                 placeholder="{{'editor.new_nm_template' | translate}}"></template-field>
             </div>

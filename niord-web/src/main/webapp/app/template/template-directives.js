@@ -44,7 +44,7 @@ angular.module('niord.template')
                 atons:              "=",
                 mainType:           "@",
                 type:               "@",
-                class:              "@",
+                fieldClass:         "@",
                 placeholder:        "@",
                 tabIndex:           "="
             },
@@ -53,7 +53,7 @@ angular.module('niord.template')
                 scope.formatParents = LangService.formatParents;
                 scope.message = scope.message || {};
                 scope.atons = scope.atons || [];
-                scope.class = scope.class || "";
+                scope.fieldClass = scope.fieldClass || "";
                 scope.placeholder = scope.placeholder || "Select Templates";
                 scope.executable = $rootScope.domain && $rootScope.domain.templates;
 
