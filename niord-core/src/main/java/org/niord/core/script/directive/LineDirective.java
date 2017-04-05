@@ -35,8 +35,9 @@ import java.util.Map;
 @SuppressWarnings("unused")
 public class LineDirective implements TemplateDirectiveModel {
 
-    private static final String PARAM_MAX_LENGTH = "maxLength";
-    private static final String PARAM_CASE = "case";
+    private static final String PARAM_MAX_LENGTH    = "maxLength";
+    private static final String PARAM_CASE          = "case";
+    private static final String PARAM_FORMAT        = "format";
 
     /**
      * {@inheritDoc}
@@ -54,6 +55,16 @@ public class LineDirective implements TemplateDirectiveModel {
         boolean lowerCase = (caseModel != null && "lower".equalsIgnoreCase(caseModel.getAsString()));
         boolean upperCase = (caseModel != null && "upper".equalsIgnoreCase(caseModel.getAsString()));
 
+        boolean navtex = false;
+        SimpleScalar formatModel = (SimpleScalar) params.get(PARAM_FORMAT);
+        if (formatModel != null && "navtex".equalsIgnoreCase(formatModel.getAsString())) {
+            navtex = true;
+            upperCase = true;
+            lowerCase = false;
+            maxLength = 40;
+        }
+
+
         // If there is non-empty nested content:
         if (body != null) {
             // Executes the nested body.
@@ -62,11 +73,17 @@ public class LineDirective implements TemplateDirectiveModel {
 
             // Process the result
             String s = bodyWriter.toString();
-            s = s.replace("\n", " ");
-            s = s.replace("\r", " ");
-            s = s.replaceAll("\\s+", " ").trim();
-            s = s.replace(" ,", ",");
-            s = s.replace(" .", ".");
+
+            // Remove certain NAVTEX words
+            if (navtex) {
+                s = s.replaceAll("(?i)\\s+the\\s+", " ");
+            }
+
+            s = s.replace("\n", " ")
+                .replace("\r", " ")
+                .replaceAll("\\s+", " ").trim()
+                .replace(" ,", ",")
+                .replace(" .", ".");
 
             if (upperCase) {
                 s = s.toUpperCase();
