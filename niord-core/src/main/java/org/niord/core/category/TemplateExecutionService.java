@@ -432,13 +432,12 @@ public class TemplateExecutionService extends BaseService {
         // Either append or assign
         if ("append".equalsIgnoreCase(fieldTemplate.getUpdate())) {
             // Append the content variable to the field
-            return String.format("%s = (%s == null) ? content : %s + content", field, field, field);
+            return String.format("%s = (%s == null) ? content : %s + '\\n' + content;", field, field, field);
 
         } else {
             // Assign the content variable to the field
             return field + " = content;";
         }
-
     }
 
 

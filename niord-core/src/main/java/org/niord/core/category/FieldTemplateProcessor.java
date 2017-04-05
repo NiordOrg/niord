@@ -129,14 +129,39 @@ public class FieldTemplateProcessor {
         /** Update the content based on the format **/
         private Object parseContent(String content) {
             if (StringUtils.isNotBlank(content)) {
-                content = content.trim() + System.lineSeparator();
+                content = content
+                        .trim()
+                        .replaceAll("\\s+\\.", ".");
+
                 if ("text".equalsIgnoreCase(format) || "boolean".equalsIgnoreCase(format)) {
                     // Trim the text to a proper plain-text format
-                    content = content.trim().replaceAll("\\s+", " ").trim();
+                    content = cleanUpPlainTextContent(content);
+                    if ("boolean".equalsIgnoreCase(format)) {
+                        return Boolean.valueOf(content.trim());
+                    }
                 }
-                if ("boolean".equalsIgnoreCase(format)) {
-                    return Boolean.valueOf(content);
-                }
+            }
+            return content;
+        }
+
+
+        /**
+         * Executing templates using Freemarker will produce a lot of extra space that we want to clean up
+         * @param content the content to clean up
+         * @return the result
+         */
+        private String cleanUpPlainTextContent(String content) {
+            if (content != null) {
+                // Trim the text to a proper plain-text format
+                content = content
+                        // 1. compress all non-newline whitespaces to single space
+                        .replaceAll("[\\s&&[^\\n]]+", " ")
+                        // 2. remove spaces from beginning or end of lines
+                        .replaceAll("(?m)^\\s|\\s$", "")
+                        // 3. compress multiple newlines to single newlines
+                        .replaceAll("\\n+", "\n")
+                        // 4. remove newlines from beginning or end of string
+                        .replaceAll("^\n|\n$", "");
             }
             return content;
         }
