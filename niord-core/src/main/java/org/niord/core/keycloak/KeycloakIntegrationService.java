@@ -125,6 +125,12 @@ public class KeycloakIntegrationService {
     }
 
 
+    /** Computes the fully-qualified URL to the Niord realm of the Keycloak server **/
+    private String resolveAuthServerRealmUrl() {
+        return resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM;
+    }
+
+
     /**
      * Queries Keycloak for its public key.
      * Please refer to Keycloak's AdapterDeploymentContext.
@@ -224,7 +230,7 @@ public class KeycloakIntegrationService {
     private List<ClientRepresentation> getKeycloakDomainClients() throws Exception {
 
         return executeAdminRequest(
-                new HttpGet(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/clients"),
+                new HttpGet(resolveAuthServerRealmUrl() + "/clients"),
                 true, // Add auth header
                 is -> {
                     List<ClientRepresentation> result = new ObjectMapper()
@@ -287,7 +293,7 @@ public class KeycloakIntegrationService {
         client.setClientId(domain.getDomainId());
         client.setName(domain.getName());
 
-        HttpPost post = new HttpPost(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/clients");
+        HttpPost post = new HttpPost(resolveAuthServerRealmUrl() + "/clients");
         post.setEntity(new StringEntity(mapper.writeValueAsString(client), ContentType.APPLICATION_JSON));
 
         // Create the client in Keycloak
@@ -301,7 +307,7 @@ public class KeycloakIntegrationService {
 
         // Get hold of the newly created client (with a proper ID)
         client = getKeycloakDomainClient(domain.getDomainId());
-        String clientsUri = resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/clients/" + client.getId();
+        String clientsUri = resolveAuthServerRealmUrl() + "/clients/" + client.getId();
 
 
         // Define the list of roles to set up for the client
@@ -363,7 +369,7 @@ public class KeycloakIntegrationService {
             userRep.setRequiredActions(user.getKeycloakActions());
         }
 
-        HttpPost post = new HttpPost(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/users");
+        HttpPost post = new HttpPost(resolveAuthServerRealmUrl() + "/users");
         post.setEntity(new StringEntity(new ObjectMapper().writeValueAsString(userRep), ContentType.APPLICATION_JSON));
 
         executeAdminRequest(post, true, is -> true);
@@ -379,8 +385,7 @@ public class KeycloakIntegrationService {
      */
     public void updateKeycloakUser(UserVo user) throws Exception {
 
-        String userUrl = resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM
-                + "/users/" + user.getKeycloakId();
+        String userUrl = resolveAuthServerRealmUrl() + "/users/" + user.getKeycloakId();
 
         // Look up the original user
         UserRepresentation origUser = executeAdminRequest(
@@ -426,8 +431,7 @@ public class KeycloakIntegrationService {
             credential.setValue(user.getKeycloakPassword());
             credential.setTemporary(false);
 
-            HttpPut put = new HttpPut(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM
-                    + "/users/" + userId + "/reset-password");
+            HttpPut put = new HttpPut(resolveAuthServerRealmUrl() + "/users/" + userId + "/reset-password");
             put.setEntity(new StringEntity(new ObjectMapper().writeValueAsString(credential), ContentType.APPLICATION_JSON));
             executeAdminRequest(put, true, is -> true);
         }
@@ -438,8 +442,7 @@ public class KeycloakIntegrationService {
      * @param userId the user to delete
      */
     public void deleteKeycloakUser(String userId) throws Exception {
-        executeAdminRequest(new HttpDelete(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM
-                    + "/users/" + WebUtils.encodeURIComponent(userId)),
+        executeAdminRequest(new HttpDelete(resolveAuthServerRealmUrl() + "/users/" + WebUtils.encodeURIComponent(userId)),
                 true,
                 is -> true);
     }
@@ -465,7 +468,7 @@ public class KeycloakIntegrationService {
                 .collect(Collectors.joining("&")) + "&first=" + first + "&max=" + max;
 
         return executeAdminRequest(
-                new HttpGet(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/users?" + params),
+                new HttpGet(resolveAuthServerRealmUrl() + "/users?" + params),
                 true, // Add auth header
                 is -> {
                     List<UserRepresentation> result = new ObjectMapper()
@@ -497,7 +500,7 @@ public class KeycloakIntegrationService {
      */
     public List<GroupVo> getKeycloakGroups() throws Exception {
         return executeAdminRequest(
-                new HttpGet(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/groups"),
+                new HttpGet(resolveAuthServerRealmUrl() + "/groups"),
                 true, // Add auth header
                 is -> {
                     List<GroupRepresentation> result = new ObjectMapper()
@@ -516,7 +519,7 @@ public class KeycloakIntegrationService {
      */
     public List<GroupVo> getKeycloakUserGroups(String userId) throws Exception {
         return executeAdminRequest(
-                new HttpGet(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM
+                new HttpGet(resolveAuthServerRealmUrl()
                         + "/users/" + WebUtils.encodeURIComponent(userId) + "/groups"),
                 true, // Add auth header
                 is -> {
@@ -551,7 +554,7 @@ public class KeycloakIntegrationService {
      * @param groupId the Keycloak group ID
      */
     public void joinKeycloakGroup(String userId, String groupId) throws Exception {
-        HttpPut put = new HttpPut(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM
+        HttpPut put = new HttpPut(resolveAuthServerRealmUrl()
                 + "/users/" + WebUtils.encodeURIComponent(userId)
                 + "/groups/" + WebUtils.encodeURIComponent(groupId));
         executeAdminRequest(put, true, is -> true);
@@ -564,7 +567,7 @@ public class KeycloakIntegrationService {
      * @param groupId the Keycloak group ID
      */
     public void leaveKeycloakGroup(String userId, String groupId) throws Exception {
-        HttpDelete del = new HttpDelete(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM
+        HttpDelete del = new HttpDelete(resolveAuthServerRealmUrl()
                 + "/users/" + WebUtils.encodeURIComponent(userId)
                 + "/groups/" + WebUtils.encodeURIComponent(groupId));
         executeAdminRequest(del, true, is -> true);
@@ -577,7 +580,7 @@ public class KeycloakIntegrationService {
         ClientRepresentation client = getKeycloakDomainClient(domain.getDomainId());
 
         return executeAdminRequest(
-                new HttpGet(resolveAuthServerUrl() + "/admin/realms/" + KEYCLOAK_REALM + "/groups/"
+                new HttpGet(resolveAuthServerRealmUrl() + "/groups/"
                             + groupId + "/role-mappings/clients/" + client.getId()),
                 true, // Add auth header
                 is -> {
