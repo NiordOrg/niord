@@ -16,6 +16,7 @@
 
 package org.niord.web;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
@@ -78,11 +79,19 @@ public class ScriptResourceRestService extends AbstractBatchableRestService {
     @GZIP
     @PermitAll
     @NoCache
-    public List<ScriptResourceVo> getScriptResources(@QueryParam("type") ScriptResource.Type type) {
+    public List<ScriptResourceVo> getScriptResources(
+            @QueryParam("type") ScriptResource.Type type,
+            @QueryParam("path") String path) {
 
         // If a ticket is defined, check if programmatically
         if (!userService.isCallerInRole(Roles.ADMIN)) {
             throw new WebApplicationException(403);
+        }
+
+        // If the path parameter has been specified, first attempt to "preload" it from DB or classpath.
+        // This is to ensure that e.g. a script not previously loaded from class path may be included in the result.
+        if (StringUtils.isNotBlank(path)) {
+            resourceService.findOrLoadFromClassPath(path);
         }
 
         if (type != null) {

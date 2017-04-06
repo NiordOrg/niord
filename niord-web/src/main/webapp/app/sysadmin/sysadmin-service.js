@@ -266,9 +266,18 @@ angular.module('niord.admin')
         return {
 
             /** Returns all script resources **/
-            getScriptResources: function (type) {
-                var params = type !== undefined ? '?type=' + type : '';
-                return $http.get('/rest/script-resources/all' + params);
+            getScriptResources: function (type, path) {
+                var params = '';
+                if (type) {
+                    params += 'type=' + type
+                }
+                if (path) {
+                    if (params.length > 0) {
+                        params += '&';
+                    }
+                    params += 'path=' + encodeURIComponent(path);
+                }
+                return $http.get('/rest/script-resources/all?' + params);
             },
 
 

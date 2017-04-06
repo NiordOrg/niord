@@ -31,6 +31,7 @@ import javax.inject.Inject;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -101,6 +102,31 @@ public class ScriptResourceService extends BaseService {
 
 
     /**
+     * Returns the script resource with the given path, either directly from the database or loaded from
+     * the class path. Returns null if not found
+     * @param path the script resource path
+     * @return the script resource with the given path, or null if not found
+     * @noinspection all
+     */
+    public ScriptResource findOrLoadFromClassPath(String path) {
+        try {
+            ScriptResource resource = findByPath(path);
+            if (resource == null) {
+                resource = readScriptResourceFromClassPath(path);
+                if (resource != null) {
+                    log.info("Loading script resource from classpath " + resource.getPath());
+                    resource = saveScriptResource(resource);
+                }
+            }
+            return resource;
+        } catch (Exception e) {
+            log.error("Error finding or loading script from resource " + path);
+            return null;
+        }
+    }
+
+
+    /**
      * Returns the script resources with the types
      * @param types the script resource types
      * @return the script resources with the given types
@@ -130,9 +156,8 @@ public class ScriptResourceService extends BaseService {
      * @return all script resource paths
      */
     public Set<String> findAllScriptResourcePaths() {
-        return em.createNamedQuery("ScriptResource.findAllPaths", String.class)
-                .getResultList().stream()
-                .collect(Collectors.toSet());
+        return new HashSet<>(em.createNamedQuery("ScriptResource.findAllPaths", String.class)
+                .getResultList());
     }
 
 
@@ -174,6 +199,7 @@ public class ScriptResourceService extends BaseService {
     /**
      * Deletes the script resource with the given path
      * @param id the ID of the script resource to delete
+     * @noinspection all
      */
     public boolean deleteScriptResource(Integer id) {
 

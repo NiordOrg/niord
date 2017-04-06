@@ -72,19 +72,25 @@ angular.module('niord.admin')
 
             /** Loads the script resources from the back-end */
             $scope.loadScriptResources = function(checkPathParam) {
+                // If the page has been initialized with a "path" param, either edit the
+                // associated resource, or add a new one.
+                var path = undefined;
+                if (checkPathParam) {
+                    path = $stateParams.path;
+                    if (path && path.startsWith('/')) {
+                        path = path.substring(1);
+                    }
+                }
+
                 $scope.resource = undefined;
                 AdminScriptResourceService
-                    .getScriptResources()
+                    .getScriptResources(null, path)
                     .success(function (resources) {
                         $scope.resources = resources;
 
                         // If the page has been initialized with a "path" param, either edit the
                         // associated resource, or add a new one.
-                        var path = $stateParams.path;
-                        if (checkPathParam && path) {
-                            if (path.startsWith('/')) {
-                                path = path.substring(1);
-                            }
+                        if (path) {
                             var pathResources = $.grep($scope.resources, function (t) {
                                 return t.path === path;
                             });
