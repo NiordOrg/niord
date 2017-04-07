@@ -274,16 +274,14 @@
                                        </a>
                                    </div>
                                    <div>
-                                       <span ng-if="!desc.link && publication.type == 'MESSAGE_REPORT' && publication.messageTag" class="dropdown">
-                                           <button class="btn btn-default btn-xs dropdown-toggle" type="button" id="generateBtn"
-                                                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                                               Generate Report
-                                               <span class="caret"></span>
+                                       <span ng-if="!desc.link && publication.type == 'MESSAGE_REPORT' && publication.messageTag">
+
+                                           <button class="btn btn-default btn-xs" ng-click="generateReport(desc, true)">
+                                               Preview Report
                                            </button>
-                                           <ul class="dropdown-menu">
-                                               <li><a href ng-click="generateReport(desc, true)">Preview Report</a></li>
-                                               <li><a href ng-click="generateReport(desc, false)">Generate Report</a></li>
-                                           </ul>
+                                           <button class="btn btn-default btn-xs" ng-click="generateReport(desc, false)">
+                                               Generate Report
+                                           </button>
                                        </span>
                                        <span ng-if="desc.link">
                                            <button class="btn btn-default btn-xs" type="button"
