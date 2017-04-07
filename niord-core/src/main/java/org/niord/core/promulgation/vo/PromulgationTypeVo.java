@@ -33,6 +33,7 @@ public class PromulgationTypeVo implements IJsonSerializable, Comparable<Promulg
     String name;
     int priority;
     Boolean active;
+    Boolean promulgateByDefault; // Whether message promulgations of this type should be promulgated by default
     String language;
     List<DomainVo> domains;
     Set<Type> messageTypes;    // If defined, can be limit which sub-types to use the promulgation type for
@@ -88,6 +89,14 @@ public class PromulgationTypeVo implements IJsonSerializable, Comparable<Promulg
 
     public void setActive(Boolean active) {
         this.active = active;
+    }
+
+    public Boolean getPromulgateByDefault() {
+        return promulgateByDefault;
+    }
+
+    public void setPromulgateByDefault(Boolean promulgateByDefault) {
+        this.promulgateByDefault = promulgateByDefault;
     }
 
     public String getLanguage() {

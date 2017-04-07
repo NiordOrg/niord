@@ -38,17 +38,19 @@
     </#if>.
 </field-template>
 
-<field-template field="message.promulgation('navtex').text" update="append">
-    <#setting locale='en'>
-    <@line format="navtex">
-        DGPS-station <@quote><@renderStationName format="long" lang="en"/></@quote>
-        ${params.station.frequency?string["0.0"]} kHz
-        <@formatPos lat=params.station.coordinates[1] lon=params.station.coordinates[0] format='navtex' />
-        <@renderStatus format="normal" lang="en"/>
-        <#if part.eventDates?has_content && part.eventDates[0].fromDate??>
-            <@renderDateInterval dateInterval=part.eventDates[0] format="navtex" lang="en"/>
-        </#if>.
-    </@line>
-</field-template>
+<#if promulgate('navtex')>
+    <field-template field="message.promulgation('navtex').text" update="append">
+        <#setting locale='en'>
+        <@line format="navtex">
+            DGPS-station <@quote><@renderStationName format="long" lang="en"/></@quote>
+            ${params.station.frequency?string["0.0"]} kHz
+            <@formatPos lat=params.station.coordinates[1] lon=params.station.coordinates[0] format='navtex' />
+            <@renderStatus format="normal" lang="en"/>
+            <#if part.eventDates?has_content && part.eventDates[0].fromDate??>
+                <@renderDateInterval dateInterval=part.eventDates[0] format="navtex" lang="en"/>
+            </#if>.
+        </@line>
+    </field-template>
+</#if>
 
 </#if>

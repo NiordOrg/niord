@@ -12,13 +12,15 @@
         <@renderWorkVessel vessel=params.vessel! lang="en" format="details"/>
     </field-template>
 
-    <field-template field="message.promulgation('navtex').text" update="append">
-        <@line format="navtex">
-            <@renderDateInterval dateInterval=part.eventDates[0] lang="en" format="navtex"/>
-            ${enNavtex}
-            <@renderPositionList geomParam=part lang="en" format="navtex"/>.
-            <@renderWorkVessel vessel=params.vessel! lang="en" format="navtex"/>
-        </@line>
-    </field-template>
+    <#if promulgate('navtex')>
+        <field-template field="message.promulgation('navtex').text" update="append">
+            <@line format="navtex">
+                <@renderDateInterval dateInterval=part.eventDates[0] lang="en" format="navtex"/>
+                ${enNavtex}
+                <@renderPositionList geomParam=part lang="en" format="navtex"/>.
+                <@renderWorkVessel vessel=params.vessel! lang="en" format="navtex"/>
+            </@line>
+        </field-template>
+    </#if>
 
 </#macro>

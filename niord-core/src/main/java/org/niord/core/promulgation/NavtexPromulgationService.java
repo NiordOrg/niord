@@ -195,7 +195,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
                 .collect(Collectors.toList());
 
         message.getPromulgations().stream()
-                .filter(p -> p instanceof NavtexMessagePromulgationVo)
+                .filter(p -> p instanceof NavtexMessagePromulgationVo && p.isPromulgate())
                 .map(p -> (NavtexMessagePromulgationVo)p)
                 .forEach(navtex -> {
                     String typeId = navtex.getType().getTypeId();
@@ -314,6 +314,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
 
     /** Deletes an existing transmitter */
+    @SuppressWarnings("all")
     public boolean deleteTransmitter(String typeId, String name) {
 
         log.info("Deleting transmitter " + name + " for promulgation type " + typeId);

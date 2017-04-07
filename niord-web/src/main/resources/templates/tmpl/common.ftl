@@ -183,6 +183,7 @@
     </#list>
 </#macro>
 
+
 <!-- ***************************************  -->
 <!-- Renders the date interval                -->
 <!-- ***************************************  -->
@@ -190,6 +191,7 @@
     <#setting locale=lang>
     <@dateIntervalFormat dateInterval=dateInterval format=format/>
 </#macro>
+
 
 <!-- ***************************************  -->
 <!-- Renders the given list value             -->
@@ -208,6 +210,7 @@
         ${defaultValue}
     </#if>
 </#macro>
+
 
 <!-- ***************************************  -->
 <!-- Renders the AtoN given by the aton_type  -->
@@ -230,3 +233,19 @@
         <@quote>${atonParams.aton_name}</@quote>
     </#if>
 </#macro>
+
+
+<!-- ***************************************  -->
+<!-- Returns whether to promulgate the given  -->
+<!-- promulgation type or not                 -->
+<!-- ***************************************  -->
+<#function promulgate type="" >
+    <#if message.promulgations?has_content>
+        <#list message.promulgations as p>
+            <#if p.type?? && p.type.typeId == type>
+                <#return p.promulgate/>
+            </#if>
+        </#list>
+    </#if>
+    <#return false/>
+</#function>

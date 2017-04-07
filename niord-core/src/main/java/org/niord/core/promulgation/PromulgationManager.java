@@ -142,6 +142,20 @@ public class PromulgationManager {
 
 
     /**
+     * Updates the promulgation status of the message promulgations based on the defaults for the promulgation type.
+     *
+     * @param message the message value object
+     */
+    public void setPromulgateByDefault(SystemMessageVo message) throws PromulgationException {
+        promulgationTypeService.getPromulgationTypes(message)
+                .forEach(type -> {
+                    BaseMessagePromulgationVo p = message.promulgation(type.getTypeId());
+                    p.setPromulgate(type.isPromulgateByDefault());
+                });
+    }
+
+
+    /**
      * Prior to creating a new message, let the registered promulgation services check up on promulgations.
      * @param message the message about to be created
      */

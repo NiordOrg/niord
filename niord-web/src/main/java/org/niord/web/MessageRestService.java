@@ -369,6 +369,9 @@ public class MessageRestService  {
 
         SystemMessageVo messageVo = toSystemMessage(message, false);
 
+        // Set whether or not to promulgate by default
+        promulgationManager.setPromulgateByDefault(messageVo);
+
         // Check if we need to populate with empty description records
         if (populate) {
             messageVo.checkCreateDescs(app.getLanguages());

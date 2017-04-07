@@ -197,6 +197,7 @@ public class PromulgationTypeService extends BaseService {
 
         original.setName(type.getName());
         original.setActive(type.isActive());
+        original.setPromulgateByDefault(type.isPromulgateByDefault());
         original.setPriority(type.getPriority());
         original.setLanguage(StringUtils.defaultIfBlank(type.getLanguage(), null));
 

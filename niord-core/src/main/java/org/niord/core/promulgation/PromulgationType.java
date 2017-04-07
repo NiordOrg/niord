@@ -77,6 +77,9 @@ public class PromulgationType extends VersionedEntity<Integer> {
 
     boolean active;
 
+    // Whether message promulgations of this type should be promulgated by default
+    boolean promulgateByDefault;
+
     String language;
 
     @ManyToMany
@@ -103,6 +106,7 @@ public class PromulgationType extends VersionedEntity<Integer> {
         this.name = typeVo.getName();
         this.priority = typeVo.getPriority();
         this.active = typeVo.isActive() != null && typeVo.isActive();
+        this.promulgateByDefault = typeVo.getPromulgateByDefault() != null && typeVo.getPromulgateByDefault();
         this.language = typeVo.getLanguage();
         if (typeVo.getDomains() != null) {
             this.domains = typeVo.getDomains().stream()
@@ -135,6 +139,7 @@ public class PromulgationType extends VersionedEntity<Integer> {
         typeVo.setPriority(priority);
         if (compFilter.includeDetails()) {
             typeVo.setActive(active);
+            typeVo.setPromulgateByDefault(promulgateByDefault);
             typeVo.setLanguage(language);
             typeVo.setDomains(domains.stream()
                     .map(Domain::toVo)
@@ -192,6 +197,14 @@ public class PromulgationType extends VersionedEntity<Integer> {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public boolean isPromulgateByDefault() {
+        return promulgateByDefault;
+    }
+
+    public void setPromulgateByDefault(boolean promulgateByDefault) {
+        this.promulgateByDefault = promulgateByDefault;
     }
 
     public String getLanguage() {

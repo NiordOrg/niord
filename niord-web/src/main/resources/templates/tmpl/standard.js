@@ -18,4 +18,3 @@
 load('niord:templates/tmpl/common.js');
 
 updateNavtexTransmitters();
-updatePromulgations();

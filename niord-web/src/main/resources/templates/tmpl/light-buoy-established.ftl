@@ -9,11 +9,13 @@
     </#list>
 </field-template>
 
-<field-template field="message.promulgation('navtex').text" update="append">
-    <#list params.positions as pos>
-        <@line format="navtex">
-            <@renderAtonType atonParams=pos defaultName="A light buoy" format="short" lang="en"/>
-            ESTABLISHED <@renderPositionList geomParam=pos format="navtex" lang="en"/>.
-        </@line>
-    </#list>
-</field-template>
+<#if promulgate('navtex')>
+    <field-template field="message.promulgation('navtex').text" update="append">
+        <#list params.positions as pos>
+            <@line format="navtex">
+                <@renderAtonType atonParams=pos defaultName="A light buoy" format="short" lang="en"/>
+                ESTABLISHED <@renderPositionList geomParam=pos format="navtex" lang="en"/>.
+            </@line>
+        </#list>
+    </field-template>
+</#if>
