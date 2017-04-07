@@ -72,8 +72,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -81,6 +83,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.niord.core.publication.Publication.DEFAULT_EDITION;
+import static org.niord.core.util.WebUtils.encodeURIComponent;
 
 
 /**
@@ -336,6 +339,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
 
     /**
      * Creates a new publication
+     * @noinspection all
      */
     @POST
     @Path("/publication/")
@@ -364,6 +368,7 @@ public class PublicationRestService extends AbstractBatchableRestService {
 
     /**
      * Updates an existing publication
+     * @noinspection all
      */
     @PUT
     @Path("/publication/{publicationId}")
@@ -454,11 +459,16 @@ public class PublicationRestService extends AbstractBatchableRestService {
             @PathParam("folder") String path,
             PublicationDescVo desc,
             @Context HttpServletRequest request) throws Exception {
+        return generatePublicationReport(path, desc, request.getQueryString());
+    }
+
+
+    private PublicationDescVo generatePublicationReport(String path, PublicationDescVo desc, String queryString) throws Exception {
 
         URL url = new URL(
                 app.getBaseUri()
                 + "/rest/message-reports/report.pdf?"
-                + request.getQueryString()
+                + queryString
                 + "&ticket=" + ticketService.createTicket());
 
         // Validate that the path is a temporary repository folder path
@@ -468,8 +478,8 @@ public class PublicationRestService extends AbstractBatchableRestService {
         int responseCode = httpConn.getResponseCode();
         if (responseCode != HttpURLConnection.HTTP_OK) {
             httpConn.disconnect();
-            log.error("Error creating publication report " + request.getQueryString());
-            throw new WebApplicationException("Error creating publication report: " + request.getQueryString(), 500);
+            log.error("Error creating publication report " + queryString);
+            throw new WebApplicationException("Error creating publication report: " + queryString, 500);
         }
 
         // If the file name has not been specified in the descriptor, extract it from the
@@ -502,6 +512,98 @@ public class PublicationRestService extends AbstractBatchableRestService {
         log.info("Generated publication report at destination " + destFile);
 
         return desc;
+    }
+
+
+    /**
+     * Releases a publication, which involves the following steps
+     * <ul>
+     *     <li>Generate message reports for all languages</li>
+     *     <li>Change status from recording to active</li>
+     *     <li>Generate the publication to next week if the "nextIssue" parameter is set.</li>
+     * </ul>
+     *
+     * @param publicationId the ID of the publication
+     * @return the updated publication
+     */
+    @PUT
+    @Path("/release-publication/{publicationId}")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed(Roles.ADMIN)
+    public PublicationVo releasePublication(
+            @PathParam("publicationId") String publicationId,
+            @QueryParam("nextIssue") boolean nextIssue,
+            @Context HttpServletRequest request) throws Exception {
+
+        Publication pub = publicationService.findByPublicationId(publicationId);
+        if (pub == null) {
+            throw new WebApplicationException("Invalid publication ID " + publicationId, 400);
+        }
+
+        // Validate that we can release the publication
+        if (pub.getType() != PublicationType.MESSAGE_REPORT ||
+                pub.getStatus() != PublicationStatus.RECORDING ||
+                pub.getMessageTag() == null ||
+                pub.getPrintSettings() == null ||
+                pub.getPrintSettings().get("report") == null) {
+            throw new WebApplicationException("Cannot release publication " + publicationId, 400);
+        }
+        Map<String, Object> printSettings = pub.getTemplate() != null ? pub.getTemplate().getPrintSettings() : pub.getPrintSettings();
+
+        long t0 = System.currentTimeMillis();
+
+        // Create an editable version of the publication, so that we e.g. work in a temporary folder
+        SystemPublicationVo publication = toSystemPublication(pub);
+
+        // Important: Keep in sync with $scope.generateReport() in admin-publication-ctrl.js
+        List<PublicationDescVo> updateDescs = new ArrayList<>();
+        for (PublicationDescVo desc : publication.getDescs()) {
+            String printParam = "tag=" + encodeURIComponent(pub.getMessageTag().getTagId());
+            for (Map.Entry<String, Object> e : printSettings.entrySet()) {
+                printParam = concatParam(printParam, e.getKey(), e.getValue());
+            }
+            for (Map.Entry<String, Object> e : pub.getReportParams().entrySet()) {
+                printParam = concatParam(printParam, "param:" + e.getKey(), e.getValue());
+            }
+            printParam = concatParam(printParam, "lang", desc.getLang());
+            printParam = concatParam(printParam, "param:edition", pub.getEdition());
+            printParam = concatParam(printParam, "fileName", desc.getFileName());
+
+            // Generate the report
+            String repoPath = publication.getEditRepoPath() + '/' + publication.getRevision();
+            updateDescs.add(generatePublicationReport(repoPath, desc, printParam));
+        }
+
+        // Having successfully generated reports, we update the editable publication and save it
+        publication.setDescs(updateDescs);
+        updatePublication(publicationId, publication);
+
+        // Make the publication active
+        publication = updatePublicationStatuses(new UpdatePublicationStatusParam(publicationId, PublicationStatus.ACTIVE));
+
+        // Create the next issue
+        if (pub.getPeriodicalType() != null && nextIssue) {
+            SystemPublicationVo nextIssuePub = copyPublicationTemplate(publicationId, true);
+            nextIssuePub = createPublication(nextIssuePub);
+            updatePublicationStatuses(new UpdatePublicationStatusParam(nextIssuePub.getPublicationId(), PublicationStatus.RECORDING));
+        }
+
+        log.info("Released publication " + publicationId + " in " + (System.currentTimeMillis() - t0) + " ms");
+        return publication;
+    }
+
+
+    /** Utility function for concatenating a key-value request parameter to the parameter string **/
+    private String concatParam(String param, Object k, Object v) {
+        param = param != null ? param : "";
+        if (k != null && v != null) {
+            param += (param.length() > 0) ? '&' : "";
+            param += encodeURIComponent(k.toString()) + '=' + encodeURIComponent(v.toString());
+        }
+        return param;
     }
 
 
@@ -652,6 +754,14 @@ public class PublicationRestService extends AbstractBatchableRestService {
     public static class UpdatePublicationStatusParam implements IJsonSerializable {
         String publicationId;
         PublicationStatus status;
+
+        public UpdatePublicationStatusParam() {
+        }
+
+        public UpdatePublicationStatusParam(String publicationId, PublicationStatus status) {
+            this.publicationId = publicationId;
+            this.status = status;
+        }
 
         @Override
         public String toString() {

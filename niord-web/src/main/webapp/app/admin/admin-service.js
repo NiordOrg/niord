@@ -215,6 +215,13 @@ angular.module('niord.admin')
             },
 
 
+            /** Releases a recoding message-report based publication **/
+            releasePublication: function (publication, nextIssue) {
+                return $http.put('/rest/publications/release-publication/' + publication.publicationId
+                    + '?nextIssue=' + nextIssue);
+            },
+
+
             /** Returns the ticket that can be used to generate an export file that requires the amdin role */
             publicationTicket: function (role) {
                 var param = role ? '?role=' + role : '';

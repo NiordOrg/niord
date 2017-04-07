@@ -279,7 +279,10 @@ angular.module('niord.admin')
             }
 
 
-            /** Generates a report file for the current publication **/
+            /**
+             * Generates a report file for the current publication
+             * Important. Keep in sync with PublicationRestService.releasePublication()
+             **/
             $scope.generateReport = function (desc, preview) {
                 var pub = $scope.publication;
                 var printSettings = pub.template ? pub.template.printSettings : pub.printSettings;
@@ -321,6 +324,49 @@ angular.module('niord.admin')
                             $scope.setDirty();
                         })
                 }
+            };
+
+
+
+            /** Returns if the publication can be released **/
+            $scope.canReleasePublication = function (pub) {
+                return pub.status === 'RECORDING' && pub.messageTag && pub.printSettings.report;
+            };
+
+
+            /** Releases a recoding message-report based publication **/
+            $scope.releasePublication = function (pub) {
+
+                // Check that required params are defined
+                if (pub.status !== 'RECORDING') {
+                    growl.error("Publication not recording", { ttl: 5000 });
+                    return;
+                }
+                // Check that required params are defined
+                if (!pub.messageTag) {
+                    growl.error("Missing message tag", { ttl: 5000 });
+                    return;
+                }
+                if (!pub.printSettings.report) {
+                    growl.error("Missing Report", { ttl: 5000 });
+                    return;
+                }
+
+                var modalOptions = {
+                    closeButtonText: 'Cancel',
+                    actionButtonText: 'Release',
+                    headerText: 'Release Publication',
+                    releaseOptions: { nextIssue: true, publication: pub },
+                    templateUrl: "releasePublication.html"
+                };
+                DialogService.showDialog({}, modalOptions)
+                    .then(function () {
+                        var nextIssue = modalOptions.releaseOptions.nextIssue;
+                        AdminPublicationService
+                            .releasePublication(pub, nextIssue)
+                            .success($scope.loadPublications)
+                            .error($scope.displayError);
+                    });
             };
 
 

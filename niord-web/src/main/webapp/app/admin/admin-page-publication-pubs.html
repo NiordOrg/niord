@@ -348,6 +348,12 @@
                             Stop Recording Messages
                         </button>
                         <button class="btn btn-default btn-sm"
+                                ng-if="canReleasePublication(publication)"
+                                ng-click="releasePublication(publication)"
+                                ng-disabled="publicationForm.$dirty">
+                            Release Publication...
+                        </button>
+                        <button class="btn btn-default btn-sm"
                                 ng-if="canChangeStatus('ACTIVE')"
                                 ng-click="changeStatus('ACTIVE')"
                                 ng-disabled="publicationForm.$dirty">
@@ -481,3 +487,20 @@
     </div>
 
 </div>
+
+
+<!-- Publish Message dialog -->
+<script type="text/ng-template" id="releasePublication.html">
+    <form name="copy_form">
+        <p>Releasing a publication entails</p>
+        <ol>
+            <li>Stop recording.</li>
+            <li>Generate reports for all language versions.</li>
+            <li>Make the publication active</li>
+            <li ng-if="modalOptions.releaseOptions.publication.periodicalType !== undefined">
+                <input type="checkbox" ng-model="modalOptions.releaseOptions.nextIssue">
+                Create next issue and start recording
+            </li>
+        </ol>
+    </form>
+</script>
