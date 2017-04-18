@@ -89,11 +89,7 @@ public class FileTypes {
         ContentType type = new ContentType(mimeType, icon, fileExtensions);
 
         // Update look-up maps
-        Set<ContentType> m = mimeTypeLookup.get(mimeType);
-        if (m == null) {
-            m = new HashSet<>();
-            mimeTypeLookup.put(mimeType, m);
-        }
+        Set<ContentType> m = mimeTypeLookup.computeIfAbsent(mimeType, k -> new HashSet<>());
         m.add(type);
 
         if (fileExtensions != null) {
@@ -115,7 +111,7 @@ public class FileTypes {
             // return Files.probeContentType(path);
             // return new MimetypesFileTypeMap().getContentType(path.toFile());
             String ext = FilenameUtils.getExtension(path.toString());
-            return fileExtensionLookup.get(ext).getMimeType();
+            return fileExtensionLookup.get(ext.toLowerCase()).getMimeType();
         } catch (Exception e) {
             // Unknown type
             return null;
