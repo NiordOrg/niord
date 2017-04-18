@@ -146,9 +146,7 @@ public class MessageTagService extends BaseService {
         return em.createNamedQuery("MessageTag.findTagsByTypeAndName", MessageTag.class)
                 .setParameter("type", type)
                 .setParameter("names", nameSet)
-                .getResultList()
-                .stream()
-                .collect(Collectors.toList());
+                .getResultList();
     }
 
 
