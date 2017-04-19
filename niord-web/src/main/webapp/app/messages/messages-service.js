@@ -23,8 +23,8 @@ angular.module('niord.messages')
     /**
      * Interface for calling the application server
      */
-    .factory('MessageService', [ '$rootScope', '$http', '$window', '$uibModal', 'AnalyticsService',
-        function($rootScope, $http, $window, $uibModal, AnalyticsService) {
+    .factory('MessageService', [ '$rootScope', '$state', '$http', '$window', '$uibModal', 'AnalyticsService',
+        function($rootScope, $state, $http, $window, $uibModal, AnalyticsService) {
         'use strict';
 
         function extractMessageIds(messages) {
@@ -602,6 +602,27 @@ angular.module('niord.messages')
                     size: 'lg',
                     resolve: {
                         selection: function () { return selection; }
+                    }
+                });
+            },
+
+
+            /** Copies the message **/
+            copyMessageDialog: function (messageId, dismissAction) {
+
+                $uibModal.open({
+                    templateUrl: "/app/messages/copy-message-dialog.html",
+                    size: 'sm'
+                }).result.then(function (includeReference) {
+                    var referenceType = includeReference ? 'REFERENCE' : '';
+                    // Navigate to the message editor page
+                    $state.go(
+                        'editor.copy',
+                        { id: messageId,  referenceType : referenceType },
+                        { reload: true }
+                    );
+                    if (dismissAction) {
+                        dismissAction();
                     }
                 });
             }

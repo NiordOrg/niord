@@ -1530,16 +1530,7 @@ angular.module('niord.editor')
 
             /** Copy the message **/
             $scope.copy = function () {
-                DialogService.showConfirmDialog(
-                    "Copy Message?", "Copy Message?")
-                    .then(function() {
-                        // Navigate to the message editor page
-                        $state.go(
-                            'editor.copy',
-                            { id: $scope.message.id,  referenceType : 'REFERENCE' },
-                            { reload: true }
-                        );
-                    });
+                MessageService.copyMessageDialog($scope.message.id);
             };
 
 

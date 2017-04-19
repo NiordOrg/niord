@@ -1,0 +1,19 @@
+<div>
+
+    <div class="modal-header" >
+        <h4><span translate>editor.status.copy_msg</span>?</h4>
+    </div>
+
+    <div class="modal-body" style="padding-bottom: 0">
+
+        <input type="checkbox" ng-model="includeReference">
+        &nbsp;<span translate>msg.copy.include_reference</span>
+
+        <div class="row" style="margin-top: 20px;">
+            <div class="form-group col-xs-12" style="text-align: right">
+                <button class="btn btn-default btn-sm" ng-click="$dismiss('aborted')" translate>term.cancel</button>
+                <button class="btn btn-primary btn-sm" ng-click="$close(includeReference)" translate>editor.status.copy_msg</button>
+            </div>
+        </div>
+    </div>
+</div>
