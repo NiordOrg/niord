@@ -96,8 +96,13 @@ public class LineDirective implements TemplateDirectiveModel {
                 while (s.length() > maxLength) {
                     String t = s.substring(0, maxLength);
                     int idx = Math.max(t.lastIndexOf(" "), t.lastIndexOf("\n"));
-                    sb.append(s.substring(0, idx + 1)).append("\n");
-                    s = s.substring(idx + 1);
+                    if (idx != -1) {
+                        sb.append(s.substring(0, idx + 1).trim()).append("\n");
+                        s = s.substring(idx + 1).trim();
+                    } else {
+                        sb.append(t.trim()).append("\n");
+                        s = s.substring(t.length()).trim();
+                    }
                 }
                 sb.append(s);
                 s = sb.toString();
