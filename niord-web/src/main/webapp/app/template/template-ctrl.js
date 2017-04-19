@@ -425,7 +425,7 @@ angular.module('niord.template')
                 // Create a combined geometry for all message parts
                 var geometry = {
                     type: 'FeatureCollection',
-                    features: MessageService.getMessageFeatures($scope.message)
+                    features: MessageService.getMessageFeatures($scope.message, true)
                 };
                 if (geometry.features.length > 0) {
                     MessageService.intersectingAreas(geometry)

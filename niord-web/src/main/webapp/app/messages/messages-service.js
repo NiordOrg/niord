@@ -403,12 +403,17 @@ angular.module('niord.messages')
 
 
             /** Returns the list of message features **/
-            getMessageFeatures: function (message) {
+            getMessageFeatures: function (message, excludeAffectedAreas) {
                 var features = [];
                 if (message && message.parts && message.parts.length > 0) {
                     angular.forEach(message.parts, function (part) {
                         if (part.geometry && part.geometry.features.length > 0) {
-                            features = features.concat(part.geometry.features);
+                            angular.forEach(part.geometry.features, function (f) {
+                                if (excludeAffectedAreas && f.properties && f.properties['restriction'] === 'affected') {
+                                    return;
+                                }
+                                features.push(f);
+                            });
                         }
                     });
                 }
