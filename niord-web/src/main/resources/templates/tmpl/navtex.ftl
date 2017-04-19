@@ -3,7 +3,7 @@
 <!-- ***************************************  -->
 <!-- Generates the NAVTEX header lines        -->
 <!-- ***************************************  -->
-<#macro navtexHeader>
+<#macro navtexHeader lang="en">
     <@line format="navtex">
         <@navtexDateFormat date=.now />
     </@line>
@@ -16,6 +16,10 @@
     <#if message.areas?has_content>
         <@line format="navtex">
             <@renderAreaLineage area=message.areas[0] />
+            <#assign msgDesc=descForLang(message, lang)!>
+            <#if msgDesc?? && msgDesc.vicinity?has_content >
+                <@trailingDot>${msgDesc.vicinity}</@trailingDot>
+            </#if>
         </@line>
     </#if>
 </#macro>
