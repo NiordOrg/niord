@@ -450,10 +450,14 @@ public class MessageRestService  {
         editMessage.setUpdated(null);
         editMessage.setNumber(null);
         editMessage.setPublishDateFrom(null);
+        editMessage.setPublishDateTo(null);
         editMessage.setUnackComments(0);
         if (editMessage.getParts() != null) {
             editMessage.getParts()
-                    .forEach(p -> p.setGeometry(featureService.copyFeatureCollection(p.getGeometry())));
+                    .forEach(p -> {
+                        p.setEventDates(null);
+                        p.setGeometry(featureService.copyFeatureCollection(p.getGeometry()));
+                    });
         }
         if (editMessage.getPromulgations() != null) {
             editMessage.getPromulgations().forEach(p -> p.setId(null));
