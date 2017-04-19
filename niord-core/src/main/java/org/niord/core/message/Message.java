@@ -510,18 +510,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                 try {
                     // First add area lineage
                     StringBuilder title = new StringBuilder();
-                    if (!getAreas().isEmpty()) {
-                        title.append(Area.computeAreaTitlePrefix(getAreas(), lang));
-                    }
-
-                    // If defined, add vicinity
-                    MessageDesc desc = getDesc(lang);
-                    if (desc != null && StringUtils.isNotBlank(desc.getVicinity())) {
-                        title.append(" ").append(desc.getVicinity());
-                        if (!desc.getVicinity().endsWith(".")) {
-                            title.append(".");
-                        }
-                    }
+                    title.append(computeAreaTitle(lang));
 
                     // Add the subject from each message part
                     parts.stream()
@@ -535,6 +524,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                             });
 
                     // Update the message title
+                    MessageDesc desc = getDesc(lang);
                     if (desc != null || StringUtils.isNotBlank(title.toString())) {
                         checkCreateDesc(lang).setTitle(title.toString().trim());
                     }
@@ -543,6 +533,30 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
             });
 
         }
+    }
+
+
+    /**
+     * Computes the area title, i.e. the area + vicinity
+     * @param lang the language to compute the area title for
+     * @return the area title
+     */
+    public String computeAreaTitle(String lang) {
+        // First add area lineage
+        StringBuilder areaTitle = new StringBuilder();
+        if (!getAreas().isEmpty()) {
+            areaTitle.append(Area.computeAreaTitlePrefix(getAreas(), lang));
+        }
+
+        // If defined, add vicinity
+        MessageDesc desc = getDesc(lang);
+        if (desc != null && StringUtils.isNotBlank(desc.getVicinity())) {
+            areaTitle.append(" ").append(desc.getVicinity());
+            if (!desc.getVicinity().endsWith(".")) {
+                areaTitle.append(".");
+            }
+        }
+        return areaTitle.toString();
     }
 
 
@@ -555,7 +569,10 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     }
 
 
-    /** Assigns a new UID to the Feature **/
+    /**
+     * Assigns a new UID to the Feature
+     * @noinspection all
+     **/
     public String assignNewUid() {
         String oldRepoPath = repoPath;
 
