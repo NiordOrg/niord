@@ -16,6 +16,8 @@
 
 package org.niord.core.promulgation;
 
+import org.niord.core.NiordApp;
+import org.niord.core.category.TemplateExecutionService;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.Message;
 import org.niord.core.message.vo.SystemMessageVo;
@@ -65,6 +67,12 @@ public class PromulgationManager {
 
     @Inject
     PromulgationTypeService promulgationTypeService;
+
+    @Inject
+    TemplateExecutionService templateExecutionService;
+
+    @Inject
+    NiordApp app;
 
     Map<String, Class<? extends BasePromulgationService>> services = new ConcurrentHashMap<>();
 
@@ -211,7 +219,25 @@ public class PromulgationManager {
      */
     public BaseMessagePromulgationVo generateMessagePromulgation(String typeId, SystemMessageVo message) throws PromulgationException {
         PromulgationType type = promulgationTypeService.getPromulgationType(typeId);
-        return instantiatePromulgationService(type.getServiceId()).generateMessagePromulgation(message, type);
+        BaseMessagePromulgationVo p = instantiatePromulgationService(type.getServiceId()).generateMessagePromulgation(message, type);
+
+        // Check if there is any associated script resources to execute
+        if (!type.getScriptResourcePaths().isEmpty()) {
+            Map<String, Object> contextData = new HashMap<>();
+            contextData.put("languages", app.getLanguages());
+            contextData.put("message", message);
+            contextData.put("promulgation", p);
+            contextData.put("promulgationType", p.getType());
+            contextData.put("params", new HashMap<>());
+            try {
+                templateExecutionService.executeScriptResources(type.getScriptResourcePaths(), contextData);
+            } catch (Exception e) {
+                log.warn("Failed executing script resources associated with promulgation type " + typeId + ": " + e);
+                // Silently ignore error
+            }
+        }
+
+        return p;
     }
 
 

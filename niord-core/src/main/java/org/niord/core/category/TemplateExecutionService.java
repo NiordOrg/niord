@@ -303,7 +303,7 @@ public class TemplateExecutionService extends BaseService {
      * @param scriptResourcePaths the list of script resources
      * @param contextData the context data, i.e. current message, part, etc.
      */
-    private void executeScriptResources(List<String> scriptResourcePaths, Map<String, Object> contextData) throws Exception {
+    public void executeScriptResources(List<String> scriptResourcePaths, Map<String, Object> contextData) throws Exception {
         for (String scriptResourcePath : scriptResourcePaths) {
 
             ScriptResource.Type type = ScriptResource.path2type(scriptResourcePath);

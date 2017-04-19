@@ -23,6 +23,7 @@ import freemarker.template.TemplateDirectiveBody;
 import freemarker.template.TemplateDirectiveModel;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateModel;
+import org.niord.core.util.TextUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -92,20 +93,7 @@ public class LineDirective implements TemplateDirectiveModel {
             }
 
             if (maxLength != -1) {
-                StringBuilder sb = new StringBuilder();
-                while (s.length() > maxLength) {
-                    String t = s.substring(0, maxLength);
-                    int idx = Math.max(t.lastIndexOf(" "), t.lastIndexOf("\n"));
-                    if (idx != -1) {
-                        sb.append(s.substring(0, idx + 1).trim()).append("\n");
-                        s = s.substring(idx + 1).trim();
-                    } else {
-                        sb.append(t.trim()).append("\n");
-                        s = s.substring(t.length()).trim();
-                    }
-                }
-                sb.append(s);
-                s = sb.toString();
+                s = TextUtils.maxLineLength(s, maxLength);
             }
 
             if (!s.endsWith("\n")) {

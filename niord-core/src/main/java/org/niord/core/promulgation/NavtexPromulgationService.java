@@ -23,6 +23,7 @@ import org.niord.core.message.Message;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.core.promulgation.vo.NavtexMessagePromulgationVo;
+import org.niord.core.util.PositionUtils;
 import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 
@@ -42,6 +43,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.niord.core.util.PositionFormatter.LATLON_NAVTEX;
+
 /**
  * Manages NAVTEX-via-mailing-lists promulgations
  */
@@ -50,6 +53,8 @@ import java.util.stream.Collectors;
 @Lock(LockType.READ)
 @SuppressWarnings("unused")
 public class NavtexPromulgationService extends BasePromulgationService {
+
+    public static int NAVTEX_LINE_LENGTH = 40;
 
     @Inject
     PromulgationTypeService promulgationTypeService;
@@ -141,8 +146,8 @@ public class NavtexPromulgationService extends BasePromulgationService {
             .flatMap(p -> p.getDescs().stream())
             .filter(d -> d.getLang().equals(language))
             .filter(d -> StringUtils.isNotBlank(d.getDetails()))
-            .map(d -> TextUtils.html2txt(d.getDetails()))
-            .forEach(d -> text.append(d.toUpperCase()).append(System.lineSeparator()));
+            .map(d -> html2navtex(d.getDetails(), type.getLanguage()))
+            .forEach(d -> text.append(d).append(System.lineSeparator()));
 
         if (text.length() > 0) {
             navtex.setPromulgate(true);
@@ -152,6 +157,26 @@ public class NavtexPromulgationService extends BasePromulgationService {
         }
 
         return navtex;
+    }
+
+
+    /** Transforms a HTML description to a NAVTEX description **/
+    private String html2navtex(String text, String language) {
+
+        // Replace positions with NAVTEX versions
+        text = PositionUtils.replacePositions(app.getLocale(language), LATLON_NAVTEX, text);
+
+        // Remove verbose words, such as "the", from the text
+        text = TextUtils.trimHtmlWhitespace(text);
+        text = text.replaceAll("(?is)\\s+(the|in pos\\.|is)\\s+", " ");
+
+        // Convert from html to plain text
+        text = TextUtils.html2txt(text, true);
+
+        // Split into 40-character lines
+        text = TextUtils.maxLineLength(text, NAVTEX_LINE_LENGTH);
+
+        return text.toUpperCase();
     }
 
 

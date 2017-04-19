@@ -17,9 +17,11 @@
 package org.niord.core.promulgation;
 
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.dictionary.DictionaryService;
 import org.niord.core.message.vo.SystemMessageVo;
-import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.core.promulgation.vo.AudioMessagePromulgationVo;
+import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
+import org.niord.core.util.PositionUtils;
 import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MessagePartType;
@@ -28,6 +30,8 @@ import javax.ejb.Lock;
 import javax.ejb.LockType;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
+import javax.inject.Inject;
+import java.util.ResourceBundle;
 
 /**
  * Manages audio promulgations.
@@ -40,6 +44,9 @@ import javax.ejb.Startup;
 @Lock(LockType.READ)
 @SuppressWarnings("unused")
 public class AudioPromulgationService extends BasePromulgationService {
+
+    @Inject
+    DictionaryService dictionaryService;
 
     /***************************************/
     /** Promulgation Service Handling     **/
@@ -88,7 +95,7 @@ public class AudioPromulgationService extends BasePromulgationService {
                     .flatMap(p -> p.getDescs().stream())
                     .filter(d -> d.getLang().equals(language))
                     .filter(d -> StringUtils.isNotBlank(d.getDetails()))
-                    .map(d -> TextUtils.html2txt(d.getDetails()))
+                    .map(d -> html2audio(d.getDetails(), type.getLanguage()))
                     .forEach(d -> text.append(d).append(System.lineSeparator()));
         }
 
@@ -100,6 +107,23 @@ public class AudioPromulgationService extends BasePromulgationService {
         }
 
         return audio;
+    }
+
+
+    /** Transforms a HTML description to an audio description **/
+    private String html2audio(String text, String language) {
+
+        // Replace positions with audio versions
+        ResourceBundle bundle = dictionaryService.getDictionariesAsResourceBundle(
+                new String[]{"template"},
+                app.getLanguage(language));
+
+        text = PositionUtils.replacePositions(
+                app.getLocale(language),
+                PositionUtils.getAudioFormat(bundle),
+                text);
+
+        return TextUtils.html2txt(text, true);
     }
 
 

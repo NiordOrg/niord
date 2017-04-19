@@ -70,8 +70,8 @@ public class PositionFormatter {
             "DEG-F[%03d]\u00B0 MIN[%04.1f]'DIR[E,W]");
 
     public static final Format LATLON_NAVTEX = new Format(
-            "DEG-F[%02d]-MIN[%05.2f]DIR[N,S]",
-            "DEG-F[%03d]-MIN[%05.2f]DIR[E,W]");
+            "DEG-F[%02d]-MIN[%04.1f]DIR[N,S]",
+            "DEG-F[%03d]-MIN[%04.1f]DIR[E,W]");
 
 
     /**

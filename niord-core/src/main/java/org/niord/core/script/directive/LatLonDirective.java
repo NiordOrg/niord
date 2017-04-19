@@ -23,11 +23,11 @@ import freemarker.template.TemplateDirectiveModel;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateModel;
 import freemarker.template.TemplateModelException;
+import org.niord.core.util.PositionUtils;
 
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
-import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.niord.core.script.FmTemplateService.BUNDLE_PROPERTY;
@@ -41,10 +41,11 @@ public class LatLonDirective implements TemplateDirectiveModel {
 
     private static final Map<Locale, Format> formatterCache = new ConcurrentHashMap<>();
 
-    private static final String PARAM_LAT = "lat";
-    private static final String PARAM_LON = "lon";
-    private static final String PARAM_SEPARATOR = "separator";
-    private static final String PARAM_FORMAT = "format";
+    private static final String PARAM_LAT               = "lat";
+    private static final String PARAM_LON               = "lon";
+    private static final String PARAM_SEPARATOR         = "separator";
+    private static final String PARAM_FORMAT            = "format";
+
 
     /**
      * Construct a format for audio positions
@@ -61,14 +62,7 @@ public class LatLonDirective implements TemplateDirectiveModel {
 
         // Fetch the resource bundle
         MultiResourceBundleModel text = (MultiResourceBundleModel)env.getDataModel().get(BUNDLE_PROPERTY);
-        ResourceBundle bundle = text.getResourceBundle();
-        String deg = bundle.getString("position.deg");
-        String min = bundle.getString("position.min");
-        String ns = bundle.getString("position.north") + "," + bundle.getString("position.south");
-        String ew = bundle.getString("position.east") + "," + bundle.getString("position.west");
-        format = new Format(
-                "DEG-F[%d] " + deg + " MIN[%.1f] " + min + " DIR[" + ns + "]",
-                "DEG-F[%d] " + deg + " MIN[%.1f] " + min + " DIR[" + ew + "]");
+        format = PositionUtils.getAudioFormat(text.getResourceBundle());
         formatterCache.put(locale, format);
         return format;
     }
@@ -86,6 +80,8 @@ public class LatLonDirective implements TemplateDirectiveModel {
         SimpleNumber latModel = (SimpleNumber)params.get(PARAM_LAT);
         SimpleNumber lonModel = (SimpleNumber)params.get(PARAM_LON);
         SimpleScalar separatorModel = (SimpleScalar)params.get(PARAM_SEPARATOR);
+        SimpleScalar wrapHtmlModel = (SimpleScalar)params.get(PARAM_SEPARATOR);
+
 
         if (latModel == null && lonModel == null) {
             throw new TemplateModelException("The 'lat' and/or 'lon' parameter must be specified");
@@ -96,6 +92,7 @@ public class LatLonDirective implements TemplateDirectiveModel {
             Double lat = (latModel == null) ? null : latModel.getAsNumber().doubleValue();
             Double lon = (lonModel == null) ? null : lonModel.getAsNumber().doubleValue();
 
+            boolean htmlWrap = true;
             Format format = LATLON_DEC;
             SimpleScalar formatModel = (SimpleScalar) params.get(PARAM_FORMAT);
             if (formatModel != null) {
@@ -112,24 +109,27 @@ public class LatLonDirective implements TemplateDirectiveModel {
                     format = LATLON_NAVTEX;
                     // Override separator
                     separator = " ";
+                    htmlWrap = false;
                 } else if ("audio".equals(code)) {
                     format = getAudioFormat(env);
                     // Override separator
                     separator = " - ";
+                    htmlWrap = false;
                 }
             }
 
             if (lat != null) {
-                env.getOut().write(format(env.getLocale(), format.getLatFormat(), lat));
+                env.getOut().write(PositionUtils.formatLat(env.getLocale(), format, lat, htmlWrap));
             }
             if (lon != null) {
                 if (lat != null) {
                     env.getOut().write(separator);
                 }
-                env.getOut().write(format(env.getLocale(), format.getLonFormat(), lon));
+                env.getOut().write(PositionUtils.formatLon(env.getLocale(), format, lon, htmlWrap));
             }
         } catch (Exception e) {
             // Prefer robustness over correctness
         }
     }
+
 }
