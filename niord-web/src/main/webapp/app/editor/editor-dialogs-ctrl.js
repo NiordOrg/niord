@@ -302,7 +302,7 @@ angular.module('niord.editor')
                 }
 
                 $scope.messageDiff = '';
-                if ($scope.message1 != undefined && $scope.message2 != undefined) {
+                if ($scope.message1 !== undefined && $scope.message2 !== undefined) {
                     $timeout(function () {
                         var msg1 = $('#message1').html();
                         var msg2 = $('#message2').html();
@@ -418,7 +418,9 @@ angular.module('niord.editor')
                 format: 'dec'
             };
             $scope.formats = [
-                { name : 'Decimal', value: 'dec' },
+                { name : '3 Decimals', value: 'dec' },
+                { name : '2 Decimals', value: 'dec-2' },
+                { name : '1 Decimal', value: 'dec-1' },
                 { name : 'Seconds', value: 'sec' },
                 { name : 'Navtex', value: 'navtex' }
             ];
