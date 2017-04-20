@@ -3,9 +3,9 @@
 
 <#macro renderLightName lightParam defaultName="">
     <#if lightParam?? && lightParam.aton_name?has_content>
-        <@quote text=lightParam.aton_name/>
+        ${lightParam.aton_name}
     <#else>
-    ${defaultName}
+       ${defaultName}
     </#if>
 </#macro>
 
