@@ -50,7 +50,7 @@
                         };
 
                         $scope.saveSettings = function () {
-                            if ($scope.editMode == 'add') {
+                            if ($scope.editMode === 'add') {
                                 $http.post(restUrl, $scope.settings)
                                     .success(scope.close);
                             } else {

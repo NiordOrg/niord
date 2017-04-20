@@ -37,7 +37,7 @@
                             $scope.editMode = 'add';
                         };
                         $scope.saveTransmitter = function (transmitter) {
-                            if ($scope.editMode == 'add') {
+                            if ($scope.editMode === 'add') {
                                 $http.post(restUrl + '/transmitter/', transmitter)
                                     .success($scope.loadTransmitters);
                             } else {
