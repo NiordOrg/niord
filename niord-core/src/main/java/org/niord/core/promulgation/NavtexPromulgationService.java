@@ -168,7 +168,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
         // Remove verbose words, such as "the", from the text
         text = TextUtils.trimHtmlWhitespace(text);
-        text = text.replaceAll("(?is)\\s+(the|in pos\\.|is)\\s+", " ");
+        text = text.replaceAll("(?is)\\s+(the|in pos\\.)\\s+", " ");
 
         // Convert from html to plain text
         text = TextUtils.html2txt(text, true);
@@ -201,6 +201,14 @@ public class NavtexPromulgationService extends BasePromulgationService {
         if (navtex != null) {
             // Replace the list of transmitters with the persisted entities
             navtex.setTransmitters(persistedTransmitters(type.getTypeId(), navtex.getTransmitters()));
+
+            // Make sure the text is uppercase and at most 40 characters long
+            String text = navtex.getText();
+            if (StringUtils.isNotBlank(text)) {
+                text = TextUtils.maxLineLength(text, NAVTEX_LINE_LENGTH)
+                        .toUpperCase();
+                navtex.setText(text);
+            }
         }
     }
 

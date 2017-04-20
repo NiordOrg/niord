@@ -37,6 +37,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
@@ -114,37 +115,33 @@ public class TextUtils {
 
     /**
      * Used for e.g. NAVTEX. Split the text into lines of the max length
-     * @param s the text
+     * @param text the text
      * @param maxLength the max length of the individual lines
      * @return the result
      */
-    public static String maxLineLength(String s, int maxLength) {
-        if (StringUtils.isBlank(s)) {
-            return s;
+    public static String maxLineLength(String text, int maxLength) {
+        if (StringUtils.isBlank(text)) {
+            return text;
         }
 
         StringBuilder sb = new StringBuilder();
-        while (s.length() > maxLength) {
-            String t = s.substring(0, maxLength);
-            int idx = t.indexOf("\n");
-            if (idx == -1) {
-                idx = t.lastIndexOf(" ");
-            }
-            if (idx != -1) {
-                sb.append(s.substring(0, idx + 1).trim()).append("\n");
-                s = s.substring(idx + 1).trim();
-            } else {
-                sb.append(t.trim()).append("\n");
-                s = s.substring(t.length()).trim();
-            }
-        }
-        sb.append(s);
-        s = sb.toString();
+        Arrays.stream(text.split("\n"))
+                .forEach(s -> {
+                    while (s.length() > maxLength) {
+                        String t = s.substring(0, maxLength);
+                        int idx = t.lastIndexOf(" ");
+                        if (idx != -1) {
+                            sb.append(s.substring(0, idx + 1).trim()).append("\n");
+                            s = s.substring(idx + 1).trim();
+                        } else {
+                            sb.append(t.trim()).append("\n");
+                            s = s.substring(t.length()).trim();
+                        }
+                    }
+                    sb.append(s).append("\n");
+                });
 
-        if (!s.endsWith("\n")) {
-            s = s + "\n";
-        }
-        return s;
+        return sb.toString();
     }
 
 

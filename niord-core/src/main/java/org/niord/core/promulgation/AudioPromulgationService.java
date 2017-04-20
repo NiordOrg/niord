@@ -123,6 +123,9 @@ public class AudioPromulgationService extends BasePromulgationService {
                 PositionUtils.getAudioFormat(bundle),
                 text);
 
+        // Replace certain standard words, e.g. "pos." with "position"
+        text = text.replaceAll("(?is)\\s+(pos\\.)\\s+", " position ");
+
         return TextUtils.html2txt(text, true);
     }
 
