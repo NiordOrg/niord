@@ -168,7 +168,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
         // Remove verbose words, such as "the", from the text
         text = TextUtils.trimHtmlWhitespace(text);
-        text = text.replaceAll("(?is)\\s+(the|in pos\\.)\\s+", " ");
+        text = text.replaceAll("(?is)\\s+(the|in pos\\.|is)\\s+", " ");
 
         // Convert from html to plain text
         text = TextUtils.html2txt(text, true);

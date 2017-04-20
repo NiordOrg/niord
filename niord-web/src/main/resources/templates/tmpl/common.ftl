@@ -230,7 +230,7 @@
         ${defaultName}
     </#if>
     <#if atonParams?has_content && atonParams.aton_name?has_content>
-        <@quote>${atonParams.aton_name}</@quote>
+        ${atonParams.aton_name}
     </#if>
 </#macro>
 
