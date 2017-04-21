@@ -636,6 +636,41 @@ angular.module('niord.common')
     }])
 
 
+    /********************************
+     * Defines a NAVTEX editor field.
+     * Shows a print margin after 40 chars
+     ********************************/
+    .directive('navtexField', [ function () {
+        'use strict';
+
+        return {
+            restrict: 'E',
+            template: '<div ui-ace="navtexEditorOptions" class="navtex" ng-model="navtexData"></div>',
+            scope: {
+                navtexData:    "="
+            },
+
+            compile: function() {
+                // Note to self: The "compile" function is used rather than the "link" because the "ui-ace"
+                // directive will not properly pick up the options, unless they are defined in the "pre" function below.
+                return {
+                    pre: function (scope) {
+
+                        scope.navtexEditorOptions = {
+                            useWrapMode : false,
+                            showGutter: false,
+                            onLoad: function (editor) {
+                                editor.setOption('printMarginColumn', 40);
+                            }
+                        }
+                    },
+                    post: function (scope, element, attrs) {}
+                }
+            }
+        }
+    }])
+
+
     /** Use this directive to set focus **/
     .directive('focus', ['$timeout', function ($timeout) {
         'use strict';

@@ -16,13 +16,17 @@
 
 package org.niord.core.promulgation;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.promulgation.vo.NavtexMessagePromulgationVo;
 import org.niord.core.promulgation.vo.NavtexTransmitterVo;
 import org.niord.core.user.Roles;
+import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 
+import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
@@ -41,6 +45,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static org.niord.core.promulgation.NavtexPromulgationService.NAVTEX_LINE_LENGTH;
+
 /**
  * REST interface to managing NAVTEX transmitters
  */
@@ -53,6 +59,33 @@ public class NavtexTransmitterRestService {
 
     @Inject
     NavtexPromulgationService navtexPromulgationService;
+
+
+    /** Reformats the NAVTEX text */
+    @PUT
+    @Path("/reformat-navtex")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @PermitAll
+    @NoCache
+    public NavtexMessagePromulgationVo reformatNavtex(NavtexMessagePromulgationVo navtex) throws Exception {
+        if (StringUtils.isNotBlank(navtex.getText())) {
+            String text = navtex.getText();
+
+            // Split into 40-character lines and enforce uppercase
+            text = TextUtils.maxLineLength(text, NAVTEX_LINE_LENGTH)
+                    .toUpperCase();
+
+            navtex.setText(text);
+        }
+        return navtex;
+    }
+
+
+    /***************************************/
+    /** Transmitter Handling              **/
+    /***************************************/
 
 
     /** Returns all transmitters */

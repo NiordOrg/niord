@@ -2,9 +2,9 @@
 <div class="row">
 
     <div class="col-xs-12 col-sm-12 col-md-6 col-lg-5">
-        <textarea class="navtex" cols="40"
-                  ng-model="promulgation.text" lang-flag="'en'" spellcheck="false">
-        </textarea>
+
+        <navtex-field navtex-data="promulgation.text"></navtex-field>
+
     </div>
 
     <div class="col-xs-12 col-sm-12 col-md-6 col-lg-7">
@@ -27,4 +27,23 @@
 <div>
     <button class="btn btn-default btn-xs"
             ng-click="generatePromulgation(promulgation)">Generate</button>
+    <button class="btn btn-default btn-xs" id="formatNavtexBtn"
+            onclick="formatNavtex()">Format</button>
 </div>
+
+<script type="application/javascript">
+    function formatNavtex() {
+        var scope = angular.element($("#formatNavtexBtn")).scope();
+        $.ajax({
+            type: "PUT",
+            contentType: "application/json; charset=utf-8",
+            url: "/rest/promulgation/navtex/reformat-navtex",
+            data: JSON.stringify(scope.promulgation),
+            dataType: "json",
+            success: function (promulgation) {
+                scope.promulgation.text = promulgation.text;
+                scope.$$phase || scope.$apply();
+            }
+        });
+    }
+</script>

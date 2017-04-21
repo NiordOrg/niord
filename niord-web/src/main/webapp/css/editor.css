@@ -326,7 +326,7 @@ div.mce-fullscreen {
     opacity: 0.4;
 }
 
-textarea.navtex {
+.navtex {
     font-family: "Courier New", serif;
     height: 120px;
     border: 1px solid lightgray;
