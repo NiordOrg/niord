@@ -1,18 +1,9 @@
 <#include "common.ftl"/>
 
 <!-- ***************************************  -->
-<!-- Generates the NAVTEX header lines        -->
+<!-- Generates the NAVTEX header line         -->
 <!-- ***************************************  -->
 <#macro navtexHeader lang="en">
-    <@line format="navtex">
-        <@navtexDateFormat date=.now />
-    </@line>
-    <@line format="navtex">
-        DANISH NAV WARN
-        <#if message.shortId?has_content>
-        ${message.shortId}
-        </#if>
-    </@line>
     <#if message.areas?has_content>
         <@line format="navtex">
             <@renderAreaLineage area=message.areas[0] />

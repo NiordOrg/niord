@@ -9,6 +9,7 @@
 </div>
 
 <div class="promulgation-text"
-     style="font-family: 'Courier New', serif"
-     ng-bind-html="promulgation.text | plain2html | toTrusted">
+     style="font-family: 'Courier New', serif">
+    <div ng-bind-html="promulgation.preamble | plain2html | toTrusted"></div>
+    <div ng-bind-html="promulgation.text | plain2html | toTrusted"></div>
 </div>

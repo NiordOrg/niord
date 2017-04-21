@@ -86,6 +86,15 @@ angular.module('niord.admin')
             };
 
 
+            /** Inserts the token in the NAVTEX preamble format field */
+            $scope.insertNavtexFormatToken = function (token) {
+                $scope.series.navtexFormat = $scope.series.navtexFormat || '';
+                $scope.series.navtexFormat += token;
+                $('#navtexFormat').focus();
+                $scope.seriesForm.$setDirty();
+            };
+
+
             /** Called when the main type of the edited message series is changed **/
             $scope.updateMainType = function () {
                 Object.keys($scope.types['NW']).forEach(function (key) {

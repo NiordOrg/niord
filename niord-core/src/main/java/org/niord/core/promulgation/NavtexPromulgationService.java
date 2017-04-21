@@ -20,12 +20,16 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.message.Message;
+import org.niord.core.message.MessageSeries;
+import org.niord.core.message.MessageSeriesService;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.core.promulgation.vo.NavtexMessagePromulgationVo;
 import org.niord.core.util.PositionUtils;
 import org.niord.core.util.TextUtils;
+import org.niord.core.util.TimeUtils;
 import org.niord.model.DataFilter;
+import org.niord.model.message.Status;
 
 import javax.ejb.Lock;
 import javax.ejb.LockType;
@@ -59,6 +63,9 @@ public class NavtexPromulgationService extends BasePromulgationService {
     @Inject
     PromulgationTypeService promulgationTypeService;
 
+    @Inject
+    MessageSeriesService messageSeriesService;
+
     /***************************************/
     /** Promulgation Service Handling     **/
     /***************************************/
@@ -77,6 +84,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
         return "NAVTEX mailing list";
     }
 
+
     /***************************************/
     /** Message Life-cycle Management     **/
     /***************************************/
@@ -89,6 +97,14 @@ public class NavtexPromulgationService extends BasePromulgationService {
         if (navtex == null) {
             navtex = new NavtexMessagePromulgationVo(type.toVo(DataFilter.get()));
             message.checkCreatePromulgations().add(navtex);
+        }
+
+        // Update the preamble from the message series - if defined
+        if (StringUtils.isBlank(navtex.getPreamble()) && message.getMessageSeries() != null) {
+            MessageSeries messageSeries = messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId());
+            if (messageSeries != null && StringUtils.isNotBlank(messageSeries.getNavtexFormat())) {
+                navtex.setPreamble(messageSeries.getNavtexFormat());
+            }
         }
 
         // Add all active transmitters not already added
@@ -117,7 +133,34 @@ public class NavtexPromulgationService extends BasePromulgationService {
     /** {@inheritDoc} */
     @Override
     public void onUpdateMessageStatus(Message message, PromulgationType type) throws PromulgationException {
-        checkNavtexPromulgation(message, type);
+        NavtexMessagePromulgation navtex = checkNavtexPromulgation(message, type);
+
+        // When the message is published and if the preamble is defined,
+        if (message.getStatus() == Status.PUBLISHED && navtex != null) {
+
+            // Update the NAVTEX preamble
+            if (StringUtils.isNotBlank(navtex.getPreamble())) {
+                // Replace tokens
+                String preamble = navtex.getPreamble()
+                        .replace("${publish-date}", TimeUtils.formatNavtexDate(message.getPublishDateFrom()))
+                        .replace("${short-id}", StringUtils.defaultString(message.getShortId()));
+
+                // Format according to NAVTEX guidelines
+                preamble = TextUtils.maxLineLength(preamble, NAVTEX_LINE_LENGTH)
+                        .toUpperCase()
+                        .trim();
+                navtex.setPreamble(preamble);
+            }
+
+            // Update the NAVTEX text
+            if (StringUtils.isNotBlank(navtex.getText())) {
+                // Format according to NAVTEX guidelines
+                String text = TextUtils.maxLineLength(navtex.getText(), NAVTEX_LINE_LENGTH)
+                        .toUpperCase()
+                        .trim();
+                navtex.setText(text);
+            }
+        }
     }
 
 
@@ -151,7 +194,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
         if (text.length() > 0) {
             navtex.setPromulgate(true);
-            navtex.setText(text.toString());
+            navtex.setText(text.toString().toUpperCase().trim());
         } else {
             navtex.setPromulgate(false);
         }
@@ -196,20 +239,19 @@ public class NavtexPromulgationService extends BasePromulgationService {
      * Checks that the NAVTEX promulgation is valid and ready to be persisted
      * @param message the message to check
      */
-    private void checkNavtexPromulgation(Message message, PromulgationType type) {
+    private NavtexMessagePromulgation checkNavtexPromulgation(Message message, PromulgationType type) {
         NavtexMessagePromulgation navtex = message.promulgation(NavtexMessagePromulgation.class, type.getTypeId());
         if (navtex != null) {
             // Replace the list of transmitters with the persisted entities
             navtex.setTransmitters(persistedTransmitters(type.getTypeId(), navtex.getTransmitters()));
 
-            // Make sure the text is uppercase and at most 40 characters long
-            String text = navtex.getText();
-            if (StringUtils.isNotBlank(text)) {
-                text = TextUtils.maxLineLength(text, NAVTEX_LINE_LENGTH)
-                        .toUpperCase();
-                navtex.setText(text);
+            // Update the preamble from the message series
+            if (StringUtils.isBlank(navtex.getPreamble()) && message.getMessageSeries() != null
+                        && StringUtils.isNotBlank(message.getMessageSeries().getNavtexFormat())) {
+                navtex.setPreamble(message.getMessageSeries().getNavtexFormat());
             }
         }
+        return navtex;
     }
 
 

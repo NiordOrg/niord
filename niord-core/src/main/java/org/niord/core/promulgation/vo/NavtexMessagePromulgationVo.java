@@ -34,6 +34,7 @@ public class NavtexMessagePromulgationVo extends BaseMessagePromulgationVo<Navte
     Map<String, Boolean> transmitters = new HashMap<>();
 
     String text;
+    String preamble;
 
 
     /** Constructor **/
@@ -100,5 +101,13 @@ public class NavtexMessagePromulgationVo extends BaseMessagePromulgationVo<Navte
     @Override
     public void setText(String text) {
         this.text = text;
+    }
+
+    public String getPreamble() {
+        return preamble;
+    }
+
+    public void setPreamble(String preamble) {
+        this.preamble = preamble;
     }
 }

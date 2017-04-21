@@ -45,6 +45,7 @@ public class SystemMessageSeriesVo extends MessageSeriesVo {
     // If defined, can be limit which sub-types be handled
     Set<Type> types;
     String shortFormat;
+    String navtexFormat;
     NumberSequenceType numberSequenceType;
     Integer nextMessageNumber;
     List<String> editorFields;
@@ -67,6 +68,14 @@ public class SystemMessageSeriesVo extends MessageSeriesVo {
 
     public void setShortFormat(String shortFormat) {
         this.shortFormat = shortFormat;
+    }
+
+    public String getNavtexFormat() {
+        return navtexFormat;
+    }
+
+    public void setNavtexFormat(String navtexFormat) {
+        this.navtexFormat = navtexFormat;
     }
 
     public NumberSequenceType getNumberSequenceType() {

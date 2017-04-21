@@ -16,12 +16,14 @@
 
 package org.niord.core.util;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Locale;
 import java.util.TimeZone;
 
 /**
@@ -274,6 +276,23 @@ public class TimeUtils {
         calendar.setFirstDayOfWeek(Calendar.MONDAY);
         calendar.setTime(date);
         return calendar.get(Calendar.WEEK_OF_YEAR);
+    }
+
+
+    /**
+     * Formats the date in the official NAVTEX date format (see S-53 guidelines)
+     * @param date the date to format
+     * @return the formatted date, or the empty string if the date is not defined
+     */
+    public static String formatNavtexDate(Date date) {
+        try {
+            SimpleDateFormat navtexUtcDate = new SimpleDateFormat("ddHHmm 'UTC' MMM yy", Locale.US);
+            navtexUtcDate.setTimeZone(TimeZone.getTimeZone("UTC"));
+            return navtexUtcDate.format(date);
+        } catch (Exception e) {
+            // Prefer robustness over correctness
+        }
+        return "";
     }
 
 }

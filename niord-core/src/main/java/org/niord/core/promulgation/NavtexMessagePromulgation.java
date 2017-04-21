@@ -58,6 +58,8 @@ public class NavtexMessagePromulgation
     @ManyToMany
     List<NavtexTransmitter> transmitters = new ArrayList<>();
 
+    String preamble;
+
     @Lob
     String text;
 
@@ -77,6 +79,7 @@ public class NavtexMessagePromulgation
                 .map(e -> new NavtexTransmitter(e.getKey()))
                 .collect(Collectors.toList());
         this.text = promulgation.getText();
+        this.preamble = promulgation.getPreamble();
     }
 
 
@@ -89,6 +92,7 @@ public class NavtexMessagePromulgation
         data.setTransmitters(transmitters.stream()
             .collect(Collectors.toMap(NavtexTransmitter::getName, t -> Boolean.TRUE)));
         data.setText(text);
+        data.setPreamble(preamble);
         return data;
     }
 
@@ -104,6 +108,7 @@ public class NavtexMessagePromulgation
             this.transmitters.clear();
             this.transmitters.addAll(p.getTransmitters());
             this.text = p.getText();
+            this.preamble = p.getPreamble();
         }
     }
 
@@ -136,5 +141,13 @@ public class NavtexMessagePromulgation
     @Override
     public void setText(String text) {
         this.text = text;
+    }
+
+    public String getPreamble() {
+        return preamble;
+    }
+
+    public void setPreamble(String preamble) {
+        this.preamble = preamble;
     }
 }

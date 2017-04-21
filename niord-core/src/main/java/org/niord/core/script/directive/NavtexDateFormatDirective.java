@@ -21,13 +21,11 @@ import freemarker.template.TemplateDirectiveBody;
 import freemarker.template.TemplateDirectiveModel;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateModel;
+import org.niord.core.util.TimeUtils;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 import java.util.Map;
-import java.util.TimeZone;
 
 /**
  * Will format a date according to the NAVTEX standard
@@ -54,9 +52,7 @@ public class NavtexDateFormatDirective implements TemplateDirectiveModel {
         }
 
         try {
-            SimpleDateFormat navtexUtcDate = new SimpleDateFormat("ddHHmm 'UTC' MMM yy", Locale.US);
-            navtexUtcDate.setTimeZone(TimeZone.getTimeZone("UTC"));
-            String result = navtexUtcDate.format(date);
+            String result = TimeUtils.formatNavtexDate(date);
             env.getOut().write(result);
         } catch (Exception e) {
             // Prefer robustness over correctness

@@ -331,6 +331,15 @@ div.mce-fullscreen {
     height: 120px;
     border: 1px solid lightgray;
     text-transform: uppercase;
+    font-size: 11px;
+}
+
+.navtex-preamble {
+    width: 100%;
+    resize: none;
+    font-size: 11px;
+    font-family: "Courier New", serif;
+    border: 1px solid lightgray;
 }
 
 .promulgation-text {

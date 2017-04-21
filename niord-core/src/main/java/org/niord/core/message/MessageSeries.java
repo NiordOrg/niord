@@ -63,6 +63,8 @@ public class MessageSeries extends VersionedEntity<Integer> {
 
     String shortFormat;
 
+    String navtexFormat;
+
     @NotNull
     NumberSequenceType numberSequenceType = NumberSequenceType.YEARLY;
 
@@ -97,6 +99,7 @@ public class MessageSeries extends VersionedEntity<Integer> {
                 this.types.addAll(sysSeries.getTypes());
             }
             this.shortFormat = sysSeries.getShortFormat();
+            this.navtexFormat = sysSeries.getNavtexFormat();
             this.numberSequenceType = sysSeries.getNumberSequenceType() != null
                     ? sysSeries.getNumberSequenceType()
                     : NumberSequenceType.YEARLY;
@@ -123,6 +126,7 @@ public class MessageSeries extends VersionedEntity<Integer> {
                     sysSeries.setTypes(new HashSet<>(types));
                 }
                 sysSeries.setShortFormat(shortFormat);
+                sysSeries.setNavtexFormat(navtexFormat);
                 sysSeries.setNumberSequenceType(numberSequenceType);
                 if (!editorFields.isEmpty()) {
                     sysSeries.setEditorFields(new ArrayList<>(editorFields));
@@ -189,6 +193,14 @@ public class MessageSeries extends VersionedEntity<Integer> {
 
     public void setShortFormat(String shortFormat) {
         this.shortFormat = shortFormat;
+    }
+
+    public String getNavtexFormat() {
+        return navtexFormat;
+    }
+
+    public void setNavtexFormat(String navtexFormat) {
+        this.navtexFormat = navtexFormat;
     }
 
     public NumberSequenceType getNumberSequenceType() {

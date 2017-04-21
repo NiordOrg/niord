@@ -204,6 +204,7 @@ public class MessageSeriesService extends BaseService {
         original.getTypes().clear();
         original.getTypes().addAll(series.getTypes());
         original.setShortFormat(series.getShortFormat());
+        original.setNavtexFormat(series.getNavtexFormat());
         original.setNumberSequenceType(series.getNumberSequenceType());
         original.getEditorFields().clear();
         original.getEditorFields().addAll(series.getEditorFields());

@@ -3,8 +3,18 @@
 
     <div class="col-xs-12 col-sm-12 col-md-6 col-lg-5">
 
+        <textarea ng-model="promulgation.preamble" readonly noresize
+                rows="2" class="navtex-preamble" tabIndex="-1" placeholder="Preamble"></textarea>
+
         <navtex-field navtex-data="promulgation.text"></navtex-field>
 
+        <div style="margin-top: 5px">
+            <button class="btn btn-default btn-xs"
+                    ng-click="generatePromulgation(promulgation)">Generate</button>
+
+            <button class="btn btn-default btn-xs" id="formatNavtexBtn"
+                    onclick="formatNavtex()">Format</button>
+        </div>
     </div>
 
     <div class="col-xs-12 col-sm-12 col-md-6 col-lg-7">
@@ -23,12 +33,6 @@
             <option value="VITAL">Vital</option>
         </select>
     </div>
-</div>
-<div>
-    <button class="btn btn-default btn-xs"
-            ng-click="generatePromulgation(promulgation)">Generate</button>
-    <button class="btn btn-default btn-xs" id="formatNavtexBtn"
-            onclick="formatNavtex()">Format</button>
 </div>
 
 <script type="application/javascript">

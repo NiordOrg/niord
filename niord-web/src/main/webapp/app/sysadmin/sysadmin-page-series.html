@@ -129,6 +129,28 @@
                             </div>
                         </div>
 
+
+                        <div class="form-group" ng-if="series.mainType == 'NW'">
+                            <label class="col-sm-4">NAVTEX Preamble</label>
+                            <div class="col-sm-8">
+                                <div class="input-group">
+                                    <textarea id="navtexFormat"
+                                              ng-model="series.navtexFormat"
+                                              rows="2" cols="40" class="navtex-preamble"></textarea>
+                                    <div class="input-group-btn">
+                                        <button type="button" class="btn btn-sm btn-default dropdown-toggle"
+                                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            insert <span class="caret"></span>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-right">
+                                            <li><a href ng-click="insertNavtexFormatToken('${publish-date}')">Publish Date</a></li>
+                                            <li><a href ng-click="insertNavtexFormatToken('${short-id}')">Short ID</a></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
