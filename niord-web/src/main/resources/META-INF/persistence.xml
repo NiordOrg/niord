@@ -8,6 +8,8 @@
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
         <jta-data-source>java:jboss/datasources/niordDS</jta-data-source>
 
+        <jar-file>lib/${niord-core.jar}</jar-file>
+
         <shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
 
         <properties>
