@@ -82,10 +82,16 @@ public class AudioPromulgationService extends BasePromulgationService {
     }
 
 
+    /***************************************/
+    /** Generating promulgations          **/
+    /***************************************/
+
+
     /** {@inheritDoc} */
     @Override
     public BaseMessagePromulgationVo generateMessagePromulgation(SystemMessageVo message, PromulgationType type) throws PromulgationException {
-        AudioMessagePromulgationVo audio = new AudioMessagePromulgationVo();
+
+        AudioMessagePromulgationVo audio = new AudioMessagePromulgationVo(type.toVo(DataFilter.get()));
 
         String language = getLanguage(type);
         StringBuilder text = new StringBuilder();

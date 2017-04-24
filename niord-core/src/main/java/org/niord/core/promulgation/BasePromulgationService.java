@@ -129,8 +129,14 @@ public abstract class BasePromulgationService extends BaseService {
     }
 
 
+    /***************************************/
+    /** Generating promulgations          **/
+    /***************************************/
+
+
     /**
-     * Generates a message promulgation record for the given type and message
+     * Manually generates a message promulgation record for the given type and message based on the contents of the message.
+     * The other way to generate message promulgations is by executing a template.
      * @param message the message template to generate a promulgation for
      * @param type the promulgation type
      * @return the promulgation
@@ -141,10 +147,23 @@ public abstract class BasePromulgationService extends BaseService {
 
 
     /**
-     * Resets the message promulgation record for the given type and message
+     * Called when a message promulgation has been generated, either manually by calling {@code generateMessagePromulgation}
+     * or by executing a template.
+     * Override this method to perform any clean-up of the generated message promulgation.
+     * @param message the message template to generate a promulgation for
+     * @param type the promulgation type
+     */
+    public void messagePromulgationGenerated(SystemMessageVo message, PromulgationType type) throws PromulgationException {
+    }
+
+
+    /**
+     * Resets the message promulgation record for the given type and message.
+     * May e.g. be called before generating the promulgations by executing a template.
      * @param message the message template to reset the promulgation for
      * @param type the promulgation type
      */
     public void resetMessagePromulgation(SystemMessageVo message, PromulgationType type) throws PromulgationException {
     }
+
 }

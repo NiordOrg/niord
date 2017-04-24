@@ -107,11 +107,16 @@ public class TwitterPromulgationService extends BasePromulgationService {
     }
 
 
+    /***************************************/
+    /** Generating promulgations          **/
+    /***************************************/
+
+
     /** {@inheritDoc} */
     @Override
     public BaseMessagePromulgationVo generateMessagePromulgation(SystemMessageVo message, PromulgationType type) throws PromulgationException {
 
-        TwitterMessagePromulgationVo twitter = new TwitterMessagePromulgationVo();
+        TwitterMessagePromulgationVo twitter = new TwitterMessagePromulgationVo(type.toVo(DataFilter.get()));
 
         MessageDescVo desc = message.getDesc(getLanguage(type));
         String title = desc != null ? desc.getTitle() : null;

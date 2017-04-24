@@ -356,16 +356,19 @@ public class TemplateExecutionService extends BaseService {
      * Adjust the message after executing a template
      * @param message the message to adjust
      */
-    private void postExecuteTemplate(SystemMessageVo message) {
+    private void postExecuteTemplate(SystemMessageVo message) throws Exception {
 
         // Update auto-title fields, etc.
         messageService.adjustMessage(message, MessageService.AdjustmentType.AREAS, MessageService.AdjustmentType.TITLE);
 
         // If there is only one DETAILS message part, hide the subject
         List<MessagePartVo> detailParts = message.partsOfType(MessagePartType.DETAILS);
-        if (detailParts.size() == 1) {
-            detailParts.get(0).setHideSubject(true);
+        if (detailParts.size() >= 1) {
+            detailParts.get(0).setHideSubject(detailParts.size() == 1);
         }
+
+        // Allow the promulgation services to clean up
+        promulgationManager.messagePromulgationGenerated(message);
     }
 
 

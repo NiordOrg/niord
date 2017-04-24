@@ -211,15 +211,28 @@ public class PromulgationManager {
     }
 
 
+    /***************************************/
+    /** Generating promulgations          **/
+    /***************************************/
+
+
     /**
-     * Generates a message promulgation record for the given type and message
+     * Manually generates a message promulgation record for the given type and message based on the contents of the message
      * @param typeId the type of promulgation to generate
      * @param message the message template to generate a promulgation for
      * @return the promulgation
      */
     public BaseMessagePromulgationVo generateMessagePromulgation(String typeId, SystemMessageVo message) throws PromulgationException {
+
+        // Generate the message promulgation
         PromulgationType type = promulgationTypeService.getPromulgationType(typeId);
-        BaseMessagePromulgationVo p = instantiatePromulgationService(type.getServiceId()).generateMessagePromulgation(message, type);
+        BasePromulgationService promulgationService = instantiatePromulgationService(type.getServiceId());
+
+        // Create a new template promulgation of the given type and add it to the message promulgation list
+        BaseMessagePromulgationVo p = promulgationService.generateMessagePromulgation(message, type);
+        message.checkCreatePromulgations().removeIf(mp -> mp.getType().getTypeId().equals(typeId));
+        message.getPromulgations().add(p);
+        message.getPromulgations().sort(Comparator.comparingInt(mp -> mp.getType().getPriority()));
 
         // Check if there is any associated script resources to execute
         if (!type.getScriptResourcePaths().isEmpty()) {
@@ -237,7 +250,25 @@ public class PromulgationManager {
             }
         }
 
+        // Allow the service to clean up
+        promulgationService.messagePromulgationGenerated(message, type);
+
         return p;
+    }
+
+
+    /**
+     * Called when message promulgations have been generated, either manually by calling {@code generateMessagePromulgation}
+     * or by executing a template.
+     * @param message the message template to generate a promulgation for
+     */
+    public void messagePromulgationGenerated(SystemMessageVo message) throws PromulgationException {
+        if (message.getPromulgations() != null) {
+            for (BaseMessagePromulgationVo promulgation : message.getPromulgations()) {
+                PromulgationType type = promulgationTypeService.getPromulgationType(promulgation.getType().getTypeId());
+                instantiatePromulgationService(type.getServiceId()).messagePromulgationGenerated(message, type);
+            }
+        }
     }
 
 
@@ -250,7 +281,6 @@ public class PromulgationManager {
             for (BaseMessagePromulgationVo promulgation : message.getPromulgations()) {
                 PromulgationType type = promulgationTypeService.getPromulgationType(promulgation.getType().getTypeId());
                 instantiatePromulgationService(type.getServiceId()).resetMessagePromulgation(message, type);
-
             }
         }
     }

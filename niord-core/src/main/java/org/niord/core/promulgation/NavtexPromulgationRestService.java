@@ -55,7 +55,7 @@ import static org.niord.core.promulgation.NavtexPromulgationService.NAVTEX_LINE_
 @SecurityDomain("keycloak")
 @RolesAllowed(Roles.SYSADMIN)
 @SuppressWarnings("unused")
-public class NavtexTransmitterRestService {
+public class NavtexPromulgationRestService {
 
     @Inject
     NavtexPromulgationService navtexPromulgationService;
@@ -75,7 +75,9 @@ public class NavtexTransmitterRestService {
 
             // Split into 40-character lines and enforce uppercase
             text = TextUtils.maxLineLength(text, NAVTEX_LINE_LENGTH)
-                    .toUpperCase();
+                    .replaceAll("(?is)\\n+", "\n")
+                    .toUpperCase()
+                    .trim();
 
             navtex.setText(text);
         }

@@ -100,12 +100,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
         }
 
         // Update the preamble from the message series - if defined
-        if (StringUtils.isBlank(navtex.getPreamble()) && message.getMessageSeries() != null) {
-            MessageSeries messageSeries = messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId());
-            if (messageSeries != null && StringUtils.isNotBlank(messageSeries.getNavtexFormat())) {
-                navtex.setPreamble(messageSeries.getNavtexFormat());
-            }
-        }
+        checkNavtexPreamble(message, navtex);
 
         // Add all active transmitters not already added
         for (NavtexTransmitter transmitter : findTransmittersByAreas(type.getTypeId(), null, true)) {
@@ -164,11 +159,47 @@ public class NavtexPromulgationService extends BasePromulgationService {
     }
 
 
+    /** Check if the NAVTEX preamble should be updated from the message series **/
+    private void checkNavtexPreamble(SystemMessageVo message, NavtexMessagePromulgationVo navtex) {
+        if (StringUtils.isBlank(navtex.getPreamble()) && message.getMessageSeries() != null) {
+            MessageSeries messageSeries = messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId());
+            if (messageSeries != null && StringUtils.isNotBlank(messageSeries.getNavtexFormat())) {
+                navtex.setPreamble(messageSeries.getNavtexFormat());
+            }
+        }
+    }
+
+
+    /**
+     * Checks that the NAVTEX promulgation is valid and ready to be persisted
+     * @param message the message to check
+     */
+    private NavtexMessagePromulgation checkNavtexPromulgation(Message message, PromulgationType type) {
+        NavtexMessagePromulgation navtex = message.promulgation(NavtexMessagePromulgation.class, type.getTypeId());
+        if (navtex != null) {
+            // Replace the list of transmitters with the persisted entities
+            navtex.setTransmitters(persistedTransmitters(type.getTypeId(), navtex.getTransmitters()));
+
+            // Update the preamble from the message series
+            if (StringUtils.isBlank(navtex.getPreamble()) && message.getMessageSeries() != null
+                    && StringUtils.isNotBlank(message.getMessageSeries().getNavtexFormat())) {
+                navtex.setPreamble(message.getMessageSeries().getNavtexFormat());
+            }
+        }
+        return navtex;
+    }
+
+
+    /***************************************/
+    /** Generating promulgations          **/
+    /***************************************/
+
+
     /** {@inheritDoc} */
     @Override
     public BaseMessagePromulgationVo generateMessagePromulgation(SystemMessageVo message, PromulgationType type) throws PromulgationException {
 
-        NavtexMessagePromulgationVo navtex = new NavtexMessagePromulgationVo();
+        NavtexMessagePromulgationVo navtex = new NavtexMessagePromulgationVo(type.toVo(DataFilter.get()));
 
         // Add all active transmitters - by default, not selected
         findTransmittersByAreas(type.getTypeId(), null, true)
@@ -225,63 +256,48 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
     /** {@inheritDoc} */
     @Override
+    public void messagePromulgationGenerated(SystemMessageVo message, PromulgationType type) throws PromulgationException {
+        NavtexMessagePromulgationVo navtex = message.promulgation(NavtexMessagePromulgationVo.class, type.getTypeId());
+        if (navtex != null) {
+
+            if (StringUtils.isNotBlank(navtex.getText())) {
+                String text = navtex.getText();
+
+                // Split into 40-character lines, remove blank lines and enforce uppercase
+                text = TextUtils.maxLineLength(text, NAVTEX_LINE_LENGTH)
+                        .replaceAll("(?is)\\n+", "\n")
+                        .toUpperCase()
+                        .trim();
+
+                navtex.setText(text);
+            }
+
+            // Compute the active transmitters from the message areas
+            if (message.getAreas() != null && !message.getAreas().isEmpty()) {
+                List<Area> areas = message.getAreas().stream()
+                        .map(Area::new)
+                        .collect(Collectors.toList());
+                String typeId = type.getTypeId();
+                Set<String> enabledTransmitters = findTransmittersByAreas(typeId, areas, true).stream()
+                        .map(NavtexTransmitter::getName)
+                        .collect(Collectors.toSet());
+                navtex.getTransmitters().keySet().forEach(name ->
+                        navtex.getTransmitters().put(name, enabledTransmitters.contains(name)));
+            }
+        }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
     public void resetMessagePromulgation(SystemMessageVo message, PromulgationType type) throws PromulgationException {
         NavtexMessagePromulgationVo navtex = message.promulgation(NavtexMessagePromulgationVo.class, type.getTypeId());
         if (navtex != null) {
             navtex.reset();
+            checkNavtexPreamble(message, navtex);
             findTransmittersByAreas(type.getTypeId(), null, true)
                     .forEach(t -> navtex.getTransmitters().put(t.getName(), Boolean.FALSE));
         }
-    }
-
-
-    /**
-     * Checks that the NAVTEX promulgation is valid and ready to be persisted
-     * @param message the message to check
-     */
-    private NavtexMessagePromulgation checkNavtexPromulgation(Message message, PromulgationType type) {
-        NavtexMessagePromulgation navtex = message.promulgation(NavtexMessagePromulgation.class, type.getTypeId());
-        if (navtex != null) {
-            // Replace the list of transmitters with the persisted entities
-            navtex.setTransmitters(persistedTransmitters(type.getTypeId(), navtex.getTransmitters()));
-
-            // Update the preamble from the message series
-            if (StringUtils.isBlank(navtex.getPreamble()) && message.getMessageSeries() != null
-                        && StringUtils.isNotBlank(message.getMessageSeries().getNavtexFormat())) {
-                navtex.setPreamble(message.getMessageSeries().getNavtexFormat());
-            }
-        }
-        return navtex;
-    }
-
-
-    /**
-     * Computes the NAVTEX transmitter status based on the message areas
-     * @param message the message to update
-     * @return the updated message
-     */
-    public SystemMessageVo computeNavtexTransmitterStatuses(SystemMessageVo message) {
-        if (message.getPromulgations() == null || message.getAreas() == null || message.getAreas().isEmpty()) {
-            return message;
-        }
-
-        List<Area> areas = message.getAreas().stream()
-                .map(Area::new)
-                .collect(Collectors.toList());
-
-        message.getPromulgations().stream()
-                .filter(p -> p instanceof NavtexMessagePromulgationVo && p.isPromulgate())
-                .map(p -> (NavtexMessagePromulgationVo)p)
-                .forEach(navtex -> {
-                    String typeId = navtex.getType().getTypeId();
-                    Set<String> enabledTransmitters = findTransmittersByAreas(typeId, areas, true).stream()
-                            .map(NavtexTransmitter::getName)
-                            .collect(Collectors.toSet());
-                    navtex.getTransmitters().keySet().forEach(name ->
-                            navtex.getTransmitters().put(name, enabledTransmitters.contains(name)));
-                });
-
-        return message;
     }
 
 
