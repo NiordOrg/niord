@@ -36,10 +36,6 @@
         ${text('cancellation.this_message',cancelDate)}.
         </@line>
     </#if>
-
-    <#if promulgation.priority?has_content && promulgation.priority != 'NONE'>
-        PRIORITY: ${promulgation.priority}
-    </#if>
 </#macro>
 
 
