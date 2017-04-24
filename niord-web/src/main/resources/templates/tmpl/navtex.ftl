@@ -1,18 +1,13 @@
 <#include "common.ftl"/>
 
+<#assign areaLineage = 'org.niord.core.script.directive.AreaLineageDirective'?new()>
+
+
 <!-- ***************************************  -->
 <!-- Generates the NAVTEX header line         -->
 <!-- ***************************************  -->
 <#macro navtexHeader lang="en">
-    <#if message.areas?has_content>
-        <@line format="navtex">
-            <@renderAreaLineage area=message.areas[0] />
-            <#assign msgDesc=descForLang(message, lang)!>
-            <#if msgDesc?? && msgDesc.vicinity?has_content >
-                <@trailingDot>${msgDesc.vicinity}</@trailingDot>
-            </#if>
-        </@line>
-    </#if>
+    <@areaLineage message=message lang=lang format="navtex"/>
 </#macro>
 
 
