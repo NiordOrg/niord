@@ -11,7 +11,7 @@
 <#assign navtexDateFormat = 'org.niord.core.script.directive.NavtexDateFormatDirective'?new()>
 <#assign lightCharacterFormat = 'org.niord.core.script.directive.LightCharacterDirective'?new()>
 <#assign callSignFormat = 'org.niord.core.script.directive.CallSignDirective'?new()>
-<#assign posFormat = params.posFormat!'dec-3'> <#-- 3 decimals in message details -->
+<#assign posFormat = params.posFormat!'dec-1'> <#-- 1 decimals in message details -->
 
 <!-- ***************************************  -->
 <!-- Returns the desc for the given language  -->
