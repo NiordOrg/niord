@@ -50,6 +50,14 @@ angular.module('niord.admin')
             };
 
 
+            // Get the number of days before mails area deleted from the mail queue
+            $scope.ttl = undefined;
+            AdminMailsService.getTTL()
+                .success(function (setting) {
+                    $scope.ttl = setting.value;
+                });
+
+
             /** Searches the scheduled mails */
             $scope.search = function() {
                 AdminMailsService

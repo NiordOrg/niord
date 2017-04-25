@@ -1,10 +1,12 @@
 
-<admin-page admin-page-title="Scheduled Mails" parent-page="sysadmin" parent-page-title="Sysadmin">
+<admin-page admin-page-title="Mail Queue" parent-page="sysadmin" parent-page-title="Sysadmin">
 
     <div ng-controller="MailsAdminCtrl">
 
         <p>Displaying {{searchResult.size}}
             of {{searchResult.total}} mails matching search criteria.</p>
+
+        <p ng-if="ttl !== undefined">NB: Mails get deleted after {{ttl}} days.</p>
 
         <div class="row">
             <!-- Recipient -->

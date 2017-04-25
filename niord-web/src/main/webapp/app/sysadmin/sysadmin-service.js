@@ -544,6 +544,10 @@ angular.module('niord.admin')
 
             getMailDetails: function (id) {
                 return $http.get('/rest/scheduled-mails/scheduled-mail/' + id);
+            },
+
+            getTTL: function () {
+                return $http.get('/rest/settings/setting/mailDeleteAfterDays');
             }
 
         };
