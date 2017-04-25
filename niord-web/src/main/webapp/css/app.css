@@ -112,6 +112,14 @@ input.ng-invalid-messageId {
     box-shadow: 0 0 4px 4px rgba(0, 0, 0, .2);
 }
 
+.domain-color-badge {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    margin-right: 5px;
+}
+
 .page-header {
     margin-top: 0;
     text-align: left;

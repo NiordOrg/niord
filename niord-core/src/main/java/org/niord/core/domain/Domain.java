@@ -100,6 +100,8 @@ public class Domain extends BaseEntity<Integer> {
     @OneToOne
     FiringSchedule firingSchedule;
 
+    String color;
+
     /**
      * Defines whether to promulgate published messages of this domain by default
      */
@@ -140,6 +142,7 @@ public class Domain extends BaseEntity<Integer> {
         this.longitude = domain.getLon();
         this.zoomLevel = domain.getZoomLevel();
         this.messageSortOrder = StringUtils.isBlank(domain.getMessageSortOrder()) ? null : domain.getMessageSortOrder();
+        this.color = domain.getColor();
         this.publish = domain.getPublish();
         this.atons = domain.getAtons();
         this.templates = domain.getTemplates();
@@ -184,6 +187,7 @@ public class Domain extends BaseEntity<Integer> {
         domain.setAtons(atons);
         domain.setTemplates(templates);
         domain.setFiringSchedule(firingSchedule != null);
+        domain.setColor(color);
         domain.setInKeycloak(inKeycloak);
 
         if (!areas.isEmpty()) {
@@ -227,6 +231,7 @@ public class Domain extends BaseEntity<Integer> {
                 !Objects.equals(longitude, template.getLongitude()) ||
                 !Objects.equals(zoomLevel, template.getZoomLevel()) ||
                 !Objects.equals(messageSortOrder, template.getMessageSortOrder()) ||
+                !Objects.equals(color, template.getColor()) ||
                 !Objects.equals(publish, template.getPublish()) ||
                 !Objects.equals(atons, template.getAtons()) ||
                 !Objects.equals(templates, template.getTemplates()) ||
@@ -392,6 +397,14 @@ public class Domain extends BaseEntity<Integer> {
 
     public void setFiringSchedule(FiringSchedule firingSchedule) {
         this.firingSchedule = firingSchedule;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
     }
 
     public Boolean getPublish() {

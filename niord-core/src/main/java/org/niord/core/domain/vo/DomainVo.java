@@ -41,6 +41,7 @@ public class DomainVo implements IJsonSerializable {
     private List<AreaVo> areas;
     private List<CategoryVo> categories;
     private List<SystemMessageSeriesVo> messageSeries;
+    private String color;
     private Boolean firingSchedule;
     private Boolean publish;
     private Boolean atons;
@@ -160,6 +161,14 @@ public class DomainVo implements IJsonSerializable {
 
     public void setMessageSeries(List<SystemMessageSeriesVo> messageSeries) {
         this.messageSeries = messageSeries;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
     }
 
     public Boolean getPublish() {

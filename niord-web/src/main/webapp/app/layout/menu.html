@@ -30,7 +30,11 @@
 
                 <li class="dropdown" ng-controller="DomainCtrl">
                     <a class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                        <span ng-if="domain">{{domain.name}}</span>
+                        <span ng-if="domain">
+                            <div ng-if="domain.color" class="domain-color-badge"
+                                  ng-style="{ 'background-color': domain.color }">&nbsp;</div>
+                            {{domain.name}}
+                        </span>
                         <span ng-if="!domain" style="font-style: italic;">none</span>
                         <span ng-if="domains.length" class="caret"></span>
                     </a>

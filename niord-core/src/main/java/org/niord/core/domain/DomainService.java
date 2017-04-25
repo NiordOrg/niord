@@ -231,6 +231,7 @@ public class DomainService extends BaseService {
         original.setLongitude(domain.getLongitude());
         original.setZoomLevel(domain.getZoomLevel());
         original.setMessageSortOrder(domain.getMessageSortOrder());
+        original.setColor(domain.getColor());
         original.setPublish(domain.getPublish());
         original.setAtons(domain.getAtons());
         original.setTemplates(domain.getTemplates());
