@@ -94,9 +94,8 @@
                             <label class="col-sm-4">HTML Color</label>
                             <div class="col-sm-8">
                                 <input type="text" ng-model="domain.color" style="width: 200px">
-                                <span style="border: 1px solid darkgray; background-color: {{domain.color}}">
-                                    &nbsp;&nbsp;&nbsp;
-                                </span>
+                                <div ng-if="domain.color" class="domain-color-badge"
+                                     ng-style="{ 'background-color': domain.color }">&nbsp;</div>
                             </div>
                         </div>
 
