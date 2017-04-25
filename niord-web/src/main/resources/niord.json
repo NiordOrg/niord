@@ -50,7 +50,7 @@
     "value"       : { "type": true, "orig_info": false, "id": true, "title": true, "references": true, "publish_date": true,
                       "areas": true, "categories": true, "positions": true, "charts": true, "event_dates": true, "subject": true,
                       "description": true, "attachments": false, "note": false, "publication": true, "source": false,
-                      "prohibition": false, "signals": false, "layout" : true },
+                      "prohibition": false, "signals": false, "layout" : false },
     "type"        : "json",
     "web"         : true,
     "editable"    : true
@@ -66,7 +66,7 @@
   {
     "key"         : "editorFieldsNm",
     "description" : "The additional set of editor fields to display for NM messages",
-    "value"       : { "orig_info": true, "attachments": true, "note": true, "source": true },
+    "value"       : { "orig_info": true, "attachments": true, "note": true, "source": true, "layout" : true },
     "type"        : "json",
     "web"         : true,
     "editable"    : true
