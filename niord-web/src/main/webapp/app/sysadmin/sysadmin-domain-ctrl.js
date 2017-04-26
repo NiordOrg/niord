@@ -91,7 +91,7 @@ angular.module('niord.admin')
                     name: undefined,
                     timeZone: moment.tz.guess(),
                     messageSortOrder: 'AREA ASC',
-                    color: false,
+                    color: undefined,
                     publish: false,
                     atons: false,
                     templates: false
