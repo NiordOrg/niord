@@ -39,7 +39,7 @@
         morse code ${lightGroup.morseCode}
 
     <#elseif lightGroup.phase == 'Al'>
-        Alternating
+        alternating
         <#if lightGroup.groupSpec?has_content>
             <#list lightGroup.groupSpec as blinks>
                 ${blinks} <#if blinks_has_next> + </#if>
@@ -48,7 +48,7 @@
 
         <#if lightGroup.colors?has_content>
             <#list lightGroup.colors as col>
-                <#if !col?is_first && col?is_last> og <#elseif !col?is_first>, </#if>
+                <#if !col?is_first && col?is_last> and <#elseif !col?is_first>, </#if>
                 <@formatLightCharacterColor col=col/>
             </#list>
         </#if>
@@ -78,7 +78,7 @@
 
         <#if lightGroup.colors?has_content>
             <#list lightGroup.colors as col>
-                <#if !col?is_first && col?is_last> og <#elseif !col?is_first>, </#if>
+                <#if !col?is_first && col?is_last> and <#elseif !col?is_first>, </#if>
                 <@formatLightCharacterColor col=col/>
             </#list>
         </#if>

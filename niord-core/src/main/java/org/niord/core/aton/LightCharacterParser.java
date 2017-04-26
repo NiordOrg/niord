@@ -33,7 +33,7 @@ public class LightCharacterParser {
 
     public static String LIGHT_PHASES = "FFl|LFl|Fl|F|IVQ|VQ|IQ|IUQ|UQ|Q|Iso|Oc|Al|Mo|Gr";
 
-    public static String LIGHT_COLORS = "W|R|G|Bu|Y|Am";
+    public static String LIGHT_COLORS = "W|R|G|B|Y|Am";
 
     public static Pattern LIGHT_CHARACTER_GROUPS = Pattern.compile(
             "^" +
@@ -48,7 +48,7 @@ public class LightCharacterParser {
 
     private static final Pattern ELEVATION = Pattern.compile("(\\d+)m");
 
-    private static final Pattern PERIOD = Pattern.compile("(\\d+)s");
+    private static final Pattern PERIOD = Pattern.compile("(\\d+)[s|S]");
 
     private static final Pattern RANGE = Pattern.compile("(\\d+)M");
 
@@ -77,15 +77,16 @@ public class LightCharacterParser {
             return lightCharacter;
         }
         return lightCharacter
-                        .replace("Qk", "Q")
-                        .replace("Bu", "B")
-                        .replace("Bl", "B")
-                        .replace("Occ", "Oc")
-                        .replace("Alt", "Al")
-                        .replace("Gp", "")
-                        .replace(".", "")
-                        .replaceAll("\\s+"," ")
-                        .trim();
+                .replace(".", "")
+                .replaceAll("\\s+"," ")
+                .replace("Qk", "Q")
+                .replace("Bu", "B")
+                .replace("Bl", "B")
+                .replace("Occ", "Oc")
+                .replace("Alt", "Al")
+                .replace("AlFl", "Al")
+                .replace("Gp", "")
+                .trim();
     }
 
 
