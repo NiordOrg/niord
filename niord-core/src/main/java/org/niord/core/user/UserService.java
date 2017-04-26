@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -162,7 +163,7 @@ public class UserService extends BaseService {
     /**
      * Looks up the {@code User} with the given username
      *
-     * @param username the email
+     * @param username the user name
      * @return the user or null
      */
     public User findByUsername(String username) {
@@ -173,6 +174,28 @@ public class UserService extends BaseService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+
+    /**
+     * Looks up the {@code User}s with the given usernames
+     *
+     * @param usernames the user names
+     * @return the user or null
+     */
+    public List<User> findByUsernames(Set<String> usernames) {
+        if (usernames != null && !usernames.isEmpty()) {
+            usernames = usernames.stream()
+                    .map(String::toUpperCase)
+                    .collect(Collectors.toSet());
+            try {
+                return em.createNamedQuery("User.findByUsernames", User.class)
+                        .setParameter("usernames", usernames)
+                        .getResultList();
+            } catch (Exception ignored) {
+            }
+        }
+        return Collections.emptyList();
     }
 
 
@@ -257,7 +280,21 @@ public class UserService extends BaseService {
      */
     public List<UserVo> searchKeycloakUsers(String search, int first, int max) {
         try {
-            return keycloakIntegrationService.searchKeycloakUsers(search, first, max);
+            List<UserVo> users = keycloakIntegrationService.searchKeycloakUsers(search, first, max);
+
+            // Merge the user data from Keycloak with local user data that is not stored in Keycloak
+            // For now, this is only the "language" attribute
+            Set<String> usernames = users.stream()
+                    .map(UserVo::getUsername)
+                    .collect(Collectors.toSet());
+            Map<String, User> userMap = findByUsernames(usernames).stream()
+                    .collect(Collectors.toMap(User::getUsername, Function.identity()));
+
+            users.stream()
+                .filter(u -> userMap.containsKey(u.getUsername()))
+                .forEach(u -> u.setLanguage(userMap.get(u.getUsername()).getLanguage()));
+
+            return users;
         } catch (Exception e) {
             log.error("Error reading Keycloak users: " + e.getMessage());
             return Collections.emptyList();

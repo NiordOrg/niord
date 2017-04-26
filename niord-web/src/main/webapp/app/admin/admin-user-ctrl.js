@@ -27,8 +27,8 @@ angular.module('niord.admin')
      * Users Admin Controller
      * Controller for the Admin users page
      */
-    .controller('UserAdminCtrl', ['$scope', 'growl', 'AdminUserService', 'AuthService', 'DialogService',
-        function ($scope, growl, AdminUserService, AuthService, DialogService) {
+    .controller('UserAdminCtrl', ['$scope', '$rootScope', 'growl', 'AdminUserService', 'AuthService', 'DialogService',
+        function ($scope, $rootScope, growl, AdminUserService, AuthService, DialogService) {
             'use strict';
 
             $scope.groups = [];
@@ -40,6 +40,7 @@ angular.module('niord.admin')
             $scope.userFilter = '';
             $scope.pageSize = 20;
             $scope.hasMore = false;
+            $scope.languages = $rootScope.modelLanguages;
 
 
             /** Init the controller **/
@@ -115,6 +116,7 @@ angular.module('niord.admin')
                     email: '',
                     firstName: '',
                     lastName: '',
+                    language: undefined,
                     action: {
                         'UPDATE_PROFILE': false,
                         'UPDATE_PASSWORD': false,
@@ -157,6 +159,9 @@ angular.module('niord.admin')
                             $scope.user.keycloakActions.push(key);
                         }
                     });
+                    if ($scope.user.language === '') {
+                        delete $scope.user.language;
+                    }
 
                     AdminUserService.addUser($scope.user)
                         .success(function () {
@@ -165,6 +170,9 @@ angular.module('niord.admin')
                         })
                         .error($scope.displayError);
                 } else if ($scope.user) {
+                    if ($scope.user.language === '') {
+                        delete $scope.user.language;
+                    }
                     AdminUserService.updateUser($scope.user)
                         .success(function () {
                             growl.info("User updated", { ttl: 3000 });

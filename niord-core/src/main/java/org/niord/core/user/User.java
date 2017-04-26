@@ -40,6 +40,8 @@ import javax.persistence.Transient;
 @NamedQueries({
         @NamedQuery(name="User.findByUsername",
                 query="SELECT u FROM User u where lower(u.username) = lower(:username)"),
+        @NamedQuery(name="User.findByUsernames",
+                query="SELECT u FROM User u where lower(u.username) in (:usernames)"),
         @NamedQuery(name="User.searchUsers",
                 query="SELECT u FROM User u where lower(u.username) like :term or lower(u.email) like :term " +
                       " or lower(u.firstName) like :term or lower(u.lastName) like :term")
