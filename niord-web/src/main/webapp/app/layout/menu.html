@@ -1,4 +1,10 @@
 
+<style ng-if="domain && domain.color">
+    .navbar {
+        border-bottom: 1px solid {{domain.color}};
+    }
+</style>
+
 <nav class="navbar navbar-inverse navbar-static-top">
     <div class="container-fluid">
         <div class="navbar-header">
