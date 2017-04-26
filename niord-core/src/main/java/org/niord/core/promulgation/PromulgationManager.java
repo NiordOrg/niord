@@ -129,7 +129,7 @@ public class PromulgationManager {
 
         if (!strict) {
             promulgationTypeService.getPromulgationTypes(message).forEach(pt -> types.put(pt.getTypeId(), pt));
-        } else {
+        } else if (message.getPromulgations() != null) {
             message.getPromulgations().removeIf(p -> !types.containsKey(p.getType().getTypeId()));
         }
 
