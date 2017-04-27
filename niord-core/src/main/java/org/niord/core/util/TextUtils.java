@@ -40,6 +40,7 @@ import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Text utility methods
@@ -203,6 +204,28 @@ public class TextUtils {
             return -1;
         }
         return s1.toLowerCase().compareTo(s2.toLowerCase());
+    }
+
+
+    /** Encode the field of a CSV row according to https://tools.ietf.org/html/rfc4180 **/
+    public static String encodeCVSField(Object value) {
+        String result = value == null ? "" : value.toString();
+        if (result.contains("\"")) {
+            result = result.replace("\"", "\"\"");
+        }
+        return result;
+    }
+
+
+    /** Simple CSV generator **/
+    public static String encodeCVSLine(String separator, Object... fieldValues) {
+        StringBuilder result = new StringBuilder();
+        separator = StringUtils.defaultIfBlank(separator, ",");
+        String line = Arrays.stream(fieldValues)
+                .map(f -> "\"" + encodeCVSField(f) + "\"")
+                .collect(Collectors.joining(separator));
+        result.append(line);
+        return result.toString();
     }
 
 

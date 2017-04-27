@@ -233,5 +233,175 @@ angular.module('niord.admin')
                     })
                     .error($scope.displayError);
             }
+        }])
+
+
+    /**
+     * ********************************************************************************
+     * ContactAdminCtrl
+     * ********************************************************************************
+     * Contacts Admin Controller
+     * Controller for the Admin contacts page
+     */
+    .controller('ContactAdminCtrl', ['$scope', '$rootScope', 'growl', 'AdminContactService', 'AuthService', 'DialogService',
+        function ($scope, $rootScope, growl, AdminContactService, AuthService, DialogService) {
+            'use strict';
+
+            $scope.contact = undefined;
+            $scope.action = "edit";
+            $scope.languages = $rootScope.modelLanguages;
+
+            $scope.params = {
+                name: ''
+            };
+            $scope.pageData = {
+                page: 1,
+                maxSize: 20
+            };
+            $scope.searchResult = {
+                data: [],
+                size: 0,
+                total: 0
+            };
+
+
+            /** Displays the error message */
+            $scope.displayError = function () {
+                growl.error("Contact operation failed", { ttl: 5000 });
+            };
+
+
+            /** Set the contact to be pristine */
+            $scope.setPristine = function () {
+                if ($scope.contactForm) {
+                    $scope.contactForm.$setPristine();
+                }
+            };
+
+
+            /** Searches the list of contacts **/
+            $scope.searchContacts = function () {
+                AdminContactService
+                    .searchContacts($scope.params, $scope.pageData)
+                        .success(function (searchResult) {
+                            $scope.searchResult = searchResult;
+                        })
+                    .error($scope.displayError);
+            };
+
+
+            // Monitor params and page
+            $scope.$watch("params", function () {
+                $scope.pageData.page = 1;
+                $scope.searchContacts();
+            }, true);
+            $scope.$watch("pageData", $scope.searchContacts, true);
+
+
+            /** Creates a new contact */
+            $scope.addContact = function() {
+                $scope.action = "add";
+                $scope.contact = {
+                    email: '',
+                    firstName: '',
+                    lastName: '',
+                    language: undefined
+                };
+                $scope.setPristine();
+            };
+
+
+            /** Edits a contact */
+            $scope.editContact = function(contact) {
+                $scope.action = "edit";
+                $scope.contact = angular.copy(contact);
+                $scope.setPristine();
+            };
+
+
+            /** Cancels editing contacts **/
+            $scope.cancelEdit = function () {
+                $scope.contact = undefined;
+                $scope.searchContacts();
+            };
+
+
+            /** Saves the currently edited contact **/
+            $scope.saveContact = function () {
+                if ($scope.contact.language === '') {
+                    delete $scope.contact.language;
+                }
+
+                if ($scope.action === 'add') {
+                    AdminContactService.createContact($scope.contact)
+                        .success(function () {
+                            growl.info("Contact added", { ttl: 3000 });
+                            $scope.cancelEdit();
+                        })
+                        .error($scope.displayError);
+
+                } else if ($scope.action === 'edit') {
+                    AdminContactService.updateContact($scope.contact)
+                        .success(function () {
+                            growl.info("Contact updated", { ttl: 3000 });
+                            $scope.cancelEdit();
+                        })
+                        .error($scope.displayError);
+                }
+            };
+
+
+            /** Deletes the given contact **/
+            $scope.deleteContact = function (contact) {
+                DialogService.showConfirmDialog(
+                    "Delete contact?", "Delete contact \"" + contact.email + "\"?\n")
+                    .then(function() {
+                        AdminContactService.deleteContact(contact)
+                            .success(function () {
+                                growl.info("Contact deleted", { ttl: 3000 });
+                                $scope.searchContacts();
+                            })
+                            .error($scope.displayError);
+                    });
+            };
+
+
+            /** Generate an export file */
+            $scope.exportContacts = function () {
+                AdminContactService
+                    .exportTicket('admin')
+                    .success(function (ticket) {
+                        var link = document.createElement("a");
+                        link.href = '/rest/contacts/export?ticket=' + ticket;
+                        link.click();
+                    });
+            };
+
+
+            /** Import a textual list of email addresses as new contacts */
+            $scope.importContacts = function () {
+                var modalOptions = {
+                    closeButtonText: 'Cancel',
+                    actionButtonText: 'Import',
+                    headerText: 'Import E-mails',
+                    importOptions: { emails: '' },
+                    templateUrl: "importEmails.html"
+                };
+
+                DialogService.showDialog({}, modalOptions)
+                    .then(function () {
+                        var emails = modalOptions.importOptions.emails;
+                        if (emails) {
+                            AdminContactService
+                                .importContactEmails(emails)
+                                .success(function (result) {
+                                    growl.info(result, { ttl: 3000 });
+                                    $scope.searchContacts();
+                                })
+                                .error($scope.displayError);
+                        }
+                    });
+            };
+
         }]);
 

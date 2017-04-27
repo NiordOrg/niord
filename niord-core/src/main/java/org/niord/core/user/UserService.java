@@ -39,14 +39,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Wraps access to the current user
+ * Defines the API for accessing users either from the database or from Keycloak
  */
 @Stateless
 @SuppressWarnings("unused")
 public class UserService extends BaseService {
+
+    public static final Pattern EMAIL_PATTERN =
+            Pattern.compile("^[_A-Za-z0-9-\\+]+(\\.[_A-Za-z0-9-]+)*@"
+                    + "[A-Za-z0-9-]+(\\.[A-Za-z0-9]+)*(\\.[A-Za-z]{2,})$");
 
     @Inject
     private Logger log;
@@ -59,6 +64,11 @@ public class UserService extends BaseService {
 
     @Inject
     KeycloakIntegrationService keycloakIntegrationService;
+
+
+    /************************/
+    /** Current User       **/
+    /************************/
 
 
     /**
@@ -160,6 +170,11 @@ public class UserService extends BaseService {
     }
 
 
+    /*************************/
+    /** Database Users      **/
+    /*************************/
+
+
     /**
      * Looks up the {@code User} with the given username
      *
@@ -170,6 +185,23 @@ public class UserService extends BaseService {
         try {
             return em.createNamedQuery("User.findByUsername", User.class)
                     .setParameter("username", username)
+                    .getSingleResult();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
+    /**
+     * Looks up the {@code User} with the email
+     *
+     * @param email the user email
+     * @return the user or null
+     */
+    public User findByEmail(String email) {
+        try {
+            return em.createNamedQuery("User.findByEmail", User.class)
+                    .setParameter("email", email)
                     .getSingleResult();
         } catch (Exception e) {
             return null;
@@ -215,7 +247,7 @@ public class UserService extends BaseService {
 
 
     /*************************/
-    /** Keycloak methods    **/
+    /** Keycloak Users      **/
     /*************************/
 
 

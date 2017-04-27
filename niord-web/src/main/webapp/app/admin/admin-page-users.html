@@ -1,227 +1,31 @@
 
-<admin-page admin-page-title="Users" parent-page="admin">
+<admin-page admin-page-title="Users &amp; Contacts" parent-page="admin">
 
-    <div ng-controller="UserAdminCtrl" ng-init="init()">
+    <uib-tabset class="framed-tabs">
 
-        <p>Manage users and group membership.</p>
+        <!-- Users -->
+        <uib-tab active="true"  ng-if="hasResourceRole('manage-users', 'realm-management')">
+            <tab-heading>
+                &nbsp;&nbsp;
+                <span class="glyphicon glyphicon-user"></span>
+                Users
+                &nbsp;&nbsp;
+            </tab-heading>
+            <div ng-include="'/app/admin/admin-page-users-user-tab.html'"></div>
+        </uib-tab>
 
+        <!-- Contacts -->
+        <uib-tab>
+            <tab-heading>
+                &nbsp;&nbsp;
+                <span class="glyphicon glyphicon-envelope"></span>
+                Contacts
+                &nbsp;&nbsp;
+            </tab-heading>
+            <div ng-include="'/app/admin/admin-page-users-contact-tab.html'"></div>
+        </uib-tab>
 
-        <!-- ************ User list **************** -->
-        <div ng-show="user === undefined">
-
-            <div class="row">
-                <div class="col-xs-8 col-sm-6 col-md-4">
-                    <input class="form-control input-sm col-sm-2" ng-model="userFilter" type="text" placeholder="Filter"
-                           ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }">
-                    <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
-                          ng-click="userFilter = ''" ng-show="userFilter != ''"></span>
-                </div>
-                <div class="col-xs-4 col-sm-6 col-md-8">
-                    <button href class="btn btn-primary btn-sm" ng-click="addUser()">
-                        <span class="glyphicon glyphicon-plus"></span> Add
-                    </button>
-
-                    <a ng-href="{{keycloakUrl}}" target="_blank" class="btn btn-primary btn-sm" style="margin-left: 5px;">
-                        Keycloak...
-                    </a>
-                </div>
-            </div>
-
-            <div class="row" style="padding-top: 20px;">
-                <div class="col-sm-12 col-md-10">
-                    <table class='table table-condensed table-hover'>
-                        <tr>
-                            <th>User name</th>
-                            <th>E-mail</th>
-                            <th>Name</th>
-                            <th>Language</th>
-                            <th></th>
-                        </tr>
-                        <tr ng-repeat="user in users">
-                            <td>{{user.username}}</td>
-                            <td>{{user.email}}</td>
-                            <td>{{user.firstName}} {{user.lastName}}</td>
-                            <td>
-                                <img ng-if="user.language" ng-src="/img/flags/{{user.language}}.png" height="14"/>
-                            </td>
-                            <td nowrap align="right">
-                                <a href ng-click="editUser(user);" title="Edit user"><i class="glyphicon glyphicon-pencil"></i></a>
-                                &nbsp;
-                                <a href ng-click="deleteUser(user);" title="Delete User"><i class="glyphicon glyphicon-trash"></i></a>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-
-            <div ng-if="hasMore" class="row">
-                <div class="col-sm-12" style="text-align: center">
-                    <button class="btn btn-default" ng-click="loadUsers(true)">Load more</button>
-                </div>
-            </div>
-        </div>
-
-
-
-        <!-- ************ Add/edit user **************** -->
-        <div ng-if="user !== undefined">
-
-            <uib-tabset class="framed-tabs">
-
-                <!-- User details -->
-                <uib-tab active="true">
-                    <tab-heading>
-                        User details
-                    </tab-heading>
-                    <div class="row">
-                        <form name="userForm" id="userForm" class="col-md-5" role="form">
-                            <fieldset ng-if="user">
-
-                                <div class="form-group">
-                                    <label class="control-label">Username</label>
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <input class="form-control input-sm" placeholder="Username" type="text"
-                                                   ng-model="user.username" ng-required="true" ng-disabled="action == 'edit'">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label class="control-label">E-mail</label>
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <input class="form-control input-sm" placeholder="E-mail" type="email"
-                                                   ng-model="user.email" ng-required="true">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label class="control-label">Name</label>
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <input class="form-control input-sm" placeholder="First name" type="text"
-                                                   ng-model="user.firstName">
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <input class="form-control input-sm" placeholder="Last name" type="text"
-                                                   ng-model="user.lastName">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label class="control-label">Password</label>
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <input class="form-control input-sm" placeholder="Password" type="password"
-                                                   ng-model="user.keycloakPassword">
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label class="control-label">Preferred Language</label>
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <select class="form-control input-sm" ng-model="user.language"
-                                                    ng-options="lang for lang in languages">
-                                                <option value=""></option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label class="control-label">Actions</label>
-                                    <div class="row">
-                                        <div class="col-sm-12">
-                                            <input type="checkbox" ng-model="user.action.UPDATE_PROFILE"> Update Profile<br>
-                                            <input type="checkbox" ng-model="user.action.UPDATE_PASSWORD"> Update Password<br>
-                                            <input type="checkbox" ng-model="user.action.VERIFY_EMAIL"> Update E-mail<br>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <button type="submit" class="btn btn-default btn-sm" ng-click="cancelEdit()">
-                                        Cancel
-                                    </button>
-                                    <button href class="btn btn-primary btn-sm" ng-click="saveUser()"
-                                            ng-disabled="userForm.$pristine || userForm.$invalid">
-                                        <span class="glyphicon glyphicon-floppy-disk"></span> Save
-                                    </button>
-                                </div>
-                            </fieldset>
-                        </form>
-                    </div>
-                </uib-tab>
-
-
-                <uib-tab ng-if="action == 'edit'">
-                    <tab-heading>
-                        Groups membership
-                    </tab-heading>
-                    <div  class="row">
-
-                        <!-- Membership list -->
-                        <div class="col-xs-12 col-sm-6 col-md-4">
-                            <div class="panel panel-default">
-                                <div class="panel-heading">
-                                    Group membership
-                                </div>
-                                <div class="panel-body">
-
-                                    <table class='table table-condensed user-group-membership'>
-                                        <tr ng-repeat="group in user.groups">
-                                            <td>{{group.path}}</td>
-                                            <td nowrap align="right">
-                                                <a ng-if="group.active" href ng-click="leaveGroup(group);" title="Leave group">
-                                                    <i class="glyphicon glyphicon-trash"></i>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Available groups tree -->
-                        <div class="col-xs-12 col-sm-6 col-md-4">
-                            <div class="panel panel-default">
-                                <div class="panel-heading">
-                                    Available Groups
-                                    <button class="btn btn-sm btn-default pull-right" style="margin-top: -5px"
-                                            ng-disabled="group == undefined" ng-click="joinGroup()">
-                                        Join
-                                    </button>
-                                </div>
-                                <div class="panel-body">
-                                    <div entity-tree entities="groups"
-                                         flag-inactive="true"
-                                         entity-selected="selectGroup(entity)"
-                                         entity-moved="moveGroup(entity, parent)"
-                                         class="user-group-tree"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <button type="submit" class="btn btn-default btn-sm" ng-click="cancelEdit()">
-                                Back
-                            </button>
-                        </div>
-                    </div>
-
-                </uib-tab>
-
-            </uib-tabset>
-        </div>
-
-    </div>
+    </uib-tabset>
 
 </admin-page>
 

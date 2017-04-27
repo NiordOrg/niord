@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Danish Maritime Authority.
+ * Copyright 2017 Danish Maritime Authority.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,9 @@
 package org.niord.core.user;
 
 import org.apache.commons.lang.StringUtils;
-import org.keycloak.representations.AccessToken;
 import org.niord.core.model.VersionedEntity;
-import org.niord.core.user.vo.UserVo;
+import org.niord.core.user.vo.ContactVo;
 
-import javax.persistence.Cacheable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Index;
@@ -30,31 +28,30 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 /**
- * Implementation of a user entity
+ * Implementation of a contact entity which may e.g. be used in mailing lists, etc.
+ * <p>
+ * Note to self: User ought to inherit from Contact, or rather, User and Contact should
+ * have a common super class with the email, firstName, lastName, and language attributes.
+ * The common-ancestor solution would allow us to search using JPA in Contact without including results from User.
  */
 @Entity
-@Cacheable
 @Table(indexes = {
-        @Index(name = "user_username", columnList="username", unique = true)
+        @Index(name = "contact_email", columnList="email", unique = true)
 })
 @NamedQueries({
-        @NamedQuery(name="User.findByUsername",
-                query="SELECT u FROM User u where lower(u.username) = lower(:username)"),
-        @NamedQuery(name="User.findByUsernames",
-                query="SELECT u FROM User u where lower(u.username) in (:usernames)"),
-        @NamedQuery(name="User.findByEmail",
-                query="SELECT u FROM User u where lower(u.email) = lower(:email)"),
-        @NamedQuery(name="User.searchUsers",
-                query="SELECT u FROM User u where lower(u.username) like :term or lower(u.email) like :term " +
-                      " or lower(u.firstName) like :term or lower(u.lastName) like :term")
+        @NamedQuery(name="Contact.findAll",
+                query="SELECT c FROM Contact c"),
+        @NamedQuery(name="Contact.findByEmail",
+                query="SELECT c FROM Contact c where lower(c.email) = :email"),
+        @NamedQuery(name="Contact.searchContacts",
+                query="SELECT c FROM Contact c where lower(c.email) like :term " +
+                      " or lower(c.firstName) like :term or lower(c.lastName) like :term")
 })
 @SuppressWarnings("unused")
-public class User extends VersionedEntity<Integer> {
+public class Contact extends VersionedEntity<Integer> {
 
-    @Column(nullable = false, unique = true)
-    private String username;
-
-    private String email;
+    @Column(nullable = false)
+    String email;
 
     String firstName;
 
@@ -62,66 +59,35 @@ public class User extends VersionedEntity<Integer> {
 
     String language;
 
-    /** Constructor **/
-    public User() {
-    }
-
 
     /** Constructor **/
-    public User(AccessToken token) {
-        copyToken(token);
+    public Contact() {
     }
 
 
     /** Constructor **/
-    public User(UserVo user) {
-        copyUser(user);
-    }
-
-
-    /** Copies the access token user values into this entity */
-    public void copyToken(AccessToken token) {
-        setUsername(token.getPreferredUsername());
-        setFirstName(token.getGivenName());
-        setLastName(token.getFamilyName());
-        setEmail(token.getEmail());
-        setLanguage(token.getLocale()); // TODO: Restrict
-    }
-
-
-    /** Returns if the user data has changed **/
-    public boolean userChanged(AccessToken token) {
-        return !StringUtils.equals(username, token.getPreferredUsername()) ||
-                !StringUtils.equals(firstName, token.getGivenName()) ||
-                !StringUtils.equals(lastName, token.getFamilyName()) ||
-                !StringUtils.equals(email, token.getEmail()) ||
-                !StringUtils.equals(language, token.getLocale());
-    }
-
-
-    /** Copies the user values to this entity **/
-    public void copyUser(UserVo user) {
-        setUsername(user.getUsername());
-        setEmail(user.getEmail());
-        setFirstName(user.getFirstName());
-        setLastName(user.getLastName());
-        setLanguage(user.getLanguage());
+    public Contact(ContactVo contact) {
+        setId(contact.getId());
+        setEmail(contact.getEmail());
+        setFirstName(contact.getFirstName());
+        setLastName(contact.getLastName());
+        setLanguage(contact.getLanguage());
     }
 
 
     /** Converts this entity to a value object */
-    public UserVo toVo() {
-        UserVo user = new UserVo();
-        user.setUsername(username);
-        user.setEmail(email);
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
-        user.setLanguage(language);
-        return user;
+    public ContactVo toVo() {
+        ContactVo contact = new ContactVo();
+        contact.setId(id);
+        contact.setEmail(email);
+        contact.setFirstName(firstName);
+        contact.setLastName(lastName);
+        contact.setLanguage(language);
+        return contact;
     }
 
 
-    /** Composes a user name from the user details */
+    /** Composes a full name from the contact details */
     @Transient
     public String getName() {
         StringBuilder name = new StringBuilder();
@@ -133,9 +99,6 @@ public class User extends VersionedEntity<Integer> {
                 name.append(" ");
             }
             name.append(lastName);
-        }
-        if (name.length() == 0) {
-            name.append(username);
         }
         return name.toString();
     }
@@ -159,8 +122,8 @@ public class User extends VersionedEntity<Integer> {
     /** {@inheritDoc} */
     @Override
     public String toString() {
-        return "User{" +
-                "username='" + username + '\'' +
+        return "Contact{" +
+                "id=" + id +
                 ", email='" + email + '\'' +
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
@@ -168,17 +131,10 @@ public class User extends VersionedEntity<Integer> {
                 '}';
     }
 
+
     /*************************/
     /** Getters and Setters **/
     /*************************/
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
 
     public String getFirstName() {
         return firstName;

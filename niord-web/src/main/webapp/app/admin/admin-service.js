@@ -369,5 +369,59 @@ angular.module('niord.admin')
                     + '/kc-groups/'+ encodeURIComponent(groupId));
             }
         };
+    }])
+
+
+    /**
+     * ********************************************************************************
+     * AdminContactService
+     * ********************************************************************************
+     * Interface for calling contact functions at the application server
+     */
+    .factory('AdminContactService', [ '$http', function($http) {
+        'use strict';
+
+        return {
+
+            /** Returns the contacts matching the search parameters **/
+            searchContacts: function(params, page) {
+                var p = 'maxSize=' + page.maxSize + '&page=' + (page.page - 1);
+                if (params.name && params.name.length > 0) {
+                    p += '&name=' + encodeURIComponent(params.name);
+                }
+                return $http.get('/rest/contacts/search?' + p);
+            },
+
+
+            /** Creates the given contact  **/
+            createContact: function(contact) {
+                return $http.post('/rest/contacts/contact/', contact);
+            },
+
+
+            /** Updates the given contact **/
+            updateContact: function(contact) {
+                return $http.put('/rest/contacts/contact/' + encodeURIComponent(contact.id), contact);
+            },
+
+
+            /** Deletes the given contact **/
+            deleteContact: function(contact) {
+                return $http['delete']('/rest/contacts/contact/' + contact.id);
+            },
+
+
+            /** Returns the ticket that can be used to generate an export file that requires the admin role */
+            exportTicket: function (role) {
+                var param = role ? '?role=' + role : '';
+                return $http.get('/rest/tickets/ticket' + param);
+            },
+
+
+            /** Imports a comma-separated list of emails as new contacts **/
+            importContactEmails: function (emails) {
+                return $http.post('/rest/contacts/import-emails', { emails: emails });
+            }
+        };
     }]);
 
