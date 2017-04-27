@@ -20,6 +20,8 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
+import org.niord.core.message.Message;
+import org.niord.core.message.MessageSeries;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.service.BaseService;
 import org.niord.model.message.Type;
@@ -118,6 +120,59 @@ public class PromulgationTypeService extends BaseService {
                 .filter(pt -> messageType == null ||
                         pt.getMessageTypes().isEmpty() ||
                         pt.getMessageTypes().contains(messageType))
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Returns the list of active promulgation types for the given service ID and message
+     * @param serviceId the promulgation service ID
+     * @param message the message
+     * @return the list of active promulgation types
+     */
+    @SuppressWarnings("all")
+    public List<PromulgationType> getActivePromulgationTypes(String serviceId, Message message) {
+
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<PromulgationType> typeQuery = cb.createQuery(PromulgationType.class);
+        Root<PromulgationType> typeRoot = typeQuery.from(PromulgationType.class);
+        CriteriaHelper<PromulgationType> criteriaHelper = new CriteriaHelper<>(cb, typeQuery);
+
+        // Only active promulgation types
+        criteriaHelper.add(cb.equal(typeRoot.get("active"), true));
+
+        // Filter on promulgation service ID
+        criteriaHelper.add(cb.equal(typeRoot.get("serviceId"), serviceId));
+
+        // Filter on domain and message series
+        Join<PromulgationType, Domain> domainJoin = typeRoot.join("domains", JoinType.LEFT);
+        Join<PromulgationType, MessageSeries> seriesJoin = domainJoin.join("messageSeries", JoinType.LEFT);
+        criteriaHelper.equals(seriesJoin.get("seriesId"), message.getMessageSeries().getSeriesId());
+
+        // If specified, filter on message type
+        /**
+         * Hibernate seems to be buggy in its handling of element-collections, so, we filter in code. See e.g.
+         * https://hibernate.atlassian.net/browse/HHH-6686
+         *
+        Expression<Collection<Type>> types = typeRoot.get("messageTypes");
+        criteriaHelper.add(cb.or(
+                cb.isEmpty(types),
+                cb.isMember(message.getType(), types)));
+         **/
+
+        // Complete the query
+        typeQuery.select(typeRoot)
+                .distinct(true)
+                .where(criteriaHelper.where())
+                .orderBy(cb.asc(typeRoot.get("priority")));
+
+        // Execute the query and update the search result
+        return em.createQuery(typeQuery)
+                .getResultList().stream()
+
+                // See Hibernate comment above - filter on message types in code for now
+                .filter(pt -> pt.getMessageTypes().isEmpty() ||
+                        pt.getMessageTypes().contains(message.getType()))
                 .collect(Collectors.toList());
     }
 

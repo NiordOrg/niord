@@ -96,7 +96,8 @@ public abstract class BasePromulgationService extends BaseService {
      * @param message the message value object
      * @param type the promulgation type
      */
-    public abstract void onLoadSystemMessage(SystemMessageVo message, PromulgationType type) throws PromulgationException;
+    public void onLoadSystemMessage(SystemMessageVo message, PromulgationType type) throws PromulgationException {
+    }
 
 
     /**
