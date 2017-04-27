@@ -99,7 +99,6 @@ public class ContactRestService {
     @Path("/contact/")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed(Roles.ADMIN)
     @NoCache
     public ContactVo addContact(ContactVo contact) throws Exception {
         log.info("Creating contact " + contact.getEmail());
@@ -115,7 +114,6 @@ public class ContactRestService {
     @Path("/contact/{id}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed(Roles.ADMIN)
     @NoCache
     public ContactVo updateContact(@PathParam("id") Integer id, ContactVo contact) throws Exception {
         if (!Objects.equals(id, contact.getId())) {
@@ -132,7 +130,6 @@ public class ContactRestService {
      */
     @DELETE
     @Path("/contact/{id}")
-    @RolesAllowed(Roles.ADMIN)
     @NoCache
     public void deleteContact(@PathParam("id") Integer id) throws Exception {
         log.info("Deleting contact " + id);
@@ -171,7 +168,6 @@ public class ContactRestService {
     @Path("/import-emails")
     @Consumes("application/json;charset=UTF-8")
     @Produces("text/plain;charset=UTF-8")
-    @RolesAllowed(Roles.ADMIN)
     @NoCache
     public String importEmails(EmailContactImportVo param) throws Exception {
 

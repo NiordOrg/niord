@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -243,6 +244,19 @@ public class UserService extends BaseService {
         return em.createNamedQuery("User.searchUsers", User.class)
                 .setParameter("term", "%" + name.toLowerCase() + "%")
                 .getResultList();
+    }
+
+
+    /**
+     * Returns a list of persisted users based on a list of template users
+     * @param users the list of users to look up persisted users for
+     * @return the list of corresponding persisted users
+     */
+    public List<User> persistedUsers(List<User> users) {
+        return users.stream()
+                .map(c -> findByUsername(c.getUsername()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
 
