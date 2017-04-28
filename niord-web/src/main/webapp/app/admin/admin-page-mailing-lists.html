@@ -1,0 +1,132 @@
+
+<admin-page admin-page-title="Mailing lists" parent-page="sysadmin" parent-page-title="Sysadmin">
+
+    <div ng-controller="MailingListAdminCtrl" ng-init="loadMailingLists()">
+
+        <p>Manage mailing lists and their associated recipient users and contacts.</p>
+
+        <!-- Add/edit mailing list -->
+        <div ng-if="mailingList !== undefined" style="margin-top: 20px">
+            <form name="edit_form" class="form-horizontal">
+
+                <div class="row">
+                    <div class="form-controls col-sm-12">
+
+                        <div class="form-group">
+                            <label for="mailingListId" class="col-sm-4 col-md-3 col-lg-2">Mailing List ID</label>
+                            <div class="col-sm-8 col-md-4 col-lg-3">
+                                <input type="text" id="mailingListId" name="mailingListId" class="form-control input-sm"
+                                       focus="focusMe" ng-model="mailingList.mailingListId" ng-disabled="editMode == 'edit'"
+                                       autocapitalize="off" autocorrect="off" autocomplete="off" required />
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4 col-md-3 col-lg-2">Name</label>
+                            <div class="col-sm-8 col-md-9 col-lg-10">
+                                <div class="row">
+                                    <div class="col-sm-6" ng-repeat="desc in mailingList.descs">
+                                        <input class="form-control input-sm" placeholder="Name" type="text"
+                                               ng-model="desc.name" ng-required="$first"
+                                               bg-flag="desc.lang" autocomplete="off">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4 col-md-3 col-lg-2">Description</label>
+                            <div class="col-sm-8 col-md-9 col-lg-10">
+                                <div class="row">
+                                    <div class="col-sm-6" ng-repeat="desc in mailingList.descs">
+                                        <input class="form-control input-sm" placeholder="Description" type="text"
+                                               ng-model="desc.description"
+                                               bg-flag="desc.lang" autocomplete="off">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;" class="row">
+                    <div class="col-sm-offset-4">
+                        <button type="submit" class="btn btn-default btn-sm" ng-click="loadMailingLists()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary btn-sm" ng-click="saveMailingList(mailingList)">
+                            <span class="glyphicon glyphicon-floppy-disk"></span>
+                            Save Mailing list
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+
+        <!-- List mailing lists -->
+        <div ng-show="mailingList === undefined">
+            <div class="row" ng-if="hasRole('sysadmin')">
+                <div class="col-xs-4 col-sm-6 col-md-8">
+                    <button type="submit" class="btn btn-primary btn-sm" ng-click="addMailingList()">
+                        <span class="glyphicon glyphicon-plus"></span> New mailing list
+                    </button>
+
+                    <span class="btn-group" style="margin-left: 5px;" uib-dropdown>
+                        <button id="single-button" type="button" class="btn btn-primary btn-sm" uib-dropdown-toggle>
+                            <span class="glyphicon glyphicon-cog"></span>
+                            <span class="caret"></span>
+                        </button>
+                        <ul uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                            <li role="menuitem"><a href="/rest/mailing-lists/all" target="_blank">Export...</a></li>
+                            <li role="menuitem"><a href ng-click="uploadMailingListsDialog()">Import...</a></li>
+                        </ul>
+                    </span>
+                </div>
+            </div>
+
+            <div class="row" style="padding-top: 20px;">
+                <div class="col-sm-12 col-md-10 col-lg-8">
+                    <table class='table table-condensed'>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>#Recipients</th>
+                            <th></th>
+                        </tr>
+                        <tr ng-repeat="mailingList in mailingLists">
+                            <td>{{mailingList.mailingListId}}</td>
+                            <td>{{mailingList.descs[0].name}}</td>
+                            <td>
+                                {{mailingList.recipientNo}}
+                            </td>
+                            <td nowrap align="right">
+                                <a href ng-click="manageRecipients(mailingList);" title="Manage Recipients">
+                                    <i class="fa fa-users"></i>
+                                </a>
+                                <span  ng-if="hasRole('sysadmin')">
+                                    &nbsp;
+                                    <a href ng-click="editMailingList(mailingList);" title="Edit Mailing list">
+                                        <i class="glyphicon glyphicon-pencil"></i>
+                                    </a>
+                                    &nbsp;
+                                    <a href ng-click="copyMailingList(mailingList);" title="Copy Mailing list">
+                                        <i class="glyphicon glyphicon-duplicate"></i>
+                                    </a>
+                                    &nbsp;
+                                    <a href ng-click="deleteMailingList(mailingList);" title="Delete Mailing list">
+                                        <i class="glyphicon glyphicon-trash"></i>
+                                    </a>
+                                </span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</admin-page>
+

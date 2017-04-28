@@ -33,7 +33,7 @@ public class MailingListVo implements ILocalizable<MailingListDescVo>, IJsonSeri
     List<UserVo> users;
     List<ContactVo> contacts;
     List<MailingListDescVo> descs;
-
+    Integer recipientNo;
 
     /** {@inheritDoc} */
     @Override
@@ -71,6 +71,14 @@ public class MailingListVo implements ILocalizable<MailingListDescVo>, IJsonSeri
 
     public void setContacts(List<ContactVo> contacts) {
         this.contacts = contacts;
+    }
+
+    public Integer getRecipientNo() {
+        return recipientNo;
+    }
+
+    public void setRecipientNo(Integer recipientNo) {
+        this.recipientNo = recipientNo;
     }
 
     @Override

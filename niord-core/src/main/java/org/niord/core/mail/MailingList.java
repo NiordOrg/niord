@@ -72,6 +72,12 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class MailingList extends VersionedEntity<Integer> implements ILocalizable<MailingListDesc> {
 
+    public static final DataFilter MESSAGE_DETAILS_FILTER =
+            DataFilter.get().fields("MailingList.details");
+    public static final DataFilter MESSAGE_DETAILS_AND_RECIPIENTS_FILTER =
+            DataFilter.get().fields("MailingList.details", "MailingList.users", "MailingList.details");
+
+
     @Column(unique = true, nullable = false)
     String mailingListId;
 
@@ -120,16 +126,20 @@ public class MailingList extends VersionedEntity<Integer> implements ILocalizabl
         mailingList.setMailingListId(mailingListId);
 
         if (compFilter.includeDetails()) {
-            if (!users.isEmpty()) {
-                mailingList.setUsers(users.stream()
+            mailingList.setDescs(getDescs(filter).stream()
+                    .map(MailingListDesc::toVo)
+                    .collect(Collectors.toList()));
+            mailingList.setRecipientNo(users.size() + contacts.size());
+        }
+        if (!users.isEmpty() && compFilter.includeField("users")) {
+            mailingList.setUsers(users.stream()
                     .map(User::toVo)
                     .collect(Collectors.toList()));
-            }
-            if (!contacts.isEmpty()) {
-                mailingList.setContacts(contacts.stream()
+        }
+        if (!contacts.isEmpty() && compFilter.includeField("contacts")) {
+            mailingList.setContacts(contacts.stream()
                     .map(Contact::toVo)
                     .collect(Collectors.toList()));
-            }
         }
 
         return mailingList;

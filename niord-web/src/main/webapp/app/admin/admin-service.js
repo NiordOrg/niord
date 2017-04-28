@@ -423,5 +423,50 @@ angular.module('niord.admin')
                 return $http.post('/rest/contacts/import-emails', { emails: emails });
             }
         };
+    }])
+
+
+    /**
+     * ********************************************************************************
+     * AdminMailingListService
+     * ********************************************************************************
+     * Interface for calling mailing list functions at the application server
+     */
+    .factory('AdminMailingListService', [ '$rootScope', '$http', function($rootScope, $http) {
+        'use strict';
+
+        return {
+
+            /** Returns all the mailing lists **/
+            getMailingLists: function() {
+                return $http.get('/rest/mailing-lists/search?lang=' + $rootScope.language);
+            },
+
+
+            /** Returns the details of the given mailing list ID **/
+            getMailingList: function(mailingListId) {
+                return $http.get('/rest/mailing-lists/mailing-list/' + encodeURIComponent(mailingListId));
+            },
+
+
+            /** Creates the given mailing list  **/
+            createMailingList: function(mailingList) {
+                return $http.post('/rest/mailing-lists/mailing-list/', mailingList);
+            },
+
+
+            /** Updates the given mailing list **/
+            updateMailingList: function(mailingList) {
+                return $http.put('/rest/mailing-lists/mailing-list/'
+                    + encodeURIComponent(mailingList.mailingListId), mailingList);
+            },
+
+
+            /** Deletes the given mailing list **/
+            deleteMailingList: function(mailingList) {
+                return $http['delete']('/rest/mailing-lists/mailing-list/'
+                    + encodeURIComponent(mailingList.mailingListId));
+            }
+        };
     }]);
 

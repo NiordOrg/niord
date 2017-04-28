@@ -75,11 +75,30 @@ public class MailingListRestService {
                 .language(lang)
                 .name(name);
 
-        DataFilter filter = DataFilter.get().lang(lang);
+        DataFilter filter = MailingList.MESSAGE_DETAILS_FILTER.lang(lang);
         
         return mailingListService.searchMailingLists(params).stream()
                 .map(m -> m.toVo(filter))
                 .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Returns the details of the mailing list with the given id
+     * @param mailingListId the ID of the mailing list
+     */
+    @GET
+    @Path("/mailing-list/{mailingListId}")
+    @Produces("application/json;charset=UTF-8")
+    @NoCache
+    public MailingListVo getMailingListDetails(@PathParam("mailingListId") String mailingListId) throws Exception {
+
+        log.info("Returning details of mailing list " + mailingListId);
+        MailingList mailingList = mailingListService.findByMailingListId(mailingListId);
+        if (mailingList == null) {
+            throw new WebApplicationException("Mailing list " + mailingListId + " not found", 404);
+        }
+        return mailingList.toVo(MailingList.MESSAGE_DETAILS_AND_RECIPIENTS_FILTER);
     }
 
 
@@ -100,6 +119,7 @@ public class MailingListRestService {
 
     /**
      * Updates the mailing list  with the given id
+     * @param mailingListId the ID of the mailing list
      * @param mailingList the template mailing list to update
      */
     @PUT

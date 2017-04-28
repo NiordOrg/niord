@@ -18,7 +18,6 @@ package org.niord.core.mail;
 import org.niord.core.mail.vo.MailingListDescVo;
 import org.niord.core.model.DescEntity;
 import org.niord.model.ILocalizedDesc;
-import org.niord.model.message.AreaDescVo;
 
 import javax.persistence.Cacheable;
 import javax.persistence.Entity;
@@ -50,10 +49,11 @@ public class MailingListDesc extends DescEntity<MailingList> {
 
 
     /** Converts this entity to a value object */
-    public AreaDescVo toVo() {
-        AreaDescVo desc = new AreaDescVo();
+    public MailingListDescVo toVo() {
+        MailingListDescVo desc = new MailingListDescVo();
         desc.setLang(lang);
         desc.setName(name);
+        desc.setDescription(description);
         return desc;
     }
 
