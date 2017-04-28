@@ -16,6 +16,7 @@
 package org.niord.core.user;
 
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.mail.IMailable;
 import org.niord.core.model.VersionedEntity;
 import org.niord.core.user.vo.ContactVo;
 
@@ -48,7 +49,7 @@ import javax.persistence.Transient;
                       " or lower(c.firstName) like :term or lower(c.lastName) like :term")
 })
 @SuppressWarnings("unused")
-public class Contact extends VersionedEntity<Integer> {
+public class Contact extends VersionedEntity<Integer> implements IMailable {
 
     @Column(nullable = false)
     String email;
@@ -89,6 +90,7 @@ public class Contact extends VersionedEntity<Integer> {
 
     /** Composes a full name from the contact details */
     @Transient
+    @Override
     public String getName() {
         StringBuilder name = new StringBuilder();
         if (StringUtils.isNotBlank(firstName)) {
@@ -101,21 +103,6 @@ public class Contact extends VersionedEntity<Integer> {
             name.append(lastName);
         }
         return name.toString();
-    }
-
-
-    /**
-     * Returns the RFC-822 internet address, e.g. name and email.
-     * Returns null if undefined.
-     * @return the RFC-822 internet address, e.g. name and email
-     */
-    @Transient
-    public String getInternetAddress() {
-        String address = getName();
-        if (StringUtils.isNotBlank(email)) {
-            address = StringUtils.isBlank(address) ? email : address + " <" + email + ">";
-        }
-        return StringUtils.isNotBlank(address) ? address : null;
     }
 
 

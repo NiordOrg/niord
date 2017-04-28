@@ -260,6 +260,15 @@ public class UserService extends BaseService {
     }
 
 
+    /**
+     * Returns all users
+     * @return all users
+     */
+    public List<User> allUsers() {
+        return getAll(User.class);
+    }
+
+
     /*************************/
     /** Keycloak Users      **/
     /*************************/

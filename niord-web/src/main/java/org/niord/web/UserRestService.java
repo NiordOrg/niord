@@ -67,6 +67,21 @@ public class UserRestService extends AbstractBatchableRestService {
     @Inject
     DomainService domainService;
 
+
+    /** Returns all users that matches the given name */
+    @GET
+    @Path("/all")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed(Roles.USER)
+    @GZIP
+    @NoCache
+    public List<UserVo> all() {
+        return userService.allUsers().stream()
+                .map(User::toVo)
+                .collect(Collectors.toList());
+    }
+
+
     /** Returns all users that matches the given name */
     @GET
     @Path("/search")

@@ -5,8 +5,8 @@
 
         <p>Manage mailing lists and their associated recipient users and contacts.</p>
 
-        <!-- Add/edit mailing list -->
-        <div ng-if="mailingList !== undefined" style="margin-top: 20px">
+        <!-- ************** Add/edit mailing list ************** -->
+        <div ng-if="mailingList !== undefined && editMode !== 'recipients'" style="margin-top: 20px">
             <form name="edit_form" class="form-horizontal">
 
                 <div class="row">
@@ -65,7 +65,13 @@
         </div>
 
 
-        <!-- List mailing lists -->
+        <!-- ************** Manage mailing list recipients ************** -->
+        <div ng-if="mailingList !== undefined && editMode === 'recipients'" style="margin-top: 20px"
+             ng-include="'/app/admin/admin-page-mailing-list-recipients.html'">
+        </div>
+
+
+        <!-- ************** List mailing lists ************** -->
         <div ng-show="mailingList === undefined">
             <div class="row" ng-if="hasRole('sysadmin')">
                 <div class="col-xs-4 col-sm-6 col-md-8">

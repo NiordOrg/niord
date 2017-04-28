@@ -466,7 +466,36 @@ angular.module('niord.admin')
             deleteMailingList: function(mailingList) {
                 return $http['delete']('/rest/mailing-lists/mailing-list/'
                     + encodeURIComponent(mailingList.mailingListId));
+            },
+
+
+            /** Returns the selected and available users for the mailing list **/
+            getRecipientUsers: function(mailingList) {
+                return $http.get('/rest/mailing-lists/mailing-list/'
+                    + encodeURIComponent(mailingList.mailingListId) + '/users');
+            },
+
+
+            /** Updates the recipient users for the mailing list **/
+            updateRecipientUsers: function(mailingList, users) {
+                return $http.put('/rest/mailing-lists/mailing-list/'
+                    + encodeURIComponent(mailingList.mailingListId) + '/users', users);
+            },
+
+
+            /** Returns the selected and available contacts for the mailing list **/
+            getRecipientContacts: function(mailingList) {
+                return $http.get('/rest/mailing-lists/mailing-list/'
+                    + encodeURIComponent(mailingList.mailingListId) + '/contacts');
+            },
+
+
+            /** Updates the recipient contacts for the mailing list **/
+            updateRecipientContacts: function(mailingList, contacts) {
+                return $http.put('/rest/mailing-lists/mailing-list/'
+                    + encodeURIComponent(mailingList.mailingListId) + '/contacts', contacts);
             }
+
         };
     }]);
 

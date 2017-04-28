@@ -71,22 +71,35 @@ angular.module('niord.admin')
 
             /** Copies a mailing list **/
             $scope.copyMailingList = function (mailingList) {
-                $scope.editMailingList(mailingList, true);
+                $scope.enterEditMode(mailingList, 'add');
             };
 
 
             /** Edits a mailing list **/
-            $scope.editMailingList = function (mailingList, copy) {
-                $scope.editMode = copy ? 'add' : 'edit';
+            $scope.editMailingList = function (mailingList) {
+                $scope.enterEditMode(mailingList, 'edit');
+            };
+
+
+            /** Enter editor mode for the mailing list **/
+            $scope.enterEditMode = function (mailingList, action) {
+                $scope.editMode = action;
                 AdminMailingListService
                     .getMailingList(mailingList.mailingListId)
                     .success(function (mailingListDetails) {
                         $scope.mailingList = mailingListDetails;
                         LangService.checkDescs($scope.mailingList, ensureNameField);
-                        if (copy) {
+                        if (action === 'add') {
                             $scope.mailingList.mailingListId = undefined;
                         }
                     });
+            };
+
+
+            /** Manage mailing list recipients **/
+            $scope.manageRecipients = function (mailingList) {
+                $scope.editMode = 'recipients';
+                $scope.mailingList = mailingList;
             };
 
 
@@ -126,11 +139,187 @@ angular.module('niord.admin')
             };
 
 
-            /** Opens the upload-mailing lists dialog **/
-            $scope.uploadMailingListsDialog = function () {
-                UploadFileService.showUploadFileDialog(
-                    'Upload MailingLists File',
-                    '/rest/mailing-lists/upload-mailing-lists',
-                    'json');
+            /** ************** Recipients ************/
+
+
+            /** Returns a filtered array of recipients */
+            function filterRecipients(recipients, filter) {
+                if (filter === undefined || filter.length === 0) {
+                    return recipients;
+                }
+                filter = filter.toLowerCase();
+                var result = [];
+                for (var x = 0; x < recipients.length; x++) {
+                    var r = recipients[x];
+                    if ((r.email && r.email.toLowerCase().indexOf(filter) !== -1) ||
+                        (r.firstName && r.firstName.toLowerCase().indexOf(filter) !== -1) ||
+                        (r.lastName && r.lastName.toLowerCase().indexOf(filter) !== -1)) {
+                        result.push(r);
+                    }
+                }
+                return result;
+            }
+
+
+            /** ************** Recipient Users ************/
+
+            $scope.userFilter = { selectedFilter: '', availableFilter: '' };
+            $scope.recipientUsers = {
+                selectedRecipients: [],
+                availableRecipients: []
             };
+
+            $scope.filterRecipientUsers = function () {
+                $scope.recipientUsers.selected = filterRecipients(
+                    $scope.recipientUsers.selectedRecipients,
+                    $scope.userFilter.selectedFilter
+                );
+                $scope.recipientUsers.available = filterRecipients(
+                    $scope.recipientUsers.availableRecipients,
+                    $scope.userFilter.availableFilter
+                );
+            };
+
+
+            /** Initialize the recipient user filter **/
+            $scope.initUserFilter = function () {
+                $scope.userFilter.selectedFilter = '';
+                $scope.userFilter.availableFilter = '';
+            };
+
+
+            /** Loads the recipient users, i.e. the selected and available users for the mailing list **/
+            $scope.loadRecipientUsers = function (mailingList) {
+                AdminMailingListService
+                    .getRecipientUsers(mailingList)
+                    .success(function (recipientUsers) {
+                        $scope.recipientUsers = recipientUsers;
+                        $scope.filterRecipientUsers();
+                    })
+            };
+
+
+            /** Updates the recipient users **/
+            $scope.updateRecipientUsers = function (mailingList) {
+                AdminMailingListService
+                    .updateRecipientUsers(mailingList, $scope.recipientUsers.selectedRecipients)
+                    .success(function (recipientUsers) {
+                        $scope.recipientUsers = recipientUsers;
+                        $scope.filterRecipientUsers();
+                    })
+            };
+
+
+            /** Adds the given user as a recipient **/
+            $scope.addRecipientUser = function (mailingList, user) {
+                $scope.recipientUsers.selectedRecipients.push(user);
+                $scope.updateRecipientUsers(mailingList);
+            };
+
+
+            /** Removes the given user as a recipient **/
+            $scope.removeRecipientUser = function (mailingList, user) {
+                var index = $scope.recipientUsers.selectedRecipients.indexOf(user);
+                $scope.recipientUsers.selectedRecipients.splice(index, 1);
+                $scope.updateRecipientUsers(mailingList);
+            };
+
+
+            /** Adds all available users as recipients **/
+            $scope.addAllRecipientUsers = function (mailingList) {
+                var r = $scope.recipientUsers;
+                r.selectedRecipients = Array.prototype.concat.apply(r.selectedRecipients, r.availableRecipients);
+                $scope.updateRecipientUsers(mailingList);
+            };
+
+
+            /** Removes all recipient users **/
+            $scope.removeAllRecipientUsers = function (mailingList) {
+                $scope.recipientUsers.selectedRecipients.length = 0;
+                $scope.updateRecipientUsers(mailingList);
+            };
+
+            $scope.$watch("userFilter", $scope.filterRecipientUsers, true);
+
+
+            /** ************** Recipient Contacts ************/
+
+            $scope.contactFilter = { selectedFilter: '', availableFilter: '' };
+            $scope.recipientContacts = {
+                selectedRecipients: [],
+                availableRecipients: []
+            };
+
+            $scope.filterRecipientContacts = function () {
+                $scope.recipientContacts.selected = filterRecipients(
+                    $scope.recipientContacts.selectedRecipients,
+                    $scope.contactFilter.selectedFilter
+                );
+                $scope.recipientContacts.available = filterRecipients(
+                    $scope.recipientContacts.availableRecipients,
+                    $scope.contactFilter.availableFilter
+                );
+            };
+
+
+            /** Initialize the recipient contact filter **/
+            $scope.initContactFilter = function () {
+                $scope.contactFilter.selectedFilter = '';
+                $scope.contactFilter.availableFilter = '';
+            };
+
+
+            /** Loads the recipient contacts, i.e. the selected and available contacts for the mailing list **/
+            $scope.loadRecipientContacts = function (mailingList) {
+                AdminMailingListService
+                    .getRecipientContacts(mailingList)
+                    .success(function (recipientContacts) {
+                        $scope.recipientContacts = recipientContacts;
+                        $scope.filterRecipientContacts();
+                    })
+            };
+
+
+            /** Updates the recipient contacts **/
+            $scope.updateRecipientContacts = function (mailingList) {
+                AdminMailingListService
+                    .updateRecipientContacts(mailingList, $scope.recipientContacts.selectedRecipients)
+                    .success(function (recipientContacts) {
+                        $scope.recipientContacts = recipientContacts;
+                        $scope.filterRecipientContacts();
+                    })
+            };
+
+
+            /** Adds the given contact as a recipient **/
+            $scope.addRecipientContact = function (mailingList, contact) {
+                $scope.recipientContacts.selectedRecipients.push(contact);
+                $scope.updateRecipientContacts(mailingList);
+            };
+
+
+            /** Removes the given contact as a recipient **/
+            $scope.removeRecipientContact = function (mailingList, contact) {
+                var index = $scope.recipientContacts.selectedRecipients.indexOf(contact);
+                $scope.recipientContacts.selectedRecipients.splice(index, 1);
+                $scope.updateRecipientContacts(mailingList);
+            };
+
+
+            /** Adds all available contacts as recipients **/
+            $scope.addAllRecipientContacts = function (mailingList) {
+                var r = $scope.recipientContacts;
+                r.selectedRecipients = Array.prototype.concat.apply(r.selectedRecipients, r.availableRecipients);
+                $scope.updateRecipientContacts(mailingList);
+            };
+
+
+            /** Removes all recipient contacts **/
+            $scope.removeAllRecipientContacts = function (mailingList) {
+                $scope.recipientContacts.selectedRecipients.length = 0;
+                $scope.updateRecipientContacts(mailingList);
+            };
+
+            $scope.$watch("contactFilter", $scope.filterRecipientContacts, true);
+
         }]);

@@ -93,7 +93,7 @@ public class MessageMailService extends BaseService {
                 scheduledMail.setSubject(mailSubject);
                 scheduledMail.setHtmlContents(mailContents);
                 scheduledMail.addRecipient(new ScheduledMailRecipient(RecipientType.TO, recipient.getAddress().toString()));
-                scheduledMail.setSender(user.getInternetAddress());
+                scheduledMail.setSender(user.computeInternetAddress());
                 saveEntity(scheduledMail);
 
                 String msg = "Mail scheduled to " + mailTo + " in " + (System.currentTimeMillis() - t0) + " ms";

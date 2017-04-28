@@ -16,6 +16,8 @@
 
 package org.niord.core.user.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.niord.core.mail.IMailable;
 import org.niord.model.IJsonSerializable;
 
 import java.util.List;
@@ -24,7 +26,7 @@ import java.util.List;
  * A value object for the User entity
  */
 @SuppressWarnings("unused")
-public class UserVo implements IJsonSerializable {
+public class UserVo implements IJsonSerializable, IMailable {
 
     // The Keycloak fields are used when creating new users in Keycloak from the Users Admin page
     String keycloakId;
@@ -36,6 +38,13 @@ public class UserVo implements IJsonSerializable {
     String firstName;
     String lastName;
     String language;
+
+    /** Not serialized to the font-end **/
+    @JsonIgnore
+    @Override
+    public String getName() {
+        return null;
+    }
 
     /*************************/
     /** Getters and Setters **/

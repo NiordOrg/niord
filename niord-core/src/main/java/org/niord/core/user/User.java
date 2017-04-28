@@ -17,6 +17,7 @@ package org.niord.core.user;
 
 import org.apache.commons.lang.StringUtils;
 import org.keycloak.representations.AccessToken;
+import org.niord.core.mail.IMailable;
 import org.niord.core.model.VersionedEntity;
 import org.niord.core.user.vo.UserVo;
 
@@ -49,7 +50,7 @@ import javax.persistence.Transient;
                       " or lower(u.firstName) like :term or lower(u.lastName) like :term")
 })
 @SuppressWarnings("unused")
-public class User extends VersionedEntity<Integer> {
+public class User extends VersionedEntity<Integer> implements IMailable {
 
     @Column(nullable = false, unique = true)
     private String username;
@@ -123,6 +124,7 @@ public class User extends VersionedEntity<Integer> {
 
     /** Composes a user name from the user details */
     @Transient
+    @Override
     public String getName() {
         StringBuilder name = new StringBuilder();
         if (StringUtils.isNotBlank(firstName)) {
@@ -141,21 +143,6 @@ public class User extends VersionedEntity<Integer> {
     }
 
 
-    /**
-     * Returns the RFC-822 internet address, e.g. name and email.
-     * Returns null if undefined.
-     * @return the RFC-822 internet address, e.g. name and email
-     */
-    @Transient
-    public String getInternetAddress() {
-        String address = getName();
-        if (StringUtils.isNotBlank(email)) {
-            address = StringUtils.isBlank(address) ? email : address + " <" + email + ">";
-        }
-        return StringUtils.isNotBlank(address) ? address : null;
-    }
-
-
     /** {@inheritDoc} */
     @Override
     public String toString() {
@@ -167,6 +154,7 @@ public class User extends VersionedEntity<Integer> {
                 ", language='" + language + '\'' +
                 '}';
     }
+
 
     /*************************/
     /** Getters and Setters **/

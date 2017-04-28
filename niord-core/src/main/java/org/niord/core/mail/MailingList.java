@@ -75,7 +75,7 @@ public class MailingList extends VersionedEntity<Integer> implements ILocalizabl
     public static final DataFilter MESSAGE_DETAILS_FILTER =
             DataFilter.get().fields("MailingList.details");
     public static final DataFilter MESSAGE_DETAILS_AND_RECIPIENTS_FILTER =
-            DataFilter.get().fields("MailingList.details", "MailingList.users", "MailingList.details");
+            DataFilter.get().fields("MailingList.details", "MailingList.users", "MailingList.contacts");
 
 
     @Column(unique = true, nullable = false)

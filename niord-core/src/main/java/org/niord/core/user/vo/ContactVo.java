@@ -16,19 +16,30 @@
 
 package org.niord.core.user.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.niord.core.mail.IMailable;
 import org.niord.model.IJsonSerializable;
 
 /**
  * A value object for the Contact entity
  */
 @SuppressWarnings("unused")
-public class ContactVo implements IJsonSerializable {
+public class ContactVo implements IJsonSerializable, IMailable {
 
     Integer id;
     String email;
     String firstName;
     String lastName;
     String language;
+
+
+    /** Not serialized to the font-end **/
+    @JsonIgnore
+    @Override
+    public String getName() {
+        return null;
+    }
+
 
     /*************************/
     /** Getters and Setters **/
