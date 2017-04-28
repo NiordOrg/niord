@@ -9,6 +9,8 @@
                 &nbsp;&nbsp;
                 <span class="glyphicon glyphicon-user"></span>
                 Users
+                &nbsp;
+                <span class="badge">{{recipientUsers.selectedRecipients.length}}</span>
                 &nbsp;&nbsp;
             </tab-heading>
             <div class="row" ng-init="initUserFilter(); loadRecipientUsers(mailingList)">
@@ -99,6 +101,8 @@
                 &nbsp;&nbsp;
                 <span class="glyphicon glyphicon-envelope"></span>
                 Contacts
+                &nbsp;
+                <span class="badge">{{recipientContacts.selectedRecipients.length}}</span>
                 &nbsp;&nbsp;
             </tab-heading>
             <div class="row" ng-init="initContactFilter(); loadRecipientContacts(mailingList)">
