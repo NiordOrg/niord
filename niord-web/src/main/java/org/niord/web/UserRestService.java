@@ -68,7 +68,7 @@ public class UserRestService extends AbstractBatchableRestService {
     DomainService domainService;
 
 
-    /** Returns all users that matches the given name */
+    /** Returns all users */
     @GET
     @Path("/all")
     @Produces("application/json;charset=UTF-8")
@@ -220,6 +220,7 @@ public class UserRestService extends AbstractBatchableRestService {
         return userService.updateKeycloakUser(user);
     }
 
+    
     /**
      * Deletes the user from Keycloak
      * @param userId the user to delete

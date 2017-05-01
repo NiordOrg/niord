@@ -438,8 +438,12 @@ angular.module('niord.admin')
         return {
 
             /** Returns all the mailing lists **/
-            getMailingLists: function() {
-                return $http.get('/rest/mailing-lists/search?lang=' + $rootScope.language);
+            getMailingLists: function(name) {
+                var params = 'lang=' + $rootScope.language;
+                if (name) {
+                    params += '&name=' + encodeURIComponent(name);
+                }
+                return $http.get('/rest/mailing-lists/search?' + params);
             },
 
 

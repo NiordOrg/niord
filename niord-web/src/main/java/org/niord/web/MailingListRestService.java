@@ -91,9 +91,13 @@ public class MailingListRestService {
     @NoCache
     public List<MailingListVo> search(
             @QueryParam("name") String name,
+            @QueryParam("username") String username,
+            @QueryParam("contactEmail") String contactEmail,
             @QueryParam("lang") @DefaultValue("en") String lang) {
 
         MailingListSearchParams params = new MailingListSearchParams()
+                .username(username)
+                .contactEmail(contactEmail)
                 .language(lang)
                 .name(name);
 
