@@ -32,12 +32,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.apache.commons.lang.StringUtils.isNotBlank;
+import static org.niord.core.util.WebUtils.getParameterValues;
 
 /**
  * Defines the message search parameters
@@ -108,41 +110,52 @@ public class MessageSearchParams extends PagedSearchParamsVo {
      * @return the MessageSearchParams initialized with parameter values
      */
     public static MessageSearchParams instantiate(Domain domain, HttpServletRequest req) {
+        return instantiate(domain, req.getParameterMap());
+    }
+
+
+    /**
+     * Returns a MessageSearchParams initialized with parameter values from a request using "default" parameter names
+     * @param domain the current domain - defines defaults for sorting
+     * @param reqParams the request parameters
+     * @return the MessageSearchParams initialized with parameter values
+     */
+    public static MessageSearchParams instantiate(Domain domain, Map<String, String[]> reqParams) {
         MessageSearchParams params = new MessageSearchParams();
-        params.language(req.getParameter("lang"))
-                .query(req.getParameter("query"))
-                .domain(req.getParameter("domain"))
-                .statuses(toSet(req.getParameterValues("status"), Status::valueOf))
-                .mainTypes(toSet(req.getParameterValues("mainType"), MainType::valueOf))
-                .types(toSet(req.getParameterValues("type"), Type::valueOf))
-                .seriesIds(toSet(req.getParameterValues("messageSeries"), Function.identity()))
-                .areaIds(toSet(req.getParameterValues("area"), Function.identity()))
-                .categoryIds(toSet(req.getParameterValues("category"), Function.identity()))
-                .chartNumbers(toSet(req.getParameterValues("chart"), Function.identity()))
-                .tags(toSet(req.getParameterValues("tag"), Function.identity()))
-                .publications(toSet(req.getParameterValues("publication"), Function.identity()))
-                .messageId(req.getParameter("messageId"))
-                .referenceLevels(checkNull(req.getParameter("referenceLevels"), Integer::valueOf))
-                .from((Long)checkNull(req.getParameter("fromDate"), Long::valueOf))
-                .to((Long)checkNull(req.getParameter("toDate"), Long::valueOf))
-                .dateType(checkNull(req.getParameter("dateType"), DateType::valueOf))
-                .username(req.getParameter("username"))
-                .userType(checkNull(req.getParameter("userType"), UserType::valueOf))
-                .commentsType(checkNull(req.getParameter("comments"), CommentsType::valueOf))
-                .viewMode(req.getParameter("viewMode"))
+        params.language(getParameterValues(reqParams, "lang"))
+                .query(getParameterValues(reqParams, "query"))
+                .domain(getParameterValues(reqParams, "domain"))
+                .statuses(toSet(reqParams.get("status"), Status::valueOf))
+                .mainTypes(toSet(reqParams.get("mainType"), MainType::valueOf))
+                .types(toSet(reqParams.get("type"), Type::valueOf))
+                .seriesIds(toSet(reqParams.get("messageSeries"), Function.identity()))
+                .areaIds(toSet(reqParams.get("area"), Function.identity()))
+                .categoryIds(toSet(reqParams.get("category"), Function.identity()))
+                .chartNumbers(toSet(reqParams.get("chart"), Function.identity()))
+                .tags(toSet(reqParams.get("tag"), Function.identity()))
+                .publications(toSet(reqParams.get("publication"), Function.identity()))
+                .messageId(getParameterValues(reqParams, "messageId"))
+                .referenceLevels(checkNull(getParameterValues(reqParams, "referenceLevels"), Integer::valueOf))
+                .from((Long)checkNull(getParameterValues(reqParams, "fromDate"), Long::valueOf))
+                .to((Long)checkNull(getParameterValues(reqParams, "toDate"), Long::valueOf))
+                .dateType(checkNull(getParameterValues(reqParams, "dateType"), DateType::valueOf))
+                .username(getParameterValues(reqParams, "username"))
+                .userType(checkNull(getParameterValues(reqParams, "userType"), UserType::valueOf))
+                .commentsType(checkNull(getParameterValues(reqParams, "comments"), CommentsType::valueOf))
+                .viewMode(getParameterValues(reqParams, "viewMode"))
 
                 // Extent parameters
-                .extent(checkNull(req.getParameter("minLat"), Double::valueOf),
-                        checkNull(req.getParameter("minLon"), Double::valueOf),
-                        checkNull(req.getParameter("maxLat"), Double::valueOf),
-                        checkNull(req.getParameter("maxLon"), Double::valueOf))
-                .includeNoPos(checkNull(req.getParameter("includeNoPos"), Boolean::valueOf))
+                .extent(checkNull(getParameterValues(reqParams, "minLat"), Double::valueOf),
+                        checkNull(getParameterValues(reqParams, "minLon"), Double::valueOf),
+                        checkNull(getParameterValues(reqParams, "maxLat"), Double::valueOf),
+                        checkNull(getParameterValues(reqParams, "maxLon"), Double::valueOf))
+                .includeNoPos(checkNull(getParameterValues(reqParams, "includeNoPos"), Boolean::valueOf))
 
                 // Standard paged search parameters
-                .maxSize(checkNull(req.getParameter("maxSize"), 100, Integer::valueOf))
-                .page(checkNull(req.getParameter("page"), 0, Integer::valueOf))
-                .sortBy(req.getParameter("sortBy"))
-                .sortOrder(checkNull(req.getParameter("sortOrder"), SortOrder::valueOf));
+                .maxSize(checkNull(getParameterValues(reqParams, "maxSize"), 100, Integer::valueOf))
+                .page(checkNull(getParameterValues(reqParams, "page"), 0, Integer::valueOf))
+                .sortBy(getParameterValues(reqParams, "sortBy"))
+                .sortOrder(checkNull(getParameterValues(reqParams, "sortOrder"), SortOrder::valueOf));
 
         // If no explicit sort order is specified, sort by domain sort order
         params.checkSortByDomain(domain);

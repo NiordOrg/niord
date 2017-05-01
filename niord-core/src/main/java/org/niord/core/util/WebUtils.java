@@ -24,6 +24,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Map;
 
 /**
  * Web-related utility functions
@@ -90,6 +91,22 @@ public class WebUtils {
         Cookie c = getCookie(request, name);
         return (c == null) ? null : c.getValue();
     }
+
+
+    /**
+     * Returns a single parameter value from the request parameter map
+     * @param reqParams the request parameter map
+     * @param name the name of the parameter
+     * @return the value or null if not defined
+     */
+    public static String getParameterValues(Map<String, String[]> reqParams, String name) {
+        if (reqParams != null && name != null) {
+            String[] values = reqParams.get(name);
+            return values == null || values.length == 0 ? null : values[0];
+        }
+        return null;
+    }
+
 
     /**
      * Reads the body of a posted request
