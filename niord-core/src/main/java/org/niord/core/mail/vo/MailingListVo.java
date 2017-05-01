@@ -21,6 +21,7 @@ import org.niord.core.user.vo.UserVo;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,6 +45,21 @@ public class MailingListVo implements ILocalizable<MailingListDescVo>, IJsonSeri
         return desc;
     }
 
+
+    public List<UserVo> checkCreateUsers() {
+        if (users == null) {
+            users = new ArrayList<>();
+        }
+        return users;
+    }
+
+
+    public List<ContactVo> checkCreateContacts() {
+        if (contacts == null) {
+            contacts = new ArrayList<>();
+        }
+        return contacts;
+    }
 
     /*************************/
     /** Getters and Setters **/

@@ -77,58 +77,115 @@
     <!-- ************ Add/edit contact **************** -->
     <div ng-if="contact !== undefined">
 
-        <div class="row">
-            <form name="contactForm" id="contactForm" class="col-md-5" role="form">
-                <fieldset ng-if="contact">
+        <uib-tabset class="framed-tabs">
 
-                    <div class="form-group">
-                        <label class="control-label">E-mail</label>
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <input class="form-control input-sm" placeholder="E-mail" type="email"
-                                       ng-model="contact.email" ng-required="true">
+            <!-- User details -->
+            <uib-tab active="true">
+                <tab-heading>
+                    <span class="glyphicon glyphicon-user"></span>
+                    Contact details
+                </tab-heading>
+                <div class="row">
+                    <form name="contactForm" id="contactForm" class="col-md-5" role="form">
+                        <fieldset ng-if="contact">
+
+                            <div class="form-group">
+                                <label class="control-label">E-mail</label>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <input class="form-control input-sm" placeholder="E-mail" type="email"
+                                               ng-model="contact.email" ng-required="true">
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+
+                            <div class="form-group">
+                                <label class="control-label">Name</label>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <input class="form-control input-sm" placeholder="First name" type="text"
+                                               ng-model="contact.firstName">
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <input class="form-control input-sm" placeholder="Last name" type="text"
+                                               ng-model="contact.lastName">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="control-label">Preferred Language</label>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <select class="form-control input-sm" ng-model="contact.language"
+                                                ng-options="lang for lang in languages">
+                                            <option value=""></option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-default btn-sm" ng-click="cancelEdit()">
+                                    Cancel
+                                </button>
+                                <button href class="btn btn-primary btn-sm" ng-click="saveContact()"
+                                        ng-disabled="contactForm.$pristine || contactForm.$invalid">
+                                    <span class="glyphicon glyphicon-floppy-disk"></span> Save
+                                </button>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+            </uib-tab>
+
+
+            <uib-tab ng-if="action == 'edit'">
+                <tab-heading>
+                    <span class="glyphicon glyphicon-envelope"></span>
+                    Mailing Lists
+                </tab-heading>
+
+                <div  class="row">
+                    <div class="col-sm-12 col-md-8">
+                        <table class='table table-condensed' style="font-size: 12px; margin-top: 10px">
+                            <tr>
+                                <th></th>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th></th>
+                            </tr>
+                            <tr ng-repeat="mailingList in mailingLists">
+                                <td><input type="checkbox" ng-model="mailingList.selected" disabled="disabled"></td>
+                                <td>{{mailingList.mailingListId}}</td>
+                                <td>{{mailingList.descs[0].name}}</td>
+                                <td>{{mailingList.descs[0].description}}</td>
+                                <td nowrap align="right">
+                                    <button class="btn btn-success btn-xs" ng-click="setRecipientStatus(mailingList, true)"
+                                            ng-if="!mailingList.selected">
+                                        Join
+                                    </button>
+                                    <button class="btn btn-danger btn-xs" ng-click="setRecipientStatus(mailingList, false)"
+                                            ng-if="mailingList.selected">
+                                        Leave
+                                    </button>
+                                </td>
+                            </tr>
+                        </table>
                     </div>
+                </div>
 
-                    <div class="form-group">
-                        <label class="control-label">Name</label>
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <input class="form-control input-sm" placeholder="First name" type="text"
-                                       ng-model="contact.firstName">
-                            </div>
-                            <div class="col-sm-6">
-                                <input class="form-control input-sm" placeholder="Last name" type="text"
-                                       ng-model="contact.lastName">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="control-label">Preferred Language</label>
-                        <div class="row">
-                            <div class="col-sm-6">
-                                <select class="form-control input-sm" ng-model="contact.language"
-                                        ng-options="lang for lang in languages">
-                                    <option value=""></option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
+                <div class="row">
+                    <div class="col-sm-12">
                         <button type="submit" class="btn btn-default btn-sm" ng-click="cancelEdit()">
-                            Cancel
-                        </button>
-                        <button href class="btn btn-primary btn-sm" ng-click="saveContact()"
-                                ng-disabled="contactForm.$pristine || contactForm.$invalid">
-                            <span class="glyphicon glyphicon-floppy-disk"></span> Save
+                            Back
                         </button>
                     </div>
-                </fieldset>
-            </form>
-        </div>
+                </div>
+
+            </uib-tab>
+        </uib-tabset>
 
     </div>
 

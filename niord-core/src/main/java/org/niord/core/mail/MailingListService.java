@@ -97,19 +97,20 @@ public class MailingListService extends BaseService {
         // Filter by the username associated with the mailing list
         if (StringUtils.isNotBlank(params.getUsername())) {
             Join<MailingList, User> userJoin = mailingListRoot.join("users", JoinType.LEFT);
-            criteriaHelper.like(userJoin.get("username"), params.getUsername());
+            criteriaHelper.equalsIgnoreCase(userJoin.get("username"), params.getUsername());
         }
 
         // Filter by the contact associated with the mailing list
         if (StringUtils.isNotBlank(params.getContactEmail())) {
             Join<MailingList, Contact> contactJoin = mailingListRoot.join("contacts", JoinType.LEFT);
-            criteriaHelper.like(contactJoin.get("email"), params.getContactEmail());
+            criteriaHelper.equalsIgnoreCase(contactJoin.get("email"), params.getContactEmail());
         }
         
         // Complete the query
         mailingListQuery.select(mailingListRoot)
                 .distinct(true)
-                .where(criteriaHelper.where());
+                .where(criteriaHelper.where())
+                .orderBy(cb.asc(mailingListRoot.get("mailingListId")));
 
         // Execute the query and update the search result
         return em.createQuery(mailingListQuery)

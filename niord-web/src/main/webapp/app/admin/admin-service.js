@@ -447,6 +447,18 @@ angular.module('niord.admin')
             },
 
 
+            /** Returns all the mailing lists for the given user **/
+            getMailingListsForUser: function(username) {
+                return $http.get('/rest/mailing-lists/search?username=' + encodeURIComponent(username));
+            },
+
+
+            /** Returns all the mailing lists for the given contact **/
+            getMailingListsForContact: function(contactEmail) {
+                return $http.get('/rest/mailing-lists/search?contactEmail=' + encodeURIComponent(contactEmail));
+            },
+
+
             /** Returns the details of the given mailing list ID **/
             getMailingList: function(mailingListId) {
                 return $http.get('/rest/mailing-lists/mailing-list/' + encodeURIComponent(mailingListId));
@@ -498,6 +510,21 @@ angular.module('niord.admin')
             updateRecipientContacts: function(mailingList, contacts) {
                 return $http.put('/rest/mailing-lists/mailing-list/'
                     + encodeURIComponent(mailingList.mailingListId) + '/contacts', contacts);
+            },
+
+
+            /** Updates the recipient status of the given user **/
+            updateUserStatus: function(mailingList, user, isRecipient) {
+                return $http.put('/rest/mailing-lists/mailing-list/'
+                    + encodeURIComponent(mailingList.mailingListId) + '/update-status',
+                    { user: user, recipient : isRecipient });
+            },
+
+            /** Updates the recipient status of the given contact **/
+            updateContactStatus: function(mailingList, contact, isRecipient) {
+                return $http.put('/rest/mailing-lists/mailing-list/'
+                    + encodeURIComponent(mailingList.mailingListId) + '/update-status',
+                    { contact: contact, recipient : isRecipient });
             }
 
         };

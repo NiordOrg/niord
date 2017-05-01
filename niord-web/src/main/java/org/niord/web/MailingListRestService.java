@@ -101,7 +101,7 @@ public class MailingListRestService {
                 .language(lang)
                 .name(name);
 
-        DataFilter filter = MailingList.MESSAGE_DETAILS_FILTER.lang(lang);
+        DataFilter filter = MailingList.LIST_DETAILS_FILTER.lang(lang);
         
         return mailingListService.searchMailingLists(params).stream()
                 .map(m -> m.toVo(filter))
@@ -129,8 +129,8 @@ public class MailingListRestService {
 
 
         DataFilter filter = includeRecipients
-                ? MailingList.MESSAGE_DETAILS_AND_RECIPIENTS_FILTER
-                : MailingList.MESSAGE_DETAILS_FILTER;
+                ? MailingList.LIST_DETAILS_AND_RECIPIENTS_FILTER
+                : MailingList.LIST_DETAILS_FILTER;
         return mailingList.toVo(filter);
     }
 
@@ -197,9 +197,9 @@ public class MailingListRestService {
     }
 
 
-    /***************************************/
-    /** Mailing list recipients           **/
-    /***************************************/
+    /********************************************/
+    /** Bulk-update Mailing list recipients    **/
+    /********************************************/
 
 
     /** Returns recipient users and available users for the given mailing list */
@@ -312,6 +312,62 @@ public class MailingListRestService {
     }
 
 
+    /***************************************************/
+    /** Individual Mailing list recipient handling    **/
+    /***************************************************/
+
+
+    /** Update the recipient status for the given mailing list and user or contact */
+    @PUT
+    @Path("/mailing-list/{mailingListId}/update-status")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public boolean updateRecipientStatus(
+            @PathParam("mailingListId") String mailingListId,
+            MailingListRecipientStatus status) throws Exception {
+
+       MailingListVo mailingList = getMailingListDetails(mailingListId, true);
+       boolean updated = false;
+       if (status.getUser() != null) {
+           boolean isUser = mailingList.getUsers() != null && mailingList.getUsers().stream()
+                   .anyMatch(u -> Objects.equals(u.getUsername(), status.getUser().getUsername()));
+           if (status.isRecipient() && !isUser) {
+               log.info("Add user " + status.getUser().getUsername() + " to mailing list " + mailingListId);
+               mailingList.checkCreateUsers().add(status.getUser());
+               updated = true;
+           } else if (!status.isRecipient() && isUser) {
+               log.info("Remove user " + status.getUser().getUsername() + " from mailing list " + mailingListId);
+               updated = mailingList.getUsers().removeIf(u -> Objects.equals(u.getUsername(), status.getUser().getUsername()));
+           }
+       } else if (status.getContact() != null) {
+           boolean isContact = mailingList.getContacts() != null && mailingList.getContacts().stream()
+                   .anyMatch(c -> Objects.equals(c.getEmail(), status.getContact().getEmail()));
+           if (status.isRecipient() && !isContact) {
+               log.info("Add contact " + status.getContact().getEmail() + " to mailing list " + mailingListId);
+               mailingList.checkCreateContacts().add(status.getContact());
+               updated = true;
+           } else if (!status.isRecipient() && isContact) {
+               log.info("Remove contact " + status.getContact().getEmail() + " from mailing list " + mailingListId);
+               updated = mailingList.getContacts().removeIf(c -> Objects.equals(c.getEmail(), status.getContact().getEmail()));
+           }
+
+       } else {
+           throw new WebApplicationException("User or contact must be specified", 400);
+       }
+
+        // If recipients were updated, persist the changes
+        if (updated) {
+            mailingListService.updateMailingListRecipients(new MailingList(mailingList));
+            return true;
+        }
+
+        // No updates
+        return false;
+    }
+
+
     /***************************************/
     /** Helper Classes                    **/
     /***************************************/
@@ -344,4 +400,36 @@ public class MailingListRestService {
             this.availableRecipients = availableRecipients;
         }
     }
+
+    @SuppressWarnings("unused")
+    public static class MailingListRecipientStatus implements IJsonSerializable {
+        UserVo user;
+        ContactVo contact;
+        boolean recipient;
+
+        public UserVo getUser() {
+            return user;
+        }
+
+        public void setUser(UserVo user) {
+            this.user = user;
+        }
+
+        public ContactVo getContact() {
+            return contact;
+        }
+
+        public void setContact(ContactVo contact) {
+            this.contact = contact;
+        }
+
+        public boolean isRecipient() {
+            return recipient;
+        }
+
+        public void setRecipient(boolean recipient) {
+            this.recipient = recipient;
+        }
+    }
+
 }

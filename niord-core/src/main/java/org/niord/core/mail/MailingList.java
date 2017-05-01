@@ -72,9 +72,9 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class MailingList extends VersionedEntity<Integer> implements ILocalizable<MailingListDesc> {
 
-    public static final DataFilter MESSAGE_DETAILS_FILTER =
+    public static final DataFilter LIST_DETAILS_FILTER =
             DataFilter.get().fields("MailingList.details");
-    public static final DataFilter MESSAGE_DETAILS_AND_RECIPIENTS_FILTER =
+    public static final DataFilter LIST_DETAILS_AND_RECIPIENTS_FILTER =
             DataFilter.get().fields("MailingList.details", "MailingList.users", "MailingList.contacts");
 
 

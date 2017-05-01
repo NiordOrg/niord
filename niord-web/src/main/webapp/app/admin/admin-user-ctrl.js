@@ -27,14 +27,17 @@ angular.module('niord.admin')
      * Users Admin Controller
      * Controller for the Admin users page
      */
-    .controller('UserAdminCtrl', ['$scope', '$rootScope', 'growl', 'AdminUserService', 'AuthService', 'DialogService',
-        function ($scope, $rootScope, growl, AdminUserService, AuthService, DialogService) {
+    .controller('UserAdminCtrl', ['$scope', '$rootScope', 'growl',
+                'AdminUserService', 'AdminMailingListService', 'AuthService', 'DialogService',
+        function ($scope, $rootScope, growl,
+                  AdminUserService, AdminMailingListService, AuthService, DialogService) {
             'use strict';
 
             $scope.groups = [];
             $scope.group = undefined;
             $scope.users = [];
             $scope.user = undefined;
+            $scope.mailingLists = [];
             $scope.groupUser = '';
             $scope.action = "edit";
             $scope.userFilter = '';
@@ -46,6 +49,7 @@ angular.module('niord.admin')
             /** Init the controller **/
             $scope.init = function () {
                 $scope.loadGroups();
+                $scope.loadMailingLists();
 
                 // Computes the Keycloak URL
                 // Template: http://localhost:8080/auth/admin/master/console/#/realms/niord/clients
@@ -107,6 +111,30 @@ angular.module('niord.admin')
             };
 
 
+            /** Loads all mailing lists **/
+            $scope.loadMailingLists = function () {
+                AdminMailingListService.getMailingLists()
+                    .success(function (mailingLists) {
+                        $scope.mailingLists = mailingLists;
+                    });
+           };
+
+
+            /** Loads the user mailing lists **/
+            $scope.loadUserMailingLists = function () {
+                AdminMailingListService.getMailingListsForUser($scope.user.username)
+                    .success(function (mailingLists) {
+                        var userMailingListIds = {};
+                        angular.forEach(mailingLists, function (mailingList) {
+                            userMailingListIds[mailingList.mailingListId] = true;
+                        });
+                        angular.forEach($scope.mailingLists, function (mailingList) {
+                            mailingList.selected = userMailingListIds[mailingList.mailingListId] === true;
+                        });
+                    });
+            };
+
+
             /** Creates a new user */
             $scope.addUser = function() {
                 $scope.action = "add";
@@ -139,6 +167,7 @@ angular.module('niord.admin')
                         $scope.setPristine();
                     })
                     .error($scope.displayError);
+                $scope.loadUserMailingLists();
             };
 
 
@@ -232,6 +261,14 @@ angular.module('niord.admin')
                         $scope.editUser($scope.user);
                     })
                     .error($scope.displayError);
+            };
+
+
+            /** Set the user recipient status of the given mailing list **/
+            $scope.setRecipientStatus = function (mailingList, isRecipient) {
+                AdminMailingListService.updateUserStatus(mailingList, $scope.user, isRecipient)
+                    .success($scope.loadUserMailingLists)
+                    .error($scope.displayError);
             }
         }])
 
@@ -243,13 +280,16 @@ angular.module('niord.admin')
      * Contacts Admin Controller
      * Controller for the Admin contacts page
      */
-    .controller('ContactAdminCtrl', ['$scope', '$rootScope', 'growl', 'AdminContactService', 'AuthService', 'DialogService',
-        function ($scope, $rootScope, growl, AdminContactService, AuthService, DialogService) {
+    .controller('ContactAdminCtrl', ['$scope', '$rootScope', 'growl',
+                'AdminContactService', 'AdminMailingListService', 'AuthService', 'DialogService',
+        function ($scope, $rootScope, growl,
+                  AdminContactService, AdminMailingListService, AuthService, DialogService) {
             'use strict';
 
             $scope.contact = undefined;
             $scope.action = "edit";
             $scope.languages = $rootScope.modelLanguages;
+            $scope.mailingLists = [];
 
             $scope.params = {
                 name: ''
@@ -298,6 +338,31 @@ angular.module('niord.admin')
             $scope.$watch("pageData", $scope.searchContacts, true);
 
 
+            /** Loads all mailing lists **/
+            $scope.loadMailingLists = function () {
+                AdminMailingListService.getMailingLists()
+                    .success(function (mailingLists) {
+                        $scope.mailingLists = mailingLists;
+                    });
+            };
+            $scope.loadMailingLists();
+
+
+            /** Loads the contact mailing lists **/
+            $scope.loadContactMailingLists = function () {
+                AdminMailingListService.getMailingListsForContact($scope.contact.email)
+                    .success(function (mailingLists) {
+                        var contactMailingListIds = {};
+                        angular.forEach(mailingLists, function (mailingList) {
+                            contactMailingListIds[mailingList.mailingListId] = true;
+                        });
+                        angular.forEach($scope.mailingLists, function (mailingList) {
+                            mailingList.selected = contactMailingListIds[mailingList.mailingListId] === true;
+                        });
+                    });
+            };
+
+
             /** Creates a new contact */
             $scope.addContact = function() {
                 $scope.action = "add";
@@ -316,6 +381,7 @@ angular.module('niord.admin')
                 $scope.action = "edit";
                 $scope.contact = angular.copy(contact);
                 $scope.setPristine();
+                $scope.loadContactMailingLists();
             };
 
 
@@ -363,6 +429,14 @@ angular.module('niord.admin')
                             })
                             .error($scope.displayError);
                     });
+            };
+
+
+            /** Set the user recipient status of the given mailing list **/
+            $scope.setRecipientStatus = function (mailingList, isRecipient) {
+                AdminMailingListService.updateContactStatus(mailingList, $scope.contact, isRecipient)
+                    .success($scope.loadContactMailingLists)
+                    .error($scope.displayError);
             };
 
 
