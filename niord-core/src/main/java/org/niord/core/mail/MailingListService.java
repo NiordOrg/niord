@@ -130,7 +130,10 @@ public class MailingListService extends BaseService {
 
 
     /**
-     * Updates the mailing list from the mailing list template
+     * Updates the mailing list from the mailing list template.
+     *
+     * Important: the list of recipients (users and contacts) are not updated. Use {@code updateMailingListRecipients}
+     * for this.
      *
      * @param mailingList the mailing list to update
      * @return the updated mailing list
@@ -141,10 +144,30 @@ public class MailingListService extends BaseService {
             throw new IllegalArgumentException("Mailing list " + mailingList.getMailingListId() + " does not exists");
         }
 
+        original.copyDescsAndRemoveBlanks(mailingList.getDescs());
+
+        original = saveEntity(original);
+
+        return original;
+    }
+
+
+    /**
+     * Updates the mailing list recipients from the mailing list template
+     *
+     * @param mailingList the mailing list to update
+     * @return the updated mailing list
+     * @noinspection all
+     */
+    public MailingList updateMailingListRecipients(MailingList mailingList) {
+        MailingList original = findByMailingListId(mailingList.getMailingListId());
+        if (original == null) {
+            throw new IllegalArgumentException("Mailing list " + mailingList.getMailingListId() + " does not exists");
+        }
+
         // Replace related entities with persisted ones
         original.setUsers(userService.persistedUsers(mailingList.getUsers()));
         original.setContacts(persistedList(Contact.class, mailingList.getContacts()));
-        original.copyDescsAndRemoveBlanks(mailingList.getDescs());
 
         original = saveEntity(original);
 
@@ -174,6 +197,7 @@ public class MailingListService extends BaseService {
     /**
      * Deletes the mailing list
      * @param mailingListId the id of the mailing list to delete
+     * @noinspection all
      */
     public boolean deleteMailingList(String mailingListId) {
 

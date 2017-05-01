@@ -113,14 +113,21 @@ public class MailingListRestService {
     @Path("/mailing-list/{mailingListId}")
     @Produces("application/json;charset=UTF-8")
     @NoCache
-    public MailingListVo getMailingListDetails(@PathParam("mailingListId") String mailingListId) {
+    public MailingListVo getMailingListDetails(
+            @PathParam("mailingListId") String mailingListId,
+            @QueryParam("includeRecipients") @DefaultValue("false") boolean includeRecipients) {
 
         log.info("Returning details of mailing list " + mailingListId);
         MailingList mailingList = mailingListService.findByMailingListId(mailingListId);
         if (mailingList == null) {
             throw new WebApplicationException("Mailing list " + mailingListId + " not found", 404);
         }
-        return mailingList.toVo(MailingList.MESSAGE_DETAILS_AND_RECIPIENTS_FILTER);
+
+
+        DataFilter filter = includeRecipients
+                ? MailingList.MESSAGE_DETAILS_AND_RECIPIENTS_FILTER
+                : MailingList.MESSAGE_DETAILS_FILTER;
+        return mailingList.toVo(filter);
     }
 
 
@@ -145,7 +152,11 @@ public class MailingListRestService {
 
 
     /**
-     * Updates the mailing list  with the given id
+     * Updates the mailing list  with the given id.
+     *
+     * Important: the list of recipients (users and contacts) are not updated.
+     * Use "/mailing-list/{mailingListId}/users" and "/mailing-list/{mailingListId}/contacts" for this.
+     *
      * @param mailingListId the ID of the mailing list
      * @param mailingList the template mailing list to update
      * @noinspection all
@@ -231,9 +242,11 @@ public class MailingListRestService {
 
         // Update the recipient users
         log.info("Updating " + users.size() + " recipient users of mailing list " + mailingListId);
-        MailingListVo mailingList = getMailingListDetails(mailingListId);
+        MailingListVo mailingList = getMailingListDetails(mailingListId, true);
         mailingList.setUsers(users);
-        updateMailingList(mailingListId, mailingList);
+
+        // Persist the changes
+        mailingListService.updateMailingListRecipients(new MailingList(mailingList));
 
         // Returns the updated recipient users
         return getRecipientUsers(mailingListId);
@@ -284,9 +297,11 @@ public class MailingListRestService {
 
         // Update the recipient contacts
         log.info("Updating " + contacts.size() + " recipient contacts of mailing list " + mailingListId);
-        MailingListVo mailingList = getMailingListDetails(mailingListId);
+        MailingListVo mailingList = getMailingListDetails(mailingListId, true);
         mailingList.setContacts(contacts);
-        updateMailingList(mailingListId, mailingList);
+
+        // Persist the changes
+        mailingListService.updateMailingListRecipients(new MailingList(mailingList));
 
         // Returns the updated recipient contacts
         return getRecipientContacts(mailingListId);
