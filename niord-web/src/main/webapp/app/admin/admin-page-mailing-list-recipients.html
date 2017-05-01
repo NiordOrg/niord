@@ -13,85 +13,22 @@
                 <span class="badge">{{recipientUsers.selectedRecipients.length}}</span>
                 &nbsp;&nbsp;
             </tab-heading>
-            <div class="row" ng-init="initUserFilter(); loadRecipientUsers(mailingList)">
+            <div ng-init="loadRecipientUsers(mailingList)" style="padding: 10px">
 
-                <div class="col-sm-12 col-md-6">
-                    <div class="mailing-list-header">Unselected Users</div>
-                    <div class="mailing-list-table">
-                        <table class='table table-condensed table-hover' style="margin-bottom: 0">
-                            <tr style="background-color: #eee">
-                                <th>E-mail</th>
-                                <th>Name</th>
-                                <th width="60"></th>
-                            </tr>
-                            <tr ng-repeat="r in recipientUsers.available">
-                                <td>{{r.email}}</td>
-                                <td>{{r.firstName + ' ' + r.lastName}}</td>
-                                <td nowrap>
-                                    <a href ng-click="addRecipientUser(mailingList, r)">
-                                        <i class="glyphicon glyphicon-plus"></i>
-                                        Add
-                                    </a>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    <div class="mailing-list-buttons row" style="margin-left: 0; margin-right: 0">
-                        <div class="col-sm-8">
-                            <input class="form-control input-xs col-sm-2" ng-model="userFilter.availableFilter"
-                                   type="text" placeholder="Filter"
-                                   ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }">
-                            <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
-                                  ng-click="userFilter.availableFilter = ''" ng-show="userFilter.availableFilter != ''"></span>
-                        </div>
+                <mailing-list-recipient-selector recipient-data="recipientUsers"></mailing-list-recipient-selector>
 
-                        <div class="col-sm-4" style="text-align: right">
-                            <button class="btn btn-default btn-xs"
-                                    ng-click="addAllRecipientUsers(mailingList)">
-                                Add All
-                            </button>
-                        </div>
+                <div style="margin-top: 20px;" class="row">
+                    <div class="col-sm-12" style="text-align: center">
+                        <button type="submit" class="btn btn-default btn-sm" ng-click="loadMailingLists()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary btn-sm" ng-click="updateRecipientUsers(mailingList)">
+                            <span class="glyphicon glyphicon-floppy-disk"></span>
+                            Save User Selection
+                        </button>
                     </div>
                 </div>
 
-                <div class="col-sm-12 col-md-6">
-                    <div class="mailing-list-header">Selected Users</div>
-                    <div class="mailing-list-table">
-                        <table class='table table-condensed table-hover' style="margin-bottom: 0">
-                            <tr style="background-color: #eee">
-                                <th>E-mail</th>
-                                <th>Name</th>
-                                <th width="60"></th>
-                            </tr>
-                            <tr ng-repeat="r in recipientUsers.selected">
-                                <td>{{r.email}}</td>
-                                <td>{{r.firstName + ' ' + r.lastName}}</td>
-                                <td nowrap>
-                                    <a href ng-click="removeRecipientUser(mailingList, r)">
-                                        <i class="glyphicon glyphicon-trash"></i>
-                                        Remove
-                                    </a>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    <div class="mailing-list-buttons row" style="margin-left: 0; margin-right: 0">
-                        <div class="col-sm-8">
-                            <input class="form-control input-xs col-sm-2" ng-model="userFilter.selectedFilter"
-                                   type="text" placeholder="Filter"
-                                   ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }">
-                            <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
-                                  ng-click="userFilter.selectedFilter = ''" ng-show="userFilter.selectedFilter != ''"></span>
-                        </div>
-
-                        <div class="col-sm-4" style="text-align: right">
-                            <button class="btn btn-default btn-xs"
-                                    ng-click="removeAllRecipientUsers(mailingList)">
-                                Remove All
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </div>
         </uib-tab>
 
@@ -105,97 +42,25 @@
                 <span class="badge">{{recipientContacts.selectedRecipients.length}}</span>
                 &nbsp;&nbsp;
             </tab-heading>
-            <div class="row" ng-init="initContactFilter(); loadRecipientContacts(mailingList)">
+            <div ng-init="loadRecipientContacts(mailingList)" style="padding: 10px">
 
-                <div class="col-sm-12 col-md-6">
-                    <div class="mailing-list-header">Unselected Contacts</div>
-                    <div class="mailing-list-table">
-                        <table class='table table-condensed table-hover' style="margin-bottom: 0">
-                            <tr style="background-color: #eee">
-                                <th>E-mail</th>
-                                <th>Name</th>
-                                <th width="60"></th>
-                            </tr>
-                            <tr ng-repeat="r in recipientContacts.available">
-                                <td>{{r.email}}</td>
-                                <td>{{r.firstName + ' ' + r.lastName}}</td>
-                                <td nowrap>
-                                    <a href ng-click="addRecipientContact(mailingList, r)">
-                                        <i class="glyphicon glyphicon-plus"></i>
-                                        Add
-                                    </a>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    <div class="mailing-list-buttons row" style="margin-left: 0; margin-right: 0">
-                        <div class="col-sm-8">
-                            <input class="form-control input-xs col-sm-2" ng-model="contactFilter.availableFilter"
-                                   type="text" placeholder="Filter"
-                                   ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }">
-                            <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
-                                  ng-click="contactFilter.availableFilter = ''" ng-show="contactFilter.availableFilter != ''"></span>
-                        </div>
+                <mailing-list-recipient-selector recipient-data="recipientContacts"></mailing-list-recipient-selector>
 
-                        <div class="col-sm-4" style="text-align: right">
-                            <button class="btn btn-default btn-xs"
-                                    ng-click="addAllRecipientContacts(mailingList)">
-                                Add All
-                            </button>
-                        </div>
+                <div style="margin-top: 20px;" class="row">
+                    <div class="col-sm-12" style="text-align: center">
+                        <button type="submit" class="btn btn-default btn-sm" ng-click="loadMailingLists()">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary btn-sm" ng-click="updateRecipientContacts(mailingList)">
+                            <span class="glyphicon glyphicon-floppy-disk"></span>
+                            Save Contact Selection
+                        </button>
                     </div>
                 </div>
 
-                <div class="col-sm-12 col-md-6">
-                    <div class="mailing-list-header">Selected Contacts</div>
-                    <div class="mailing-list-table">
-                        <table class='table table-condensed table-hover' style="margin-bottom: 0">
-                            <tr style="background-color: #eee">
-                                <th>E-mail</th>
-                                <th>Name</th>
-                                <th width="60"></th>
-                            </tr>
-                            <tr ng-repeat="r in recipientContacts.selected">
-                                <td>{{r.email}}</td>
-                                <td>{{r.firstName + ' ' + r.lastName}}</td>
-                                <td nowrap>
-                                    <a href ng-click="removeRecipientContact(mailingList, r)">
-                                        <i class="glyphicon glyphicon-trash"></i>
-                                        Remove
-                                    </a>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                    <div class="mailing-list-buttons row" style="margin-left: 0; margin-right: 0">
-                        <div class="col-sm-8">
-                            <input class="form-control input-xs col-sm-2" ng-model="contactFilter.selectedFilter"
-                                   type="text" placeholder="Filter"
-                                   ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }">
-                            <span class="glyphicon glyphicon-remove clear-input" style="right: 22px"
-                                  ng-click="contactFilter.selectedFilter = ''" ng-show="contactFilter.selectedFilter != ''"></span>
-                        </div>
-
-                        <div class="col-sm-4" style="text-align: right">
-                            <button class="btn btn-default btn-xs"
-                                    ng-click="removeAllRecipientContacts(mailingList)">
-                                Remove All
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </div>
         </uib-tab>
 
     </uib-tabset>
 
-
-
-    <div style="margin-top: 20px;" class="row">
-        <div class="col-sm-offset-4">
-            <button type="submit" class="btn btn-primary btn-sm" ng-click="loadMailingLists()">
-                Back
-            </button>
-        </div>
-    </div>
 </form>

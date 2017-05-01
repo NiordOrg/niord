@@ -70,5 +70,124 @@ angular.module('niord.common')
 
             }
         }
+    }])
+
+        
+    /*************************************
+     * Recipient selector panel for mailing lists
+     *************************************/
+    .directive('mailingListRecipientSelector', [function () {
+        return {
+            restrict: 'EA',
+            templateUrl: '/app/admin/mailing-list-recipient-selector.html',
+            replace: true,
+            scope: {
+                recipientData:   "="
+            },
+            link: function(scope) {
+
+
+                /** Returns a filtered array of recipients */
+                function filterRecipients(recipients, filter) {
+                    if (filter === undefined || filter.length === 0) {
+                        return recipients;
+                    }
+                    filter = filter.toLowerCase();
+                    var result = [];
+                    for (var x = 0; x < recipients.length; x++) {
+                        var r = recipients[x];
+                        if ((r.email && r.email.toLowerCase().indexOf(filter) !== -1) ||
+                            (r.firstName && r.firstName.toLowerCase().indexOf(filter) !== -1) ||
+                            (r.lastName && r.lastName.toLowerCase().indexOf(filter) !== -1)) {
+                            result.push(r);
+                        }
+                    }
+                    return result;
+                }
+
+
+                function sortRecipients(recipients) {
+                    recipients.sort(function(a,b){
+                        return a.email.toLowerCase().localeCompare(b.email.toLowerCase());
+                    })
+                }
+
+
+                scope.filter = { selectedFilter: '', availableFilter: '' };
+                scope.filteredData = {
+                    selectedRecipients: [],
+                    availableRecipients: []
+                };
+
+
+                scope.filterRecipients = function () {
+                    scope.filteredData.selectedRecipients = filterRecipients(
+                        scope.recipientData.selectedRecipients,
+                        scope.filter.selectedFilter
+                    );
+                    scope.filteredData.availableRecipients = filterRecipients(
+                        scope.recipientData.availableRecipients,
+                        scope.filter.availableFilter
+                    );
+                };
+
+
+                /** Called when the recipient data has been updated **/
+                scope.recipientDataUpdated = function () {
+                    sortRecipients(scope.recipientData.availableRecipients);
+                    sortRecipients(scope.recipientData.selectedRecipients);
+                    scope.filterRecipients();
+                };
+
+
+                /** Initialize the recipient filter **/
+                scope.initFilter = function () {
+                    scope.filter.selectedFilter = '';
+                    scope.filter.availableFilter = '';
+                };
+
+
+                /** Selects the given recipient **/
+                scope.addRecipient = function (recipient) {
+                    scope.recipientData.selectedRecipients.push(recipient);
+                    var index = scope.recipientData.availableRecipients.indexOf(recipient);
+                    scope.recipientData.availableRecipients.splice(index, 1);
+                    scope.recipientDataUpdated();
+                };
+
+
+                /** Un-selects the given recipient **/
+                scope.removeRecipient = function (recipient) {
+                    var index = scope.recipientData.selectedRecipients.indexOf(recipient);
+                    scope.recipientData.selectedRecipients.splice(index, 1);
+                    scope.recipientData.availableRecipients.push(recipient);
+                    scope.recipientDataUpdated();
+                };
+
+
+                /** Selects all available recipients **/
+                scope.addAllRecipients = function () {
+                    var r = scope.recipientData;
+                    r.selectedRecipients = Array.prototype.concat.apply(r.selectedRecipients, r.availableRecipients);
+                    scope.recipientData.availableRecipients.length = 0;
+                    scope.recipientDataUpdated();
+                };
+
+
+                /** Un-selects all recipients **/
+                scope.removeAllRecipients = function () {
+                    var r = scope.recipientData;
+                    r.availableRecipients = Array.prototype.concat.apply(r.selectedRecipients, r.availableRecipients);
+                    scope.recipientData.selectedRecipients.length = 0;
+                    scope.recipientDataUpdated();
+                };
+
+
+                scope.$watch("filter", scope.filterRecipients, true);
+                scope.$watch("recipientData", scope.recipientDataUpdated);
+
+            }
+        };
     }]);
+
 
