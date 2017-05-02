@@ -16,6 +16,7 @@
 package org.niord.core.util;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -23,8 +24,13 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Web-related utility functions
@@ -41,16 +47,16 @@ public class WebUtils {
      * @return the base URL
      */
     public static String getWebAppUrl(HttpServletRequest request, String... appends) {
-        String result = String.format(
+        StringBuilder result = new StringBuilder(String.format(
                 "%s://%s%s%s",
                 request.getScheme(),
                 request.getServerName(),
                 request.getServerPort() == 80 || request.getServerPort() == 443 ? "" : ":" + request.getServerPort(),
-                request.getContextPath());
+                request.getContextPath()));
         for (String a : appends) {
-            result = result + a;
+            result.append(a);
         }
-        return result;
+        return result.toString();
     }
 
     /**
@@ -105,6 +111,39 @@ public class WebUtils {
             return values == null || values.length == 0 ? null : values[0];
         }
         return null;
+    }
+
+
+    /**
+     * Parses the URL (or part of the URL) to extract a request parameter map.
+     * @param url the URL to parse
+     * @return the parsed request parameter map
+     */
+    public static Map<String, String[]> parseParameterMap(String url) {
+        Map<String, List<String>> params = new HashMap<>();
+
+        if (StringUtils.isNotBlank(url)) {
+            int index = url.indexOf("?");
+            if (index > -1) {
+                url = url.substring(index + 1);
+            }
+        }
+        if (StringUtils.isNotBlank(url)) {
+            for (String kv : url.split("&")) {
+                String key, value = "";
+                int x = kv.indexOf("=");
+                if (x == -1) {
+                    key = urlDecode(kv);
+                } else {
+                    key = urlDecode(kv.substring(0, x));
+                    value = urlDecode(kv.substring(x + 1));
+                }
+                params.computeIfAbsent(key, v -> new ArrayList<>())
+                        .add(value);
+            }
+        }
+        return params.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> (String[])e.getValue().toArray(new String[0])));
     }
 
 
@@ -187,5 +226,19 @@ public class WebUtils {
                     .replaceAll("\\%2F", "/")
                     .replaceAll("\\%3B", ";")
                     .replaceAll("\\%3F", "?");
+    }
+
+
+    /**
+     * Wraps a call to URLDecoder.decode(value, "UTF-8") to prevent the exception signature
+     * @param value the value to decode
+     * @return the decoded value or the original value in case of an exception
+     */
+    public static String urlDecode(String value) {
+        try {
+            return URLDecoder.decode(value, "UTF-8");
+        } catch (Exception e) {
+            return value;
+        }
     }
 }

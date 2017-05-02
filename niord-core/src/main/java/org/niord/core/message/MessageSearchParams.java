@@ -21,6 +21,7 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.domain.Domain;
 import org.niord.core.geojson.JtsConverter;
 import org.niord.core.util.TimeUtils;
+import org.niord.core.util.WebUtils;
 import org.niord.model.message.MainType;
 import org.niord.model.message.Status;
 import org.niord.model.message.Type;
@@ -105,6 +106,17 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
 
     /**
+     * Returns a MessageSearchParams initialized with parameter values from a URL using "default" parameter names
+     * @param domain the current domain - defines defaults for sorting
+     * @param url the URL
+     * @return the MessageSearchParams initialized with parameter values
+     */
+    public static MessageSearchParams instantiate(Domain domain, String url) {
+        return instantiate(domain, WebUtils.parseParameterMap(url));
+    }
+
+
+    /**
      * Returns a MessageSearchParams initialized with parameter values from a request using "default" parameter names
      * @param domain the current domain - defines defaults for sorting
      * @param req the servlet request
@@ -116,7 +128,8 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
 
     /**
-     * Returns a MessageSearchParams initialized with parameter values from a request using "default" parameter names
+     * Returns a MessageSearchParams initialized with parameter values from a request parameter map
+     * using "default" parameter names
      * @param domain the current domain - defines defaults for sorting
      * @param reqParams the request parameters
      * @return the MessageSearchParams initialized with parameter values
