@@ -71,6 +71,16 @@ public class PromulgationTypeService extends BaseService {
 
 
     /**
+     * Returns all active promulgation types
+     * @return all active promulgation types
+     */
+    public List<PromulgationType> getActive() {
+        return em.createNamedQuery("PromulgationType.findActive", PromulgationType.class)
+                .getResultList();
+    }
+
+
+    /**
      * Returns the list of active promulgation types for the current domain
      * @param messageType optionally specify a message type that must be matched by the promulgation types
      * @return the list of active promulgation types

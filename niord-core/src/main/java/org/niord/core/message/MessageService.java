@@ -38,6 +38,7 @@ import org.niord.core.message.MessageSearchParams.UserType;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.BaseMessagePromulgation;
 import org.niord.core.promulgation.PromulgationManager;
+import org.niord.core.promulgation.PromulgationType;
 import org.niord.core.publication.PublicationService;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
@@ -1158,6 +1159,15 @@ public class MessageService extends BaseService {
             // Next, add messages referencing the message ID
             findReferencingMessageIds(referencedIds, param.getMessageId(), levels);
             criteriaHelper.in(msgRoot.get("id"), referencedIds);
+        }
+
+
+        // Promulgation types
+        if (!param.getPromulgationTypes().isEmpty()) {
+            Join<Message, BaseMessagePromulgation> promulgationJoin = msgRoot.join("promulgations", JoinType.LEFT);
+            Join<BaseMessagePromulgation, PromulgationType> promulgationTypeJoin = promulgationJoin.join("type", JoinType.LEFT);
+            criteriaHelper.equals(promulgationJoin.get("promulgate"), true);
+            criteriaHelper.in(promulgationTypeJoin.get("typeId"), param.getPromulgationTypes());
         }
 
 

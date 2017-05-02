@@ -96,6 +96,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     Set<String> chartNumbers = new HashSet<>();
     Set<String> tags = new HashSet<>();
     Set<String> publications = new HashSet<>();
+    Set<String> promulgationTypes = new HashSet<>();
     String viewMode;
 
     Geometry extent;
@@ -134,6 +135,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
                 .chartNumbers(toSet(reqParams.get("chart"), Function.identity()))
                 .tags(toSet(reqParams.get("tag"), Function.identity()))
                 .publications(toSet(reqParams.get("publication"), Function.identity()))
+                .promulgationTypes(toSet(reqParams.get("promulgationType"), Function.identity()))
                 .messageId(getParameterValues(reqParams, "messageId"))
                 .referenceLevels(checkNull(getParameterValues(reqParams, "referenceLevels"), Integer::valueOf))
                 .from((Long)checkNull(getParameterValues(reqParams, "fromDate"), Long::valueOf))
@@ -280,6 +282,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         if (chartNumbers.size() > 0) { desc.add(String.format("Chart Numbers: %s", chartNumbers)); }
         if (tags.size() > 0) { desc.add(String.format("Tags: %s", tags)); }
         if (publications.size() > 0) { desc.add(String.format("Publications: %s", publications)); }
+        if (promulgationTypes.size() > 0) { desc.add(String.format("Promulgation Types: %s", promulgationTypes)); }
         if (extent != null) { desc.add(String.format("Extent: '%s'", extent.toString())); }
 
         return desc.stream().collect(Collectors.joining(", "));
@@ -500,6 +503,15 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public MessageSearchParams publications(Set<String> publications) {
         this.publications = toSet(publications);
+        return this;
+    }
+
+    public Set<String> getPromulgationTypes() {
+        return promulgationTypes;
+    }
+
+    public MessageSearchParams promulgationTypes(Set<String> promulgationTypes) {
+        this.promulgationTypes = promulgationTypes;
         return this;
     }
 
