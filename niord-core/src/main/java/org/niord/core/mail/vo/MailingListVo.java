@@ -31,10 +31,12 @@ import java.util.List;
 public class MailingListVo implements ILocalizable<MailingListDescVo>, IJsonSerializable {
 
     String mailingListId;
+    Boolean active;
     List<UserVo> users;
     List<ContactVo> contacts;
     List<MailingListDescVo> descs;
     Integer recipientNo;
+
 
     /** {@inheritDoc} */
     @Override
@@ -61,6 +63,7 @@ public class MailingListVo implements ILocalizable<MailingListDescVo>, IJsonSeri
         return contacts;
     }
 
+
     /*************************/
     /** Getters and Setters **/
     /*************************/
@@ -71,6 +74,14 @@ public class MailingListVo implements ILocalizable<MailingListDescVo>, IJsonSeri
 
     public void setMailingListId(String mailingListId) {
         this.mailingListId = mailingListId;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
     }
 
     public List<UserVo> getUsers() {

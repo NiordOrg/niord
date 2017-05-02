@@ -145,6 +145,7 @@ public class MailingListService extends BaseService {
             throw new IllegalArgumentException("Mailing list " + mailingList.getMailingListId() + " does not exists");
         }
 
+        original.setActive(mailingList.isActive());
         original.copyDescsAndRemoveBlanks(mailingList.getDescs());
 
         original = saveEntity(original);

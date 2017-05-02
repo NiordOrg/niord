@@ -81,6 +81,8 @@ public class MailingList extends VersionedEntity<Integer> implements ILocalizabl
     @Column(unique = true, nullable = false)
     String mailingListId;
 
+    boolean active;
+
     @ManyToMany
     List<User> users = new ArrayList<>();
 
@@ -99,6 +101,7 @@ public class MailingList extends VersionedEntity<Integer> implements ILocalizabl
     /** Constructor **/
     public MailingList(MailingListVo mailingList) {
         this.mailingListId = mailingList.getMailingListId();
+        this.active = mailingList.getActive() != null && mailingList.getActive();
         if (mailingList.getUsers() != null) {
             this.users.addAll(mailingList.getUsers().stream()
                 .map(User::new)
@@ -124,6 +127,7 @@ public class MailingList extends VersionedEntity<Integer> implements ILocalizabl
 
         MailingListVo mailingList = new MailingListVo();
         mailingList.setMailingListId(mailingListId);
+        mailingList.setActive(active);
 
         if (compFilter.includeDetails()) {
             mailingList.setDescs(getDescs(filter).stream()
@@ -168,6 +172,14 @@ public class MailingList extends VersionedEntity<Integer> implements ILocalizabl
 
     public void setMailingListId(String mailingListId) {
         this.mailingListId = mailingListId;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public List<User> getUsers() {

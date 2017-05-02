@@ -62,6 +62,7 @@ angular.module('niord.admin')
                 $scope.editMode = 'add';
                 $scope.mailingList = {
                     mailingListId: undefined,
+                    active: true,
                     users: [],
                     contacts: []
                 };
