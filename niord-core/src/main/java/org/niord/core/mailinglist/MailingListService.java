@@ -140,17 +140,17 @@ public class MailingListService extends BaseService {
      * @return the updated mailing list
      */
     public MailingList updateMailingList(MailingList mailingList) {
-        MailingList original = findByMailingListId(mailingList.getMailingListId());
+        final MailingList original = findByMailingListId(mailingList.getMailingListId());
         if (original == null) {
             throw new IllegalArgumentException("Mailing list " + mailingList.getMailingListId() + " does not exists");
         }
 
         original.setActive(mailingList.isActive());
         original.copyDescsAndRemoveBlanks(mailingList.getDescs());
+        original.getTriggers().clear();
+        mailingList.getTriggers().forEach(original::addTrigger);
 
-        original = saveEntity(original);
-
-        return original;
+        return saveEntity(original);
     }
 
 

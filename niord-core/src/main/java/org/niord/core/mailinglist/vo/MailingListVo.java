@@ -35,6 +35,7 @@ public class MailingListVo implements ILocalizable<MailingListDescVo>, IJsonSeri
     List<UserVo> users;
     List<ContactVo> contacts;
     List<MailingListDescVo> descs;
+    List<MailingListTriggerVo> triggers;
     Integer recipientNo;
 
 
@@ -61,6 +62,14 @@ public class MailingListVo implements ILocalizable<MailingListDescVo>, IJsonSeri
             contacts = new ArrayList<>();
         }
         return contacts;
+    }
+
+
+    public List<MailingListTriggerVo> checkCreateTriggers() {
+        if (triggers == null) {
+            triggers = new ArrayList<>();
+        }
+        return triggers;
     }
 
 
@@ -116,5 +125,13 @@ public class MailingListVo implements ILocalizable<MailingListDescVo>, IJsonSeri
     @Override
     public void setDescs(List<MailingListDescVo> descs) {
         this.descs = descs;
+    }
+
+    public List<MailingListTriggerVo> getTriggers() {
+        return triggers;
+    }
+
+    public void setTriggers(List<MailingListTriggerVo> triggers) {
+        this.triggers = triggers;
     }
 }

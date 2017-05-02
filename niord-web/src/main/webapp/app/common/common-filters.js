@@ -88,6 +88,16 @@ angular.module('niord.common')
                 .replace(/ /g, "&#8203;&nbsp;&#8203;")
                 .replace(/\r\n|\r|\n/g, "<br />");
         };
+    })
+
+
+    /** Serializes an array using the given separator **/
+    .filter('serialize', function () {
+        return function (input, separator) {
+            input = input || [];
+            separator = separator || ',';
+            return input.join(separator);
+        };
     });
 
 

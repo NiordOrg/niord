@@ -36,33 +36,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Defines a mailing list.
+ * Defines a mailing list, including a list of users and contacts that should receive mails via the list.
  * <p>
- * At the moment, mailing lists amounts to a named collection of users and contacts, and is
- * user directly by promulgation types to determine the recipients of promulgation mails.
+ * A mailing list can also be associated with a list of "triggers" that will cause the mailing list to be
+ * enacted automatically based on the trigger definitions.
  * <p>
- * In the future, mailing lists should be "auto-executable" by extending them in the following manner:
- * <ul>
- *     <li>
- *         Mailing lists could be associated with script resources (Freemarker and server-side JavaScript)
- *         that performs the fetching of messages and generating the PDF report.
- *     </li>
- *     <li>
- *         A mailing list could be scheduled as running either daily, or on a specific week-day at
- *         a certain time.
- *     </li>
- *     <li>
- *         Alternatively, it could be triggered by status changes of messages.
- *     </li>
- *     <li>
- *         In addition, it should be possible to specify a message filter, e.g. domain, message series,
- *         area, category, geometry, etc. used to compute the list of messages to include.
- *     </li>
- *     <li>
- *         Ultimately, end-users should be allowed to register as contacts (via Niord-proxy) and create their
- *         own mailing lists.
- *     </li>
- * </ul>
+ * A future addition would be to allow users and contacts (via a REST API) to create their own
+ * personalized mailing lists.
  */
 @Entity
 @NamedQueries({
@@ -92,6 +72,9 @@ public class MailingList extends VersionedEntity<Integer> implements ILocalizabl
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
     List<MailingListDesc> descs = new ArrayList<>();
 
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "mailingList", orphanRemoval = true)
+    List<MailingListTrigger> triggers = new ArrayList<>();
+
 
     /** Constructor **/
     public MailingList() {
@@ -118,6 +101,9 @@ public class MailingList extends VersionedEntity<Integer> implements ILocalizabl
                     .forEach(desc -> createDesc(desc.getLang())
                             .copyDesc(new MailingListDesc(desc)));
         }
+        if (mailingList.getTriggers() != null) {
+            mailingList.getTriggers().forEach(t -> addTrigger(new MailingListTrigger(t)));
+        }
     }
 
 
@@ -133,6 +119,11 @@ public class MailingList extends VersionedEntity<Integer> implements ILocalizabl
             mailingList.setDescs(getDescs(filter).stream()
                     .map(MailingListDesc::toVo)
                     .collect(Collectors.toList()));
+            if (!triggers.isEmpty()) {
+                mailingList.setTriggers(triggers.stream()
+                    .map(t -> t.toVo(filter))
+                    .collect(Collectors.toList()));
+            }
             mailingList.setRecipientNo(users.size() + contacts.size());
         }
         if (!users.isEmpty() && compFilter.includeField("users")) {
@@ -147,6 +138,14 @@ public class MailingList extends VersionedEntity<Integer> implements ILocalizabl
         }
 
         return mailingList;
+    }
+
+
+    /** Adds a mailing list trigger to this mailing list */
+    public MailingListTrigger addTrigger(MailingListTrigger trigger) {
+        trigger.setMailingList(this);
+        triggers.add(trigger);
+        return trigger;
     }
 
 
@@ -206,6 +205,14 @@ public class MailingList extends VersionedEntity<Integer> implements ILocalizabl
     @Override
     public void setDescs(List<MailingListDesc> descs) {
         this.descs = descs;
+    }
+
+    public List<MailingListTrigger> getTriggers() {
+        return triggers;
+    }
+
+    public void setTriggers(List<MailingListTrigger> triggers) {
+        this.triggers = triggers;
     }
 }
 

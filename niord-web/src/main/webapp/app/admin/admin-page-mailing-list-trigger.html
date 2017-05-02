@@ -1,0 +1,138 @@
+
+<div class="form-controls" ng-init="initTrigger(trigger)">
+
+    <div class="mailing-list-trigger-header">
+        <span>
+            <span ng-if="trigger.type == 'STATUS_CHANGE'">
+                Status Change Trigger ({{trigger.statusChanges | serialize | capitalize}})
+            </span>
+            <span ng-if="trigger.type == 'SCHEDULED'">
+                Scheduled Trigger ({{trigger.scheduleType | capitalize}} at
+                {{trigger.scheduledTimeOfDay | formatDate: 'HH:mm z'}})
+            </span>
+        </span>
+        <span class="pull-right">
+            <button class="btn btn-xs btn-default"
+                    ng-click="trigger.edit = !trigger.edit">
+                <span class="glyphicon glyphicon-pencil"></span>
+                <span ng-if="trigger.edit">Hide details</span>
+                <span ng-if="!trigger.edit">Show details</span>
+            </button>
+            <button class="btn btn-xs btn-default"
+                    ng-click="copyTrigger(mailingList, trigger)">
+                <span class="glyphicon glyphicon-duplicate"></span> Copy
+            </button>
+            <button class="btn btn-xs btn-default"
+                    ng-click="deleteTrigger(mailingList, trigger)">
+                <span class="glyphicon glyphicon-trash"></span> Delete
+            </button>
+        </span>
+    </div>
+
+    <div ng-if="trigger.edit" class="mailing-list-trigger-edit">
+        <div class="form-group row">
+            <label class="col-sm-4 col-md-3 col-lg-2">Mail Subject</label>
+            <div class="col-sm-8 col-md-9 col-lg-10">
+                <div class="row">
+                    <div class="col-sm-6" ng-repeat="desc in trigger.descs">
+                        <input class="form-control input-sm" placeholder="Mail Subject" type="text"
+                               ng-model="desc.subject" required
+                               bg-flag="desc.lang" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label class="col-sm-4 col-md-3 col-lg-2">Message Query</label>
+            <div class="col-sm-8 col-md-9 col-lg-10">
+                <input class="form-control input-sm" placeholder="Message Query String" type="text"
+                       ng-model="trigger.messageQuery" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label class="col-sm-4 col-md-3 col-lg-2">Message Filter</label>
+            <div class="col-sm-8 col-md-9 col-lg-10">
+                <input class="form-control input-sm" placeholder="Message JavaScript Filter" type="text"
+                       ng-model="trigger.messageFilter" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label class="col-sm-4 col-md-3 col-lg-2">Script Resources</label>
+            <div class="col-sm-8">
+                <script-resources-field
+                        path-data="trigger"
+                        multiple="true">
+                </script-resources-field>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label class="col-sm-4 col-md-3 col-lg-2">Trigger Type</label>
+            <div class="col-sm-8 col-md-9 col-lg-10">
+                <div class="btn-group">
+                    <label class="btn btn-default btn-sm" ng-model="trigger.type"
+                           ng-change="updateTriggerType(trigger)" uib-btn-radio="'STATUS_CHANGE'">
+                        Status Change
+                    </label>
+                    <label class="btn btn-default btn-sm" ng-model="trigger.type"
+                           ng-change="updateTriggerType(trigger)" uib-btn-radio="'SCHEDULED'">
+                        Scheduled
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div ng-if="trigger.type == 'STATUS_CHANGE'" class="form-group row">
+            <label class="col-sm-4 col-md-3 col-lg-2">Statuses</label>
+            <div class="col-sm-8 col-md-9 col-lg-10">
+                <div class="btn-group">
+                    <label class="btn btn-default btn-sm" ng-model="trigger.statusMap.PUBLISHED"
+                           ng-change="updateStatusChange(trigger)" uib-btn-checkbox>
+                        Published
+                    </label>
+                    <label class="btn btn-default btn-sm" ng-model="trigger.statusMap.CANCELLED"
+                           ng-change="updateStatusChange(trigger)" uib-btn-checkbox>
+                        Cancelled
+                    </label>
+                    <label class="btn btn-default btn-sm" ng-model="trigger.statusMap.EXPIRED"
+                           ng-change="updateStatusChange(trigger)" uib-btn-checkbox>
+                        Expired
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div ng-if="trigger.type == 'SCHEDULED'" class="form-group row">
+            <label class="col-sm-4 col-md-3 col-lg-2">Schedule</label>
+            <div class="col-sm-8 col-md-9 col-lg-10">
+                <table>
+                    <tr>
+                        <td>
+                            <select id="sortOrder" name="sortOrder" class="form-control input-sm"
+                                    style="width: 120px"
+                                    ng-model="trigger.scheduleType">
+                                <option value="DAILY">Daily</option>
+                                <option value="MONDAY">Monday</option>
+                                <option value="TUESDAY">Tuesday</option>
+                                <option value="WEDNESDAY">Wednesday</option>
+                                <option value="THURSDAY">Thursday</option>
+                                <option value="FRIDAY">Friday</option>
+                                <option value="SATURDAY">Saturday</option>
+                                <option value="SUNDAY">Sunday</option>
+                            </select>
+                        </td>
+                        <td>&nbsp;&nbsp;at&nbsp;&nbsp;</td>
+                        <td width="140">
+                            <date-time-picker ng-model="trigger.scheduledTimeOfDay" placeholder="Time"
+                                              format="'HH:mm z'"></date-time-picker>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+

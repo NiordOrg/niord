@@ -56,6 +56,11 @@ angular.module('niord.admin')
                 desc.name = '';
                 desc.description = '';
             }
+            // Used to ensure that description entities have a "subject" field
+            function ensureSubjectField(desc) {
+                desc.subject = '';
+            }
+
 
             /** Adds a new mailing list **/
             $scope.addMailingList = function () {
@@ -63,6 +68,7 @@ angular.module('niord.admin')
                 $scope.mailingList = {
                     mailingListId: undefined,
                     active: true,
+                    triggers: [],
                     users: [],
                     contacts: []
                 };
@@ -90,6 +96,7 @@ angular.module('niord.admin')
                     .success(function (mailingListDetails) {
                         $scope.mailingList = mailingListDetails;
                         LangService.checkDescs($scope.mailingList, ensureNameField);
+                        $scope.mailingList.triggers = $scope.mailingList.triggers || [];
                         if (action === 'add') {
                             $scope.mailingList.mailingListId = undefined;
                         }
@@ -137,6 +144,81 @@ angular.module('niord.admin')
                             .success($scope.loadMailingLists)
                             .error($scope.displayError);
                     });
+            };
+
+
+            /** *************************** **/
+            /** Mailing list triggers       **/
+            /** *************************** **/
+
+            /** Called before rendering a trigger **/
+            $scope.initTrigger = function(trigger) {
+                LangService.checkDescs(trigger, ensureSubjectField);
+
+                // Create a status map
+                trigger.statusMap = { 'PUBLISHED':false, "CANCELLED": false, "EXPIRED": false };
+                if (trigger.statusChanges) {
+                    angular.forEach(trigger.statusChanges, function (status) {
+                        trigger.statusMap[status] = true;
+                    })
+                }
+            };
+
+
+            /** Adds a new mailing list trigger to the mailing list **/
+            $scope.addTrigger = function (mailingList, trigger) {
+                trigger = trigger || {
+                    edit: true,
+                    type: 'STATUS_CHANGE',
+                    statusChanges: [ 'PUBLISHED' ],
+                    messageQuery: '',
+                    messageFilter: '',
+                    scriptResourcePaths: [],
+                    descs: []
+                };
+                LangService.checkDescs(trigger, ensureSubjectField);
+                mailingList.triggers.push(trigger);
+            };
+
+
+            /** Copies the mailing list trigger **/
+            $scope.copyTrigger = function (mailingList, trigger) {
+                $scope.addTrigger(mailingList, angular.copy(trigger))
+            };
+
+
+            /** Deletes the mailing list trigger **/
+            $scope.deleteTrigger = function (mailingList, trigger) {
+                var index = mailingList.triggers.indexOf(trigger);
+                if (index !== -1) {
+                    mailingList.triggers.splice(index, 1);
+                }
+            };
+
+
+            /** Called whenever the user changes the trigger type **/
+            $scope.updateTriggerType = function (trigger) {
+                if (trigger.type === 'STATUS_CHANGE') {
+                    delete trigger.scheduleType;
+                    delete trigger.scheduledTimeOfDay;
+                    trigger.statusChanges = [];
+                } else if (trigger.type === 'SCHEDULED') {
+                    trigger.scheduleType = 'DAILY';
+                    trigger.scheduledTimeOfDay = moment().valueOf();
+                    delete trigger.statusChanges;
+                }
+            };
+
+
+            /** Called whenever the user changes the status changes **/
+            $scope.updateStatusChange = function (trigger) {
+                // Update the statusChanges list from the statusMap updated via the UI
+                trigger.statusChanges = [];
+                angular.forEach(trigger.statusMap, function (val, status) {
+                    if (val) {
+                        trigger.statusChanges.push(status);
+                    }
+                })
             };
 
 
