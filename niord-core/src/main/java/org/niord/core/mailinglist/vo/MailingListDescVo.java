@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.niord.core.mail.vo;
+package org.niord.core.mailinglist.vo;
 
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizedDesc;

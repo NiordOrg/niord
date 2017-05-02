@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.niord.core.mail.vo;
+package org.niord.core.mailinglist.vo;
 
 import org.niord.core.user.vo.ContactVo;
 import org.niord.core.user.vo.UserVo;

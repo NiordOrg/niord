@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package org.niord.core.mail;
+package org.niord.core.mailinglist;
 
-import org.niord.core.mail.vo.MailingListDescVo;
-import org.niord.core.mail.vo.MailingListVo;
+import org.niord.core.mailinglist.vo.MailingListDescVo;
+import org.niord.core.mailinglist.vo.MailingListVo;
 import org.niord.core.model.VersionedEntity;
 import org.niord.core.user.Contact;
 import org.niord.core.user.User;

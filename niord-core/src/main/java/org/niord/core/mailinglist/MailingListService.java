@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.niord.core.mail;
+package org.niord.core.mailinglist;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.CriteriaHelper;
