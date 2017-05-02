@@ -143,7 +143,9 @@ public class WebUtils {
             }
         }
         return params.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> (String[])e.getValue().toArray(new String[0])));
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> (String[])e.getValue().toArray(new String[e.getValue().size()])));
     }
 
 
