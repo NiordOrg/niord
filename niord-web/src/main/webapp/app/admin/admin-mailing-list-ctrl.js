@@ -95,8 +95,13 @@ angular.module('niord.admin')
                     .getMailingList(mailingList.mailingListId)
                     .success(function (mailingListDetails) {
                         $scope.mailingList = mailingListDetails;
-                        LangService.checkDescs($scope.mailingList, ensureNameField);
                         $scope.mailingList.triggers = $scope.mailingList.triggers || [];
+                        angular.forEach($scope.mailingList.triggers, function (trigger) {
+                            angular.forEach(trigger.descs || [], function (desc) {
+                                desc.enabled = true;
+                            });
+                        });
+                        LangService.checkDescs($scope.mailingList, ensureNameField);
                         if (action === 'add') {
                             $scope.mailingList.mailingListId = undefined;
                         }
@@ -120,12 +125,18 @@ angular.module('niord.admin')
             /** Saves the current mailing list being edited */
             $scope.saveMailingList = function () {
 
-                if ($scope.mailingList && $scope.editMode === 'add') {
+                // Remove trigger descriptor entities not currently enabled
+                angular.forEach($scope.mailingList.triggers, function (trigger) {
+                    trigger.descs  = $.grep(trigger.descs, function (desc) { return desc.enabled; })
+                });
+
+
+                if ($scope.editMode === 'add') {
                     AdminMailingListService
                         .createMailingList($scope.mailingList)
                         .success($scope.loadMailingLists)
                         .error($scope.displayError);
-                } else if ($scope.mailingList && $scope.editMode === 'edit') {
+                } else if ($scope.editMode === 'edit') {
                     AdminMailingListService
                         .updateMailingList($scope.mailingList)
                         .success($scope.loadMailingLists)
@@ -151,6 +162,7 @@ angular.module('niord.admin')
             /** Mailing list triggers       **/
             /** *************************** **/
 
+
             /** Called before rendering a trigger **/
             $scope.initTrigger = function(trigger) {
                 LangService.checkDescs(trigger, ensureSubjectField);
@@ -161,6 +173,14 @@ angular.module('niord.admin')
                     angular.forEach(trigger.statusChanges, function (status) {
                         trigger.statusMap[status] = true;
                     })
+                }
+            };
+
+
+            /** Called when the user enables/disabled a language */
+            $scope.updateTriggerLangEnabledState = function (desc) {
+                if (!desc.enabled) {
+                    desc.subject = '';
                 }
             };
 
@@ -177,6 +197,9 @@ angular.module('niord.admin')
                     descs: []
                 };
                 LangService.checkDescs(trigger, ensureSubjectField);
+                angular.forEach(trigger.descs, function (desc) {
+                    desc.enabled = true;
+                });
                 mailingList.triggers.push(trigger);
             };
 
