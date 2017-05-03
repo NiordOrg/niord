@@ -73,7 +73,11 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
     @Enumerated(EnumType.STRING)
     ScheduleType scheduleType;
 
-    @Temporal(TemporalType.TIME)
+    /**
+     * We actually only use the time of day for the persisted date, but avoid time zone issues by storing
+     * the entire date, rather than just the time part, using TemporalType.TIME
+     **/
+    @Temporal(TemporalType.TIMESTAMP)
     Date scheduledTimeOfDay;
 
     @Temporal(TemporalType.TIMESTAMP)
@@ -157,7 +161,7 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
         MailingListTriggerVo trigger = new MailingListTriggerVo();
         trigger.setType(type);
         trigger.setScheduleType(scheduleType);
-        trigger.setScheduledTimeOfDay(scheduledTimeOfDay == null ? null : new Date(scheduledTimeOfDay.getTime()));
+        trigger.setScheduledTimeOfDay(scheduledTimeOfDay);
         if (!statusChanges.isEmpty()) {
             trigger.setStatusChanges(new HashSet<>(statusChanges));
         }
