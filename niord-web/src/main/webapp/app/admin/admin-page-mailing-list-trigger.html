@@ -30,28 +30,6 @@
     </div>
 
     <div ng-if="trigger.edit" class="mailing-list-trigger-edit">
-        <div class="form-group row">
-            <label class="col-sm-4 col-md-3 col-lg-2">Mail Subject</label>
-            <div class="col-sm-8 col-md-9 col-lg-10">
-                <div class="row">
-                    <div class="col-sm-6" ng-repeat="desc in trigger.descs">
-                        <input class="form-control input-sm" placeholder="Mail Subject" type="text"
-                               ng-model="desc.subject" required
-                               bg-flag="desc.lang" autocomplete="off">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-group row">
-            <label class="col-sm-4 col-md-3 col-lg-2">Script Resources</label>
-            <div class="col-sm-8">
-                <script-resources-field
-                        path-data="trigger"
-                        multiple="true">
-                </script-resources-field>
-            </div>
-        </div>
 
         <div class="form-group row">
             <label class="col-sm-4 col-md-3 col-lg-2">Trigger Type</label>
@@ -66,6 +44,34 @@
                         Scheduled
                     </label>
                 </div>
+                <span style="margin-left: 20px">
+                    <input type="checkbox" ng-model="trigger.languageSpecific">
+                    &nbsp;&nbsp;Language specific
+                </span>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label class="col-sm-4 col-md-3 col-lg-2">Mail Subject</label>
+            <div class="col-sm-8 col-md-9 col-lg-10">
+                <div class="row">
+                    <div class="col-sm-6" ng-repeat="desc in trigger.descs">
+                        <input class="form-control input-sm" placeholder="Mail Subject" type="text"
+                               ng-model="desc.subject" required
+                               ng-if="trigger.languageSpecific || $first"
+                               bg-flag="desc.lang" autocomplete="off">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group row">
+            <label class="col-sm-4 col-md-3 col-lg-2">Mail Body Template</label>
+            <div class="col-sm-8">
+                <script-resources-field
+                        path-data="trigger"
+                        multiple="true">
+                </script-resources-field>
             </div>
         </div>
 

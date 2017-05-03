@@ -17,8 +17,12 @@
 package org.niord.core;
 
 import org.junit.Test;
+import org.niord.core.mailinglist.MessageFilter;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageScriptFilterEvaluator;
+import org.niord.core.promulgation.NavtexMessagePromulgation;
+import org.niord.core.promulgation.NavtexTransmitter;
+import org.niord.core.promulgation.PromulgationType;
 import org.niord.model.message.Status;
 
 import java.util.HashMap;
@@ -50,4 +54,27 @@ public class MessageScriptFilterEvaluatorTest {
         assertFalse(new MessageScriptFilterEvaluator(filter2).includeMessage(msg, data));
 
     }
+
+
+    @Test
+    public void testMessageFilter() throws Exception {
+
+        Message msg = new Message();
+        NavtexMessagePromulgation navtex = new NavtexMessagePromulgation();
+        NavtexTransmitter transmitter = new NavtexTransmitter();
+        transmitter.setName("Baltico");
+        navtex.getTransmitters().add(transmitter);
+        PromulgationType type = new PromulgationType();
+        type.setTypeId("navtex");
+        navtex.setType(type);
+        navtex.setPromulgate(true);
+        msg.addPromulgation(navtex);
+
+        String filter = "msg.promulgation('navtex').promulgate && msg.promulgation('navtex').useTransmitter('Baltico')";
+
+        assertTrue(MessageFilter.getInstance(filter).matches(msg));
+    }
+
+
+
 }

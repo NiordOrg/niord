@@ -23,6 +23,7 @@ import org.niord.model.ILocalizable;
 import org.niord.model.message.Status;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -39,6 +40,7 @@ public class MailingListTriggerVo implements ILocalizable<MailingListTriggerDesc
     String messageQuery;
     String messageFilter;
     List<String> scriptResourcePaths;
+    Set<String> languages = new HashSet<>();
     List<MailingListTriggerDescVo> descs;
 
 

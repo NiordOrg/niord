@@ -56,9 +56,12 @@ import static org.niord.core.mailinglist.TriggerType.STATUS_CHANGE;
  */
 @Entity
 @NamedQueries({
-        @NamedQuery(name = "MailingListTrigger.findPendingTriggers",
+        @NamedQuery(name = "MailingListTrigger.findPendingScheduledTriggers",
                 query = "SELECT t FROM MailingListTrigger t where t.type = 'SCHEDULED' "
-                        + " and t.mailingList.active = true and t.nextScheduledExecution < current_timestamp")
+                        + " and t.mailingList.active = true and t.nextScheduledExecution < current_timestamp"),
+        @NamedQuery(name = "MailingListTrigger.findStatusChangeTriggers",
+                query = "SELECT t FROM MailingListTrigger t join t.statusChanges s where t.type = 'STATUS_CHANGE' "
+                        + " and t.mailingList.active = true and s = :status")
 })
 @SuppressWarnings("unused")
 public class MailingListTrigger extends VersionedEntity<Integer> implements ILocalizable<MailingListTriggerDesc> {

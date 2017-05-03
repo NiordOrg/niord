@@ -617,6 +617,18 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
 
     /**
+     * Returns the promulgation with the given type, or null if not found
+     * @return the promulgation with the given type, or null if not found
+     */
+    public BaseMessagePromulgation promulgation(String type) {
+        return promulgations.stream()
+                .filter(p -> p.getType().getTypeId().equals(type))
+                .findFirst()
+                .orElse(null);
+    }
+
+
+    /**
      * {@inheritDoc}
      */
     @Override

@@ -22,6 +22,7 @@ import org.niord.core.user.Contact;
 import org.niord.core.user.ContactService;
 import org.niord.core.user.User;
 import org.niord.core.user.UserService;
+import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
@@ -217,4 +218,29 @@ public class MailingListService extends BaseService {
         }
         return false;
     }
+
+
+    /**
+     * Returns the list of pending scheduled mailing list triggers
+     * @return the list of pending scheduled mailing list triggers
+     */
+    public List<MailingListTrigger> findPendingScheduledTriggers() {
+        return em.createNamedQuery("MailingListTrigger.findPendingScheduledTriggers", MailingListTrigger.class)
+                .getResultList();
+    }
+
+
+    /**
+     * Returns the list of status change mailing list triggers matching the given status
+     * @param status the status to find triggers for
+     * @return the list of status change mailing list triggers
+     */
+    public List<MailingListTrigger> findStatusChangeTriggers(Status status) {
+        return em.createNamedQuery("MailingListTrigger.findStatusChangeTriggers", MailingListTrigger.class)
+                .setParameter("status", status)
+                .getResultList();
+    }
+
+
+
 }
