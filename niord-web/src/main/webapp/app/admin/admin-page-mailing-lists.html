@@ -45,34 +45,33 @@
                             <th>Active</th>
                             <th>ID</th>
                             <th>Name</th>
-                            <th>#Recipients</th>
-                            <th></th>
+                            <th style="text-align: right">#Recipients</th>
+                            <th ng-if="hasRole('sysadmin')"></th>
                         </tr>
                         <tr ng-repeat="mailingList in mailingLists">
                             <td><input type="checkbox" ng-model="mailingList.active" disabled="disabled"></td>
                             <td>{{mailingList.mailingListId}}</td>
                             <td>{{mailingList.descs[0].name}}</td>
-                            <td>
-                                {{mailingList.recipientNo}}
-                            </td>
                             <td nowrap align="right">
+                                {{mailingList.recipientNo}}
+                                &nbsp;
                                 <a href ng-click="manageRecipients(mailingList);" title="Manage Recipients">
                                     <i class="fa fa-users"></i>
                                 </a>
-                                <span  ng-if="hasRole('sysadmin')">
-                                    &nbsp;
-                                    <a href ng-click="editMailingList(mailingList);" title="Edit Mailing list">
-                                        <i class="glyphicon glyphicon-pencil"></i>
-                                    </a>
-                                    &nbsp;
-                                    <a href ng-click="copyMailingList(mailingList);" title="Copy Mailing list">
-                                        <i class="glyphicon glyphicon-duplicate"></i>
-                                    </a>
-                                    &nbsp;
-                                    <a href ng-click="deleteMailingList(mailingList);" title="Delete Mailing list">
-                                        <i class="glyphicon glyphicon-trash"></i>
-                                    </a>
-                                </span>
+                            </td>
+                            <td nowrap align="right" ng-if="hasRole('sysadmin')">
+                                &nbsp;
+                                <a href ng-click="editMailingList(mailingList);" title="Edit Mailing list">
+                                    <i class="glyphicon glyphicon-pencil"></i>
+                                </a>
+                                &nbsp;
+                                <a href ng-click="copyMailingList(mailingList);" title="Copy Mailing list">
+                                    <i class="glyphicon glyphicon-duplicate"></i>
+                                </a>
+                                &nbsp;
+                                <a href ng-click="deleteMailingList(mailingList);" title="Delete Mailing list">
+                                    <i class="glyphicon glyphicon-trash"></i>
+                                </a>
                             </td>
                         </tr>
                     </table>
