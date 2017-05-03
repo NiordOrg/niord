@@ -16,16 +16,28 @@
 
 package org.niord.core.mailinglist;
 
+import java.util.Calendar;
+
 /**
  * Defines the schedule type of a mailing list trigger
  */
 public enum ScheduleType {
-    DAILY,
-    MONDAY,
-    TUESDAY,
-    WEDNESDAY,
-    THURSDAY,
-    FRIDAY,
-    SATURDAY,
-    SUNDAY
+    DAILY(-1),
+    MONDAY(Calendar.MONDAY),
+    TUESDAY(Calendar.TUESDAY),
+    WEDNESDAY(Calendar.WEDNESDAY),
+    THURSDAY(Calendar.THURSDAY),
+    FRIDAY(Calendar.FRIDAY),
+    SATURDAY(Calendar.SATURDAY),
+    SUNDAY(Calendar.SUNDAY);
+
+    private final int calendarField;
+
+    ScheduleType(int calendarField) {
+        this.calendarField = calendarField;
+    }
+
+    public int getCalendarField() {
+        return calendarField;
+    }
 }

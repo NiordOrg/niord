@@ -150,6 +150,9 @@ public class MailingListService extends BaseService {
         original.getTriggers().clear();
         mailingList.getTriggers().forEach(original::addTrigger);
 
+        // Compute next execution for scheduled triggers
+        original.checkComputeNextScheduledExecutions();
+
         return saveEntity(original);
     }
 
@@ -191,6 +194,9 @@ public class MailingListService extends BaseService {
         // Replace related entities with persisted ones
         mailingList.setUsers(userService.persistedUsers(mailingList.getUsers()));
         mailingList.setContacts(persistedList(Contact.class, mailingList.getContacts()));
+
+        // Compute next execution for scheduled triggers
+        mailingList.checkComputeNextScheduledExecutions();
 
         return saveEntity(mailingList);
     }

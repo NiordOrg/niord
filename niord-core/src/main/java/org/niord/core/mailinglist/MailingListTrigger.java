@@ -38,6 +38,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -175,6 +176,37 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
                 .collect(Collectors.toList()));
 
         return trigger;
+    }
+
+
+    /**
+     * If the trigger is a scheduled trigger,
+     * computes the next scheduled execution
+     */
+    public void checkComputeNextScheduledExecution() {
+        if (type == SCHEDULED && scheduleType != null && scheduledTimeOfDay != null) {
+            Calendar timeOfDay = Calendar.getInstance();
+            timeOfDay.setTime(scheduledTimeOfDay);
+
+            Calendar nextExecution = Calendar.getInstance();
+            nextExecution.set(Calendar.HOUR_OF_DAY, timeOfDay.get(Calendar.HOUR_OF_DAY));
+            nextExecution.set(Calendar.MINUTE,      timeOfDay.get(Calendar.MINUTE));
+            nextExecution.set(Calendar.SECOND,      timeOfDay.get(Calendar.SECOND));
+            nextExecution.set(Calendar.MILLISECOND, 0);
+
+            Date now = new Date();
+            if (scheduleType == ScheduleType.DAILY) {
+                if (nextExecution.getTime().before(now)) {
+                    nextExecution.add(Calendar.DAY_OF_WEEK, 1);
+                }
+            } else {
+                nextExecution.set(Calendar.DAY_OF_WEEK, scheduleType.getCalendarField());
+                if (nextExecution.getTime().before(now)) {
+                    nextExecution.add(Calendar.WEEK_OF_YEAR, 1);
+                }
+            }
+            this.nextScheduledExecution = nextExecution.getTime();
+        }
     }
 
 

@@ -141,6 +141,13 @@ public class MailingList extends VersionedEntity<Integer> implements ILocalizabl
     }
 
 
+    /**
+     * For scheduled mailing list triggers, computes the next scheduled execution
+     */
+    public void checkComputeNextScheduledExecutions() {
+        triggers.forEach(MailingListTrigger::checkComputeNextScheduledExecution);
+    }
+
     /** Adds a mailing list trigger to this mailing list */
     public MailingListTrigger addTrigger(MailingListTrigger trigger) {
         trigger.setMailingList(this);
