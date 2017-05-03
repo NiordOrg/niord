@@ -89,21 +89,21 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
     Set<Status> statusChanges = new HashSet<>();
 
     /**
-     * Defines a message query string used for performing a message search
+     * Defines a message query string used for fetching the messages of a scheduled trigger
      * <p>
      * Example filter:
      * <pre>
-     *   "messageSeries=dma-nw&status=PUBLISHED&type=COASTAL_WARNING&promulgationType=navtex"
+     *   "messageSeries=dma-nw&status=PUBLISHED&type=COASTAL_WARNING"
      * </pre>
      */
     String messageQuery;
 
     /**
-     * May be used to define a server-side JavaScript filter for messages to be included in the mailing list execution.
+     * Define a server-side JavaScript that filters messages in a status-change trigger.
      * <p>
      * Example filter:
      * <pre>
-     *   "msg.promulgation('navtex').transmitters.contains('Baltico')"
+     *   "msg.promulgation('navtex').promulgate && msg.promulgation('navtex').useTransmitter('Baltico')"
      * </pre>
      */
     String messageFilter;
@@ -149,8 +149,10 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
         if (type == STATUS_CHANGE) {
             scheduleType = null;
             scheduledTimeOfDay = null;
+            messageQuery = null;
         } else if (type == SCHEDULED) {
             statusChanges.clear();
+            messageFilter = null;
         }
     }
 

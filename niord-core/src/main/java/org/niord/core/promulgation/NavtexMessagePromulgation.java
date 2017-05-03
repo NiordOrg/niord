@@ -113,6 +113,15 @@ public class NavtexMessagePromulgation
     }
 
 
+    /**
+     * Returns if this NAVTEX should be promulgated to the transmitter with the given name
+     * @param transmitterName the transmitter name
+     * @return if this NAVTEX should be promulgated to the transmitter with the given name
+     */
+    public boolean useTransmitter(String transmitterName) {
+        return transmitters.stream().anyMatch(t -> t.getName().equalsIgnoreCase(transmitterName));
+    }
+
     /*************************/
     /** Getters and Setters **/
     /*************************/
