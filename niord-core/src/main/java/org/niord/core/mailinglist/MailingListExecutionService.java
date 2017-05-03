@@ -19,9 +19,13 @@ package org.niord.core.mailinglist;
 import freemarker.template.TemplateException;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
+import org.niord.core.mail.IMailable;
+import org.niord.core.mail.ScheduledMail;
+import org.niord.core.mail.ScheduledMailRecipient;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.model.DescEntity;
 import org.niord.core.script.FmTemplateService;
 import org.niord.core.script.JsResourceService;
 import org.niord.core.script.ScriptResource;
@@ -31,10 +35,14 @@ import org.slf4j.Logger;
 import javax.ejb.Asynchronous;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import static org.niord.core.mail.ScheduledMailRecipient.RecipientType.TO;
 import static org.niord.core.script.ScriptResource.Type.FM;
 
 /**
@@ -78,23 +86,23 @@ public class MailingListExecutionService extends BaseService {
         Message message = messageService.findByUid(messageUid);
 
         List<MailingListTrigger> triggers = mailingListService.findStatusChangeTriggers(message.getStatus());
-        log.info("Found %d status change listeners for %s in status %s",
+        log.info(String.format("Found %d status change listeners for %s in status %s",
                 triggers.size(),
                 messageUid,
-                message.getStatus());
+                message.getStatus()));
 
         for (MailingListTrigger trigger : triggers) {
             try {
-                executeStatusChangeTrigger(trigger, message);
+                executeStatusChangeTrigger(trigger, message, true);
             } catch (Exception e) {
                 log.error("Error executing status-change mailing-list trigger " + trigger.getId(), e);
             }
         }
-        log.info("Executed %d status change listeners for %s in status %s in %d ms",
+        log.info(String.format("Executed %d status change listeners for %s in status %s in %d ms",
                 triggers.size(),
                 messageUid,
                 message.getStatus(),
-                System.currentTimeMillis() - t0);
+                System.currentTimeMillis() - t0));
     }
 
 
@@ -102,30 +110,98 @@ public class MailingListExecutionService extends BaseService {
      * Executes the mailing list trigger for the given message
      * @param trigger the mailing list trigger to execute
      * @param message the message to execute the trigger for
+     * @param persist whether to persist the mails or not
      */
-    public void executeStatusChangeTrigger(MailingListTrigger trigger, Message message) throws Exception {
+    public List<ScheduledMail> executeStatusChangeTrigger(MailingListTrigger trigger, Message message, boolean persist) throws Exception {
+
+        List<ScheduledMail> mails = new ArrayList<>();
+
+        // Check that one or more language variants have been defined
+        List<String> languages = trigger.getDescs().stream()
+                .map(DescEntity::getLang)
+                .collect(Collectors.toList());
+        if (languages.isEmpty()) {
+            return mails;
+        }
 
         // In no Freemarker script resources have been defined, bail
         if (trigger.getScriptResourcePaths().isEmpty() ||
                 trigger.getScriptResourcePaths().stream().noneMatch(p -> ScriptResource.path2type(p) == FM)) {
             log.debug("No Freemarker template defined for trigger " + trigger.getId());
-            return;
+            return mails;
         }
 
         // If a message filter is defined for the trigger, see if the message qualifies
         if (StringUtils.isNotBlank(trigger.getMessageFilter())) {
             MessageFilter filter = MessageFilter.getInstance(trigger.getMessageFilter());
             if (!filter.matches(message)) {
-                log.debug("Message %s not matching trigger message filter: %s",
+                log.debug(String.format("Message %s not matching trigger message filter: %s",
                         message.getUid(),
-                        trigger.getMessageFilter());
-                return;
+                        trigger.getMessageFilter()));
+                return mails;
             }
         }
 
-        String html = executeScriptResources(trigger, message);
+
+        // Create mails language by language
+        for (String language : languages) {
+            ScheduledMail mail = createMailTemplate(trigger, language, languages);
+
+            // First check if there are any recipients for the language
+            if (mail.getRecipients().isEmpty()) {
+                continue;
+            }
+
+            String html = executeScriptResources(trigger, Collections.singletonList(message), language);
+            mail.setHtmlContents(html);
+
+            mails.add(mail);
+        }
+
+        // Persist the mails
+        if (persist) {
+            persistMails(mails);
+        }
+        return mails;
+    }
 
 
+    /** Creates a template mailing list mail **/
+    private ScheduledMail createMailTemplate(MailingListTrigger trigger, String language, List<String> languages) {
+
+        // Compute the default language
+        String defaultLanguage = app.getDefaultLanguage();
+        if (languages.size() == 1 || (languages.size() > 1 && !languages.contains(defaultLanguage))) {
+            defaultLanguage = app.getLanguage(languages.get(0));
+        }
+        boolean isDefaultLanguage = defaultLanguage.equals(language);
+
+        ScheduledMail mail = new ScheduledMail();
+        mail.setSubject(trigger.getDesc(language).getSubject());
+
+        // Get all recipients matching the given language
+        List<IMailable> recipients = new ArrayList<>();
+        recipients.addAll(trigger.getMailingList().getUsers().stream()
+            .filter(r -> (r.getLanguage() == null && isDefaultLanguage) || language.equalsIgnoreCase(r.getLanguage()))
+            .collect(Collectors.toList()));
+        recipients.addAll(trigger.getMailingList().getContacts().stream()
+                .filter(r -> (r.getLanguage() == null && isDefaultLanguage) || language.equalsIgnoreCase(r.getLanguage()))
+                .collect(Collectors.toList()));
+
+        recipients.forEach(r -> mail.addRecipient(new ScheduledMailRecipient(TO, r.computeInternetAddress())));
+
+        return mail;
+    }
+
+
+    /** Saves the list of scheduled mail templates **/
+    private void persistMails(List<ScheduledMail> mails) {
+        for (int x = 0; x < mails.size(); x++) {
+            saveEntity(mails.get(x));
+            if ((x + 1) % 20 == 0) {
+                em.flush();
+            }
+        }
     }
 
 
@@ -135,11 +211,10 @@ public class MailingListExecutionService extends BaseService {
 
 
 
-    /**
-     * *******************************************
-     * Template Execution
-     * *******************************************
-     */
+    /***************************************/
+    /** Template Execution                **/
+    /***************************************/
+
 
     /**
      * Executes the script resources associated with a mailing list trigger and return the resulting HTML.
@@ -148,23 +223,31 @@ public class MailingListExecutionService extends BaseService {
      * and a single freemarker template that actually generates the HTML for the mail.
      *
      * @param trigger the mailing list trigger to execute
-     * @param message  the message to apply the template to
-     * @return the resulting message
+     * @param messages  the messages to apply the template to
+     * @param language the language of the template execution
+     * @return the resulting html generated in the templates
      */
-    public String executeScriptResources(MailingListTrigger trigger, Message message) throws Exception {
+    public String executeScriptResources(MailingListTrigger trigger, List<Message> messages, String language) throws Exception {
 
         // Sanity check
-        if (trigger.getScriptResourcePaths().isEmpty()) {
+        if (trigger.getScriptResourcePaths().isEmpty() || messages.isEmpty()) {
             return null;
         }
 
         // Adjust the message prior to executing the template
-        SystemMessageVo msg = message.toVo(SystemMessageVo.class, Message.MESSAGE_DETAILS_AND_PROMULGATIONS_FILTER);
+        List<SystemMessageVo> msgs = messages.stream()
+                .map(m -> m.toVo(SystemMessageVo.class, Message.MESSAGE_DETAILS_AND_PROMULGATIONS_FILTER))
+                .collect(Collectors.toList());
+        msgs.forEach(m -> m.sort(language));
 
         // Create context data to use with Freemarker templates and JavaScript updates
         Map<String, Object> contextData = new HashMap<>();
         contextData.put("languages", app.getLanguages());
-        contextData.put("message", msg);
+        contextData.put("language", language);
+        contextData.put("messages", messages);
+        if (msgs.size() == 1) {
+            contextData.put("message", msgs.get(0));
+        }
 
         StringBuilder result = new StringBuilder();
 
@@ -177,7 +260,7 @@ public class MailingListExecutionService extends BaseService {
                 evalJavaScriptResource(contextData, scriptResourcePath);
             } else if (type == FM) {
                 // Freemarker Template update
-                String html = applyFreemarkerTemplate(contextData, scriptResourcePath);
+                String html = applyFreemarkerTemplate(contextData, scriptResourcePath, language);
                 result.append(html);
             }
         }
@@ -191,15 +274,18 @@ public class MailingListExecutionService extends BaseService {
      *
      * @param contextData        the context data to use in the Freemarker template
      * @param scriptResourcePath the path to the Freemarker template
+     * @param language the language of the template execution
      */
     private String applyFreemarkerTemplate(
             Map<String, Object> contextData,
-            String scriptResourcePath) throws IOException, TemplateException {
+            String scriptResourcePath,
+            String language) throws IOException, TemplateException {
 
         // Run the associated Freemarker template to get a result in the "FieldTemplates" format
         return templateService.newFmTemplateBuilder()
                 .templatePath(scriptResourcePath)
                 .data(contextData)
+                .language(language)
                 .dictionaryNames("message", "mail")
                 .process();
     }

@@ -520,12 +520,24 @@ angular.module('niord.admin')
                     { user: user, recipient : isRecipient });
             },
 
+
             /** Updates the recipient status of the given contact **/
             updateContactStatus: function(mailingList, contact, isRecipient) {
                 return $http.put('/rest/mailing-lists/mailing-list/'
                     + encodeURIComponent(mailingList.mailingListId) + '/update-status',
                     { contact: contact, recipient : isRecipient });
             },
+
+
+            /** Test executes a mailing list trigger **/
+            testExecuteTrigger: function(mailingList, triggerIndex, messageId) {
+                var params = 'triggerIndex=' + triggerIndex;
+                if (messageId) {
+                    params += '&messageId=' + encodeURIComponent(messageId);
+                }
+                return $http.post('/rest/mailing-lists/test-execute-trigger?' + params, mailingList);
+            },
+
 
             /** Returns the ticket that can be used to generate an export file that requires the sysamdin role */
             exportTicket: function (role) {

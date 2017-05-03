@@ -1,0 +1,66 @@
+<div>
+    <div class="modal-header">
+        <h4 class="modal-title">Test Trigger Execution</h4>
+    </div>
+    <div class="modal-body">
+
+        <div class="container-fluid">
+
+            <div ng-if="trigger.type == 'STATUS_CHANGE'" class="row">
+                <div class="col-sm-6 col-md-4">
+                    Test Message
+                </div>
+                <div class="col-sm-6 col-md-8">
+                    <message-id-field reference="messageParam"></message-id-field>
+                </div>
+            </div>
+
+            <div class="mailing-list-execution-mails">
+                <table class="table table-condensed" style="margin-bottom: 0">
+                    <tr>
+                        <th>To</th>
+                        <th>Subject</th>
+                    </tr>
+                    <tr ng-repeat="m in mails" class="pointer" ng-click="mailData.mail = m">
+                        <td ng-class="{ 'selected' : m == mailData.mail }">{{m.recipients[0].address}}</td>
+                        <td ng-class="{ 'selected' : m == mailData.mail }">{{m.subject}}</td>
+                    </tr>
+                    <tr ng-if="mails === undefined || mails.length === 0">
+                        <td colspan="2">No mails</td>
+                    </tr>
+                </table>
+            </div>
+
+
+            <div class="mailing-list-execution-mail" ng-if="mailData.mail">
+                    <table class="scheduled-mail-details-table">
+                        <tr>
+                            <th>To</th>
+                            <td>{{mailData.mail.recipients[0].address}}</td>
+                        </tr>
+                        <tr>
+                            <th style="padding-top: 10px; padding-bottom: 10px;">Subject</th>
+                            <td style="padding-top: 10px; padding-bottom: 10px;">
+                                <strong>{{mailData.mail.subject}}</strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Details</th>
+                            <td class="scheduled-mail-details" ng-bind-html="mailData.mail.contents | toTrusted"></td>
+                        </tr>
+                    </table>
+            </div>
+
+        </div>
+    </div>
+    <div class="modal-footer">
+
+        <button class="btn btn-sm btn-primary" ng-click="testExecuteTrigger()"
+            ng-disabled="!canExecuteTrigger()">
+            <span class="glyphicon glyphicon-cog"></span>
+            Execute
+        </button>
+
+        <button class="btn btn-default" ng-click="$dismiss('aborted')">Close</button>
+    </div>
+</div>

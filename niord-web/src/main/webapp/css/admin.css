@@ -530,3 +530,25 @@ div.ace_scrollbar.ace_scrollbar-h {
     border-top: 1px solid lightgray;
     padding: 10px 10px 0 10px;
 }
+
+.mailing-list-execution-mails {
+    font-size: 12px;
+    margin-top: 20px;
+    border: 1px solid lightgray;
+    height: 100px;
+    overflow-y: scroll
+}
+
+.mailing-list-execution-mails .selected {
+    color: white;
+    background-color: #669;
+}
+
+.mailing-list-execution-mail {
+    font-size: 12px;
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid lightgray;
+    max-height: 200px;
+    overflow-y: scroll
+}

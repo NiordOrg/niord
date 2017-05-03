@@ -26,6 +26,10 @@
                     ng-click="deleteTrigger(mailingList, trigger)">
                 <span class="glyphicon glyphicon-trash"></span> Delete
             </button>
+            <button class="btn btn-xs btn-default"
+                    ng-click="testExecuteTrigger(mailingList, $index)">
+                <span class="glyphicon glyphicon-cog"></span> Execute
+            </button>
         </span>
     </div>
 

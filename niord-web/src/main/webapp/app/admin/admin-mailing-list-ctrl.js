@@ -27,9 +27,9 @@ angular.module('niord.admin')
      * MailingLists Admin Controller
      * Controller for the Admin mailing lists page
      */
-    .controller('MailingListAdminCtrl', ['$scope', '$rootScope', 'growl', 'LangService',
+    .controller('MailingListAdminCtrl', ['$scope', '$rootScope', '$uibModal', 'growl', 'LangService',
                 'AdminMailingListService', 'DialogService', 'UploadFileService',
-        function ($scope, $rootScope, growl, LangService,
+        function ($scope, $rootScope, $uibModal, growl, LangService,
                   AdminMailingListService, DialogService, UploadFileService) {
             'use strict';
 
@@ -219,6 +219,20 @@ angular.module('niord.admin')
             };
 
 
+            /** Deletes the mailing list trigger **/
+            $scope.testExecuteTrigger = function(mailingList, index) {
+                return $uibModal.open({
+                    controller: "ExecuteTriggerDialogCtrl",
+                    templateUrl: "/app/admin/mailing-list-test-dialog.html",
+                    size: 'md',
+                    resolve: {
+                        mailingList: function () { return mailingList; },
+                        index: function () { return index; }
+                    }
+                });
+            };
+
+
             /** Called whenever the user changes the trigger type **/
             $scope.updateTriggerType = function (trigger) {
                 if (trigger.type === 'STATUS_CHANGE') {
@@ -325,4 +339,46 @@ angular.module('niord.admin')
             };
 
 
+        }])
+
+
+    /**
+     * ********************************************************************************
+     * ExecuteTriggerDialogCtrl
+     * ********************************************************************************
+     * Controller for testing mailing list trigger execution
+     */
+    .controller('ExecuteTriggerDialogCtrl', ['$scope', 'growl', 'AdminMailingListService', 'mailingList', 'index',
+        function ($scope, growl, AdminMailingListService, mailingList, index) {
+            'use strict';
+
+            $scope.mailingList = mailingList;
+            $scope.trigger = mailingList.triggers[index];
+
+            $scope.mails = [];
+            $scope.mailData = { mail: undefined };
+            $scope.messageParam = {
+                messageId: undefined
+            };
+
+
+            /** Checks if the trigger can be executed **/
+            $scope.canExecuteTrigger = function () {
+                return $scope.trigger.type === 'SCHEDULED' ||  $scope.messageParam.messageId !== undefined;
+            };
+
+
+            /** Test-executes the trigger **/
+            $scope.testExecuteTrigger = function() {
+                AdminMailingListService
+                    .testExecuteTrigger(mailingList, index, $scope.messageParam.messageId)
+                    .success(function (mails) {
+                        $scope.mails = mails;
+                    })
+                    .error(function () {
+                        growl.error("Error testing trigger", { ttl: 5000 });
+                    });
+            };
+
         }]);
+

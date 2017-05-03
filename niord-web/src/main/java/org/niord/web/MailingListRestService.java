@@ -22,10 +22,16 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.mail.IMailable;
+import org.niord.core.mail.vo.ScheduledMailVo;
 import org.niord.core.mailinglist.MailingList;
+import org.niord.core.mailinglist.MailingListExecutionService;
 import org.niord.core.mailinglist.MailingListSearchParams;
 import org.niord.core.mailinglist.MailingListService;
+import org.niord.core.mailinglist.MailingListTrigger;
+import org.niord.core.mailinglist.TriggerType;
 import org.niord.core.mailinglist.vo.MailingListVo;
+import org.niord.core.message.Message;
+import org.niord.core.message.MessageService;
 import org.niord.core.user.Contact;
 import org.niord.core.user.ContactService;
 import org.niord.core.user.Roles;
@@ -77,10 +83,16 @@ public class MailingListRestService extends AbstractBatchableRestService  {
     MailingListService mailingListService;
 
     @Inject
+    MailingListExecutionService mailingListExecutionService;
+
+    @Inject
     UserService userService;
 
     @Inject
     ContactService contactService;
+
+    @Inject
+    MessageService messageService;
 
 
     /***************************************/
@@ -421,6 +433,53 @@ public class MailingListRestService extends AbstractBatchableRestService  {
     public String importPublications(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "mailing-list-import");
     }
+
+
+    /***************************************/
+    /** Mailing list Trigger Execution    **/
+    /***************************************/
+
+    /**
+     * Tests executing a mailing list trigger and return the resulting emails, but do NOT send the mails
+     * @param mailingListVo the mailing list
+     * @param triggerIndex the trigger index
+     * @param messageId the ID of the message to use with status-change triggers
+     */
+    @POST
+    @Path("/test-execute-trigger")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @RolesAllowed(Roles.SYSADMIN)
+    @NoCache
+    public List<ScheduledMailVo> testExecuteTrigger(
+            @QueryParam("messageId") String messageId,
+            @QueryParam("triggerIndex") Integer triggerIndex,
+            MailingListVo mailingListVo) throws Exception {
+
+        log.info(String.format("Test-executing mailing list trigger %d of mailingList %s",
+                triggerIndex,
+                mailingListVo.getMailingListId()));
+
+
+        MailingList mailingList = new MailingList(mailingListVo);
+        MailingListTrigger trigger = mailingList.getTriggers().get(triggerIndex);
+
+        // Add recipients from the persisted mailing list to the template mailing lists
+        MailingList orig = mailingListService.findByMailingListId(mailingList.getMailingListId());
+        mailingList.getUsers().addAll(orig.getUsers());
+        mailingList.getContacts().addAll(orig.getContacts());
+
+        if (trigger.getType() == TriggerType.STATUS_CHANGE) {
+            Message message = messageService.resolveMessage(messageId);
+
+            return mailingListExecutionService.executeStatusChangeTrigger(trigger, message, false).stream()
+                    .map(m -> m.toVo(DataFilter.get().fields(DataFilter.DETAILS)))
+                    .collect(Collectors.toList());
+        } else {
+            return null;
+        }
+    }
+
 
 
     /***************************************/
