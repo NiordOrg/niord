@@ -275,4 +275,31 @@ angular.module('niord.admin')
                     })
             };
 
+
+            /** **************************** **/
+            /** Export / import mailing list **/
+            /** **************************** **/
+
+
+            /** Generate an export file */
+            $scope.exportMailingLists = function () {
+                AdminMailingListService
+                    .exportTicket('sysadmin')
+                    .success(function (ticket) {
+                        var link = document.createElement("a");
+                        link.href = '/rest/mailing-lists/export?ticket=' + ticket;
+                        link.click();
+                    });
+            };
+
+
+            /** Opens the upload-mailing lists dialog **/
+            $scope.uploadMailingListsDialog = function () {
+                UploadFileService.showUploadFileDialog(
+                    'Upload Mailing-Lists File',
+                    '/rest/mailing-lists/upload-mailing-lists',
+                    'json');
+            };
+
+
         }]);

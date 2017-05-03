@@ -525,6 +525,12 @@ angular.module('niord.admin')
                 return $http.put('/rest/mailing-lists/mailing-list/'
                     + encodeURIComponent(mailingList.mailingListId) + '/update-status',
                     { contact: contact, recipient : isRecipient });
+            },
+
+            /** Returns the ticket that can be used to generate an export file that requires the sysamdin role */
+            exportTicket: function (role) {
+                var param = role ? '?role=' + role : '';
+                return $http.get('/rest/tickets/ticket' + param);
             }
 
         };

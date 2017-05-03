@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.mail.IMailable;
 import org.niord.core.mailinglist.MailingList;
 import org.niord.core.mailinglist.MailingListSearchParams;
@@ -36,9 +37,11 @@ import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.slf4j.Logger;
 
+import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -50,6 +53,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -63,7 +68,7 @@ import java.util.stream.Collectors;
 @Stateless
 @SecurityDomain("keycloak")
 @RolesAllowed(Roles.ADMIN)
-public class MailingListRestService {
+public class MailingListRestService extends AbstractBatchableRestService  {
 
     @Inject
     Logger log;
@@ -365,6 +370,56 @@ public class MailingListRestService {
 
         // No updates
         return false;
+    }
+
+
+    /***************************************/
+    /** Export / Import                   **/
+    /***************************************/
+
+
+    /**
+     * Returns all publications for export purposes
+     *
+     * If not called via Ajax, pass a ticket request parameter along, which
+     * can be requested via Ajax call to /rest/tickets/ticket?role=admin
+     */
+    @GET
+    @Path("/export")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @PermitAll // Sysadmin role enforced programmatically
+    @NoCache
+    public List<MailingListVo> exportMailingLists() {
+
+        // If a ticket is defined, check if programmatically
+        if (!userService.isCallerInRole(Roles.SYSADMIN)) {
+            throw new WebApplicationException(403);
+        }
+
+        MailingListSearchParams params = new MailingListSearchParams();
+
+        DataFilter filter = MailingList.LIST_DETAILS_FILTER;
+
+        return mailingListService.searchMailingLists(params).stream()
+                .map(m -> m.toVo(filter))
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Imports an uploaded mailing-list json file
+     *
+     * @param request the servlet request
+     * @return a status
+     */
+    @POST
+    @Path("/upload-mailing-lists")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces("text/plain")
+    @RolesAllowed(Roles.SYSADMIN)
+    public String importPublications(@Context HttpServletRequest request) throws Exception {
+        return executeBatchJobFromUploadedFile(request, "mailing-list-import");
     }
 
 
