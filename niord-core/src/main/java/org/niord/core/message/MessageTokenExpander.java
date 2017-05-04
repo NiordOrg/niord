@@ -47,25 +47,27 @@ public class MessageTokenExpander {
 
         Map<String, String> params = new HashMap<>();
 
-        if (StringUtils.isNotBlank(language)) {
-            MessageDesc desc = message.getDescs().isEmpty() ? null : message.getDescs(DataFilter.get().lang(language)).get(0);
-            params.put("${title}", desc == null ? "" : StringUtils.defaultString(desc.getTitle()));
-        }
+        if (message != null) {
+            if (StringUtils.isNotBlank(language)) {
+                MessageDesc desc = message.getDescs().isEmpty() ? null : message.getDescs(DataFilter.get().lang(language)).get(0);
+                params.put("${title}", desc == null ? "" : StringUtils.defaultString(desc.getTitle()));
+            }
 
-        if (languages != null) {
-            languages.forEach(lang -> {
-                MessageDesc desc = message.getDesc(lang);
-                params.put("${title:" + lang + "}", desc == null ? "" : StringUtils.defaultString(desc.getTitle()));
-            });
-        }
+            if (languages != null) {
+                languages.forEach(lang -> {
+                    MessageDesc desc = message.getDesc(lang);
+                    params.put("${title:" + lang + "}", desc == null ? "" : StringUtils.defaultString(desc.getTitle()));
+                });
+            }
 
-        params.put("${uid}", StringUtils.defaultString(message.getUid()));
-        params.put("${id}", message.getId() == null ? "" : message.getId().toString());
-        params.put("${short-id}", message.getShortId() == null ? "" : message.getShortId());
-        params.put("${number}", message.getNumber() == null ? "" : String.valueOf(message.getNumber()));
-        params.put("${number-3-digits}", message.getNumber() == null ? "" : String.format("%03d", message.getNumber()));
-        params.put("${main-type}", message.getMainType() == null ? "" : message.getMainType().toString());
-        params.put("${main-type-lower}", message.getMainType() == null ? "" : message.getMainType().toString().toLowerCase());
+            params.put("${uid}", StringUtils.defaultString(message.getUid()));
+            params.put("${id}", message.getId() == null ? "" : message.getId().toString());
+            params.put("${short-id}", message.getShortId() == null ? "" : message.getShortId());
+            params.put("${number}", message.getNumber() == null ? "" : String.valueOf(message.getNumber()));
+            params.put("${number-3-digits}", message.getNumber() == null ? "" : String.format("%03d", message.getNumber()));
+            params.put("${main-type}", message.getMainType() == null ? "" : message.getMainType().toString());
+            params.put("${main-type-lower}", message.getMainType() == null ? "" : message.getMainType().toString().toLowerCase());
+        }
 
         return new MessageTokenExpander(params);
     }

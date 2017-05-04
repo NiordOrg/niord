@@ -195,6 +195,20 @@
 
 
 <!-- ***************************************  -->
+<!-- Returns the given promulgation           -->
+<!-- ***************************************  -->
+<#function promulgation msg type >
+    <#if msg.promulgations?has_content>
+        <#list msg.promulgations as p>
+            <#if p.type?? && p.type.typeId == type>
+                <#return p />
+            </#if>
+        </#list>
+    </#if>
+</#function>
+
+
+<!-- ***************************************  -->
 <!-- Renders a language flag if wrong lang    -->
 <!-- ***************************************  -->
 <#macro renderLangFlag desc lang=language  draft=draft!false >

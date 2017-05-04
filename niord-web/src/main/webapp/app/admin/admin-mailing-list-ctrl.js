@@ -224,7 +224,7 @@ angular.module('niord.admin')
                 return $uibModal.open({
                     controller: "ExecuteTriggerDialogCtrl",
                     templateUrl: "/app/admin/mailing-list-test-dialog.html",
-                    size: 'md',
+                    size: 'lg',
                     resolve: {
                         mailingList: function () { return mailingList; },
                         index: function () { return index; }

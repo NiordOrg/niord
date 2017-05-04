@@ -10,6 +10,14 @@ a {
     color: #000000;
 }
 
+h1 {
+    font-size: 24px;
+}
+
+h2 {
+    font-size: 18px;
+}
+
 h3 {
     color: #002D47;
     font-size: 14px;

@@ -19,6 +19,8 @@ package org.niord.core.mailinglist;
 import freemarker.template.TemplateException;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
+import org.niord.core.dictionary.DictionaryService;
+import org.niord.core.dictionary.vo.DictionaryVo;
 import org.niord.core.mail.IMailable;
 import org.niord.core.mail.ScheduledMail;
 import org.niord.core.mail.ScheduledMailRecipient;
@@ -38,8 +40,10 @@ import org.slf4j.Logger;
 import javax.ejb.Asynchronous;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +74,9 @@ public class MailingListExecutionService extends BaseService {
 
     @Inject
     MailingListService mailingListService;
+
+    @Inject
+    DictionaryService dictionaryService;
 
 
     /***************************************/
@@ -272,10 +279,7 @@ public class MailingListExecutionService extends BaseService {
         String subject = StringUtils.defaultString(desc.getSubject());
 
         // Check if we need to replace any tokens in the subject, like "${short-id}", "${title}", etc.
-        if (message != null) {
-            subject = MessageTokenExpander.getInstance(message, languages, language)
-                    .expandTokens(subject);
-        }
+        subject = expandSubject(message, language, languages, subject);
         mail.setSubject(subject);
 
         // Get all recipients matching the given language
@@ -290,6 +294,21 @@ public class MailingListExecutionService extends BaseService {
         recipients.forEach(r -> mail.addRecipient(new ScheduledMailRecipient(TO, r.computeInternetAddress())));
 
         return mail;
+    }
+
+
+    /** Check if we need to replace any tokens in the subject, like "${short-id}", "${title}", etc. **/
+    private String expandSubject(Message message, String language, List<String> languages, String subject) {
+
+        DictionaryVo mailDict = dictionaryService.getCachedDictionary("mail");
+        String shortFormat = mailDict.value(language, "mail.date_format.short");
+        String longFormat = mailDict.value(language, "mail.date_format.long");
+        Date today = new Date();
+
+        return MessageTokenExpander.getInstance(message, languages, language)
+                .token("${date-short}", new SimpleDateFormat(shortFormat).format(today))
+                .token("${date-long}", new SimpleDateFormat(longFormat).format(today))
+                .expandTokens(subject);
     }
 
 
