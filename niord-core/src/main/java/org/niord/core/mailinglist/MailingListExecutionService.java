@@ -38,6 +38,10 @@ import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.ejb.Asynchronous;
+import javax.ejb.Schedule;
+import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -55,6 +59,7 @@ import static org.niord.core.script.ScriptResource.Type.FM;
 /**
  * Handles execution of mailing list triggers
  */
+@Stateless
 public class MailingListExecutionService extends BaseService {
 
     @Inject
@@ -187,10 +192,36 @@ public class MailingListExecutionService extends BaseService {
 
 
     /**
+     * Checks every minute if there are pending scheduled mailing list triggers.
+     *
+     * TODO: Transaction Handling - one failed transaction should not prevent all future executions.
+     */
+    @Schedule(persistent=false, second="37", minute="*/1", hour="*/1")
+    public void checkExecuteScheduledTriggers() {
+
+        List<MailingListTrigger> pendingTriggers = mailingListService.findPendingScheduledTriggers();
+
+        if (!pendingTriggers.isEmpty()) {
+            log.info("Processing " + pendingTriggers.size() + " scheduled triggers");
+            for (MailingListTrigger trigger : pendingTriggers) {
+                try {
+                    executeScheduledTrigger(trigger, true);
+                    trigger.checkComputeNextScheduledExecution();
+                    saveEntity(trigger);
+                } catch (Exception e) {
+                    log.error("Failed executing scheduled mailing list trigger " + trigger + ": " + e);
+                }
+            }
+        }
+    }
+
+
+    /**
      * Executes the scheduled mailing list trigger for the given message
      * @param trigger the scheduled mailing list trigger to execute
      * @param persist whether to persist the mails or not
      */
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public List<ScheduledMail> executeScheduledTrigger(MailingListTrigger trigger, boolean persist) throws Exception {
 
         if (trigger.getType() != TriggerType.SCHEDULED) {
@@ -360,6 +391,7 @@ public class MailingListExecutionService extends BaseService {
         if (msgs.size() == 1) {
             contextData.put("message", msgs.get(0));
         }
+        contextData.put("params", new HashMap<>());
 
         StringBuilder result = new StringBuilder();
 
