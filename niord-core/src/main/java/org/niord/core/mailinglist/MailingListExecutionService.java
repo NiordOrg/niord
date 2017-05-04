@@ -316,10 +316,14 @@ public class MailingListExecutionService extends BaseService {
         // Get all recipients matching the given language
         List<IMailable> recipients = new ArrayList<>();
         recipients.addAll(trigger.getMailingList().getUsers().stream()
-                .filter(r -> (r.getLanguage() == null && isDefaultLanguage) || language.equalsIgnoreCase(r.getLanguage()))
+                .filter(r -> (r.getLanguage() == null && isDefaultLanguage) ||
+                            languages.size() == 1 ||
+                            language.equalsIgnoreCase(r.getLanguage()))
                 .collect(Collectors.toList()));
         recipients.addAll(trigger.getMailingList().getContacts().stream()
-                .filter(r -> (r.getLanguage() == null && isDefaultLanguage) || language.equalsIgnoreCase(r.getLanguage()))
+                .filter(r -> (r.getLanguage() == null && isDefaultLanguage) ||
+                        languages.size() == 1 ||
+                        language.equalsIgnoreCase(r.getLanguage()))
                 .collect(Collectors.toList()));
 
         recipients.forEach(r -> mail.addRecipient(new ScheduledMailRecipient(TO, r.computeInternetAddress())));
@@ -387,7 +391,7 @@ public class MailingListExecutionService extends BaseService {
         Map<String, Object> contextData = new HashMap<>();
         contextData.put("languages", app.getLanguages());
         contextData.put("language", language);
-        contextData.put("messages", messages);
+        contextData.put("messages", msgs);
         if (msgs.size() == 1) {
             contextData.put("message", msgs.get(0));
         }
