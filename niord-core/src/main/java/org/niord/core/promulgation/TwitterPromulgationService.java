@@ -20,8 +20,8 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.message.Message;
-import org.niord.core.message.MessageDesc;
 import org.niord.core.message.MessageService;
+import org.niord.core.message.MessageTokenExpander;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.core.promulgation.vo.TwitterMessagePromulgationVo;
@@ -44,8 +44,6 @@ import javax.inject.Inject;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Manages Twitter message promulgations
@@ -283,34 +281,19 @@ public class TwitterPromulgationService extends BasePromulgationService {
     private String computeTweet(Message message, String format, String tweet) {
         format = StringUtils.defaultIfBlank(format, DEFAULT_TWEET_FORMAT);
 
-        Map<String, String> params = new HashMap<>();
-        Arrays.stream(app.getLanguages()).forEach(lang -> {
-            MessageDesc desc = message.getDesc(lang);
-            params.put("${title:" + lang + "}", desc == null ? "" : StringUtils.defaultString(desc.getTitle()));
-        });
-        params.put("${uid}", message.getUid());
-        params.put("${id}", message.getId().toString());
-        params.put("${short-id}", message.getShortId() == null ? "" : message.getShortId());
-        params.put("${number}", message.getNumber() == null ? "" : String.valueOf(message.getNumber()));
-        params.put("${number-3-digits}", message.getNumber() == null ? "" : String.format("%03d", message.getNumber()));
-        params.put("${main-type}", message.getMainType().toString());
-        params.put("${main-type-lower}", message.getMainType().toString().toLowerCase());
-        params.put("${base-uri}", app.getBaseUri());
+        MessageTokenExpander expander = MessageTokenExpander.getInstance(
+                message,
+                Arrays.asList(app.getLanguages()),
+                app.getDefaultLanguage());
+        expander.token("${base-uri}", app.getBaseUri());
 
         // First, update the tweet
-        for (Map.Entry<String, String> e : params.entrySet()) {
-            tweet = tweet.replace(e.getKey(), e.getValue()).trim();
-        }
-
+        tweet = expander.expandTokens(tweet);
+        tweet = StringUtils.abbreviate(tweet, MAX_TWEET_LENGTH);
 
         // Then update the tweet template
-        tweet = StringUtils.abbreviate(tweet, MAX_TWEET_LENGTH);
-        params.put("${tweet}", tweet);
-        String result = format;
-        for (Map.Entry<String, String> e : params.entrySet()) {
-            result = result.replace(e.getKey(), e.getValue()).trim();
-        }
-        return result;
+        expander.token("${tweet}", tweet);
+        return expander.expandTokens(format);
     }
 
 

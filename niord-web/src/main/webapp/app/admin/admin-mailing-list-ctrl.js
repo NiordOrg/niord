@@ -358,7 +358,7 @@ angular.module('niord.admin')
             $scope.mails = [];
             $scope.mailData = { mail: undefined };
             $scope.messageParam = {
-                messageId: $window.localStorage['mailListTestMessage']
+                messageId: $scope.trigger.type === 'STATUS_CHANGE' ? $window.localStorage['mailListTestMessage'] : undefined
             };
 
 

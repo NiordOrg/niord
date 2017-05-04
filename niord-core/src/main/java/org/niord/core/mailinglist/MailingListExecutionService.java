@@ -24,6 +24,7 @@ import org.niord.core.mail.ScheduledMail;
 import org.niord.core.mail.ScheduledMailRecipient;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
+import org.niord.core.message.MessageTokenExpander;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.model.DescEntity;
 import org.niord.core.script.FmTemplateService;
@@ -145,7 +146,7 @@ public class MailingListExecutionService extends BaseService {
 
         // Create mails language by language
         for (String language : languages) {
-            ScheduledMail mail = createMailTemplate(trigger, language, languages);
+            ScheduledMail mail = createMailTemplate(trigger, language, languages, message);
 
             // First check if there are any recipients for the language
             if (mail.getRecipients().isEmpty()) {
@@ -155,7 +156,8 @@ public class MailingListExecutionService extends BaseService {
             String html = executeScriptResources(trigger, Collections.singletonList(message), language);
             mail.setHtmlContents(html);
 
-            mails.add(mail);
+            // All a copy of the mail for each recipient
+            mails.addAll(mail.splitByRecipient());
         }
 
         // Persist the mails
@@ -167,17 +169,27 @@ public class MailingListExecutionService extends BaseService {
 
 
     /** Creates a template mailing list mail **/
-    private ScheduledMail createMailTemplate(MailingListTrigger trigger, String language, List<String> languages) {
+    private ScheduledMail createMailTemplate(MailingListTrigger trigger, String language, List<String> languages, Message message) {
 
         // Compute the default language
-        String defaultLanguage = app.getDefaultLanguage();
+        String defaultLanguage = app.getLanguage("en");
         if (languages.size() == 1 || (languages.size() > 1 && !languages.contains(defaultLanguage))) {
             defaultLanguage = app.getLanguage(languages.get(0));
         }
         boolean isDefaultLanguage = defaultLanguage.equals(language);
 
         ScheduledMail mail = new ScheduledMail();
-        mail.setSubject(trigger.getDesc(language).getSubject());
+
+        // Create the mail subject
+        MailingListTriggerDesc desc = trigger.getDesc(language);
+        String subject = StringUtils.defaultString(desc.getSubject());
+
+        // Check if we need to replace any tokens in the subject, like "${short-id}", "${title}", etc.
+        if (message != null) {
+            subject = MessageTokenExpander.getInstance(message, languages, language)
+                .expandTokens(subject);
+        }
+        mail.setSubject(subject);
 
         // Get all recipients matching the given language
         List<IMailable> recipients = new ArrayList<>();

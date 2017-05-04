@@ -151,6 +151,26 @@ public class ScheduledMail extends BaseEntity<Integer> {
 
 
     /**
+     * Creates a template message for each recipient with same subject and contents as this mail
+     * @return a template message for each recipient with same subject and contents as this mail
+     */
+    public List<ScheduledMail> splitByRecipient() {
+        return recipients.stream()
+                .map(r -> {
+                    ScheduledMail m = new ScheduledMail();
+                    m.addRecipient(new ScheduledMailRecipient(r.getRecipientType(), r.getAddress()));
+                    m.setSendDate(sendDate);
+                    m.setCreated(created);
+                    m.setSender(sender);
+                    m.setSubject(subject);
+                    m.setContents(contents);
+                    return m;
+                })
+                .collect(Collectors.toList());
+    }
+
+
+    /**
      * When sending the mail has failed, call this method to register the error
      * and schedule when to make another attempt
      * @param error the error message
