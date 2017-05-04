@@ -23,6 +23,7 @@ import org.niord.core.mail.IMailable;
 import org.niord.core.mail.ScheduledMail;
 import org.niord.core.mail.ScheduledMailRecipient;
 import org.niord.core.message.Message;
+import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTokenExpander;
 import org.niord.core.message.vo.SystemMessageVo;
@@ -31,6 +32,7 @@ import org.niord.core.script.FmTemplateService;
 import org.niord.core.script.JsResourceService;
 import org.niord.core.script.ScriptResource;
 import org.niord.core.service.BaseService;
+import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.ejb.Asynchronous;
@@ -108,12 +110,16 @@ public class MailingListExecutionService extends BaseService {
 
 
     /**
-     * Executes the mailing list trigger for the given message
-     * @param trigger the mailing list trigger to execute
+     * Executes the status change mailing list trigger for the given message
+     * @param trigger the status change mailing list trigger to execute
      * @param message the message to execute the trigger for
      * @param persist whether to persist the mails or not
      */
     public List<ScheduledMail> executeStatusChangeTrigger(MailingListTrigger trigger, Message message, boolean persist) throws Exception {
+
+        if (trigger.getType() != TriggerType.STATUS_CHANGE) {
+            throw new IllegalAccessException("Must be a status-change trigger");
+        }
 
         List<ScheduledMail> mails = new ArrayList<>();
 
@@ -168,7 +174,88 @@ public class MailingListExecutionService extends BaseService {
     }
 
 
-    /** Creates a template mailing list mail **/
+    /***************************************/
+    /** Scheduled triggers                **/
+    /***************************************/
+
+
+    /**
+     * Executes the scheduled mailing list trigger for the given message
+     * @param trigger the scheduled mailing list trigger to execute
+     * @param persist whether to persist the mails or not
+     */
+    public List<ScheduledMail> executeScheduledTrigger(MailingListTrigger trigger, boolean persist) throws Exception {
+
+        if (trigger.getType() != TriggerType.SCHEDULED) {
+            throw new IllegalAccessException("Must be a scheduled trigger");
+        }
+
+        List<ScheduledMail> mails = new ArrayList<>();
+
+        // Check that one or more language variants have been defined
+        List<String> languages = trigger.getDescs().stream()
+                .map(DescEntity::getLang)
+                .collect(Collectors.toList());
+        if (languages.isEmpty()) {
+            return mails;
+        }
+
+        // In no Freemarker script resources have been defined, bail
+        if (trigger.getScriptResourcePaths().isEmpty() ||
+                trigger.getScriptResourcePaths().stream().noneMatch(p -> ScriptResource.path2type(p) == FM)) {
+            log.debug("No Freemarker template defined for trigger " + trigger.getId());
+            return mails;
+        }
+
+        // If no message query is defined for the trigger
+        if (StringUtils.isBlank(trigger.getMessageQuery())) {
+            log.debug("No mail query defined for trigger " + trigger.getId());
+            return mails;
+        }
+
+        // Perform the message search
+        MessageSearchParams params = MessageSearchParams.instantiate(null, trigger.getMessageQuery());
+        params.maxSize(Integer.MAX_VALUE);
+        PagedSearchResultVo<Message> messageResult = messageService.search(params);
+
+        // Create mails language by language
+        for (String language : languages) {
+            ScheduledMail mail = createMailTemplate(trigger, language, languages, null);
+
+            // First check if there are any recipients for the language
+            if (mail.getRecipients().isEmpty()) {
+                continue;
+            }
+
+            String html = executeScriptResources(trigger, messageResult.getData(), language);
+            mail.setHtmlContents(html);
+
+            // All a copy of the mail for each recipient
+            mails.addAll(mail.splitByRecipient());
+        }
+
+        // Persist the mails
+        if (persist) {
+            persistMails(mails);
+        }
+        return mails;
+    }
+
+
+    /***************************************/
+    /** Common for all trigger types      **/
+    /***************************************/
+
+
+    /**
+     * Creates a template mail for the mailing list trigger, with instantiated recipients and subject
+     *
+     * @param trigger the mailing list trigger to create a mail template for
+     * @param language the current language
+     * @param languages all language versions
+     * @param message optionally, a message when the mails is created for a single message
+     * @return the mail template
+     **/
     private ScheduledMail createMailTemplate(MailingListTrigger trigger, String language, List<String> languages, Message message) {
 
         // Compute the default language
@@ -187,15 +274,15 @@ public class MailingListExecutionService extends BaseService {
         // Check if we need to replace any tokens in the subject, like "${short-id}", "${title}", etc.
         if (message != null) {
             subject = MessageTokenExpander.getInstance(message, languages, language)
-                .expandTokens(subject);
+                    .expandTokens(subject);
         }
         mail.setSubject(subject);
 
         // Get all recipients matching the given language
         List<IMailable> recipients = new ArrayList<>();
         recipients.addAll(trigger.getMailingList().getUsers().stream()
-            .filter(r -> (r.getLanguage() == null && isDefaultLanguage) || language.equalsIgnoreCase(r.getLanguage()))
-            .collect(Collectors.toList()));
+                .filter(r -> (r.getLanguage() == null && isDefaultLanguage) || language.equalsIgnoreCase(r.getLanguage()))
+                .collect(Collectors.toList()));
         recipients.addAll(trigger.getMailingList().getContacts().stream()
                 .filter(r -> (r.getLanguage() == null && isDefaultLanguage) || language.equalsIgnoreCase(r.getLanguage()))
                 .collect(Collectors.toList()));
@@ -215,12 +302,6 @@ public class MailingListExecutionService extends BaseService {
             }
         }
     }
-
-
-    /***************************************/
-    /** Scheduled triggers                **/
-    /***************************************/
-
 
 
     /***************************************/

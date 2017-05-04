@@ -476,7 +476,9 @@ public class MailingListRestService extends AbstractBatchableRestService  {
                     .map(m -> m.toVo(DataFilter.get().fields(DataFilter.DETAILS)))
                     .collect(Collectors.toList());
         } else {
-            return null;
+            return mailingListExecutionService.executeScheduledTrigger(trigger, false).stream()
+                    .map(m -> m.toVo(DataFilter.get().fields(DataFilter.DETAILS)))
+                    .collect(Collectors.toList());
         }
     }
 
