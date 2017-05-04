@@ -348,8 +348,8 @@ angular.module('niord.admin')
      * ********************************************************************************
      * Controller for testing mailing list trigger execution
      */
-    .controller('ExecuteTriggerDialogCtrl', ['$scope', 'growl', 'AdminMailingListService', 'mailingList', 'index',
-        function ($scope, growl, AdminMailingListService, mailingList, index) {
+    .controller('ExecuteTriggerDialogCtrl', ['$scope', '$window', 'growl', 'AdminMailingListService', 'mailingList', 'index',
+        function ($scope, $window, growl, AdminMailingListService, mailingList, index) {
             'use strict';
 
             $scope.mailingList = mailingList;
@@ -358,7 +358,7 @@ angular.module('niord.admin')
             $scope.mails = [];
             $scope.mailData = { mail: undefined };
             $scope.messageParam = {
-                messageId: undefined
+                messageId: $window.localStorage['mailListTestMessage']
             };
 
 
@@ -370,6 +370,11 @@ angular.module('niord.admin')
 
             /** Test-executes the trigger **/
             $scope.testExecuteTrigger = function() {
+                // Remember which message we used for testing
+                if ($scope.messageParam.messageId) {
+                    $window.localStorage['mailListTestMessage'] = $scope.messageParam.messageId;
+                }
+
                 AdminMailingListService
                     .testExecuteTrigger(mailingList, index, $scope.messageParam.messageId)
                     .success(function (mails) {
