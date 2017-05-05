@@ -16,6 +16,8 @@
 
 package org.niord.core.mailinglist;
 
+import org.niord.core.model.BaseEntity;
+import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
 import javax.ejb.ActivationConfigProperty;
@@ -23,6 +25,8 @@ import javax.ejb.MessageDriven;
 import javax.inject.Inject;
 import javax.jms.MapMessage;
 import javax.jms.MessageListener;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Used for listening for message status updates via JMS
@@ -41,6 +45,9 @@ public class MailingListMessageListener implements MessageListener {
     Logger log;
 
     @Inject
+    MailingListService mailingListService;
+
+    @Inject
     MailingListExecutionService mailingListExecutionService;
 
 
@@ -53,11 +60,50 @@ public class MailingListMessageListener implements MessageListener {
         try {
             MapMessage msg = (MapMessage) message;
 
-            log.debug("Received " + msg.getString("STATUS") + " message status update for UID: " + msg.getString("UID"));
-            mailingListExecutionService.checkStatusChangeMailingListExecution(msg.getString("UID"));
+            String uid = msg.getString("UID");
+            Status status = Status.valueOf(msg.getString("STATUS"));
+
+            log.debug("Received " + status + " message status update for UID: " + uid);
+            checkStatusChangeMailingListExecution(uid, status);
 
         } catch (Throwable e) {
             log.error("Failed processing JMS message " + message, e);
         }
     }
+
+
+    /**
+     * Handle mailing list execution for the message. Called from the MailingListMessageListener MDB listener.
+     *
+     * @param messageUid the UID of the message
+     * @param status the message status
+     */
+    public void checkStatusChangeMailingListExecution(String messageUid, Status status) {
+
+        long t0 = System.currentTimeMillis();
+
+        List<Integer> triggerIds = mailingListService.findStatusChangeTriggers(status).stream()
+                .map(BaseEntity::getId)
+                .collect(Collectors.toList());
+
+        log.info(String.format("Found %d status change triggers for %s in status %s",
+                triggerIds.size(),
+                messageUid,
+                status));
+
+        for (Integer triggerId : triggerIds) {
+            try {
+                // NB: This function requires a new transaction
+                mailingListExecutionService.executeStatusChangeTrigger(triggerId, messageUid);
+            } catch (Exception e) {
+                log.error("Error executing status-change mailing-list trigger " + triggerId, e);
+            }
+        }
+        log.info(String.format("Executed %d status change triggers for %s in status %s in %d ms",
+                triggerIds.size(),
+                messageUid,
+                status,
+                System.currentTimeMillis() - t0));
+    }
+
 }

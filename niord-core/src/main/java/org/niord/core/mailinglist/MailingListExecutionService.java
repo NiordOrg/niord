@@ -37,8 +37,6 @@ import org.niord.core.service.BaseService;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.ejb.Asynchronous;
-import javax.ejb.Schedule;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
@@ -90,39 +88,37 @@ public class MailingListExecutionService extends BaseService {
 
 
     /**
-     * Handle mailing list execution for the message. Called from the MailingListMessageListener MDB listener.
-     * @param messageUid the UID of the message
+     * Executes the status change mailing list trigger for the given message
+     *
+     * @param triggerId the ID of the status change mailing list trigger to execute
+     * @param messageUid the message UID to execute the trigger for
      */
-    @Asynchronous
-    public void checkStatusChangeMailingListExecution(String messageUid) {
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    public void executeStatusChangeTrigger(Integer triggerId, String messageUid) throws Exception {
 
-        long t0 = System.currentTimeMillis();
-
-        Message message = messageService.findByUid(messageUid);
-
-        List<MailingListTrigger> triggers = mailingListService.findStatusChangeTriggers(message.getStatus());
-        log.info(String.format("Found %d status change listeners for %s in status %s",
-                triggers.size(),
-                messageUid,
-                message.getStatus()));
-
-        for (MailingListTrigger trigger : triggers) {
-            try {
-                executeStatusChangeTrigger(trigger, message, true);
-            } catch (Exception e) {
-                log.error("Error executing status-change mailing-list trigger " + trigger.getId(), e);
-            }
+        // Look up the trigger
+        MailingListTrigger trigger = getByPrimaryKey(MailingListTrigger.class, triggerId);
+        if (trigger == null || trigger.getType() != TriggerType.STATUS_CHANGE) {
+            throw new IllegalArgumentException("Invalid trigger " + triggerId);
         }
-        log.info(String.format("Executed %d status change listeners for %s in status %s in %d ms",
-                triggers.size(),
-                messageUid,
-                message.getStatus(),
-                System.currentTimeMillis() - t0));
+
+        // Look up the message
+        Message message = messageService.findByUid(messageUid);
+        if (message == null) {
+            throw new IllegalArgumentException("Invalid message " + messageUid);
+        }
+
+
+        executeStatusChangeTrigger(trigger, message, true);
     }
 
 
     /**
      * Executes the status change mailing list trigger for the given message
+     *
+     * The trigger may be an actual persisted entity or a template trigger user for testing.
+     * In the latter case, set "persist" to false to prevent the mails being persisted.
+     *
      * @param trigger the status change mailing list trigger to execute
      * @param message the message to execute the trigger for
      * @param persist whether to persist the mails or not
@@ -192,36 +188,49 @@ public class MailingListExecutionService extends BaseService {
 
 
     /**
-     * Checks every minute if there are pending scheduled mailing list triggers.
-     *
-     * TODO: Transaction Handling - one failed transaction should not prevent all future executions.
+     * Executes the scheduled mailing list trigger for the given message
+     * @param triggerId the ID of the scheduled mailing list trigger to execute
      */
-    @Schedule(persistent=false, second="37", minute="*/1", hour="*/1")
-    public void checkExecuteScheduledTriggers() {
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    public void executeScheduledTrigger(Integer triggerId) throws Exception {
 
-        List<MailingListTrigger> pendingTriggers = mailingListService.findPendingScheduledTriggers();
+        MailingListTrigger trigger = getByPrimaryKey(MailingListTrigger.class, triggerId);
+        if (trigger == null || trigger.getType() != TriggerType.SCHEDULED) {
+            throw new IllegalArgumentException("Invalid trigger " + triggerId);
+        }
 
-        if (!pendingTriggers.isEmpty()) {
-            log.info("Processing " + pendingTriggers.size() + " scheduled triggers");
-            for (MailingListTrigger trigger : pendingTriggers) {
-                try {
-                    executeScheduledTrigger(trigger, true);
-                    trigger.checkComputeNextScheduledExecution();
-                    saveEntity(trigger);
-                } catch (Exception e) {
-                    log.error("Failed executing scheduled mailing list trigger " + trigger + ": " + e);
-                }
+        executeScheduledTrigger(trigger, true);
+    }
+
+
+    /**
+     * Computes the next scheduled execution of the given trigger
+     * @param triggerId the ID of the scheduled mailing list trigger to execute
+     */
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    public void computeNextScheduledExecution(Integer triggerId) {
+
+        MailingListTrigger trigger = getByPrimaryKey(MailingListTrigger.class, triggerId);
+        if (trigger != null && trigger.getType() == TriggerType.SCHEDULED) {
+            try {
+                trigger.checkComputeNextScheduledExecution();
+                saveEntity(trigger);
+            } catch (Exception e) {
+                log.error("Failed computing next scheduled execution for trigger " + triggerId);
             }
         }
     }
 
 
     /**
-     * Executes the scheduled mailing list trigger for the given message
+     * Executes the scheduled mailing list trigger for the given message.
+     *
+     * The trigger may be an actual persisted entity or a template trigger user for testing.
+     * In the latter case, set "persist" to false to prevent the mails being persisted.
+     *
      * @param trigger the scheduled mailing list trigger to execute
      * @param persist whether to persist the mails or not
      */
-    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public List<ScheduledMail> executeScheduledTrigger(MailingListTrigger trigger, boolean persist) throws Exception {
 
         if (trigger.getType() != TriggerType.SCHEDULED) {
