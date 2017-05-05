@@ -15,8 +15,7 @@
     <field-template field="message.promulgation('navtex').text" update="append">
         <#setting locale="en">
         <@line format="navtex">
-            Water depths down to ${params.water_depth!0?c} M
-            have been observed
+            Water depths down to ${params.water_depth!0?c} M OBSERVED
             <@renderPositionList geomParam=part format="navtex" lang="en"/>
             <#if params.locality?has_content>IN ENTRANCE TO ${params.locality}</#if>.
         </@line>
