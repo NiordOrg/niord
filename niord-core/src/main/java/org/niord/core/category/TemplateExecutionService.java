@@ -273,7 +273,7 @@ public class TemplateExecutionService extends BaseService {
 
 
         // Next, for each associated promulgation type, execute any script resources associated with these
-        List<PromulgationType> types = promulgationTypeService.getPromulgationTypes(message).stream()
+        List<PromulgationType> types = promulgationTypeService.getPromulgationTypes(message, true).stream()
                 .filter(type -> !type.getScriptResourcePaths().isEmpty())
                 .collect(Collectors.toList());
 

@@ -192,12 +192,22 @@ public class PromulgationTypeService extends BaseService {
      * @return the list of promulgation types for the given message
      */
     public List<PromulgationType> getPromulgationTypes(SystemMessageVo message) {
+        return getPromulgationTypes(message, false);
+    }
+
+
+    /**
+     * Returns the list of promulgation types for the given message
+     * @return the list of promulgation types for the given message
+     */
+    public List<PromulgationType> getPromulgationTypes(SystemMessageVo message, boolean onlyPromulgating) {
 
         if (message.getPromulgations() == null) {
             return Collections.emptyList();
         }
 
         Set<String> typeIds = message.getPromulgations().stream()
+                .filter(p -> p.isPromulgate() || !onlyPromulgating)
                 .map(p -> p.getType().getTypeId())
                 .collect(Collectors.toSet());
         if (typeIds.isEmpty()) {
