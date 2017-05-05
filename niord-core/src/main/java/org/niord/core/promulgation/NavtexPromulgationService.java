@@ -42,6 +42,7 @@ import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -136,15 +137,11 @@ public class NavtexPromulgationService extends BasePromulgationService {
             // Update the NAVTEX preamble
             if (StringUtils.isNotBlank(navtex.getPreamble())) {
                 // Replace tokens
-                String preamble = navtex.getPreamble()
-                        .replace("${publish-date}", TimeUtils.formatNavtexDate(message.getPublishDateFrom()))
-                        .replace("${short-id}", StringUtils.defaultString(message.getShortId()));
-
-                // Format according to NAVTEX guidelines
-                preamble = TextUtils.maxLineLength(preamble, NAVTEX_LINE_LENGTH)
-                        .toUpperCase()
-                        .trim();
-                navtex.setPreamble(preamble);
+                navtex.setPreamble(expandNavtexPreambleTokens(
+                        navtex.getPreamble(),
+                        message.getStatus(),
+                        message.getPublishDateFrom(),
+                        message.getShortId()));
             }
 
             // Update the NAVTEX text
@@ -164,9 +161,34 @@ public class NavtexPromulgationService extends BasePromulgationService {
         if (StringUtils.isBlank(navtex.getPreamble()) && message.getMessageSeries() != null) {
             MessageSeries messageSeries = messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId());
             if (messageSeries != null && StringUtils.isNotBlank(messageSeries.getNavtexFormat())) {
-                navtex.setPreamble(messageSeries.getNavtexFormat());
+                navtex.setPreamble(expandNavtexPreambleTokens(
+                        messageSeries.getNavtexFormat(),
+                        message.getStatus(),
+                        message.getPublishDateFrom(),
+                        message.getShortId()));
             }
         }
+    }
+
+
+    /**
+     * If the message status is PUBLISHED, CANCELLED or DELETED, expand preamble tokens such as
+     * ${publish-date} and ${short-id}
+     */
+    private String expandNavtexPreambleTokens(String preamble, Status status, Date publishDateFrom, String shortId) {
+        // Update the NAVTEX preamble
+        if (StringUtils.isNotBlank(preamble) && status.isPublic()) {
+            // Replace tokens
+            preamble = preamble
+                    .replace("${publish-date}", TimeUtils.formatNavtexDate(publishDateFrom))
+                    .replace("${short-id}", StringUtils.defaultString(shortId));
+
+            // Format according to NAVTEX guidelines
+            preamble = TextUtils.maxLineLength(preamble, NAVTEX_LINE_LENGTH)
+                    .toUpperCase()
+                    .trim();
+        }
+        return preamble;
     }
 
 
