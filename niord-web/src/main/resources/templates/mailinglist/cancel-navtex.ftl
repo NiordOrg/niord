@@ -1,2 +1,4 @@
 
-CANCEL DANISH NAV WARN ${message.shortId!''}
+<#if message??>
+    CANCEL NAV WARN ${message.shortId!''}
+</#if>
