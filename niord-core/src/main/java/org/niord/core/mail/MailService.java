@@ -160,7 +160,7 @@ public class MailService extends BaseService {
             if (scheduledMail != null && scheduledMail.getStatus() == ScheduledMail.Status.PENDING) {
 
                 try {
-                    Mail mail = scheduledMail.toMail(app.getBaseUri(), HtmlMail.StyleHandling.INLINE_STYLES, true);
+                    Mail mail = scheduledMail.toMail(app.getBaseUri(), HtmlMail.StyleHandling.INLINE_STYLES, false);
 
                     // If undefined, set reply-to to the first to-recipient
                     if (mail.getReplyTo().isEmpty()) {
