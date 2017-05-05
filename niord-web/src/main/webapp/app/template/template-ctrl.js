@@ -397,6 +397,22 @@ angular.module('niord.template')
             };
 
 
+            /** When vicinity is focused, check if we should copy vicinity from another language version **/
+            $scope.checkCopyVicinity = function (lang) {
+                var desc = LangService.descForLanguage($scope.message, lang);
+                // If vicinity is blank, attempt to copy the vicinity from another language version
+                if (desc && (desc.vicinity === undefined || desc.vicinity === '')) {
+                    for (var x = 0; x < $scope.message.descs.length; x++) {
+                        var desc2 = $scope.message.descs[x];
+                        if (desc2.lang !== desc.lang && desc2.vicinity !== undefined && desc2.vicinity !== '') {
+                            desc.vicinity = desc2.vicinity;
+                            return;
+                        }
+                    }
+                }
+            };
+
+
             /** Executes the message template **/
             $scope.executeTemplates = function (selectMessage) {
                 if ($scope.operation === 'execute') {
