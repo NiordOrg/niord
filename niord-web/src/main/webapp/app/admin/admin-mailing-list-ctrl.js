@@ -38,6 +38,7 @@ angular.module('niord.admin')
             $scope.editMode = 'add';
             $scope.search = '';
             $scope.hasRole = $rootScope.hasRole;
+            $scope.timeZones = moment.tz.names();
 
 
             /** Loads the mailing lists from the back-end */
@@ -237,11 +238,14 @@ angular.module('niord.admin')
             $scope.updateTriggerType = function (trigger) {
                 if (trigger.type === 'STATUS_CHANGE') {
                     delete trigger.scheduleType;
-                    delete trigger.scheduledTimeOfDay;
+                    delete trigger.scheduledExecutionTime;
+                    delete trigger.scheduledExecutionTimeZone;
                     trigger.statusChanges = [];
                 } else if (trigger.type === 'SCHEDULED') {
                     trigger.scheduleType = 'DAILY';
-                    trigger.scheduledTimeOfDay = moment().valueOf();
+                    trigger.scheduledExecutionTime = moment().format('HH:mm');
+                    trigger.scheduledExecutionTimeZone = $rootScope.domain && $rootScope.domain.timeZone
+                                    ? $rootScope.domain.timeZone : moment.tz.guess();
                     delete trigger.statusChanges;
                 }
             };

@@ -22,8 +22,6 @@ import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 import org.niord.model.message.Status;
 
-import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -35,12 +33,12 @@ public class MailingListTriggerVo implements ILocalizable<MailingListTriggerDesc
 
     TriggerType type;
     ScheduleType scheduleType;
-    Date scheduledTimeOfDay;
+    String scheduledExecutionTime;
+    String scheduledExecutionTimeZone;
     Set<Status> statusChanges;
     String messageQuery;
     String messageFilter;
     List<String> scriptResourcePaths;
-    Set<String> languages = new HashSet<>();
     List<MailingListTriggerDescVo> descs;
 
 
@@ -74,12 +72,20 @@ public class MailingListTriggerVo implements ILocalizable<MailingListTriggerDesc
         this.scheduleType = scheduleType;
     }
 
-    public Date getScheduledTimeOfDay() {
-        return scheduledTimeOfDay;
+    public String getScheduledExecutionTime() {
+        return scheduledExecutionTime;
     }
 
-    public void setScheduledTimeOfDay(Date scheduledTimeOfDay) {
-        this.scheduledTimeOfDay = scheduledTimeOfDay;
+    public void setScheduledExecutionTime(String scheduledExecutionTime) {
+        this.scheduledExecutionTime = scheduledExecutionTime;
+    }
+
+    public String getScheduledExecutionTimeZone() {
+        return scheduledExecutionTimeZone;
+    }
+
+    public void setScheduledExecutionTimeZone(String scheduledExecutionTimeZone) {
+        this.scheduledExecutionTimeZone = scheduledExecutionTimeZone;
     }
 
     public Set<Status> getStatusChanges() {

@@ -16,6 +16,7 @@
 
 package org.niord.core.mailinglist;
 
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.mailinglist.vo.MailingListTriggerDescVo;
 import org.niord.core.mailinglist.vo.MailingListTriggerVo;
 import org.niord.core.model.VersionedEntity;
@@ -38,7 +39,6 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -78,11 +78,14 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
     ScheduleType scheduleType;
 
     /**
-     * We actually only use the time of day for the persisted date, but avoid time zone issues by storing
-     * the entire date, rather than just the time part, using TemporalType.TIME
-     **/
-    @Temporal(TemporalType.TIMESTAMP)
-    Date scheduledTimeOfDay;
+     * The time of day, in a "HH24:MM" format, where the trigger should be executed
+     */
+    String scheduledExecutionTime;
+
+    /**
+     * The time-zone of the scheduled execution time
+     */
+    String scheduledExecutionTimeZone;
 
     @Temporal(TemporalType.TIMESTAMP)
     Date nextScheduledExecution;
@@ -130,7 +133,8 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
 
         this.type = trigger.getType();
         this.scheduleType = trigger.getScheduleType();
-        this.scheduledTimeOfDay = trigger.getScheduledTimeOfDay();
+        this.scheduledExecutionTime = trigger.getScheduledExecutionTime();
+        this.scheduledExecutionTimeZone = trigger.getScheduledExecutionTimeZone();
         if (trigger.getStatusChanges() != null) {
             statusChanges = new HashSet<>(trigger.getStatusChanges());
         }
@@ -151,7 +155,8 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
         // Reset fields that are not valid for the current trigger type
         if (type == STATUS_CHANGE) {
             scheduleType = null;
-            scheduledTimeOfDay = null;
+            scheduledExecutionTime = null;
+            scheduledExecutionTimeZone = null;
             messageQuery = null;
         } else if (type == SCHEDULED) {
             statusChanges.clear();
@@ -167,7 +172,8 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
         MailingListTriggerVo trigger = new MailingListTriggerVo();
         trigger.setType(type);
         trigger.setScheduleType(scheduleType);
-        trigger.setScheduledTimeOfDay(scheduledTimeOfDay);
+        trigger.setScheduledExecutionTime(scheduledExecutionTime);
+        trigger.setScheduledExecutionTimeZone(scheduledExecutionTimeZone);
         if (!statusChanges.isEmpty()) {
             trigger.setStatusChanges(new HashSet<>(statusChanges));
         }
@@ -189,28 +195,8 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
      * computes the next scheduled execution
      */
     public void checkComputeNextScheduledExecution() {
-        if (type == SCHEDULED && scheduleType != null && scheduledTimeOfDay != null) {
-            Calendar timeOfDay = Calendar.getInstance();
-            timeOfDay.setTime(scheduledTimeOfDay);
-
-            Calendar nextExecution = Calendar.getInstance();
-            nextExecution.set(Calendar.HOUR_OF_DAY, timeOfDay.get(Calendar.HOUR_OF_DAY));
-            nextExecution.set(Calendar.MINUTE,      timeOfDay.get(Calendar.MINUTE));
-            nextExecution.set(Calendar.SECOND,      timeOfDay.get(Calendar.SECOND));
-            nextExecution.set(Calendar.MILLISECOND, 0);
-
-            Date now = new Date();
-            if (scheduleType == ScheduleType.DAILY) {
-                if (nextExecution.getTime().before(now)) {
-                    nextExecution.add(Calendar.DAY_OF_WEEK, 1);
-                }
-            } else {
-                nextExecution.set(Calendar.DAY_OF_WEEK, scheduleType.getCalendarField());
-                if (nextExecution.getTime().before(now)) {
-                    nextExecution.add(Calendar.WEEK_OF_YEAR, 1);
-                }
-            }
-            this.nextScheduledExecution = nextExecution.getTime();
+        if (type == SCHEDULED && scheduleType != null && StringUtils.isNotBlank(scheduledExecutionTime)) {
+            this.nextScheduledExecution = ScheduledExecutionTimeUtil.computeNextExecutionTime(this);
         }
     }
 
@@ -254,12 +240,20 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
         this.scheduleType = scheduleType;
     }
 
-    public Date getScheduledTimeOfDay() {
-        return scheduledTimeOfDay;
+    public String getScheduledExecutionTime() {
+        return scheduledExecutionTime;
     }
 
-    public void setScheduledTimeOfDay(Date scheduledTimeOfDay) {
-        this.scheduledTimeOfDay = scheduledTimeOfDay;
+    public void setScheduledExecutionTime(String scheduledExecutionTime) {
+        this.scheduledExecutionTime = scheduledExecutionTime;
+    }
+
+    public String getScheduledExecutionTimeZone() {
+        return scheduledExecutionTimeZone;
+    }
+
+    public void setScheduledExecutionTimeZone(String scheduledExecutionTimeZone) {
+        this.scheduledExecutionTimeZone = scheduledExecutionTimeZone;
     }
 
     public Set<Status> getStatusChanges() {
