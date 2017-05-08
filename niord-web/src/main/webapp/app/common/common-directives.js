@@ -671,6 +671,44 @@ angular.module('niord.common')
     }])
 
 
+    /********************************
+     * Used for inserting a help link.
+     ********************************/
+    .directive('help', [ '$rootScope', function ($rootScope) {
+        'use strict';
+
+        return {
+            restrict: 'E',
+            templateUrl: '/app/common/help-link.html',
+            scope: {
+                manual:     "@",    // either "editor" (default value), "admin" or "sysadmin"
+                section:    "@"     // sub-section of the manual
+            },
+
+            link: function(scope) {
+
+                // There is an underlying assumption that the url to the help link has the format
+                // http://docs.niord.org/${manual}-manual/manual.html#${section}
+
+                scope.helpLink = undefined;
+                scope.manual = scope.manual || 'editor';
+
+                if ($rootScope['documentationUrl'] !== undefined) {
+                    scope.helpLink = $rootScope['documentationUrl'];
+                    if (!scope.helpLink.endsWith('/')) {
+                        scope.helpLink += '/';
+                    }
+                    scope.helpLink += scope.manual + '-manual/manual.html';
+
+                    if (scope.section !== undefined) {
+                        scope.helpLink += '#' + encodeURIComponent(scope.section);
+                    }
+                }
+            }
+        }
+    }])
+
+
     /** Use this directive to set focus **/
     .directive('focus', ['$timeout', function ($timeout) {
         'use strict';

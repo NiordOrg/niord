@@ -21,6 +21,13 @@
     "editable"    : true
   },
   {
+    "key"         : "documentationUrl",
+    "description" : "The URL template to the documentation site",
+    "value"       : "http://docs.niord.org",
+    "web"         : true,
+    "editable"    : true
+  },
+  {
     "key"         : "modelLanguages",
     "description" : "The default message model languages",
     "value"       : [ "en" ],
