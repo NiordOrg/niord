@@ -35,12 +35,12 @@
     <#if format == 'navtex'>
         MARINERS REQUESTED TO PASS WITH CAUTION
         <#if vessel.minDist?has_content>
-            KEEPING MINIMUM DISTANCE ${vessel.minDist} ${(vessel.minDistType!'m')?upper_case}
+            KEEPING MINIMUM DISTANCE ${vessel.minDist}${(vessel.minDistType!'m')?upper_case}
         </#if>.
     <#else>
         Mariners are requested to pass with caution
         <#if vessel.minDist?has_content>
-            and keep a minimum distance of ${vessel.minDist} ${(vessel.minDistType!'m')?upper_case}
+            and keep a minimum distance of ${vessel.minDist}${(vessel.minDistType!'m')}
         </#if>.
     </#if>
 </#macro>
