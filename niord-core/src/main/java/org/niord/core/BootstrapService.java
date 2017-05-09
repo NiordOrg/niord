@@ -60,28 +60,5 @@ public class BootstrapService extends BaseService {
     @SuppressWarnings("all")
     private void handleUpgrade() {
 
-        try {
-
-            int updates = em.createNativeQuery(
-                    "update Category c set c.type = 'CATEGORY' where c.type is null or c.type = ''")
-                .executeUpdate();
-            em.flush();
-            log.info("*** UPDATED TYPE OF " + updates + " CATEGORIES");
-
-        } catch (Exception e) {
-            log.error("Error executing SQL ", e);
-        }
-
-        try {
-
-            int updates = em.createNativeQuery(
-                    "update Message m set m.type = 'COASTAL_WARNING' where m.type = 'SUBAREA_WARNING'")
-                .executeUpdate();
-            em.flush();
-            log.info("*** UPDATED TYPE OF " + updates + " MESSAGES");
-
-        } catch (Exception e) {
-            log.error("Error executing SQL ", e);
-        }
     }
 }
