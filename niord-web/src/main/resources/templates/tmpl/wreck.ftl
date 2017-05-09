@@ -21,7 +21,11 @@
 <field-template field="part.getDesc('en').details" format="html">
     <@renderVesselType defaultName="a vessel" format="long" lang="en"/>
     has sunk <@renderPositionList geomParam=part lang="en"/>.
-    The depth above the wreck is <#if params.wreck_depth??>${params.wreck_depth} m.<#else>unknown.</#if>
+    <#if params.wreck_visible!false>
+        The wreck is visible above the sea surface.
+    <#else>
+        The depth above the wreck is <#if params.wreck_depth??>${params.wreck_depth} m.<#else>unknown.</#if>
+    </#if>
     The wreck is <@renderMarkings markings=params.markings! lang="en" format="details" unmarkedText="unmarked"/><br>
     Mariners are advised to keep well clear.
 </field-template>
@@ -31,7 +35,11 @@
         <@line format="navtex">
             <@renderVesselType defaultName="A VESSEL" format="short" lang="en"/>
             SUNK <@renderPositionList geomParam=part format="navtex" lang="en"/>.
-            DEPTH ABOVE WRECK <#if params.wreck_depth??>${params.wreck_depth}M.<#else>UNKNOWN.</#if>
+            <#if params.wreck_visible!false>
+                WRECK VISIBLE ABOVE SEA SURFACE.
+            <#else>
+                DEPTH ABOVE WRECK <#if params.wreck_depth??>${params.wreck_depth}M.<#else>UNKNOWN.</#if>
+            </#if>
             WRECK <@renderMarkings markings=params.markings! lang="en" format="navtex"  unmarkedText="UNMARKED"/>
         </@line>
         <@line format="navtex">
