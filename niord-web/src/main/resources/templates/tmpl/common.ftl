@@ -187,9 +187,9 @@
 <!-- ***************************************  -->
 <!-- Renders the date interval                -->
 <!-- ***************************************  -->
-<#macro renderDateInterval dateInterval format="normal" lang='en'>
+<#macro renderDateInterval dateInterval format="normal" lang="en" tz="">
     <#setting locale=lang>
-    <@dateIntervalFormat dateInterval=dateInterval format=format/>
+    <@dateIntervalFormat dateInterval=dateInterval format=format tz=tz/>
 </#macro>
 
 

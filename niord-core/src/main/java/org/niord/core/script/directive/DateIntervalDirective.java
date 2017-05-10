@@ -22,15 +22,13 @@ import freemarker.template.TemplateDirectiveBody;
 import freemarker.template.TemplateDirectiveModel;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateModel;
+import org.apache.commons.lang.StringUtils;
+import org.niord.core.util.NavWarnDateFormatter;
+import org.niord.core.util.NavWarnDateFormatter.Format;
 import org.niord.model.message.DateIntervalVo;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 import java.util.Map;
-import java.util.ResourceBundle;
 import java.util.TimeZone;
 
 import static org.niord.core.script.FmTemplateService.BUNDLE_PROPERTY;
@@ -44,6 +42,7 @@ public class DateIntervalDirective implements TemplateDirectiveModel {
 
     private static final String PARAM_DATE_INTERVAL = "dateInterval";
     private static final String PARAM_FORMAT        = "format";
+    private static final String PARAM_TIME_ZONE     = "tz";
 
     /**
      * {@inheritDoc}
@@ -67,162 +66,39 @@ public class DateIntervalDirective implements TemplateDirectiveModel {
         }
 
         // Get the "format" parameter
+        Format format = Format.PLAIN;
         SimpleScalar formatModel = (SimpleScalar)params.get(PARAM_FORMAT);
-        boolean navtex = formatModel != null && "navtex".equalsIgnoreCase(formatModel.getAsString());
-
-        if (navtex) {
-            // NAVTEX
-            try {
-                String result = formatNavtexDateInterval(text.getResourceBundle(), env.getLocale(), dateInterval);
-                env.getOut().write(result);
-            } catch (Exception e) {
-                // Prefer robustness over correctness
-            }
-
-        } else {
-            // Non-NAVTEX case
-            SimpleScalar timeZoneId = (SimpleScalar)env.getDataModel().get(TIME_ZONE_PROPERTY);
-            TimeZone timeZone = (timeZoneId != null)
-                    ? TimeZone.getTimeZone(timeZoneId.toString())
-                    : TimeZone.getDefault();
-
-            try {
-                String result = formatDateInterval(text.getResourceBundle(), env.getLocale(), timeZone, dateInterval);
-                env.getOut().write(result);
-            } catch (Exception e) {
-                // Prefer robustness over correctness
-            }
-        }
-    }
-
-
-    /**
-     * Formats the date interval as text
-     * <p>
-     * Keep this function in sync with DateIntervalService.translateDateInterval() in message-service.js
-     *
-     * @param text the resource bundle
-     * @param locale the current locale
-     * @param dateInterval the date interval
-     * @return the formatted date interval
-     */
-    private String formatDateInterval(ResourceBundle text, Locale locale, TimeZone timeZone, DateIntervalVo dateInterval) throws Exception {
-        if (dateInterval == null || (dateInterval.getFromDate() == null && dateInterval.getToDate() == null)) {
-            return text.getString("msg.time.until_further_notice");
-        }
-
-        // TODO: Optimize based on same month and year. E.g.:
-        // "3 May 2016 - 4 Jun 2016" -> "3 May - 4 Jun 2016"
-        // "3 May 2016 - 4 May 2016" -> "3 - 4 May 2016"
-
-        Date from = dateInterval.getFromDate();
-        Date to = dateInterval.getToDate();
-        boolean allDay = dateInterval.getAllDay() != null && dateInterval.getAllDay();
-
-        DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.LONG, locale);
-        dateFormat.setTimeZone(timeZone);
-        DateFormat timeFormat = DateFormat.getTimeInstance(DateFormat.SHORT, locale);
-        timeFormat.setTimeZone(timeZone);
-        DateFormat timeZoneFormat = new SimpleDateFormat(" z");
-        timeZoneFormat.setTimeZone(timeZone);
-
-        StringBuilder result = new StringBuilder();
-
-        if (from != null && to != null) {
-            String fromDateTxt = dateFormat.format(from);
-            String toDateTxt = dateFormat.format(to);
-
-            if (fromDateTxt.equals(toDateTxt)) {
-                result.append(fromDateTxt);
-                if (!allDay) {
-                    String fromTimeTxt = timeFormat.format(from);
-                    String toTimeTxt = timeFormat.format(to);
-                    result.append(" ").append(fromTimeTxt);
-                    if (!fromTimeTxt.equals(toTimeTxt)) {
-                        result.append(" - ").append(toTimeTxt);
-                    }
-                }
-
-            } else {
-                if (allDay) {
-                    // Different dates
-                    result.append(fromDateTxt).append(" - ").append(toDateTxt);
-                } else {
-                    // Different dates
-                    String fromTimeTxt = timeFormat.format(from);
-                    String toTimeTxt = timeFormat.format(to);
-                    result.append(fromDateTxt).append(" ").append(fromTimeTxt).append(" - ")
-                            .append(toDateTxt).append(" ").append(toTimeTxt);
-                }
-            }
-
-        } else if (from != null) {
-            String fromDateTxt = dateFormat.format(from);
-            if (!allDay) {
-                fromDateTxt += " " + timeFormat.format(from);
-            }
-            result.append(text.getString("msg.time.from_date").replace("{{fromDate}}", fromDateTxt));
-
-        } else if (to != null) {
-            String toDateTxt = dateFormat.format(to);
-            if (!allDay) {
-                toDateTxt += " " + timeFormat.format(to);
-            }
-            result.append(text.getString("msg.time.to_date").replace("{{toDate}}", toDateTxt));
-        }
-
-        // Add the time zone
-        result.append(timeZoneFormat.format(new Date()));
-
-        return result.toString();
-    }
-
-
-
-    /**
-     * Formats the date interval as text in the NAVTEX format
-     *
-     * @param text the resource bundle
-     * @param locale the current locale
-     * @param dateInterval the date interval
-     * @return the formatted date interval
-     */
-    private String formatNavtexDateInterval(ResourceBundle text, Locale locale, DateIntervalVo dateInterval) throws Exception {
-        if (dateInterval == null || (dateInterval.getFromDate() == null && dateInterval.getToDate() == null)) {
-            return text.getString("msg.time.until_further_notice");
-        }
-
-        // TODO: Optimize based on same month and year. E.g.:
-        // "3 May 2016 - 4 Jun 2016" -> "3 May - 4 Jun 2016"
-        // "3 May 2016 - 4 May 2016" -> "3 - 4 May 2016"
-
-        Date from = dateInterval.getFromDate();
-        Date to = dateInterval.getToDate();
-        boolean allDay = dateInterval.getAllDay() != null && dateInterval.getAllDay();
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("ddHHmm 'UTC' MMM yy", Locale.US);
-        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-        StringBuilder result = new StringBuilder();
-
-        if (from != null) {
-            String fromDateTxt = dateFormat.format(from);
-            if (to == null) {
-                result.append(text.getString("msg.time.from_date").replace("{{fromDate}}", fromDateTxt));
-            } else {
-                result.append(fromDateTxt).append(" - ");
-
-            }
-        }
-        if (to != null) {
-            String toDateTxt = dateFormat.format(to);
-            if (from == null) {
-                result.append(text.getString("msg.time.to_date").replace("{{toDate}}", toDateTxt));
-            } else {
-                result.append(toDateTxt);
+        if (formatModel != null) {
+            if ("navtex".equalsIgnoreCase(formatModel.getAsString())) {
+                format = Format.NAVTEX;
+            } else if ("html".equalsIgnoreCase(formatModel.getAsString())) {
+                format = Format.HTML;
             }
         }
 
-        return result.toString();
+        // For the time zone, first check for "tz" parameter, next check for "timeZone" data, lastly pick default.
+        SimpleScalar timeZoneParam = (SimpleScalar)params.get(PARAM_TIME_ZONE);
+        boolean showTimeZone = timeZoneParam != null && StringUtils.isNotBlank(timeZoneParam.getAsString());
+        SimpleScalar timeZoneModel = showTimeZone
+                ? timeZoneParam
+                : (SimpleScalar)env.getDataModel().get(TIME_ZONE_PROPERTY);
+        String timeZoneId = (timeZoneModel != null)
+                ? timeZoneModel.toString()
+                : TimeZone.getDefault().getID();
+
+        NavWarnDateFormatter formatter = NavWarnDateFormatter.newDateFormatter(
+                text.getResourceBundle(),
+                format,
+                env.getLocale(),
+                timeZoneId,
+                showTimeZone);
+
+
+        try {
+            String result = formatter.formatDateInterval(dateInterval);
+            env.getOut().write(result);
+        } catch (Exception e) {
+            // Prefer robustness over correctness
+        }
     }
 }
