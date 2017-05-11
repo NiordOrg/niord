@@ -721,7 +721,6 @@ angular.module('niord.common')
                             } else {
                                 scope.helpLink = undefined;
                             }
-                            console.log("XXXXXXX " + scope.helpLink);
                         });
                     }
 
