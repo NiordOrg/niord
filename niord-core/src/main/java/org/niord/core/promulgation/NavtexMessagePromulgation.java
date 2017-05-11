@@ -53,7 +53,7 @@ public class NavtexMessagePromulgation
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    NavtexPriority priority = NavtexPriority.NONE;
+    NavtexPriority priority = NavtexPriority.ROUTINE;
 
     @ManyToMany
     List<NavtexTransmitter> transmitters = new ArrayList<>();

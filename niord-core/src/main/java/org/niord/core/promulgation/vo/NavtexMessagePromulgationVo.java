@@ -19,6 +19,7 @@ package org.niord.core.promulgation.vo;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.promulgation.IMailPromulgation;
 import org.niord.core.promulgation.NavtexMessagePromulgation;
+import org.niord.core.promulgation.NavtexMessagePromulgation.NavtexPriority;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +30,7 @@ import java.util.Map;
 @SuppressWarnings("unused")
 public class NavtexMessagePromulgationVo extends BaseMessagePromulgationVo<NavtexMessagePromulgation> implements IMailPromulgation {
 
-    NavtexMessagePromulgation.NavtexPriority priority = NavtexMessagePromulgation.NavtexPriority.NONE;
+    NavtexPriority priority = NavtexPriority.ROUTINE;
 
     Map<String, Boolean> transmitters = new HashMap<>();
 
@@ -68,7 +69,7 @@ public class NavtexMessagePromulgationVo extends BaseMessagePromulgationVo<Navte
     public NavtexMessagePromulgationVo reset() {
         transmitters.clear();
         text = null;
-        priority = NavtexMessagePromulgation.NavtexPriority.NONE;
+        priority = NavtexPriority.ROUTINE;
         return this;
     }
 
@@ -77,11 +78,11 @@ public class NavtexMessagePromulgationVo extends BaseMessagePromulgationVo<Navte
     /** Getters and Setters **/
     /*************************/
 
-    public NavtexMessagePromulgation.NavtexPriority getPriority() {
+    public NavtexPriority getPriority() {
         return priority;
     }
 
-    public void setPriority(NavtexMessagePromulgation.NavtexPriority priority) {
+    public void setPriority(NavtexPriority priority) {
         this.priority = priority;
     }
 
