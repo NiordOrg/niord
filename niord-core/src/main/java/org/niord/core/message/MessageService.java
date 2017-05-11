@@ -644,6 +644,7 @@ public class MessageService extends BaseService {
             // Update the publish date needs updating
             if (message.getPublishDateFrom() == null || message.getPublishDateFrom().after(now)) {
                 message.setPublishDateFrom(now);
+                message.checkUpdateYear();
             }
 
             // If no event dates are defined, add event dates based on publish start date

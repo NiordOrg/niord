@@ -19,7 +19,7 @@
 </#if>
 
 <field-template field="part.getDesc('en').details" format="html">
-    <@renderDateIntervals dateInterval=part.eventDates lang="en" capFirst=true/>
+    <@renderDateIntervals dateIntervals=part.eventDates lang="en" capFirst=true/>
     <#if params.exercise_type??>
         <@renderListValue value=params.exercise_type defaultValue="" lang="en"/>
     </#if>
@@ -32,7 +32,7 @@
 <#if promulgate('navtex')>
     <field-template field="message.promulgation('navtex').text" update="append">
         <@line format="navtex">
-            <@renderDateIntervals dateInterval=part.eventDates lang="en" format="navtex"/>
+            <@renderDateIntervals dateIntervals=part.eventDates lang="en" format="navtex"/>
             <#if params.exercise_type??>
                 <@renderListValue value=params.exercise_type lang="en" defaultValue="" format="navtex"/>
             </#if>

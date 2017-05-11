@@ -219,6 +219,19 @@
 
 
 <!-- ***************************************  -->
+<!-- Renders the number and year of a         -->
+<!-- as "number-3-digits/year-2-digits"       -->
+<!-- ***************************************  -->
+<#macro renderNumberYearId message defaultValue="" >
+    <#if message?? && message.year?? && message.number??>
+        ${message.number?string['000']}/${(message.year % 100)?string['00']}
+    <#else>
+        ${defaultValue}
+    </#if>
+</#macro>
+
+
+<!-- ***************************************  -->
 <!-- Renders the message source + publ. date  -->
 <!-- ***************************************  -->
 <#function renderSource desc msg >

@@ -17,6 +17,7 @@ package org.niord.core.message.vo;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.message.Message;
+import org.niord.core.message.MessageTokenExpander;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.core.repo.IRepoBackedVo;
 import org.niord.core.util.UidUtils;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
 public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
 
     int revision;
+    Integer year; // NB: Read-only
     Boolean autoTitle;
     String thumbnailPath;
     String repoPath;
@@ -200,6 +202,27 @@ public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
     }
 
 
+    /** Returns a more NAVTEX-savvy message ID **/
+    public String computeNumberYearId() {
+        if (getNumber() != null && year != null) {
+            return String.format("%03d/%02d", getNumber(), year - 2000);
+        }
+        return "";
+    }
+
+
+    /**
+     * Create a new instance of the token-expander for the given message. Can be used to replace
+     * tokens such as "${short-id}" and "${title}" in template strings.
+     * @param languages all supported languages
+     * @param language optionally, define a current language
+     * @return a new instance of the token-expander
+     */
+    public MessageTokenExpander newMessageTokenExpander(List<String> languages, String language) {
+        return MessageTokenExpander.getInstance(this, languages, language);
+    }
+
+
     /*************************/
     /** Getters and Setters **/
     /*************************/
@@ -211,6 +234,14 @@ public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
 
     public void setRevision(int revision) {
         this.revision = revision;
+    }
+
+    public Integer getYear() {
+        return year;
+    }
+
+    public void setYear(Integer year) {
+        this.year = year;
     }
 
     public Boolean isAutoTitle() {

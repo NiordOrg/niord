@@ -22,6 +22,7 @@ import org.niord.core.db.CriteriaHelper;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageSeriesService;
+import org.niord.core.message.MessageTokenExpander;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.core.promulgation.vo.NavtexMessagePromulgationVo;
@@ -141,7 +142,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
                         navtex.getPreamble(),
                         message.getStatus(),
                         message.getPublishDateFrom(),
-                        message.getShortId()));
+                        message.newMessageTokenExpander(null, null)));
             }
 
             // Update the NAVTEX text
@@ -165,7 +166,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
                         messageSeries.getNavtexFormat(),
                         message.getStatus(),
                         message.getPublishDateFrom(),
-                        message.getShortId()));
+                        message.newMessageTokenExpander(null, null)));
             }
         }
     }
@@ -175,13 +176,14 @@ public class NavtexPromulgationService extends BasePromulgationService {
      * If the message status is PUBLISHED, CANCELLED or DELETED, expand preamble tokens such as
      * ${publish-date} and ${short-id}
      */
-    private String expandNavtexPreambleTokens(String preamble, Status status, Date publishDateFrom, String shortId) {
+    private String expandNavtexPreambleTokens(String preamble, Status status, Date publishDateFrom, MessageTokenExpander tokenExpander) {
         // Update the NAVTEX preamble
         if (StringUtils.isNotBlank(preamble) && status.isPublic()) {
+
             // Replace tokens
-            preamble = preamble
-                    .replace("${publish-date}", TimeUtils.formatNavtexDate(publishDateFrom))
-                    .replace("${short-id}", StringUtils.defaultString(shortId));
+            preamble = tokenExpander
+                    .token("${publish-date}", TimeUtils.formatNavtexDate(publishDateFrom))
+                    .expandTokens(preamble);
 
             // Format according to NAVTEX guidelines
             preamble = TextUtils.maxLineLength(preamble, NAVTEX_LINE_LENGTH)

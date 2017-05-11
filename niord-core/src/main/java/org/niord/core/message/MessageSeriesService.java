@@ -346,7 +346,7 @@ public class MessageSeriesService extends BaseService {
             if (publishDate == null) {
                 throw new IllegalArgumentException("Publish date must be specified");
             }
-            int year = TimeUtils.getCalendarField(publishDate, Calendar.YEAR);
+            int year = message.checkUpdateYear();
 
             // If requested assign a new message number
             if (assignMessageNumber && message.getNumber() == null) {

@@ -17,7 +17,9 @@
 package org.niord.core.message;
 
 import org.apache.commons.lang.StringUtils;
+import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.model.DataFilter;
+import org.niord.model.message.MessageDescVo;
 
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +65,46 @@ public class MessageTokenExpander {
             params.put("${uid}", StringUtils.defaultString(message.getUid()));
             params.put("${id}", message.getId() == null ? "" : message.getId().toString());
             params.put("${short-id}", message.getShortId() == null ? "" : message.getShortId());
+            params.put("${number-year-id}", message.computeNumberYearId());
+            params.put("${number}", message.getNumber() == null ? "" : String.valueOf(message.getNumber()));
+            params.put("${number-3-digits}", message.getNumber() == null ? "" : String.format("%03d", message.getNumber()));
+            params.put("${main-type}", message.getMainType() == null ? "" : message.getMainType().toString());
+            params.put("${main-type-lower}", message.getMainType() == null ? "" : message.getMainType().toString().toLowerCase());
+        }
+
+        return new MessageTokenExpander(params);
+    }
+
+
+    /**
+     * Create a new instance of the token-expander for the given message
+     * @param message the message
+     * @param languages all supported languages
+     * @param language optionally, define a current language
+     * @return a new instance of the token-expander
+     */
+    public static MessageTokenExpander getInstance(SystemMessageVo message, List<String> languages, String language) {
+
+        Map<String, String> params = new HashMap<>();
+
+        if (message != null) {
+            if (StringUtils.isNotBlank(language)) {
+                MessageDescVo desc = message.getDescs() == null || message.getDescs().isEmpty()
+                        ? null
+                        : message.getDescs(DataFilter.get().lang(language)).get(0);
+                params.put("${title}", desc == null ? "" : StringUtils.defaultString(desc.getTitle()));
+            }
+
+            if (languages != null) {
+                languages.forEach(lang -> {
+                    MessageDescVo desc = message.getDesc(lang);
+                    params.put("${title:" + lang + "}", desc == null ? "" : StringUtils.defaultString(desc.getTitle()));
+                });
+            }
+
+            params.put("${uid}", StringUtils.defaultString(message.getId()));
+            params.put("${short-id}", message.getShortId() == null ? "" : message.getShortId());
+            params.put("${number-year-id}", message.computeNumberYearId());
             params.put("${number}", message.getNumber() == null ? "" : String.valueOf(message.getNumber()));
             params.put("${number-3-digits}", message.getNumber() == null ? "" : String.format("%03d", message.getNumber()));
             params.put("${main-type}", message.getMainType() == null ? "" : message.getMainType().toString());

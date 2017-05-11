@@ -4,7 +4,7 @@
 <@defaultSubjectFieldTemplates/>
 
 <field-template field="part.getDesc('en').details" format="html">
-    <@renderDateIntervals dateInterval=part.eventDates lang="en" capFirst=true/>
+    <@renderDateIntervals dateIntervals=part.eventDates lang="en" capFirst=true/>
     salvage operations is carried out
     <#if params.salvage_type??>
         on <@renderListValue value=params.salvage_type defaultValue="" lang="en"/>
@@ -16,7 +16,7 @@
 <#if promulgate('navtex')>
     <field-template field="message.promulgation('navtex').text" update="append">
         <@line format="navtex">
-            <@renderDateIntervals dateInterval=part.eventDates lang="en" format="navtex"/>
+            <@renderDateIntervals dateIntervals=part.eventDates lang="en" format="navtex"/>
             SALVAGE OPERATION
             <#if params.salvage_type??>
                 ON <@renderListValue value=params.salvage_type lang="en" defaultValue="" format="navtex"/>

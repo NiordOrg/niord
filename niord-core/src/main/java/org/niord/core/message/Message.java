@@ -371,6 +371,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         if (message instanceof SystemMessageVo) {
             SystemMessageVo systemMessage = (SystemMessageVo)message;
             systemMessage.setRevision(revision + 1); // NB: Increase revision number
+            systemMessage.setYear(year);
             systemMessage.setRepoPath(repoPath);
             systemMessage.setThumbnailPath(thumbnailPath);
             systemMessage.setAutoTitle(autoTitle);
@@ -433,7 +434,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
         updateAggregateEventDateInterval();
 
         // Sync the year field from the publishDateFrom date
-        year = publishDateFrom != null ? TimeUtils.getCalendarField(publishDateFrom, Calendar.YEAR) : null;
+        checkUpdateYear();
 
         // Update the auto-generated message fields
         updateAutoMessageFields();
@@ -458,6 +459,18 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                 eventDateTo = di.getToDate();
             }
         });
+    }
+
+
+    /**
+     * Check if year can be updated from the publish date
+     * @return the year or null if undefined
+     */
+    public Integer checkUpdateYear() {
+        // Sync the year field from the publishDateFrom date
+        // TODO: Needs to incorporate time-zone of domain (via message series)
+        year = publishDateFrom != null ? TimeUtils.getCalendarField(publishDateFrom, Calendar.YEAR) : null;
+        return year;
     }
 
 
@@ -702,6 +715,27 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
                 .flatMap(f -> Arrays.stream(f.getFeatures()))
                 .toArray(FeatureVo[]::new));
         return fc;
+    }
+
+
+    /** Returns a more NAVTEX-savvy message ID **/
+    public String computeNumberYearId() {
+        if (number != null && year != null) {
+            return String.format("%03d/%02d", number, year - 2000);
+        }
+        return "";
+    }
+
+
+    /**
+     * Create a new instance of the token-expander for the given message. Can be used to replace
+     * tokens such as "${short-id}" and "${title}" in template strings.
+     * @param languages all supported languages
+     * @param language optionally, define a current language
+     * @return a new instance of the token-expander
+     */
+    public MessageTokenExpander newMessageTokenExpander(List<String> languages, String language) {
+        return MessageTokenExpander.getInstance(this, languages, language);
     }
 
 
