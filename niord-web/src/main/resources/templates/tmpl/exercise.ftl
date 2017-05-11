@@ -37,7 +37,7 @@
                 <@renderListValue value=params.exercise_type lang="en" defaultValue="" format="navtex"/>
             </#if>
             <@renderPositionList geomParam=part lang="en" format="navtex"/>.
-            Guard vessels will be in area listening on VHF CH 16.
+            Guard vessels in area listening VHF CH 16.
             MARINERS REQUESTED TO PASS WITH CAUTION.
         </@line>
     </field-template>

@@ -25,9 +25,15 @@
                 Guard vessels will be in the area.
             </#if>
             <#if vessel.contact!false>
-                The <#if vessel.guardVessels!false>vessels are<#else>vessel is</#if>
-                listening on VHF channel 16
-                <#if vessel.channel?has_content>and ${vessel.channel}</#if>.
+                <#if format == 'navtex'>
+                    <#if vessel.guardVessels!false>vessels<#else>vessel</#if>
+                    listening VHF CH 16
+                    <#if vessel.channel?has_content>and ${vessel.channel}</#if>.
+                <#else>
+                    The <#if vessel.guardVessels!false>vessels are<#else>vessel is</#if>
+                    listening on VHF channel 16
+                    <#if vessel.channel?has_content>and ${vessel.channel}</#if>.
+                </#if>
             </#if>
         </#if>
     </#if>
