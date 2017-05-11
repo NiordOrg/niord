@@ -674,7 +674,7 @@ angular.module('niord.common')
     /********************************
      * Used for inserting a help link.
      ********************************/
-    .directive('help', [ '$rootScope', '$state', function ($rootScope, $state) {
+    .directive('help', [ '$rootScope', function ($rootScope) {
         'use strict';
 
         return {
