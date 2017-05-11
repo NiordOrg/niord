@@ -196,10 +196,10 @@
 <!-- ***************************************  -->
 <!-- Renders the date intervals                -->
 <!-- ***************************************  -->
-<#macro renderDateIntervals dateIntervals format="html" lang="en" tz="">
+<#macro renderDateIntervals dateIntervals format="html" lang="en" tz="" capFirst=false>
     <#setting locale=lang>
     <#if dateIntervals?has_content>
-        <@dateIntervalFormat dateIntervals=dateIntervals format=format tz=tz/>
+        <@dateIntervalFormat dateIntervals=dateIntervals format=format tz=tz capFirst=capFirst/>
     </#if>
 </#macro>
 

@@ -17,11 +17,14 @@ package org.niord.core.script.directive;
 
 import freemarker.core.Environment;
 import freemarker.ext.beans.BeanModel;
+import freemarker.template.DefaultListAdapter;
 import freemarker.template.SimpleScalar;
+import freemarker.template.TemplateBooleanModel;
 import freemarker.template.TemplateDirectiveBody;
 import freemarker.template.TemplateDirectiveModel;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateModel;
+import freemarker.template.TemplateModelException;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.util.NavWarnDateFormatter;
 import org.niord.core.util.NavWarnDateFormatter.Format;
@@ -36,7 +39,7 @@ import static org.niord.core.script.FmTemplateService.BUNDLE_PROPERTY;
 import static org.niord.core.script.FmTemplateService.TIME_ZONE_PROPERTY;
 
 /**
- * This Freemarker directive will format a date interval
+ * This Freemarker directive will format a date interval(s) according to Navigational Warning standards
  */
 @SuppressWarnings("unused")
 public class DateIntervalDirective implements TemplateDirectiveModel {
@@ -45,11 +48,13 @@ public class DateIntervalDirective implements TemplateDirectiveModel {
     private static final String PARAM_DATE_INTERVALS    = "dateIntervals";
     private static final String PARAM_FORMAT            = "format";
     private static final String PARAM_TIME_ZONE         = "tz";
+    private static final String PARAM_CAP_FIRST         = "capFirst";
 
     /**
      * {@inheritDoc}
      */
     @Override
+    @SuppressWarnings("unchecked")
     public void execute(Environment env,
                         Map params,
                         TemplateModel[] loopVars,
@@ -67,11 +72,20 @@ public class DateIntervalDirective implements TemplateDirectiveModel {
             dateInterval = (DateIntervalVo)dateIntervalParam.getWrappedObject();
         }
 
+        // Alternatively, resolve the "dateIntervals" parameter
         List<DateIntervalVo> dateIntervals  = null;
-        BeanModel dateIntervalsParam = (BeanModel)params.get(PARAM_DATE_INTERVALS);
+        DefaultListAdapter dateIntervalsParam = (DefaultListAdapter)params.get(PARAM_DATE_INTERVALS);
         if (dateIntervalsParam != null && dateIntervalsParam.getWrappedObject() != null) {
-            dateIntervals = (List<DateIntervalVo>)dateIntervalParam.getWrappedObject();
+            dateIntervals = (List<DateIntervalVo>)dateIntervalsParam.getWrappedObject();
         }
+
+        // Make sure that either "dateInterval" or "dateIntervals" has been specified
+        if (dateInterval == null && dateIntervals == null) {
+            throw new TemplateModelException("The 'dateInterval' or 'dateIntervals' parameter must be specified");
+        } else if (dateInterval != null && dateIntervals != null) {
+            throw new TemplateModelException("Only one of the 'dateInterval' and 'dateIntervals' parameters must be specified");
+        }
+
 
         // Get the "format" parameter
         Format format = Format.PLAIN;
@@ -101,15 +115,27 @@ public class DateIntervalDirective implements TemplateDirectiveModel {
                 timeZoneId,
                 showTimeZone);
 
+        // Get the capFirst parameter, i.e. whether or not to capitalize the first character
+        TemplateBooleanModel capFirstModel = (TemplateBooleanModel)params.get(PARAM_CAP_FIRST);
+        boolean capFirst = capFirstModel != null && capFirstModel.getAsBoolean();
 
         try {
+            String result;
+
+            // Generate the single date interval or list of date intervals
             if (dateInterval != null) {
-                String result = formatter.formatDateInterval(dateInterval);
-                env.getOut().write(result);
-            } else if (dateIntervals != null) {
-                String result = formatter.formatDateIntervals(dateIntervals);
-                env.getOut().write(result);
+                result = formatter.formatDateInterval(dateInterval);
+            } else {
+                result = formatter.formatDateIntervals(dateIntervals);
             }
+
+            // Check if we need to capitalize the result
+            if (capFirst) {
+                result = StringUtils.capitalize(result);
+            }
+
+            env.getOut().write(result);
+
         } catch (Exception e) {
             // Prefer robustness over correctness
         }

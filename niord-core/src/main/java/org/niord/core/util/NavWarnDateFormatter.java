@@ -147,13 +147,9 @@ public class NavWarnDateFormatter {
                         " - " +
                         TimeUtils.formatNavtexDate(di.getToDate()).toUpperCase();
             } else if (di.getFromDate() != null) {
-                return fromTxt
-                        .replace("{{fromDate}}", TimeUtils.formatNavtexDate(di.getFromDate()))
-                        .toUpperCase();
+                return fromTxt.toUpperCase() + TimeUtils.formatNavtexDate(di.getFromDate());
             } else {
-                return fromTxt
-                        .replace("{{toDate}}", TimeUtils.formatNavtexDate(di.getToDate()))
-                        .toUpperCase();
+                return untilTxt + TimeUtils.formatNavtexDate(di.getToDate());
             }
 
         } else {
