@@ -674,13 +674,14 @@ angular.module('niord.common')
     /********************************
      * Used for inserting a help link.
      ********************************/
-    .directive('help', [ '$rootScope', function ($rootScope) {
+    .directive('help', [ '$rootScope', '$state', function ($rootScope, $state) {
         'use strict';
 
         return {
             restrict: 'E',
             templateUrl: '/app/common/help-link.html',
             scope: {
+                type:       "@",    // either "manual" or "auto"
                 manual:     "@",    // either "editor" (default value), "admin" or "sysadmin"
                 section:    "@"     // sub-section of the manual
             },
@@ -690,10 +691,13 @@ angular.module('niord.common')
                 // There is an underlying assumption that the url to the help link has the format
                 // http://docs.niord.org/${manual}-manual/manual.html#${section}
 
+                scope.type = scope.type || 'manual';
                 scope.helpLink = undefined;
                 scope.manual = scope.manual || 'editor';
 
-                if ($rootScope['documentationUrl'] !== undefined) {
+
+                /** Updates the help link **/
+                scope.updateHelpLink = function () {
                     scope.helpLink = $rootScope['documentationUrl'];
                     if (!scope.helpLink.endsWith('/')) {
                         scope.helpLink += '/';
@@ -703,6 +707,25 @@ angular.module('niord.common')
                     if (scope.section !== undefined) {
                         scope.helpLink += '#' + encodeURIComponent(scope.section);
                     }
+                };
+
+
+                if ($rootScope['documentationUrl'] !== undefined) {
+
+                    if (scope.type === 'auto') {
+                        $rootScope.$on('$stateChangeSuccess', function (event, toState) {
+                            if (toState && toState.help && toState.help['section'] !== undefined) {
+                                scope.section = toState.help['section'];
+                                scope.manual = toState.help['manual'] || 'editor';
+                                scope.updateHelpLink();
+                            } else {
+                                scope.helpLink = undefined;
+                            }
+                            console.log("XXXXXXX " + scope.helpLink);
+                        });
+                    }
+
+                    scope.updateHelpLink();
                 }
             }
         }

@@ -671,6 +671,27 @@ body > .ui-select-container {
     border: none;
 }
 
+/** Help link **/
+
+.help-link {
+    font-size: 10px;
+    border: 1px solid gray;
+    border-radius: 7px;
+    padding: 2px 4px 4px 4px;
+}
+
+.help-link a {
+    color: gray;
+    text-decoration: none;
+}
+
+.auto-help-link {
+    position: absolute;
+    z-index: 310;
+    top: 60px;
+    right: 30px;
+}
+
 /** Template selection dialog **/
 
 .selected-atons-btn {
