@@ -851,7 +851,7 @@ angular.module('niord.editor')
 
             /** Adds a new date interval to the list of message date intervals */
             $scope.addPartEventDate = function (part) {
-                part.eventDates.push({ allDay: true, fromDate: undefined, toDate: undefined });
+                part.eventDates.push({ allDay: $scope.message.mainType === 'NM', fromDate: undefined, toDate: undefined });
                 $timeout(function () {
                     $('.evt-date:last').find('input:first').focus();
                 }, 100)
@@ -1561,6 +1561,7 @@ angular.module('niord.editor')
                     closeButtonText: 'Cancel',
                     actionButtonText: 'Confirm Cancellation',
                     headerText: 'Cancel Message',
+                    message: $scope.message,
                     cancelOptions: { createCancelMessage: false },
                     templateUrl: "cancelMessage.html"
                 };

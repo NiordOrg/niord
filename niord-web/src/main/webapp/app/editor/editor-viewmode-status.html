@@ -100,7 +100,7 @@
 <script type="text/ng-template" id="cancelMessage.html">
     <form name="copy_form">
         <p>Please confirm cancellation</p>
-        <div>
+        <div ng-if="modalOptions.message.mainType == 'NM'">
             <input type="checkbox" ng-model="modalOptions.cancelOptions.createCancelMessage"> Create cancellation message
         </div>
     </form>

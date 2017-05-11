@@ -507,7 +507,7 @@ angular.module('niord.template')
 
             /** Adds a new date interval to the list of message date intervals */
             $scope.addPartEventDate = function (part, focus) {
-                part.eventDates.push({ allDay: true, fromDate: undefined, toDate: undefined });
+                part.eventDates.push({ allDay: $scope.message.mainType === 'NM', fromDate: undefined, toDate: undefined });
                 if (focus) {
                     $timeout(function () { $('.evt-date:last').find('input:first').focus(); }, 100)
                 }
