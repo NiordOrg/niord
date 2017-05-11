@@ -460,6 +460,8 @@ public class MessageService extends BaseService {
             throw new Exception("updateMessage() cannot change status");
         }
 
+        original.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
+
         if (message.getType() != null) {
             if (!message.getMessageSeries().validType(message.getType())) {
                 throw new Exception("Invalid type for message " + message.getType());
@@ -467,7 +469,6 @@ public class MessageService extends BaseService {
             message.setMainType(message.getType().getMainType());
         }
 
-        original.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
         original.setNumber(message.getNumber());
         original.setShortId(message.getShortId());
         original.setType(message.getType());

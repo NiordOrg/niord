@@ -28,6 +28,7 @@ import org.niord.core.util.NavWarnDateFormatter.Format;
 import org.niord.model.message.DateIntervalVo;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -40,9 +41,10 @@ import static org.niord.core.script.FmTemplateService.TIME_ZONE_PROPERTY;
 @SuppressWarnings("unused")
 public class DateIntervalDirective implements TemplateDirectiveModel {
 
-    private static final String PARAM_DATE_INTERVAL = "dateInterval";
-    private static final String PARAM_FORMAT        = "format";
-    private static final String PARAM_TIME_ZONE     = "tz";
+    private static final String PARAM_DATE_INTERVAL     = "dateInterval";
+    private static final String PARAM_DATE_INTERVALS    = "dateIntervals";
+    private static final String PARAM_FORMAT            = "format";
+    private static final String PARAM_TIME_ZONE         = "tz";
 
     /**
      * {@inheritDoc}
@@ -63,6 +65,12 @@ public class DateIntervalDirective implements TemplateDirectiveModel {
         if (dateIntervalParam != null && dateIntervalParam.getWrappedObject() != null &&
                 dateIntervalParam.getWrappedObject() instanceof DateIntervalVo) {
             dateInterval = (DateIntervalVo)dateIntervalParam.getWrappedObject();
+        }
+
+        List<DateIntervalVo> dateIntervals  = null;
+        BeanModel dateIntervalsParam = (BeanModel)params.get(PARAM_DATE_INTERVALS);
+        if (dateIntervalsParam != null && dateIntervalsParam.getWrappedObject() != null) {
+            dateIntervals = (List<DateIntervalVo>)dateIntervalParam.getWrappedObject();
         }
 
         // Get the "format" parameter
@@ -95,8 +103,13 @@ public class DateIntervalDirective implements TemplateDirectiveModel {
 
 
         try {
-            String result = formatter.formatDateInterval(dateInterval);
-            env.getOut().write(result);
+            if (dateInterval != null) {
+                String result = formatter.formatDateInterval(dateInterval);
+                env.getOut().write(result);
+            } else if (dateIntervals != null) {
+                String result = formatter.formatDateIntervals(dateIntervals);
+                env.getOut().write(result);
+            }
         } catch (Exception e) {
             // Prefer robustness over correctness
         }
