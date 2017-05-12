@@ -752,6 +752,7 @@ angular.module('niord.messages')
                 showDetailsMenu:    "@",
                 showDetails:        "&",
                 showPromulgation:   "@",
+                promulgationClass:  "@",
                 compact:            "="
             },
             link: function(scope, element, attrs) {
@@ -761,6 +762,7 @@ angular.module('niord.messages')
                 scope.attachmentsBelow = [];
                 scope.showAttachments = scope.compact || false;
                 scope.promulgations = [];
+                scope.promulgationClass = scope.promulgationClass || 'col-sm-12';
 
 
                 // Returns if the given message is selected or not
@@ -857,9 +859,11 @@ angular.module('niord.messages')
                 templateUrl: '/app/messages/render-promulgations.html',
                 scope: {
                     msg:                "=",
+                    promulgationClass:  "@",
                     allPromulgations:   "="
                 },
-                link: function(scope, element, attrs) {
+                link: function(scope) {
+                    scope.promulgationClass = scope.promulgationClass || "col-sm-12 col-md-6";
                 }
             };
         }])

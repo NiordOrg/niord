@@ -318,7 +318,8 @@ div.mce-fullscreen {
 }
 
 .promulgation {
-    margin-top: 10px;
+    margin-top: 5px;
+    margin-bottom: 10px;
 }
 
 .disabled-promulgation {
@@ -328,8 +329,7 @@ div.mce-fullscreen {
 
 .promulgation-view-header {
     padding: 2px 5px;
-    border-top: 1px solid lightgray;
-    border-bottom: 1px solid lightgray;
+    border: 1px solid lightgray;
 }
 
 .navtex {
