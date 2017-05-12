@@ -326,6 +326,12 @@ div.mce-fullscreen {
     opacity: 0.4;
 }
 
+.promulgation-view-header {
+    padding: 2px 5px;
+    border-top: 1px solid lightgray;
+    border-bottom: 1px solid lightgray;
+}
+
 .navtex {
     font-family: "Courier New", serif;
     height: 120px;

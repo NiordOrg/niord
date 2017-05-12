@@ -8,7 +8,7 @@
     </span>
 </div>
 
-<div class="promulgation-text"
+<div class="promulgation-text" ng-if="promulgation.preamble || promulgation.text"
      style="font-family: 'Courier New', serif">
     <div ng-bind-html="promulgation.preamble | plain2html | toTrusted"></div>
     <div ng-bind-html="promulgation.text | plain2html | toTrusted"></div>

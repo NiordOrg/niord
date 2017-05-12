@@ -845,6 +845,26 @@ angular.module('niord.messages')
         }])
 
 
+    /********************************
+     * Renders the message part
+     ********************************/
+    .directive('renderPromulgations', [
+        function () {
+            'use strict';
+
+            return {
+                restrict: 'E',
+                templateUrl: '/app/messages/render-promulgations.html',
+                scope: {
+                    msg:                "=",
+                    allPromulgations:   "="
+                },
+                link: function(scope, element, attrs) {
+                }
+            };
+        }])
+
+
     /****************************************************************
      * Adds a message details drop-down menu
      ****************************************************************/
