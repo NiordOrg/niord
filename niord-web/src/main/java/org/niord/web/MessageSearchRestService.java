@@ -232,7 +232,7 @@ public class MessageSearchRestService {
 
         DataFilter filter = ("map".equalsIgnoreCase(params.getViewMode()))
                 ? Message.MESSAGE_MAP_FILTER.lang(params.getLanguage())
-                : Message.MESSAGE_DETAILS_FILTER.lang(params.getLanguage()).user(userService.userResolver());
+                : Message.MESSAGE_DETAILS_AND_PROMULGATIONS_FILTER.lang(params.getLanguage()).user(userService.userResolver());
         return search(params).map(m -> m.toVo(SystemMessageVo.class, filter));
     }
 

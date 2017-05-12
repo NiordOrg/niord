@@ -163,6 +163,7 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
                 if (message.getPublishDateFrom() == null) {
                     // Published, cancelled and expired message should have a published from-date
                     message.setPublishDateFrom(new Date());
+                    message.checkUpdateYear();
                 }
                 if (message.getStatus() != Status.PUBLISHED && message.getPublishDateTo() == null) {
                     // Cancelled and expired message should have a published to-date
@@ -204,6 +205,10 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
 
             // Reset all attachment IDs
             message.getAttachments().forEach(att -> att.setId(null));
+
+            // Reset all promulgation IDs
+            message.getPromulgations().forEach(p -> p.setId(null));
+
 
             getLog().info("Processed message " + origUid);
             return message;
