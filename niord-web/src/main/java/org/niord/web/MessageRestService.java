@@ -459,9 +459,9 @@ public class MessageRestService  {
                         p.setGeometry(featureService.copyFeatureCollection(p.getGeometry()));
                     });
         }
-        if (editMessage.getPromulgations() != null) {
-            editMessage.getPromulgations().forEach(p -> p.setId(null));
-        }
+
+        // Reset copied promulgations
+        promulgationManager.onCopyMessage(editMessage);
 
         return editMessage;
     }

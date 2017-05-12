@@ -150,6 +150,29 @@ public class PromulgationManager {
 
 
     /**
+     * When a message is created as a copy of another message, let the registered promulgation services
+     * check up on promulgations.
+     *
+     * @param message the message value object
+     */
+    public void onCopyMessage(SystemMessageVo message) throws PromulgationException {
+        if (message.getPromulgations() != null) {
+            // Always reset the ID of the copied promulgation
+            message.getPromulgations().forEach(p -> p.setId(null));
+
+            for (PromulgationType type : promulgationTypeService.getPromulgationTypes(message)) {
+                BasePromulgationService service = instantiatePromulgationService(type.getServiceId());
+                if (service != null) {
+                    service.onCopyMessage(message, type);
+                } else {
+                    log.warn("Unable to instantiate promulgation service for type " + type.getTypeId());
+                }
+            }
+        }
+    }
+
+
+    /**
      * Updates the promulgation status of the message promulgations based on the defaults for the promulgation type.
      *
      * @param message the message value object

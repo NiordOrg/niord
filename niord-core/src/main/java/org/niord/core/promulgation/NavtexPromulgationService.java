@@ -115,6 +115,18 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
     /** {@inheritDoc} */
     @Override
+    public void onCopyMessage(SystemMessageVo message, PromulgationType type) throws PromulgationException {
+        NavtexMessagePromulgationVo navtex = message.promulgation(NavtexMessagePromulgationVo.class, type.getTypeId());
+
+        // When copying a message with a NAVTEX promulgation, reset the preamble
+        if (navtex != null) {
+            navtex.setPreamble(null);
+        }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
     public void onCreateMessage(Message message, PromulgationType type) throws PromulgationException {
         checkNavtexPromulgation(message, type);
     }

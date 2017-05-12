@@ -101,6 +101,16 @@ public abstract class BasePromulgationService extends BaseService {
 
 
     /**
+     * When a message is created as a copy of another message, let the registered promulgation services
+     * check up on promulgations.
+     * @param message the message created as a copy of another message
+     * @param type the promulgation type
+     */
+    public void onCopyMessage(SystemMessageVo message, PromulgationType type) throws PromulgationException {
+    }
+
+
+    /**
      * Prior to creating a new message, let the registered promulgation services check up on promulgations.
      * Default implementation does nothing.
      * @param message the message about to be created

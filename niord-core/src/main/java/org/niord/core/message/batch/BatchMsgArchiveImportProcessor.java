@@ -30,6 +30,7 @@ import org.niord.core.message.MessageSeriesService;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.batch.BatchMsgArchiveImportReader.ExtractedArchiveMessageVo;
 import org.niord.core.message.vo.SystemMessageSeriesVo;
+import org.niord.core.promulgation.PromulgationManager;
 import org.niord.core.settings.SettingsService;
 import org.niord.model.message.Status;
 
@@ -73,6 +74,9 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
     @Inject
     FeatureService featureService;
 
+    @Inject
+    PromulgationManager promulgationManager;
+
     MessageSeries defaultMessageSeries;
 
     /** {@inheritDoc} **/
@@ -85,6 +89,9 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
         // rewritten to point to the zip archive folder. Rewrite back to the Niord repository structure
         String repoPath = messageVo.getMessage().getRepoPath();
         messageVo.getMessage().rewriteRepoPath("\"" + repoPath, "\"/rest/repo/file/" + repoPath);
+
+        // Reset copied promulgations
+        promulgationManager.onCopyMessage(messageVo.getMessage());
 
         // Process related message base data
         Message message = new Message(messageVo.getMessage());
@@ -205,10 +212,6 @@ public class BatchMsgArchiveImportProcessor extends AbstractItemHandler {
 
             // Reset all attachment IDs
             message.getAttachments().forEach(att -> att.setId(null));
-
-            // Reset all promulgation IDs
-            message.getPromulgations().forEach(p -> p.setId(null));
-
 
             getLog().info("Processed message " + origUid);
             return message;
