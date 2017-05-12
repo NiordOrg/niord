@@ -674,7 +674,7 @@ angular.module('niord.common')
     /********************************
      * Used for inserting a help link.
      ********************************/
-    .directive('help', [ '$rootScope', function ($rootScope) {
+    .directive('help', [ '$rootScope', '$state', function ($rootScope, $state) {
         'use strict';
 
         return {
@@ -710,21 +710,32 @@ angular.module('niord.common')
                 };
 
 
+                /** Based on the current router state, update an auto-type help link **/
+                scope.updateAutoHelp = function (state) {
+                    if (state && state.help && state.help['section'] !== undefined) {
+                        scope.section = state.help['section'];
+                        scope.manual = state.help['manual'] || 'editor';
+                        scope.updateHelpLink();
+                    } else {
+                        scope.helpLink = undefined;
+                    }
+                };
+
+
                 if ($rootScope['documentationUrl'] !== undefined) {
 
-                    if (scope.type === 'auto') {
-                        $rootScope.$on('$stateChangeSuccess', function (event, toState) {
-                            if (toState && toState.help && toState.help['section'] !== undefined) {
-                                scope.section = toState.help['section'];
-                                scope.manual = toState.help['manual'] || 'editor';
-                                scope.updateHelpLink();
-                            } else {
-                                scope.helpLink = undefined;
-                            }
-                        });
-                    }
-
                     scope.updateHelpLink();
+
+                    if (scope.type === 'auto') {
+
+                        // Whenever the state changes, update the auto-type help link
+                        $rootScope.$on('$stateChangeSuccess', function (event, toState) {
+                            scope.updateAutoHelp(toState);
+                        });
+
+                        // Bootstrap the auto-type help link
+                        scope.updateAutoHelp($state.current);
+                    }
                 }
             }
         }
