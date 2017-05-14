@@ -199,7 +199,7 @@ public class MessageSearchRestService {
         String description = params.toString();
         searchResult.setDescription(description);
 
-        log.info(String.format("Search [%s] returns %d of %d messages in %d ms",
+        log.debug(String.format("Search [%s] returns %d of %d messages in %d ms",
                 description, searchResult.getData().size(), searchResult.getTotal(), System.currentTimeMillis() - t0));
         return searchResult;
     }
