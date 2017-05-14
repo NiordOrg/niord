@@ -56,7 +56,8 @@ var app = angular.module('niord.admin', [
             /** Home **/
             .state('home', {
                 url: "/",
-                templateUrl: "/app/home/home.html"
+                templateUrl: "/app/home/home.html",
+                help: { section: 'home' }
             })
             .state('home.message', {
                 url: "message/{messageId:.*}",
@@ -111,23 +112,28 @@ var app = angular.module('niord.admin', [
             })
             .state('messages.table', {
                 url: "/table",
-                templateUrl: "/app/messages/messages-viewmode-table.html"
+                templateUrl: "/app/messages/messages-viewmode-table.html",
+                help: { section: 'messages' }
             })
             .state('messages.grid', {
                 url: "/grid",
-                templateUrl: "/app/messages/messages-viewmode-grid.html"
+                templateUrl: "/app/messages/messages-viewmode-grid.html",
+                help: { section: 'messages' }
             })
             .state('messages.map', {
                 url: "/map",
-                templateUrl: "/app/messages/messages-viewmode-map.html"
+                templateUrl: "/app/messages/messages-viewmode-map.html",
+                help: { section: 'messages' }
             })
             .state('messages.details', {
                 url: "/details",
-                templateUrl: "/app/messages/messages-viewmode-details.html"
+                templateUrl: "/app/messages/messages-viewmode-details.html",
+                help: { section: 'messages' }
             })
             .state('messages.selected', {
                 url: "/selected",
-                templateUrl: "/app/messages/messages-viewmode-selected.html"
+                templateUrl: "/app/messages/messages-viewmode-selected.html",
+                help: { section: 'messages' }
             })
 
 
