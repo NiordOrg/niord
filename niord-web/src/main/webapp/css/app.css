@@ -692,6 +692,24 @@ body > .ui-select-container {
     right: 30px;
 }
 
+.dialog-help-link {
+    position: absolute;
+    z-index: 310;
+    zoom: 0.6;
+    opacity: 0.4;
+    top: 50px;
+    right: 10px;
+}
+
+.message-details-help-link {
+    position: absolute;
+    z-index: 310;
+    zoom: 0.6;
+    opacity: 0.4;
+    top: 75px;
+    right: 30px;
+}
+
 /** Template selection dialog **/
 
 .selected-atons-btn {

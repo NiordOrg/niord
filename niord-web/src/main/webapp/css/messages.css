@@ -331,8 +331,8 @@ img.map-general-message-icon {
 .message-details-close-btn {
     float: right;
     position: absolute;
-    top: 30px;
-    right: 30px;
+    top: 20px;
+    right: 25px;
     z-index: 2000;
 }
 
