@@ -51,6 +51,7 @@
                 <#if !col?is_first && col?is_last> and <#elseif !col?is_first>, </#if>
                 <@formatLightCharacterColor col=col/>
             </#list>
+            flashes
         </#if>
 
     <#elseif lightGroup.phase == 'Oc'>
