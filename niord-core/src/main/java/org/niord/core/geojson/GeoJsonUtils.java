@@ -373,6 +373,7 @@ public class GeoJsonUtils {
 
                 SerializedFeature sf = new SerializedFeature();
                 sf.setName(FeatureName.getFeatureName(feature.getProperties(), lang));
+                sf.setGeometryType(feature.getGeometry() != null ? feature.getGeometry().getType() : null);
                 serializeGeometry(feature.getGeometry(), sf, feature.getProperties(), lang, new AtomicInteger(0));
                 if (StringUtils.isNotBlank(sf.getName()) || !sf.getCoordinates().isEmpty()) {
                     result.add(sf);
@@ -503,6 +504,7 @@ public class GeoJsonUtils {
     public static class SerializedFeature {
         String name;
         int startIndex = 0;
+        String geometryType;
         List<SerializedCoordinates> coordinates = new ArrayList<>();
 
         public String getName() {
@@ -511,6 +513,14 @@ public class GeoJsonUtils {
 
         public void setName(String name) {
             this.name = name;
+        }
+
+        public String getGeometryType() {
+            return geometryType;
+        }
+
+        public void setGeometryType(String geometryType) {
+            this.geometryType = geometryType;
         }
 
         public boolean getHasCoordinateName() {

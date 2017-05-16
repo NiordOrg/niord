@@ -148,12 +148,29 @@
 
 
 <!-- ***************************************  -->
+<!-- Returns if the geometry represents       -->
+<!-- an area, i.e. defined by a polygon       -->
+<!-- ***************************************  -->
+<#function isArea geomParam >
+    <#if geomParam?? && geomParam.geometry?has_content>
+        <#list geomParam.geometry as feature>
+            <#if feature.geometryType?has_content && (feature.geometryType == 'Polygon' || feature.geometryType == 'MultiPolygon')>
+                <#return true/>
+            </#if>
+        </#list>
+    </#if>
+    <#return false/>
+</#function>
+
+
+<!-- ***************************************  -->
 <!-- Renders the geometry parameter           -->
 <!-- as a list of positions                   -->
 <!-- ***************************************  -->
 <#macro renderPositionList geomParam format=posFormat plural=false lang='en'>
     <#setting locale=lang>
     <#assign positions=toPositions(geomParam)/>
+    <#assign area=isArea(geomParam)/>
 
     <#if positions?size gt 1>
         <#if plural>
@@ -163,6 +180,7 @@
                 <#default>${text('position.in_pos')}
             </#switch>
         <#else>
+            <#if area>${text('position.in_area')}</#if>
             <#switch format>
                 <#case 'audio'>${text('position.between_positions')}<#break>
                 <#case 'navtex'><#break>

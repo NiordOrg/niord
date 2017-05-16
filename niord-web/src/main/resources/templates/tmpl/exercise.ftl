@@ -23,7 +23,7 @@
     <#if params.exercise_type??>
         <@renderListValue value=params.exercise_type defaultValue="" lang="en"/>
     </#if>
-    will take place in the area
+    will take place
     <@renderPositionList geomParam=part lang="en"/>.
     Guard vessels will be in the area listening on VHF CH 16.
     Mariners are requested to pass with caution.
