@@ -36,6 +36,13 @@ public class FeatureVo extends GeoJsonVo {
     private GeometryVo geometry;
     private Map<String, Object> properties = new HashMap<>();
 
+
+    /** Constructor **/
+    public FeatureVo() {
+        setType("Feature");
+    }
+
+
     /** {@inheritDoc} */
     @Override
     public void visitCoordinates(Consumer<double[]> handler) {

@@ -32,9 +32,11 @@ public class PolygonVo extends GeometryVo {
 
     @SuppressWarnings("unused")
     public PolygonVo() {
+        setType("Polygon");
     }
 
     public PolygonVo(double[][][] coordinates) {
+        this();
         this.coordinates = coordinates;
     }
 

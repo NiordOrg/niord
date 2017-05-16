@@ -32,9 +32,11 @@ public class MultiPointVo extends GeometryVo {
 
     @SuppressWarnings("unused")
     public MultiPointVo() {
+        setType("MultiPoint");
     }
 
     public MultiPointVo(double[][] coordinates) {
+        this();
         this.coordinates = coordinates;
     }
 

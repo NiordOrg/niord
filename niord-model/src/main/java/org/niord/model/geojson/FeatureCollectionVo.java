@@ -21,6 +21,7 @@ import io.swagger.annotations.ApiModel;
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -34,6 +35,13 @@ public class FeatureCollectionVo extends GeoJsonVo {
     // NB: "id" not directly mentioned in specification, but it's useful...
     private Object id;
     private FeatureVo[] features;
+
+
+    /** Constructor **/
+    public FeatureCollectionVo() {
+        setType("FeatureCollection");
+    }
+
 
     /** {@inheritDoc} */
     @Override
@@ -62,7 +70,7 @@ public class FeatureCollectionVo extends GeoJsonVo {
         geometry.setType("GeometryCollection");
         geometry.setGeometries(Arrays.stream(features)
             .map(FeatureVo::getGeometry)
-            .filter(g -> g != null)
+            .filter(Objects::nonNull)
             .toArray(GeometryVo[]::new));
         return geometry;
     }

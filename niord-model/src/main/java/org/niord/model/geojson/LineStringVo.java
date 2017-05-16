@@ -32,9 +32,11 @@ public class LineStringVo extends GeometryVo {
 
     @SuppressWarnings("unused")
     public LineStringVo() {
+        setType("LineString");
     }
 
     public LineStringVo(double[][] coordinates) {
+        this();
         this.coordinates = coordinates;
     }
 

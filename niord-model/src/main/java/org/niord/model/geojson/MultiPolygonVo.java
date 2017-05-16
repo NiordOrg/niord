@@ -32,9 +32,11 @@ public class MultiPolygonVo extends GeometryVo {
 
     @SuppressWarnings("unused")
     public MultiPolygonVo() {
+        setType("MultiPolygon");
     }
 
     public MultiPolygonVo(double[][][][] coordinates) {
+        this();
         this.coordinates = coordinates;
     }
 

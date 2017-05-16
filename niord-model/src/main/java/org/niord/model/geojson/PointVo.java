@@ -32,9 +32,11 @@ public class PointVo extends GeometryVo {
 
     @SuppressWarnings("unused")
     public PointVo() {
+        setType("Point");
     }
 
     public PointVo(double[] coordinates) {
+        this();
         this.coordinates = coordinates;
     }
 

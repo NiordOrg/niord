@@ -32,9 +32,11 @@ public class MultiLineStringVo extends GeometryVo {
 
     @SuppressWarnings("unused")
     public MultiLineStringVo() {
+        setType("MultiLineString");
     }
 
     public MultiLineStringVo(double[][][] coordinates) {
+        this();
         this.coordinates = coordinates;
     }
 
