@@ -436,8 +436,13 @@ angular.module('niord.template')
             };
 
 
-            /** Computes the areas intersecting with the current message geometry **/
+            /** If no areas are defined, compute the areas intersecting with the current message geometry **/
             $scope.computeAreas = function () {
+                // Only update the areas, if the current area selection is empty
+                if ($scope.message.areas && $scope.message.areas.length > 0) {
+                    return;
+                }
+
                 // Create a combined geometry for all message parts
                 var geometry = {
                     type: 'FeatureCollection',
