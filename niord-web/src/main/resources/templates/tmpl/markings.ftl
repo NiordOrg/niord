@@ -4,7 +4,7 @@
 <!-- ***************************************  -->
 
 <#macro renderMarkings markings lang="en" format="details" unmarkedText="">
-    <#assign lightFormat=(format == 'audio')?then('verbose','normal')/>
+    <#assign lightFormat=(format == 'navtex')?then('normal','verbose')/>
     <#assign valueFormat=(format == 'navtex')?then('normal','long')/>
     <#if markings?has_content>
         marked with
