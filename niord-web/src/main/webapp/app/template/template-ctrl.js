@@ -582,8 +582,10 @@ angular.module('niord.template')
 
             $scope.$watch("message", $scope.updatePreviewMessage, true);
             $scope.$watch("operation", function() {
-                $scope.enterExecutionMode();
-                $scope.updatePreviewMessage();
+                $timeout(function () {
+                    $scope.enterExecutionMode();
+                    $scope.updatePreviewMessage();
+                }, 100);
             }, true);
 
         }]);
