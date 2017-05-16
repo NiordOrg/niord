@@ -27,30 +27,32 @@ if (dk) {
     message.areas.add(dkVo);
 }
 
-/** Example DGPS stations **/
 var dgpsStation = {
     'radio_navigation.dgps.skagen' :  {
         frequency: 296.0,
-        coordinates: Java.to([ 10.59512710571289, 57.74877166748047],"java.lang.Double[]")
+        coordinates: Java.to([ 10.59512710571289, 57.74877166748047],"java.lang.Double[]"),
+        transmitters: [ 'Baltico', 'Rogaland' ]
     },
     'radio_navigation.dgps.blåvand' :  {
         frequency: 290.0,
-        coordinates: Java.to([ 8.08320140838623, 55.5578498840332],"java.lang.Double[]")
+        coordinates: Java.to([ 8.08320140838623, 55.5578498840332],"java.lang.Double[]"),
+        transmitters: [ 'Baltico', 'Rogaland' ]
     },
     'radio_navigation.dgps.hammer_odde' :  {
         frequency: 289.5,
-        coordinates: Java.to([ 14.773825645446777, 55.298221588134766],"java.lang.Double[]")
+        coordinates: Java.to([ 14.773825645446777, 55.298221588134766],"java.lang.Double[]"),
+        transmitters: [ 'Baltico' ]
     },
     'radio_navigation.dgps.torshavn' :  {
         frequency: 287.5,
-        coordinates: Java.to([ -6.837833404541016, 62.02050018310547],"java.lang.Double[]")
+        coordinates: Java.to([ -6.837833404541016, 62.02050018310547],"java.lang.Double[]"),
+        transmitters: [ 'Rogaland' ]
     }
 };
 
 // Update the geometry of the message part
 if (params.dgps_station
     && params.dgps_station.key) {
-    var p = part;
     var station = dgpsStation[params.dgps_station.key];
     if (station !== undefined) {
         part.geometry.features.length = 0;
@@ -68,6 +70,16 @@ if (params.dgps_station
             featureJson,
             org.niord.model.geojson.FeatureVo.class);
         part.geometry.features = Java.to([ feature ], "org.niord.model.geojson.FeatureVo[]");
+
+        var navtex = message.promulgation('navtex');
+        if (navtex !== undefined && navtex.promulgate) {
+            for (var t = 0; t < station.transmitters.length; t++) {
+                var transmitter = station.transmitters[t];
+                if (navtex.transmitters !== undefined && navtex.transmitters.containsKey(transmitter)) {
+                    navtex.transmitters.put(transmitter, true);
+                }
+            }
+        }
 
         params.put('station', station);
     }

@@ -45,6 +45,7 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -317,6 +318,13 @@ public class NavtexPromulgationService extends BasePromulgationService {
                 Set<String> enabledTransmitters = findTransmittersByAreas(typeId, areas, true).stream()
                         .map(NavtexTransmitter::getName)
                         .collect(Collectors.toSet());
+
+                // Add transmitters manually selected to the enabled-list
+                enabledTransmitters.addAll(navtex.getTransmitters().entrySet().stream()
+                    .filter(Map.Entry::getValue)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList()));
+
                 navtex.getTransmitters().keySet().forEach(name ->
                         navtex.getTransmitters().put(name, enabledTransmitters.contains(name)));
             }
