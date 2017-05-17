@@ -29,6 +29,18 @@ import java.net.URI;
 import java.util.Map;
 
 /**
+ *
+ * Originally, Niord would use a Keycloak overlay in the Niord Wildfly.
+ * This caused A LOT of problems in the early versions of Keycloak.
+ *
+ * In order to fix some of these problems, a custom KeycloakUrlResolver was developed.
+ * However, as Keycloak now flags the overlay as "not for production", we have stopped
+ * using overlays, and instead run Keycloak as a separate server.
+ *
+ * Hence, the bug-fixing code of the custom KeycloakUrlResolver is not needed anymore.
+ *
+ * ==========================================
+ *
  * IMPORTANT: In order to handle relative auth-server-url's, various functions and helper classes
  * has been copied from Keycloak AdapterDeploymentContext class.
  * <p>
