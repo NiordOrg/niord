@@ -46,6 +46,7 @@ import java.util.Map;
  * <p>
  * This class must thus be kept up-to-date with future versions of Keycloak.
  */
+@Deprecated
 public class KeycloakUrlResolver {
 
 
