@@ -183,7 +183,7 @@ public class PromulgationRestService extends AbstractBatchableRestService {
     @Path("/generate/{typeId}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
-    @RolesAllowed(Roles.SYSADMIN)
+    @RolesAllowed(Roles.EDITOR)
     @GZIP
     @NoCache
     public BaseMessagePromulgationVo<?> generateMessagePromulgation(

@@ -1199,7 +1199,7 @@ angular.module('niord.editor')
                         });
                     })
                     .error(function () {
-                        console.error("Error generating promulgation for " + type);
+                        console.error("Error generating promulgation for " + promulgation.type.typeId);
                     });
             };
 
