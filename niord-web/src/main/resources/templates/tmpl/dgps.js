@@ -72,7 +72,8 @@ if (params.dgps_station
         part.geometry.features = Java.to([ feature ], "org.niord.model.geojson.FeatureVo[]");
 
         var navtex = message.promulgation('navtex');
-        if (navtex !== undefined && navtex.promulgate) {
+        if (navtex !== undefined) {
+            navtex.promulgate = true;
             for (var t = 0; t < station.transmitters.length; t++) {
                 var transmitter = station.transmitters[t];
                 if (navtex.transmitters !== undefined && navtex.transmitters.containsKey(transmitter)) {
