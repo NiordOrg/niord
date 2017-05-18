@@ -70,6 +70,11 @@ public class TimeUtils {
      * @return the reset date
      */
     public static Date resetTime(Date date, TimeZone timeZone) {
+
+        if (timeZone == null) {
+            return resetTime(date);
+        }
+
         if (date != null) {
             ZonedDateTime time = ZonedDateTime.ofInstant(date.toInstant(), timeZone.toZoneId());
             time = time.with(LocalTime.of(0, 0, 0, 0));
@@ -133,6 +138,11 @@ public class TimeUtils {
      * @return the end of the day
      */
     public static Date endOfDay(Date date, TimeZone timeZone) {
+
+        if (timeZone == null) {
+            return endOfDay(date);
+        }
+
         if (date != null) {
             ZonedDateTime time = ZonedDateTime.ofInstant(date.toInstant(), timeZone.toZoneId());
             time = time.with(LocalTime.of(23, 59, 59, 0));

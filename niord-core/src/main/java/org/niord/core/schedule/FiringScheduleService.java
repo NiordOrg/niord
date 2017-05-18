@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -187,6 +188,7 @@ public class FiringScheduleService extends BaseService {
      * Deletes the firing schedule
      *
      * @param id the ID of the firing schedule to delete
+     * @noinspection all
      */
     public boolean deleteFiringSchedule(Integer id) {
 
@@ -221,18 +223,23 @@ public class FiringScheduleService extends BaseService {
             ? new HashSet<>(Arrays.asList(TRUE, FALSE))
             : Collections.singleton(TRUE);
 
+        // Adjust the date for the time-zone of the current domain
+        Domain domain = domainService.currentDomain();
+        TimeZone timeZone = domain != null ? domain.timeZone() : null;
+        Date fromDate = TimeUtils.resetTime(date, timeZone);
+        Date toDate = TimeUtils.endOfDay(date, timeZone);
+
         // Find the firing periods
         List<FiringPeriod> fps = em.createNamedQuery("FiringPeriod.findByDateInterval", FiringPeriod.class)
                 .setParameter("active", activeSet)
-                .setParameter("fromDate", TimeUtils.resetTime(date))
-                .setParameter("toDate", TimeUtils.endOfDay(date))
+                .setParameter("fromDate", fromDate)
+                .setParameter("toDate", toDate)
                 .getResultList();
 
         // Look up all firing areas for the current domain
         DataFilter filter = DataFilter.get()
                 .fields(DataFilter.PARENT, DataFilter.DETAILS, DataFilter.GEOMETRY)
                 .lang(lang);
-        Domain domain = domainService.currentDomain();
 
         AreaSearchParams param = new AreaSearchParams()
                 .name(query)
