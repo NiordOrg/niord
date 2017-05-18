@@ -394,6 +394,20 @@ angular.module('niord.editor')
             };
 
 
+            /** Returns if the references field should be displayed **/
+            $scope.showReferencesField = function () {
+                return $scope.showField('references') ||
+                    ($scope.message.references && $scope.message.references.length > 0);
+            };
+
+
+            /** Returns if the charts field should be displayed **/
+            $scope.showChartsField = function () {
+                return $scope.showField('charts') ||
+                    ($scope.message.charts && $scope.message.charts.length > 0);
+            };
+
+
             /** Sets the current editor fields **/
             $scope.setEditorFields = function (editorFields, reset) {
                 $scope.editorFields = editorFields || $rootScope.editorFieldsBase;
@@ -845,7 +859,8 @@ angular.module('niord.editor')
 
             /** Returns if the given message part event dates field should be displayed **/
             $scope.showPartEventDatesField = function (part) {
-                return part.type === 'DETAILS' || part.type === 'TIME' || (part.eventDates && part.eventDates.length > 0);
+                return (part.eventDates && part.eventDates.length > 0) ||
+                    ($scope.showField('event_dates') && (part.type === 'DETAILS' || part.type === 'TIME'));
             };
 
 

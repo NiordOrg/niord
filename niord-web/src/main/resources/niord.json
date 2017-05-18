@@ -54,8 +54,8 @@
   {
     "key"         : "editorFieldsBase",
     "description" : "The base set of editor fields to display in the message editor",
-    "value"       : { "type": true, "orig_info": false, "id": true, "title": true, "references": true, "publish_date": true,
-                      "areas": true, "categories": true, "positions": true, "charts": true, "event_dates": true, "subject": true,
+    "value"       : { "type": true, "orig_info": false, "id": true, "title": true, "references": false, "publish_date": true,
+                      "areas": true, "categories": true, "positions": true, "charts": false, "event_dates": false, "subject": true,
                       "description": true, "attachments": false, "note": false, "publication": true, "source": false,
                       "prohibition": false, "signals": false, "layout" : false },
     "type"        : "json",
@@ -73,7 +73,8 @@
   {
     "key"         : "editorFieldsNm",
     "description" : "The additional set of editor fields to display for NM messages",
-    "value"       : { "orig_info": true, "attachments": true, "note": true, "source": true, "layout" : true },
+    "value"       : { "orig_info": true, "references": true, "attachments": true, "note": true, "charts": true,
+                      "event_dates": true, "source": true, "layout" : true },
     "type"        : "json",
     "web"         : true,
     "editable"    : true

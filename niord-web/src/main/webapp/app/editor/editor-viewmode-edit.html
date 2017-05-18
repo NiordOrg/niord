@@ -227,7 +227,7 @@
             <!-- ********************* -->
             <!-- ** References      ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="references" field-title="msg.field.references"
+            <editor-field ng-if="showReferencesField()" edit-mode="editMode" field-id="references" field-title="msg.field.references"
                           tab-index="500">
 
                 <editor-field-value-viewer>
@@ -754,7 +754,7 @@
             <!-- ********************* -->
             <!-- ** Charts          ** -->
             <!-- ********************* -->
-            <editor-field edit-mode="editMode" field-id="charts" field-title="msg.field.charts"
+            <editor-field ng-if="showChartsField()" edit-mode="editMode" field-id="charts" field-title="msg.field.charts"
                           tab-index="2000">
 
                 <editor-field-value-viewer>
