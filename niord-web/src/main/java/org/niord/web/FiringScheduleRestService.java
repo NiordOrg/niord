@@ -169,7 +169,7 @@ public class FiringScheduleRestService {
     @PUT
     @Path("/update-firing-exercises")
     @NoCache
-    @RolesAllowed(Roles.SYSADMIN)
+    @RolesAllowed(Roles.EDITOR)
     public void updateFiringExercises() {
         log.info("Updating firing exercises based on active schedules");
         firingExerciseService.updateFiringExercises();
