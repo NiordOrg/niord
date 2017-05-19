@@ -1,4 +1,4 @@
 
 <#if message??>
-    Cancel navigational warning ${message.shortId!''}
+    ${text('mail.navwarn.cancel')} ${message.shortId!''}
 </#if>

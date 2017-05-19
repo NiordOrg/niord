@@ -21,14 +21,14 @@
 </head>
 <body>
 
-<h1>Active Navigational Warnings</h1>
+<h1>${text('mail.active_nav_warnings')}</h1>
 
 <table class="nw-table">
   <tr>
-    <th>Date</th>
-    <th>ID</th>
-    <th>Area</th>
-    <th>Warning</th>
+    <th>${text('mail.field.date')}</th>
+    <th>${text('msg.field.id')}</th>
+    <th>${text('msg.field.areas')}</th>
+    <th>${text('mail.field.warning')}</th>
   </tr>
   <#list messages as msg>
     <#assign msgDesc=descForLang(msg, language)!>

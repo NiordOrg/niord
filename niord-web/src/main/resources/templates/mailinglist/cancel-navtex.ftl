@@ -2,6 +2,6 @@
 <#include "../messages/message-support.ftl"/>
 
 <#if message??>
-    CANCEL NAV WARN
+    ${text('mail.navtex.cancel')}
     <@renderNumberYearId message=message defaultValue=message.shortId!''></@renderNumberYearId>
 </#if>
