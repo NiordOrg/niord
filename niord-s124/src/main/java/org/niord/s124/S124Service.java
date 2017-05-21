@@ -19,6 +19,7 @@ package org.niord.s124;
 import freemarker.cache.ClassTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
+import org.niord.core.NiordApp;
 import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
@@ -34,11 +35,26 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
+/**
+ * Service for converting Niord navigational warnings to S-124 GML
+ * <p>
+ * NB: Currently the service is at a proof-of-concept stage, what with S-124 still under development.
+ * <p>
+ * The S-124 XSD area based on the format used by the STM-project at
+ * http://stmvalidation.eu/schemas/ ("Area Exchange Format")
+ *
+ * TODO: When a more mature version has been implemented, the Freemarker template execution should
+ *       use the {@code FmTemplateService} for DB-backed template execution.
+ */
 @Stateless
 public class S124Service {
 
     @Inject
     MessageService messageService;
+
+    @Inject
+    NiordApp app;
 
     /**
      * Generates S-124 compliant GML for the message
@@ -58,6 +74,9 @@ public class S124Service {
         } else if (message.getNumber() == null) {
             throw new IllegalArgumentException("Sadly, S-124 does not currently support un-numbered navigational warnings :-(");
         }
+
+        // Ensure we use a valid language
+        language = app.getLanguage(language);
 
         SystemMessageVo msg = message.toVo(
                 SystemMessageVo.class,
