@@ -160,6 +160,7 @@
         <module>niord-josm-seachart</module>
         <module>niord-model</module>
         <module>niord-core</module>
+        <module>niord-s124</module>
         <module>niord-web</module>
     </modules>
 
