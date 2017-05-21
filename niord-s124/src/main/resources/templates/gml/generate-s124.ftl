@@ -344,7 +344,7 @@
 
 <#macro generateGeometry g>
 
-    <#switch g.type>
+    <#switch g.type!''>
         <#case "Point">
             <@generatePoint coords=g.coordinates></@generatePoint>
             <#break>
