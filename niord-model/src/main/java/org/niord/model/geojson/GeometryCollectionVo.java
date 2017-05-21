@@ -33,9 +33,11 @@ public class GeometryCollectionVo extends GeometryVo {
 
     @SuppressWarnings("unused")
     public GeometryCollectionVo() {
+        setType("GeometryCollection");
     }
 
     public GeometryCollectionVo(GeometryVo[] geometries) {
+        this();
         this.geometries = geometries;
     }
 
