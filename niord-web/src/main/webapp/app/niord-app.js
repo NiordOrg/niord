@@ -73,27 +73,33 @@ var app = angular.module('niord.admin', [
             })
             .state('editor.edit', {
                 url: "/edit/:id",
-                templateUrl: "/app/editor/editor-viewmode-edit.html"
+                templateUrl: "/app/editor/editor-viewmode-edit.html",
+                help: { section: 'editor' }
             })
             .state('editor.copy', {
                 url: "/edit/:id/:referenceType",
-                templateUrl: "/app/editor/editor-viewmode-edit.html"
+                templateUrl: "/app/editor/editor-viewmode-edit.html",
+                help: { section: 'editor' }
             })
             .state('editor.template', {
                 url: "/edit/",
-                templateUrl: "/app/editor/editor-viewmode-edit.html"
+                templateUrl: "/app/editor/editor-viewmode-edit.html",
+                help: { section: 'editor' }
             })
             .state('editor.status', {
                 url: "/status/:id",
-                templateUrl: "/app/editor/editor-viewmode-status.html"
+                templateUrl: "/app/editor/editor-viewmode-status.html",
+                help: { section: 'status-editor-page' }
             })
             .state('editor.comments', {
                 url: "/comments/:id",
-                templateUrl: "/app/editor/editor-viewmode-comments.html"
+                templateUrl: "/app/editor/editor-viewmode-comments.html",
+                help: { section: 'comments-editor-page' }
             })
             .state('editor.history', {
                 url: "/history/:id",
-                templateUrl: "/app/editor/editor-viewmode-history.html"
+                templateUrl: "/app/editor/editor-viewmode-history.html",
+                help: { section: 'history-editor-page' }
             })
 
 
