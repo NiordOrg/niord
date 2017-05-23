@@ -253,7 +253,7 @@ public class TemplateExecutionRestService extends AbstractBatchableRestService {
         SystemMessageVo message = executeTemplate.getMessage();
         if (message == null) {
             // NB: Access to the message is checked:
-            message = messageRestService.getSystemMessage(executeTemplate.getMessageId());
+            message = messageRestService.getSystemMessage(executeTemplate.getMessageId(), null);
         }
 
         // Resolve the category to use

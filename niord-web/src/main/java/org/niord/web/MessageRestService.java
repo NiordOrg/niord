@@ -311,7 +311,8 @@ public class MessageRestService  {
     @NoCache
     @RolesAllowed(Roles.USER)
     public SystemMessageVo getSystemMessage(
-            @PathParam("messageId") String messageId) throws Exception {
+            @PathParam("messageId") String messageId,
+            @QueryParam("lang") String language) throws Exception {
 
         Message message = messageService.resolveMessage(messageId);
         if (message == null) {
@@ -322,7 +323,10 @@ public class MessageRestService  {
         checkMessageEditingAccess(message, EditOp.VIEW);
 
         // Returns a system model version of the message
-        return toSystemMessage(message, false);
+        SystemMessageVo msg = toSystemMessage(message, false);
+        msg.sort(language);
+
+        return msg;
     }
 
 

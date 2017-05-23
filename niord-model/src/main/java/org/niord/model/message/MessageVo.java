@@ -126,6 +126,7 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
 
 
     /** Returns the stream of localizable entities of the message **/
+    @SuppressWarnings("all")
     public Stream<ILocalizable> localizableStream() {
         List<ILocalizable> localizables = new ArrayList<>();
         localizables.add(this);
@@ -143,6 +144,14 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
                 while (area != null) {
                     localizables.add(area);
                     area = area.getParent();
+                }
+            });
+        }
+        if (categories != null) {
+            categories.forEach(category -> {
+                while (category != null) {
+                    localizables.add(category);
+                    category = category.getParent();
                 }
             });
         }
