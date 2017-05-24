@@ -94,8 +94,6 @@ public class S124Service {
 
         data.put("references", referencedMessagess(msg, language));
 
-        System.out.println("Message loaded: " + message.getId());
-
         Configuration cfg = new Configuration(Configuration.getVersion());
         cfg.setTemplateLoader(new ClassTemplateLoader(getClass(), "/templates/gml"));
 
