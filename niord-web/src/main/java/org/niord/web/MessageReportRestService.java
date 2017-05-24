@@ -19,6 +19,7 @@ package org.niord.web;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
+import org.niord.core.NiordApp;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.domain.DomainService;
 import org.niord.core.report.FmReport;
@@ -75,6 +76,9 @@ public class MessageReportRestService extends AbstractBatchableRestService {
 
     @Inject
     Logger log;
+
+    @Inject
+    NiordApp app;
 
     @Inject
     DomainService domainService;
@@ -251,6 +255,7 @@ public class MessageReportRestService extends AbstractBatchableRestService {
                 try {
                     templateService.newFmTemplateBuilder()
                             .templatePath(report.getTemplatePath())
+                            .data("executionMode", app.getExecutionMode())
                             .data("messages", Collections.singleton(message))
                             .data("areaHeadings", false)
                             .data("pageSize", printParams.getPageSize())
@@ -317,6 +322,7 @@ public class MessageReportRestService extends AbstractBatchableRestService {
                 try {
                     templateService.newFmTemplateBuilder()
                             .templatePath(report.getTemplatePath())
+                            .data("executionMode", app.getExecutionMode())
                             .data("messages", result.getData())
                             .data("areaHeadings", params.sortByArea())
                             .data("searchCriteria", result.getDescription())
