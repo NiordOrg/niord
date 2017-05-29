@@ -171,23 +171,28 @@ var app = angular.module('niord.admin', [
             })
             .state('admin.overview', {
                 url: "/overview",
-                templateUrl: "/app/admin/admin-page-overview.html"
+                templateUrl: "/app/admin/admin-page-overview.html",
+                help: { manual: 'admin', section: '' }
             })
             .state('admin.charts', {
                 url: "/charts",
-                templateUrl: "/app/admin/admin-page-charts.html"
+                templateUrl: "/app/admin/admin-page-charts.html",
+                help: { manual: 'admin', section: 'charts' }
             })
             .state('admin.areas', {
                 url: "/areas",
-                templateUrl: "/app/admin/admin-page-areas.html"
+                templateUrl: "/app/admin/admin-page-areas.html",
+                help: { manual: 'admin', section: 'areas' }
             })
             .state('admin.publications', {
                 url: "/publications",
-                templateUrl: "/app/admin/admin-page-publications.html"
+                templateUrl: "/app/admin/admin-page-publications.html",
+                help: { manual: 'admin', section: 'publications' }
             })
             .state('admin.sources', {
                 url: "/sources",
-                templateUrl: "/app/admin/admin-page-sources.html"
+                templateUrl: "/app/admin/admin-page-sources.html",
+                help: { manual: 'admin', section: 'sources' }
             })
             .state('admin.users', {
                 url: "/users",
