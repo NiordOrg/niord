@@ -419,6 +419,14 @@ div.mce-fullscreen {
 
 /** Editor -> GeoJson Editor directive **/
 
+.gj-editor-help-link {
+    position: absolute;
+    z-index: 310;
+    opacity: 0.6;
+    top: 10px;
+    right: 10px;
+}
+
 .gj-editor .viewer {
     width: 100%;
     height: 100%;
