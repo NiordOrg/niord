@@ -818,3 +818,11 @@ a.template-dialog-header-link {
 .template-param-mandatory {
     color: red;
 }
+
+.template-help-link {
+    position: absolute;
+    z-index: 310;
+    opacity: 0.6;
+    top: 15px;
+    right: 20px;
+}
