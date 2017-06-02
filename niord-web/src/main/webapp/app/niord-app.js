@@ -196,7 +196,8 @@ var app = angular.module('niord.admin', [
             })
             .state('admin.users', {
                 url: "/users",
-                templateUrl: "/app/admin/admin-page-users.html"
+                templateUrl: "/app/admin/admin-page-users.html",
+                help: { manual: 'admin', section: 'users-contacts' }
             })
             .state('admin.mailing-lists', {
                 url: "/mailing-lists",
