@@ -201,7 +201,8 @@ var app = angular.module('niord.admin', [
             })
             .state('admin.mailing-lists', {
                 url: "/mailing-lists",
-                templateUrl: "/app/admin/admin-page-mailing-lists.html"
+                templateUrl: "/app/admin/admin-page-mailing-lists.html",
+                help: { manual: 'admin', section: 'mailing-lists' }
             })
 
 
