@@ -37,7 +37,7 @@ import java.util.function.Consumer;
                 PolygonVo.class, MultiPolygonVo.class, GeometryCollectionVo.class, FeatureVo.class, FeatureCollectionVo.class
         }
 )
-@JsonTypeInfo(property = "type", use = JsonTypeInfo.Id.NAME)
+@JsonTypeInfo(property = "type", use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY)
 @JsonSubTypes({
         @JsonSubTypes.Type(value = PointVo.class,               name = "Point"),
         @JsonSubTypes.Type(value = MultiPointVo.class,          name = "MultiPoint"),
@@ -52,6 +52,7 @@ import java.util.function.Consumer;
 @XmlTransient
 @XmlSeeAlso({ PointVo.class, MultiPointVo.class, LineStringVo.class, MultiLineStringVo.class,
         PolygonVo.class, MultiPolygonVo.class, GeometryCollectionVo.class, FeatureVo.class, FeatureCollectionVo.class })
+@SuppressWarnings("unused")
 public abstract class GeoJsonVo implements IJsonSerializable {
 
     private static final ObjectMapper mapper = new ObjectMapper();
