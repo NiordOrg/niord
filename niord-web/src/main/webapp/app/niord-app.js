@@ -214,15 +214,18 @@ var app = angular.module('niord.admin', [
             })
             .state('sysadmin.overview', {
                 url: "/overview",
-                templateUrl: "/app/sysadmin/sysadmin-page-overview.html"
+                templateUrl: "/app/sysadmin/sysadmin-page-overview.html",
+                help: { manual: 'sysadmin', section: '' }
             })
             .state('sysadmin.series', {
                 url: "/series",
-                templateUrl: "/app/sysadmin/sysadmin-page-series.html"
+                templateUrl: "/app/sysadmin/sysadmin-page-series.html",
+                help: { manual: 'sysadmin', section: 'message-series' }
             })
             .state('sysadmin.domains', {
                 url: "/domains",
-                templateUrl: "/app/sysadmin/sysadmin-page-domains.html"
+                templateUrl: "/app/sysadmin/sysadmin-page-domains.html",
+                help: { manual: 'sysadmin', section: 'domains' }
             })
             .state('sysadmin.promulgation', {
                 url: "/promulgation",
