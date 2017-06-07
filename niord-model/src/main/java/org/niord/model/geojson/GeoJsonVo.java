@@ -37,7 +37,9 @@ import java.util.function.Consumer;
                 PolygonVo.class, MultiPolygonVo.class, GeometryCollectionVo.class, FeatureVo.class, FeatureCollectionVo.class
         }
 )
-@JsonTypeInfo(property = "type", use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY)
+// TODO: Re-introduce include=EXISTING_PROPERTY - disabled for now because of clients with old Jackson versions :-(
+// @JsonTypeInfo(property = "type", use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY)
+@JsonTypeInfo(property = "type", use = JsonTypeInfo.Id.NAME)
 @JsonSubTypes({
         @JsonSubTypes.Type(value = PointVo.class,               name = "Point"),
         @JsonSubTypes.Type(value = MultiPointVo.class,          name = "MultiPoint"),
