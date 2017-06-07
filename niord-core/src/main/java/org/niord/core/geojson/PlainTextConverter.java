@@ -208,10 +208,23 @@ public class PlainTextConverter {
         Format format = PositionFormatter.LATLON_DEC;
         Locale locale = new Locale(languages.get(0));
         AtomicInteger coordIndex = new AtomicInteger(0);
-        g.visitCoordinates(xy -> {
-            result.append(PositionFormatter.format(locale, format, xy[1], xy[0]));
-            formatFeatureName(result, "name:" + coordIndex.getAndIncrement() + ":", properties);
-        });
+
+        // For polygons, only select exterior ring, and omit last coordinate which is identical to the first coordinate
+        if (g instanceof PolygonVo) {
+            PolygonVo pol = (PolygonVo)g;
+            if (pol.getCoordinates() != null && pol.getCoordinates().length >= 1 && pol.getCoordinates()[0].length >= 3) {
+                for (int index = 0; index < pol.getCoordinates()[0].length - 1; index++) {
+                    double[] xy = pol.getCoordinates()[0][index];
+                    result.append(PositionFormatter.format(locale, format, xy[1], xy[0]));
+                    formatFeatureName(result, "name:" + coordIndex.getAndIncrement() + ":", properties);
+                }
+            }
+        } else {
+            g.visitCoordinates(xy -> {
+                result.append(PositionFormatter.format(locale, format, xy[1], xy[0]));
+                formatFeatureName(result, "name:" + coordIndex.getAndIncrement() + ":", properties);
+            });
+        }
     }
 
 
