@@ -24,7 +24,11 @@ import java.util.function.Consumer;
  * GeoJSON Point, as defined in the specification:
  * http://geojson.org/geojson-spec.html#point
  */
-@ApiModel(value = "Point", description = "GeoJson Point type")
+@ApiModel(
+        value = "Point",
+        parent = GeoJsonVo.class,
+        description = "GeoJson Point type"
+)
 @XmlRootElement(name = "point")
 public class PointVo extends GeometryVo {
 

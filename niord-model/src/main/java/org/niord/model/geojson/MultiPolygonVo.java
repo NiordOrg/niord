@@ -24,7 +24,11 @@ import java.util.function.Consumer;
  * GeoJSON MultiPolygon, as defined in the specification:
  * http://geojson.org/geojson-spec.html#multipolygon
  */
-@ApiModel(value = "MultiPolygon", description = "GeoJson MultiPolygon type")
+@ApiModel(
+        value = "MultiPolygon",
+        parent = GeoJsonVo.class,
+        description = "GeoJson MultiPolygon type"
+)
 @XmlRootElement(name = "multiPolygon")
 public class MultiPolygonVo extends GeometryVo {
 

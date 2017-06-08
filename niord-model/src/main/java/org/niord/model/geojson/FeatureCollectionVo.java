@@ -28,7 +28,11 @@ import java.util.function.Consumer;
  * GeoJSON FeatureCollection, as defined in the specification:
  * hhttp://geojson.org/geojson-spec.html#feature-objects
  */
-@ApiModel(value = "FeatureCollection", description = "GeoJson FeatureCollection type")
+@ApiModel(
+        value = "FeatureCollection",
+        parent = GeoJsonVo.class,
+        description = "GeoJson FeatureCollection type"
+)
 @XmlRootElement(name = "featureCollection")
 public class FeatureCollectionVo extends GeoJsonVo {
 

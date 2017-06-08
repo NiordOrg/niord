@@ -24,7 +24,11 @@ import java.util.function.Consumer;
  * GeoJSON Point, as defined in the specification:
  * http://geojson.org/geojson-spec.html#linestring
  */
-@ApiModel(value = "LineString", description = "GeoJson LineString type")
+@ApiModel(
+        value = "LineString",
+        parent = GeoJsonVo.class,
+        description = "GeoJson LineString type"
+)
 @XmlRootElement(name = "lineString")
 public class LineStringVo extends GeometryVo {
 

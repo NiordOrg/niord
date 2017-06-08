@@ -24,7 +24,11 @@ import java.util.function.Consumer;
  * GeoJSON MultiPoint, as defined in the specification:
  * http://geojson.org/geojson-spec.html#multipoint
  */
-@ApiModel(value = "MultiPoint", description = "GeoJson MultiPoint type")
+@ApiModel(
+        value = "MultiPoint",
+        parent = GeoJsonVo.class,
+        description = "GeoJson MultiPoint type"
+)
 @XmlRootElement(name = "multiPoint")
 public class MultiPointVo extends GeometryVo {
 
