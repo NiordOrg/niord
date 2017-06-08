@@ -15,7 +15,7 @@
 
     <properties>
         <batik.version>1.8</batik.version>
-        <swagger-ui.version>2.2.0</swagger-ui.version>
+        <swagger-ui.version>3.0.10</swagger-ui.version>
         <timestamp>${maven.build.timestamp}</timestamp>
         <maven.build.timestamp.format>yyyyMMddHHmm</maven.build.timestamp.format>
         <niord-core.jar>niord-core-${project.version}.jar</niord-core.jar>
