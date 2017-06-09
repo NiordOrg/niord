@@ -203,6 +203,15 @@
 
 
 <!-- ***************************************  -->
+<!-- Renders the date                         -->
+<!-- ***************************************  -->
+<#macro renderDate date format="html" lang="en" tz="">
+    <#setting locale=lang>
+    <@dateIntervalFormat date=date format=format tz=tz/>
+</#macro>
+
+
+<!-- ***************************************  -->
 <!-- Renders the date interval                -->
 <!-- ***************************************  -->
 <#macro renderDateInterval dateInterval format="html" lang="en" tz="">

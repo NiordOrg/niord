@@ -33,6 +33,7 @@ public class StandardParamType extends ParamType {
             "text",             // Generic text
             "number",           // Numbers
             "boolean",          // Booleans
+            "date",             // Date
             "aton_name",        // Textual name of AtoN
             "light_character",  // Validated light character field (e.g. "Fl(2+1) R 10s"
             "call_sign"         // Validated vessel call sign

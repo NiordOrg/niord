@@ -18,6 +18,8 @@ package org.niord.core.script.directive;
 import freemarker.core.Environment;
 import freemarker.ext.beans.BeanModel;
 import freemarker.template.DefaultListAdapter;
+import freemarker.template.SimpleDate;
+import freemarker.template.SimpleNumber;
 import freemarker.template.SimpleScalar;
 import freemarker.template.TemplateBooleanModel;
 import freemarker.template.TemplateDirectiveBody;
@@ -31,6 +33,7 @@ import org.niord.core.util.NavWarnDateFormatter.Format;
 import org.niord.model.message.DateIntervalVo;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -39,13 +42,15 @@ import static org.niord.core.script.FmTemplateService.BUNDLE_PROPERTY;
 import static org.niord.core.script.FmTemplateService.TIME_ZONE_PROPERTY;
 
 /**
- * This Freemarker directive will format a date interval(s) according to Navigational Warning standards
+ * This Freemarker directive will format a date interval(s) according to Navigational Warning standards.
+ * It can also format a single date.
  */
 @SuppressWarnings("unused")
 public class DateIntervalDirective implements TemplateDirectiveModel {
 
     private static final String PARAM_DATE_INTERVAL     = "dateInterval";
     private static final String PARAM_DATE_INTERVALS    = "dateIntervals";
+    private static final String PARAM_DATE              = "date";
     private static final String PARAM_FORMAT            = "format";
     private static final String PARAM_TIME_ZONE         = "tz";
     private static final String PARAM_CAP_FIRST         = "capFirst";
@@ -79,11 +84,20 @@ public class DateIntervalDirective implements TemplateDirectiveModel {
             dateIntervals = (List<DateIntervalVo>)dateIntervalsParam.getWrappedObject();
         }
 
+        // Alternatively, resolve the "date" parameter
+        Date date = null;
+        Object dateParam = params.get(PARAM_DATE);
+        if (dateParam != null) {
+            if (dateParam instanceof SimpleDate) {
+                date = ((SimpleDate)dateParam).getAsDate();
+            } else if (dateParam instanceof SimpleNumber) {
+                date = new Date(((SimpleNumber)dateParam).getAsNumber().longValue());
+            }
+        }
+
         // Make sure that either "dateInterval" or "dateIntervals" has been specified
-        if (dateInterval == null && dateIntervals == null) {
-            throw new TemplateModelException("The 'dateInterval' or 'dateIntervals' parameter must be specified");
-        } else if (dateInterval != null && dateIntervals != null) {
-            throw new TemplateModelException("Only one of the 'dateInterval' and 'dateIntervals' parameters must be specified");
+        if (dateInterval == null && dateIntervals == null && date == null) {
+            throw new TemplateModelException("The 'date', 'dateInterval' or 'dateIntervals' parameter must be specified");
         }
 
 
@@ -122,8 +136,10 @@ public class DateIntervalDirective implements TemplateDirectiveModel {
         try {
             String result;
 
-            // Generate the single date interval or list of date intervals
-            if (dateInterval != null) {
+            // Generate the single date, date interval or list of date intervals
+            if (date != null) {
+                result = formatter.formatDate(date);
+            } else if (dateInterval != null) {
                 result = formatter.formatDateInterval(dateInterval);
             } else {
                 result = formatter.formatDateIntervals(dateIntervals);

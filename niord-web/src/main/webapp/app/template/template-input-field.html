@@ -18,6 +18,10 @@
                    type="checkbox"
                    ng-model="templateData[templateParam.paramId]">
 
+            <date-time-picker ng-switch-when="date"
+                              ng-model="templateData[templateParam.paramId]" placeholder="Date" format="'lll z'">
+            </date-time-picker>
+
             <input ng-switch-when="aton_name"
                    type="text"
                    class="form-control input-sm"

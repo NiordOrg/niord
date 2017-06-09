@@ -90,6 +90,47 @@ public class NavWarnDateFormatter {
 
 
     /**
+     * Formats the date
+     * @param date the date to format
+     * @return the formatted date
+     */
+    public String formatDate(Date date) {
+        // Sanity checks
+        if (date == null) {
+            return "";
+        }
+
+        if (format == Format.NAVTEX) {
+            return TimeUtils.formatNavtexDate(date).toUpperCase();
+        } else {
+            return formatNavWarnDate(date);
+        }
+    }
+
+
+    /**
+     * Formats the date and time
+     * @param date the date to format
+     * @return the date and time
+     */
+    public String formatNavWarnDate(Date date) {
+        String  time1   = formatTime(date),
+                day1    = formatDay(date),
+                month1  = formatMonth(date),
+                year1   = formatYear(date);
+
+        StringBuilder result = new StringBuilder();
+
+        String dateStr = formatDate(day1, month1, year1);
+        result.append(dayPrefix).append(dateStr).append(timePrefix).append(time1).append(timeZoneTxt);
+
+        return result.toString()
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+
+    /**
      * Formats the list of date intervals
      * @param dateIntervals the list of date intervals to format
      * @return the formatted date intervals
