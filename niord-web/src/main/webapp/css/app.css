@@ -483,6 +483,10 @@ li.view-mode-menu-btn .active .badge {
     color: transparent !important;
 }
 
+.btn.active, .btn:active {
+    background-color: #c0c0c0;
+}
+
 /** ui-select modifications **/
 
 .ui-select-search {
