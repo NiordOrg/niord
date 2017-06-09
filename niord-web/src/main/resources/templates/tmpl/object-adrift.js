@@ -24,6 +24,18 @@ if (params.get('date') !== null) {
     var cancelDate = new java.util.Date(params.get('date') + offset);
     params.put('cancelDate', cancelDate);
 
-    message.publishDateFrom = date;
+    // Update publication dates - assume manual publication, so, ignore start date
+    //message.publishDateFrom = date;
     message.publishDateTo = cancelDate;
+
+    // Update event dates
+    var part = message.part(MessagePartType.DETAILS);
+    if (part !== undefined) {
+        var di = new org.niord.model.message.DateIntervalVo();
+        di.allDay = false;
+        di.fromDate = date;
+        di.toDate = cancelDate;
+        part.eventDates = new java.util.ArrayList();
+        part.eventDates.add(di);
+    }
 }
