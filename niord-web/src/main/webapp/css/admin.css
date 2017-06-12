@@ -563,3 +563,13 @@ div.ace_scrollbar.ace_scrollbar-h {
     overflow: hidden;
     overflow-y: scroll;
 }
+
+.mailing-list-report-result-header {
+    font-size: 12px;
+    display: block;
+    width: 100%;
+    color: white;
+    background-color: gray;
+    padding: 5px;
+    box-shadow: 2px 2px 4px rgba(50, 50, 50, 0.5);
+}

@@ -1,5 +1,6 @@
 <div>
     <div class="modal-header">
+        <button type="button" class="close" ng-click="$dismiss('aborted')">x</button>
         <h4 class="modal-title" translate>reports.title</h4>
     </div>
     <div class="modal-body">
@@ -23,7 +24,7 @@
                                 {{report.scheduledExecutionTime}}
                                 {{report.scheduledExecutionTimeZone}}
                             </td>
-                            <td>
+                            <td align="right">
                                 <button class="btn btn-xs btn-primary" ng-click="executeReport(report)">
                                     <span class="glyphicon glyphicon-play"></span>
                                     <span translate>report.execute</span>
@@ -38,6 +39,15 @@
                 No report defined
             </div>
 
+
+            <div ng-if="result !== undefined" class="mailing-list-report-result-header">
+                <strong>Result</strong>
+                <span class="pull-right">
+                    <a href ng-click="newWindow()" style="color: white; font-size: 11px">
+                        <span class="glyphicon glyphicon-new-window"></span> New Window
+                    </a>
+                </span>
+            </div>
             <div ng-if="result !== undefined" class="mailing-list-report-result" ng-bind-html="result | toTrusted"></div>
 
         </div>

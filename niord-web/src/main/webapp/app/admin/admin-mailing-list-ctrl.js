@@ -409,6 +409,17 @@ angular.module('niord.admin')
                 });
 
             $scope.result = undefined;
+            $scope.resultTitle = '';
+
+
+            /** Will open the result of executing a report in a new window **/
+            $scope.newWindow = function () {
+                if ($scope.result) {
+                    var w = window.open();
+                    w.document.title = $scope.resultTitle;
+                    $(w.document.body).html($scope.result)
+                }
+            };
 
 
             /** Executes the report **/
@@ -417,6 +428,7 @@ angular.module('niord.admin')
                     .executeMailingListReport(report)
                     .success(function (result) {
                         $scope.result = result;
+                        $scope.resultTitle = report.name;
                     })
                     .error(function () {
                         growl.error("Error executing report", { ttl: 5000 });
