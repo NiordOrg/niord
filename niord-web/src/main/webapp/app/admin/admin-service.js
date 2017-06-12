@@ -545,9 +545,17 @@ angular.module('niord.admin')
             },
 
 
+            /** Returns the URL for executing the mailing list report **/
+            executeMailingListReportUrl: function(report, ticket) {
+                var params = '?lang=' + $rootScope.language + '&ticket=' + encodeURIComponent(ticket);
+                return '/rest/mailing-lists/execute-report/' + report.id + '.html' + params;
+            },
+
+
             /** Executes the mailing list report **/
             executeMailingListReport: function(report) {
-                return $http.post('/rest/mailing-lists/execute-report', report);
+                var params = '?lang=' + $rootScope.language;
+                return $http.get('/rest/mailing-lists/execute-report/' + report.id + '.html' + params);
             },
 
 

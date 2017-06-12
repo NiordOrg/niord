@@ -316,14 +316,15 @@ public class MailingListExecutionService extends BaseService {
      * Executes the given mailing list report, i.e. the scheduled triggers that can
      * be executed by end-users as reports.
      *
-     * @param report the mailing list report to execute
+     * @param triggerId the ID of the trigger (mailing list report) to execute
+     * @param lang the language
      * @return the resulting HTML
      */
-    public String executeMailingListReport(MailingListReportVo report) throws Exception {
+    public String executeMailingListReport(Integer triggerId, String lang) throws Exception {
 
-        MailingListTrigger trigger = getByPrimaryKey(MailingListTrigger.class, report.getId());
+        MailingListTrigger trigger = getByPrimaryKey(MailingListTrigger.class, triggerId);
         if (trigger == null || trigger.getType() != TriggerType.SCHEDULED || trigger.getPublicReport() != Boolean.TRUE) {
-            throw new IllegalArgumentException("Trigger " + report.getId() + " cannot be used as a public report");
+            throw new IllegalArgumentException("Trigger " + triggerId + " cannot be used as a public report");
         }
 
         // Perform the message search
@@ -332,7 +333,8 @@ public class MailingListExecutionService extends BaseService {
         PagedSearchResultVo<Message> messageResult = messageService.search(params);
 
 
-        String lang = app.getLanguage(report.getLang());
+        // Make sure that the language is defined for the trigger
+        lang = app.getLanguage(lang);
         Set<String> languages = trigger.getDescs().stream()
                 .map(DescEntity::getLang)
                 .collect(Collectors.toSet());

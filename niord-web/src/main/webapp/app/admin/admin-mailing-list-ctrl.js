@@ -398,8 +398,8 @@ angular.module('niord.admin')
      * ********************************************************************************
      * Controller for testing mailing list trigger execution
      */
-    .controller('MailingListReportDialogCtrl', ['$scope', '$window', 'growl', 'AdminMailingListService',
-        function ($scope, $window, growl, AdminMailingListService) {
+    .controller('MailingListReportDialogCtrl', ['$scope', '$window', '$timeout', 'growl', 'AdminMailingListService',
+        function ($scope, $window, $timeout, growl, AdminMailingListService) {
             'use strict';
 
             $scope.reports = [];
@@ -409,16 +409,24 @@ angular.module('niord.admin')
                 });
 
             $scope.result = undefined;
-            $scope.resultTitle = '';
+            $scope.resultReport = '';
 
 
             /** Will open the result of executing a report in a new window **/
             $scope.newWindow = function () {
-                if ($scope.result) {
-                    var w = window.open();
-                    w.document.title = $scope.resultTitle;
-                    $(w.document.body).html($scope.result)
+                if (!$scope.resultReport) {
+                    return;
                 }
+                var w = window.open();
+                AdminMailingListService
+                    .exportTicket('user')
+                    .success(function (ticket) {
+                        var url = AdminMailingListService.executeMailingListReportUrl($scope.resultReport, ticket);
+                        w.document.location.href = url;
+                        $timeout(function() {
+                            w.document.title = $scope.resultReport.name;
+                        }, 500);
+                    });
             };
 
 
@@ -428,7 +436,7 @@ angular.module('niord.admin')
                     .executeMailingListReport(report)
                     .success(function (result) {
                         $scope.result = result;
-                        $scope.resultTitle = report.name;
+                        $scope.resultReport = report;
                     })
                     .error(function () {
                         growl.error("Error executing report", { ttl: 5000 });

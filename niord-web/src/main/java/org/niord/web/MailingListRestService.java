@@ -511,17 +511,26 @@ public class MailingListRestService extends AbstractBatchableRestService  {
      * Executes the given mailing list report, i.e. the scheduled triggers that can
      * be executed by end-users as reports.
      *
-     * @param report the mailing list report to execute
+     * @param triggerId the ID of the trigger (mailing list report) to execute
      * @return the resulting HTML
      */
-    @POST
-    @Path("/execute-report")
+    @GET
+    @Path("/execute-report/{triggerId}.html")
     @Consumes("application/json;charset=UTF-8")
     @Produces("text/html;charset=UTF-8")
-    @RolesAllowed(Roles.USER)
+    @PermitAll // User role enforced programmatically
     @NoCache
-    public String executeMailingListReport(MailingListReportVo report) throws Exception {
-        return mailingListExecutionService.executeMailingListReport(report);
+    public String executeMailingListReport(
+            @PathParam("triggerId") Integer triggerId,
+            @QueryParam("lang") String lang
+    ) throws Exception {
+
+        // If a ticket is defined, check if programmatically
+        if (!userService.isCallerInRole(Roles.USER)) {
+            throw new WebApplicationException(403);
+        }
+
+        return mailingListExecutionService.executeMailingListReport(triggerId, lang);
     }
 
 
