@@ -39,6 +39,7 @@ public class MailingListTriggerVo implements ILocalizable<MailingListTriggerDesc
     String messageQuery;
     String messageFilter;
     List<String> scriptResourcePaths;
+    Boolean publicReport;
     List<MailingListTriggerDescVo> descs;
 
 
@@ -118,6 +119,14 @@ public class MailingListTriggerVo implements ILocalizable<MailingListTriggerDesc
 
     public void setScriptResourcePaths(List<String> scriptResourcePaths) {
         this.scriptResourcePaths = scriptResourcePaths;
+    }
+
+    public Boolean getPublicReport() {
+        return publicReport;
+    }
+
+    public void setPublicReport(Boolean publicReport) {
+        this.publicReport = publicReport;
     }
 
     @Override

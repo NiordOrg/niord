@@ -29,6 +29,7 @@ import org.niord.core.mailinglist.MailingListSearchParams;
 import org.niord.core.mailinglist.MailingListService;
 import org.niord.core.mailinglist.MailingListTrigger;
 import org.niord.core.mailinglist.TriggerType;
+import org.niord.core.mailinglist.vo.MailingListReportVo;
 import org.niord.core.mailinglist.vo.MailingListVo;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
@@ -480,6 +481,47 @@ public class MailingListRestService extends AbstractBatchableRestService  {
                     .map(m -> m.toVo(DataFilter.get().fields(DataFilter.DETAILS)))
                     .collect(Collectors.toList());
         }
+    }
+
+
+    /***************************************/
+    /** Mailing list Reports              **/
+    /***************************************/
+
+
+    /**
+     * Returns the list of mailing list reports, i.e. the scheduled triggers that can
+     * be executed by end-users as reports.
+     *
+     * @param lang the language
+     * @return the list of mailing list reports
+     */
+    @GET
+    @Path("/reports")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @RolesAllowed(Roles.USER)
+    @NoCache
+    public List<MailingListReportVo> getMailingListReports(@QueryParam("lang") String lang) {
+        return mailingListExecutionService.getMailingListReports(lang);
+    }
+
+
+    /**
+     * Executes the given mailing list report, i.e. the scheduled triggers that can
+     * be executed by end-users as reports.
+     *
+     * @param report the mailing list report to execute
+     * @return the resulting HTML
+     */
+    @POST
+    @Path("/execute-report")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("text/html;charset=UTF-8")
+    @RolesAllowed(Roles.USER)
+    @NoCache
+    public String executeMailingListReport(MailingListReportVo report) throws Exception {
+        return mailingListExecutionService.executeMailingListReport(report);
     }
 
 

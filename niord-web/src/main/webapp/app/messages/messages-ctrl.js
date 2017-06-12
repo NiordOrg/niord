@@ -786,6 +786,15 @@ angular.module('niord.messages')
 
 
             /*****************************/
+            /** Mailing list reports    **/
+            /*****************************/
+
+            $scope.mailingListReportDialog = function () {
+                MessageService.mailingListReportDialog();
+            };
+
+
+            /*****************************/
             /** Message Comparison      **/
             /*****************************/
 

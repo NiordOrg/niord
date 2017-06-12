@@ -550,3 +550,16 @@ div.ace_scrollbar.ace_scrollbar-h {
     padding: 10px;
     border: 1px solid lightgray;
 }
+
+.mailing-list-report-result {
+    font-size: 12px;
+    display: block;
+    width: 100%;
+    background-color: #eee;
+    padding: 10px;
+    border: 1px solid lightgray;
+    box-shadow: 2px 2px 4px rgba(50, 50, 50, 0.5);
+    max-height: 600px;
+    overflow: hidden;
+    overflow-y: scroll;
+}

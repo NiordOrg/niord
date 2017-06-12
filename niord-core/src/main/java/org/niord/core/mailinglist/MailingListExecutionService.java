@@ -24,6 +24,7 @@ import org.niord.core.dictionary.vo.DictionaryVo;
 import org.niord.core.mail.IMailable;
 import org.niord.core.mail.ScheduledMail;
 import org.niord.core.mail.ScheduledMailRecipient;
+import org.niord.core.mailinglist.vo.MailingListReportVo;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageService;
@@ -49,6 +50,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.niord.core.mail.ScheduledMailRecipient.RecipientType.TO;
@@ -286,6 +288,63 @@ public class MailingListExecutionService extends BaseService {
             persistMails(mails);
         }
         return mails;
+    }
+
+
+    /***************************************/
+    /** Mailing List Reports              **/
+    /***************************************/
+
+    /**
+     * Returns the list of mailing list reports, i.e. the scheduled triggers that can
+     * be executed by end-users as reports.
+     *
+     * @param lang the language
+     * @return the list of mailing list reports
+     */
+    public List<MailingListReportVo> getMailingListReports(String lang) {
+
+        return em.createNamedQuery("MailingListTrigger.findMailingListReports", MailingListTrigger.class)
+                .getResultList()
+                .stream()
+                .map(t -> new MailingListReportVo(t, app.getLanguage(lang)))
+                .collect(Collectors.toList());
+    }
+
+
+    /**
+     * Executes the given mailing list report, i.e. the scheduled triggers that can
+     * be executed by end-users as reports.
+     *
+     * @param report the mailing list report to execute
+     * @return the resulting HTML
+     */
+    public String executeMailingListReport(MailingListReportVo report) throws Exception {
+
+        MailingListTrigger trigger = getByPrimaryKey(MailingListTrigger.class, report.getId());
+        if (trigger == null || trigger.getType() != TriggerType.SCHEDULED || trigger.getPublicReport() != Boolean.TRUE) {
+            throw new IllegalArgumentException("Trigger " + report.getId() + " cannot be used as a public report");
+        }
+
+        // Perform the message search
+        MessageSearchParams params = MessageSearchParams.instantiate(null, trigger.getMessageQuery());
+        params.maxSize(Integer.MAX_VALUE);
+        PagedSearchResultVo<Message> messageResult = messageService.search(params);
+
+
+        String lang = app.getLanguage(report.getLang());
+        Set<String> languages = trigger.getDescs().stream()
+                .map(DescEntity::getLang)
+                .collect(Collectors.toSet());
+        if (!languages.contains(lang) && !languages.isEmpty()) {
+            lang = languages.iterator().next();
+        }
+
+        // Execute the script resources associated with the trigger
+        return executeScriptResources(
+                trigger,
+                messageResult.getData(),
+                lang);
     }
 
 

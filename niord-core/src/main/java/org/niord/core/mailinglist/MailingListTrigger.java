@@ -61,7 +61,10 @@ import static org.niord.core.mailinglist.TriggerType.STATUS_CHANGE;
                         + " and t.mailingList.active = true and t.nextScheduledExecution < current_timestamp"),
         @NamedQuery(name = "MailingListTrigger.findStatusChangeTriggers",
                 query = "SELECT t FROM MailingListTrigger t join t.statusChanges s where t.type = 'STATUS_CHANGE' "
-                        + " and t.mailingList.active = true and s = :status")
+                        + " and t.mailingList.active = true and s = :status"),
+        @NamedQuery(name = "MailingListTrigger.findMailingListReports",
+                query = "SELECT t FROM MailingListTrigger t where t.type = 'SCHEDULED' "
+                        + " and t.publicReport = true"),
 })
 @SuppressWarnings("unused")
 public class MailingListTrigger extends VersionedEntity<Integer> implements ILocalizable<MailingListTriggerDesc> {
@@ -74,27 +77,42 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
     @Enumerated(EnumType.STRING)
     TriggerType type;
 
+    /**
+     * For scheduled triggers only.
+     * Defines the schedule type, i.e. daily, Monday,...
+     */
     @Enumerated(EnumType.STRING)
     ScheduleType scheduleType;
 
     /**
+     * For scheduled triggers only.
      * The time of day, in a "HH24:MM" format, where the trigger should be executed
      */
     String scheduledExecutionTime;
 
     /**
+     * For scheduled triggers only.
      * The time-zone of the scheduled execution time
      */
     String scheduledExecutionTimeZone;
 
+    /**
+     * For scheduled triggers only.
+     * Defines the next computed execution time
+     */
     @Temporal(TemporalType.TIMESTAMP)
     Date nextScheduledExecution;
 
+    /**
+     * For status-change triggers only.
+     * Defines the message status changes that will cause the trigger to execute.
+     */
     @ElementCollection(targetClass = Status.class)
     @Enumerated(EnumType.STRING)
     Set<Status> statusChanges = new HashSet<>();
 
     /**
+     * For scheduled triggers only.
      * Defines a message query string used for fetching the messages of a scheduled trigger
      * <p>
      * Example filter:
@@ -105,6 +123,7 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
     String messageQuery;
 
     /**
+     * For status-change triggers only.
      * Define a server-side JavaScript that filters messages in a status-change trigger.
      * <p>
      * Example filter:
@@ -114,10 +133,20 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
      */
     String messageFilter;
 
-    /** The script resources to execute to generate the mail body **/
+    /**
+     * The script resources to execute to generate the mail body
+     **/
     @OrderColumn(name = "indexNo")
     @ElementCollection
     List<String> scriptResourcePaths = new ArrayList<>();
+
+
+    /**
+     * For scheduled triggers only.
+     * If set, the trigger can be executed as a report by end-users.
+     */
+    Boolean publicReport;
+
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
     List<MailingListTriggerDesc> descs = new ArrayList<>();
@@ -145,6 +174,7 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
                     .filter(p -> ScriptResource.path2type(p) != null)
                     .forEach(p -> this.scriptResourcePaths.add(p));
         }
+        this.publicReport = trigger.getPublicReport();
         if (trigger.getDescs() != null) {
             trigger.getDescs().stream()
                     .filter(MailingListTriggerDescVo::descDefined)
@@ -182,6 +212,7 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
         if (!scriptResourcePaths.isEmpty()) {
             trigger.setScriptResourcePaths(new ArrayList<>(scriptResourcePaths));
         }
+        trigger.setPublicReport(publicReport);
         trigger.setDescs(getDescs(filter).stream()
                 .map(MailingListTriggerDesc::toVo)
                 .collect(Collectors.toList()));
@@ -286,6 +317,14 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
 
     public void setScriptResourcePaths(List<String> scriptResourcePaths) {
         this.scriptResourcePaths = scriptResourcePaths;
+    }
+
+    public Boolean getPublicReport() {
+        return publicReport;
+    }
+
+    public void setPublicReport(Boolean publicReport) {
+        this.publicReport = publicReport;
     }
 
     @Override

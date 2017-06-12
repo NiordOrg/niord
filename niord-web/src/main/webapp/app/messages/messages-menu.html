@@ -87,6 +87,12 @@
                         <span translate>menu.action.print.selection</span>
                     </a>
                 </li>
+                <li ng-if="isLoggedIn">
+                    <a href ng-click="mailingListReportDialog()">
+                        <span class="fa fa-file menu-icon"></span>&nbsp;
+                        <span translate>menu.action.report</span>
+                    </a>
+                </li>
 
 
                 <!-- Mail -->

@@ -1,0 +1,48 @@
+<div>
+    <div class="modal-header">
+        <h4 class="modal-title" translate>reports.title</h4>
+    </div>
+    <div class="modal-body">
+
+        <div class="container-fluid">
+
+            <div class="row" ng-if="reports.length != 0">
+                <div class="col-md-12">
+                    <table class="table table-condensed">
+                        <tr>
+                            <th translate>reports.report</th>
+                            <th translate>reports.schedule</th>
+                            <th></th>
+                        </tr>
+                        <tr ng-repeat="report in reports">
+                            <td>
+                                {{report.name}}
+                            </td>
+                            <td>
+                                {{report.scheduleType | capitalize}} at
+                                {{report.scheduledExecutionTime}}
+                                {{report.scheduledExecutionTimeZone}}
+                            </td>
+                            <td>
+                                <button class="btn btn-xs btn-primary" ng-click="executeReport(report)">
+                                    <span class="glyphicon glyphicon-play"></span>
+                                    <span translate>report.execute</span>
+                                </button>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="row" ng-if="reports.length == 0">
+                No report defined
+            </div>
+
+            <div ng-if="result !== undefined" class="mailing-list-report-result" ng-bind-html="result | toTrusted"></div>
+
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-default" ng-click="$dismiss('aborted')" translate>term.close</button>
+    </div>
+</div>

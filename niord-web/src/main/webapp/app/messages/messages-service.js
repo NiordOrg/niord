@@ -573,6 +573,16 @@ angular.module('niord.messages')
             },
 
 
+            /** Opens the mailing list report dialog **/
+            mailingListReportDialog: function() {
+                return $uibModal.open({
+                    controller: "MailingListReportDialogCtrl",
+                    templateUrl: "/app/admin/mailing-list-reports-dialog.html",
+                    size: 'lg'
+                });
+            },
+
+
             /** Sorts the messages withing an area **/
             sortAreaMessagesDialog: function (area, status, tag) {
                 // Get the user to pick an area with a geometry

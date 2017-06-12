@@ -539,6 +539,18 @@ angular.module('niord.admin')
             },
 
 
+            /** Returns the mailing list reports **/
+            mailingListReports: function() {
+                return $http.get('/rest/mailing-lists/reports?lang=' + $rootScope.language);
+            },
+
+
+            /** Executes the mailing list report **/
+            executeMailingListReport: function(report) {
+                return $http.post('/rest/mailing-lists/execute-report', report);
+            },
+
+
             /** Returns the ticket that can be used to generate an export file that requires the sysamdin role */
             exportTicket: function (role) {
                 var param = role ? '?role=' + role : '';

@@ -29,7 +29,7 @@
             </button>
             <button class="btn btn-xs btn-default"
                     ng-click="testExecuteTrigger(mailingList, $index)">
-                <span class="glyphicon glyphicon-cog"></span> Test
+                <span class="glyphicon glyphicon-play"></span> Test
             </button>
         </span>
     </div>
@@ -153,6 +153,14 @@
             <div class="col-sm-8 col-md-9 col-lg-10">
                 <input class="form-control input-sm" placeholder="Message Query String" type="text"
                        ng-model="trigger.messageQuery" autocomplete="off">
+            </div>
+        </div>
+
+        <div ng-if="trigger.type == 'SCHEDULED'" class="form-group row">
+            <label class="col-sm-4 col-md-3 col-lg-2">Public Report</label>
+            <div class="col-sm-8 col-md-9 col-lg-10">
+                <input type="checkbox" ng-model="trigger.publicReport">
+                &nbsp;Allow public execution of mailing list report
             </div>
         </div>
 

@@ -389,5 +389,39 @@ angular.module('niord.admin')
                     });
             };
 
+        }])
+
+
+    /**
+     * ********************************************************************************
+     * MailingListReportDialogCtrl
+     * ********************************************************************************
+     * Controller for testing mailing list trigger execution
+     */
+    .controller('MailingListReportDialogCtrl', ['$scope', '$window', 'growl', 'AdminMailingListService',
+        function ($scope, $window, growl, AdminMailingListService) {
+            'use strict';
+
+            $scope.reports = [];
+            AdminMailingListService.mailingListReports()
+                .success(function (reports) {
+                    $scope.reports = reports;
+                });
+
+            $scope.result = undefined;
+
+
+            /** Executes the report **/
+            $scope.executeReport = function(report) {
+                AdminMailingListService
+                    .executeMailingListReport(report)
+                    .success(function (result) {
+                        $scope.result = result;
+                    })
+                    .error(function () {
+                        growl.error("Error executing report", { ttl: 5000 });
+                    });
+            };
+
         }]);
 
