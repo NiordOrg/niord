@@ -585,7 +585,7 @@ angular.module('niord.template')
                 $timeout(function () {
                     $scope.enterExecutionMode();
                     $scope.updatePreviewMessage();
-                }, 100);
+                }, 200);
             }, true);
 
         }]);
