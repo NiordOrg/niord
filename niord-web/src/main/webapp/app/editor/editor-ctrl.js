@@ -1187,7 +1187,12 @@ angular.module('niord.editor')
 
 
             /** Called with a promulgation-specific endpoint to generate a promulgation **/
-            $scope.generatePromulgation = function(promulgation) {
+            $scope.generatePromulgation = function(promulgation, noConfirm) {
+
+                if (!noConfirm &&
+                    !confirm(LangService.translate('promulgation.confirm.generate', { 'type': promulgation.type.name }))) {
+                    return;
+                }
 
                 MessageService.generatePromulgation(promulgation.type.typeId, $scope.message)
                     .success(function (result) {
@@ -1207,11 +1212,14 @@ angular.module('niord.editor')
 
             /** Re-generate all promulgations **/
             $scope.generateAllPromulgations = function () {
+                if (!confirm(LangService.translate('promulgation.confirm.generate_all'))) {
+                    return;
+                }
                 var promulgations = $scope.message.promulgations;
                 if (promulgations && promulgations.length > 0) {
                     for (var x = 0; x < promulgations.length; x++) {
                         if (promulgations[x].promulgate) {
-                            $scope.generatePromulgation(promulgations[x]);
+                            $scope.generatePromulgation(promulgations[x], true);
                         }
                     }
                 }
