@@ -24,7 +24,8 @@ import freemarker.template.TemplateException;
 import freemarker.template.TemplateModel;
 import freemarker.template.TemplateModelException;
 import org.apache.commons.lang.StringUtils;
-import org.niord.core.aton.LightCharacterParser;
+import org.niord.core.aton.LightCharacterService;
+import org.niord.core.util.CdiUtils;
 
 import java.io.IOException;
 import java.util.Map;
@@ -70,7 +71,9 @@ public class CallSignDirective implements TemplateDirectiveModel {
         try {
             if (verbose && StringUtils.isNotBlank(callSign)) {
 
-                String result = LightCharacterParser.getInstance().getTelephonyCode(callSign);
+                String lang = env.getLocale().getLanguage();
+                LightCharacterService lightCharacterService = CdiUtils.getBean(LightCharacterService.class);
+                String result = lightCharacterService.formatTelephonyCode(lang, callSign);
                 env.getOut().write(result);
 
             } else {

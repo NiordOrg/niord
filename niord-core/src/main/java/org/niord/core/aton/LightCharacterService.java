@@ -36,6 +36,7 @@ import javax.inject.Inject;
 public class LightCharacterService {
 
     public static final String LIGHT_CHARACTER_TEMPLATE = "/templates/aton/light-character.ftl";
+    public static final String TELEPHONY_CODE_TEMPLATE = "/templates/aton/telephony-codes.ftl";
 
     @Inject
     Logger log;
@@ -98,4 +99,37 @@ public class LightCharacterService {
         return text;
     }
 
+
+    /**
+     * Translates telephony codes to text in a language specific way.
+     *
+     * A faster standard way is to call {@code LightCharacterParser.getTelephonyCode()}, however,
+     * in some situations you want a language-specific result, e.g. for included numbers.
+     *
+     * @param language the language
+     * @param code the telephony codes
+     * @return the formatted telephony codes
+     */
+    public String formatTelephonyCode(
+            String language,
+            String code) throws Exception {
+
+        // Sanity check
+        if (StringUtils.isBlank(code)) {
+            return code;
+        }
+
+        String lang = app.getLanguage(language);
+
+        String result = templateService.newFmTemplateBuilder()
+                .templatePath(TELEPHONY_CODE_TEMPLATE)
+                .data("code", code)
+                .language(lang)
+                .process()
+                .trim();
+
+        log.info(String.format("Translate telephony code \"%s\" -> %s -> \"%s\"", code, language, result));
+
+        return result;
+    }
 }
