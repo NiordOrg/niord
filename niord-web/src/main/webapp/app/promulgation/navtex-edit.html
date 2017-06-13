@@ -10,10 +10,10 @@
 
         <div style="margin-top: 5px">
             <button class="btn btn-default btn-xs"
-                    ng-click="generatePromulgation(promulgation)">Generate</button>
+                    ng-click="generatePromulgation(promulgation)" translate>term.generate</button>
 
             <button class="btn btn-default btn-xs" id="formatNavtexBtn"
-                    onclick="formatNavtex()">Format</button>
+                    onclick="formatNavtex()" translate>term.format</button>
         </div>
     </div>
 
@@ -23,7 +23,7 @@
             <input type="checkbox" ng-model="promulgation.transmitters[name]"/> {{name}} &nbsp;
         </span>
 
-        <div style="margin-top: 20px;">Priority</div>
+        <div style="margin-top: 20px;" translate>term.priority</div>
         <select class="form-control input-sm"
                 style="width: 100px"
                 ng-model="promulgation.priority">
