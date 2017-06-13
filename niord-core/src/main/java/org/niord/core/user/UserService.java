@@ -34,6 +34,7 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import java.security.Principal;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -88,16 +89,39 @@ public class UserService extends BaseService {
 
 
     /**
+     * Returns the current Keycloak Access Token
+     */
+    public AccessToken getKeycloakAccessToken() {
+        KeycloakPrincipal keycloakPrincipal = getCallerPrincipal();
+        if (keycloakPrincipal != null) {
+            KeycloakSecurityContext ctx = keycloakPrincipal.getKeycloakSecurityContext();
+            return ctx.getToken();
+        }
+        return null;
+    }
+
+
+    /**
+     * Returns the user attributes, i.e. the "other claims" map of the current Keycloak principal
+     */
+    public Map<String, Object> getUserAttributes() {
+        AccessToken accessToken = getKeycloakAccessToken();
+        if (accessToken != null) {
+            return accessToken.getOtherClaims();
+        }
+        return new HashMap<>();
+    }
+
+
+    /**
      * Returns all the Keycloak domain IDs where the current user has the given role
      *
      * @param role the role to check for
      * @return all the Keycloak domain IDs where the current user has the given role
      */
     public Set<String> getKeycloakDomainIdsForRole(String role) {
-        KeycloakPrincipal keycloakPrincipal = getCallerPrincipal();
-        if (keycloakPrincipal != null) {
-            KeycloakSecurityContext ctx = keycloakPrincipal.getKeycloakSecurityContext();
-            AccessToken accessToken = ctx.getToken();
+        AccessToken accessToken = getKeycloakAccessToken();
+        if (accessToken != null) {
             Map<String, AccessToken.Access> accessMap = accessToken.getResourceAccess();
             return accessMap.entrySet().stream()
                     .filter(kv -> kv.getValue().isUserInRole(role))

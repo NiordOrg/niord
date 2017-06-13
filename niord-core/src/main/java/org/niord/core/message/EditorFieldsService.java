@@ -16,13 +16,15 @@
 
 package org.niord.core.message;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.niord.core.area.Area;
+import org.niord.core.area.AreaType;
 import org.niord.core.category.Category;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
-import org.niord.core.area.AreaType;
+import org.niord.core.util.JsonUtils;
 import org.niord.model.message.MainType;
 
 import javax.ejb.Stateless;
@@ -54,6 +56,8 @@ public class EditorFieldsService extends BaseService {
     private static final Setting EDITOR_FIELDS_NW   = new Setting("editorFieldsNw");
     private static final Setting EDITOR_FIELDS_NM   = new Setting("editorFieldsNm");
 
+    private static final String USER_ATTR_EDITOR_FIELDS         = "editorFields";
+
     private final static String[] EDITOR_FIELDS_FIRING_EXERCISE = { "prohibition", "signals" };
 
     @Inject
@@ -66,9 +70,10 @@ public class EditorFieldsService extends BaseService {
     /**
      * Computes and updates the editor fields of the editable message value object
      * @param messageVo the message to update
+     * @param userAttributes the Keycloak attributes associated with the current user
      */
-    public void computeEditorFields(SystemMessageVo messageVo) {
-        Map<String, Boolean> result = computeEditorFields(new Message(messageVo));
+    public void computeEditorFields(SystemMessageVo messageVo, Map<String, Object> userAttributes) {
+        Map<String, Boolean> result = computeEditorFields(new Message(messageVo), userAttributes);
         messageVo.setEditorFields(result);
     }
 
@@ -77,7 +82,7 @@ public class EditorFieldsService extends BaseService {
      * Computes the editor fields to display for a given message
      * @param message the message to compute the editor fields for
      */
-    public Map<String, Boolean> computeEditorFields(Message message) {
+    public Map<String, Boolean> computeEditorFields(Message message, Map<String, Object> userAttributes) {
 
         Map<String, Boolean> result = new HashMap<>();
 
@@ -117,6 +122,18 @@ public class EditorFieldsService extends BaseService {
         if (message.getMessageSeries() != null) {
             message.setMessageSeries(messageSeriesService.findBySeriesId(message.getMessageSeries().getSeriesId()));
             addEditorFields(result, message.getMessageSeries().getEditorFields());
+        }
+
+        // Add editor fields from the user attributes (Keycloak "other claims")
+        if (userAttributes != null && userAttributes.containsKey(USER_ATTR_EDITOR_FIELDS)) {
+            try {
+                Object userFields = userAttributes.get(USER_ATTR_EDITOR_FIELDS);
+                Map<String, Boolean> userFieldMap = JsonUtils.fromJson(
+                        (String)userFields,
+                        new TypeReference<Map<String, Boolean>>(){});
+                addEditorFields(result, userFieldMap);
+            } catch (Exception ignored) {
+            }
         }
 
         return result;

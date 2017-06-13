@@ -233,6 +233,15 @@ public class MessageRestService  {
 
 
     /**
+     * Computes the editor fields to use for the given message
+     * @param message the message to compute the editor fields for
+     */
+    private void computeEditorFields(SystemMessageVo message) {
+        editorFieldsService.computeEditorFields(message, userService.getUserAttributes());
+    }
+
+
+    /**
      * Returns the message with the given message id, which may be either a UID,
      * or a short ID of a message.
      *
@@ -286,7 +295,7 @@ public class MessageRestService  {
         promulgationManager.onLoadSystemMessage(messageVo, false);
 
         // Compute the default set of editor fields to display for the message
-        editorFieldsService.computeEditorFields(messageVo);
+        computeEditorFields(messageVo);
 
         // Create a temporary repository folder for the message
         messageService.createTempMessageRepoFolder(messageVo, copyToTemp);
@@ -445,7 +454,7 @@ public class MessageRestService  {
         }
 
         // Compute the default set of editor fields to display for the message
-        editorFieldsService.computeEditorFields(editMessage);
+        computeEditorFields(editMessage);
 
         // Reset various fields
         editMessage.setShortId(null);
@@ -835,7 +844,7 @@ public class MessageRestService  {
     public SystemMessageVo adjustEditableMessage(SystemMessageVo message) throws Exception {
 
         // Compute the editor fields to use for the message
-        editorFieldsService.computeEditorFields(message);
+        computeEditorFields(message);
 
         Message msg = null;
         boolean autoTitle = message.isAutoTitle() != null && message.isAutoTitle();
