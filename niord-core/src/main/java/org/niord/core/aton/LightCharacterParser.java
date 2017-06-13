@@ -222,7 +222,7 @@ public class LightCharacterParser {
             case 'U': return "Uniform";
             case 'V': return "Victor";
             case 'W': return "Whiskey";
-            case 'X': return "X-ray";
+            case 'X': return "Xray";
             case 'Y': return "Yankee";
             case 'Z': return "Zulu";
             case '1': return "One";
