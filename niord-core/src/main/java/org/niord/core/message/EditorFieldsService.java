@@ -141,11 +141,11 @@ public class EditorFieldsService extends BaseService {
     }
 
 
-    /** Adds the editor fields to the result, overwriting existing fields settings **/
+    /** Adds the user attribute editor fields to the result, overwriting existing fields settings **/
     private void addUserEditorFields(Map<String, Boolean> result, Object userFields) {
 
         // The user editor fields should be a string representation of a JSON object.
-        // Example: '{ "publication": false }'
+        // Example: '{ "publication": false }' - will turn off the "publication" editor field
 
         if (userFields != null && userFields instanceof String && StringUtils.isNotBlank((String)userFields)) {
             try {
