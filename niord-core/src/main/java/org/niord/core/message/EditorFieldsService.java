@@ -17,6 +17,7 @@
 package org.niord.core.message;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaType;
 import org.niord.core.category.Category;
@@ -46,17 +47,20 @@ import java.util.Map;
  *                     Additionally, all firing areas will be assigned the "prohibition" and "signals" fields.</li>
  *     <li>Category editor fields: Each message category (or parent categories) may define editor fields.</li>
  *     <li>Message series editor fields: Each associated message series may define editor fields.</li>
+ *     <li>User attribute editor fields: NW or NM specific editor fields. Defined in user Keycloak "other claims" attributes.</li>
  * </ol>
  */
 @Stateless
 public class EditorFieldsService extends BaseService {
 
     /** These settings are all defined in niord.json **/
-    private static final Setting EDITOR_FIELDS_BASE = new Setting("editorFieldsBase");
-    private static final Setting EDITOR_FIELDS_NW   = new Setting("editorFieldsNw");
-    private static final Setting EDITOR_FIELDS_NM   = new Setting("editorFieldsNm");
+    private static final String KEY_EDITOR_FIELDS_BASE = "editorFieldsBase";
+    private static final String KEY_EDITOR_FIELDS_NW   = "editorFieldsNw";
+    private static final String KEY_EDITOR_FIELDS_NM   = "editorFieldsNm";
 
-    private static final String USER_ATTR_EDITOR_FIELDS         = "editorFields";
+    private static final Setting EDITOR_FIELDS_BASE = new Setting(KEY_EDITOR_FIELDS_BASE);
+    private static final Setting EDITOR_FIELDS_NW   = new Setting(KEY_EDITOR_FIELDS_NW);
+    private static final Setting EDITOR_FIELDS_NM   = new Setting(KEY_EDITOR_FIELDS_NM);
 
     private final static String[] EDITOR_FIELDS_FIRING_EXERCISE = { "prohibition", "signals" };
 
@@ -125,9 +129,26 @@ public class EditorFieldsService extends BaseService {
         }
 
         // Add editor fields from the user attributes (Keycloak "other claims")
-        if (userAttributes != null && userAttributes.containsKey(USER_ATTR_EDITOR_FIELDS)) {
+        if (userAttributes != null) {
+            if (message.getMainType() == MainType.NW) {
+                addUserEditorFields(result, userAttributes.get(KEY_EDITOR_FIELDS_NW));
+            } else if (message.getMainType() == MainType.NM) {
+                addUserEditorFields(result, userAttributes.get(KEY_EDITOR_FIELDS_NM));
+            }
+        }
+
+        return result;
+    }
+
+
+    /** Adds the editor fields to the result, overwriting existing fields settings **/
+    private void addUserEditorFields(Map<String, Boolean> result, Object userFields) {
+
+        // The user editor fields should be a string representation of a JSON object.
+        // Example: '{ "publication": false }'
+
+        if (userFields != null && userFields instanceof String && StringUtils.isNotBlank((String)userFields)) {
             try {
-                Object userFields = userAttributes.get(USER_ATTR_EDITOR_FIELDS);
                 Map<String, Boolean> userFieldMap = JsonUtils.fromJson(
                         (String)userFields,
                         new TypeReference<Map<String, Boolean>>(){});
@@ -135,8 +156,6 @@ public class EditorFieldsService extends BaseService {
             } catch (Exception ignored) {
             }
         }
-
-        return result;
     }
 
 
