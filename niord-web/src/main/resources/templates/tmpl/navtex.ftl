@@ -19,7 +19,7 @@
         <#list message.references as ref>
             <#if ref.type == 'CANCELLATION'>
                 <@line format="navtex">
-                ${text('cancellation.message',ref.messageId)}.
+                    ${text('cancellation.message',ref.messageId)}.
                 </@line>
             </#if>
         </#list>
@@ -28,7 +28,7 @@
     <#if message.publishDateTo?has_content>
         <@line format="navtex">
             <#assign cancelDate><@navtexDateFormat date=message.publishDateTo /></#assign>
-        ${text('cancellation.this_message',cancelDate)}.
+            ${text('cancellation.this_message',cancelDate)}.
         </@line>
     </#if>
 </#macro>
