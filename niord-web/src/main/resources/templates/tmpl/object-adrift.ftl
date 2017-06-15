@@ -23,7 +23,7 @@
 
 <field-template field="part.getDesc('en').details" format="html">
     <@renderObject defaultName="an object" format="long" lang="en"/>
-    has been reported adrift <@renderPositionList geomParam=part lang="en"/>
+    has been observed adrift <@renderPositionList geomParam=part lang="en"/>
     <#if params.date??><@renderDate date=params.date lang="en" tz="UTC"/></#if>.
     <#if params.cancelDate??>
         <p>Cancel this warning <@renderDate date=params.cancelDate lang="en" tz="UTC"/>.</p>
