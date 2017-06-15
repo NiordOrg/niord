@@ -400,22 +400,30 @@ public class PlainTextConverter {
 
     /**  Parses the degree (either latitude or longitude) **/
     private double parseCoordinate(String deg, String dir) throws Exception {
+        // Check if it include a seconds part
+        boolean includesSeconds = deg.contains("\"");
+
         String[] parts = deg.replace("°", " ")
-                .replace("'", "")
+                .replace("'", " ")
+                .replace("\"", " ")
                 .replace("I", " ") // When you copy-paste ° from DMA NtM PDF
                 .replace("J", " ") // When you copy-paste ' from DMA NtM PDF
                 .replaceAll("\\s+", " ")
                 .replace(",", ".")
                 .split(" ");
-        if (parts.length == 0 || parts.length > 2) {
+        if (parts.length == 0 || (parts.length > 2 && !includesSeconds) || (parts.length > 3 && includesSeconds)) {
             throw new Exception("Invalid degree format: " + deg);
         }
 
         try {
             double val = Double.valueOf(parts[0]);
-            if (parts.length == 2) {
+            if (parts.length == 2 || parts.length == 3) {
                 double min = Double.valueOf(parts[1]);
                 val += min / 60.0;
+            }
+            if (parts.length == 3 && includesSeconds) {
+                double secs = Double.valueOf(parts[2]);
+                val += secs / (60.0 * 60.0);
             }
 
             if (dir.equalsIgnoreCase("S") || dir.equalsIgnoreCase("W")) {
