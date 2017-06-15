@@ -52,6 +52,7 @@
 
                 <div ng-if="isEditor && message.status == 'VERIFIED' && !message.publishDateFrom">
                     <button href class="btn btn-primary btn-sm message-status-action"
+                            ng-disabled="canSaveMessage"
                             ng-click="publish()">
                         <span class="glyphicon glyphicon-send"></span>
                         <span translate>editor.status.publish_msg</span>...
@@ -64,6 +65,7 @@
                 </div>
                 <div ng-if="isEditor && message.status == 'DRAFT'">
                     <button href class="btn btn-primary btn-sm message-status-action"
+                            ng-disabled="canSaveMessage"
                             ng-click="verify()">
                         <span class="glyphicon glyphicon-ok"></span>
                         <span translate>editor.status.verify_msg</span>...
@@ -71,6 +73,7 @@
                 </div>
                 <div ng-if="isEditor && (message.status == 'DRAFT' || message.status == 'VERIFIED')">
                     <button href class="btn btn-default btn-sm message-status-action"
+                            ng-disabled="canSaveMessage"
                             ng-click="deleteDraft()">
                         <span class="glyphicon glyphicon-trash"></span>
                         <span translate>editor.status.delete_msg</span>...
@@ -78,6 +81,7 @@
                 </div>
                 <div ng-if="isEditor && message.status == 'PUBLISHED'">
                     <button href class="btn btn-default btn-sm message-status-action"
+                            ng-disabled="canSaveMessage"
                             ng-click="cancel()">
                         <span class="glyphicon glyphicon-trash"></span>
                         <span translate>editor.status.cancel_msg</span>...
@@ -85,6 +89,7 @@
                 </div>
                 <div ng-if="isEditor">
                     <button href class="btn btn-default btn-sm message-status-action"
+                            ng-disabled="canSaveMessage"
                             ng-click="copy()">
                         <span class="glyphicon glyphicon-duplicate"></span>
                         <span translate>editor.status.copy_msg</span>...
