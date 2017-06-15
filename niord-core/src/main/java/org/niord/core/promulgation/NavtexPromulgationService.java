@@ -50,7 +50,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.niord.core.util.PositionFormatter.LATLON_NAVTEX;
+import static org.niord.core.util.PositionFormatter.LATLON_NAVTEX_1;
 
 /**
  * Manages NAVTEX-via-mailing-lists promulgations
@@ -275,7 +275,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
     private String html2navtex(String text, String language) {
 
         // Replace positions with NAVTEX versions
-        text = PositionUtils.replacePositions(app.getLocale(language), LATLON_NAVTEX, text);
+        text = PositionUtils.replacePositions(app.getLocale(language), LATLON_NAVTEX_1, text);
 
         // Remove verbose words, such as "the", from the text
         text = TextUtils.trimHtmlWhitespace(text);

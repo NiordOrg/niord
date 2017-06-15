@@ -24,7 +24,7 @@ import org.niord.core.util.TextUtils;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-import static org.niord.core.util.PositionFormatter.LATLON_NAVTEX;
+import static org.niord.core.util.PositionFormatter.LATLON_NAVTEX_1;
 
 /**
  * Test extracting positions from html and replacing them with the positions in a new format.
@@ -45,14 +45,14 @@ public class PositionTest {
         String html2 = PositionUtils.replaceSeparator(html, " ");
         System.out.println("No separator: " + html2);
 
-        String navtex = PositionUtils.replacePositions(Locale.ENGLISH, LATLON_NAVTEX, html2);
+        String navtex = PositionUtils.replacePositions(Locale.ENGLISH, LATLON_NAVTEX_1, html2);
         navtex = TextUtils.trimHtmlWhitespace(navtex);
         navtex = navtex.replaceAll("(?is)\\s+(the|in pos\\.|is)\\s+", " ");
         System.out.println("NAVTEX: " + navtex);
 
         // Replace positions with audio format
         ResourceBundle bundle = ResourceBundle.getBundle("template", Locale.ENGLISH);
-        PositionFormatter.Format audioFormat = PositionUtils.getAudioFormat(bundle);
+        PositionFormatter.Format audioFormat = PositionUtils.getAudioFormat(bundle, 1);
         String audio = PositionUtils.replacePositions(Locale.ENGLISH, audioFormat, html);
         System.out.println("Audio: " + audio);
 

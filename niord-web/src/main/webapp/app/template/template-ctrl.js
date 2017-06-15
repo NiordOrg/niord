@@ -320,7 +320,7 @@ angular.module('niord.template')
                             type: 'DETAILS'
                         })
                     }
-                    $scope.templateData.push({ posFormat: 'dec-1', positions: [] });
+                    $scope.templateData.push({ posDecimals: '1', positions: [] });
                 }
 
 

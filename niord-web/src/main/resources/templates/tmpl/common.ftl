@@ -11,7 +11,7 @@
 <#assign navtexDateFormat = 'org.niord.core.script.directive.NavtexDateFormatDirective'?new()>
 <#assign lightCharacterFormat = 'org.niord.core.script.directive.LightCharacterDirective'?new()>
 <#assign callSignFormat = 'org.niord.core.script.directive.CallSignDirective'?new()>
-<#assign posFormat = params.posFormat!'dec-1'> <#-- 1 decimals in message details -->
+<#assign posDecimals = (params.posDecimals!'1')?number> <#-- 1 decimals in position formatting -->
 
 <!-- ***************************************  -->
 <!-- Returns the desc for the given language  -->
@@ -167,7 +167,7 @@
 <!-- Renders the geometry parameter           -->
 <!-- as a list of positions                   -->
 <!-- ***************************************  -->
-<#macro renderPositionList geomParam format=posFormat plural=false lang='en'>
+<#macro renderPositionList geomParam format="dec" plural=false lang='en'>
     <#setting locale=lang>
     <#assign positions=toPositions(geomParam)/>
     <#assign area=isArea(geomParam)/>
@@ -196,7 +196,7 @@
     </#if>
 
     <#list positions as pos>
-        <@formatPos lat=pos.coordinates[1] lon=pos.coordinates[0] format=format />
+        <@formatPos lat=pos.coordinates[1] lon=pos.coordinates[0] format=format decimals=posDecimals/>
         <#if pos_has_next> ${text('term.and')} </#if>
     </#list>
 </#macro>

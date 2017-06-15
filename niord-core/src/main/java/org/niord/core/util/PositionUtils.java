@@ -24,7 +24,7 @@ import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.niord.core.util.PositionFormatter.LATLON_DEC;
+import static org.niord.core.util.PositionFormatter.LATLON_DEC_3;
 import static org.niord.core.util.PositionFormatter.format;
 
 /**
@@ -72,14 +72,14 @@ public class PositionUtils {
      * @param bundle the language bundle containing relevant names used for the positions
      * @return the audio format
      */
-    public static PositionFormatter.Format getAudioFormat(ResourceBundle bundle) {
+    public static PositionFormatter.Format getAudioFormat(ResourceBundle bundle, int decimals) {
         String deg = bundle.getString("position.deg");
         String min = bundle.getString("position.min");
         String ns = bundle.getString("position.north") + "," + bundle.getString("position.south");
         String ew = bundle.getString("position.east") + "," + bundle.getString("position.west");
         return new PositionFormatter.Format(
-                "DEG-F[%d] " + deg + " MIN[%.1f] " + min + " DIR[" + ns + "]",
-                "DEG-F[%d] " + deg + " MIN[%.1f] " + min + " DIR[" + ew + "]");
+                "DEG-F[%d] " + deg + " MIN[%." + decimals + "f] " + min + " DIR[" + ns + "]",
+                "DEG-F[%d] " + deg + " MIN[%." + decimals + "f] " + min + " DIR[" + ew + "]");
     }
 
 
@@ -122,7 +122,7 @@ public class PositionUtils {
             locale = Locale.ENGLISH;
         }
         if (format == null) {
-            format = LATLON_DEC;
+            format = LATLON_DEC_3;
         }
 
         Matcher m = WRAPPED_POS_PATTERN.matcher(html);

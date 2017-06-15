@@ -39,33 +39,24 @@ import static org.niord.core.util.PositionFormatter.*;
 @SuppressWarnings("unused")
 public class LatLonDirective implements TemplateDirectiveModel {
 
-    private static final Map<Locale, Format> formatterCache = new ConcurrentHashMap<>();
+    private static final Map<String, Format> formatterCache = new ConcurrentHashMap<>();
+
+    static {
+        // Pre-populate formatter cache
+        formatterCache.put("dec-1", LATLON_DEC_1);
+        formatterCache.put("dec-2", LATLON_DEC_2);
+        formatterCache.put("dec-3", LATLON_DEC_3);
+        formatterCache.put("navtex-1", LATLON_NAVTEX_1);
+        formatterCache.put("navtex-2", LATLON_NAVTEX_2);
+        formatterCache.put("navtex-3", LATLON_NAVTEX_3);
+    }
 
     private static final String PARAM_LAT               = "lat";
     private static final String PARAM_LON               = "lon";
+    private static final String PARAM_DECIMALS          = "decimals";
     private static final String PARAM_SEPARATOR         = "separator";
     private static final String PARAM_FORMAT            = "format";
 
-
-    /**
-     * Construct a format for audio positions
-     * @param env the current environment
-     * @return the format
-     */
-    public synchronized Format getAudioFormat(Environment env) throws TemplateModelException {
-
-        Locale locale = env.getLocale();
-        Format format = formatterCache.get(locale);
-        if (format != null) {
-            return format;
-        }
-
-        // Fetch the resource bundle
-        MultiResourceBundleModel text = (MultiResourceBundleModel)env.getDataModel().get(BUNDLE_PROPERTY);
-        format = PositionUtils.getAudioFormat(text.getResourceBundle());
-        formatterCache.put(locale, format);
-        return format;
-    }
 
     /**
      * {@inheritDoc}
@@ -79,8 +70,10 @@ public class LatLonDirective implements TemplateDirectiveModel {
 
         SimpleNumber latModel = (SimpleNumber)params.get(PARAM_LAT);
         SimpleNumber lonModel = (SimpleNumber)params.get(PARAM_LON);
+        SimpleNumber decimalModel = (SimpleNumber)params.get(PARAM_DECIMALS);
         SimpleScalar separatorModel = (SimpleScalar)params.get(PARAM_SEPARATOR);
         SimpleScalar wrapHtmlModel = (SimpleScalar)params.get(PARAM_SEPARATOR);
+        SimpleScalar formatModel = (SimpleScalar) params.get(PARAM_FORMAT);
 
 
         if (latModel == null && lonModel == null) {
@@ -92,32 +85,36 @@ public class LatLonDirective implements TemplateDirectiveModel {
             Double lat = (latModel == null) ? null : latModel.getAsNumber().doubleValue();
             Double lon = (lonModel == null) ? null : lonModel.getAsNumber().doubleValue();
 
-            boolean htmlWrap = true;
-            Format format = LATLON_DEC;
-            SimpleScalar formatModel = (SimpleScalar) params.get(PARAM_FORMAT);
+
+            // The code may or may not contain the decimals as a suffix, e.g. "dec-1".
+            String code = "dec";
             if (formatModel != null) {
-                String code = formatModel.getAsString().toLowerCase();
-                if ("dec".equals(code) || "dec-3".equals(code)) {
-                    format = LATLON_DEC;
-                } else if ("dec-1".equals(code)) {
-                    format = LATLON_DEC_1;
-                } else if ("dec-2".equals(code)) {
-                    format = LATLON_DEC_2;
-                } else if ("sec".equals(code)) {
-                    format = LATLON_SEC;
-                } else if ("navtex".equals(code)) {
-                    format = LATLON_NAVTEX;
-                    // Override separator
-                    separator = " ";
-                    htmlWrap = false;
-                } else if ("audio".equals(code)) {
-                    format = getAudioFormat(env);
-                    // Override separator
-                    separator = " - ";
-                    htmlWrap = false;
-                }
+                code = formatModel.getAsString().toLowerCase();
             }
 
+            // Check if we should extract the number of decimals from the code
+            // Example: "dec-1" -> code="dec" and codeDecimals=1
+            Integer codeDecimals = null;
+            if (code.matches("\\w+-\\d+"))  {
+                String[] codeParts = code.split("-");
+                code = codeParts[0];
+                codeDecimals = Integer.parseInt(codeParts[1]);
+            }
+            int decimals = getDecimals(code, codeDecimals, decimalModel);
+
+            // Resolve the position format to use
+            Format format = resolvePositionFormat(env, code, decimals);
+
+            boolean htmlWrap = "dec".equals(code);
+
+            // Override separator for "navtex" and "audio"
+            if ("navtex".equals(code)) {
+                separator = " ";
+            } else if ("audio".equals(code)) {
+                separator = " ";
+            }
+
+            // Emit latitude and/or longitude
             if (lat != null) {
                 env.getOut().write(PositionUtils.formatLat(env.getLocale(), format, lat, htmlWrap));
             }
@@ -130,6 +127,76 @@ public class LatLonDirective implements TemplateDirectiveModel {
         } catch (Exception e) {
             // Prefer robustness over correctness
         }
+    }
+
+
+    /**
+     * Look up or construct a position format the format code and number of decimal
+     * @param env the current environment
+     * @param code the format code, e.g. "dec", "audio" or "navtex"
+     * @param decimals the number of decimals
+     * @return the format
+     */
+    public synchronized Format resolvePositionFormat(Environment env, String code, int decimals) throws TemplateModelException {
+
+        Format format = null;
+
+        // Handle language independent "sec", "dec" and "navtex" first
+        String cacheKey = code + "-" + decimals;
+
+        if ("sec".equals(code)) {
+            return LATLON_SEC;
+        } else if ("dec".equals(code) || "navtex".equals(code)) {
+            format = formatterCache.get(cacheKey);
+        } else if ("audio".equals(code)) {
+            Locale locale = env.getLocale();
+            cacheKey += "_" + locale.getLanguage();
+
+            format = formatterCache.get(cacheKey);
+            if (format != null) {
+                return format;
+            }
+
+            // Fetch the resource bundle
+            MultiResourceBundleModel text = (MultiResourceBundleModel)env.getDataModel().get(BUNDLE_PROPERTY);
+            format = PositionUtils.getAudioFormat(text.getResourceBundle(), decimals);
+            formatterCache.put(cacheKey, format);
+        }
+
+        // Fall back to a high-precision format
+        if (format == null) {
+            format = LATLON_DEC_3;
+        }
+
+        return format;
+    }
+
+
+    /**
+     * Returns the decimals based on the format code and decimal parameters
+     * @param code the format code, e.g. "dec", "audio" or "navtex"
+     * @param codeDecimals Optionally, the decimals that was specified as a suffix to the code, e.g. "dec-1"
+     * @param decimalModel the decimals specified as parameters to the directive
+     * @return the number of decimals to use
+     */
+    private int getDecimals(String code, Integer codeDecimals, SimpleNumber decimalModel) {
+        // A "decimal" parameter trumps all
+        if (decimalModel != null) {
+            return decimalModel.getAsNumber().intValue();
+        }
+
+        // Next priority is if decimals was specified as part of the code, as in "dec-1"
+        if (codeDecimals != null) {
+            return codeDecimals;
+        }
+
+        // Lastly, depending on the code, pick a default decimal value
+        if ("sec".equals(code)) {
+            return 2;
+        } else if ("dec".equals(code)) {
+            return 3;
+        }
+        return 1;
     }
 
 }

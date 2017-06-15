@@ -205,7 +205,7 @@ public class PlainTextConverter {
 
     /** Formats the coordinates of the geometry **/
     private void formatCoordinates(StringBuilder result, GeoJsonVo g, Map<String, Object> properties) {
-        Format format = PositionFormatter.LATLON_DEC;
+        Format format = PositionFormatter.LATLON_DEC_3;
         Locale locale = new Locale(languages.get(0));
         AtomicInteger coordIndex = new AtomicInteger(0);
 

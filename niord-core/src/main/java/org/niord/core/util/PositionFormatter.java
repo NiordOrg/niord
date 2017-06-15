@@ -57,7 +57,7 @@ public class PositionFormatter {
             "DEG-F[%02d]\u00B0 MIN-F[%02d]' SEC-F[%02d]\"DIR[N,S]",
             "DEG-F[%03d]\u00B0 MIN-F[%02d]' SEC-F[%02d]\"DIR[E,W]");
 
-    public static final Format LATLON_DEC = new Format(
+    public static final Format LATLON_DEC_3 = new Format(
             "DEG-F[%02d]\u00B0 MIN[%06.3f]'DIR[N,S]",
             "DEG-F[%03d]\u00B0 MIN[%06.3f]'DIR[E,W]");
 
@@ -69,7 +69,15 @@ public class PositionFormatter {
             "DEG-F[%02d]\u00B0 MIN[%04.1f]'DIR[N,S]",
             "DEG-F[%03d]\u00B0 MIN[%04.1f]'DIR[E,W]");
 
-    public static final Format LATLON_NAVTEX = new Format(
+    public static final Format LATLON_NAVTEX_3 = new Format(
+            "DEG-F[%02d]-MIN[%06.3f]DIR[N,S]",
+            "DEG-F[%03d]-MIN[%06.3f]DIR[E,W]");
+
+    public static final Format LATLON_NAVTEX_2 = new Format(
+            "DEG-F[%02d]-MIN[%05.2f]DIR[N,S]",
+            "DEG-F[%03d]-MIN[%05.2f]DIR[E,W]");
+
+    public static final Format LATLON_NAVTEX_1 = new Format(
             "DEG-F[%02d]-MIN[%04.1f]DIR[N,S]",
             "DEG-F[%03d]-MIN[%04.1f]DIR[E,W]");
 
@@ -238,8 +246,8 @@ public class PositionFormatter {
 
     public static void main(String[] args) {
         System.out.println(PositionFormatter.format(Locale.ENGLISH, "DEG[%02d], MIN[%2d], MIN[%.2f], SEC[%02d], DIR[N,S]", 55.0999));
-        System.out.println(PositionFormatter.format(Locale.ENGLISH, LATLON_DEC.getLatFormat(), 55.2211));
-        System.out.println(PositionFormatter.format(Locale.ENGLISH, LATLON_NAVTEX.getLatFormat(), 55.512345));
+        System.out.println(PositionFormatter.format(Locale.ENGLISH, LATLON_DEC_3.getLatFormat(), 55.2211));
+        System.out.println(PositionFormatter.format(Locale.ENGLISH, LATLON_NAVTEX_1.getLatFormat(), 55.512345));
     }
 
     /**
