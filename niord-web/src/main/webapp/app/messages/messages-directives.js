@@ -984,7 +984,8 @@ angular.module('niord.messages')
 
                     /** Copies the message **/
                     scope.copy = function () {
-                        MessageService.copyMessageDialog(scope.messageId, scope.dismissAction);
+                        var mainType = scope.msg ? scope.msg.mainType : '';
+                        MessageService.copyMessageDialog(scope.messageId, mainType, scope.dismissAction);
                     };
                 }
             }

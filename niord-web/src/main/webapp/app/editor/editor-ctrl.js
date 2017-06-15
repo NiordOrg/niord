@@ -1582,7 +1582,8 @@ angular.module('niord.editor')
 
             /** Copy the message **/
             $scope.copy = function () {
-                MessageService.copyMessageDialog($scope.message.id);
+                var mainType = $scope.message ? $scope.message.mainType : '';
+                MessageService.copyMessageDialog($scope.message.id, mainType);
             };
 
 

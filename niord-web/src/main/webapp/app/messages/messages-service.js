@@ -623,11 +623,14 @@ angular.module('niord.messages')
 
 
             /** Copies the message **/
-            copyMessageDialog: function (messageId, dismissAction) {
+            copyMessageDialog: function (messageId, mainType, dismissAction) {
 
                 $uibModal.open({
                     templateUrl: "/app/messages/copy-message-dialog.html",
-                    size: 'sm'
+                    size: 'sm',
+                    controller: function($scope) {
+                        $scope.mainType = mainType;
+                    }
                 }).result.then(function (includeReference) {
                     var referenceType = includeReference ? 'REFERENCE' : '';
                     // Navigate to the message editor page

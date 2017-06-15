@@ -6,8 +6,12 @@
 
     <div class="modal-body" style="padding-bottom: 0">
 
-        <input type="checkbox" ng-model="includeReference">
-        &nbsp;<span translate>msg.copy.include_reference</span>
+        <div class="row" ng-if="mainType == 'NM'">
+            <div class="col-sm-12">
+                <input type="checkbox" ng-model="includeReference">
+                &nbsp;<span translate>msg.copy.include_reference</span>
+            </div>
+        </div>
 
         <div class="row" style="margin-top: 20px;">
             <div class="form-group col-xs-12" style="text-align: right">
