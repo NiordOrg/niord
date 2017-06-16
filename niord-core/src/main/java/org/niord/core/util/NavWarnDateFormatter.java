@@ -47,6 +47,7 @@ public class NavWarnDateFormatter {
     Format format;
     Locale locale;
     TimeZone timeZone;
+    TimeZone allDayTimeZone;
     String timeZoneTxt;
 
 
@@ -65,6 +66,7 @@ public class NavWarnDateFormatter {
             Format format,
             Locale locale,
             String timeZoneId,
+            String allDayTimeZoneId,
             boolean showTimeZone) {
 
         NavWarnDateFormatter formatter = new NavWarnDateFormatter();
@@ -83,6 +85,9 @@ public class NavWarnDateFormatter {
         formatter.timeZoneTxt           = showTimeZone ? " " + timeZoneId + " " : "";
         formatter.timeZone              = StringUtils.isNotBlank(timeZoneId)
                 ? TimeZone.getTimeZone(timeZoneId)
+                : TimeZone.getDefault();
+        formatter.allDayTimeZone        = StringUtils.isNotBlank(allDayTimeZoneId)
+                ? TimeZone.getTimeZone(allDayTimeZoneId)
                 : TimeZone.getDefault();
 
         return formatter;
@@ -114,10 +119,10 @@ public class NavWarnDateFormatter {
      * @return the date and time
      */
     public String formatNavWarnDate(Date date) {
-        String  time1   = formatTime(date),
-                day1    = formatDay(date),
-                month1  = formatMonth(date),
-                year1   = formatYear(date);
+        String  time1   = formatTime(date, allDayTimeZone),
+                day1    = formatDay(date, allDayTimeZone),
+                month1  = formatMonth(date, allDayTimeZone),
+                year1   = formatYear(date, allDayTimeZone);
 
         StringBuilder result = new StringBuilder();
 
@@ -212,14 +217,16 @@ public class NavWarnDateFormatter {
 
         boolean allDay  = di.getAllDay() != null && di.getAllDay();
 
-        String  time1   = allDay ? null : formatTime(di.getFromDate()),
-                time2   = allDay ? null : formatTime(di.getToDate()),
-                day1    = formatDay(di.getFromDate()),
-                day2    = formatDay(di.getToDate()),
-                month1  = formatMonth(di.getFromDate()),
-                month2  = formatMonth(di.getToDate()),
-                year1   = formatYear(di.getFromDate()),
-                year2   = formatYear(di.getToDate());
+        TimeZone tz = allDay ? allDayTimeZone : timeZone;
+
+        String  time1   = allDay ? null : formatTime(di.getFromDate(), tz),
+                time2   = allDay ? null : formatTime(di.getToDate(), tz),
+                day1    = formatDay(di.getFromDate(), tz),
+                day2    = formatDay(di.getToDate(), tz),
+                month1  = formatMonth(di.getFromDate(), tz),
+                month2  = formatMonth(di.getToDate(), tz),
+                year1   = formatYear(di.getFromDate(), tz),
+                year2   = formatYear(di.getToDate(), tz);
 
         boolean sameYear    = Objects.equals(year1, year2);
         boolean sameMonth   = sameYear  && Objects.equals(month1, month2);
@@ -313,14 +320,14 @@ public class NavWarnDateFormatter {
      * @param date the day to format
      * @return the formatted day
      */
-    private String formatDay(Date date) {
+    private String formatDay(Date date, TimeZone tz) {
         if (date == null) {
             return null;
         }
 
         // Get the day from the date
         SimpleDateFormat dayFormat = new SimpleDateFormat("d");
-        dayFormat.setTimeZone(timeZone);
+        dayFormat.setTimeZone(tz);
         int day = Integer.valueOf(dayFormat.format(date));
 
         // Add the suffix, e.g. "1" -> "1st"
@@ -337,12 +344,12 @@ public class NavWarnDateFormatter {
      * @param date the date to format the month of
      * @return the formatted month
      */
-    private String formatMonth(Date date) {
+    private String formatMonth(Date date, TimeZone tz) {
         if (date == null) {
             return null;
         }
         SimpleDateFormat monthFormat = new SimpleDateFormat(format == Format.NAVTEX ? "MMM" : "MMMM", locale);
-        monthFormat.setTimeZone(timeZone);
+        monthFormat.setTimeZone(tz);
         return monthFormat.format(date);
     }
 
@@ -351,12 +358,12 @@ public class NavWarnDateFormatter {
      * @param date the date to format the year of
      * @return the formatted year
      */
-    private String formatYear(Date date) {
+    private String formatYear(Date date, TimeZone tz) {
         if (date == null) {
             return null;
         }
         SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy");
-        yearFormat.setTimeZone(timeZone);
+        yearFormat.setTimeZone(tz);
         return yearFormat.format(date);
     }
 
@@ -365,12 +372,12 @@ public class NavWarnDateFormatter {
      * @param date the date to format the time of
      * @return the formatted time
      */
-    private String formatTime(Date date) {
+    private String formatTime(Date date, TimeZone tz) {
         if (date == null) {
             return null;
         }
         SimpleDateFormat timeFormat = new SimpleDateFormat("HHmm");
-        timeFormat.setTimeZone(timeZone);
+        timeFormat.setTimeZone(tz);
         return timeFormat.format(date);
     }
 

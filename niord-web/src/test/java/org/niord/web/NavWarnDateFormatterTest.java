@@ -35,7 +35,7 @@ import static org.niord.core.util.NavWarnDateFormatter.Format.PLAIN;
 /**
  * Test formatting navigational warning dates
  */
-@SuppressWarnings("unused")
+@SuppressWarnings("all")
 public class NavWarnDateFormatterTest {
 
     public List<DateIntervalVo> getDateIntervals() throws ParseException {
@@ -66,7 +66,7 @@ public class NavWarnDateFormatterTest {
         ResourceBundle bundle = ResourceBundle.getBundle("template", locale);
 
         NavWarnDateFormatter formatter = NavWarnDateFormatter.newDateFormatter(
-                bundle, PLAIN, locale, "UTC", true);
+                bundle, PLAIN, locale, "UTC", "CEST", true);
 
         Arrays.stream(formatter.formatDateIntervals(getDateIntervals()).split(",|and")).forEach(
                 di -> System.out.println(di.trim())

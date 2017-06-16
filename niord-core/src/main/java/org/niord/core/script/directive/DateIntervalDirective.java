@@ -114,12 +114,16 @@ public class DateIntervalDirective implements TemplateDirectiveModel {
 
         // For the time zone, first check for "tz" parameter, next check for "timeZone" data, lastly pick default.
         SimpleScalar timeZoneParam = (SimpleScalar)params.get(PARAM_TIME_ZONE);
+        SimpleScalar envTimeZone = (SimpleScalar)env.getDataModel().get(TIME_ZONE_PROPERTY);
         boolean showTimeZone = timeZoneParam != null && StringUtils.isNotBlank(timeZoneParam.getAsString());
         SimpleScalar timeZoneModel = showTimeZone
                 ? timeZoneParam
-                : (SimpleScalar)env.getDataModel().get(TIME_ZONE_PROPERTY);
+                : envTimeZone;
         String timeZoneId = (timeZoneModel != null)
                 ? timeZoneModel.toString()
+                : TimeZone.getDefault().getID();
+        String allDayTimeZoneId = (envTimeZone != null)
+                ? envTimeZone.toString()
                 : TimeZone.getDefault().getID();
 
         NavWarnDateFormatter formatter = NavWarnDateFormatter.newDateFormatter(
@@ -127,6 +131,7 @@ public class DateIntervalDirective implements TemplateDirectiveModel {
                 format,
                 env.getLocale(),
                 timeZoneId,
+                allDayTimeZoneId,
                 showTimeZone);
 
         // Get the capFirst parameter, i.e. whether or not to capitalize the first character
