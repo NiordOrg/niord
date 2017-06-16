@@ -17,7 +17,7 @@
 </#macro>
 
 
-<field-template field="part.getDesc('en').subject">
+<field-template field="part.getDesc('en').subject" format="text">
     <@renderObject defaultName="Object" format="short" lang="en"/> Adrift
 </field-template>
 
