@@ -260,6 +260,13 @@ angular.module('niord.editor')
                     // Convert the GeoJson features to OpenLayers features and buffer features
                     scope.importGjFeatures(scope.featureCollection.features);
 
+                    // If no features are defined, make the 'point' the default draw-control
+                    if (scope.features.length === 0 && scope.drawControls.indexOf('point') > -1) {
+                        scope.drawControl = 'point';
+                    } else {
+                        scope.drawControl = 'select';
+                    }
+
                     // Enter editor mode
                     scope.mode = 'editor';
                 };
