@@ -119,10 +119,10 @@ public class NavWarnDateFormatter {
      * @return the date and time
      */
     public String formatNavWarnDate(Date date) {
-        String  time1   = formatTime(date, allDayTimeZone),
-                day1    = formatDay(date, allDayTimeZone),
-                month1  = formatMonth(date, allDayTimeZone),
-                year1   = formatYear(date, allDayTimeZone);
+        String  time1   = formatTime(date, timeZone),
+                day1    = formatDay(date, timeZone),
+                month1  = formatMonth(date, timeZone),
+                year1   = formatYear(date, timeZone);
 
         StringBuilder result = new StringBuilder();
 
