@@ -56,7 +56,7 @@
                 <template-dialog-param-field field-title-key="msg.field.promulgation" ng-if="showStdTemplateField('promulgation')">
 
                     <span ng-repeat="promulgation in message.promulgations" style="margin-right: 20px">
-                        <input type="checkbox" ng-model="promulgation.promulgate">
+                        <input type="checkbox" ng-model="promulgation.promulgate" ng-click="promulgationSelection(promulgation)">
                         {{promulgation.type.name}}
                     </span>
 

@@ -114,6 +114,18 @@ public class PromulgationRestService extends AbstractBatchableRestService {
     }
 
 
+    /** Returns the given promulgation type */
+    @GET
+    @Path("/promulgation-type/{typeId}")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @RolesAllowed(Roles.EDITOR)
+    @NoCache
+    public PromulgationTypeVo getPromulgationType(@PathParam("typeId") String typeId) throws Exception {
+        return promulgationTypeService.getPromulgationType(typeId).toVo();
+    }
+
+
     /** Creates a promulgation type */
     @POST
     @Path("/promulgation-type/")

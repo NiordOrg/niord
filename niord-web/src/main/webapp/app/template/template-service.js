@@ -75,6 +75,12 @@ angular.module('niord.template')
             };
 
 
+            /** Returns the given promulgation type **/
+            this.getPromulgationType = function (typeId) {
+                return $http.get('/rest/promulgations/promulgation-type/' + encodeURIComponent(typeId));
+            };
+
+
             /** Refreshes the categories against the backend **/
             this.refreshCategories = function (categories) {
                 var catIds = categories.map(function (cat) { return cat.id }).join(',');

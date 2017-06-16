@@ -397,6 +397,22 @@ angular.module('niord.template')
             };
 
 
+            /** Called when the user clicks the promulgate checkbox for the promulgation **/
+            $scope.promulgationSelection = function (promulgation) {
+                if (!promulgation.promulgate || $scope.message.type) {
+                    return;
+                }
+                // If the promulgation is turned on, check if the message type can be deduced from the promulgation
+                TemplateService.getPromulgationType(promulgation.type.typeId)
+                    .success(function (type) {
+                        if (type.messageTypes && type.messageTypes.length === 1) {
+                            $scope.message.type = type.messageTypes[0];
+                            $scope.typeSelected();
+                        }
+                    })
+            };
+
+
             /** When vicinity is focused, check if we should copy vicinity from another language version **/
             $scope.checkCopyVicinity = function (lang) {
                 var desc = LangService.descForLanguage($scope.message, lang);
