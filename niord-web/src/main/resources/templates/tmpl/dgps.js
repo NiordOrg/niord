@@ -30,22 +30,22 @@ if (dk) {
 var dgpsStation = {
     'radio_navigation.dgps.skagen' :  {
         frequency: 296.0,
-        coordinates: Java.to([ 10.59512710571289, 57.74877166748047],"java.lang.Double[]"),
+        coordinates: Java.to([ 10.59512710571289, 57.74877166748047],"double[]"),
         transmitters: [ 'Baltico', 'Rogaland' ]
     },
     'radio_navigation.dgps.blåvand' :  {
         frequency: 290.0,
-        coordinates: Java.to([ 8.08320140838623, 55.5578498840332],"java.lang.Double[]"),
+        coordinates: Java.to([ 8.08320140838623, 55.5578498840332],"double[]"),
         transmitters: [ 'Baltico', 'Rogaland' ]
     },
     'radio_navigation.dgps.hammer_odde' :  {
         frequency: 289.5,
-        coordinates: Java.to([ 14.773825645446777, 55.298221588134766],"java.lang.Double[]"),
+        coordinates: Java.to([ 14.773825645446777, 55.298221588134766],"double[]"),
         transmitters: [ 'Baltico' ]
     },
     'radio_navigation.dgps.torshavn' :  {
         frequency: 287.5,
-        coordinates: Java.to([ -6.837833404541016, 62.02050018310547],"java.lang.Double[]"),
+        coordinates: Java.to([ -6.837833404541016, 62.02050018310547],"double[]"),
         transmitters: [ 'Rogaland' ]
     }
 };
@@ -57,18 +57,10 @@ if (params.dgps_station
     if (station !== undefined) {
         part.geometry.features.length = 0;
 
-        var featureObj = {
-            'type': 'Feature',
-            'properties': {},
-            'geometry': {
-                'type': 'Point',
-                'coordinates': station.coordinates
-            }
-        };
-        var featureJson = org.niord.core.util.JsonUtils.toJson(featureObj);
-        var feature = org.niord.core.util.JsonUtils.fromJson(
-            featureJson,
-            org.niord.model.geojson.FeatureVo.class);
+        var feature = new org.niord.model.geojson.FeatureVo();
+        var pt = new org.niord.model.geojson.PointVo();
+        pt.coordinates = station.coordinates;
+        feature.geometry = pt;
         part.geometry.features = Java.to([ feature ], "org.niord.model.geojson.FeatureVo[]");
 
         var navtex = message.promulgation('navtex');
