@@ -147,6 +147,30 @@ public class TextUtils {
 
 
     /**
+     * Removes the list of pipe-separated words from the text
+     * @param text the text to remove the words from
+     * @param words the words to remove
+     * @return the result
+     */
+    public static String removeWords(String text, String words) {
+        try {
+            StringBuilder sb = new StringBuilder();
+            Arrays.stream(text.split("\n"))
+                .forEach(s -> {
+                    String line = s.replaceAll("(?i)\\s+(" + words + ")\\s+", " ")
+                            .replaceAll("(?i)^(" + words + ")\\s+", "")
+                            .replaceAll("(?i)\\s+(" + words + ")$", "");
+                    sb.append(line).append(System.lineSeparator());
+                });
+            return sb.toString().trim();
+
+        } catch (Exception ignored) {
+            return text;
+        }
+    }
+
+
+    /**
      * Use JTidy to clean up the HTML
      * @param html the HTML to clean up
      * @return the resulting XHTML

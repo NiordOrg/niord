@@ -17,14 +17,16 @@
 package org.niord.web;
 
 import org.junit.Test;
-import org.niord.core.util.PositionFormatter;
+import org.niord.core.util.PositionAssembler;
 import org.niord.core.util.PositionUtils;
 import org.niord.core.util.TextUtils;
 
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.regex.Matcher;
 
-import static org.niord.core.util.PositionFormatter.LATLON_NAVTEX_1;
+import static org.niord.core.util.PositionUtils.POSITION_PATTERN;
 
 /**
  * Test extracting positions from html and replacing them with the positions in a new format.
@@ -38,24 +40,47 @@ public class PositionTest {
     @Test
     public void testUnwrappingPos() {
         String html = "RACON on  north cardinal buoy \"xx\" in pos.\n"
-                    + "<span data-latitude=\"56.8866\">56° 53,195'N</span> - <span data-longitude=\"9.0417\">009° 02,501'E</span> "
+                    + "56° 53,195'N - 009° 02,501'E "
                     + " is inoperative.<br>";
 
-        // Replace positions with NAVTEX format
-        String html2 = PositionUtils.replaceSeparator(html, " ");
-        System.out.println("No separator: " + html2);
+        html = TextUtils.trimHtmlWhitespace(html);
 
-        String navtex = PositionUtils.replacePositions(Locale.ENGLISH, LATLON_NAVTEX_1, html2);
-        navtex = TextUtils.trimHtmlWhitespace(navtex);
+        String navtex = PositionUtils.replaceSeparator(html, " ");
+        PositionAssembler navtexPosAssembler = PositionAssembler.newNavtexPositionAssembler();
+        navtex = PositionUtils.updatePositionFormat(navtex, navtexPosAssembler);
         navtex = navtex.replaceAll("(?is)\\s+(the|in pos\\.|is)\\s+", " ");
         System.out.println("NAVTEX: " + navtex);
 
         // Replace positions with audio format
         ResourceBundle bundle = ResourceBundle.getBundle("template", Locale.ENGLISH);
-        PositionFormatter.Format audioFormat = PositionUtils.getAudioFormat(bundle, 1);
-        String audio = PositionUtils.replacePositions(Locale.ENGLISH, audioFormat, html);
+        PositionAssembler audioPosAssembler = PositionAssembler.newAudioPositionAssembler(Locale.ENGLISH, bundle);
+        String audio = PositionUtils.updatePositionFormat(html, audioPosAssembler);
         System.out.println("Audio: " + audio);
 
     }
+
+
+    @Test
+    public void testPosRegEx() {
+        String[] lats = {
+                "Nordkardinalen på pos. 56° 55,4'N - 009° 05,3'E er permanent inddraget.",
+                "The north cardinal light buoy in pos. 56° 55.4'N - 009° 05.3'E has been withdrawn.",
+                "The north cardinal light buoy in pos. 56°N - 009°E has been withdrawn."
+        };
+        Arrays.stream(lats)
+                .forEach(p -> {
+                    Matcher m = POSITION_PATTERN.matcher(p);
+                    if (m.find()) {
+                        System.out.println(
+                                "MATCH " + p +
+                                        "\t\t-> deg=" + m.group("latDegs") +
+                                        ", min=" + m.group("latMin") +
+                                        ", dir=" + m.group("latDir"));
+                    } else {
+                        System.out.println("NO MATCH " + p);
+                    }
+                });
+    }
+
 
 }

@@ -26,6 +26,7 @@ import org.niord.core.message.MessageTokenExpander;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.core.promulgation.vo.NavtexMessagePromulgationVo;
+import org.niord.core.util.PositionAssembler;
 import org.niord.core.util.PositionUtils;
 import org.niord.core.util.TextUtils;
 import org.niord.core.util.TimeUtils;
@@ -50,8 +51,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.niord.core.util.PositionFormatter.LATLON_NAVTEX_1;
-
 /**
  * Manages NAVTEX-via-mailing-lists promulgations
  */
@@ -62,6 +61,7 @@ import static org.niord.core.util.PositionFormatter.LATLON_NAVTEX_1;
 public class NavtexPromulgationService extends BasePromulgationService {
 
     public static int NAVTEX_LINE_LENGTH = 40;
+    public static final String SUPERFLUOUS_WORDS = "the|in pos\\.|is";
 
     @Inject
     PromulgationTypeService promulgationTypeService;
@@ -274,15 +274,18 @@ public class NavtexPromulgationService extends BasePromulgationService {
     /** Transforms a HTML description to a NAVTEX description **/
     private String html2navtex(String text, String language) {
 
-        // Replace positions with NAVTEX versions
-        text = PositionUtils.replacePositions(app.getLocale(language), LATLON_NAVTEX_1, text);
-
-        // Remove verbose words, such as "the", from the text
-        text = TextUtils.trimHtmlWhitespace(text);
-        text = text.replaceAll("(?is)\\s+(the|in pos\\.|is)\\s+", " ");
-
         // Convert from html to plain text
         text = TextUtils.html2txt(text, true);
+
+        // Remove separator between positions
+        text = PositionUtils.replaceSeparator(text, " ");
+
+        // Replace positions with NAVTEX versions
+        PositionAssembler navtexPosAssembler = PositionAssembler.newNavtexPositionAssembler();
+        text = PositionUtils.updatePositionFormat(text, navtexPosAssembler);
+
+        // Remove verbose words, such as "the", from the text
+        text = TextUtils.removeWords(text, SUPERFLUOUS_WORDS);
 
         // Split into 40-character lines
         text = TextUtils.maxLineLength(text, NAVTEX_LINE_LENGTH);

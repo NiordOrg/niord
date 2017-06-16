@@ -72,7 +72,6 @@ public class LatLonDirective implements TemplateDirectiveModel {
         SimpleNumber lonModel = (SimpleNumber)params.get(PARAM_LON);
         SimpleNumber decimalModel = (SimpleNumber)params.get(PARAM_DECIMALS);
         SimpleScalar separatorModel = (SimpleScalar)params.get(PARAM_SEPARATOR);
-        SimpleScalar wrapHtmlModel = (SimpleScalar)params.get(PARAM_SEPARATOR);
         SimpleScalar formatModel = (SimpleScalar) params.get(PARAM_FORMAT);
 
 
@@ -116,13 +115,13 @@ public class LatLonDirective implements TemplateDirectiveModel {
 
             // Emit latitude and/or longitude
             if (lat != null) {
-                env.getOut().write(PositionUtils.formatLat(env.getLocale(), format, lat, htmlWrap));
+                env.getOut().write(PositionUtils.formatLat(env.getLocale(), format, lat));
             }
             if (lon != null) {
                 if (lat != null) {
                     env.getOut().write(separator);
                 }
-                env.getOut().write(PositionUtils.formatLon(env.getLocale(), format, lon, htmlWrap));
+                env.getOut().write(PositionUtils.formatLon(env.getLocale(), format, lon));
             }
         } catch (Exception e) {
             // Prefer robustness over correctness
