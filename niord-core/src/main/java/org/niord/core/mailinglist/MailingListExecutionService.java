@@ -447,7 +447,7 @@ public class MailingListExecutionService extends BaseService {
     public String executeScriptResources(MailingListTrigger trigger, List<Message> messages, String language) throws Exception {
 
         // Sanity check
-        if (trigger.getScriptResourcePaths().isEmpty() || messages.isEmpty()) {
+        if (trigger.getScriptResourcePaths().isEmpty()) {
             return null;
         }
 
