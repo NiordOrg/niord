@@ -396,6 +396,12 @@ angular.module('niord.messages')
             },
 
 
+            /** Returns the given promulgation type **/
+            getPromulgationType: function (typeId) {
+                return $http.get('/rest/promulgations/promulgation-type/' + encodeURIComponent(typeId));
+            },
+
+
             /** Called with a promulgation-specific endpoint to generate a promulgation **/
             generatePromulgation: function (type, message) {
                 return $http.post('/rest/promulgations/generate/' + encodeURIComponent(type), message);

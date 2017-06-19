@@ -1186,6 +1186,26 @@ angular.module('niord.editor')
             /*****************************/
 
 
+            /** Called when the user clicks the promulgate checkbox for the promulgation **/
+            $scope.promulgationSelection = function (promulgation, event) {
+                event.stopPropagation();
+                $scope.setDirty();
+
+                if (!promulgation.promulgate || $scope.message.type) {
+                    return;
+                }
+
+                // If the promulgation is turned on, check if the message type can be deduced from the promulgation
+                MessageService.getPromulgationType(promulgation.type.typeId)
+                    .success(function (type) {
+                        if (type.messageTypes && type.messageTypes.length === 1) {
+                            $scope.message.type = type.messageTypes[0];
+                            $scope.typeSelected();
+                        }
+                    })
+            };
+
+
             /** Called with a promulgation-specific endpoint to generate a promulgation **/
             $scope.generatePromulgation = function(promulgation, noConfirm) {
 

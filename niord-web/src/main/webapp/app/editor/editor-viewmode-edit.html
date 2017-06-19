@@ -738,7 +738,8 @@
                                 <uib-tab ng-repeat="promulgation in message.promulgations">
                                     <uib-tab-heading>
                                         <input type="checkbox" ng-model="promulgation.promulgate"
-                                               ng-click="$event.stopPropagation(); setDirty();" tabindex="1601">
+                                               ng-click="promulgationSelection(promulgation, $event)"
+                                               tabindex="1601">
                                         {{promulgation.type.name}}
                                     </uib-tab-heading>
                                     <div class="promulgation" ng-class="{ 'disabled-promulgation' : !promulgation.promulgate }">
