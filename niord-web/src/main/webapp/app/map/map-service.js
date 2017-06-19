@@ -510,7 +510,13 @@ angular.module('niord.map')
             /** Formats (simplified) GeoJSON as plain text **/
             this.formatAsPlainText = function (geometry) {
                 return $http.post('/rest/messages/format-geometry?lang=' + $rootScope.language, geometry);
-            }
+            };
+
+            /** Parses UTM text as GeoJSON **/
+            this.parseUtm = function (utmText) {
+                return $http.post('/rest/messages/parse-utm', { geometryText: utmText });
+            };
+
 
         }]);
 

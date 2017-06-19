@@ -55,6 +55,36 @@
                     </div>
                 </div>
             </uib-tab>
+
+            <uib-tab>
+                <tab-heading>
+                    From UTM
+                </tab-heading>
+
+                <div class="row">
+                    <div class="col-sm-12" style="padding: 10px 20px;">
+                        This editor allows you to import a list of UTM coordinates.
+                        <div ng-if="!data.showUTMExamples" ><a href ng-click="data.showUTMExamples = true">Show Examples</a></div>
+                        <div ng-if="data.showUTMExamples" ><a href ng-click="data.showUTMExamples = false">Hide Examples</a></div>
+                        <div ng-if="data.showUTMExamples" style="border: 1px solid lightgray; margin: 20px; padding: 5px 10px; font-size: 11px">
+                            <pre style="font-size: 11px">32V 624726.15 6207884.60</pre>
+                            NB: The UTM zones can be found
+                            <a href="https://upload.wikimedia.org/wikipedia/commons/9/9e/LA2-Europe-UTM-zones.png"
+                               target="_blank">here</a>.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-12">
+                        <textarea ng-model="data.utmText" class="form-control input-sm geometry-text-editor"  wrap="off"
+                                  ng-class="{ 'geometry-text-invalid': !utmTextValid() }"
+                                  ng-change="utmTextChanged()"
+                                  ng-model-options="{ updateOn: 'default blur', debounce: { default: 500, blur: 0 } }">
+                        </textarea>
+                    </div>
+                </div>
+            </uib-tab>
         </uib-tabset>
 
         <div class="row" style="margin-top: 24px;">

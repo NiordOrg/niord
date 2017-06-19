@@ -1088,7 +1088,8 @@ angular.module('niord.editor')
             $scope.data = {
                 message: undefined,
                 area: undefined,
-                geometryText: ''
+                geometryText: '',
+                utmText: ''
             };
             $scope.domain = $rootScope.domain;
 
@@ -1144,6 +1145,27 @@ angular.module('niord.editor')
                 $scope.featureCollection.features.length = 0;
 
                 MapService.parsePlainText($scope.data.geometryText)
+                    .success(function (fc) {
+                        if (fc && fc.features && fc.features.length > 0) {
+                            angular.forEach(fc.features, function (feature) {
+                                $scope.featureCollection.features.push(feature);
+                            });
+                        }
+                    });
+            };
+
+            /** Checks if the UTM text is valid **/
+            $scope.utmTextValid = function () {
+                return $scope.data.utmText && $scope.data.utmText.length > 0
+                    && $scope.featureCollection.features.length > 0;
+            };
+
+
+            /** Called whenever the UTM text changes **/
+            $scope.utmTextChanged = function () {
+                $scope.featureCollection.features.length = 0;
+
+                MapService.parseUtm($scope.data.utmText)
                     .success(function (fc) {
                         if (fc && fc.features && fc.features.length > 0) {
                             angular.forEach(fc.features, function (feature) {

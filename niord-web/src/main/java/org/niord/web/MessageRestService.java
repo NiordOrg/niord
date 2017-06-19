@@ -1021,6 +1021,28 @@ public class MessageRestService  {
         }
     }
 
+
+    /**
+     * Converts an UTM text representation into a GeoJSON representation.
+     * Returns null if the parsing fails.
+     */
+    @POST
+    @Path("/parse-utm")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public FeatureCollectionVo parseUtmGeometry(PlainTextGeometryParam param) throws Exception {
+        try {
+            PlainTextConverter converter = PlainTextConverter.newInstance(app.getLanguages());
+            return converter.fromUtmText(param.getGeometryText());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
+
     /***************************
      * Helper classes
      ***************************/

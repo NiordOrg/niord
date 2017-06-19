@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -85,6 +86,11 @@ public class PlainTextConverter {
             "^(?<lat>[^NS]+)(?<latDir>[NS])([ -])*(?<lon>[^EW]+)(?<lonDir>[EW])(?<desc>.*)$",
             Pattern.CASE_INSENSITIVE
     );
+
+    public static final Pattern UTM_ZONE_FORMAT = Pattern.compile(
+            "^(?<zone>\\d+)(?<latZone>[a-zA-Z])\\s+"
+    );
+
 
     private final List<String> languages = new ArrayList<>();
 
@@ -487,4 +493,85 @@ public class PlainTextConverter {
             }
         }
     }
+
+
+    /***********************************************/
+    /** Parsing UTM text as GeoJSON               **/
+    /***********************************************/
+
+
+    /**
+     * Returns the geometry given by the given UTM text representation.
+     * Return null for empty representations and throws an exception when
+     * experiencing parsing errors.
+     *
+     * @param text the UTM text representation
+     * @return the resulting GeoJSON feature collection
+     */
+    public FeatureCollectionVo fromUtmText(String text) throws Exception {
+
+        UTMCoordinateConversion utmConverter = new UTMCoordinateConversion();
+
+        if (StringUtils.isBlank(text)) {
+            return null;
+        }
+        text = text.trim();
+
+        // Group the text into feature lines
+        double[][] coordinates = Arrays.stream(text.split("\n"))
+                .map(String::trim)
+                .filter(Objects::nonNull)
+                .map(this::prepareUtmLine)
+                .map(l -> {
+                    try {
+                        double[] latLon = utmConverter.utm2LatLon(l);
+                        return new double[]{ latLon[1], latLon[0] };
+                    } catch (Exception e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .toArray(double[][]::new);
+
+        if (coordinates.length == 0) {
+            return null;
+        }
+
+        // Assemble the feature collection from the list of features
+        FeatureCollectionVo fc = new FeatureCollectionVo();
+        FeatureVo featureVo = new FeatureVo();
+        if (coordinates.length == 1) {
+            PointVo pt = new PointVo();
+            pt.setCoordinates(coordinates[0]);
+            featureVo.setGeometry(pt);
+        } else {
+            MultiPointVo mpt = new MultiPointVo();
+            mpt.setCoordinates(coordinates);
+            featureVo.setGeometry(mpt);
+        }
+        fc.setFeatures(new FeatureVo[] { featureVo });
+
+        return fc;
+    }
+
+
+    /**
+     * The UTMCoordinateParser assumes a space between zone and lat-zone, i.e.
+     * "32V 624726.15 6207884.60" is invalid but "32 V 624726.15 6207884.60" is valid.
+     * Fix this problem by inserting a space if needed
+     * @param line the line to update
+     */
+    private String prepareUtmLine(String line) {
+        try {
+            line = line.replaceAll("\\s+", " ");
+            Matcher m = UTM_ZONE_FORMAT.matcher(line);
+            if (m.find()) {
+                return m.group("zone") + " " + m.group("latZone") + " "
+                        + line.substring(line.indexOf(" ")).trim();
+            }
+        } catch (Exception ignored) {
+        }
+        return line;
+    }
+
 }
