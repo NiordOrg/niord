@@ -234,7 +234,8 @@ var app = angular.module('niord.admin', [
             })
             .state('sysadmin.schedules', {
                 url: "/schedules",
-                templateUrl: "/app/sysadmin/sysadmin-page-schedules.html"
+                templateUrl: "/app/sysadmin/sysadmin-page-schedules.html",
+                help: { manual: 'sysadmin', section: 'firing-schedules' }
             })
             .state('sysadmin.dictionaries', {
                 url: "/dictionaries",
