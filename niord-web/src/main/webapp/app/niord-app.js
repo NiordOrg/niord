@@ -229,7 +229,8 @@ var app = angular.module('niord.admin', [
             })
             .state('sysadmin.promulgation', {
                 url: "/promulgation",
-                templateUrl: "/app/sysadmin/sysadmin-page-promulgation.html"
+                templateUrl: "/app/sysadmin/sysadmin-page-promulgation.html",
+                help: { manual: 'sysadmin', section: 'promulgation-types' }
             })
             .state('sysadmin.schedules', {
                 url: "/schedules",
