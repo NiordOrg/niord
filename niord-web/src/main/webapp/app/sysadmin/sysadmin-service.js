@@ -220,7 +220,7 @@ angular.module('niord.admin')
      * ********************************************************************************
      * Interface for calling dictionaries-related functions at the application server
      */
-    .factory('AdminDictionariesService', [ '$http', function($http) {
+    .factory('AdminDictionariesService', [ '$rootScope', '$http', function($rootScope, $http) {
         'use strict';
 
         return {
@@ -229,7 +229,8 @@ angular.module('niord.admin')
             },
 
             getDictionaryEntries: function(name) {
-                return $http.get('/rest/dictionaries/dictionary/' + encodeURIComponent(name) + '/entries');
+                return $http.get('/rest/dictionaries/dictionary/' + encodeURIComponent(name) + '/entries?lang=' +
+                    $rootScope.language);
             },
 
             addEntry: function(name, entry) {
@@ -352,7 +353,7 @@ angular.module('niord.admin')
 
             /** Returns the parameter type details for the given ID **/
             getParamTypeDetails: function (id) {
-                return $http.get('/rest/templates/parameter-type/' + id);
+                return $http.get('/rest/templates/parameter-type/' + id + '?lang=' + $rootScope.language);
             },
 
 

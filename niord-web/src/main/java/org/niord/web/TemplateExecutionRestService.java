@@ -166,10 +166,21 @@ public class TemplateExecutionRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public ParamTypeVo getParamType(@PathParam("id") Integer id) {
+    public ParamTypeVo getParamType(
+            @PathParam("id") Integer id,
+            @QueryParam("lang") String lang) {
 
-        return templateExecutionService.getParamType(id)
+        ParamTypeVo type = templateExecutionService.getParamType(id)
                 .toVo(DataFilter.get());
+
+        if (StringUtils.isNotBlank(lang) && type instanceof ListParamTypeVo) {
+            ListParamTypeVo listType = (ListParamTypeVo)type;
+            if  (listType.getValues() != null) {
+                listType.getValues().forEach(t -> t.sortDescs(lang));
+            }
+        }
+
+        return type;
     }
 
 

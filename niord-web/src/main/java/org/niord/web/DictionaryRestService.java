@@ -45,6 +45,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -98,13 +99,20 @@ public class DictionaryRestService extends AbstractBatchableRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public List<DictionaryEntryVo> getDictionaryEntries(@PathParam("name") String name) {
-        return dictionaryService.getCachedDictionary(name)
+    public List<DictionaryEntryVo> getDictionaryEntries(
+            @PathParam("name") String name,
+            @QueryParam("lang") String lang) {
+        List<DictionaryEntryVo> entries = dictionaryService.getCachedDictionary(name)
                 .getEntries()
                 .values()
                 .stream()
                 .sorted(Comparator.comparing(e -> e.getKey().toLowerCase()))
                 .collect(Collectors.toList());
+
+        if (StringUtils.isNotBlank(lang)) {
+            entries.forEach(e -> e.sortDescs(lang));
+        }
+        return entries;
     }
 
 
@@ -114,7 +122,7 @@ public class DictionaryRestService extends AbstractBatchableRestService {
     @Produces("text/plain;charset=UTF-8")
     @GZIP
     @NoCache
-    public String getDictionaryEntries(@PathParam("name") String name, @PathParam("lang") String lang) {
+    public String getDictionaryEntriesAsPropertyFile(@PathParam("name") String name, @PathParam("lang") String lang) {
         DictionaryVo dict = dictionaryService.getCachedDictionary(name);
         if (dict == null) {
             throw new WebApplicationException(404);
