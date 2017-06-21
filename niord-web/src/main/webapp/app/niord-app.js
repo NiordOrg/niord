@@ -239,7 +239,8 @@ var app = angular.module('niord.admin', [
             })
             .state('sysadmin.dictionaries', {
                 url: "/dictionaries",
-                templateUrl: "/app/sysadmin/sysadmin-page-dictionaries.html"
+                templateUrl: "/app/sysadmin/sysadmin-page-dictionaries.html",
+                help: { manual: 'sysadmin', section: 'dictionaries' }
             })
             .state('sysadmin.script-resources', {
                 url: "/script-resources/:path",
