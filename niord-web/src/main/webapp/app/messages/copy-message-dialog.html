@@ -8,7 +8,7 @@
 
         <div class="row" ng-if="mainType == 'NM'">
             <div class="col-sm-12">
-                <input type="checkbox" ng-model="includeReference">
+                <input type="checkbox" ng-model="data.includeReference">
                 &nbsp;<span translate>msg.copy.include_reference</span>
             </div>
         </div>
@@ -16,7 +16,7 @@
         <div class="row" style="margin-top: 20px;">
             <div class="form-group col-xs-12" style="text-align: right">
                 <button class="btn btn-default btn-sm" ng-click="$dismiss('aborted')" translate>term.cancel</button>
-                <button class="btn btn-primary btn-sm" ng-click="$close(includeReference)" translate>editor.status.copy_msg</button>
+                <button class="btn btn-primary btn-sm" ng-click="$close(data.includeReference)" translate>editor.status.copy_msg</button>
             </div>
         </div>
     </div>

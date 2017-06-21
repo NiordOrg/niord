@@ -636,6 +636,9 @@ angular.module('niord.messages')
                     size: 'sm',
                     controller: function($scope) {
                         $scope.mainType = mainType;
+                        $scope.data = {
+                            includeReference: false
+                        };
                     }
                 }).result.then(function (includeReference) {
                     var referenceType = includeReference ? 'REFERENCE' : '';
