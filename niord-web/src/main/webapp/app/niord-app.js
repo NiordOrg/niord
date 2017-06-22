@@ -242,13 +242,14 @@ var app = angular.module('niord.admin', [
                 templateUrl: "/app/sysadmin/sysadmin-page-dictionaries.html",
                 help: { manual: 'sysadmin', section: 'dictionaries' }
             })
+            .state('sysadmin.param-types', {
+                url: "/param-types",
+                templateUrl: "/app/sysadmin/sysadmin-page-param-types.html",
+                help: { manual: 'sysadmin', section: 'parameter-types' }
+            })
             .state('sysadmin.script-resources', {
                 url: "/script-resources/:path",
                 templateUrl: "/app/sysadmin/sysadmin-page-script-resources.html"
-            })
-            .state('sysadmin.param-types', {
-                url: "/param-types",
-                templateUrl: "/app/sysadmin/sysadmin-page-param-types.html"
             })
             .state('sysadmin.categories', {
                 url: "/categories",
