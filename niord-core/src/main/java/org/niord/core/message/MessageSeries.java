@@ -75,6 +75,12 @@ public class MessageSeries extends VersionedEntity<Integer> {
     @ElementCollection
     List<String> editorFields = new ArrayList<>();
 
+    /**
+     * If this flag is set, messages of this series are not included in the Lucene free-text index.
+     * This is usable for e.g. Firing Exercises, where you have thousands of nearly identical messages that
+     * are never searched using free-text searches.
+     */
+    Boolean excludeFromMessageIndex;
 
     /** Constructor */
     public MessageSeries() {
@@ -106,6 +112,7 @@ public class MessageSeries extends VersionedEntity<Integer> {
             if (sysSeries.getEditorFields() != null) {
                 editorFields.addAll(sysSeries.getEditorFields());
             }
+            this.excludeFromMessageIndex = sysSeries.getExcludeFromMessageIndex();
         }
     }
 
@@ -131,6 +138,7 @@ public class MessageSeries extends VersionedEntity<Integer> {
                 if (!editorFields.isEmpty()) {
                     sysSeries.setEditorFields(new ArrayList<>(editorFields));
                 }
+                sysSeries.setExcludeFromMessageIndex(excludeFromMessageIndex);
             }
         }
         return series;
@@ -217,5 +225,13 @@ public class MessageSeries extends VersionedEntity<Integer> {
 
     public void setEditorFields(List<String> editorFields) {
         this.editorFields = editorFields;
+    }
+
+    public Boolean getExcludeFromMessageIndex() {
+        return excludeFromMessageIndex;
+    }
+
+    public void setExcludeFromMessageIndex(Boolean excludeFromMessageIndex) {
+        this.excludeFromMessageIndex = excludeFromMessageIndex;
     }
 }

@@ -566,8 +566,13 @@ public class MessageLuceneIndex extends BaseService {
      * By default, add all eligible messages.
      * @param message the message to check
      * @return whether to add the message to the index
+     * @noinspection all
      */
     private boolean shouldAddMessage(Message message) {
+        if (message.getMessageSeries().getExcludeFromMessageIndex() != null &&
+                message.getMessageSeries().getExcludeFromMessageIndex()) {
+            return false;
+        }
         return includeDeletedMessages || message.getStatus() != Status.DELETED;
     }
 

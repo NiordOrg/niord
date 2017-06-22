@@ -49,6 +49,7 @@ public class SystemMessageSeriesVo extends MessageSeriesVo {
     NumberSequenceType numberSequenceType;
     Integer nextMessageNumber;
     List<String> editorFields;
+    Boolean excludeFromMessageIndex;
 
     /*************************/
     /** Getters and Setters **/
@@ -100,5 +101,13 @@ public class SystemMessageSeriesVo extends MessageSeriesVo {
 
     public void setEditorFields(List<String> editorFields) {
         this.editorFields = editorFields;
+    }
+
+    public Boolean getExcludeFromMessageIndex() {
+        return excludeFromMessageIndex;
+    }
+
+    public void setExcludeFromMessageIndex(Boolean excludeFromMessageIndex) {
+        this.excludeFromMessageIndex = excludeFromMessageIndex;
     }
 }

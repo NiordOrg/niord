@@ -115,7 +115,8 @@ angular.module('niord.admin')
                     mainType: 'NW',
                     numberSequenceType: 'YEARLY',
                     shortFormat: '',
-                    types: []
+                    types: [],
+                    excludeFromMessageIndex: false
                 };
                 $scope.updateMainType();
                 $scope.seriesForm.$setPristine();

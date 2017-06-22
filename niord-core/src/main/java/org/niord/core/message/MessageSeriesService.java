@@ -208,6 +208,7 @@ public class MessageSeriesService extends BaseService {
         original.setNumberSequenceType(series.getNumberSequenceType());
         original.getEditorFields().clear();
         original.getEditorFields().addAll(series.getEditorFields());
+        original.setExcludeFromMessageIndex(series.getExcludeFromMessageIndex());
 
         log.info("Updating message series " + series.getSeriesId());
         return saveEntity(original);
