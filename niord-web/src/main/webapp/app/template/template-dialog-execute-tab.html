@@ -327,18 +327,18 @@
 
                         <div class="row" ng-init="templateData[templateIndex].markings = []; templateData[templateIndex].markingType = 'unmarked'">
 
-                            <div class="col-sm-4" style="margin-top: 5px;">Markings used</div>
+                            <div class="col-sm-4" style="margin-top: 5px;" translate>template.markings.type</div>
                             <div class="col-sm-8">
                                 <div class="btn-group" style="text-align: center;">
                                     <button class="btn btn-default btn-sm" ng-model="templateData[templateIndex].markingType"
                                             ng-click="resetMarkings(templateData[templateIndex].markings)"
-                                            uib-btn-radio="'unmarked'">Unmarked</button>
+                                            uib-btn-radio="'unmarked'" translate>template.markings.type.unmarked</button>
                                     <button class="btn btn-default btn-sm" ng-model="templateData[templateIndex].markingType"
                                             ng-click="resetMarkings(templateData[templateIndex].markings, true)"
-                                            uib-btn-radio="'buoy'">Buoys</button>
+                                            uib-btn-radio="'buoy'" translate>template.markings.type.bouys</button>
                                     <button class="btn btn-default btn-sm" ng-model="templateData[templateIndex].markingType"
                                             ng-click="resetMarkings(templateData[templateIndex].markings, true)"
-                                            uib-btn-radio="'marking'">Other markings</button>
+                                            uib-btn-radio="'marking'" translate>template.markings.type.other_markings</button>
                                 </div>
                             </div>
                             <div class="col-sm-12">
@@ -399,7 +399,7 @@
                                         class="table table-condensed editor-date-interval-table"
                                         style="margin-top: 10px">
                                     <tr>
-                                        <th>Color</th>
+                                        <th translate>term.color</th>
                                         <th translate>template.aton.type</th>
                                         <th translate>template.markings.dist</th>
                                         <th colspan="2">
