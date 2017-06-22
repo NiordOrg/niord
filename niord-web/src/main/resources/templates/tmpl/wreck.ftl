@@ -26,7 +26,7 @@
     <#else>
         The depth above the wreck is <#if params.wreck_depth??>${params.wreck_depth} m.<#else>unknown.</#if>
     </#if>
-    The wreck is <@renderMarkings markings=params.markings! lang="en" format="details" unmarkedText="unmarked"/><br>
+    The wreck is <@renderMarkings markings=params.markings! markingType=params.markingType! lang="en" format="details" unmarkedText="unmarked"/><br>
     Mariners are advised to keep well clear.
 </field-template>
 
@@ -40,7 +40,7 @@
             <#else>
                 DEPTH ABOVE WRECK <#if params.wreck_depth??>${params.wreck_depth}M.<#else>UNKNOWN.</#if>
             </#if>
-            WRECK <@renderMarkings markings=params.markings! lang="en" format="navtex"  unmarkedText="UNMARKED"/>
+            WRECK <@renderMarkings markings=params.markings! markingType=params.markingType! lang="en" format="navtex"  unmarkedText="UNMARKED"/>
         </@line>
         <@line format="navtex">
             MARINERS ADVISED TO KEEP CLEAR.

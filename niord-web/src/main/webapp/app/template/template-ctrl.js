@@ -580,6 +580,15 @@ angular.module('niord.template')
             };
 
 
+            /** Resets the list of markings, optionally adding a new blank marking **/
+            $scope.resetMarkings = function (markings, addMarking) {
+                markings.length = 0;
+                if (addMarking) {
+                    $scope.addMarking(markings);
+                }
+            };
+
+
             /** Set the preview language **/
             $scope.previewLanguage = function (lang) {
                 $scope.previewLang = lang;

@@ -325,9 +325,26 @@
                     <template-dialog-param-field field-title-key="template.markings.title"
                                  ng-if="showStdTemplateField('markings', template) && paramTypeMap['marking_type_list'] && paramTypeMap['marking_bearing']">
 
-                        <div class="row" ng-init="templateData[templateIndex].markings = []">
+                        <div class="row" ng-init="templateData[templateIndex].markings = []; templateData[templateIndex].markingType = 'unmarked'">
+
+                            <div class="col-sm-4" style="margin-top: 5px;">Markings used</div>
+                            <div class="col-sm-8">
+                                <div class="btn-group" style="text-align: center;">
+                                    <button class="btn btn-default btn-sm" ng-model="templateData[templateIndex].markingType"
+                                            ng-click="resetMarkings(templateData[templateIndex].markings)"
+                                            uib-btn-radio="'unmarked'">Unmarked</button>
+                                    <button class="btn btn-default btn-sm" ng-model="templateData[templateIndex].markingType"
+                                            ng-click="resetMarkings(templateData[templateIndex].markings, true)"
+                                            uib-btn-radio="'buoy'">Buoys</button>
+                                    <button class="btn btn-default btn-sm" ng-model="templateData[templateIndex].markingType"
+                                            ng-click="resetMarkings(templateData[templateIndex].markings, true)"
+                                            uib-btn-radio="'marking'">Other markings</button>
+                                </div>
+                            </div>
                             <div class="col-sm-12">
-                                <table class="table table-condensed editor-date-interval-table">
+                                <table  ng-if="templateData[templateIndex].markingType == 'buoy'"
+                                        class="table table-condensed editor-date-interval-table"
+                                        style="margin-top: 10px">
                                     <tr>
                                         <th translate>template.aton.type</th>
                                         <th>
@@ -360,6 +377,54 @@
                                                    ng-remote-validate="/rest/templates/validate-light-character"
                                                    ng-remote-method="POST"
                                                    ng-disabled="!m.type || m.type.key.indexOf('light') == -1">
+                                        </td>
+                                        <td>
+                                            <input type="number" class="form-control input-sm" style="width: 60px"
+                                                   ng-model="m.distance">
+                                        </td>
+                                        <td>
+                                            <select class="form-control input-sm"  style="width: 50px"
+                                                    ng-model="m.bearing"
+                                                    ng-options="val as val.descs[0].value for val in paramTypeMap['marking_bearing'].values">
+                                            </select>
+                                        </td>
+                                        <td width="*" style="padding-top: 12px">
+                                            <a href ng-click="deleteMarking(templateData[templateIndex].markings, m);"
+                                               title="Delete Interval"><span class="glyphicon glyphicon-trash"></span></a>
+                                        </td>
+                                    </tr>
+                                </table>
+
+                                <table  ng-if="templateData[templateIndex].markingType == 'marking'"
+                                        class="table table-condensed editor-date-interval-table"
+                                        style="margin-top: 10px">
+                                    <tr>
+                                        <th>Color</th>
+                                        <th translate>template.aton.type</th>
+                                        <th translate>template.markings.dist</th>
+                                        <th colspan="2">
+                                            {{'template.markings.bearing' | translate}}
+                                            <div class="pull-right">
+                                                <button ng-click="addMarking(templateData[templateIndex].markings)" class="btn btn-default btn-xs">
+                                                    <span class="glyphicon glyphicon-plus"></span> {{'term.add' | translate}}
+                                                </button>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                    <tr ng-repeat="m in templateData[templateIndex].markings">
+                                        <td>
+                                            <select class="form-control input-sm"
+                                                    ng-model="m.color"
+                                                    ng-options="val as val.descs[0].value for val in paramTypeMap['other_marking_color_list'].values"
+                                                    required>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select class="form-control input-sm"
+                                                    ng-model="m.type"
+                                                    ng-options="val as val.descs[0].value for val in paramTypeMap['other_marking_type_list'].values"
+                                                    required>
+                                            </select>
                                         </td>
                                         <td>
                                             <input type="number" class="form-control input-sm" style="width: 60px"

@@ -232,21 +232,28 @@
 
 
 <!-- ***************************************  -->
-<!-- Renders the given list value             -->
+<!-- Returns the given list value             -->
 <!-- ***************************************  -->
-<#macro renderListValue value defaultValue format='long' lang='en'>
+<#function getListValue value defaultValue format='long' lang='en'>
     <#if value?has_content>
         <#assign desc=descForLang(value, lang)!>
         <#if desc?? && format == 'long'>
-            ${desc.longValue}
+            <#return desc.longValue/>
         <#elseif desc??>
-            ${desc.value}
+            <#return desc.value/>
         <#elseif defaultValue>
-            ${defaultValue}
+            <#return defaultValue/>
         </#if>
-    <#else>
-        ${defaultValue}
     </#if>
+    <#return defaultValue/>
+</#function>
+
+
+<!-- ***************************************  -->
+<!-- Renders the given list value             -->
+<!-- ***************************************  -->
+<#macro renderListValue value defaultValue format='long' lang='en'>
+    ${getListValue(value, defaultValue, format, lang)}
 </#macro>
 
 
