@@ -16,7 +16,13 @@
     </#if>
 </#macro>
 
-<@defaultSubjectFieldTemplates/>
+<field-template field="part.getDesc('en').subject" format="text">
+    <#switch params.markingType!''>
+        <#case 'marking'>Marked Wreck<#break>
+        <#case 'buoy'>Buoyed Wreck<#break>
+        <#default>Unmarked Wreck
+    </#switch>
+</field-template>
 
 <field-template field="part.getDesc('en').details" format="html">
     <@renderVesselType defaultName="a vessel" format="long" lang="en"/>
