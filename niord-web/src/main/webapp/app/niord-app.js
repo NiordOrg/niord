@@ -249,7 +249,8 @@ var app = angular.module('niord.admin', [
             })
             .state('sysadmin.script-resources', {
                 url: "/script-resources/:path",
-                templateUrl: "/app/sysadmin/sysadmin-page-script-resources.html"
+                templateUrl: "/app/sysadmin/sysadmin-page-script-resources.html",
+                help: { manual: 'sysadmin', section: 'script-resources' }
             })
             .state('sysadmin.categories', {
                 url: "/categories",
