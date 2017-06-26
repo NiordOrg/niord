@@ -264,7 +264,8 @@ var app = angular.module('niord.admin', [
             })
             .state('sysadmin.mails', {
                 url: "/mails",
-                templateUrl: "/app/sysadmin/sysadmin-page-mails.html"
+                templateUrl: "/app/sysadmin/sysadmin-page-mails.html",
+                help: { manual: 'sysadmin', section: 'mail-queue' }
             })
             .state('sysadmin.settings', {
                 url: "/settings",
