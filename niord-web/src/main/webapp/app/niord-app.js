@@ -259,7 +259,8 @@ var app = angular.module('niord.admin', [
             })
             .state('sysadmin.reports', {
                 url: "/reports",
-                templateUrl: "/app/sysadmin/sysadmin-page-reports.html"
+                templateUrl: "/app/sysadmin/sysadmin-page-reports.html",
+                help: { manual: 'sysadmin', section: 'print-reports' }
             })
             .state('sysadmin.mails', {
                 url: "/mails",
