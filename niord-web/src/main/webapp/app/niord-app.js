@@ -273,7 +273,8 @@ var app = angular.module('niord.admin', [
             })
             .state('sysadmin.integration', {
                 url: "/integration",
-                templateUrl: "/app/sysadmin/sysadmin-page-integration.html"
+                templateUrl: "/app/sysadmin/sysadmin-page-integration.html",
+                help: { manual: 'sysadmin', section: 'integration' }
             })
             .state('sysadmin.batch', {
                 url: "/batch/:batchName",
