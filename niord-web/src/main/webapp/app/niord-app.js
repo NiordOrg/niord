@@ -279,7 +279,8 @@ var app = angular.module('niord.admin', [
             })
             .state('sysadmin.batch', {
                 url: "/batch/:batchName",
-                templateUrl: "/app/sysadmin/sysadmin-page-batch.html"
+                templateUrl: "/app/sysadmin/sysadmin-page-batch.html",
+                help: { manual: 'sysadmin', section: 'batch-jobs' }
             })
         ;
     }])
