@@ -846,7 +846,8 @@ angular.module('niord.editor')
 
             /** Returns if the given message part type selector (group) should be displayed **/
             $scope.showPartType = function (part, fieldId) {
-                return $scope.showField(fieldId) || part.type.toLowerCase() === fieldId;
+                return (fieldId === 'part_types' && $scope.showField(fieldId)) ||
+                    $scope.showField(fieldId) || part.type.toLowerCase() === fieldId;
             };
 
 

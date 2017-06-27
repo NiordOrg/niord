@@ -424,32 +424,44 @@
                         <table style="height: 100%; margin: -4px 0">
                             <tr>
                                 <td ng-click="setPartType(part, 'DETAILS')"
-                                      class="part-type-btn" ng-class="{'part-type-selected': part.type == 'DETAILS'}">
+                                    ng-if="showPartType(part, 'part_types')"
+                                    ng-class="{'part-type-selected': part.type == 'DETAILS'}"
+                                    class="part-type-btn">
                                     <i class="fa fa-file-text"></i>
                                     <span translate>msg.field.details</span>
                                 </td>
                                 <td ng-click="setPartType(part, 'TIME')"
-                                              class="part-type-btn" ng-class="{'part-type-selected': part.type == 'TIME'}">
+                                    ng-if="showPartType(part, 'part_types')"
+                                    ng-class="{'part-type-selected': part.type == 'TIME'}"
+                                    class="part-type-btn">
                                     <i class="fa fa-clock-o"></i>
                                     <span translate>msg.field.time</span>
                                 </td>
                                 <td ng-click="setPartType(part, 'POSITIONS')"
-                                    class="part-type-btn" ng-class="{'part-type-selected': part.type == 'POSITIONS'}">
+                                    ng-if="showPartType(part, 'part_types')"
+                                    ng-class="{'part-type-selected': part.type == 'POSITIONS'}"
+                                    class="part-type-btn">
                                     <i class="fa fa-map-marker"></i>
                                     <span translate>msg.field.positions</span>
                                 </td>
-                                <td ng-click="setPartType(part, 'PROHIBITION')" ng-if="showPartType(part, 'prohibition')"
-                                              class="part-type-btn" ng-class="{'part-type-selected': part.type == 'PROHIBITION'}">
+                                <td ng-click="setPartType(part, 'PROHIBITION')"
+                                    ng-if="showPartType(part, 'prohibition')"
+                                    ng-class="{'part-type-selected': part.type == 'PROHIBITION'}"
+                                    class="part-type-btn">
                                     <i class="fa fa-warning"></i>
                                     <span translate>msg.field.prohibition</span>
                                 </td>
-                                <td ng-click="setPartType(part, 'SIGNALS')" ng-if="showPartType(part, 'signals')"
-                                              class="part-type-btn" ng-class="{'part-type-selected': part.type == 'SIGNALS'}">
+                                <td ng-click="setPartType(part, 'SIGNALS')"
+                                    ng-if="showPartType(part, 'signals')"
+                                    ng-class="{'part-type-selected': part.type == 'SIGNALS'}"
+                                    class="part-type-btn">
                                     <i class="fa fa-flag"></i>
                                     <span translate>msg.field.signals</span>
                                 </td>
                                 <td ng-click="setPartType(part, 'NOTE')"
-                                              class="part-type-btn" ng-class="{'part-type-selected': part.type == 'NOTE'}">
+                                    ng-if="showPartType(part, 'part_types')"
+                                    ng-class="{'part-type-selected': part.type == 'NOTE'}"
+                                    class="part-type-btn">
                                     <i class="fa fa-sticky-note"></i>
                                     <span translate>msg.field.note</span>
                                 </td>
