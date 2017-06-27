@@ -739,7 +739,7 @@
                                     <uib-tab-heading>
                                         <input type="checkbox" ng-model="promulgation.promulgate"
                                                ng-click="promulgationSelection(promulgation, $event)"
-                                               ng-disabled="promulgation.type.requirement == 'MANDATORY'"
+                                               ng-disabled="promulgation.type.requirement == 'MANDATORY' && promulgation.promulgate"
                                                tabindex="1601">
                                         {{promulgation.type.name}}
                                     </uib-tab-heading>
