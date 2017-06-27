@@ -66,6 +66,8 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class PromulgationType extends VersionedEntity<Integer> {
 
+    public enum Requirement { OPTIONAL, DEFAULT, MANDATORY }
+
     @Column(unique = true, nullable = false)
     String typeId;
 
@@ -79,8 +81,9 @@ public class PromulgationType extends VersionedEntity<Integer> {
 
     boolean active;
 
-    // Whether message promulgations of this type should be promulgated by default
-    boolean promulgateByDefault;
+    // Whether the promulgation type is "mandatory", "optional" or "default"
+    @Enumerated(EnumType.STRING)
+    Requirement requirement;
 
     String language;
 
@@ -108,7 +111,7 @@ public class PromulgationType extends VersionedEntity<Integer> {
         this.name = typeVo.getName();
         this.priority = typeVo.getPriority();
         this.active = typeVo.isActive() != null && typeVo.isActive();
-        this.promulgateByDefault = typeVo.getPromulgateByDefault() != null && typeVo.getPromulgateByDefault();
+        this.requirement = typeVo.getRequirement();
         this.language = typeVo.getLanguage();
         if (typeVo.getDomains() != null) {
             this.domains = typeVo.getDomains().stream()
@@ -139,9 +142,9 @@ public class PromulgationType extends VersionedEntity<Integer> {
         typeVo.setServiceId(serviceId);
         typeVo.setName(name);
         typeVo.setPriority(priority);
+        typeVo.setRequirement(requirement);
         if (compFilter.includeDetails()) {
             typeVo.setActive(active);
-            typeVo.setPromulgateByDefault(promulgateByDefault);
             typeVo.setLanguage(language);
             typeVo.setDomains(domains.stream()
                     .map(Domain::toVo)
@@ -201,12 +204,12 @@ public class PromulgationType extends VersionedEntity<Integer> {
         this.active = active;
     }
 
-    public boolean isPromulgateByDefault() {
-        return promulgateByDefault;
+    public Requirement getRequirement() {
+        return requirement;
     }
 
-    public void setPromulgateByDefault(boolean promulgateByDefault) {
-        this.promulgateByDefault = promulgateByDefault;
+    public void setRequirement(Requirement requirement) {
+        this.requirement = requirement;
     }
 
     public String getLanguage() {

@@ -102,7 +102,7 @@ angular.module('niord.admin')
                     name: '',
                     priority: 0,
                     active: true,
-                    promulgateByDefault: false,
+                    requirement: 'OPTIONAL',
                     language: undefined,
                     domains: []
                 };

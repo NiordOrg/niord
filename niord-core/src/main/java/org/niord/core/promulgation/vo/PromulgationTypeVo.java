@@ -23,6 +23,8 @@ import org.niord.model.message.Type;
 import java.util.List;
 import java.util.Set;
 
+import static org.niord.core.promulgation.PromulgationType.Requirement;
+
 /**
  * Defines the persistent data of a promulgation type
  */
@@ -33,7 +35,7 @@ public class PromulgationTypeVo implements IJsonSerializable, Comparable<Promulg
     String name;
     int priority;
     Boolean active;
-    Boolean promulgateByDefault; // Whether message promulgations of this type should be promulgated by default
+    Requirement requirement;
     String language;
     List<DomainVo> domains;
     Set<Type> messageTypes;    // If defined, can be limit which sub-types to use the promulgation type for
@@ -91,12 +93,12 @@ public class PromulgationTypeVo implements IJsonSerializable, Comparable<Promulg
         this.active = active;
     }
 
-    public Boolean getPromulgateByDefault() {
-        return promulgateByDefault;
+    public Requirement getRequirement() {
+        return requirement;
     }
 
-    public void setPromulgateByDefault(Boolean promulgateByDefault) {
-        this.promulgateByDefault = promulgateByDefault;
+    public void setRequirement(Requirement requirement) {
+        this.requirement = requirement;
     }
 
     public String getLanguage() {

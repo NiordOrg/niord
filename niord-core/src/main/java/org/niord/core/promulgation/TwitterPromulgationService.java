@@ -123,7 +123,7 @@ public class TwitterPromulgationService extends BasePromulgationService {
             twitter.setPromulgate(true);
             twitter.setTweet(title);
         } else {
-            twitter.setPromulgate(false);
+            twitter.setPromulgate(type.getRequirement() == PromulgationType.Requirement.MANDATORY);
         }
 
         return twitter;

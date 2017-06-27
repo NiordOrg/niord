@@ -24,6 +24,7 @@ import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageSeriesService;
 import org.niord.core.message.MessageTokenExpander;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.promulgation.PromulgationType.Requirement;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.core.promulgation.vo.NavtexMessagePromulgationVo;
 import org.niord.core.util.PositionAssembler;
@@ -264,7 +265,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
             navtex.setPromulgate(true);
             navtex.setText(text.toString().toUpperCase().trim());
         } else {
-            navtex.setPromulgate(false);
+            navtex.setPromulgate(type.getRequirement() == Requirement.MANDATORY);
         }
 
         return navtex;

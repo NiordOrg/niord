@@ -21,6 +21,7 @@ import org.niord.core.category.TemplateExecutionService;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.Message;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.promulgation.PromulgationType.Requirement;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.core.promulgation.vo.PromulgationServiceVo;
 import org.niord.core.util.CdiUtils;
@@ -173,15 +174,17 @@ public class PromulgationManager {
 
 
     /**
-     * Updates the promulgation status of the message promulgations based on the defaults for the promulgation type.
+     * Updates the promulgation status depending on the promulgation type requirements.
      *
      * @param message the message value object
      */
-    public void setPromulgateByDefault(SystemMessageVo message) throws PromulgationException {
+    public void checkDefaultPromulgationRequirements(SystemMessageVo message) throws PromulgationException {
         promulgationTypeService.getPromulgationTypes(message)
                 .forEach(type -> {
                     BaseMessagePromulgationVo p = message.promulgation(type.getTypeId());
-                    p.setPromulgate(type.isPromulgateByDefault());
+                    p.setPromulgate(
+                            type.getRequirement() == Requirement.DEFAULT ||
+                            type.getRequirement() == Requirement.MANDATORY);
                 });
     }
 

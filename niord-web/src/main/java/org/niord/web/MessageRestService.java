@@ -382,8 +382,8 @@ public class MessageRestService  {
 
         SystemMessageVo messageVo = toSystemMessage(message, false);
 
-        // Set whether or not to promulgate by default
-        promulgationManager.setPromulgateByDefault(messageVo);
+        // Set whether or not to promulgate based on promulgation type requirements
+        promulgationManager.checkDefaultPromulgationRequirements(messageVo);
 
         // Check if we need to populate with empty description records
         if (populate) {
