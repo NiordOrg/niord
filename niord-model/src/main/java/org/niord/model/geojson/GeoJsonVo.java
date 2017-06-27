@@ -15,6 +15,7 @@
  */
 package org.niord.model.geojson;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,8 +38,6 @@ import java.util.function.Consumer;
                 PolygonVo.class, MultiPolygonVo.class, GeometryCollectionVo.class, FeatureVo.class, FeatureCollectionVo.class
         }
 )
-// TODO: Re-introduce include=EXISTING_PROPERTY - disabled for now because of clients with old Jackson versions :-(
-// @JsonTypeInfo(property = "type", use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY)
 @JsonTypeInfo(property = "type", use = JsonTypeInfo.Id.NAME)
 @JsonSubTypes({
         @JsonSubTypes.Type(value = PointVo.class,               name = "Point"),
@@ -120,6 +119,7 @@ public abstract class GeoJsonVo implements IJsonSerializable {
         return new double[]{(bbox[0] + bbox[2]) / 2.0, (bbox[1] + bbox[3]) / 2.0};
     }
 
+    @JsonIgnore // @JsonTypeInfo will add the "type" property as a discriminator field
     public String getType() {
         return type;
     }
