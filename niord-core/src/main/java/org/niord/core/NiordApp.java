@@ -22,8 +22,11 @@ import org.niord.core.settings.SettingsService;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.servlet.ServletRequest;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
+import java.util.Properties;
 
 /**
  * Common settings and functionality for the Niord app
@@ -63,6 +66,20 @@ public class NiordApp {
 
     @Inject
     SettingsService settingsService;
+
+
+    /** Returns the build version **/
+    public String getBuildVersion() {
+        // The "version.properties" file is updated by maven with the build timestamp.
+        try (InputStream in = getClass().getResourceAsStream("/version.properties")) {
+            Properties versionProperties = new Properties();
+            versionProperties.load(in);
+            return versionProperties.getProperty("niord.version");
+        } catch (IOException ignored) {
+        }
+        return "undefined";
+    }
+
 
     /**
      * Returns the base URI used to access this application

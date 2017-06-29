@@ -17,7 +17,7 @@
         <batik.version>1.8</batik.version>
         <swagger-ui.version>3.0.10</swagger-ui.version>
         <timestamp>${maven.build.timestamp}</timestamp>
-        <maven.build.timestamp.format>yyyyMMddHHmm</maven.build.timestamp.format>
+        <maven.build.timestamp.format>dd-MM-yyyy HH:mm 'UTC'</maven.build.timestamp.format>
         <niord-core.jar>niord-core-${project.version}.jar</niord-core.jar>
     </properties>
 
@@ -84,6 +84,7 @@
                 <filtering>true</filtering>
                 <includes>
                     <include>**/persistence.xml</include>
+                    <include>**/version.properties</include>
                 </includes>
             </resource>
             <resource>
@@ -91,6 +92,7 @@
                 <filtering>false</filtering>
                 <excludes>
                     <exclude>**/persistence.xml</exclude>
+                    <exclude>**/version.properties</exclude>
                 </excludes>
             </resource>
         </resources>
@@ -136,7 +138,25 @@
                             <directory>${project.build.directory}/swagger-ui-${swagger-ui.version}/dist</directory>
                             <targetPath>swagger-ui</targetPath>
                         </webResource>
+
+                        <!-- Inject build version into home-ctrl.js -->
+                        <resource>
+                            <directory>src/main/webapp</directory>
+                            <filtering>true</filtering>
+                            <includes>
+                                <include>**/home-ctrl.js</include>
+                            </includes>
+                        </resource>
+                        <resource>
+                            <directory>src/main/webapp</directory>
+                            <filtering>false</filtering>
+                            <excludes>
+                                <exclude>**/home-ctrl.js</exclude>
+                            </excludes>
+                        </resource>
+
                     </webResources>
+                    <failOnMissingWebXml>false</failOnMissingWebXml>
                 </configuration>
             </plugin>
 

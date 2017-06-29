@@ -18,11 +18,13 @@
  * The home controller
  */
 angular.module('niord.home')
-    .controller('HomeCtrl', ['$scope', '$timeout', '$stateParams', 'MessageService',
-        function ($scope, $timeout, $stateParams, MessageService) {
+    .controller('HomeCtrl', ['$scope', '$timeout', '$stateParams', 'MessageService', 'VersionService',
+        function ($scope, $timeout, $stateParams, MessageService, VersionService) {
             'use strict';
 
             $scope.messageList = [];
+            $scope.serverBuildVersion = undefined;
+            $scope.webBuildVersion = '${timestamp}';
 
             $scope.init = function () {
 
@@ -36,10 +38,26 @@ angular.module('niord.home')
                         $scope.totalMessageNo = result.total;
                     });
 
+
+                // Load the back-end build version
+                VersionService.buildVersion()
+                    .success(function (version) {
+                        $scope.serverBuildVersion = version;
+                    });
+
+
                 // If specified in the URL, show the given message details
                 if ($stateParams.messageId) {
                     $timeout(function() { MessageService.detailsDialog($stateParams.messageId) });
                 }
             };
+
+
+            /** Checks for version conflicts between web and server back-end **/
+            $scope.versionConflict = function () {
+                return $scope.serverBuildVersion !== undefined &&
+                    $scope.webBuildVersion.indexOf('timestamp') === -1 && // When developing - don't show error
+                    $scope.serverBuildVersion !== $scope.webBuildVersion;
+            }
 
         }]);

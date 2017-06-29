@@ -40,6 +40,22 @@
     animation-duration: 1s;
 }
 
+.home-version-error {
+    opacity: 0.8;
+    max-width: 260px;
+    font-size: 13px;
+    color: white;
+    background-color: darkred;
+    padding: 10px;
+    margin: 5px auto;
+    border-radius: 10px;
+}
+
+.home-version-error .version {
+    margin-top: 10px;
+    font-size: 10px;
+}
+
 /** Home -> Map **/
 
 .home-map {

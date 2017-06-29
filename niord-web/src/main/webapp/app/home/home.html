@@ -19,6 +19,14 @@
 
         <a ng-if="!isLoggedIn" href ng-click="login()" class="btn btn-lg btn-primary" translate>menu.login</a>
         <div ng-include="'app/home/home-teaser.html'"></div>
+
+        <div ng-if="versionConflict()" class="home-version-error">
+            <span translate>front_page.version_error</span>
+            <div class="version">
+                Server Version: {{serverBuildVersion}}<br>
+                Web Version: {{webBuildVersion}}<br>
+            </div>
+        </div>
     </div>
 </div>
 

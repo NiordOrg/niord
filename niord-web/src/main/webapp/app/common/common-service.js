@@ -300,6 +300,23 @@ angular.module('niord.common')
 
 
     /**
+     * Interface for obtaining the back-end build version
+     */
+    .factory('VersionService', [ '$http',
+        function($http) {
+            'use strict';
+
+            return {
+
+                /** Returns the back-end build version */
+                buildVersion: function () {
+                    return $http.get('/rest/version/build-version');
+                }
+            };
+        }])
+
+
+    /**
      * The modalService is very much inspired by (even copied from):
      * http://weblogs.asp.net/dwahlin/building-an-angularjs-modal-service
      */
