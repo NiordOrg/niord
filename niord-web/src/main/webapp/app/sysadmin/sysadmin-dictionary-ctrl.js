@@ -100,6 +100,7 @@ angular.module('niord.admin')
             $scope.copyEntry = function (entry) {
                 $scope.editMode = 'add';
                 $scope.entry = angular.copy(entry);
+                delete $scope.entry.id;
                 LangService.checkDescs($scope.entry, ensureValueField);
             };
 
