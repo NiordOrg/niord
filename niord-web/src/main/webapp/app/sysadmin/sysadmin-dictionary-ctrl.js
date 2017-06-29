@@ -38,6 +38,7 @@ angular.module('niord.admin')
             $scope.entries = [];
             $scope.entry = undefined; // The entry being edited
             $scope.editMode = 'add';
+            $scope.showExtended = false;
 
 
             /** Loads the dictionary names from the back-end */
@@ -61,7 +62,24 @@ angular.module('niord.admin')
                     .getDictionaryEntries($scope.currentDictionaryName)
                     .success(function (dictionary) {
                         $scope.entries = dictionary;
+                        $scope.guessShowExtended();
                     });
+            };
+
+
+            /** Guess whether or not to show the dictionary long values **/
+            $scope.guessShowExtended = function () {
+                $scope.showExtended = false;
+                if ($scope.entries) {
+                    for (var x = 0; x < $scope.entries.length; x++) {
+                        var descs = $scope.entries[x].descs || [];
+                        for (var y = 0; y < descs.length; y++) {
+                            if (descs[y].longValue !== undefined) {
+                                $scope.showExtended = true;
+                            }
+                        }
+                    }
+                }
             };
 
 
@@ -154,11 +172,7 @@ angular.module('niord.admin')
                             .error($scope.displayError);
                     });
 
-            };
-
-
-            $scope.updateShowExtended = function () {
-                $rootScope.showExtended = $scope.showExtended;
             }
+
         }]);
 
