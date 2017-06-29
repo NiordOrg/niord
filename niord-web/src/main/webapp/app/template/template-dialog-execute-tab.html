@@ -284,7 +284,7 @@
                                     <input type="checkbox"
                                            ng-model="templateData[templateIndex].vessel.contact">
                                     {{'template.vessel.contact' | translate}}
-                                    <input type="number"
+                                    <input type="number" step="any"
                                            ng-disabled="!templateData[templateIndex].vessel.contact"
                                            style="width: 60px"
                                            ng-model="templateData[templateIndex].vessel.channel">
@@ -302,7 +302,7 @@
                                 <div class="col-sm-3" style="margin-top: 5px;" translate>template.caution.title</div>
                                 <div class="col-sm-9 inline">
                                     {{'template.caution.min_dist' | translate}}
-                                    <input type="number"
+                                    <input type="number" step="any"
                                            style="width: 60px"
                                            ng-model="templateData[templateIndex].vessel.minDist">
                                     <span class="btn-group">
@@ -379,7 +379,7 @@
                                                    ng-disabled="!m.type || m.type.key.indexOf('light') == -1">
                                         </td>
                                         <td>
-                                            <input type="number" class="form-control input-sm" style="width: 60px"
+                                            <input type="number" step="any" class="form-control input-sm" style="width: 60px"
                                                    ng-model="m.distance">
                                         </td>
                                         <td>
@@ -427,7 +427,7 @@
                                             </select>
                                         </td>
                                         <td>
-                                            <input type="number" class="form-control input-sm" style="width: 60px"
+                                            <input type="number" step="any" class="form-control input-sm" style="width: 60px"
                                                    ng-model="m.distance">
                                         </td>
                                         <td>

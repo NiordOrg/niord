@@ -13,6 +13,7 @@
 <#macro renderMarkings markings lang="en" format="details" unmarkedText="">
     <#assign lightFormat=(format == 'navtex')?then('normal','verbose')/>
     <#assign valueFormat=(format == 'navtex')?then('normal','long')/>
+    <#assign bearingFormat=(format == 'audio')?then('long','normal')/>
     <#if markings?has_content>
         ${(markingType == 'buoy')?then('buoyed', 'marked')} with
         <#list markings as marking>
@@ -22,9 +23,9 @@
                 showing
                 <@lightCharacterFormat light=marking.lightCharacter format=lightFormat/>
             </#if>
-            <#if marking.distance??>approx. ${marking.distance}m.</#if>
+            <#if marking.distance?? && marking.distance gt 0>approx. ${marking.distance}m.</#if>
             <#if marking.bearing??>
-                <@renderListValue value=marking.bearing defaultValue="" format=valueFormat lang=lang/>
+                <@renderListValue value=marking.bearing defaultValue="" format=bearingFormat lang=lang/>
             </#if>
             <#if marking.distance?? || marking.bearing??>of the position</#if>
             <#if marking?has_next> and <#else>.</#if>

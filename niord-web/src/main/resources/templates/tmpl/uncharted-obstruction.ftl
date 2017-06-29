@@ -30,7 +30,7 @@
         <@renderObstructionType defaultValue="The obstruction" format="long" lang="en" capFirst=true/> is visible above the sea surface.
     <#else>
         The depth above <@renderObstructionType defaultValue="the obstruction" format="long" lang="en"/> is
-        <#if params.obstruction_depth??>${params.obstruction_depth} m.<#else>unknown.</#if>
+        <#if params.obstruction_depth??>${params.obstruction_depth}m.<#else>unknown.</#if>
     </#if>
     <@renderObstructionType defaultValue="Obstruction" format="long" lang="en" capFirst=true/>
     is <@renderMarkings markings=params.markings! markingType=params.markingType! lang="en" format="details" unmarkedText="unmarked"/><br>
