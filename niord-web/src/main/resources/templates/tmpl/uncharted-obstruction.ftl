@@ -43,13 +43,16 @@
             UNCHARTED <@renderObstructionType defaultValue="OBSTRUCTION" lang="en"/>
             <@renderObstructionReport defaultValue="REPORTED" lang="en" />
             <@renderPositionList geomParam=part format="navtex" lang="en"/>.
+        </@line>
+        <@line format="navtex">
             <#if params.obstruction_visible!false>
                 <@renderObstructionType defaultValue="OBSTRUCTION" lang="en" /> VISIBLE ABOVE SEA SURFACE.
             <#else>
-                DEPTH ABOVE <@renderObstructionType defaultValue="OBSTRUCTION" lang="en"/> IS
+                DEPTH ABOVE <@renderObstructionType defaultValue="OBSTRUCTION" lang="en"/>
                 <#if params.obstruction_depth??>${params.obstruction_depth}M.<#else>UNKNOWN.</#if>
             </#if>
-            <@renderObstructionType defaultValue="OBSTRUCTION" lang="en"/>
+        </@line>
+        <@line format="navtex">
             <@renderMarkings markings=params.markings! markingType=params.markingType! lang="en" format="navtex"  unmarkedText="UNMARKED"/>
         </@line>
         <@line format="navtex">
