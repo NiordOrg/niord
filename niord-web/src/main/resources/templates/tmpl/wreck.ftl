@@ -30,7 +30,7 @@
     <#if params.wreck_visible!false>
         The wreck is visible above the sea surface.
     <#else>
-        The depth above the wreck is <#if params.wreck_depth??>${params.wreck_depth} m.<#else>unknown.</#if>
+        The depth above the wreck is <#if params.wreck_depth??>${params.wreck_depth}m.<#else>unknown.</#if>
     </#if>
     The wreck is <@renderMarkings markings=params.markings! markingType=params.markingType! lang="en" format="details" unmarkedText="unmarked"/><br>
     Mariners are advised to keep well clear.
