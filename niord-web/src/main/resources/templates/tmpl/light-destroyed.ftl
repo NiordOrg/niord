@@ -16,7 +16,8 @@
         The light <@renderLightName lightParam=pos/> <@renderPositionList geomParam=part lang="en"/>
         has been destroyed and makes an obstruction.
     </#list>
-    The light is <@renderMarkings markings=params.markings! markingType=params.markingType! lang="en" format="details" unmarkedText="unmarked"/><br>
+    The foundation of the light is
+    <@renderMarkings markings=params.markings! markingType=params.markingType! lang="en" format="details" unmarkedText="unmarked"/><br>
     Mariners are advised to keep well clear.
 </field-template>
 
@@ -27,7 +28,8 @@
                 LIGHT <@renderLightName lightParam=pos/> <@renderPositionList geomParam=part format="navtex" lang="en"/>
                 DESTROYED.
             </#list>
-            LIGHT <@renderMarkings markings=params.markings! markingType=params.markingType! lang="en" format="navtex"  unmarkedText="UNMARKED"/>
+            FOUNDATION OF LIGHT
+            <@renderMarkings markings=params.markings! markingType=params.markingType! lang="en" format="navtex"  unmarkedText="UNMARKED"/>
         </@line>
         <@line format="navtex">
             MARINERS ADVISED TO KEEP CLEAR.

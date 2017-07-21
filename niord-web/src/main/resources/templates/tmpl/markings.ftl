@@ -15,9 +15,7 @@
     <#assign valueFormat=(format == 'navtex')?then('normal','long')/>
     <#assign bearingFormat=(format == 'audio')?then('long','normal')/>
     <#if markings?has_content>
-        <#if format != 'navtex'>
-            ${(markingType == 'buoy')?then('buoyed', 'marked')} with
-        </#if>
+        ${(markingType == 'buoy')?then('buoyed', 'marked')} with
         <#list markings as marking>
             <#if format == 'navtex'>${(marking.color??)?then(getListValue(marking.color, '', 'normal', lang), '')}</#if>
             <@renderMarkingType marking=marking format=valueFormat lang=lang/>
