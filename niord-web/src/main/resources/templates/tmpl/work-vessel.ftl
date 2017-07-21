@@ -14,20 +14,19 @@
         <#if lang == "en">
 
             <#if format == 'navtex'>
-                Work by <@quote text=vesselName/>
+                By <@quote text=vesselName/>
             <#elseif format == 'audio'>
                 Work is carried out by <@quote text=vesselName/>
             <#else>
                 Work is carried out by <@quote text=vesselName format="angular"/>
             </#if>
-            <#if vessel.callSign?has_content>call-sign <@callSignFormat callSign=vessel.callSign format=csFormat/></#if>.
+            <#if vessel.callSign?has_content>call sign <@callSignFormat callSign=vessel.callSign format=csFormat/></#if>.
             <#if vessel.guardVessels!false>
                 Guard vessels will be in the area.
             </#if>
             <#if vessel.contact!false>
                 <#if format == 'navtex'>
-                    <#if vessel.guardVessels!false>vessels<#else>vessel</#if>
-                    listening VHF CH 16
+                    Listening VHF CH 16
                     <#if vessel.channel?has_content>and ${vessel.channel}</#if>.
                 <#else>
                     The <#if vessel.guardVessels!false>vessels are<#else>vessel is</#if>
