@@ -25,7 +25,11 @@
         <#list params.positions![] as pos>
             <@renderAtonType atonParams=pos defaultName="${enDefaultName}" format="long" lang="en"/>
             <@renderPositionList geomParam=pos lang="en"/> has been replaced with
-            <@renderAtonReplacementType atonParams=pos defaultName="${enDefaultReplacementName}" format="long" lang="en"/>.<br>
+            <@renderAtonReplacementType atonParams=pos defaultName="${enDefaultReplacementName}" format="long" lang="en"/>
+            <#if pos.aton_light?has_content>
+                showing
+                <@lightCharacterFormat light=pos.aton_light format="verbose" lang="en"/>
+            </#if>.<br>
         </#list>
     </field-template>
 
@@ -35,7 +39,11 @@
                 <@line format="navtex">
                     <@renderAtonType atonParams=pos defaultName="${enDefaultName}" format="short" lang="en"/>
                     <@renderPositionList geomParam=pos format="navtex" lang="en"/> REPLACED WITH
-                    <@renderAtonReplacementType atonParams=pos defaultName="${enDefaultReplacementName}" format="navtex" lang="en"/>.
+                    <@renderAtonReplacementType atonParams=pos defaultName="${enDefaultReplacementName}" format="navtex" lang="en"/>
+                    <#if pos.aton_light?has_content>
+                        showing
+                        <@lightCharacterFormat light=pos.aton_light format="normal" lang="en"/>
+                    </#if>.
                 </@line>
             </#list>
         </field-template>

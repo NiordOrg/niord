@@ -45,6 +45,7 @@ public class LightCharacterDirective implements TemplateDirectiveModel {
 
     private static final String PARAM_LIGHT     = "light";
     private static final String PARAM_FORMAT    = "format";
+    private static final String PARAM_LANG      = "lang";
 
     /**
      * {@inheritDoc}
@@ -68,10 +69,13 @@ public class LightCharacterDirective implements TemplateDirectiveModel {
         SimpleScalar formatModel = (SimpleScalar)params.get(PARAM_FORMAT);
         boolean verbose = formatModel != null && "verbose".equalsIgnoreCase(formatModel.getAsString());
 
+        // Get the "lang" parameter
+        SimpleScalar langParam = (SimpleScalar)params.get(PARAM_LANG);
+
         try {
             if (verbose && StringUtils.isNotBlank(lightCharacter)) {
 
-                String lang = env.getLocale().getLanguage();
+                String lang = (langParam != null) ? langParam.getAsString() : env.getLocale().getLanguage();
                 LightCharacterService lightCharacterService = CdiUtils.getBean(LightCharacterService.class);
                 String result = lightCharacterService.formatLightCharacter(lang, lightCharacter);
                 env.getOut().write(result);

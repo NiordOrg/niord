@@ -7,7 +7,7 @@
         <@renderAtonType atonParams=pos defaultName="A light buoy" format="long" lang="en"/>
         <#if pos.aton_light?has_content>
             showing
-            <@lightCharacterFormat light=pos.aton_light format="verbose"/>
+            <@lightCharacterFormat light=pos.aton_light format="verbose" lang="en"/>
         </#if>
         has been established <@renderPositionList geomParam=pos lang="en"/>.<br>
     </#list>
@@ -20,7 +20,7 @@
                 <@renderAtonType atonParams=pos defaultName="A light buoy" format="short" lang="en"/>
                 <#if pos.aton_light?has_content>
                     SHOWING
-                    <@lightCharacterFormat light=pos.aton_light format="normal"/>
+                    <@lightCharacterFormat light=pos.aton_light format="normal" lang="en"/>
                 </#if>
                 ESTABLISHED <@renderPositionList geomParam=pos format="navtex" lang="en"/>.
             </@line>

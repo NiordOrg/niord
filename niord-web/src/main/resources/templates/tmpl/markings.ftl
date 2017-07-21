@@ -21,7 +21,7 @@
             <@renderMarkingType marking=marking format=valueFormat lang=lang/>
             <#if marking.lightCharacter?has_content>
                 showing
-                <@lightCharacterFormat light=marking.lightCharacter format=lightFormat/>
+                <@lightCharacterFormat light=marking.lightCharacter format=lightFormat  lang="en"/>
             </#if>
             <#if marking.distance?? && marking.distance gt 0>approx. ${marking.distance}m</#if>
             <#if marking.bearing??>
