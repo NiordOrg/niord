@@ -1,8 +1,10 @@
 <#include "common.ftl"/>
 
-<#macro aton enDefaultName="" enDetails="" enNavtex="">
+<#macro aton defaultSubjectFields=true enDefaultName="" enDetails="" enNavtex="">
 
-    <@defaultSubjectFieldTemplates/>
+    <#if defaultSubjectFields>
+        <@defaultSubjectFieldTemplates/>
+    </#if>
 
     <field-template field="part.getDesc('en').details" format="html">
         <#list params.positions![] as pos>
