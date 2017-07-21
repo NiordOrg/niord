@@ -136,5 +136,12 @@
     "value"       : false,
     "web"         : true,
     "editable"    : true
+  },
+  {
+    "key"         : "lightCharacterUrl",
+    "description" : "Help link for light character input fields",
+    "value"       : "https://en.wikipedia.org/wiki/Light_characteristic",
+    "web"         : true,
+    "editable"    : true
   }
 ]
