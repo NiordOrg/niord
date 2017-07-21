@@ -22,7 +22,11 @@
             </#if>
             <#if vessel.callSign?has_content>call sign <@callSignFormat callSign=vessel.callSign format=csFormat/></#if>.
             <#if vessel.guardVessels!false>
-                Guard vessels will be in the area.
+                <#if format == 'navtex'>
+                    Guard vessels in area.
+                <#else>
+                    Guard vessels will be in the area.
+                </#if>
             </#if>
             <#if vessel.contact!false>
                 <#if format == 'navtex'>
