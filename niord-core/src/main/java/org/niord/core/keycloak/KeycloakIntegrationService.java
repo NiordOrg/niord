@@ -617,6 +617,7 @@ public class KeycloakIntegrationService {
         // For e.g. "*.e-navigation.net", with no intermediate certificates specified, you will get an
         // "unable to find valid certification path to requested target" exception.
         // Code around this.
+        // See https://stackoverflow.com/questions/19517538/ignoring-ssl-certificate-in-apache-httpclient-4-3
         SSLContextBuilder builder = new SSLContextBuilder();
         builder.loadTrustMaterial(null, (chain, authType) -> true);
 
