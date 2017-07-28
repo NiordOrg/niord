@@ -20,8 +20,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -32,6 +31,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.KeycloakDeployment;
@@ -624,29 +624,29 @@ public class KeycloakIntegrationService {
         SSLConnectionSocketFactory sslSF = new SSLConnectionSocketFactory(builder.build(),
                 SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
 
-        HttpClient client = HttpClients.custom()
+        CloseableHttpClient client = HttpClients.custom()
                 .setSSLSocketFactory(sslSF)
                 .setHostnameVerifier(new AllowAllHostnameVerifier())
                 .build();
 
-        HttpResponse response = client.execute(request);
-
-        int status = response.getStatusLine().getStatusCode();
-        if (status < 200 || status > 299) {
-            try {
-                response.getEntity().getContent().close();
-            } catch (Exception ignored) {
+        try (CloseableHttpResponse response = client.execute(request)) {
+            int status = response.getStatusLine().getStatusCode();
+            if (status < 200 || status > 299) {
+                try {
+                    response.getEntity().getContent().close();
+                } catch (Exception ignored) {
+                }
+                throw new Exception("Unable to execute request " + request.getURI() + ", status = " + status);
             }
-            throw new Exception("Unable to execute request " + request.getURI() + ", status = " + status);
-        }
 
-        HttpEntity entity = response.getEntity();
-        if (entity == null) {
-            return responseHandler.execute(null);
-        }
+            HttpEntity entity = response.getEntity();
+            if (entity == null) {
+                return responseHandler.execute(null);
+            }
 
-        try (InputStream is = entity.getContent()) {
-            return responseHandler.execute(is);
+            try (InputStream is = entity.getContent()) {
+                return responseHandler.execute(is);
+            }
         }
     }
 
