@@ -28,6 +28,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
@@ -612,8 +614,19 @@ public class KeycloakIntegrationService {
             request.addHeader("Authorization", "Bearer " + keycloakPrincipal.getKeycloakSecurityContext().getTokenString());
         }
 
-        // TODO: Check if this works with https based on self-signed certificates
-        HttpClient client = HttpClients.custom().setHostnameVerifier(new AllowAllHostnameVerifier()).build();
+        // For e.g. "*.e-navigation.net", with no intermediate certificates specified, you will get an
+        // "unable to find valid certification path to requested target" exception.
+        // Code around this.
+        SSLContextBuilder builder = new SSLContextBuilder();
+        builder.loadTrustMaterial(null, (chain, authType) -> true);
+
+        SSLConnectionSocketFactory sslSF = new SSLConnectionSocketFactory(builder.build(),
+                SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+
+        HttpClient client = HttpClients.custom()
+                .setSSLSocketFactory(sslSF)
+                .setHostnameVerifier(new AllowAllHostnameVerifier())
+                .build();
 
         HttpResponse response = client.execute(request);
 
