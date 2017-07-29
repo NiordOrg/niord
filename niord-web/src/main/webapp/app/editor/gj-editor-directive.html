@@ -49,6 +49,12 @@
                             <img src="/img/editor/drawBox.png"/>
                         </label>
                     </span>
+                    <span class="btn-group" ng-show="showDrawControls.measure">
+                        <label class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'measure'"
+                               uib-tooltip="Measure" tooltip-placement="bottom">
+                            <img src="/img/editor/ruler.png"/>
+                        </label>
+                    </span>
                     <span class="btn-group">
                         <label ng-show="showDrawControls.select"
                                class="btn btn-default btn-sm" ng-model="drawControl" uib-btn-radio="'select'"
@@ -204,6 +210,7 @@
             <map-aton-layer name="AtoN" visible="false" layer-switcher="atonLayerEnabled" aton-selected="atonSelected(aton)"></map-aton-layer>
             <map-ol-editor-layer name="Locations" visible="true" layer-switcher="false"
                                  features="features" buffer-features="bufferFeatures" draw-control="drawControl"></map-ol-editor-layer>
+            <map-ol-measure-layer name="Measure" draw-control="drawControl"></map-ol-measure-layer>
             <map-position-tooltip></map-position-tooltip>
             <map-layer-switcher></map-layer-switcher>
 

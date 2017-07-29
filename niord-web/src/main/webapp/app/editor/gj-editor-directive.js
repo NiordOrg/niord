@@ -62,7 +62,7 @@ angular.module('niord.editor')
                 scope.mode = 'viewer';
                 scope.openEditorMessage = scope.openEditorMessage || 'Edit';
                 scope.editAsTextMessage = scope.editAsTextMessage || 'Edit as text';
-                scope.drawControls  =  scope.drawControls || 'point,polyline,polygon,select,remove';
+                scope.drawControls  =  scope.drawControls || 'point,polyline,polygon,select,remove,measure';
                 scope.drawControl = 'select';
                 scope.editorId = attrs['id'] + '-editor';
                 scope.languages = $rootScope.modelLanguages;
@@ -89,7 +89,8 @@ angular.module('niord.editor')
                     polygon:    scope.drawControls.indexOf('polygon') !== -1,
                     box:        scope.drawControls.indexOf('box') !== -1,
                     select:     scope.drawControls.indexOf('select') !== -1,
-                    remove:     scope.drawControls.indexOf('remove') !== -1
+                    remove:     scope.drawControls.indexOf('remove') !== -1,
+                    measure:    scope.drawControls.indexOf('measure') !== -1
                 };
 
                 if (scope.tabIndex) {
