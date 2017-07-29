@@ -73,9 +73,6 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class ScheduledMail extends BaseEntity<Integer> {
 
-    /** Defines the max number of times to attempt to send the mail **/
-    public static final int MAX_ATTEMPTS = 5;
-
     /** In case of an error, how many minutes should the system wait before attempting to send the mail again **/
     public static final int[] DELAYS = {1, 5, 15, 60};
 
@@ -176,7 +173,7 @@ public class ScheduledMail extends BaseEntity<Integer> {
      * @param error the error message
      */
     public void registerMailErrorAttempt(String error) {
-        if (attempts < MAX_ATTEMPTS) {
+        if (attempts < DELAYS.length) {
             sendDate = TimeUtils.add(new Date(), Calendar.MINUTE, DELAYS[attempts]);
         } else {
             status = Status.ERROR;
