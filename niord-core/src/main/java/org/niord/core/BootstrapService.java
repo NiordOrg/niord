@@ -59,16 +59,5 @@ public class BootstrapService extends BaseService {
      */
     @SuppressWarnings("all")
     private void handleUpgrade() {
-        try {
-
-            int updates = em.createNativeQuery(
-                    "update PromulgationType c set c.requirement = 'OPTIONAL' where c.requirement is null or c.requirement = ''")
-                    .executeUpdate();
-            em.flush();
-            log.info("*** UPDATED REQUIREMENT OF " + updates + " PROMULGATION TYPES");
-
-        } catch (Exception e) {
-            log.error("Error executing SQL ", e);
-        }
     }
 }
