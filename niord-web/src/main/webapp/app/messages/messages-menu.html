@@ -106,14 +106,14 @@
 
 
                 <!-- Tags -->
-                <li ng-if="selection.size() > 0" role="separator" class="divider"></li>
-                <li ng-if="selection.size() > 0">
+                <li ng-if="isLoggedIn && selection.size() > 0" role="separator" class="divider"></li>
+                <li ng-if="isLoggedIn && selection.size() > 0">
                     <a href ng-click="addToTagDialog()">
                         <span class="glyphicon glyphicon-tags menu-icon"></span>&nbsp;
                         <span translate>menu.action.tag.add_selection</span>
                     </a>
                 </li>
-                <li ng-if="selection.size() > 0">
+                <li ng-if="isLoggedIn && selection.size() > 0">
                     <a href ng-click="removeFromTagDialog()">
                         <span class="glyphicon glyphicon-tags menu-icon"></span>&nbsp;
                         <span translate>menu.action.tag.remove_selection</span>
@@ -170,8 +170,8 @@
 
 
                 <!-- Status updates -->
-                <li ng-if="selection.size() > 0" role="separator" class="divider"></li>
-                <li ng-if="selection.size() > 0">
+                <li ng-if="selection.size() > 0 && isEditor" role="separator" class="divider"></li>
+                <li ng-if="selection.size() > 0 && isEditor">
                     <a href ng-click="updateStatusDialog()">
                         <span class="glyphicon glyphicon-pencil menu-icon"></span>&nbsp;
                         <span translate>menu.action.update_status</span>
