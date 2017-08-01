@@ -291,6 +291,9 @@ public class FiringExerciseService extends BaseService {
                         if (p.getGeometry() != null) {
                             p.setGeometry(featureService.copyFeatureCollection(p.getGeometry()));
                         }
+                        // Remove any event date interval
+                        p.setEventDates(null);
+                        // Add the part to the new firing exercise message
                         message.addPart(new MessagePart(p));
                     });
 
