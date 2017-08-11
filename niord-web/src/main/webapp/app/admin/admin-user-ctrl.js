@@ -368,8 +368,7 @@ angular.module('niord.admin')
                 $scope.action = "add";
                 $scope.contact = {
                     email: '',
-                    firstName: '',
-                    lastName: '',
+                    name: '',
                     language: undefined
                 };
                 $scope.setPristine();

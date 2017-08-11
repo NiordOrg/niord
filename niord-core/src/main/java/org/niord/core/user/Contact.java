@@ -15,7 +15,6 @@
  */
 package org.niord.core.user;
 
-import org.apache.commons.lang.StringUtils;
 import org.niord.core.mail.IMailable;
 import org.niord.core.model.VersionedEntity;
 import org.niord.core.user.vo.ContactVo;
@@ -26,14 +25,9 @@ import javax.persistence.Index;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 
 /**
  * Implementation of a contact entity which may e.g. be used in mailing lists, etc.
- * <p>
- * Note to self: User ought to inherit from Contact, or rather, User and Contact should
- * have a common super class with the email, firstName, lastName, and language attributes.
- * The common-ancestor solution would allow us to search using JPA in Contact without including results from User.
  */
 @Entity
 @Table(indexes = {
@@ -46,7 +40,7 @@ import javax.persistence.Transient;
                 query="SELECT c FROM Contact c where lower(c.email) = :email"),
         @NamedQuery(name="Contact.searchContacts",
                 query="SELECT c FROM Contact c where lower(c.email) like :term " +
-                      " or lower(c.firstName) like :term or lower(c.lastName) like :term")
+                      " or lower(c.name) like :term")
 })
 @SuppressWarnings("unused")
 public class Contact extends VersionedEntity<Integer> implements IMailable {
@@ -54,9 +48,7 @@ public class Contact extends VersionedEntity<Integer> implements IMailable {
     @Column(nullable = false)
     String email;
 
-    String firstName;
-
-    String lastName;
+    String name;
 
     String language;
 
@@ -70,8 +62,7 @@ public class Contact extends VersionedEntity<Integer> implements IMailable {
     public Contact(ContactVo contact) {
         setId(contact.getId());
         setEmail(contact.getEmail());
-        setFirstName(contact.getFirstName());
-        setLastName(contact.getLastName());
+        setName(contact.getName());
         setLanguage(contact.getLanguage());
     }
 
@@ -81,28 +72,9 @@ public class Contact extends VersionedEntity<Integer> implements IMailable {
         ContactVo contact = new ContactVo();
         contact.setId(id);
         contact.setEmail(email);
-        contact.setFirstName(firstName);
-        contact.setLastName(lastName);
+        contact.setName(name);
         contact.setLanguage(language);
         return contact;
-    }
-
-
-    /** Composes a full name from the contact details */
-    @Transient
-    @Override
-    public String getName() {
-        StringBuilder name = new StringBuilder();
-        if (StringUtils.isNotBlank(firstName)) {
-            name.append(firstName);
-        }
-        if (StringUtils.isNotBlank(lastName)) {
-            if (name.length() > 0) {
-                name.append(" ");
-            }
-            name.append(lastName);
-        }
-        return name.toString();
     }
 
 
@@ -112,8 +84,7 @@ public class Contact extends VersionedEntity<Integer> implements IMailable {
         return "Contact{" +
                 "id=" + id +
                 ", email='" + email + '\'' +
-                ", firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
+                ", name='" + name + '\'' +
                 ", language='" + language + '\'' +
                 '}';
     }
@@ -123,20 +94,13 @@ public class Contact extends VersionedEntity<Integer> implements IMailable {
     /** Getters and Setters **/
     /*************************/
 
-    public String getFirstName() {
-        return firstName;
+    @Override
+    public String getName() {
+        return name;
     }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getEmail() {

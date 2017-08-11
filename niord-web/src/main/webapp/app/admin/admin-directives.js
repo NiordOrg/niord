@@ -96,9 +96,9 @@ angular.module('niord.common')
                     var result = [];
                     for (var x = 0; x < recipients.length; x++) {
                         var r = recipients[x];
+                        var name = scope.getName(r);
                         if ((r.email && r.email.toLowerCase().indexOf(filter) !== -1) ||
-                            (r.firstName && r.firstName.toLowerCase().indexOf(filter) !== -1) ||
-                            (r.lastName && r.lastName.toLowerCase().indexOf(filter) !== -1)) {
+                            (name && name.toLowerCase().indexOf(filter) !== -1)) {
                             result.push(r);
                         }
                     }
@@ -111,6 +111,18 @@ angular.module('niord.common')
                         return a.email.toLowerCase().localeCompare(b.email.toLowerCase());
                     })
                 }
+
+
+                /**
+                 * Compute the name of the recipient
+                 */
+                scope.getName = function (r) {
+                    // Contacts have r.name, users have r.firstName and r.lastName
+                    if (r.firstName || r.lastName) {
+                        return r.firstName + ' ' + r.lastName;
+                    }
+                    return r.name || '';
+                };
 
 
                 scope.filter = { selectedFilter: '', availableFilter: '' };

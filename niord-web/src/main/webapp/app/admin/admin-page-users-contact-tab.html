@@ -46,7 +46,7 @@
                     </tr>
                     <tr ng-repeat="contact in searchResult.data">
                         <td>{{contact.email}}</td>
-                        <td>{{contact.firstName}} {{contact.lastName}}</td>
+                        <td>{{contact.name}}</td>
                         <td>
                             <img ng-if="contact.language" ng-src="/img/flags/{{contact.language}}.png" height="14"/>
                         </td>
@@ -86,7 +86,7 @@
                     Contact details
                 </tab-heading>
                 <div class="row">
-                    <form name="contactForm" id="contactForm" class="col-md-5" role="form">
+                    <form name="contactForm" id="contactForm" class="col-md-5">
                         <fieldset ng-if="contact">
 
                             <div class="form-group">
@@ -102,13 +102,9 @@
                             <div class="form-group">
                                 <label class="control-label">Name</label>
                                 <div class="row">
-                                    <div class="col-sm-6">
-                                        <input class="form-control input-sm" placeholder="First name" type="text"
-                                               ng-model="contact.firstName">
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <input class="form-control input-sm" placeholder="Last name" type="text"
-                                               ng-model="contact.lastName">
+                                    <div class="col-sm-12">
+                                        <input class="form-control input-sm" placeholder="Name"
+                                               ng-model="contact.name">
                                     </div>
                                 </div>
                             </div>

@@ -98,8 +98,7 @@ public class ContactService extends BaseService {
         if (StringUtils.isNotBlank(params.getName())) {
             String nameMatch = "%" + params.getName().toLowerCase() + "%";
             Predicate namePredicate = cb.or(
-                    cb.like(contactRoot.get("firstName"), nameMatch),
-                    cb.like(contactRoot.get("lastName"), nameMatch),
+                    cb.like(contactRoot.get("name"), nameMatch),
                     cb.like(contactRoot.get("email"), nameMatch)
             );
             criteriaHelper.add(namePredicate);
@@ -182,8 +181,7 @@ public class ContactService extends BaseService {
         }
 
         original.setEmail(contact.getEmail());
-        original.setFirstName(contact.getFirstName());
-        original.setLastName(contact.getLastName());
+        original.setName(contact.getName());
         original.setLanguage(contact.getLanguage());
 
         return saveEntity(original);

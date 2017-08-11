@@ -153,7 +153,7 @@ public class ContactRestService {
         }
 
         return contactService.getAllContacts().stream()
-                .map(c -> encodeCVSLine(separator, c.getEmail(), c.getFirstName(), c.getLastName(), c.getLanguage()))
+                .map(c -> encodeCVSLine(separator, c.getEmail(), c.getName(), c.getLanguage()))
                 .collect(Collectors.joining(System.lineSeparator()));
     }
 

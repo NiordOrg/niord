@@ -12,7 +12,7 @@
                 </tr>
                 <tr ng-repeat="r in filteredData.selectedRecipients">
                     <td>{{r.email}}</td>
-                    <td>{{r.firstName + ' ' + r.lastName}}</td>
+                    <td>{{getName(r)}}</td>
                     <td nowrap>
                         <a href ng-click="removeRecipient(r)">
                             <i class="glyphicon glyphicon-trash"></i>
@@ -51,7 +51,7 @@
                 </tr>
                 <tr ng-repeat="r in filteredData.availableRecipients">
                     <td>{{r.email}}</td>
-                    <td>{{r.firstName + ' ' + r.lastName}}</td>
+                    <td>{{getName(r)}}</td>
                     <td nowrap>
                         <a href ng-click="addRecipient(r)">
                             <i class="glyphicon glyphicon-plus"></i>

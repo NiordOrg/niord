@@ -16,7 +16,6 @@
 
 package org.niord.core.user.vo;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.niord.core.mail.IMailable;
 import org.niord.model.IJsonSerializable;
 
@@ -28,17 +27,8 @@ public class ContactVo implements IJsonSerializable, IMailable {
 
     Integer id;
     String email;
-    String firstName;
-    String lastName;
+    String name;
     String language;
-
-
-    /** Not serialized to the font-end **/
-    @JsonIgnore
-    @Override
-    public String getName() {
-        return null;
-    }
 
 
     /*************************/
@@ -61,20 +51,13 @@ public class ContactVo implements IJsonSerializable, IMailable {
         this.email = email;
     }
 
-    public String getFirstName() {
-        return firstName;
+    @Override
+    public String getName() {
+        return name;
     }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getLanguage() {
