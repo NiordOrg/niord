@@ -50,7 +50,7 @@
 
 .admin-main {
     padding: 0 20px 20px 20px;
-    min-height: 460px;
+    min-height: 480px;
 }
 
 .admin-breadcrumbs .breadcrumb {
@@ -572,4 +572,12 @@ div.ace_scrollbar.ace_scrollbar-h {
     background-color: gray;
     padding: 5px;
     box-shadow: 2px 2px 4px rgba(50, 50, 50, 0.5);
+}
+
+/** Niord Integration **/
+
+.niord-integration-mappings {
+    font-size: 12px;
+    border: 1px solid lightgray;
+    padding: 5px
 }

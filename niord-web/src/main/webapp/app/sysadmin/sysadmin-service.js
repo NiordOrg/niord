@@ -617,5 +617,49 @@ angular.module('niord.admin')
             }
 
         };
+    }])
+
+
+    /**
+     * ********************************************************************************
+     * AdminNiordIntegrationService
+     * ********************************************************************************
+     * Interface for calling Niord integration related functions at the application server
+     */
+    .factory('AdminNiordIntegrationService', [ '$http', function($http) {
+        'use strict';
+
+        return {
+
+            /** Returns all integrations **/
+            getNiordIntegrations: function () {
+                return $http.get('/rest/niord-integrations/all');
+            },
+
+
+            /** Creates a new integration **/
+            createNiordIntegration: function(integration) {
+                return $http.post('/rest/niord-integrations/niord-integration/', integration);
+            },
+
+
+            /** Updates the given integration **/
+            updateNiordIntegration: function(integration) {
+                return $http.put('/rest/niord-integrations/niord-integration/' + integration.id, integration);
+            },
+
+
+            /** Deletes the given integration **/
+            deleteNiordIntegration: function(integration) {
+                return $http['delete']('/rest/niord-integrations/niord-integration/' + integration.id);
+            },
+
+
+            /** Executes the Niord integration **/
+            executeNiordIntegration: function (integration) {
+                return $http.put('/rest/niord-integrations/execute/' + integration.id);
+            }
+        };
     }]);
+
 

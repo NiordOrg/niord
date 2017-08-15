@@ -35,7 +35,10 @@
         <dt><a href ui-sref="sysadmin.mails">Mail Queue</a></dt>
         <dd>Search all pending and sent e-mails.</dd>
 
-        <dt ng-if="adminIntegrationPageEnabled"><a href ui-sref="sysadmin.integration">Integration</a></dt>
+        <dt><a href ui-sref="sysadmin.niord-integration">Niord Integration</a></dt>
+        <dd>Integration with other Niord servers.</dd>
+
+        <dt ng-if="adminIntegrationPageEnabled"><a href ui-sref="sysadmin.integration">Legacy Integration</a></dt>
         <dd ng-if="adminIntegrationPageEnabled">Handle integration with the legacy systems.</dd>
 
         <dt><a href ui-sref="sysadmin.settings">Settings</a></dt>

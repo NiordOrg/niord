@@ -1,0 +1,148 @@
+
+<admin-page admin-page-title="Niord Integration" parent-page="sysadmin" parent-page-title="Sysadmin">
+
+    <div ng-controller="NiordIntegrationAdminCtrl" ng-init="loadNiordIntegrations()">
+
+        <p>Add, modify and manage Niord integration points.</p>
+
+        <!-- Add/edit Niord integrations -->
+        <div ng-if="integration !== undefined" style="margin-top: 20px">
+            <form name="integrationForm" class="form-horizontal">
+
+                <div class="row">
+                    <div class="form-controls col-sm-12 col-md-10 col-lg-8">
+
+                        <div class="form-group">
+                            <label class="col-sm-4">ID</label>
+                            <div class="col-sm-8">
+                                {{integration.id}}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4">Active</label>
+                            <div class="col-sm-8">
+                                <input type="checkbox" ng-model="integration.active">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4">Assign new UIDs</label>
+                            <div class="col-sm-8">
+                                <input type="checkbox" ng-model="integration.assignNewUids">
+                                Assign new underlying UID to each imported message
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4">Create base data</label>
+                            <div class="col-sm-8">
+                                <input type="checkbox" ng-model="integration.createBaseData">
+                                Create missing base data such as areas, charts, etc.
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4">Niord URL</label>
+                            <div class="col-sm-8">
+                                <input ng-model="integration.url" class="form-control input-sm" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="col-sm-4">Message Series</label>
+                            <div class="col-sm-8">
+                                <table class="niord-integration-mappings table">
+                                    <tr>
+                                        <th>Source Message Series</th>
+                                        <th>Target Message Series</th>
+                                        <th>
+                                            &nbsp;<a href ng-click="addMessageSeriesMapping(integration)">Add</a>
+                                        </th>
+                                    </tr>
+                                    <tr ng-repeat="ms in integration.messageSeriesMappings">
+                                        <td>
+                                            <input ng-model="ms.sourceSeriesId" class="input-sm" style="font-size: 12px;">
+                                        </td>
+                                        <td>
+                                            <select class="form-control input-xm" style="font-size: 12px;"
+                                                    ng-required="true"
+                                                    ng-model="ms.targetSeriesId"
+                                                    ng-options="s.seriesId as s.seriesId for s in messageSeries">
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <a href ng-click="deleteMessageSeriesMapping(integration, ms)"><span class="glyphicon glyphicon-trash"></span></a>
+                                        </td>
+                                    </tr>
+                                </table>
+
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;" class="row">
+                    <div class="col-sm-offset-4 col-lg-offset-2">
+                        <button class="btn btn-default btn-sm" ng-click="loadNiordIntegrations()">
+                            Cancel
+                        </button>
+                        <button class="btn btn-primary btn-sm" ng-click="saveNiordIntegration(integration)"
+                                ng-disabled="integrationForm.$pristine || integrationForm.$invalid">
+                            <span class="glyphicon glyphicon-floppy-disk"></span>
+                            Save Niord Integration
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+
+        <!-- List integrations -->
+        <div ng-show="integration === undefined">
+            <div class="row">
+                <div class="col-xs-4 col-sm-6 col-md-8">
+                    <button class="btn btn-primary btn-sm" ng-click="addNiordIntegration()">
+                        <span class="glyphicon glyphicon-plus"></span> New Niord Integration
+                    </button>
+                </div>
+            </div>
+
+            <div class="row" style="padding-top: 20px;">
+                <div class="col-sm-12 col-lg-8">
+                    <table class='table table-condensed table-hover'>
+                        <tr>
+                            <th>Active</th>
+                            <th>URL</th>
+                            <th>Message Series</th>
+                            <th></th>
+                        </tr>
+                        <tr ng-repeat="integration in integrations">
+                            <td><input type="checkbox" ng-model="integration.active" disabled="disabled"></td>
+                            <td>{{integration.url}}</td>
+                            <td>
+                                <div ng-repeat="ms in integration.messageSeriesMappings">
+                                    {{ms.sourceSeriesId}} &rarr; {{ms.targetSeriesId}}
+                                </div>
+                            </td>
+                            <td nowrap align="right">
+                                <a href ng-click="editNiordIntegration(integration);"
+                                   title="Edit Niord Integration"><i class="glyphicon glyphicon-pencil"></i></a>
+                                &nbsp;
+                                <a href ng-click="deleteNiordIntegration(integration);"
+                                   title="Delete Niord Integration"><i class="glyphicon glyphicon-trash"></i></a>
+                                &nbsp;
+                                <a href ng-click="executeNiordIntegration(integration);"
+                                   title="Execute Niord Integration"><i class="glyphicon glyphicon-cog"></i></a>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</admin-page>
+
