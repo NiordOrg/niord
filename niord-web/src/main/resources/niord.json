@@ -54,7 +54,7 @@
   {
     "key"         : "editorFieldsBase",
     "description" : "The base set of editor fields to display in the message editor",
-    "value"       : { "type": true, "orig_info": false, "id": true, "title": true, "references": false, "publish_date": true,
+    "value"       : { "type": true, "orig_info": false, "id": true, "title": true, "references": true, "publish_date": true,
                       "areas": true, "categories": true, "positions": true, "charts": false, "event_dates": false, "subject": true,
                       "description": true, "attachments": false, "publication": true, "source": false,
                       "part_types": false, "prohibition": false, "signals": false, "layout" : false },
