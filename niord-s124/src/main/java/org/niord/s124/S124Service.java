@@ -92,7 +92,7 @@ public class S124Service {
             data.put("bbox", bbox);
         }
 
-        data.put("references", referencedMessagess(msg, language));
+        data.put("references", referencedMessages(msg, language));
 
         Configuration cfg = new Configuration(Configuration.getVersion());
         cfg.setTemplateLoader(new ClassTemplateLoader(getClass(), "/templates/gml"));
@@ -111,7 +111,7 @@ public class S124Service {
      * @param message the message to return resolved message references for
      * @return the resolved message references
      */
-    private List<MessageReferenceVo> referencedMessagess(SystemMessageVo message, String language) {
+    private List<MessageReferenceVo> referencedMessages(SystemMessageVo message, String language) {
         List<MessageReferenceVo> result = new ArrayList<>();
         if (message.getReferences() != null) {
             for (ReferenceVo ref : message.getReferences()) {

@@ -102,7 +102,7 @@ public class S124RestService {
                     .entity("No message found with ID: " + messageId)
                     .build();
         } catch (Exception e) {
-            log.error("Error generating S-124 GML for message " + messageId, e);
+            log.error("Error generating S-124 GML for message " + messageId + ": " + e);
             return Response.status(Response.Status.BAD_REQUEST)
                     .type(MediaType.TEXT_HTML_TYPE)
                     .entity("Error generating GML: " + e.getMessage())
