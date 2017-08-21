@@ -1502,6 +1502,14 @@ angular.module('niord.editor')
                 if (!descFieldDefined('title')) {
                     error += '<li>Title</li>';
                 }
+                if (msg.promulgations) {
+                    for (var x = 0; x < msg.promulgations.length; x++) {
+                        var p = msg.promulgations[x];
+                        if (p.type.requirement === 'MANDATORY' && !p.promulgate) {
+                            error += '<li>' + p.type.name + ' promulgation</li>';
+                        }
+                    }
+                }
                 if (error.length > 0) {
                     growl.error("Missing fields:\n<ul>" + error + "</ul>", {ttl: 5000});
                     return false;

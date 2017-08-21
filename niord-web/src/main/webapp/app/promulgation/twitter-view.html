@@ -1,4 +1,6 @@
 
+<div ng-if="!promulgation.promulgate" translate>promulgation.undefined</div>
+
 <div class="promulgation-text"
-     ng-if="promulgation.tweet"
+     ng-if="promulgation.promulgate && promulgation.tweet"
      ng-bind-html="promulgation.tweet | plain2html | toTrusted"></div>

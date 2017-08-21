@@ -753,7 +753,9 @@
                                                ng-click="promulgationSelection(promulgation, $event)"
                                                ng-disabled="promulgation.type.requirement == 'MANDATORY' && promulgation.promulgate"
                                                tabindex="1601">
-                                        {{promulgation.type.name}}
+                                        <span ng-class="{ 'editor-field-invalid' : promulgation.type.requirement == 'MANDATORY' && !promulgation.promulgate }">
+                                            {{promulgation.type.name}}
+                                        </span>
                                     </uib-tab-heading>
                                     <div class="promulgation" ng-class="{ 'disabled-promulgation' : !promulgation.promulgate }">
                                         <ng-include src="'/app/promulgation/' + promulgation.type.serviceId + '-edit.html'"></ng-include>

@@ -2,7 +2,8 @@
 <div class="row">
     <div class="{{promulgationClass}}"
          ng-repeat="promulgation in msg.promulgations" ng-if="promulgation.promulgate || allPromulgations">
-        <div class="promulgation-view-header">
+        <div class="promulgation-view-header"
+             ng-class="{ 'editor-field-invalid' : allPromulgations && promulgation.type.requirement == 'MANDATORY' && !promulgation.promulgate }">
             <span ng-if="allPromulgations" class="glyphicon {{ 'glyphicon-' + (promulgation.promulgate ? 'check' : 'unchecked')}}"></span>
             {{promulgation.type.name}}
         </div>

@@ -1,15 +1,19 @@
 
-<div style="font-size: 80%; margin: 5px 0">
-    <span translate>term.priority</span> : {{promulgation.priority}},&nbsp;
-    Transmitters:
-    <span ng-repeat="(name, val) in promulgation.transmitters"
-          ng-if="val">
+<div ng-if="!promulgation.promulgate" translate>promulgation.undefined</div>
+
+<div ng-if="promulgation.promulgate">
+    <div style="font-size: 80%; margin: 5px 0">
+        <span translate>term.priority</span> : {{promulgation.priority}},&nbsp;
+        Transmitters:
+        <span ng-repeat="(name, val) in promulgation.transmitters"
+              ng-if="val">
         {{name}}
     </span>
-</div>
+    </div>
 
-<div class="promulgation-text" ng-if="promulgation.preamble || promulgation.text"
-     style="font-family: 'Courier New', serif">
-    <div ng-bind-html="promulgation.preamble | plain2html | toTrusted"></div>
-    <div ng-bind-html="promulgation.text | plain2html | toTrusted"></div>
+    <div class="promulgation-text" ng-if="promulgation.preamble || promulgation.text"
+         style="font-family: 'Courier New', serif">
+        <div ng-bind-html="promulgation.preamble | plain2html | toTrusted"></div>
+        <div ng-bind-html="promulgation.text | plain2html | toTrusted"></div>
+    </div>
 </div>
