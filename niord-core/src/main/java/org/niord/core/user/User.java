@@ -86,7 +86,7 @@ public class User extends VersionedEntity<Integer> implements IMailable {
         setFirstName(token.getGivenName());
         setLastName(token.getFamilyName());
         setEmail(token.getEmail());
-        setLanguage(token.getLocale()); // TODO: Restrict
+        //setLanguage(token.getLocale()); // NB: Keycloak locale not currently used
     }
 
 
@@ -95,8 +95,8 @@ public class User extends VersionedEntity<Integer> implements IMailable {
         return !StringUtils.equals(username, token.getPreferredUsername()) ||
                 !StringUtils.equals(firstName, token.getGivenName()) ||
                 !StringUtils.equals(lastName, token.getFamilyName()) ||
-                !StringUtils.equals(email, token.getEmail()) ||
-                !StringUtils.equals(language, token.getLocale());
+                !StringUtils.equals(email, token.getEmail());
+                //!StringUtils.equals(language, token.getLocale()); // NB: Keycloak locale not currently used
     }
 
 
