@@ -123,7 +123,7 @@ public class FiringExerciseService extends BaseService {
                 .filter(FiringSchedule::isActive)
                 .collect(Collectors.toList());
 
-        log.info("Processing " + activeSchedules.size() + " active firing schedules");
+        log.debug("Processing " + activeSchedules.size() + " active firing schedules");
 
         for (FiringSchedule schedule : activeSchedules) {
 
