@@ -33,6 +33,7 @@ angular.module('niord.editor')
             $scope.initId = $stateParams.id || '';
             $scope.referenceType = $stateParams.referenceType || '';
             $scope.isEditor = $rootScope.hasRole('editor');
+            $scope.showWmsLayer = true;
 
             // Records if a field is expanded or collapsed.
             // Flags packaged in arrays in order to handle message part fields

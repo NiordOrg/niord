@@ -270,6 +270,7 @@ angular.module('niord.template')
 
             $scope.previewLang          = LangService.language();
             $scope.templateData         = [];
+            $scope.showWmsLayer         = true;
 
             $scope.validTypes = {
                 NW: { LOCAL_WARNING: false, COASTAL_WARNING: false, SUBAREA_WARNING: false, NAVAREA_WARNING: false },
