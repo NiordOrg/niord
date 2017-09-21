@@ -36,7 +36,9 @@
         <#list msg.parts as part>
             <#assign partDesc=descForLang(part, lang)!>
             <#if partDesc?? && partDesc.details?has_content>
-                <div class="message-details">${partDesc.details}</div>
+                <div class="message-details">
+                    <@line>${partDesc.details}</@line>
+                </div>
             </#if>
         </#list>
     </#if>

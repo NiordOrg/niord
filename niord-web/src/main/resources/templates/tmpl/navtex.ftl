@@ -3,17 +3,17 @@
 <#assign areaLineage = 'org.niord.core.script.directive.AreaLineageDirective'?new()>
 
 
-<!-- ***************************************  -->
-<!-- Generates the NAVTEX header line         -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Generates the NAVTEX header line         -->
+<#-- ***************************************  -->
 <#macro navtexHeader lang="en">
     <@areaLineage message=message lang=lang format="navtex"/>
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Generates the NAVTEX footer lines        -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Generates the NAVTEX footer lines        -->
+<#-- ***************************************  -->
 <#macro navtexFooter>
     <#if message.references?has_content>
         <#list message.references as ref>

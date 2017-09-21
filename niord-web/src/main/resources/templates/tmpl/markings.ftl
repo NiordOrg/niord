@@ -1,7 +1,7 @@
 
-<!-- ***************************************  -->
-<!-- Renders the list of markings             -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders the list of markings             -->
+<#-- ***************************************  -->
 
 <#macro renderMarkingType marking format='long' lang='en'>
     <#assign markingType=(marking.type??)?then(getListValue(marking.type, '', format, lang), '')/>

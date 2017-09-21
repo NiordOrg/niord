@@ -1,7 +1,7 @@
 
-<!-- ***************************************  -->
-<!-- Renders information about a work vessel  -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders information about a work vessel  -->
+<#-- ***************************************  -->
 
 <#macro renderWorkVessel vessel lang="en" format="details">
     <#setting locale=lang>

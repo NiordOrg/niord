@@ -50,7 +50,7 @@
                 <#list msg.parts as part>
                     <#assign partDesc=descForLang(part, language)!>
                     <#if partDesc?? && partDesc.details?has_content>
-                        ${partDesc.details}<br>
+                        <@line>${partDesc.details}</@line><br>
                     </#if>
                 </#list>
             </#if>

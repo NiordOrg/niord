@@ -16,7 +16,7 @@
 
 <#assign msg=messages[0] />
 
-<!-- Construct the title -->
+<#-- Construct the title -->
 <#assign title="" />
 <#if msg.descs?has_content && msg.descs[0].title?has_content>
     <#assign title=msg.descs[0].title />

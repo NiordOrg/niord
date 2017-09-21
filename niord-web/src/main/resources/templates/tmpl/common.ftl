@@ -1,7 +1,7 @@
 
-<!-- ***************************************  -->
-<!-- Global directives                        -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Global directives                        -->
+<#-- ***************************************  -->
 <#assign formatPos = "org.niord.core.script.directive.LatLonDirective"?new()>
 <#assign line = 'org.niord.core.script.directive.LineDirective'?new()>
 <#assign quote = 'org.niord.core.script.directive.QuoteDirective'?new()>
@@ -13,9 +13,9 @@
 <#assign callSignFormat = 'org.niord.core.script.directive.CallSignDirective'?new()>
 <#assign posDecimals = (params.posDecimals!'1')?number> <#-- 1 decimals in position formatting -->
 
-<!-- ***************************************  -->
-<!-- Returns the desc for the given language  -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Returns the desc for the given language  -->
+<#-- ***************************************  -->
 <#function descForLang entity lang >
     <#if entity.descs?has_content>
         <#list entity.descs as desc>
@@ -30,9 +30,9 @@
 </#function>
 
 
-<!-- ***************************************  -->
-<!-- Renders the parent-first area lineage    -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders the parent-first area lineage    -->
+<#-- ***************************************  -->
 <#macro renderAreaLineage area lang="en">
     <#if area??>
         <#if area.parent??>
@@ -46,9 +46,9 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Renders the message title line           -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders the message title line           -->
+<#-- ***************************************  -->
 <#macro renderTitleLine message lang="en">
     <#if message??>
         <#if message.areas?has_content>
@@ -70,9 +70,9 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Returns the two root-most area headings  -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Returns the two root-most area headings  -->
+<#-- ***************************************  -->
 <#function areaHeading area="area" >
     <#if area?? && (!area.parent?? || (area.parent?? && !area.parent.parent??))>
         <#return area/>
@@ -84,11 +84,11 @@
 </#function>
 
 
-<!-- ***************************************  -->
-<!-- Renders default suject fields of the     -->
-<!-- first details message part as the name   -->
-<!-- of the current template                  -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders default suject fields of the     -->
+<#-- first details message part as the name   -->
+<#-- of the current template                  -->
+<#-- ***************************************  -->
 <#macro defaultMessageSubjectFieldTemplates>
     <#list languages as lang>
         <#assign desc=descForLang(template, lang)!>
@@ -101,11 +101,11 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Renders default suject fields of the     -->
-<!-- current message part as the name of the  -->
-<!-- current template                         -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders default suject fields of the     -->
+<#-- current message part as the name of the  -->
+<#-- current template                         -->
+<#-- ***************************************  -->
 <#macro defaultSubjectFieldTemplates>
     <#list languages as lang>
         <#assign desc=descForLang(template, lang)!>
@@ -118,10 +118,10 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Serializes the message geometry param    -->
-<!-- into a list of positions                 -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Serializes the message geometry param    -->
+<#-- into a list of positions                 -->
+<#-- ***************************************  -->
 <#function toPositions geomParam >
     <#assign positions = []/>
     <#if geomParam?? && geomParam.geometry?has_content>
@@ -137,20 +137,20 @@
 </#function>
 
 
-<!-- ***************************************  -->
-<!-- Returns if the geometry param defines    -->
-<!-- multiple positions                       -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Returns if the geometry param defines    -->
+<#-- multiple positions                       -->
+<#-- ***************************************  -->
 <#function multiplePositions geomParam >
     <#assign positions = toPositions(geomParam) />
     <#return positions?size gt 1/>
 </#function>
 
 
-<!-- ***************************************  -->
-<!-- Returns if the geometry represents       -->
-<!-- an area, i.e. defined by a polygon       -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Returns if the geometry represents       -->
+<#-- an area, i.e. defined by a polygon       -->
+<#-- ***************************************  -->
 <#function isArea geomParam >
     <#if geomParam?? && geomParam.geometry?has_content>
         <#list geomParam.geometry as feature>
@@ -163,10 +163,10 @@
 </#function>
 
 
-<!-- ***************************************  -->
-<!-- Renders the geometry parameter           -->
-<!-- as a list of positions                   -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders the geometry parameter           -->
+<#-- as a list of positions                   -->
+<#-- ***************************************  -->
 <#macro renderPositionList geomParam format="dec" plural=false lang='en'>
     <#setting locale=lang>
     <#assign positions=toPositions(geomParam)/>
@@ -202,27 +202,27 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Renders the date                         -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders the date                         -->
+<#-- ***************************************  -->
 <#macro renderDate date format="html" lang="en" tz="">
     <#setting locale=lang>
     <@dateIntervalFormat date=date format=format tz=tz/>
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Renders the date interval                -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders the date interval                -->
+<#-- ***************************************  -->
 <#macro renderDateInterval dateInterval format="html" lang="en" tz="">
     <#setting locale=lang>
     <@dateIntervalFormat dateInterval=dateInterval format=format tz=tz/>
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Renders the date intervals                -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders the date intervals                -->
+<#-- ***************************************  -->
 <#macro renderDateIntervals dateIntervals format="html" lang="en" tz="" capFirst=false>
     <#setting locale=lang>
     <#if dateIntervals?has_content>
@@ -231,9 +231,9 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Returns the given list value             -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Returns the given list value             -->
+<#-- ***************************************  -->
 <#function getListValue value defaultValue format='long' lang='en'>
     <#if value?has_content>
         <#assign desc=descForLang(value, lang)!>
@@ -249,18 +249,18 @@
 </#function>
 
 
-<!-- ***************************************  -->
-<!-- Renders the given list value             -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders the given list value             -->
+<#-- ***************************************  -->
 <#macro renderListValue value defaultValue format='long' lang='en'>
     ${getListValue(value, defaultValue, format, lang)}
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Renders the AtoN given by the aton_type  -->
-<!-- parameter                                -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders the AtoN given by the aton_type  -->
+<#-- parameter                                -->
+<#-- ***************************************  -->
 <#macro renderAtonType atonParams defaultName format='long' lang='en'>
     <#if atonParams?has_content && atonParams.aton_type?has_content>
         <#assign desc=descForLang(atonParams.aton_type, lang)!>
@@ -280,10 +280,10 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Returns whether to promulgate the given  -->
-<!-- promulgation type or not                 -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Returns whether to promulgate the given  -->
+<#-- promulgation type or not                 -->
+<#-- ***************************************  -->
 <#function promulgate type="" >
     <#if message.promulgations?has_content>
         <#list message.promulgations as p>

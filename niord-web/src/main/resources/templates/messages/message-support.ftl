@@ -1,12 +1,13 @@
 
+<#assign line = 'org.niord.core.script.directive.LineDirective'?new()>
 <#assign formatPos = "org.niord.core.script.directive.LatLonDirective"?new()>
 <#assign formatDateInterval = "org.niord.core.script.directive.DateIntervalDirective"?new()>
 <#assign txtToHtml = "org.niord.core.script.directive.TextToHtmlDirective"?new()>
 <#assign trailingDot = "org.niord.core.script.directive.TrailingDotDirective"?new()>
 
-<!-- ***************************************  -->
-<!-- Parametrized message styles             -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Parametrized message styles             -->
+<#-- ***************************************  -->
 <#macro pageSizeStyle frontPage=true>
     <style type="text/css" media="all">
 
@@ -31,9 +32,9 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Renders the default headers and footers  -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders the default headers and footers  -->
+<#-- ***************************************  -->
 <#macro renderDefaultHeaderAndFooter headerText frontPage=true>
     <#if frontPage>
         <div class="first-page-header">
@@ -49,9 +50,9 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Renders the parent-first area lineage    -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders the parent-first area lineage    -->
+<#-- ***************************************  -->
 <#macro areaLineage area>
     <#if area??>
         <#if area.parent??>
@@ -62,9 +63,9 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Returns the two root-most area headings  -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Returns the two root-most area headings  -->
+<#-- ***************************************  -->
 <#function areaHeading area="area" >
     <#if area?? && (!area.parent?? || (area.parent?? && !area.parent.parent??))>
         <#return area/>
@@ -76,17 +77,17 @@
 </#function>
 
 
-<!-- ***************************************  -->
-<!-- Returns if the attachment has the given type  -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Returns if the attachment has the given type  -->
+<#-- ***************************************  -->
 <#function includeAttachment att type >
     <#return att.display?has_content && att.display == type && att.type?has_content && att.type?starts_with('image')/>
 </#function>
 
 
-<!-- ***************************************  -->
-<!-- Renders an attachment  -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders an attachment  -->
+<#-- ***************************************  -->
 <#macro renderAttachment att >
     <#assign imageStyle='max-width: 100%;' />
     <#if att.width?has_content && att.height?has_content>
@@ -108,9 +109,9 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Renders all nessage attachments of the given type    -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders all nessage attachments of the given type    -->
+<#-- ***************************************  -->
 <#macro renderMessageAttachments msg type>
     <#if msg.attachments?has_content>
         <#list msg.attachments as att>
@@ -122,9 +123,9 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Renders all separate-page attachments    -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders all separate-page attachments    -->
+<#-- ***************************************  -->
 <#macro renderSeparatePageAttachments msg>
     <#if msg.attachments?has_content>
         <#list msg.attachments as att>
@@ -145,9 +146,9 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Renders the TOC for area-headings        -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders the TOC for area-headings        -->
+<#-- ***************************************  -->
 <#macro renderTOC messages areaHeadings prefix="">
     <#if areaHeadings>
         <div>
@@ -177,9 +178,9 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Returns the desc for the given language  -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Returns the desc for the given language  -->
+<#-- ***************************************  -->
 <#function descForLang entity lang=language >
     <#if entity.descs?has_content>
         <#list entity.descs as desc>
@@ -194,9 +195,9 @@
 </#function>
 
 
-<!-- ***************************************  -->
-<!-- Returns the given promulgation           -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Returns the given promulgation           -->
+<#-- ***************************************  -->
 <#function promulgation msg type >
     <#if msg.promulgations?has_content>
         <#list msg.promulgations as p>
@@ -208,9 +209,9 @@
 </#function>
 
 
-<!-- ***************************************  -->
-<!-- Renders a language flag if wrong lang    -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders a language flag if wrong lang    -->
+<#-- ***************************************  -->
 <#macro renderLangFlag desc lang=language  draft=draft!false >
     <#if draft == true && desc?? && desc.lang != lang>
         <img src="/img/flags/${desc.lang}.png" class="lang-flag"/>
@@ -218,10 +219,10 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Renders the number and year of a         -->
-<!-- as "number-3-digits/year-2-digits"       -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders the number and year of a         -->
+<#-- as "number-3-digits/year-2-digits"       -->
+<#-- ***************************************  -->
 <#macro renderNumberYearId message defaultValue="" >
     <#if message?? && message.year?? && message.number??>
         ${message.number?string['000']}/${(message.year % 100)?string['00']}
@@ -231,9 +232,9 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Renders the message source + publ. date  -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders the message source + publ. date  -->
+<#-- ***************************************  -->
 <#function renderSource desc msg >
     <#assign source=""/>
     <#if desc?? && desc.source?has_content>
@@ -249,9 +250,9 @@
 </#function>
 
 
-<!-- ***************************************  -->
-<!-- Renders a message part                   -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders a message part                   -->
+<#-- ***************************************  -->
 <#macro renderMessagePart part lang=language draft=draft!false >
     <#assign partDesc=descForLang(part, lang)!>
     <#if !(part.hideSubject!false) && partDesc?? && partDesc.subject??>
@@ -261,25 +262,27 @@
         </p>
     </#if>
     <#if partDesc?? && partDesc.details??>
-        <div>${partDesc.details}</div>
+        <div>
+            <@line>${partDesc.details}</@line>
+        </div>
     </#if>
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Renders a message                        -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders a message                        -->
+<#-- ***************************************  -->
 <#macro renderMessage msg lang=language draft=draft!false link=link!false >
 
     <#assign msgDesc=descForLang(msg, lang)!>
 
     <div style="width: 100%;">
 
-    <!-- Attachments to display above message -->
+    <#-- Attachments to display above message -->
     <@renderMessageAttachments msg=msg type="ABOVE" />
 
 
-    <!-- Title line -->
+    <#-- Title line -->
     <#if msg.originalInformation?has_content && msg.originalInformation>
         <div class="avoid-break-after original-information">*</div>
     </#if>
@@ -317,7 +320,7 @@
 
     <table class="field-table">
 
-        <!-- Type line (drafts only) -->
+        <#-- Type line (drafts only) -->
         <#if draft == true>
             <tr>
                 <td class="field-name">${text("msg.field.type")}</td>
@@ -327,7 +330,7 @@
             </tr>
         </#if>
 
-        <!-- Status (drafts only) -->
+        <#-- Status (drafts only) -->
         <#if draft == true>
             <tr>
                 <td class="field-name">${text("msg.field.status")}</td>
@@ -337,7 +340,7 @@
             </tr>
         </#if>
 
-        <!-- Reference lines -->
+        <#-- Reference lines -->
         <#if msg.references?has_content>
             <tr>
                 <td class="field-name">
@@ -377,7 +380,7 @@
         </#if>
 
 
-        <!-- Details line -->
+        <#-- Details line -->
         <#if msg.parts?has_content>
             <#list msg.parts as part>
                 <tr style="page-break-inside: auto;">
@@ -394,7 +397,7 @@
         </#if>
 
 
-        <!-- Charts line -->
+        <#-- Charts line -->
         <#if msg.charts?has_content>
             <tr>
                 <td class="field-name">${text("msg.field.charts")}</td>
@@ -408,7 +411,7 @@
             </tr>
         </#if>
 
-        <!-- Publication line -->
+        <#-- Publication line -->
         <#if msgDesc?has_content && msgDesc.publication?has_content>
             <tr>
                 <td class="field-name">${text("msg.field.publication")}</td>
@@ -418,7 +421,7 @@
             </tr>
         </#if>
 
-        <!-- Source line -->
+        <#-- Source line -->
         <#assign source=renderSource(msgDesc, msg)/>
         <#if source?has_content>
             <tr>
@@ -430,7 +433,7 @@
 
     </table>
 
-    <!-- Attachments to display below message -->
+    <#-- Attachments to display below message -->
     <@renderMessageAttachments msg=msg type="BELOW" />
 
     </div>
@@ -438,15 +441,15 @@
 </#macro>
 
 
-<!-- ***************************************  -->
-<!-- Renders a list of messages               -->
-<!-- ***************************************  -->
+<#-- ***************************************  -->
+<#-- Renders a list of messages               -->
+<#-- ***************************************  -->
 <#macro renderMessageList messages areaHeadings=true prefix="" draft=draft!false link=link!false>
 
     <#assign areaHeadingId=-9999999 />
 
     <table class="message-table">
-        <!-- Layout row for fixed-layout table -->
+        <#-- Layout row for fixed-layout table -->
         <tr>
             <#if mapThumbnails!true>
                 <#assign colspan=2 />

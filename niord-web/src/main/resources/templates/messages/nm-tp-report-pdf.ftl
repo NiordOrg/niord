@@ -37,7 +37,7 @@
 
 <@renderDefaultHeaderAndFooter headerText="${text('pdf.nm_tp')} - ${text('pdf.week')} ${week!''}, ${year!''}"/>
 
-<!-- First page -->
+<#-- First page -->
 <h1>${text("pdf.nm_tp")}</h1>
 
 <div class="week-year-header">
@@ -54,14 +54,14 @@
 </table>
 
 
-<!-- T&P messages -->
+<#-- T&P messages -->
 <#if tpMessages?has_content>
 
     <#assign areaHeadingId=-9999999 />
 
      <table class="message-table">
 
-         <!-- Define column widths (fixed table layout) -->
+         <#-- Define column widths (fixed table layout) -->
          <tr>
              <td style="width: 2.5cm"></td>
              <td style="width: 0.5cm"></td>

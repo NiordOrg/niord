@@ -62,11 +62,11 @@
 </head>
 <body>
 
-<!-- Headers and footers -->
+<#-- Headers and footers -->
 <@renderDefaultHeaderAndFooter headerText="${text('pdf.nm')} - ${text('pdf.week')} ${week!''}, ${year!''}"/>
 
 
-<!-- First page -->
+<#-- First page -->
 <h1>${text("pdf.nm")}</h1>
 
 <div class="week-year-header">
@@ -117,17 +117,17 @@
 </div>
 
 
-<!-- Permanent and T&P messages -->
+<#-- Permanent and T&P messages -->
 <#if nmMessages?has_content>
     <@renderMessageList messages=nmMessages areaHeadings=areaHeadings prefix="nm"/>
 </#if>
 
-<!-- Add page break -->
+<#-- Add page break -->
 <#if nmMessages?has_content && miscMessages?has_content>
     <div class="page-break"></div>
 </#if>
 
-<!-- Misc messages -->
+<#-- Misc messages -->
 <#if miscMessages?has_content>
     <table width="100%">
         <tr>
