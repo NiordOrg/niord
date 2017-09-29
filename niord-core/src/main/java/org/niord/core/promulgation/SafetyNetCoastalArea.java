@@ -70,7 +70,7 @@ public class SafetyNetCoastalArea extends SafetyNetNavareaArea {
     /** {@inheritDoc} */
     @Override
     public boolean supportsMessageType(Type messageType) {
-        // Default is to support all NW types
+        // Only use for coastal warnings
         return messageType == Type.COASTAL_WARNING;
     }
 
