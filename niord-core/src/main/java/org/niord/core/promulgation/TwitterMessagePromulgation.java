@@ -51,6 +51,7 @@ public class TwitterMessagePromulgation extends BaseMessagePromulgation<TwitterM
 
 
     /** Returns a value object for this entity */
+    @Override
     public TwitterMessagePromulgationVo toVo() {
         TwitterMessagePromulgationVo data = toVo(new TwitterMessagePromulgationVo());
         data.setTweet(tweet);

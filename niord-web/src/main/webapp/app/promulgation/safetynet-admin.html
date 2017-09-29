@@ -1,0 +1,276 @@
+
+<div class="form-group">
+    <label class="col-sm-4">Areas</label>
+    <div class="col-sm-8">
+
+        <button id="areas" class="btn btn-default btn-sm"
+                onclick="editAreas()">Manage...</button>
+
+        <script type="application/javascript">
+            function editAreas() {
+                var scope = angular.element($("#areas")).scope();
+                scope.openDialog({
+                    templateUrl: 'areas.html',
+                    controller: function ($scope, $rootScope, $uibModalInstance, $http, typeId) {
+                        var restUrl = '/rest/promulgation/safetynet/areas/' + encodeURIComponent(typeId);
+                        $scope.editMode = 'edit';
+                        $scope.typeId = typeId;
+                        $scope.area = undefined;
+                        $scope.areas = [];
+                        $scope.coastalAreas = [ 'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O',
+                                                'P','Q','R','S','T','U','V','W','X','Y','Z'];
+                        $scope.loadAreas =  function () {
+                            $scope.area = undefined;
+                            $http.get(restUrl + '/all?lang=' + $rootScope.language)
+                                .success(function (areas) {
+                                    $scope.areas = areas;
+                                })
+                        };
+                        $scope.editArea = function (area) {
+                            $scope.area = angular.copy(area);
+                            $scope.editMode = 'edit';
+                        };
+                        $scope.addArea = function (type) {
+                            $scope.area = {
+                                promulgationType: { typeId: typeId },
+                                type: type,
+                                name: '',
+                                active: true };
+                            if (type === 'CIRCULAR') {
+                                $scope.area.center = '';
+                                $scope.area.radius = '';
+                            } else if (type === 'RECTANGULAR') {
+                                $scope.area.swCorner = '';
+                                $scope.area.northings = '';
+                                $scope.area.eastings = '';
+                            } else if (type === 'COASTAL') {
+                                $scope.area.coastalArea = '';
+                            } else if (type === 'NAVAREA') {
+                                $scope.area.navarea = '';
+                            }
+                            $scope.editMode = 'add';
+                        };
+                        $scope.saveArea = function (area) {
+                            if ($scope.editMode === 'add') {
+                                $http.post(restUrl + '/area/', area)
+                                    .success($scope.loadAreas);
+                            } else {
+                                $http.put(restUrl + '/area/' + encodeURIComponent(area.name), area)
+                                    .success($scope.loadAreas);
+                            }
+                        };
+                        $scope.deleteArea = function (area) {
+                            $http.delete(restUrl + '/area/' + encodeURIComponent(area.name))
+                                .success($scope.loadAreas);
+                        };
+                        $scope.loadAreas();
+                    },
+                    size: 'md',
+                    resolve: {
+                        typeId: function () { return scope.promulgationType.typeId; }
+                    }
+                });
+            }
+        </script>
+
+    </div>
+</div>
+
+<script type="text/ng-template" id="areas.html">
+    <div class="modal-header">
+        <h4 class="modal-title">Areas</h4>
+    </div>
+    <div class="modal-body">
+
+        <div class="container-fluid">
+
+            <form class="form-horizontal">
+
+                <!-- Edit area -->
+                <div ng-if="area !== undefined" style="margin-top: 20px">
+
+                    <div class="row">
+                        <div class="form-controls col-sm-12">
+
+                            <div class="form-group">
+                                <label class="col-sm-4">Type</label>
+                                <div class="col-sm-8">
+                                   {{area.type | capitalize}}
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-4">Active</label>
+                                <div class="col-sm-8">
+                                    <input type="checkbox" ng-model="area.active" />
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-4">Name</label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control input-sm" required
+                                           placeholder="Name"
+                                           ng-model="area.name"
+                                           ng-disabled="editMode == 'edit'"/>
+                                </div>
+                            </div>
+
+                            <div class="form-group" ng-if="area.type === 'CIRCULAR'">
+                                <label class="col-sm-4">Center</label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control input-sm" required
+                                           ng-model="area.center"
+                                           placeholder="Lat Lon"
+                                           uib-tooltip="Specify center latitude and longitude. Positive for N and W, negative for S and W"
+                                           pattern="-?\d+\s+-?\d+"/>
+                                </div>
+                            </div>
+
+                            <div class="form-group" ng-if="area.type === 'CIRCULAR'">
+                                <label class="col-sm-4">Radius (NM)</label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control input-sm" required
+                                           ng-model="area.radius"
+                                           placeholder="Radius in nautical miles"
+                                           pattern="\d+"/>
+                                </div>
+                            </div>
+
+                            <div class="form-group" ng-if="area.type === 'RECTANGULAR'">
+                                <label class="col-sm-4">SW Corner</label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control input-sm" required
+                                           ng-model="area.swCorner" placeholder="Lat Lon"
+                                           uib-tooltip="Specify South-West latitude and longitude. Positive for N and W, negative for S and W"
+                                           pattern="-?\d+\s+-?\d+"/>
+                                </div>
+                            </div>
+
+                            <div class="form-group" ng-if="area.type === 'RECTANGULAR'">
+                                <label class="col-sm-4">Northings</label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control input-sm" required
+                                           ng-model="area.northings"
+                                           placeholder="Extension North in degrees"
+                                           pattern="\d+"/>
+                                </div>
+                            </div>
+
+                            <div class="form-group" ng-if="area.type === 'RECTANGULAR'">
+                                <label class="col-sm-4">Eastings</label>
+                                <div class="col-sm-8">
+                                    <input type="text" class="form-control input-sm" required
+                                           ng-model="area.eastings"
+                                           placeholder="Extension East in degrees"
+                                           pattern="\d+"/>
+                                </div>
+                            </div>
+
+                            <div class="form-group" ng-if="area.type === 'COASTAL' || area.type === 'NAVAREA'">
+                                <label class="col-sm-4">NAVAREA</label>
+                                <div class="col-sm-8">
+                                    <select class="form-control input-sm"
+                                            ng-model="area.navarea">
+                                        <option style="display:none" value=""></option>
+                                        <option value="I">I - UK</option>
+                                        <option value="II">II - France</option>
+                                        <option value="III">III - Spain</option>
+                                        <option value="IV">IV - United States</option>
+                                        <option value="V">V - Brazil</option>
+                                        <option value="VI">VI - Argentina</option>
+                                        <option value="VII">VII - South Africa</option>
+                                        <option value="VIII">VIII - India</option>
+                                        <option value="IX">IX - Pakistan</option>
+                                        <option value="X">X - Australia</option>
+                                        <option value="XI">XI - Japan</option>
+                                        <option value="XII">XII - United States</option>
+                                        <option value="XIII">XIII - Russian Federation</option>
+                                        <option value="XIV">XIV - New Zealand</option>
+                                        <option value="XV">XV - Chile</option>
+                                        <option value="XVI">XVI - Peru</option>
+                                        <option value="XVII">XVII - Canada</option>
+                                        <option value="XVIII">XVIII - Canada</option>
+                                        <option value="XIX">XIX - Norway</option>
+                                        <option value="XX">XX - Russian Federation</option>
+                                        <option value="XXI">XXI - Russian Federation</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group" ng-if="area.type === 'COASTAL'">
+                                <label class="col-sm-4">Area</label>
+                                <div class="col-sm-8">
+                                    <select class="form-control input-sm"
+                                            ng-model="area.coastalArea" ng-options="ca for ca in coastalAreas">
+                                        <option style="display:none" value=""></option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px;" class="row">
+                        <div class="col-sm-offset-4">
+                            <button type="submit" class="btn btn-default btn-sm" ng-click="loadAreas()">
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary btn-sm" ng-click="saveArea(area)">
+                                <span class="glyphicon glyphicon-floppy-disk"></span>
+                                Save
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- List areas -->
+                <div ng-if="area === undefined">
+
+                    <div class="row" style="padding-top: 20px;">
+                        <div class="col-sm-12">
+                            <table class='table table-condensed table-hover'>
+                                <tr>
+                                    <th>Active</th>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th></th>
+                                </tr>
+                                <tr ng-repeat="area in areas">
+                                    <td><input type="checkbox" ng-model="area.active" disabled="disabled"></td>
+                                    <td>{{area.name}}</td>
+                                    <td>{{area.type | capitalize}}</td>
+                                    <td nowrap align="right">
+                                        <a href ng-click="editArea(area)" title="Edit Area"><i class="glyphicon glyphicon-pencil"></i></a>
+                                        &nbsp;
+                                        <a href ng-click="deleteArea(area)" title="Delete Area"><i class="glyphicon glyphicon-trash"></i></a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+    <div class="modal-footer">
+        <span class="btn-group pull-left" uib-dropdown>
+            <button type="button" class="btn btn-primary btn-sm" uib-dropdown-toggle>
+                Add Area
+                <span class="caret"></span>
+            </button>
+            <ul uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                <li role="menuitem">
+                    <a href ng-click="addArea('CIRCULAR')">Circular</a>
+                    <a href ng-click="addArea('RECTANGULAR')">Rectangular</a>
+                    <a href ng-click="addArea('COASTAL')">Coastal</a>
+                    <a href ng-click="addArea('NAVAREA')">NAVAREA</a>
+                </li>
+            </ul>
+        </span>
+
+        <button class="btn btn-primary" ng-click="$dismiss('aborted')">Close</button>
+    </div>
+</script>

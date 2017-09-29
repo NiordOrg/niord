@@ -84,6 +84,7 @@ public class NavtexMessagePromulgation
 
 
     /** Returns a value object for this entity */
+    @Override
     public NavtexMessagePromulgationVo toVo() {
 
         NavtexMessagePromulgationVo data = toVo(new NavtexMessagePromulgationVo());

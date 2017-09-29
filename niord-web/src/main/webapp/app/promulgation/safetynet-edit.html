@@ -1,0 +1,48 @@
+
+<div class="row">
+
+    <div class="col-xs-12 col-sm-12 col-md-6 col-lg-5">
+
+        <navtex-field navtex-data="promulgation.text"></navtex-field>
+
+        <div style="margin-top: 5px">
+            <button class="btn btn-default btn-xs"
+                    ng-click="generatePromulgation(promulgation)" translate>term.generate</button>
+
+            <button class="btn btn-default btn-xs" id="formatSafetyNetBtn"
+                    onclick="formatSafetyNet()" translate>term.format</button>
+        </div>
+    </div>
+
+    <div class="col-xs-12 col-sm-12 col-md-6 col-lg-7">
+        <div>Area</div>
+        <span ng-repeat="a in promulgation.areas">
+            <input type="radio" ng-model="promulgation.areaName" ng-value="a.name"/> {{a.name}} &nbsp;
+        </span>
+
+        <div style="margin-top: 20px;" translate>term.priority</div>
+        <select class="form-control input-sm"
+                style="width: 100px"
+                ng-model="promulgation.priority">
+            <option value="SAFETY">Safety</option>
+            <option value="URGENCY">Urgency</option>
+        </select>
+    </div>
+</div>
+
+<script type="application/javascript">
+    function formatSafetyNet() {
+        var scope = angular.element($("#formatSafetyNetBtn")).scope();
+        $.ajax({
+            type: "PUT",
+            contentType: "application/json; charset=utf-8",
+            url: "/rest/promulgation/safetynet/reformat-safetynet",
+            data: JSON.stringify(scope.promulgation),
+            dataType: "json",
+            success: function (promulgation) {
+                scope.promulgation.text = promulgation.text;
+                scope.$$phase || scope.$apply();
+            }
+        });
+    }
+</script>

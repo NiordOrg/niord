@@ -1,0 +1,17 @@
+
+<div ng-if="!promulgation.promulgate" translate>promulgation.undefined</div>
+
+<div ng-if="promulgation.promulgate">
+    <div style="font-size: 80%; margin: 5px 0">
+        <span translate>term.priority</span> : {{promulgation.priority}},&nbsp;
+        Area:
+        <span ng-if="promulgation.areaName">
+            {{promulgation.areaName}}
+        </span>
+    </div>
+
+    <div class="promulgation-text" ng-if="promulgation.text"
+         style="font-family: 'Courier New', serif">
+        <div ng-bind-html="promulgation.text | plain2html | toTrusted"></div>
+    </div>
+</div>

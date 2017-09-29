@@ -12,7 +12,7 @@
 
                 scope.openDialog({
                     templateUrl: 'twitter-settings.html',
-                    controller: function ($scope, $modalInstance, $http, typeId) {
+                    controller: function ($scope, $uibModalInstance, $http, typeId) {
                         var restUrl = '/rest/promulgation/twitter-settings/';
                         $scope.editMode = 'edit';
                         $scope.typeId = typeId;

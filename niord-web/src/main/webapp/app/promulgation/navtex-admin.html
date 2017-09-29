@@ -11,7 +11,7 @@
                 var scope = angular.element($("#transmitters")).scope();
                 scope.openDialog({
                     templateUrl: 'transmitters.html',
-                    controller: function ($scope, $rootScope, $modalInstance, $http, typeId) {
+                    controller: function ($scope, $rootScope, $uibModalInstance, $http, typeId) {
                         var restUrl = '/rest/promulgation/navtex/transmitters/' + encodeURIComponent(typeId);
                         $scope.editMode = 'edit';
                         $scope.typeId = typeId;
