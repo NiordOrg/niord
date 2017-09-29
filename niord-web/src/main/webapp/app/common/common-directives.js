@@ -661,6 +661,7 @@ angular.module('niord.common')
                             showGutter: false,
                             onLoad: function (editor) {
                                 editor.setOption('printMarginColumn', 40);
+                                editor.$blockScrolling = 1;
                             }
                         }
                     },

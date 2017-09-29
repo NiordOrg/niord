@@ -245,6 +245,7 @@ angular.module('niord.admin')
                             mode: 'javascript',
                             onLoad: function(editor) {
                                 $scope.editor = editor;
+                                editor.$blockScrolling = 1;
                             }
                         };
                         $timeout(function () {

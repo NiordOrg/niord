@@ -41,7 +41,10 @@ angular.module('niord.admin')
             $scope.jsonEditorOptions = {
                 useWrapMode : true,
                 showGutter: false,
-                mode: 'json'
+                mode: 'json',
+                onLoad: function(editor) {
+                    editor.$blockScrolling = 1;
+                }
             };
 
             /** Loads the report from the back-end */

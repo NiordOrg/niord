@@ -44,6 +44,7 @@ angular.module('niord.admin')
                     mode: 'ftl',
                     onLoad: function(editor) {
                         $scope.editor = editor;
+                        editor.$blockScrolling = 1;
                     }
                 },
                 'JS': {
@@ -52,6 +53,7 @@ angular.module('niord.admin')
                     mode: 'javascript',
                     onLoad: function(editor) {
                         $scope.editor = editor;
+                        editor.$blockScrolling = 1;
                     }
                 }
             };
@@ -261,12 +263,18 @@ angular.module('niord.admin')
                 'FM' : {
                     useWrapMode : false,
                     showGutter: true,
-                    mode: 'ftl'
+                    mode: 'ftl',
+                    onLoad: function(editor) {
+                        editor.$blockScrolling = 1;
+                    }
                 },
                 'JS': {
                     useWrapMode : false,
                     showGutter: true,
-                    mode: 'javascript'
+                    mode: 'javascript',
+                    onLoad: function(editor) {
+                        editor.$blockScrolling = 1;
+                    }
                 }
             };
 
