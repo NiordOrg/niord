@@ -10,7 +10,7 @@
 </#macro>
 
 
-<#macro renderMarkings markings lang="en" format="details" unmarkedText="">
+<#macro renderMarkings markings markingType="buoy" lang="en" format="details" unmarkedText="">
     <#assign lightFormat=(format == 'navtex')?then('normal','verbose')/>
     <#assign valueFormat=(format == 'navtex')?then('normal','long')/>
     <#assign bearingFormat=(format == 'audio')?then('long','normal')/>
