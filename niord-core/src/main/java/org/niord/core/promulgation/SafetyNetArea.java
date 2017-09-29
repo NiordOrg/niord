@@ -42,14 +42,16 @@ import javax.validation.constraints.NotNull;
 @NamedQueries({
         @NamedQuery(name="SafetyNetArea.findByName",
                 query="SELECT a FROM SafetyNetArea a where a.promulgationType.typeId = :typeId "
-                        + " and lower(a.name) = lower(:name)"),
+                        + " and lower(a.name) = lower(:name) order by a.priority asc"),
         @NamedQuery(name="SafetyNetArea.findByType",
                 query="SELECT a FROM SafetyNetArea a where a.promulgationType.typeId = :typeId "
-                        + " order by lower(a.name) asc")
+                        + "  order by a.priority asc")
 })
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @SuppressWarnings("unused")
 public abstract class SafetyNetArea extends BaseEntity<Integer> {
+
+    public static final int DEFAULT_PRIORITY = 100;
 
     @NotNull
     @ManyToOne
@@ -60,6 +62,8 @@ public abstract class SafetyNetArea extends BaseEntity<Integer> {
     // The name of the area
     @Column(nullable = false, unique = true)
     String name;
+
+    int priority = DEFAULT_PRIORITY;
 
 
     /** Constructor */
@@ -74,6 +78,7 @@ public abstract class SafetyNetArea extends BaseEntity<Integer> {
         }
         this.active = area.isActive();
         this.name  = area.getName();
+        this.priority = area.getPriority() != null ? area.getPriority() : DEFAULT_PRIORITY;
     }
 
 
@@ -82,6 +87,7 @@ public abstract class SafetyNetArea extends BaseEntity<Integer> {
         // NB: We never update promulgationType of an area
         this.active = area.isActive();
         this.name  = area.getName();
+        this.priority = area.getPriority();
     }
 
 
@@ -93,6 +99,7 @@ public abstract class SafetyNetArea extends BaseEntity<Integer> {
     public <A extends SafetyNetAreaVo> A toVo(A area, DataFilter filter) {
         if (filter.includeDetails()) {
             area.setPromulgationType(promulgationType.toVo());
+            area.setPriority(priority);
         }
         area.setName(name);
         area.setActive(active);
@@ -137,5 +144,13 @@ public abstract class SafetyNetArea extends BaseEntity<Integer> {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 }

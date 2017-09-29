@@ -47,6 +47,7 @@ public class SafetyNetAreaVo implements IJsonSerializable {
     PromulgationTypeVo promulgationType;
     String name;
     boolean active;
+    Integer priority;
 
 
     /**
@@ -93,6 +94,14 @@ public class SafetyNetAreaVo implements IJsonSerializable {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public Integer getPriority() {
+        return priority;
+    }
+
+    public void setPriority(Integer priority) {
+        this.priority = priority;
     }
 
     /*******************************************/

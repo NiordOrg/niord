@@ -35,6 +35,7 @@
                                 promulgationType: { typeId: typeId },
                                 type: type,
                                 name: '',
+                                priority: 100,
                                 active: true };
                             if (type === 'CIRCULAR') {
                                 $scope.area.center = '';
@@ -111,8 +112,17 @@
                                 <div class="col-sm-8">
                                     <input type="text" class="form-control input-sm" required
                                            placeholder="Name"
-                                           ng-model="area.name"
-                                           ng-disabled="editMode == 'edit'"/>
+                                           ng-model="area.name"/>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-4">Priority</label>
+                                <div class="col-sm-8">
+                                    <input type="number" class="form-control input-sm" required
+                                           min="0" step="1"
+                                           placeholder="Priority"
+                                           ng-model="area.priority"/>
                                 </div>
                             </div>
 
@@ -234,12 +244,14 @@
                                     <th>Active</th>
                                     <th>Name</th>
                                     <th>Type</th>
+                                    <th>Priority</th>
                                     <th></th>
                                 </tr>
                                 <tr ng-repeat="area in areas">
                                     <td><input type="checkbox" ng-model="area.active" disabled="disabled"></td>
                                     <td>{{area.name}}</td>
                                     <td>{{area.type | capitalize}}</td>
+                                    <td>{{area.priority}}</td>
                                     <td nowrap align="right">
                                         <a href ng-click="editArea(area)" title="Edit Area"><i class="glyphicon glyphicon-pencil"></i></a>
                                         &nbsp;
