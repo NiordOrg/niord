@@ -65,7 +65,7 @@ public class SafetyNetMessagePromulgationVo
     @Override
     public boolean promulgationDataDefined() {
         return StringUtils.isNotBlank(text)
-                && StringUtils.isNotBlank(areaName);
+                || StringUtils.isNotBlank(areaName);
     }
 
 
