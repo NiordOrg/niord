@@ -23,6 +23,7 @@ import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.promulgation.vo.SafetyNetAreaVo;
 import org.niord.core.promulgation.vo.SafetyNetMessagePromulgationVo;
 import org.niord.core.user.Roles;
+import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 
 import javax.annotation.security.PermitAll;
@@ -43,6 +44,8 @@ import javax.ws.rs.WebApplicationException;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static org.niord.core.promulgation.NavtexPromulgationService.NAVTEX_LINE_LENGTH;
 
 /**
  * REST interface to managing SafetyNET areas
@@ -71,7 +74,7 @@ public class SafetyNetPromulgationRestService {
             String text = safetynet.getText();
 
             // Clean up blank space and enforce uppercase
-            text = text
+            text = TextUtils.maxLineLength(text, NAVTEX_LINE_LENGTH)
                     .replaceAll("(?is)\\n+", "\n")
                     .toUpperCase()
                     .trim();

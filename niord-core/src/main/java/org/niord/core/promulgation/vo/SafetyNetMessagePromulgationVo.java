@@ -39,6 +39,7 @@ public class SafetyNetMessagePromulgationVo
     List<SafetyNetAreaVo> areas = new ArrayList<>();    // Selectable areas
     String areaName;                                    // Selected area name
     String text;
+    String safetyNetId;
 
 
     /** Constructor **/
@@ -75,6 +76,7 @@ public class SafetyNetMessagePromulgationVo
         text = null;
         areas.clear();
         areaName = null;
+        safetyNetId = null;
         return this;
     }
 
@@ -140,5 +142,13 @@ public class SafetyNetMessagePromulgationVo
 
     public void setAreaName(String areaName) {
         this.areaName = areaName;
+    }
+
+    public String getSafetyNetId() {
+        return safetyNetId;
+    }
+
+    public void setSafetyNetId(String safetyNetId) {
+        this.safetyNetId = safetyNetId;
     }
 }

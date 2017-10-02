@@ -86,6 +86,9 @@ public class SafetyNetMessagePromulgation
     @Lob
     String text;
 
+    // The actual ID assigned to the SafetyNET message by the distributor (e.g. SHOM for NAVAREA II)
+    String safetyNetId;
+
 
     /** Constructor **/
     public SafetyNetMessagePromulgation() {
@@ -100,6 +103,7 @@ public class SafetyNetMessagePromulgation
         this.priority = promulgation.getPriority();
         this.repetition = promulgation.getRepetition();
         this.text = promulgation.getText();
+        this.safetyNetId = promulgation.getSafetyNetId();
 
         SafetyNetAreaVo a = promulgation.selectedArea();
         this.area = a == null ? null : a.toEntity();
@@ -115,6 +119,7 @@ public class SafetyNetMessagePromulgation
         data.setPriority(priority);
         data.setRepetition(repetition);
         data.setText(text);
+        data.setSafetyNetId(safetyNetId);
         if (area != null) {
             data.setAreaName(area.getName());
         }
@@ -132,6 +137,7 @@ public class SafetyNetMessagePromulgation
             this.priority = p.getPriority();
             this.repetition = p.getRepetition();
             this.text = p.getText();
+            this.safetyNetId = p.getSafetyNetId();
             this.area = p.getArea();
         }
     }
@@ -173,5 +179,13 @@ public class SafetyNetMessagePromulgation
 
     public void setArea(SafetyNetArea area) {
         this.area = area;
+    }
+
+    public String getSafetyNetId() {
+        return safetyNetId;
+    }
+
+    public void setSafetyNetId(String safetyNetId) {
+        this.safetyNetId = safetyNetId;
     }
 }

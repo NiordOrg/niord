@@ -48,6 +48,15 @@
                     </select>
                 </td>
             </tr>
+            <tr ng-if="message.status == 'PUBLISHED'">
+                <td style="padding-top: 10px">SafetyNET ID&nbsp;</td>
+                <td style="padding-top: 10px">
+                    <input class="form-control input-xs"
+                            style="width: 200px"
+                            uib-tooltip="The actual ID assigned to the message by the SafetyNET authority, e.g.'130/17'"
+                            ng-model="promulgation.safetyNetId">
+                </td>
+            </tr>
         </table>
     </div>
 </div>
