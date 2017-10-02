@@ -36,3 +36,19 @@
         </@line>
     </field-template>
 </#if>
+
+<#if promulgate('safetynet')>
+    <field-template field="message.promulgation('safetynet').text" update="append">
+        <@line format="navtex">
+            <#list params.positions as pos>
+                LIGHT <@renderLightName lightParam=pos/> <@renderPositionList geomParam=part format="navtex" lang="en"/>
+                DESTROYED.
+            </#list>
+            FOUNDATION OF LIGHT
+            <@renderMarkings markings=params.markings! markingType=params.markingType! lang="en" format="navtex"  unmarkedText="UNMARKED"/>
+        </@line>
+        <@line format="navtex">
+            MARINERS ADVISED TO KEEP CLEAR.
+        </@line>
+    </field-template>
+</#if>

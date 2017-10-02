@@ -42,3 +42,17 @@
         </@line>
     </field-template>
 </#if>
+
+<#if promulgate('safetynet')>
+    <field-template field="message.promulgation('safetynet').text" update="append">
+        <@line format="navtex">
+            <@renderDateIntervals dateIntervals=part.eventDates lang="en" format="navtex"/>
+            <#if params.exercise_type??>
+                <@renderListValue value=params.exercise_type lang="en" defaultValue="" format="navtex"/>
+            </#if>
+            <@renderPositionList geomParam=part lang="en" format="navtex"/>.
+            Guard vessels in area listening VHF CH 16.
+            MARINERS REQUESTED TO PASS WITH CAUTION.
+        </@line>
+    </field-template>
+</#if>

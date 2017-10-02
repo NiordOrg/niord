@@ -40,3 +40,13 @@
         </@line>
     </field-template>
 </#if>
+
+<#if promulgate('safetynet')>
+    <field-template field="message.promulgation('safetynet').text" update="append">
+        <@line format="navtex">
+            <@renderObject defaultName="an object" format="short" lang="en" capFirst=true/>
+            ADRIFT <@renderPositionList geomParam=part format="navtex" lang="en"/>
+            <#if params.date??><@renderDate date=params.date lang="da" format="navtex"/></#if>.
+        </@line>
+    </field-template>
+</#if>

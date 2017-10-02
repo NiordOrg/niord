@@ -60,3 +60,27 @@
         </@line>
     </field-template>
 </#if>
+
+<#if promulgate('safetynet')>
+    <field-template field="message.promulgation('safetynet').text" update="append">
+        <@line format="navtex">
+            UNCHARTED <@renderObstructionType defaultValue="OBSTRUCTION" lang="en"/>
+            <@renderObstructionReport defaultValue="REPORTED" lang="en" />
+            <@renderPositionList geomParam=part format="navtex" lang="en"/>.
+        </@line>
+        <@line format="navtex">
+            <#if params.obstruction_visible!false>
+                <@renderObstructionType defaultValue="OBSTRUCTION" lang="en" /> VISIBLE ABOVE SEA SURFACE.
+            <#else>
+                DEPTH ABOVE <@renderObstructionType defaultValue="OBSTRUCTION" lang="en"/>
+                <#if params.obstruction_depth??>${params.obstruction_depth}M.<#else>UNKNOWN.</#if>
+            </#if>
+        </@line>
+        <@line format="navtex">
+            <@renderMarkings markings=params.markings! markingType=params.markingType! lang="en" format="navtex"  unmarkedText="UNMARKED"/>
+        </@line>
+        <@line format="navtex">
+            MARINERS ADVISED TO KEEP CLEAR.
+        </@line>
+    </field-template>
+</#if>

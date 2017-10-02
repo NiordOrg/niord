@@ -27,3 +27,18 @@
         </#list>
     </field-template>
 </#if>
+
+<#if promulgate('safetynet')>
+    <field-template field="message.promulgation('safetynet').text" update="append">
+        <#list params.positions as pos>
+            <@line format="navtex">
+                <@renderAtonType atonParams=pos defaultName="A light buoy" format="short" lang="en"/>
+                <#if pos.aton_light?has_content>
+                    SHOWING
+                    <@lightCharacterFormat light=pos.aton_light format="normal" lang="en"/>
+                </#if>
+                ESTABLISHED <@renderPositionList geomParam=pos format="navtex" lang="en"/>.
+            </@line>
+        </#list>
+    </field-template>
+</#if>

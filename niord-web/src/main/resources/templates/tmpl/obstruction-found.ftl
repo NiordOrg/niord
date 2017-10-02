@@ -28,4 +28,17 @@
         </field-template>
     </#if>
 
+    <#if promulgate('safetynet')>
+        <field-template field="message.promulgation('safetynet').text" update="append">
+            <@line format="navtex">
+                ${navtexObj[0+offset]} REPORTED FOUND
+                <@renderPositionList geomParam=part lang="en" format="navtex" plural=true/>.
+                ${navtexObj[1+offset]} MAY BE DANGEROUS.
+            </@line>
+            <@line format="navtex">
+                MARINERS ADVISED TO KEEP CLEAR.
+            </@line>
+        </field-template>
+    </#if>
+
 </#macro>

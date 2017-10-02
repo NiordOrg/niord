@@ -23,3 +23,16 @@
         </@line>
     </field-template>
 </#if>
+
+<#if promulgate('safetynet')>
+    <field-template field="message.promulgation('safetynet').text" update="append">
+        <@line format="navtex">
+            BRIDGE
+            <#if params.bridge_name?has_content>
+                ${params.bridge_name}
+            </#if>
+            <@renderPositionList geomParam=part format="navtex" lang="en"/>
+            CLOSED FOR PASSAGE THAT REQUIRES OPENING OF BRIDGE.
+        </@line>
+    </field-template>
+</#if>

@@ -49,4 +49,20 @@
         </field-template>
     </#if>
 
+    <#if promulgate('safetynet')>
+        <field-template field="message.promulgation('safetynet').text" update="append">
+            <#list params.positions![] as pos>
+                <@line format="navtex">
+                    <@renderAtonType atonParams=pos defaultName="${enDefaultName}" format="short" lang="en"/>
+                    <@renderPositionList geomParam=pos format="navtex" lang="en"/> REPLACED WITH
+                    <@renderAtonReplacementType atonParams=pos defaultName="${enDefaultReplacementName}" format="navtex" lang="en"/>
+                    <#if pos.aton_light?has_content>
+                        showing
+                        <@lightCharacterFormat light=pos.aton_light format="normal" lang="en"/>
+                    </#if>.
+                </@line>
+            </#list>
+        </field-template>
+    </#if>
+
 </#macro>

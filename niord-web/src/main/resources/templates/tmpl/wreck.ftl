@@ -53,3 +53,21 @@
         </@line>
     </field-template>
 </#if>
+
+<#if promulgate('safetynet')>
+    <field-template field="message.promulgation('safetynet').text" update="append">
+        <@line format="navtex">
+            <@renderVesselType defaultName="A VESSEL" format="short" lang="en"/>
+            SUNK <@renderPositionList geomParam=part format="navtex" lang="en"/>.
+            <#if params.wreck_visible!false>
+                WRECK VISIBLE ABOVE SEA SURFACE.
+            <#else>
+                DEPTH ABOVE WRECK <#if params.wreck_depth??>${params.wreck_depth}M.<#else>UNKNOWN.</#if>
+            </#if>
+            WRECK <@renderMarkings markings=params.markings! markingType=params.markingType! lang="en" format="navtex"  unmarkedText="UNMARKED"/>
+        </@line>
+        <@line format="navtex">
+            MARINERS ADVISED TO KEEP CLEAR.
+        </@line>
+    </field-template>
+</#if>

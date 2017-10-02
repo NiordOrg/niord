@@ -24,3 +24,17 @@
         </@line>
     </field-template>
 </#if>
+
+<#if promulgate('safetynet')>
+    <field-template field="message.promulgation('safetynet').text" update="append">
+        <#setting locale="en">
+        <@line format="navtex">
+            Water depths down to ${params.water_depth!0?c}M OBSERVED
+            <@renderPositionList geomParam=part format="navtex" lang="en"/>
+            <#if params.locality?has_content>IN ENTRANCE TO ${params.locality}</#if>.
+        </@line>
+        <@line format="navtex">
+            MARINERS ADVISED TO KEEP CLEAR
+        </@line>
+    </field-template>
+</#if>

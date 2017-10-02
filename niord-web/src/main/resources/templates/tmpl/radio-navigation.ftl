@@ -52,3 +52,16 @@
         </#list>
     </field-template>
 </#if>
+
+<#if promulgate('safetynet')>
+    <field-template field="message.promulgation('safetynet').text" update="append">
+        <#list params.positions![] as pos>
+            <@line format="navtex">
+                ${computeRadioType(pos)} on
+                <@renderAtonType atonParams=pos defaultName="AtoN" format="short" lang="en"/>
+                <@renderPositionList geomParam=pos format="navtex" lang="en"/>
+                <@renderStatus statusParam=pos format="normal" lang="en"/>.
+            </@line>
+        </#list>
+    </field-template>
+</#if>

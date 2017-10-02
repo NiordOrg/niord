@@ -26,3 +26,17 @@
         </@line>
     </field-template>
 </#if>
+
+<#if promulgate('safetynet')>
+    <field-template field="message.promulgation('safetynet').text" update="append">
+        <@line format="navtex">
+            <@renderDateIntervals dateIntervals=part.eventDates lang="en" format="navtex"/>
+            SALVAGE OPERATION
+            <#if params.salvage_type??>
+                ON <@renderListValue value=params.salvage_type lang="en" defaultValue="" format="navtex"/>
+            </#if>
+            <@renderPositionList geomParam=part lang="en" format="navtex"/>.
+            <@renderWorkVessel vessel=params.vessel! lang="en" format="navtex"/>
+        </@line>
+    </field-template>
+</#if>
