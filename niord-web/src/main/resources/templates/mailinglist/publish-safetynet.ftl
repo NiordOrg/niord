@@ -132,7 +132,11 @@
     </tr>
     <tr>
         <th>Repetition Code</th>
-        <td>01 - Transmit once</td>
+        <td>
+            <#if safetynet.repetition??>
+                ${safetynet.repetitionDescription}
+            </#if>
+        </td>
     </tr>
     <tr>
         <th>6</th>
