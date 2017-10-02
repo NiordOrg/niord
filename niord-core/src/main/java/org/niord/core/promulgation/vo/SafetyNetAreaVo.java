@@ -15,6 +15,7 @@
  */
 package org.niord.core.promulgation.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.niord.core.promulgation.SafetyNetArea;
@@ -190,6 +191,13 @@ public class SafetyNetAreaVo implements IJsonSerializable {
 
     public static class SafetyNetNavareaAreaVo extends SafetyNetAreaVo {
         NAVAREA navarea;
+
+        @JsonIgnore
+        public String getNavareaDescription() {
+            return navarea == null
+                    ? ""
+                    : navarea.toString() + "-" + navarea.getCoordinator();
+        }
 
         public NAVAREA getNavarea() {
             return navarea;
