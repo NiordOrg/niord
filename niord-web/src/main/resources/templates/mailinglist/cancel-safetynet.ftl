@@ -1,6 +1,8 @@
 
 <#include "../messages/message-support.ftl"/>
 
+<#include "safetynet-intro.ftl">
+
 <#if message??>
     <div>
         ${text('mail.safetynet.cancel')}

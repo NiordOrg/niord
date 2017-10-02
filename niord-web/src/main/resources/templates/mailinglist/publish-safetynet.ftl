@@ -23,7 +23,12 @@
     </#if>
 </#macro>
 
-<#include "publish-safetynet-intro.ftl">
+<#include "safetynet-intro.ftl">
+
+<p>
+    The following navigational warning should be promulgated via SafetyNET.<br>
+    The format is aligned with the Inmarsat Maritime Safety Server (MSS) interface.
+</p>
 
 <#if safetynet??>
 <table class="safetynetTable">
