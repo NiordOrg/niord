@@ -22,29 +22,18 @@
                     <span ng-repeat="a in promulgation.areas">
                         <input type="radio" ng-model="promulgation.areaName" ng-value="a.name"/> {{a.name}} &nbsp;
                     </span>
+                    <span ng-if="promulgation.promulgate && !promulgation.areaName && (!promulgation.areas || promulgation.areas.length === 0)"
+                          class="editor-field-invalid">Undefined</span>
                 </td>
             </tr>
             <tr>
                 <td style="padding-top: 10px" translate>term.priority</td>
                 <td style="padding-top: 10px">
                     <select class="form-control input-xs"
-                            style="width: 200px"
+                            style="width: 200px; margin-left: 5px"
                             ng-model="promulgation.priority">
                         <option value="SAFETY">Safety</option>
                         <option value="URGENCY">Urgency</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td style="padding-top: 10px">Repetition&nbsp;</td>
-                <td style="padding-top: 10px">
-                    <select class="form-control input-xs"
-                            style="width: 200px"
-                            ng-model="promulgation.repetition">
-                        <option value="REPETITION_1">Transmit once</option>
-                        <option value="REPETITION_11">Two transmissions, 6 min. interval</option>
-                        <option value="REPETITION_64">Two transmissions, 4 hour interval</option>
-                        <option value="REPETITION_66">Two transmissions, 12 hour interval</option>
                     </select>
                 </td>
             </tr>

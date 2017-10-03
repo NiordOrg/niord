@@ -17,6 +17,7 @@ package org.niord.core.promulgation;
 
 import org.niord.core.promulgation.vo.SafetyNetAreaVo.SafetyNetCircularAreaVo;
 import org.niord.model.DataFilter;
+import org.niord.model.message.Type;
 
 import javax.persistence.Entity;
 
@@ -63,6 +64,15 @@ public class SafetyNetCircularArea extends SafetyNetArea {
         }
         return area;
     }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean supportsMessageType(Type messageType) {
+        // TODO: Verify assumption: Circular supports all message types except NAVAREA
+        return super.supportsMessageType(messageType) && messageType != Type.NAVAREA_WARNING;
+    }
+
 
     /*************************/
     /** Getters and Setters **/

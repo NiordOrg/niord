@@ -46,38 +46,9 @@ public class SafetyNetMessagePromulgation
         DISTRESS // NB: Distress not used for Navigational Warnings
     }
 
-    /** SafetyNET Transmission Repetition */
-    public enum SafetyNetRepetition {
-        REPETITION_1("01", "Transmit once"),
-        REPETITION_11("11", "Two transmissions, 6 min. interval"),
-        REPETITION_64("64", "Two transmissions, 4 hour interval"),
-        REPETITION_66("66", "Two transmissions, 12 hour interval");
-
-        final String code;
-        final String description;
-
-        SafetyNetRepetition(String code, String description) {
-            this.code = code;
-            this.description = description;
-        }
-
-        public String getCode() {
-            return code;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-    }
-
-
     @NotNull
     @Enumerated(EnumType.STRING)
     SafetyNetPriority priority = SafetyNetPriority.SAFETY;
-
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    SafetyNetRepetition repetition = SafetyNetRepetition.REPETITION_1;
 
     @NotNull
     @ManyToOne
@@ -101,12 +72,11 @@ public class SafetyNetMessagePromulgation
         super(promulgation);
 
         this.priority = promulgation.getPriority();
-        this.repetition = promulgation.getRepetition();
         this.text = promulgation.getText();
         this.safetyNetId = promulgation.getSafetyNetId();
 
         SafetyNetAreaVo a = promulgation.selectedArea();
-        this.area = a == null ? null : a.toEntity();
+        this.area = a != null ? a.toEntity() : null;
     }
 
 
@@ -117,7 +87,6 @@ public class SafetyNetMessagePromulgation
         SafetyNetMessagePromulgationVo data = toVo(new SafetyNetMessagePromulgationVo());
 
         data.setPriority(priority);
-        data.setRepetition(repetition);
         data.setText(text);
         data.setSafetyNetId(safetyNetId);
         if (area != null) {
@@ -135,7 +104,6 @@ public class SafetyNetMessagePromulgation
 
             SafetyNetMessagePromulgation p = (SafetyNetMessagePromulgation)promulgation;
             this.priority = p.getPriority();
-            this.repetition = p.getRepetition();
             this.text = p.getText();
             this.safetyNetId = p.getSafetyNetId();
             this.area = p.getArea();
@@ -163,14 +131,6 @@ public class SafetyNetMessagePromulgation
 
     public void setPriority(SafetyNetPriority priority) {
         this.priority = priority;
-    }
-
-    public SafetyNetRepetition getRepetition() {
-        return repetition;
-    }
-
-    public void setRepetition(SafetyNetRepetition repetition) {
-        this.repetition = repetition;
     }
 
     public SafetyNetArea getArea() {

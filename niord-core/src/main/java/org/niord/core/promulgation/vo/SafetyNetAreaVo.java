@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.niord.core.promulgation.SafetyNetArea;
+import org.niord.core.promulgation.SafetyNetArea.SafetyNetRepetition;
 import org.niord.core.promulgation.SafetyNetCircularArea;
 import org.niord.core.promulgation.SafetyNetCoastalArea;
 import org.niord.core.promulgation.SafetyNetCoastalArea.CoastalArea;
@@ -47,8 +48,9 @@ public class SafetyNetAreaVo implements IJsonSerializable {
 
     PromulgationTypeVo promulgationType;
     String name;
+    SafetyNetRepetition repetition;
     boolean active;
-    Integer priority;
+    Integer sortOrder;
 
 
     /**
@@ -66,6 +68,15 @@ public class SafetyNetAreaVo implements IJsonSerializable {
             area = new SafetyNetNavareaArea((SafetyNetNavareaAreaVo) this);
         }
         return area;
+    }
+
+
+    /** Returns a verbose description of the repetition code **/
+    @JsonIgnore
+    public String getRepetitionDescription() {
+        return repetition == null
+                ? ""
+                : repetition.getCode() + " - " + repetition.getDescription();
     }
 
 
@@ -89,6 +100,14 @@ public class SafetyNetAreaVo implements IJsonSerializable {
         this.name = name;
     }
 
+    public SafetyNetRepetition getRepetition() {
+        return repetition;
+    }
+
+    public void setRepetition(SafetyNetRepetition repetition) {
+        this.repetition = repetition;
+    }
+
     public boolean isActive() {
         return active;
     }
@@ -97,12 +116,12 @@ public class SafetyNetAreaVo implements IJsonSerializable {
         this.active = active;
     }
 
-    public Integer getPriority() {
-        return priority;
+    public Integer getSortOrder() {
+        return sortOrder;
     }
 
-    public void setPriority(Integer priority) {
-        this.priority = priority;
+    public void setSortOrder(Integer sortOrder) {
+        this.sortOrder = sortOrder;
     }
 
     /*******************************************/

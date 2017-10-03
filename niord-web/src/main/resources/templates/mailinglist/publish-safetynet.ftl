@@ -138,8 +138,10 @@
     <tr>
         <th>Repetition Code</th>
         <td>
-            <#if safetynet.repetition??>
-                ${safetynet.repetitionDescription}
+            <#if params.area?? && params.area.repetition??>
+                ${params.area.repetitionDescription}
+            <#else>
+                01 - Transmit once
             </#if>
         </td>
     </tr>

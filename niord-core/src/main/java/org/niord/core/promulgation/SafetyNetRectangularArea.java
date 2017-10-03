@@ -17,6 +17,7 @@ package org.niord.core.promulgation;
 
 import org.niord.core.promulgation.vo.SafetyNetAreaVo.SafetyNetRectangularAreaVo;
 import org.niord.model.DataFilter;
+import org.niord.model.message.Type;
 
 import javax.persistence.Entity;
 
@@ -66,6 +67,14 @@ public class SafetyNetRectangularArea extends SafetyNetArea {
             area.setEastings(eastings);
         }
         return area;
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public boolean supportsMessageType(Type messageType) {
+        // TODO: Verify assumption: Rectangular supports all message types except NAVAREA
+        return super.supportsMessageType(messageType) && messageType != Type.NAVAREA_WARNING;
     }
 
 

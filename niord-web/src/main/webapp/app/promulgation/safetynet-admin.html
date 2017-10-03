@@ -35,7 +35,8 @@
                                 promulgationType: { typeId: typeId },
                                 type: type,
                                 name: '',
-                                priority: 100,
+                                repetition: undefined,
+                                sortOrder: 100,
                                 active: true };
                             if (type === 'CIRCULAR') {
                                 $scope.area.center = '';
@@ -52,6 +53,9 @@
                             $scope.editMode = 'add';
                         };
                         $scope.saveArea = function (area) {
+                            if (area.repetition === '') {
+                                delete area.repetition;
+                            }
                             if ($scope.editMode === 'add') {
                                 $http.post(restUrl + '/area/', area)
                                     .success($scope.loadAreas);
@@ -117,12 +121,27 @@
                             </div>
 
                             <div class="form-group">
-                                <label class="col-sm-4">Priority</label>
+                                <label class="col-sm-4">Repetition</label>
+                                <div class="col-sm-8">
+                                    <select class="form-control input-xs"
+                                            style="width: 200px"
+                                            ng-model="area.repetition">
+                                        <option value=""></option>
+                                        <option value="REPETITION_1">Transmit once</option>
+                                        <option value="REPETITION_11">Two transmissions, 6 min. interval</option>
+                                        <option value="REPETITION_64">Two transmissions, 4 hour interval</option>
+                                        <option value="REPETITION_66">Two transmissions, 12 hour interval</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-sm-4">Sort Order</label>
                                 <div class="col-sm-8">
                                     <input type="number" class="form-control input-sm" required
                                            min="0" step="1"
-                                           placeholder="Priority"
-                                           ng-model="area.priority"/>
+                                           placeholder="Sort Order"
+                                           ng-model="area.sortOrder"/>
                                 </div>
                             </div>
 
@@ -244,14 +263,14 @@
                                     <th>Active</th>
                                     <th>Name</th>
                                     <th>Type</th>
-                                    <th>Priority</th>
+                                    <th>Sort Order</th>
                                     <th></th>
                                 </tr>
                                 <tr ng-repeat="area in areas">
                                     <td><input type="checkbox" ng-model="area.active" disabled="disabled"></td>
                                     <td>{{area.name}}</td>
                                     <td>{{area.type | capitalize}}</td>
-                                    <td>{{area.priority}}</td>
+                                    <td>{{area.sortOrder}}</td>
                                     <td nowrap align="right">
                                         <a href ng-click="editArea(area)" title="Edit Area"><i class="glyphicon glyphicon-pencil"></i></a>
                                         &nbsp;

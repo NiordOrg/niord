@@ -16,12 +16,10 @@
 
 package org.niord.core.promulgation.vo;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.promulgation.IMailPromulgation;
 import org.niord.core.promulgation.SafetyNetMessagePromulgation;
 import org.niord.core.promulgation.SafetyNetMessagePromulgation.SafetyNetPriority;
-import org.niord.core.promulgation.SafetyNetMessagePromulgation.SafetyNetRepetition;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +33,6 @@ public class SafetyNetMessagePromulgationVo
         implements IMailPromulgation {
 
     SafetyNetPriority priority = SafetyNetPriority.SAFETY;
-    SafetyNetRepetition repetition = SafetyNetRepetition.REPETITION_1;
     List<SafetyNetAreaVo> areas = new ArrayList<>();    // Selectable areas
     String areaName;                                    // Selected area name
     String text;
@@ -72,7 +69,6 @@ public class SafetyNetMessagePromulgationVo
     /** Resets data of this message promulgation **/
     public SafetyNetMessagePromulgationVo reset() {
         priority = SafetyNetPriority.SAFETY;
-        repetition = SafetyNetRepetition.REPETITION_1;
         text = null;
         areas.clear();
         areaName = null;
@@ -90,14 +86,6 @@ public class SafetyNetMessagePromulgationVo
     }
 
 
-    @JsonIgnore
-    public String getRepetitionDescription() {
-        return repetition == null
-                ? ""
-                : repetition.getCode() + " - " + repetition.getDescription();
-    }
-
-
     /*************************/
     /** Getters and Setters **/
     /*************************/
@@ -108,14 +96,6 @@ public class SafetyNetMessagePromulgationVo
 
     public void setPriority(SafetyNetPriority priority) {
         this.priority = priority;
-    }
-
-    public SafetyNetRepetition getRepetition() {
-        return repetition;
-    }
-
-    public void setRepetition(SafetyNetRepetition repetition) {
-        this.repetition = repetition;
     }
 
     @Override

@@ -8,6 +8,8 @@
         <span ng-if="promulgation.areaName">
             {{promulgation.areaName}}
         </span>
+        <span ng-if="!promulgation.areaName"
+              class="editor-field-invalid">Undefined</span>
     </div>
 
     <div class="promulgation-text" ng-if="promulgation.text"
