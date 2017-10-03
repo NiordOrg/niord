@@ -49,7 +49,8 @@ import java.io.StringWriter;
  * </pre>
  */
 @Api(value = "/S-124",
-        description = "Public API for accessing messages as S-124 GML",
+        description = "Public API for accessing messages as S-124 GML. " +
+                "NB: Only use this service for test purposes, not for production.",
         tags = {"S-124" })
 @Path("/S-124")
 public class S124RestService {
@@ -65,7 +66,8 @@ public class S124RestService {
      * Returns the S-124 GML representation for the given message
      */
     @ApiOperation(
-            value = "Returns S-124 GML representation for the message",
+            value = "Returns S-124 GML representation for the message." +
+                    "NB: Only use this service for test purposes, not for production.",
             response = String.class,
             tags = {"S-124"}
     )
