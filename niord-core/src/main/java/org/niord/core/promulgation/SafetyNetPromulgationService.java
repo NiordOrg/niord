@@ -135,11 +135,18 @@ public class SafetyNetPromulgationService
         // If no selected area was found (it may e.g. be inactive), look it up by name and add it to the area list.
         if (selArea == null && StringUtils.isNotBlank(safetynet.getAreaName())) {
             selArea = findAreaByName(safetynet.getType().getTypeId(), safetynet.getAreaName()).toVo(DataFilter.get());
-            if (selArea != null) {
+            // For persisted SafetyNET promulgations, always include the selected area, even if it is not valid anymore
+            if (safetynet.getId() != null && selArea != null) {
                 safetynet.getAreas().add(selArea);
             } else {
                 safetynet.setAreaName(null);
             }
+        }
+
+        // If the SafetyNET promulgation is not yet persisted and no area is specified
+        // and only one area is available, select it.
+        if (StringUtils.isBlank(safetynet.getAreaName()) && areas.size() == 1) {
+            safetynet.setAreaName(areas.get(0).getName());
         }
     }
 
