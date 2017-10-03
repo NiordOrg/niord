@@ -118,7 +118,7 @@ public class SafetyNetPromulgationService
 
     /**
      * Checks that SafetyNET area matches the current message type.
-     * @param safetynet the promulgation type
+     * @param safetynet the promulgation type.
      * @param messageType the message type to match
      */
     public void checkSafetyNetArea(SafetyNetMessagePromulgationVo safetynet, Type messageType) {
