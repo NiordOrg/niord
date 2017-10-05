@@ -506,7 +506,7 @@ angular.module('niord.messages')
 
                         // If we have changed domain, return null
                         var lastTagDomain = $window.sessionStorage.lastTagDomain;
-                        if ($rootScope.domain && $rootScope.domain.domainId !== lastTagDomain) {
+                        if ($rootScope.domain === undefined || $rootScope.domain.domainId !== lastTagDomain) {
                             return null;
                         }
                         return lastTagSelection;
