@@ -491,6 +491,7 @@ angular.module('niord.messages')
             saveLastMessageTagSelection: function (tag) {
                 if (tag && !tag.locked) {
                     $window.sessionStorage.lastTagSelection = angular.toJson(tag);
+                    $window.sessionStorage.lastTagDomain = $rootScope.domain ? $rootScope.domain.domainId : '';
                 } else {
                     $window.sessionStorage.removeItem('lastTagSelection')
                 }
@@ -501,7 +502,14 @@ angular.module('niord.messages')
             getLastMessageTagSelection: function () {
                 if ($window.sessionStorage.lastTagSelection) {
                     try {
-                        return angular.fromJson($window.sessionStorage.lastTagSelection);
+                        var lastTagSelection = angular.fromJson($window.sessionStorage.lastTagSelection);
+
+                        // If we have changed domain, return null
+                        var lastTagDomain = $window.sessionStorage.lastTagDomain;
+                        if ($rootScope.domain && $rootScope.domain.domainId !== lastTagDomain) {
+                            return null;
+                        }
+                        return lastTagSelection;
                     } catch (error) {
                     }
                 }
