@@ -24,7 +24,10 @@ import javax.persistence.Entity;
 /**
  * Used for defining a rectangular SafetyNET distribution area.
  * <p>
- * Please refer to the IMO International SafetyNET Manual.
+ * The model implemented in Niord is that used by the Inmarsat MMS (Maritime Safety Server System), rather than
+ * the EGC (older model).
+ * <p>
+ * The best source of information is the IMO International SafetyNET manual.
  */
 @Entity
 @SuppressWarnings("unused")
