@@ -56,10 +56,10 @@ public abstract class SafetyNetArea extends BaseEntity<Integer> {
 
     /** SafetyNET Transmission Repetition */
     public enum SafetyNetRepetition {
-        REPETITION_1("01", "Transmit once"),
+        REPETITION_01("01", "Transmit once"),
         REPETITION_11("11", "Two transmissions, 6 min. interval"),
-        REPETITION_64("64", "Two transmissions, 4 hour interval"),
-        REPETITION_66("66", "Two transmissions, 12 hour interval");
+        REPETITION_16("16", "Every 12 hours"),
+        REPETITION_42("42", "Every 4 hours");
 
         final String code;
         final String description;
