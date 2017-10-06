@@ -68,4 +68,6 @@ Sensitive or environment-specific settings should be placed in a "${niord.home}/
 * If working on a country-specific Niord implementation, e.g. [niord-dk](https://github.com/NiordOrg/niord-dk), 
   import this maven project via the "Maven Projects" tab. Deploy the imported project to Wildfly instead of "niord-web".
 * If you have only updated web resources, there is no need to re-deploy the web application. Use the "Update resources" function instead.
+* To get rid of superfluous IntelliJ code editor warnings, disable the "Declaration access can be weaker" 
+  and "Dangling Javadoc comment" inspections.
 
