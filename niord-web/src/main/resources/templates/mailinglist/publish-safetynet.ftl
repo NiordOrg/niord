@@ -149,17 +149,21 @@
         <th>6</th>
         <th>MSI Contents</th>
         <td>
-            <#if message.areas?has_content>
-                <div>
-                    <@line case="upper">
+            <div>
+                <@line case="upper">
+                    <#if params.area?? && params.area.messageAreaPrefix?has_content>
+                        ${params.area.messageAreaPrefix}
+                        <#if message.areas?has_content>-</#if>
+                    </#if>
+                    <#if message.areas?has_content>
                         <@renderAreas area=message.areas[0] lang='en'></@renderAreas>
                         <#assign msgDesc=descForLang(message, lang)!>
                         <#if msgDesc?? && msgDesc.vicinity?has_content>
                             - ${msgDesc.vicinity}
                         </#if>
-                    </@line>
-                </div>
-            </#if>
+                    </#if>
+                </@line>
+            </div>
             <div>
                 <@txtToHtml text=safetynet.text/>
             </div>

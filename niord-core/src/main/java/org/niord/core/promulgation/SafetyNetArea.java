@@ -91,6 +91,9 @@ public abstract class SafetyNetArea extends BaseEntity<Integer> {
 
     SafetyNetRepetition repetition;
 
+    // May be used to define a prefix to the message area line, e.g. "GULF OF GUINEA"
+    String messageAreaPrefix;
+
     int sortOrder = DEFAULT_SORT_ORDER;
 
 
@@ -107,6 +110,7 @@ public abstract class SafetyNetArea extends BaseEntity<Integer> {
         this.active = area.isActive();
         this.name  = area.getName();
         this.repetition = area.getRepetition();
+        this.messageAreaPrefix = area.getMessageAreaPrefix();
         this.sortOrder = area.getSortOrder() != null ? area.getSortOrder() : DEFAULT_SORT_ORDER;
     }
 
@@ -117,6 +121,7 @@ public abstract class SafetyNetArea extends BaseEntity<Integer> {
         this.active = area.isActive();
         this.name  = area.getName();
         this.repetition = area.getRepetition();
+        this.messageAreaPrefix = area.getMessageAreaPrefix();
         this.sortOrder = area.getSortOrder();
     }
 
@@ -130,10 +135,11 @@ public abstract class SafetyNetArea extends BaseEntity<Integer> {
         if (filter.includeDetails()) {
             area.setPromulgationType(promulgationType.toVo());
             area.setSortOrder(sortOrder);
+            area.setMessageAreaPrefix(messageAreaPrefix);
+            area.setRepetition(repetition);
         }
         area.setName(name);
         area.setActive(active);
-        area.setRepetition(repetition);
         return area;
     }
 
@@ -183,6 +189,14 @@ public abstract class SafetyNetArea extends BaseEntity<Integer> {
 
     public void setRepetition(SafetyNetRepetition repetition) {
         this.repetition = repetition;
+    }
+
+    public String getMessageAreaPrefix() {
+        return messageAreaPrefix;
+    }
+
+    public void setMessageAreaPrefix(String messageAreaPrefix) {
+        this.messageAreaPrefix = messageAreaPrefix;
     }
 
     public int getSortOrder() {

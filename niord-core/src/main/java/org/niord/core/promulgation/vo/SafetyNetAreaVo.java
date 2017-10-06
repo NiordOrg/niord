@@ -49,6 +49,7 @@ public class SafetyNetAreaVo implements IJsonSerializable {
     PromulgationTypeVo promulgationType;
     String name;
     SafetyNetRepetition repetition;
+    String messageAreaPrefix;
     boolean active;
     Integer sortOrder;
 
@@ -106,6 +107,14 @@ public class SafetyNetAreaVo implements IJsonSerializable {
 
     public void setRepetition(SafetyNetRepetition repetition) {
         this.repetition = repetition;
+    }
+
+    public String getMessageAreaPrefix() {
+        return messageAreaPrefix;
+    }
+
+    public void setMessageAreaPrefix(String messageAreaPrefix) {
+        this.messageAreaPrefix = messageAreaPrefix;
     }
 
     public boolean isActive() {
