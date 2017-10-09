@@ -86,7 +86,7 @@ public class MailingListMessageListener implements MessageListener {
                 .map(BaseEntity::getId)
                 .collect(Collectors.toList());
 
-        log.info(String.format("Found %d status change triggers for %s in status %s",
+        log.debug(String.format("Found %d status change triggers for %s in status %s",
                 triggerIds.size(),
                 messageUid,
                 status));
@@ -99,7 +99,7 @@ public class MailingListMessageListener implements MessageListener {
                 log.error("Error executing status-change mailing-list trigger " + triggerId, e);
             }
         }
-        log.info(String.format("Executed %d status change triggers for %s in status %s in %d ms",
+        log.debug(String.format("Executed %d status change triggers for %s in status %s in %d ms",
                 triggerIds.size(),
                 messageUid,
                 status,

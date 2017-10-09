@@ -59,7 +59,7 @@ public class MailingListSchedulerService extends BaseService {
                 .collect(Collectors.toList());
 
         if (!pendingTriggers.isEmpty()) {
-            log.info("Processing " + pendingTriggers.size() + " scheduled triggers");
+            log.debug("Processing " + pendingTriggers.size() + " scheduled triggers");
             for (Integer triggerId : pendingTriggers) {
                 try {
                     // NB: These functions each require a new transaction
@@ -69,7 +69,7 @@ public class MailingListSchedulerService extends BaseService {
                     log.error("Failed executing scheduled mailing list trigger " + triggerId + ": " + e);
                 }
             }
-            log.info(String.format("Executed %d scheduled mailing list triggers in %d ms",
+            log.debug(String.format("Executed %d scheduled mailing list triggers in %d ms",
                     pendingTriggers.size(),
                     System.currentTimeMillis() - t0));
         }
