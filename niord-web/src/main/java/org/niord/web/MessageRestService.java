@@ -354,7 +354,7 @@ public class MessageRestService  {
             @QueryParam("mainType") MainType mainType,
             @QueryParam("populate") @DefaultValue("false") boolean populate) throws Exception {
 
-        log.info("Creating new message template");
+        log.debug("Creating new message template");
 
         // Validate the mainType is valid in the current domain
         Domain domain = domainService.currentDomain();
@@ -410,7 +410,7 @@ public class MessageRestService  {
             @PathParam("messageId") String messageId,
             @QueryParam("referenceType") ReferenceType referenceType) throws Exception {
 
-        log.info("Creating copy of message " + messageId);
+        log.debug("Creating copy of message " + messageId);
         Domain domain = domainService.currentDomain();
 
         Message message = messageService.resolveMessage(messageId);
@@ -498,7 +498,7 @@ public class MessageRestService  {
             @QueryParam("lang") String language
     ) throws Exception {
 
-        log.info("Returning referenced messages for " + messageId + ", types="
+        log.debug("Returning referenced messages for " + messageId + ", types="
                     + referenceTypes + ", status=" + status);
 
         Message message = messageService.resolveMessage(messageId);
@@ -539,7 +539,7 @@ public class MessageRestService  {
     @NoCache
     @RolesAllowed(Roles.EDITOR)
     public MessageVo createMessage(SystemMessageVo message) throws Exception {
-        log.info("Creating message " + message);
+        log.debug("Creating message " + message);
 
         // Point embedded links and images to the message repository folder
         message.toMessageRepo();
@@ -576,7 +576,7 @@ public class MessageRestService  {
         if (!Objects.equals(messageId, message.getId())) {
             throw new WebApplicationException(400);
         }
-        log.info("Updating message " + message);
+        log.debug("Updating message " + message);
 
         // Point embedded links and images to the message repository folder
         message.toMessageRepo();
@@ -614,7 +614,7 @@ public class MessageRestService  {
             @PathParam("messageId") String messageId,
             @QueryParam("cancelReferencedMessages") Boolean cancelReferencedMessages,
             String status) throws Exception {
-        log.info("Updating status of message " + messageId + " to " + status);
+        log.debug("Updating status of message " + messageId + " to " + status);
 
         // Validate access to the message
         checkMessageEditingAccess(messageService.findByUid(messageId), EditOp.CHANGE_STATUS);
@@ -637,7 +637,7 @@ public class MessageRestService  {
                 for (Message refMsg : referencedMessages) {
                     try {
                         messageService.updateStatus(refMsg.getUid(), CANCELLED);
-                        log.info("Cancelling referenced messages to " + messageId + ": " + refMsg.getUid());
+                        log.debug("Cancelling referenced messages to " + messageId + ": " + refMsg.getUid());
                     } catch (Exception ex) {
                         log.error("Error cancelling referenced messages to " + messageId + ": " + refMsg.getUid(), ex);
                     }
@@ -664,7 +664,7 @@ public class MessageRestService  {
     @NoCache
     @RolesAllowed(Roles.EDITOR)
     public List<MessageVo> updateMessageStatuses(List<UpdateStatusParam> updates) throws Exception {
-        log.info("Updating statuses " + updates);
+        log.debug("Updating statuses " + updates);
 
         // Validate access to the messages
         for (UpdateStatusParam update : updates) {
@@ -802,7 +802,7 @@ public class MessageRestService  {
         PagedSearchResultVo<Message> searchResult = messageService.search(params);
         searchResult.getData().forEach(m -> messageService.computeMessageAreaSortingOrder(m));
 
-        log.info(String.format("Updates area sort order for  %d messages in %d ms",
+        log.debug(String.format("Updates area sort order for  %d messages in %d ms",
                 searchResult.getData().size(), System.currentTimeMillis() - t0));
     }
 
