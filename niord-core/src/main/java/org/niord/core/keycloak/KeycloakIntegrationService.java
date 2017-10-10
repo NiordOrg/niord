@@ -95,6 +95,10 @@ public class KeycloakIntegrationService {
     String authServerRealmKey;
 
     @Inject
+    @Setting(value = "authServerSslRequired", defaultValue = "external", description = "Either 'external', 'none' or 'all'")
+    String authServerSslRequired;
+
+    @Inject
     NiordApp app;
 
     @Inject
@@ -192,7 +196,7 @@ public class KeycloakIntegrationService {
         cfg.setRealmKey(getKeycloakPublicRealmKey());
         cfg.setBearerOnly(true);
         cfg.setAuthServerUrl(authServerUrl);
-        cfg.setSslRequired("external");
+        cfg.setSslRequired(authServerSslRequired);
         cfg.setResource(domainId);
         cfg.setUseResourceRoleMappings(true);
 
@@ -214,7 +218,7 @@ public class KeycloakIntegrationService {
         cfg.put("realm-public-key", getKeycloakPublicRealmKey());
         cfg.put("public-client", true);
         cfg.put("auth-server-url", authServerUrl);
-        cfg.put("ssl-required", "external");
+        cfg.put("ssl-required", authServerSslRequired);
         cfg.put("resource", KEYCLOAK_WEB_CLIENT);
         cfg.put("use-resource-role-mappings", true);
         return cfg;
