@@ -1,6 +1,6 @@
 # niord-josm-seachart
 
-The niord-josm-seachart library is merely a copy of the Niord JSOM seachart plugin
+The niord-josm-seachart library is merely a copy of the JSOM seachart plugin
 <a href="https://github.com/openstreetmap/josm-plugins">https://github.com/openstreetmap/josm-plugins</a>.
 
 In Niord, the library is used for creating those pesky AtoN icons...
