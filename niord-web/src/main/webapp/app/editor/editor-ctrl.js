@@ -350,6 +350,12 @@ angular.module('niord.editor')
                     return;
                 }
 
+                // When saving a verified message, it will be reset to status draft. Confirm this
+                if (msg.status === 'VERIFIED' && !confirm(LangService.translate('editor.save_verified'))) {
+                    return;
+                }
+
+
                 // Prevent double-submissions
                 $scope.messageSaving = true;
 
