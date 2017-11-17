@@ -71,7 +71,7 @@ public class ScheduledMailService extends BaseService {
 
 
     @Inject
-    @Setting(value = "mailDeleteAfterDays", defaultValue = "300", type = Integer,
+    @Setting(value = "mailDeleteAfterDays", defaultValue = "30", type = Integer,
             description = "Delete scheduled mails older than the given value. A non-positive value means never.")
     Integer mailDeleteAfterDays;
 
