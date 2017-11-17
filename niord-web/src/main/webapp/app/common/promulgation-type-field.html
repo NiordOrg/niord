@@ -1,0 +1,21 @@
+<div class="input-group">
+
+    <ui-select multiple  ng-model="promulgationTypeData.promulgationTypes">
+        <ui-select-match placeholder="Select Promulgation Types">
+            {{$item.name}}
+            <span class="base-data-inactive" ng-if="!$item.active">(inactive)</span>
+        </ui-select-match>
+        <ui-select-choices repeat="p in promulgationTypes"
+                           refresh="refreshPromulgationTypes($select.search)"
+                           refresh-delay="200">
+            <div>
+                <span ng-bind-html="p.name | highlight: $select.search"></span>
+                <span class="base-data-inactive" ng-if="!p.active">(inactive)</span>
+            </div>
+
+        </ui-select-choices>
+    </ui-select>
+
+
+    <span class="input-group-addon clickable" style="font-size: 12px" ng-click="removePromulgationTypes()"><span class="glyphicon glyphicon-trash"></span></span>
+</div>

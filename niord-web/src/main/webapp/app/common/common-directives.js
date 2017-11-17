@@ -637,6 +637,64 @@ angular.module('niord.common')
 
 
     /********************************
+     * Defines a promulgation type search field used for
+     * selecting one or more promulgation types
+     ********************************/
+    .directive('promulgationTypeField', [ '$rootScope', '$http',
+        function ($rootScope, $http) {
+        'use strict';
+
+        return {
+            restrict: 'E',
+            templateUrl: '/app/common/promulgation-type-field.html',
+            replace: false,
+            scope: {
+                promulgationTypeData:   "=",
+                initIds:                "="
+            },
+            link: function(scope) {
+
+                scope.promulgationTypeData = scope.promulgationTypeData || {};
+                if (!scope.promulgationTypeData.promulgationTypes) {
+                    scope.promulgationTypeData.promulgationTypes = [];
+                }
+
+                // init-ids can be used to instantiate the field from a list of promulgationType IDs
+                scope.$watch("initIds", function (initIds) {
+                    if (initIds && initIds.length > 0) {
+                        $http.get('/rest/promulgations/public-promulgation-type/' + initIds.join()).then(function(response) {
+                            // Reset the initId array
+                            initIds.length = 0;
+                            // Update the loaded entities
+                            scope.promulgationTypeData.promulgationTypes = response.data;
+                        });
+                    }
+                }, true);
+
+
+                /** Refreshes the promulgationType selection **/
+                scope.promulgationTypes = [];
+                scope.refreshPromulgationTypes = function (text) {
+                    text = text || '';
+                    if (text.length > 0) {
+                        $http.get('/rest/promulgations/search-public-promulgation-type?type=' + encodeURIComponent(text))
+                            .then(function(response) {
+                                scope.promulgationTypes = response.data;
+                            });
+                    }
+                };
+
+
+                /** Removes the current promulgation type selection */
+                scope.removePromulgationTypes = function () {
+                    scope.promulgationTypeData.promulgationTypes.length = 0;
+                }
+            }
+        }
+    }])
+
+
+    /********************************
      * Defines a NAVTEX editor field.
      * Shows a print margin after 40 chars
      ********************************/

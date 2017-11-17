@@ -41,7 +41,7 @@ angular.module('niord.messages')
             $scope.selectionList = []; // Flattened list of selected messages
             $scope.totalMessageNo = 0;
             $scope.filterNames = [ 'domain', 'messageSeries', 'text', 'type', 'status', 'tag', 'publication',
-                'user', 'comments', 'reference', 'chart', 'area', 'category', 'date' ];
+                'promulgationType', 'user', 'comments', 'reference', 'chart', 'area', 'category', 'date' ];
             $scope.state = {
 
                 /** Sorting **/
@@ -92,6 +92,11 @@ angular.module('niord.messages')
                     enabled: false,
                     focusField: '#publications input.ui-select-search',
                     publications: []
+                },
+                promulgationType: {
+                    enabled: false,
+                    focusField: '#promulgationTypes input.ui-select-search',
+                    promulgationTypes: []
                 },
                 user: {
                     enabled: false,
@@ -145,6 +150,7 @@ angular.module('niord.messages')
             // loaded the corresponding entities and updated the "state" object with the them.
             $scope.initTagIds = [];
             $scope.initPublicationIds = [];
+            $scope.initPromulgationTypeIds = [];
             $scope.initAreaIds = [];
             $scope.initCategoryIds = [];
             $scope.initChartIds = [];
@@ -153,8 +159,8 @@ angular.module('niord.messages')
 
             /** Returns the number of pending base entities that has not yet been loaded */
             $scope.pendingInitDataNo = function () {
-                return $scope.initTagIds.length + $scope.initPublicationIds.length + $scope.initAreaIds.length
-                    + $scope.initCategoryIds.length + $scope.initChartIds.length + $scope.initSeriesIds.length;
+                return $scope.initTagIds.length + $scope.initPublicationIds.length + $scope.initPromulgationTypeIds.length
+                    + $scope.initAreaIds.length + $scope.initCategoryIds.length + $scope.initChartIds.length + $scope.initSeriesIds.length;
             };
 
 
@@ -246,6 +252,9 @@ angular.module('niord.messages')
                         break;
                     case 'publication':
                         filter.publications.length = 0;
+                        break;
+                    case 'promulgationType':
+                        filter.promulgationTypes.length = 0;
                         break;
                     case 'user':
                         filter.username = undefined;
@@ -379,6 +388,11 @@ angular.module('niord.messages')
                         params += '&publication=' + publication.publicationId;
                     })
                 }
+                if ($scope.loggedIn && s.promulgationType.enabled) {
+                    angular.forEach(s.promulgationType.promulgationTypes, function (promulgationType) {
+                        params += '&promulgationType=' + promulgationType.typeId;
+                    })
+                }
                 if ($scope.loggedIn && s.user.enabled && s.user.username && s.user.username.length > 0) {
                     params += '&username=' + encodeURIComponent(s.user.username);
                     if (s.user.userType && s.user.userType.length > 0) {
@@ -496,6 +510,10 @@ angular.module('niord.messages')
                 if (params.publication && params.publication.length > 0) {
                     s.publication.enabled = true;
                     $scope.initPublicationIds = (typeof params.publication === 'string') ? [ params.publication ] : params.publication;
+                }
+                if ($scope.loggedIn && params.promulgationType && params.promulgationType.length > 0) {
+                    s.promulgationType.enabled = true;
+                    $scope.initPromulgationTypeIds = (typeof params.promulgationType === 'string') ? [ params.promulgationType ] : params.promulgationType;
                 }
                 if ($scope.loggedIn && params.username) {
                     s.user.enabled = true;

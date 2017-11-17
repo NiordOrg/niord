@@ -42,6 +42,15 @@ public class PromulgationTypeVo implements IJsonSerializable, Comparable<Promulg
     List<String> scriptResourcePaths;
 
 
+    /**
+     * Returns a public version of the promulgation type, i.e. a version that unauthenticated users may use
+     * @return a public version of the promulgation type
+     */
+    public PublicPromulgationTypeVo toPublicPromulgationType() {
+        return new PublicPromulgationTypeVo(this);
+    }
+
+
     /** {@inheritDoc} */
     @Override
     @SuppressWarnings("all")

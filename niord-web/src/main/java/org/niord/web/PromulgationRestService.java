@@ -16,6 +16,7 @@
 
 package org.niord.web;
 
+import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
@@ -27,6 +28,7 @@ import org.niord.core.promulgation.PromulgationTypeService;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.core.promulgation.vo.PromulgationServiceVo;
 import org.niord.core.promulgation.vo.PromulgationTypeVo;
+import org.niord.core.promulgation.vo.PublicPromulgationTypeVo;
 import org.niord.core.user.Roles;
 import org.niord.core.user.UserService;
 import org.slf4j.Logger;
@@ -38,17 +40,23 @@ import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -183,6 +191,52 @@ public class PromulgationRestService extends AbstractBatchableRestService {
     @RolesAllowed(Roles.SYSADMIN)
     public String importReports(@Context HttpServletRequest request) throws Exception {
         return executeBatchJobFromUploadedFile(request, "promulgation-type-import");
+    }
+
+
+    /***************************************/
+    /** Public Promulgation Types         **/
+    /***************************************/
+
+
+    /** Returns the promulgation types with the given comma-separated IDs  */
+    @GET
+    @Path("/public-promulgation-type/{typeIds}")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @PermitAll
+    @NoCache
+    public List<PublicPromulgationTypeVo> getPublicPromulgationTypes(@PathParam("typeIds") String typeIds) {
+        Set<String> ids = new HashSet<>();
+        if (StringUtils.isNotBlank(typeIds)) {
+            ids.addAll(Arrays.asList(typeIds.split(",")));
+        }
+        return promulgationTypeService.getAll().stream()
+                .filter(t -> ids.contains(t.getTypeId()))
+                .map(PromulgationType::toVo)
+                .map(PromulgationTypeVo::toPublicPromulgationType)
+                .collect(Collectors.toList());
+    }
+
+
+    /** Searches the promulgation types whose type ID or name matches the given string  */
+    @GET
+    @Path("/search-public-promulgation-type")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @PermitAll
+    @NoCache
+    public List<PublicPromulgationTypeVo> searchPublicPromulgationTypes(
+            @QueryParam("type") @DefaultValue("")  String type) {
+        if (StringUtils.isBlank(type)) {
+            return Collections.emptyList();
+        }
+        String str = type.toLowerCase();
+        return promulgationTypeService.getAll().stream()
+                .filter(t -> t.getTypeId().toLowerCase().contains(str) || t.getName().toLowerCase().contains(str))
+                .map(PromulgationType::toVo)
+                .map(PromulgationTypeVo::toPublicPromulgationType)
+                .collect(Collectors.toList());
     }
 
 
