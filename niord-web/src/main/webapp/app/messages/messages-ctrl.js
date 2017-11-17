@@ -388,7 +388,7 @@ angular.module('niord.messages')
                         params += '&publication=' + publication.publicationId;
                     })
                 }
-                if ($scope.loggedIn && s.promulgationType.enabled) {
+                if (s.promulgationType.enabled) {
                     angular.forEach(s.promulgationType.promulgationTypes, function (promulgationType) {
                         params += '&promulgationType=' + promulgationType.typeId;
                     })
@@ -511,7 +511,7 @@ angular.module('niord.messages')
                     s.publication.enabled = true;
                     $scope.initPublicationIds = (typeof params.publication === 'string') ? [ params.publication ] : params.publication;
                 }
-                if ($scope.loggedIn && params.promulgationType && params.promulgationType.length > 0) {
+                if (params.promulgationType && params.promulgationType.length > 0) {
                     s.promulgationType.enabled = true;
                     $scope.initPromulgationTypeIds = (typeof params.promulgationType === 'string') ? [ params.promulgationType ] : params.promulgationType;
                 }
