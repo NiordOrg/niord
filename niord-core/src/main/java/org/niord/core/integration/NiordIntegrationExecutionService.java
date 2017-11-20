@@ -321,7 +321,7 @@ public class NiordIntegrationExecutionService extends BaseService {
 
             try (InputStream is = entity.getContent()) {
                 List<MessageVo> result = new ObjectMapper().readValue(is, new TypeReference<List<MessageVo>>(){});
-                log.info("Fetching " + result.size() + " messages from URL " + url + " in " +
+                log.debug("Fetching " + result.size() + " messages from URL " + url + " in " +
                         (System.currentTimeMillis() - t0) + " ms");
                 return result;
             }

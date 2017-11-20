@@ -172,7 +172,7 @@ public class NiordIntegrationService extends BaseService {
         }
 
         try {
-            log.info(String.format("Processing Niord Integration %d for server %s",
+            log.debug(String.format("Processing Niord Integration %d for server %s",
                     integration.getId(),
                     integration.getUrl()));
             executionService.processNiordIntegration(integration.toVo());
