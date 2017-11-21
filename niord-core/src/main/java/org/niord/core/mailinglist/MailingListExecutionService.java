@@ -78,9 +78,6 @@ public class MailingListExecutionService extends BaseService {
     JsResourceService javaScriptService;
 
     @Inject
-    MailingListService mailingListService;
-
-    @Inject
     DictionaryService dictionaryService;
 
 
