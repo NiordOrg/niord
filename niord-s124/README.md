@@ -30,7 +30,7 @@ Validation of the produced GML can be done using _xmllint_:
     
 ## Comments
 
-A collection of comments about the current stage of the S-124 format:
+A collection of comments about the current state of the S-124 format:
 
 * In general, too much focus on supporting NAVTEX-like warnings for ECDIS clients. 
   Consider promulgation via e.g. Web and Apps as first-tier clients too.
