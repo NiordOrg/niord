@@ -65,7 +65,7 @@ import java.util.stream.Collectors;
  *   &lt;node-type name="Isolated Danger Topmark"&gt;
  *     &lt;tag k="seamark:topmark:shape" v="2 spheres"/&gt;
  *     &lt;tag k="seamark:topmark:colour" v="black"/&gt;
- *     &lt;tag k="seamark:topmark:colour_patern" v=""/&gt;
+ *     &lt;tag k="seamark:topmark:colour_pattern" v=""/&gt;
  *   &lt;/node-type&gt;
  *   &lt;node-type name="Isolated Danger Buoy"&gt;
  *     &lt;tag k="seamark:type" v="buoy_isolated_danger"/&gt;
