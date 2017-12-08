@@ -76,7 +76,7 @@
     <tr>
         <td width="25%" align="left">${.now?string["dd. MMMM yyyy"]}</td>
         <td width="25%" align="center">ISSN ${ISSN!""}</td>
-        <td width="25%" align="center">${text('pdf.volume', volume!"133")}</td>
+        <td width="25%" align="center">${text('pdf.volume', (.now?string('yyyy')?number - 1884))}</td>
         <td width="25%" align="right">
             <#if minMessageNo != 9999999 && maxMessageNo != -9999999>
                 ${minMessageNo?c} - ${maxMessageNo?c}
