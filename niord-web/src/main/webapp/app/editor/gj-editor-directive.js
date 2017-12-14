@@ -1119,7 +1119,6 @@ angular.module('niord.editor')
                                     id: MapService.uuid(),
                                     type: 'Feature',
                                     properties: {
-                                        restriction: 'affected',
                                         areaId: area.id
                                     },
                                     geometry: area.geometry
