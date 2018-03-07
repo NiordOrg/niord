@@ -47,6 +47,7 @@ public class SwaggerConfigServlet extends HttpServlet {
             super.init(servletConfig);
             BeanConfig beanConfig = new BeanConfig();
             beanConfig.setVersion("1.0.0");
+            beanConfig.setTitle("Niord - Nautical Information Directory");
             beanConfig.setBasePath("/rest");
             beanConfig.setResourcePackage("org.niord.web.api,org.niord.model,org.niord.model.message,org.niord.model.publication,org.niord.model.search,org.niord.model.geojson,org.niord.s124");
             beanConfig.setScan(true);

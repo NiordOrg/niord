@@ -74,7 +74,7 @@ public class S124RestService {
     @GET
     @Path("/{messageId}.gml")
     @Produces({"application/gml+xml;charset=UTF-8"})
-    public Response messageDetails(
+    public Response s124MessageDetails(
             @ApiParam(value = "The message UID or short ID", example = "NW-061-17")
             @PathParam("messageId") String messageId,
 
