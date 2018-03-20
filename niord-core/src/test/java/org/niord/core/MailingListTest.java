@@ -22,13 +22,14 @@ import org.niord.core.mailinglist.ScheduledExecutionTimeUtil;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 import static org.junit.Assert.assertEquals;
 
 /**
  * Mailing list tests
  */
-public class MailingLIstTest {
+public class MailingListTest {
 
     @Test
     public void testScheduledExecutionTime() throws Exception {
@@ -36,6 +37,7 @@ public class MailingLIstTest {
         String timeZone = "Europe/Copenhagen";
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+        sdf.setTimeZone(TimeZone.getTimeZone(timeZone));
 
         Date nextExecutionTime = ScheduledExecutionTimeUtil
                 .computeNextExecutionTime(
