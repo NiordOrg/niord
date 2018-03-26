@@ -72,7 +72,7 @@ public class S124RestService {
             tags = {"S-124"}
     )
     @GET
-    @Path("/{messageId}.gml")
+    @Path("/messages/{messageId}")
     @Produces({"application/gml+xml;charset=UTF-8"})
     public Response s124MessageDetails(
             @ApiParam(value = "The message UID or short ID", example = "NW-061-17")
@@ -138,7 +138,7 @@ public class S124RestService {
      * {@inheritDoc}
      */
     @GET
-    @Path("/{file}.xsd")
+    @Path("/xsds/{file}")
     @Produces({"text/xml;charset=UTF-8"})
     public Response xsdFile(
             @PathParam("file") String file
