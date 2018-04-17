@@ -16,24 +16,31 @@
 package org.niord.s124;
 
 
-import freemarker.cache.ClassTemplateLoader;
-import freemarker.template.Configuration;
-import freemarker.template.Template;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.ejb.Stateless;
+import javax.inject.Inject;
+
 import org.niord.core.NiordApp;
 import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.message.Message;
+import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.model.message.MainType;
 import org.niord.model.message.ReferenceVo;
+import org.niord.model.message.Status;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import freemarker.cache.ClassTemplateLoader;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
 
 
 /**
@@ -158,4 +165,9 @@ public class S124Service {
             this.msg = msg;
         }
     }
+
+    public List<String> messagesLastUpdatedBetween(Date fromInclusive, Date toExclusive) {
+        return messageService.messagesLastUpdatedBetween(fromInclusive, toExclusive);
+    }
+
 }

@@ -15,11 +15,12 @@
  */
 package org.niord.s124;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.List;
 
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
@@ -36,9 +37,15 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-import java.io.InputStream;
-import java.io.StringReader;
-import java.io.StringWriter;
+
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+
+import com.fasterxml.jackson.databind.util.ISO8601DateFormat;
+
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 
 /**
  * A public REST API for accessing messages as S-124 GML.
@@ -111,7 +118,26 @@ public class S124RestService {
                     .build();
         }
     }
-
+    
+    //TODO add @ApiOperation
+    @GET
+    @Path("/messages")
+    @Produces("application/json;charset=UTF-8")
+    public List<String> s124messagesLastUpdatedBetween(
+            @PathParam("fromInclusive") String fromTimestampInclusive, 
+            @PathParam("toExclusive") @DefaultValue("9999-01-01T12:00Z") String toTimestampExclusive) throws ParseException {
+        ISO8601DateFormat df = new ISO8601DateFormat();
+        Date fromInclusive;
+        Date toExclusive;
+        try {
+            fromInclusive = df.parse(fromTimestampInclusive);
+            toExclusive = df.parse(toTimestampExclusive);
+        } catch (ParseException e) {
+            log.error("from or to parameter should be a timestamp as per ISO 8601");
+            throw e;
+        }
+        return s124Service.messagesLastUpdatedBetween(fromInclusive, toExclusive);
+    }
 
     /** Arghh, for some insane reason, this function does not work properly :-( **/
     public static String prettyPrint(String input) {
@@ -165,5 +191,4 @@ public class S124RestService {
                     .build();
         }
     }
-
 }

@@ -750,8 +750,7 @@ public class MessageService extends BaseService {
                 .setMaxResults(maxCount)
                 .getResultList();
     }
-
-
+    
     /**
      * Computes the auto-generated message fields for the given message template
      *
@@ -960,6 +959,14 @@ public class MessageService extends BaseService {
         messages.sort(Comparator.comparingInt(m -> ids.indexOf(m.getId())));
 
         return messages;
+    }
+    
+    public List<String> messagesLastUpdatedBetween(Date fromInclusive, Date toExclusive) {
+        return em.createNamedQuery("Message.findByLastUpdatedTimeBetween", String.class)
+                   .setParameter("series", domainService.currentDomain().getMessageSeries())
+                   .setParameter("from", fromInclusive)
+                   .setParameter("to", toExclusive)
+                   .getResultList();
     }
 
 
@@ -1489,4 +1496,5 @@ public class MessageService extends BaseService {
     public void updateMessageFromTempRepoFolder(SystemMessageVo message) throws IOException {
         repositoryService.updateRepoFolderFromTempEditFolder(message);
     }
+    
 }

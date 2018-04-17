@@ -103,6 +103,8 @@ import java.util.stream.Stream;
                         + " msg.publishDateFrom between :fromDate and :toDate and msg.number is not null"),
         @NamedQuery(name="Message.separatePageUids",
                 query="SELECT msg.uid FROM Message msg where msg.separatePage = true and msg.uid in (:uids)"),
+        @NamedQuery(name="Message.findByLastUpdatedTimeBetween",
+                query="SELECT msg.uid FROM Message msg where msg.updated >= :from and msg.updated < :to and msg.messageSeries in (:series)")
 })
 @SuppressWarnings("unused")
 public class Message extends VersionedEntity<Integer> implements ILocalizable<MessageDesc> {
