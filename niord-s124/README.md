@@ -13,7 +13,7 @@ http://stmvalidation.eu/schemas/
 Niord provides a REST endpoint for converting a navigational warning, say "NW-069-17", to
 S-124 (assuming you are running at localhost):
 
-    http://localhost:8080/rest/S-124/NW-069-17.gml?lang=en
+    http://localhost:8080/rest/S-124/messages/NW-069-17?lang=en
 
 The function can also be tested via Swagger: 
 
@@ -25,8 +25,8 @@ The function can also be tested via Swagger:
 Validation of the produced GML can be done using _xmllint_:
 
     xmllint --noout \
-        --schema http://localhost:8080/rest/S-124/S124.xsd \
-        http://localhost:8080/rest/S-124/NW-069-17.gml
+        --schema http://localhost:8080/rest/S-124/xsds/S124 \
+        http://localhost:8080/rest/S-124/messages/NW-069-17
     
 ## Comments
 
