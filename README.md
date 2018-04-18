@@ -27,6 +27,11 @@ custom versions.
 
 For an example, please refer to [niord-dk](https://github.com/NiordOrg/niord-dk) - a Danish implementation of Niord.
 
+## Public API
+A swagger definition of the public portion of the Rest API is published at https://niord.e-navigation.net/rest/swagger.json.
+
+The swagger definition is generated from the jersey annotated methods in [ApiRestService.java](https://github.com/NiordOrg/niord/blob/master/niord-web/src/main/java/org/niord/web/api/ApiRestService.java) and [S124RestService.java](https://github.com/NiordOrg/niord/blob/master/niord-s124/src/main/java/org/niord/s124/S124RestService.java).
+
 ## Configuration
 
 Sensitive or environment-specific settings should be placed in a "${niord.home}/niord.json" file. Example:
