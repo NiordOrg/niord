@@ -42,9 +42,6 @@ public class NiordKeycloakConfigResolver implements KeycloakConfigResolver {
 
     DomainResolver domainResolver = DomainResolver.newInstance();
 
-    // KeycloakUrlResolver urlResolver = KeycloakUrlResolver.newInstance();
-
-
     /** {@inheritDoc} */
     @Override
     public KeycloakDeployment resolve(HttpFacade.Request request) {
@@ -67,23 +64,6 @@ public class NiordKeycloakConfigResolver implements KeycloakConfigResolver {
                 }
             }
         }
-
-        /**
-         * Originally, Niord would use a Keycloak overlay in the Niord Wildfly.
-         * This caused A LOT of problems in the early versions of Keycloak.
-         *
-         * In order to fix some of these problems, a custom KeycloakUrlResolver was developed.
-         * However, as Keycloak now flags the overlay as "not for production", we have stopped
-         * using overlays, and instead run Keycloak as a separate server.
-         *
-         * Hence, the bug-fixing code of the custom KeycloakUrlResolver is not needed anymore.
-         *
-        if (deployment.getAuthServerBaseUrl() == null) {
-            return deployment;
-        }
-
-       return urlResolver.resolveUrls(deployment, request);
-         */
 
         return deployment;
     }
