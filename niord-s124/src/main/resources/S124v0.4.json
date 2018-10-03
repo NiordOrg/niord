@@ -1,0 +1,945 @@
+{
+	"swagger": "2.0",
+	"info": {
+		"version": "v1",
+		"title": "Standard S-124 REST Service"
+	},
+	"paths": {
+		"/S-124/access": {
+			"post": {
+				"tags": ["Access"],
+				"summary": "Access to information can be requested through the Access interface. Depending on application, the decision is sent synchronous in the response, or asynchronous through the Access Notification interface.",
+				"operationId": "S-124AccessPost",
+				"consumes": ["application/json"],
+				"produces": ["application/json"],
+				"parameters": [{
+						"name": "requestObject",
+						"in": "body",
+						"required": true,
+						"schema": {
+							"$ref": "#/definitions/RequestAccessRequestObject"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"schema": {
+							"$ref": "#/definitions/ResponseObject"
+						}
+					},
+					"202": {
+						"description": "Saved for later processing",
+						"schema": {
+							"$ref": "#/definitions/ResponseObject"
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"500": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"501": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					}
+				}
+			}
+		},
+		"/S-124/access/notification": {
+			"post": {
+				"tags": ["Access"],
+				"summary": "Result from a Access Request is sent asynchronous through this interface",
+				"operationId": "S-124AccessNotificationPost",
+				"consumes": ["application/json"],
+				"produces": ["application/json"],
+				"parameters": [{
+						"name": "requestObject",
+						"in": "body",
+						"description": "",
+						"required": true,
+						"schema": {
+							"$ref": "#/definitions/AccessNotificationRequestObject"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"schema": {
+							"$ref": "#/definitions/ResponseObject"
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"500": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"501": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					}
+				}
+			}
+		},
+		"/capability": {
+			"get": {
+				"tags": ["Capability"],
+				"summary": "The purpose of the interface is to provide a dynamic method to ask a service instance at runtime what interfaces that are accessible and what payload formats and version that are valid.",
+				"operationId": "CapabilityGet",
+				"consumes": [],
+				"produces": ["application/json"],
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"schema": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/GetCapabilitiesResponseObject"
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"500": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					}
+				}
+			}
+		},
+		"/S-124/list": {
+			"get": {
+				"tags": ["List"],
+				"summary": "A list of accessible information is returned from this interface. The list contains reference to the identity of information that can be retrieved through the Get interface, status and short description.",
+				"operationId": "S-124ListGet",
+				"consumes": [],
+				"produces": ["application/json"],
+				"parameters": [{
+						"name": "wkt",
+						"in": "query",
+						"description": "Area in WKT format.",
+						"required": false,
+						"type": "string"
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"schema": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/GetListResponseObject"
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"500": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"501": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					}
+				}
+			}
+		},
+		"/S-124": {
+			"get": {
+				"tags": ["Pull"],
+				"summary": "The Get interface is used for pulling information from a service producer. The owner of the information (producer) is responsible for authorization procedure before returning information. The consumer can ask for information by its id, status or by geometry in wkt.",
+				"operationId": "S-124Get",
+				"consumes": [],
+				"produces": ["application/json"],
+				"parameters": [{
+						"name": "id",
+						"in": "query",
+						"description": "Get specific S-124 message by supplying an ID. To get a list of accessible messages and their IDs, use the getList operation.",
+						"required": false,
+						"type": "integer",
+						"format": "int32"
+					}, {
+						"name": "status",
+						"in": "query",
+						"description": "Get all S-124 message with specific status",
+						"required": false,
+						"type": "integer",
+						"format": "int32"
+					}, {
+						"name": "wkt",
+						"in": "query",
+						"description": "Get all S-124 messages in specific area specified as WKT",
+						"required": false,
+						"type": "string"
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"schema": {
+							"$ref": "#/definitions/GetMessageResponseObject"
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"500": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"501": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					}
+				}
+			},
+			"post": {
+				"tags": ["Push"],
+				"summary": "The Post interface is used for pushing information to a service consumer.",
+				"operationId": "S-124Post",
+				"consumes": ["application/json"],
+				"produces": ["application/json"],
+				"parameters": [{
+						"name": "requestObject",
+						"in": "body",
+						"description": "Object containing metadata for the message, and the message itself.",
+						"required": true,
+						"schema": {
+							"$ref": "#/definitions/PostMessageRequestObject"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"schema": {
+							"$ref": "#/definitions/ResponseObject"
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"500": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"501": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					}
+				}
+			}
+		},
+		"/acknowledgement": {
+			"post": {
+				"tags": ["Push"],
+				"summary": "During upload of information, acknowledgement can be requested when the information has been delivered to private end application. The acknowledgement contains reference to the time and message delivered.",
+				"operationId": "AcknowledgementPost",
+				"consumes": ["application/json"],
+				"produces": ["application/json"],
+				"parameters": [{
+						"name": "acknowledgementObject",
+						"in": "body",
+						"description": "",
+						"required": true,
+						"schema": {
+							"$ref": "#/definitions/AcknowledgementObject"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"schema": {
+							"$ref": "#/definitions/ResponseObject"
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"500": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"501": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					}
+				}
+			}
+		},
+		"/status": {
+			"get": {
+				"tags": ["Status"],
+				"summary": "The purpose of the interface is to provide a dynamic method to ask for status on the service and the application behind the service.",
+				"operationId": "StatusGet",
+				"consumes": [],
+				"produces": ["application/json"],
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"schema": {
+							"$ref": "#/definitions/GetStatusResponseObject"
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"500": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					}
+				}
+			}
+		},
+		"/S-124/subscription": {
+			"get": {
+				"tags": ["Subscription"],
+				"summary": "A list of active subscriptions can be retrieved through this interface.",
+				"operationId": "S-124SubscriptionGet",
+				"consumes": ["application/json"],
+				"produces": ["application/json"],
+				"parameters": [],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"schema": {
+							"type": "array",
+							"items": {
+								"$ref": "#/definitions/GetListResponseObject"
+							}
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"500": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"501": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					}
+				}
+			},
+			"post": {
+				"tags": ["Subscription"],
+				"summary": "The purpose of the interface is to request subscription on information, either on specific identity, or the information decided upon by information provider.",
+				"operationId": "S-124SubscriptionPost",
+				"consumes": ["application/json"],
+				"produces": ["application/json"],
+				"parameters": [{
+						"name": "requestObject",
+						"in": "body",
+						"description": "",
+						"required": true,
+						"schema": {
+							"$ref": "#/definitions/RequestSubscriptionRequestObject"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"schema": {
+							"$ref": "#/definitions/ResponseObject"
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"500": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"501": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					}
+				}
+			},
+			"delete": {
+				"tags": ["Subscription"],
+				"summary": "Subscription can be removed by the consumer through this interface.",
+				"operationId": "S-124SubscriptionDelete",
+				"consumes": ["application/json"],
+				"produces": ["application/json"],
+				"parameters": [{
+						"name": "requestObject",
+						"in": "body",
+						"description": "",
+						"required": true,
+						"schema": {
+							"$ref": "#/definitions/RemoveSubscriptionRequestObject"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"schema": {
+							"$ref": "#/definitions/ResponseObject"
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"500": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"501": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					}
+				}
+			}
+		},
+		"/S-124/subscription/createdNotification": {
+			"post": {
+				"tags": ["Subscription"],
+				"summary": "The interface provides notifications when subscription is created, either internally by information owner, or externally on request.",
+				"operationId": "S-124SubscriptionCreatedNotificationPost",
+				"consumes": ["application/json"],
+				"produces": ["application/json"],
+				"parameters": [{
+						"name": "requestObject",
+						"in": "body",
+						"description": "",
+						"required": true,
+						"schema": {
+							"$ref": "#/definitions/SubscriptionNotificationRequestObject"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"schema": {
+							"$ref": "#/definitions/ResponseObject"
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"500": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"501": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					}
+				}
+			}
+		},
+		"/S-124/subscription/removedNotification": {
+			"post": {
+				"tags": ["Subscription"],
+				"summary": "The interface provides notifications when subscription is removed, either internally by information owner, or externally on request.",
+				"operationId": "S-124SubscriptionRemovedNotificationPost",
+				"consumes": ["application/json"],
+				"produces": ["application/json"],
+				"parameters": [{
+						"name": "requestObject",
+						"in": "body",
+						"description": "",
+						"required": true,
+						"schema": {
+							"$ref": "#/definitions/SubscriptionNotificationRequestObject"
+						}
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Success",
+						"schema": {
+							"$ref": "#/definitions/ResponseObject"
+						}
+					},
+					"400": {
+						"description": "Bad Request",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"404": {
+						"description": "Not Found",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"500": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					},
+					"501": {
+						"description": "Server Error",
+						"schema": {
+							"$ref": "#/definitions/ErrorResponseObject"
+						}
+					}
+				}
+			}
+		}
+	},
+	"definitions": {
+		"RequestAccessRequestObject": {
+			"required": ["reason"],
+			"type": "object",
+			"properties": {
+				"reason": {
+					"description": "String description of the reason for access request",
+					"type": "string"
+				}
+			}
+		},
+		"ResponseObject": {
+			"type": "object",
+			"properties": {
+				"message": {
+					"type": "string"
+				}
+			}
+		},
+		"ErrorResponseObject": {
+			"type": "object",
+			"properties": {
+				"errorMessage": {
+					"type": "string"
+				}
+			}
+		},
+		"AccessNotificationRequestObject": {
+			"type": "object",
+			"properties": {
+				"accept": {
+					"type": "boolean"
+				},
+				"reason": {
+					"type": "string"
+				}
+			}
+		},
+		"GetCapabilitiesResponseObject": {
+			"type": "object",
+			"properties": {
+				"payloadName": {
+					"type": "string"
+				},
+				"payloadVersion": {
+					"type": "string"
+				},
+				"payloadSchemaUrl": {
+					"type": "string"
+				},
+				"implementedInterfaces": {
+					"$ref": "#/definitions/ImplementedInterfaces"
+				}
+			}
+		},
+		"ImplementedInterfaces": {
+			"type": "object",
+			"properties": {
+				"pull": {
+					"type": "boolean"
+				},
+				"push": {
+					"type": "boolean"
+				},
+				"list": {
+					"type": "boolean"
+				},
+				"subscription": {
+					"type": "boolean"
+				},
+				"status": {
+					"type": "boolean"
+				},
+				"access": {
+					"type": "boolean"
+				}
+			}
+		},
+		"GetListResponseObject": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"format": "int32",
+					"type": "integer"
+				},
+				"status": {
+					"format": "int32",
+					"type": "integer"
+				},
+				"description": {
+					"type": "string"
+				}
+			}
+		},
+		"GetMessageResponseObject": {
+			"type": "object",
+			"properties": {
+				"messages": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"messageId": {
+					"format": "uuid",
+					"type": "string"
+				},
+				"timestamp": {
+					"format": "date-time",
+					"type": "string"
+				}
+			}
+		},
+		"PostMessageRequestObject": {
+			"type": "object",
+			"properties": {
+				"ackRequest": {
+					"type": "boolean"
+				},
+				"activeSubscription": {
+					"type": "boolean"
+				},
+				"purpose": {
+					"enum": ["RouteOptimization", "RouteCrossCheck", "EnhancedMonitoring"],
+					"type": "string"
+				},
+				"message": {
+					"type": "string"
+				},
+				"messageId": {
+					"format": "uuid",
+					"type": "string"
+				},
+				"timestamp": {
+					"format": "date-time",
+					"type": "string"
+				}
+			}
+		},
+		"AcknowledgementObject": {
+			"type": "object",
+			"properties": {
+				"referenceMessageId": {
+					"format": "uuid",
+					"type": "string"
+				},
+				"timeOfDelivery": {
+					"format": "date-time",
+					"type": "string"
+				},
+				"acknowledgementType": {
+					"type": "string"
+				}
+			}
+		},
+		"GetStatusResponseObject": {
+			"type": "object",
+			"properties": {
+				"lastPrivateInteractionTime": {
+					"format": "date-time",
+					"type": "string"
+				}
+			}
+		},
+		"RequestSubscriptionRequestObject": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"type": "string"
+				}
+			}
+		},
+		"RemoveSubscriptionRequestObject": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"type": "string"
+				}
+			}
+		},
+		"SubscriptionNotificationRequestObject": {
+			"type": "object",
+			"properties": {
+				"id": {
+					"type": "string"
+				},
+				"initiatedInternally": {
+					"type": "boolean"
+				}
+			}
+		}
+	}
+}
