@@ -22,12 +22,7 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.xml.transform.OutputKeys;
@@ -48,11 +43,11 @@ import java.io.StringWriter;
  *     xmllint --noout --schema http://localhost:8080/rest/S-124/S124.xsd http://localhost:8080/rest/S-124/NW-061-17.gml
  * </pre>
  */
-@Api(value = "/S-124",
+@Api(value = "/legacy/S-124",
         description = "Public API for accessing messages as S-124 GML. " +
                 "NB: Only use this service for test purposes, not for production.",
         tags = {"S-124" })
-@Path("/S-124")
+@Path("/legacy/S-124")
 public class S124RestService {
 
     @Inject
