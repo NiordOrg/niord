@@ -15,8 +15,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jboss.bom.version>10.1.0.Final</jboss.bom.version>
         <keycloak.version>3.1.0.Final</keycloak.version>
-        <jackson.version>2.7.4</jackson.version>
-        <swagger.version>1.5.13</swagger.version>
+        <jackson.version>2.9.7</jackson.version>
+        <swagger.version>1.5.21</swagger.version>
         <batik.version>1.8</batik.version>
     </properties>
 
@@ -139,7 +139,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
+                <version>3.8.0</version>
                 <configuration>
                     <source>${java.min.version}</source>
                     <target>${java.min.version}</target>
@@ -148,7 +148,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
-                <version>2.1.1</version>
+                <version>3.2.2</version>
                 <configuration>
                     <failOnMissingWebXml>false</failOnMissingWebXml>
                 </configuration>
