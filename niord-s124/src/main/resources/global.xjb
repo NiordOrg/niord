@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <jaxb:bindings version="2.0" xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
                xmlns:xs="http://www.w3.org/2001/XMLSchema"
+               xmlns:namespace="http://jaxb2-commons.dev.java.net/namespace-prefix"
                jaxb:extensionBindingPrefixes="xjc">
 
     <jaxb:globalBindings>
@@ -22,6 +23,17 @@
             <jaxb:bindings node="//xs:element[@name='SurfaceProperty']">
                 <jaxb:factoryMethod name="SurfacePropertyExt"/>
             </jaxb:bindings>
+        </jaxb:bindings>
+    </jaxb:bindings>
+
+    <jaxb:bindings schemaLocation="xsd/S124/1.0/20180910/S124.xsd">
+        <jaxb:bindings>
+            <namespace:prefix name="S124" />
+        </jaxb:bindings>
+    </jaxb:bindings>
+    <jaxb:bindings schemaLocation="xsd/S100_3_0_0/S100GML/20170505/S100_gmlProfile.xsd">
+        <jaxb:bindings>
+            <namespace:prefix name="GML" />
         </jaxb:bindings>
     </jaxb:bindings>
 
