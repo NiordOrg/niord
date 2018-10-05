@@ -30,6 +30,13 @@ public class S124ApiServiceImpl implements S124ApiService {
     }
 
     public Response s124Get(Integer id, Integer status, String wkt, SecurityContext securityContext) {
+        if (id != null)
+            return Response.status(501).entity(new ApiResponseMessage(ApiResponseMessage.ERROR, "'id' query parameter not yet supported.")).build();
+        if (status != null)
+            return Response.status(501).entity(new ApiResponseMessage(ApiResponseMessage.ERROR, "'status' query parameter not yet supported.")).build();
+        if (wkt != null)
+            return Response.status(501).entity(new ApiResponseMessage(ApiResponseMessage.ERROR, "'wkt' query parameter not yet supported.")).build();
+
         List<String> gmls = s124Service.generateGML();
 
         GetMessageResponseObject responseObject = new GetMessageResponseObject();
