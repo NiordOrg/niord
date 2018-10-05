@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml/3.2"
+    xmlns:S100="http://www.iho.int/s100gml/1.0"
+    xmlns="http://www.iho.int/s100gml/1.0+EXT" targetNamespace="http://www.iho.int/s100gml/1.0+EXT" elementFormDefault="qualified">
+<!-- ============================================================================================= -->
+<!-- S-100 GML base schema extensions and corrections.                                             -->
+<!-- ============================================================================================= -->
+
+<!-- =============================================================================================
+Draft Copyright, license, and disclaimer
+© Copyright 2015 ... (Formal Copyright statement tbd)
+
+License (Draft)
+Certain parts of this document refer to or are based on the standards, documents, schemas, or other material
+of the International Organization for Standardization (ISO), Open Geospatial Consortium (OGC), and International
+Hydrographic Organization / Organisation Hydrographique Internationale (IHO/OHI).
+The ISO material can be obtained from any ISO member and from the Web site of the ISO Central Secretariat
+at www.iso.org.
+The OGC material can be obtained from the OGC Web site at www.opengeospatial.org.
+The IHO material can be obtained from the IHO Web site at www.iho.int or from the International Hydrographic
+Bureau.
+
+Permission to copy and distribute this document is hereby granted provided that this notice is retained
+on all copies, and that IHO & Jeppesen are credited when the material is redistributed or used in
+part or whole in derivative works.
+Redistributions in binary form must reproduce this notice in the documentation and/or other materials
+provided with the distribution.
+
+Disclaimer
+This work is provided by the copyright holders and contributors "as is" and any express or implied warranties,
+including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose
+are disclaimed. In no event shall the copyright owner or contributors be liable for any direct, indirect,
+incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute
+goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of
+liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way
+out of the use of this software, even if advised of the possibility of such damage.
+
+Document history
+Version 1.0	2015-09-29	Raphael Malyankar (Jeppesen)	Initial version
+================================================================================================== -->
+    <xs:annotation>
+        <xs:documentation>Extensions / corrections to the IHO TSMAD S-100 GML base schema (April 2014) for S-100 GML data format.</xs:documentation>
+    </xs:annotation>
+
+    <xs:import namespace="http://www.opengis.net/gml/3.2" schemaLocation="./S100_gmlProfile.xsd"/>
+    <xs:import namespace="http://www.iho.int/s100gml/1.0" schemaLocation="s100gmlbase.xsd"/>
+    <!-- Note: See Part 10b regarding application dataset import of GML schemas instead of profile XSD, and declaration of compliance levels -->
+
+<!-- to do: add common nillable types? -->
+
+<!--    <xs:complexType name="PointType">
+        <xs:annotation><xs:documentation>S-100 point type adds an information association to the GML spatial type Point. And a separate SpatialQuality association?</xs:documentation></xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="gml:PointType">
+                <xs:sequence>
+                    <xs:element ref="S100:informationAssociation" maxOccurs="unbounded" minOccurs="0"/>
+                    <xs:element name="SpatialQuality" type="gml:ReferenceType" minOccurs="0" maxOccurs="1"><xs:annotation><xs:documentation>Reference to spatial uncertainty information type.</xs:documentation></xs:annotation></xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:element name="Point" type="PointType" substitutionGroup="gml:AbstractGeometricPrimitive"/>
+
+    <xs:complexType name="PointPropertyType">
+        <xs:annotation><xs:documentation>Point property using the S-100 point type.</xs:documentation></xs:annotation>
+        <xs:sequence>
+            <xs:element ref="Point" minOccurs="0"/>
+        </xs:sequence>
+        <xs:attributeGroup ref="gml:AssociationAttributeGroup"/>
+    </xs:complexType>-->
+    <xs:complexType name="PointPropertyType">
+        <xs:annotation><xs:documentation>WIP update to spatial property types in profile. Spatial quality for an individual should be indicated by either the generic information association or the SpatialQuality role-element.</xs:documentation></xs:annotation>
+        <xs:sequence>
+            <xs:element ref="S100:pointProperty"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:element name="PointProperty" type="PointPropertyType"/>
+    <xs:complexType name="SurfacePropertyType">
+        <xs:annotation><xs:documentation>WIP update to spatial property types in profile. Spatial quality for an individual should be indicated by either the generic information association or the SpatialQuality role-element.</xs:documentation></xs:annotation>
+        <xs:choice>
+            <xs:element ref="S100:surfaceProperty"/>
+        </xs:choice>
+    </xs:complexType>
+    <xs:element name="SurfaceProperty" type="SurfacePropertyType"/>
+    <xs:complexType name="CurvePropertyType">
+        <xs:annotation><xs:documentation>WIP update to spatial property types in profile. Spatial quality for an individual should be indicated by either the generic information association or the SpatialQuality role-element.</xs:documentation></xs:annotation>
+        <xs:choice>
+            <xs:element ref="S100:curveProperty"/>
+            <xs:element ref="S100:compositeCurveProperty"/>
+            <xs:element ref="S100:orientableCurveProperty"/>
+        </xs:choice>
+    </xs:complexType>
+    <xs:element name="CurveProperty" type="CurvePropertyType"/>
+
+    <!-- ================================================= -->
+    <!-- spatial property union types                      -->
+    <!-- these are needed if the encoding defines features -->
+    <!-- with the same tag for all different spatial types -->
+    <!-- allowed for the feature                           -->
+    <!-- ================================================= -->
+    
+    <xs:complexType name="PointOrSurfacePropertyType">
+        <xs:choice>
+            <xs:element ref="S100:pointProperty"/>
+            <xs:element ref="S100:surfaceProperty"/>
+        </xs:choice>
+    </xs:complexType>
+    <xs:element name="PointOrSurfaceProperty" type="PointOrSurfacePropertyType"/>
+    <xs:complexType name="CurveOrSurfacePropertyType">
+        <xs:choice>
+            <xs:element ref="S100:curveProperty"/>
+            <xs:element ref="S100:surfaceProperty"/>
+        </xs:choice>
+    </xs:complexType>
+    <xs:element name="CurveOrSurfaceProperty" type="CurveOrSurfacePropertyType"/>
+    <xs:complexType name="PointCurveSurfacePropertyType">
+        <xs:choice>
+            <xs:element ref="S100:pointProperty"/>
+            <xs:element ref="S100:curveProperty"/>
+            <xs:element ref="S100:surfaceProperty"/>
+        </xs:choice>
+        <!--<xs:attributeGroup ref="gml:AssociationAttributeGroup"/>-->
+    </xs:complexType>
+    <xs:element name="PointCurveSurfaceProperty" type="PointCurveSurfacePropertyType"/>
+    <xs:complexType name="PointOrCurvePropertyType">
+        <xs:choice>
+            <xs:element ref="CurveProperty"/>
+            <xs:element ref="SurfaceProperty"/>
+        </xs:choice>
+        <!--<xs:attributeGroup ref="gml:AssociationAttributeGroup"/>-->
+    </xs:complexType>
+    <xs:element name="PointOrCurveProperty" type="PointOrCurvePropertyType"/>
+
+</xs:schema>
