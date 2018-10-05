@@ -16,6 +16,8 @@
 package org.niord.s124;
 
 
+import _int.iho.s124.gml.cs0._0.DatasetType;
+import _int.iho.s124.gml.cs0._0.ObjectFactory;
 import freemarker.cache.ClassTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -29,11 +31,9 @@ import org.niord.model.message.ReferenceVo;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.xml.bind.*;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 /**
@@ -51,10 +51,39 @@ import java.util.Map;
 public class S124Service {
 
     @Inject
-    MessageService messageService;
+    private MessageService messageService;
 
     @Inject
-    NiordApp app;
+    private NiordApp app;
+
+    @Inject
+    private ObjectFactory objectFactory;
+
+    public List<String> generateGML() {
+        List<String> gmls = new LinkedList<>();
+
+        DatasetType datasetType = new DatasetType();
+        datasetType.setId("myId");
+
+        JAXBElement<DatasetType> dataSet = objectFactory.createDataSet(datasetType);
+
+        StringWriter sw = new StringWriter();
+
+        try {
+            JAXBContext context = JAXBContext.newInstance(DatasetType.class);
+            Marshaller mar = context.createMarshaller();
+            mar.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+            mar.marshal(dataSet, sw);
+
+            gmls.add(sw.toString());
+        } catch (PropertyException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        } catch (JAXBException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
+
+        return gmls;
+    }
 
     /**
      * Generates S-124 compliant GML for the message
@@ -130,7 +159,6 @@ public class S124Service {
         }
         return result;
     }
-
 
     /**
      * Utility class used for message references, including the referenced message

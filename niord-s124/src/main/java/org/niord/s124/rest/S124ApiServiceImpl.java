@@ -1,15 +1,26 @@
 package org.niord.s124.rest;
 
+import org.niord.s124.S124Service;
 import org.niord.s124.rest.generated.api.ApiResponseMessage;
 import org.niord.s124.rest.generated.api.S124ApiService;
 import org.niord.s124.rest.generated.model.*;
 
 import javax.enterprise.context.RequestScoped;
+import javax.inject.Inject;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
+import java.time.OffsetDateTime;
+import java.util.List;
+import java.util.UUID;
+
+import static javax.ws.rs.core.Response.Status.OK;
 
 @RequestScoped
 public class S124ApiServiceImpl implements S124ApiService {
+
+    @Inject
+    private S124Service s124Service;
+
     public Response s124AccessNotificationPost(AccessNotificationRequestObject requestObject, SecurityContext securityContext) {
         return Response.status(501).entity(new ApiResponseMessage(ApiResponseMessage.ERROR, "Not yet implemented")).build();
     }
@@ -19,7 +30,14 @@ public class S124ApiServiceImpl implements S124ApiService {
     }
 
     public Response s124Get(Integer id, Integer status, String wkt, SecurityContext securityContext) {
-        return Response.status(501).entity(new ApiResponseMessage(ApiResponseMessage.ERROR, "Not yet implemented")).build();
+        List<String> gmls = s124Service.generateGML();
+
+        GetMessageResponseObject responseObject = new GetMessageResponseObject();
+        responseObject.setMessageId(UUID.randomUUID());
+        responseObject.setTimestamp(OffsetDateTime.now());
+        responseObject.getMessages().addAll(gmls);
+
+        return Response.status(OK).entity(responseObject).build();
     }
 
     public Response s124ListGet(String wkt, SecurityContext securityContext) {
