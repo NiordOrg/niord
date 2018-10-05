@@ -5,6 +5,8 @@
             <!--module name="org.dom4j"/-->
             <module name="org.keycloak.keycloak-adapter-spi"/>
             <module name="org.apache.httpcomponents"/>
+            <module name="com.fasterxml.jackson.datatype.jackson-datatype-jsr310" services="import" />
+            <module name="com.fasterxml.jackson.datatype.jackson-datatype-jdk8" services="import" />
         </dependencies>
     </deployment>
 </jboss-deployment-structure>
