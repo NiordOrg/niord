@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<jaxb:bindings version="2.0" xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+               xmlns:xs="http://www.w3.org/2001/XMLSchema"
+               jaxb:extensionBindingPrefixes="xjc">
+
+    <jaxb:globalBindings>
+    </jaxb:globalBindings>
+
+    <jaxb:bindings version="1.0" xmlns:jaxb="http://java.sun.com/xml/ns/jaxb">
+
+        <jaxb:bindings scd="x-schema::xlink" xmlns:xlink="http://www.w3.org/1999/xlink">
+            <jaxb:bindings scd="/group::xlink:locatorModel/model::sequence/xlink:title">
+                <jaxb:property name="title1"/>
+            </jaxb:bindings>
+        </jaxb:bindings>
+
+        <jaxb:bindings schemaLocation="xsd/S100_3_0_0/S100GML/20170505/s100gmlbaseExt.xsd" node="/xs:schema">
+            <jaxb:bindings node="//xs:element[@name='PointProperty']">
+                <jaxb:factoryMethod name="PointPropertyExt"/>
+            </jaxb:bindings>
+            <jaxb:bindings node="//xs:element[@name='CurveProperty']">
+                <jaxb:factoryMethod name="CurvePropertyExt"/>
+            </jaxb:bindings>
+            <jaxb:bindings node="//xs:element[@name='SurfaceProperty']">
+                <jaxb:factoryMethod name="SurfacePropertyExt"/>
+            </jaxb:bindings>
+
+        </jaxb:bindings>
+<!--
+com.sun.istack.SAXParseException2; systemId: file:/Users/tbsalling/Documents/tbsalling.dk/prj/028_DMA_niord/src/niord/niord-s124/src/main/resources/xsd/S100_3_0_0/S100GML/20170505/s100gmlbase.xsd; lineNumber: 332; columnNumber: 64; Two declarations cause a collision in the ObjectFactory class.
+com.sun.istack.SAXParseException2; systemId: file:/Users/tbsalling/Documents/tbsalling.dk/prj/028_DMA_niord/src/niord/niord-s124/src/main/resources/xsd/S100_3_0_0/S100GML/20170505/s100gmlbaseExt.xsd; lineNumber: 79; columnNumber: 64; (Related to above error) This is the other declaration.
+-->
+    </jaxb:bindings>
+
+</jaxb:bindings>
