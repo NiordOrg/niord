@@ -13,21 +13,21 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class S124ValidatorTest {
+public class S124GmlValidatorTest {
 
-    private static S124Validator sut;
+    private static S124GmlValidator sut;
     private static ObjectFactory objectFactory;
 
     @BeforeClass
     public static void before() throws SAXException {
-        sut = new S124Validator();
+        sut = new S124GmlValidator();
         objectFactory = new ObjectFactory();
     }
 
     @Test
     public void detectMissingId() throws JAXBException {
         JAXBElement<DatasetType> datasetType = objectFactory.createDataSet(new DatasetType());
-        List<S124Validator.ValidationError> validationErrors = sut.validateSchema(datasetType);
+        List<S124GmlValidator.ValidationError> validationErrors = sut.validateAgainstSchema(datasetType);
 
         assertTrue(validationErrors.size() == 1);
         assertEquals("ERROR: Line 0, column 0: cvc-complex-type.4: Attribute 'id' must appear on element 'S124:DataSet'.", validationErrors.get(0).toString());
@@ -39,7 +39,7 @@ public class S124ValidatorTest {
         JAXBElement<DatasetType> datasetType = objectFactory.createDataSet(new DatasetType());
 
         datasetType.getValue().setId("IDTBS");
-        List<S124Validator.ValidationError> validationErrors = sut.validateSchema(datasetType);
+        List<S124GmlValidator.ValidationError> validationErrors = sut.validateAgainstSchema(datasetType);
 
         assertTrue(validationErrors.isEmpty());
     }

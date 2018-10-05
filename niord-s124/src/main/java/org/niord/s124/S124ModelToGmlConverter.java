@@ -8,12 +8,12 @@ import javax.inject.Inject;
 import javax.xml.bind.*;
 import java.io.StringWriter;
 
-public class ModelToS124Converter {
+public class S124ModelToGmlConverter {
 
     private final ObjectFactory objectFactory;
 
     @Inject
-    public ModelToS124Converter(ObjectFactory objectFactory) {
+    public S124ModelToGmlConverter(ObjectFactory objectFactory) {
         this.objectFactory = objectFactory;
     }
 

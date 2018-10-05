@@ -19,17 +19,17 @@ import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.List;
 
-public class S124Validator {
+public class S124GmlValidator {
 
     private final Validator validator;
 
     @SuppressWarnings("unused")
-    public S124Validator() throws SAXException {
+    public S124GmlValidator() throws SAXException {
         Schema mySchema = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI).newSchema(new File("src/main/resources/xsd/S124/1.0/20180910/S124.xsd"));
         validator = mySchema.newValidator();
     }
 
-    public List<ValidationError> validateSchema(JAXBElement<?> jaxbElement) throws JAXBException {
+    public List<ValidationError> validateAgainstSchema(JAXBElement<?> jaxbElement) throws JAXBException {
         JAXBContext jaxbContext = JAXBContext.newInstance(jaxbElement.getValue().getClass());
         JAXBSource source = new JAXBSource(jaxbContext, jaxbElement);
 
