@@ -17,7 +17,6 @@ package org.niord.s124;
 
 
 import _int.iho.s124.gml.cs0._0.DatasetType;
-import _int.iho.s124.gml.cs0._0.ObjectFactory;
 import freemarker.cache.ClassTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -31,7 +30,7 @@ import org.niord.model.message.ReferenceVo;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
-import javax.xml.bind.*;
+import javax.xml.bind.JAXBElement;
 import java.io.StringWriter;
 import java.util.*;
 
@@ -50,37 +49,30 @@ import java.util.*;
 @Stateless
 public class S124Service {
 
-    @Inject
     private MessageService messageService;
 
-    @Inject
+    private ModelToS124Converter modelToS124Converter;
+
     private NiordApp app;
 
+    @SuppressWarnings("unused")
+    public S124Service() {}
+
     @Inject
-    private ObjectFactory objectFactory;
+    public S124Service(MessageService messageService, ModelToS124Converter modelToS124Converter, NiordApp app) {
+        this.messageService = messageService;
+        this.modelToS124Converter = modelToS124Converter;
+        this.app = app;
+    }
 
     public List<String> generateGML() {
+        Message message = messageService.resolveMessage("NW-015-17");
+
+        JAXBElement<DatasetType> dataSet = modelToS124Converter.toS124(message);
+        String gml = modelToS124Converter.toString(dataSet);
+
         List<String> gmls = new LinkedList<>();
-
-        DatasetType datasetType = new DatasetType();
-        datasetType.setId("myId");
-
-        JAXBElement<DatasetType> dataSet = objectFactory.createDataSet(datasetType);
-
-        StringWriter sw = new StringWriter();
-
-        try {
-            JAXBContext context = JAXBContext.newInstance(DatasetType.class);
-            Marshaller mar = context.createMarshaller();
-            mar.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-            mar.marshal(dataSet, sw);
-
-            gmls.add(sw.toString());
-        } catch (PropertyException e) {
-            throw new RuntimeException(e.getMessage(), e);
-        } catch (JAXBException e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
+        gmls.add(gml);
 
         return gmls;
     }
