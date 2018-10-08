@@ -6,6 +6,7 @@ import _int.iho.s124.gml.cs0._0.*;
 import com.google.common.collect.Lists;
 import net.opengis.gml._3.*;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.message.Message;
@@ -348,7 +349,11 @@ public class S124ModelToGmlConverter {
     }
 
     private void generatePreamble(DatasetType datasetType, String lang, String mrn, String id, SystemMessageVo msg) {
+        NWPreambleType nwPreambleType = s124ObjectFactory.createNWPreambleType();
+
         datasetType.setId(id);
+
+        // ---
 
         MessageSeriesIdentifierType messageSeriesIdentifierType = s124ObjectFactory.createMessageSeriesIdentifierType();
         messageSeriesIdentifierType.setWarningIdentifier(mrn);
@@ -377,15 +382,28 @@ public class S124ModelToGmlConverter {
                 log.warn("Messages of type {} not mapped.", msg.getType().name());
         }
 
+        // ---
+
         if (lang.equalsIgnoreCase("da"))
             messageSeriesIdentifierType.setProductionAgency("SØFARTSSTYRELSEN");
         else
             messageSeriesIdentifierType.setProductionAgency("DANISH MARITIME AUTHORITY");
 
-        NWPreambleType nwPreambleType = s124ObjectFactory.createNWPreambleType();
         nwPreambleType.setMessageSeriesIdentifier(messageSeriesIdentifierType);
         nwPreambleType.setId("PR." + id);
 
+        // ---
+
+        MessageDescVo msgDesc = msg.getDesc(lang);
+
+        if (msgDesc != null && !StringUtils.isBlank(msgDesc.getTitle())) {
+            TitleType titleType = s124ObjectFactory.createTitleType();
+            titleType.setLanguage(msgDesc.getLang());
+            titleType.setText(msgDesc.getTitle());
+            nwPreambleType.getTitle().add(titleType);
+        }
+
+        // ---
 
         GregorianCalendar publicationDate = new GregorianCalendar();
         publicationDate.setTime(msg.getPublishDateFrom());
@@ -395,6 +413,8 @@ public class S124ModelToGmlConverter {
             log.error(e.getMessage(), e);
         }
 
+        // ---
+
         msg.getAreas().forEach(area -> {
             GeneralAreaType generalAreaType = generateArea(s124ObjectFactory.createGeneralAreaType(), area, area, "en");
             nwPreambleType.getGeneralArea().add(generalAreaType);
@@ -402,6 +422,8 @@ public class S124ModelToGmlConverter {
             LocalityType localityType = generateLocality(s124ObjectFactory.createLocalityType(), area, area, "en");
             nwPreambleType.getLocality().add(localityType);
         });
+
+        // ---
 
         JAXBElement<NWPreambleType> nwPreambleTypeElement = s124ObjectFactory.createNWPreamble(nwPreambleType);
 
