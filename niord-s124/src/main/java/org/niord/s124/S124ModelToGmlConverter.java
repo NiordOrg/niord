@@ -5,6 +5,7 @@ import _int.iho.s100gml._1.PointType;
 import _int.iho.s124.gml.cs0._0.*;
 import com.google.common.collect.Lists;
 import net.opengis.gml._3.*;
+import net.opengis.gml._3.ReferenceType;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.niord.core.NiordApp;
@@ -422,6 +423,24 @@ public class S124ModelToGmlConverter {
             LocalityType localityType = generateLocality(s124ObjectFactory.createLocalityType(), area, area, "en");
             nwPreambleType.getLocality().add(localityType);
         });
+
+        // ---
+
+        msg.getParts().forEach(part -> {
+            ReferenceType referenceType = gmlObjectFactory.createReferenceType();
+            referenceType.setHref(String.format("#%s.%d", id, part.getIndexNo() + 1));
+            nwPreambleType.getTheWarningPart().add(referenceType);
+        });
+
+        /*
+            TODO referenced messages
+
+        <#if references?has_content>
+            <#list references as ref>
+                <theWarningPart xlink:href="#${id}.${ref?index + partNo + 1}"></theWarningPart>
+            </#list>
+        </#if>
+         */
 
         // ---
 
