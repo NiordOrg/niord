@@ -7,6 +7,7 @@ import org.niord.s124.rest.generated.model.*;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.time.OffsetDateTime;
@@ -37,7 +38,9 @@ public class S124ApiServiceImpl implements S124ApiService {
         if (wkt != null)
             return Response.status(501).entity(new ApiResponseMessage(ApiResponseMessage.ERROR, "'wkt' query parameter not yet supported.")).build();
 
-        List<String> gmls = s124Service.generateGML();
+        String language = "en";
+
+        List<String> gmls = s124Service.generateGML(language);
 
         GetMessageResponseObject responseObject = new GetMessageResponseObject();
         responseObject.setMessageId(UUID.randomUUID());
