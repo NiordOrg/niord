@@ -51,7 +51,7 @@ public class S124Service {
 
     private MessageService messageService;
 
-    private S124ModelToGmlConverter s124ModelToGmlConverter;
+    private S124ModelToGmlConverter modelToGmlConverter;
 
     private NiordApp app;
 
@@ -59,17 +59,17 @@ public class S124Service {
     public S124Service() {}
 
     @Inject
-    public S124Service(MessageService messageService, S124ModelToGmlConverter s124ModelToGmlConverter, NiordApp app) {
+    public S124Service(MessageService messageService, S124ModelToGmlConverter modelToGmlConverter, NiordApp app) {
         this.messageService = messageService;
-        this.s124ModelToGmlConverter = s124ModelToGmlConverter;
+        this.modelToGmlConverter = modelToGmlConverter;
         this.app = app;
     }
 
-    public List<String> generateGML() {
+    public List<String> generateGML(String language) {
         Message message = messageService.resolveMessage("NW-015-17");
 
-        JAXBElement<DatasetType> dataSet = s124ModelToGmlConverter.toS124(message);
-        String gml = s124ModelToGmlConverter.toString(dataSet);
+        JAXBElement<DatasetType> dataSet = modelToGmlConverter.toGml(message, language);
+        String gml = modelToGmlConverter.toString(dataSet);
 
         List<String> gmls = new LinkedList<>();
         gmls.add(gml);
@@ -120,7 +120,6 @@ public class S124Service {
 
         StringWriter result = new StringWriter();
         Template fmTemplate = cfg.getTemplate("generate-s124.ftl");
-
 
         fmTemplate.process(data, result);
         return result.toString();
