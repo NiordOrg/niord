@@ -21,7 +21,10 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import java.io.StringWriter;
 import java.lang.Boolean;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
@@ -204,7 +207,7 @@ public class S124ModelToGmlConverter {
     }
 
 
-    public PointPropertyType generatePoint(String id, double[] coords) {
+    private PointPropertyType generatePoint(String id, double[] coords) {
         PointPropertyType pointPropertyType = null;
 
         if (coords != null && coords.length > 1) {
@@ -310,7 +313,7 @@ public class S124ModelToGmlConverter {
             geometry.add(p);
         } else if (g instanceof MultiLineStringVo) {
             double[][][] coords = ((MultiLineStringVo) g).getCoordinates();
-            for (int i=0; i<coords.length; i++) {
+            for (int i = 0; i < coords.length; i++) {
                 _int.iho.s100gml._1.CurvePropertyType curvePropertyType = generateCurve(id, coords[i]);
                 PointCurveSurface p = s124ObjectFactory.createPointCurveSurface();
                 p.setCurveProperty(curvePropertyType);
@@ -318,7 +321,7 @@ public class S124ModelToGmlConverter {
             }
         } else if (g instanceof PolygonVo) {
             double[][][] coords = ((PolygonVo) g).getCoordinates();
-            for (int i=0; i<coords.length; i++) {
+            for (int i = 0; i < coords.length; i++) {
                 _int.iho.s100gml._1.SurfacePropertyType surfacePropertyType = generateSurface(id, coords[i], i == 0);
                 PointCurveSurface p = s124ObjectFactory.createPointCurveSurface();
                 p.setSurfaceProperty(surfacePropertyType);
@@ -395,6 +398,9 @@ public class S124ModelToGmlConverter {
         msg.getAreas().forEach(area -> {
             GeneralAreaType generalAreaType = generateArea(s124ObjectFactory.createGeneralAreaType(), area, area, "en");
             nwPreambleType.getGeneralArea().add(generalAreaType);
+
+            LocalityType localityType = generateLocality(s124ObjectFactory.createLocalityType(), area, area, "en");
+            nwPreambleType.getLocality().add(localityType);
         });
 
         JAXBElement<NWPreambleType> nwPreambleTypeElement = s124ObjectFactory.createNWPreamble(nwPreambleType);
@@ -405,24 +411,20 @@ public class S124ModelToGmlConverter {
         datasetType.getImemberOrMember().add(imember);
     }
 
-    private List<LocationNameType> generateLocality(AreaVo area, AreaVo rootArea, String lang) {
-        List<LocationNameType> locationNameList = new LinkedList<>();
-
-        if (area.getId() != rootArea.getId()) {
-            AreaDescVo areaDesc = area.getDesc(lang);
-            if (areaDesc != null && areaDesc.getName() != null) {
-                LocationNameType locationNameType = s124ObjectFactory.createLocationNameType();
-                locationNameType.setLanguage(lang);
-                locationNameType.setText(areaDesc.getName());
-                locationNameList.add(locationNameType);
-            }
-            if (area.getParent() != null) {
-                generateLocality(area.getParent(), rootArea, lang);
-            }
-
+    private LocalityType generateLocality(LocalityType localityType, AreaVo area, AreaVo rootArea, String lang) {
+        AreaDescVo areaDesc = area.getDesc(lang);
+        if (areaDesc != null && areaDesc.getName() != null) {
+            LocationNameType locationNameType = s124ObjectFactory.createLocationNameType();
+            locationNameType.setLanguage(lang);
+            locationNameType.setText(areaDesc.getName());
+            localityType.getLocationName().add(locationNameType);
         }
 
-        return locationNameList;
+        if (area.getParent() != null) {
+            generateLocality(localityType, area.getParent(), rootArea, lang);
+        }
+
+        return localityType;
     }
 
     private GeneralAreaType generateArea(GeneralAreaType generalAreaType, AreaVo msgArea, AreaVo area, String lang) {
@@ -452,8 +454,6 @@ public class S124ModelToGmlConverter {
 
             if (area.getParent() != null) {
                 generalAreaType = generateArea(generalAreaType, msgArea, area.getParent(), lang);
-            } else {
-                generalAreaType.getLocationName().addAll(generateLocality(msgArea, area, lang));
             }
         }
 
