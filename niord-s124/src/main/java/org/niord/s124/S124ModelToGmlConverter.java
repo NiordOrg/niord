@@ -158,7 +158,15 @@ public class S124ModelToGmlConverter {
             <@generateGeometry g=feature.geometry></@generateGeometry>
         </#list>
     </#if>
+    */
+        if (partDesc != null && StringUtils.isNotBlank(partDesc.getDetails())) {
+            WarningInformationType warningInformationType = s124ObjectFactory.createWarningInformationType();
+            warningInformationType.setLanguage(partDesc.getLang());
+            warningInformationType.setText(partDesc.getDetails());
+            navigationalWarningFeaturePartType.getWarningInformation().add(warningInformationType);
+        }
 
+/*
     <#if partDesc?? && partDesc.details?has_content>
         <Subject>
             <language>${lang(partDesc.lang)}</language>
