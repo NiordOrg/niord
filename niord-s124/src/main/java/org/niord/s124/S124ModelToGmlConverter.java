@@ -167,12 +167,6 @@ public class S124ModelToGmlConverter {
         }
 
 /*
-    <#if partDesc?? && partDesc.details?has_content>
-        <Subject>
-            <language>${lang(partDesc.lang)}</language>
-            <text><@htmlToText html=partDesc.details></@htmlToText></text>
-        </Subject>
-    </#if>
 
     <#if partVo.eventDates?? && partVo.eventDates?has_content>
         <#list partVo.eventDates as date>
@@ -208,9 +202,13 @@ public class S124ModelToGmlConverter {
         DirectPositionListType directPositionListType = gmlObjectFactory.createDirectPositionListType();
 
         List<Double> coordColl = new ArrayList<>(coords.length * 2);
-        Arrays.stream(coords)
-                .flatMapToDouble(array -> Arrays.stream(array))
-                .forEach(d -> coordColl.add(d));
+
+        for (int i=0; i<coords.length; i++) {
+            double[] coord = coords[i];
+            for (int j=coord.length-1; j>=0; j--) {
+                coordColl.add(coord[j]);
+            }
+        }
 
         directPositionListType.getValue().addAll(coordColl);
         return directPositionListType;
@@ -280,21 +278,19 @@ public class S124ModelToGmlConverter {
             PolygonPatchType polygonPatchType = gmlObjectFactory.createPolygonPatchType();
             surfacePatchArrayPropertyType.getAbstractSurfacePatch().add(gmlObjectFactory.createPolygonPatch(polygonPatchType));
 
-            JAXBElement<PolygonPatchType> polygonPatch = gmlObjectFactory.createPolygonPatch(polygonPatchType);
-            surfaceType.getPatches().getAbstractSurfacePatch().add(polygonPatch);
-
             LinearRingType linearRingType = gmlObjectFactory.createLinearRingType();
             linearRingType.setPosList(generateCoordinates(coords));
 
-            AbstractRingPropertyType abstractRingPropertyType1 = gmlObjectFactory.createAbstractRingPropertyType();
-            abstractRingPropertyType1.setAbstractRing(gmlObjectFactory.createAbstractRing(linearRingType));
+            AbstractRingPropertyType abstractRingPropertyType = gmlObjectFactory.createAbstractRingPropertyType();
+            abstractRingPropertyType.setAbstractRing(gmlObjectFactory.createAbstractRing(linearRingType));
 
-            JAXBElement<AbstractRingPropertyType> element = isFirst ? gmlObjectFactory.createExterior(abstractRingPropertyType1) : gmlObjectFactory.createInterior(abstractRingPropertyType1);
-
-            if (isFirst)
+            if (isFirst) {
+                JAXBElement<AbstractRingPropertyType> element = gmlObjectFactory.createExterior(abstractRingPropertyType);
                 polygonPatchType.setExterior(element.getValue());
-            else
+            } else {
+                JAXBElement<AbstractRingPropertyType> element = gmlObjectFactory.createInterior(abstractRingPropertyType);
                 polygonPatchType.getInterior().add(element.getValue());
+            }
         }
 
         return surfacePropertyType;
