@@ -23,10 +23,7 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import java.io.StringWriter;
 import java.lang.Boolean;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.GregorianCalendar;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static java.util.Objects.requireNonNull;
@@ -166,34 +163,78 @@ public class S124ModelToGmlConverter {
             navigationalWarningFeaturePartType.getWarningInformation().add(warningInformationType);
         }
 
-/*
+        // ---
 
-    <#if partVo.eventDates?? && partVo.eventDates?has_content>
-        <#list partVo.eventDates as date>
-            <#assign allDay=date.allDay?? && date.allDay == true />
-            <fixedDateRange>
-                <#if date.fromDate?? && !allDay>
-                    <timeOfDayStart>${date.fromDate?string["HH:mm:ss"]}Z</timeOfDayStart>
-                </#if>
-                <#if date.toDate?? && !allDay>
-                    <timeOfDayEnd>${date.toDate?string["HH:mm:ss"]}Z</timeOfDayEnd>
-                </#if>
-                <#if date.fromDate??>
-                    <dateStart>
-                        <date>${date.fromDate?string["yyyy-MM-dd"]}</date>
-                    </dateStart>
-                </#if>
-                <#if date.toDate??>
-                    <dateEnd>
-                        <date>${date.toDate?string["yyyy-MM-dd"]}</date>
-                    </dateEnd>
-                </#if>
-            </fixedDateRange>
-        </#list>
-    </#if>
+        FixedDateRangeType fixedDateRangeType = s124ObjectFactory.createFixedDateRangeType();
+        navigationalWarningFeaturePartType.setFixedDateRange(fixedDateRangeType);
+
+        List<DateIntervalVo> eventDatesVo = partVo.getEventDates();
+        if (eventDatesVo != null && eventDatesVo.size() > 0) {
+            if (eventDatesVo.size() > 1)
+                log.warn("There are " + eventDatesVo.size()+ " event dates - but XML only supports one.");
+
+            DateIntervalVo eventDateVo = eventDatesVo.get(0);
+            boolean allDay = eventDateVo.getAllDay() == Boolean.TRUE;
+            Date fromDate = eventDateVo.getFromDate();
+            Date toDate = eventDateVo.getToDate();
+
+            if (fromDate != null && !allDay) {
+                try {
+                    GregorianCalendar cal = new GregorianCalendar();
+                    cal.setTime(fromDate);
+                    fixedDateRangeType.setTimeOfDayStart(DatatypeFactory.newInstance().newXMLGregorianCalendar(cal));
+                } catch (DatatypeConfigurationException e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+
+            if (toDate != null && !allDay) {
+                try {
+                    GregorianCalendar cal = new GregorianCalendar();
+                    cal.setTime(toDate);
+                    fixedDateRangeType.setTimeOfDayEnd(DatatypeFactory.newInstance().newXMLGregorianCalendar(cal));
+                } catch (DatatypeConfigurationException e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+
+            if (fromDate != null) {
+                try {
+                    GregorianCalendar cal = new GregorianCalendar();
+                    cal.setTime(fromDate);
+
+                    S100TruncatedDate s100TruncatedDate = s124ObjectFactory.createS100TruncatedDate();
+                    s100TruncatedDate.setDate(DatatypeFactory.newInstance().newXMLGregorianCalendar(cal));
+
+                    fixedDateRangeType.setDateStart(s100TruncatedDate);
+                } catch (DatatypeConfigurationException e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+
+            if (toDate != null) {
+                try {
+                    GregorianCalendar cal = new GregorianCalendar();
+                    cal.setTime(toDate);
+
+                    S100TruncatedDate s100TruncatedDate = s124ObjectFactory.createS100TruncatedDate();
+                    s100TruncatedDate.setDate(DatatypeFactory.newInstance().newXMLGregorianCalendar(cal));
+
+                    fixedDateRangeType.setDateEnd(s100TruncatedDate);
+                } catch (DatatypeConfigurationException e) {
+                    log.error(e.getMessage(), e);
+                }
+            }
+        }
+
+        // ---
+
+        /*
     <header xlink:href = "#PR.${id}" ></header >
 </#macro >
 */
+
+        // ---
 
         return navigationalWarningFeaturePartType;
     }
@@ -203,9 +244,9 @@ public class S124ModelToGmlConverter {
 
         List<Double> coordColl = new ArrayList<>(coords.length * 2);
 
-        for (int i=0; i<coords.length; i++) {
+        for (int i = 0; i < coords.length; i++) {
             double[] coord = coords[i];
-            for (int j=coord.length-1; j>=0; j--) {
+            for (int j = coord.length - 1; j >= 0; j--) {
                 coordColl.add(coord[j]);
             }
         }
