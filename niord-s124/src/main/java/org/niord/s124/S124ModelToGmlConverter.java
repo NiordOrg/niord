@@ -79,6 +79,22 @@ public class S124ModelToGmlConverter {
 
         // ---
 
+        generateEnvelope(gml, message);
+
+        generatePreamble(gml, lang, id, mrn, msg);
+
+        if (msg.getParts() != null)
+            generateFeatureParts(gml, lang, id, mrn, msg.getParts());
+
+        generateReferences();
+
+        // ---
+
+        JAXBElement<DatasetType> dataSet = s124ObjectFactory.createDataSet(gml);
+        return dataSet;
+    }
+
+    private void generateEnvelope(DatasetType datasetType, Message message) {
         double[] bbox = GeoJsonUtils.computeBBox(message.toGeoJson());
         if (bbox != null) {
             DirectPositionType lowerCorner = new DirectPositionType();
@@ -94,27 +110,146 @@ public class S124ModelToGmlConverter {
 
             BoundingShapeType boundingShapeType = new BoundingShapeType();
             boundingShapeType.setEnvelope(envelopeType);
-            gml.setBoundedBy(boundingShapeType);
+            datasetType.setBoundedBy(boundingShapeType);
+        }
+    }
+
+    private void generatePreamble(DatasetType datasetType, String lang, String id, String mrn, SystemMessageVo msg) {
+        NWPreambleType nwPreambleType = s124ObjectFactory.createNWPreambleType();
+
+        datasetType.setId(id);
+
+        // ---
+
+        MessageSeriesIdentifierType messageSeriesIdentifierType = s124ObjectFactory.createMessageSeriesIdentifierType();
+        messageSeriesIdentifierType.setWarningIdentifier(mrn);
+        messageSeriesIdentifierType.setWarningNumber(msg.getNumber() != null ? msg.getNumber() : -1);
+        messageSeriesIdentifierType.setYear(msg.getYear() != null ? msg.getYear() % 100 : 0);
+        messageSeriesIdentifierType.setCountry("DK");
+
+        switch (msg.getType()) {
+            case LOCAL_WARNING:
+                messageSeriesIdentifierType.setNameOfSeries("Danish Nav Warn");
+                messageSeriesIdentifierType.setWarningType(WarningType.LOCAL_NAVIGATIONAL_WARNING);
+                break;
+            case COASTAL_WARNING:
+                messageSeriesIdentifierType.setNameOfSeries("Danish Nav Warn");
+                messageSeriesIdentifierType.setWarningType(WarningType.COASTAL_NAVIGATIONAL_WARNING);
+                break;
+            case SUBAREA_WARNING:
+                messageSeriesIdentifierType.setNameOfSeries("Danish Nav Warn");
+                messageSeriesIdentifierType.setWarningType(WarningType.SUB_AREA_NAVIGATIONAL_WARNING);
+                break;
+            case NAVAREA_WARNING:
+                messageSeriesIdentifierType.setNameOfSeries("Danish Nav Warn");
+                messageSeriesIdentifierType.setWarningType(WarningType.NAVAREA_NAVIGATIONAL_WARNING);
+                break;
+            default:
+                log.warn("Messages of type {} not mapped.", msg.getType().name());
         }
 
         // ---
 
-        generatePreamble(gml, lang, mrn, id, msg);
+        if (lang.equalsIgnoreCase("da"))
+            messageSeriesIdentifierType.setProductionAgency("SØFARTSSTYRELSEN");
+        else
+            messageSeriesIdentifierType.setProductionAgency("DANISH MARITIME AUTHORITY");
 
-        if (msg.getParts() != null) {
-            int partNo = msg.getParts().size();
-            msg.getParts().forEach(part -> {
-                if (part.getGeometry() != null && part.getGeometry().getFeatures() != null && part.getGeometry().getFeatures().length > 0) {
-                    NavigationalWarningFeaturePartType navigationalWarningFeaturePartType = generateNavWarnPart(part, part.getIndexNo(), mrn, id, lang);
-                    JAXBElement<NavigationalWarningFeaturePartType> navigationalWarningFeaturePart = s124ObjectFactory.createNavigationalWarningFeaturePart(navigationalWarningFeaturePartType);
-                    MemberType memberType = s124ObjectFactory.createMemberType();
-                    memberType.setAbstractFeature(navigationalWarningFeaturePart);
-                    gml.getImemberOrMember().add(memberType);
-                } else {
-                    log.error("S124_InformationNoticePart not supported.");
-                }
-            });
+        nwPreambleType.setMessageSeriesIdentifier(messageSeriesIdentifierType);
+        nwPreambleType.setId("PR." + id);
+
+        // ---
+
+        MessageDescVo msgDesc = msg.getDesc(lang);
+
+        if (msgDesc != null && !StringUtils.isBlank(msgDesc.getTitle())) {
+            TitleType titleType = s124ObjectFactory.createTitleType();
+            titleType.setLanguage(msgDesc.getLang());
+            titleType.setText(msgDesc.getTitle());
+            nwPreambleType.getTitle().add(titleType);
         }
+
+        // ---
+
+        GregorianCalendar publicationDate = new GregorianCalendar();
+        publicationDate.setTime(msg.getPublishDateFrom());
+        try {
+            nwPreambleType.setPublicationDate(DatatypeFactory.newInstance().newXMLGregorianCalendar(publicationDate));
+        } catch (DatatypeConfigurationException e) {
+            log.error(e.getMessage(), e);
+        }
+
+        // ---
+
+        msg.getAreas().forEach(area -> {
+            GeneralAreaType generalAreaType = generateArea(s124ObjectFactory.createGeneralAreaType(), area, area, "en");
+            nwPreambleType.getGeneralArea().add(generalAreaType);
+
+            LocalityType localityType = generateLocality(s124ObjectFactory.createLocalityType(), area, area, "en");
+            nwPreambleType.getLocality().add(localityType);
+        });
+
+        // ---
+
+        msg.getParts().forEach(part -> {
+            ReferenceType referenceType = gmlObjectFactory.createReferenceType();
+            referenceType.setHref(String.format("#%s.%d", id, part.getIndexNo() + 1));
+            nwPreambleType.getTheWarningPart().add(referenceType);
+        });
+
+        /*
+            TODO referenced messages
+
+        <#if references?has_content>
+            <#list references as ref>
+                <theWarningPart xlink:href="#${id}.${ref?index + partNo + 1}"></theWarningPart>
+            </#list>
+        </#if>
+         */
+
+        // ---
+
+        JAXBElement<NWPreambleType> nwPreambleTypeElement = s124ObjectFactory.createNWPreamble(nwPreambleType);
+
+        IMemberType imember = s124ObjectFactory.createIMemberType();
+        imember.setInformationType(nwPreambleTypeElement);
+
+        datasetType.getImemberOrMember().add(imember);
+    }
+
+    private void generateFeatureParts(DatasetType gml, String lang, String id, String mrn, List<MessagePartVo> parts) {
+        parts.forEach(part -> {
+            if (part.getGeometry() != null && part.getGeometry().getFeatures() != null && part.getGeometry().getFeatures().length > 0) {
+                NavigationalWarningFeaturePartType navigationalWarningFeaturePartType = generateNavWarnPart(part, lang, id, mrn);
+                JAXBElement<NavigationalWarningFeaturePartType> navigationalWarningFeaturePart = s124ObjectFactory.createNavigationalWarningFeaturePart(navigationalWarningFeaturePartType);
+                MemberType memberType = s124ObjectFactory.createMemberType();
+                memberType.setAbstractFeature(navigationalWarningFeaturePart);
+                gml.getImemberOrMember().add(memberType);
+            } else {
+                log.error("S124_InformationNoticePart not supported.");
+            }
+        });
+    }
+
+    private void generateReferences() {
+        /*
+        <#macro generateReference ref index>
+    <S124:S124_References gml:id="${id}.${index + 1}">
+        <id>${mrn}.${index + 1}</id>
+        <#switch ref.type>
+            <#case "CANCELLATION">
+                <referenceType>cancellation</referenceType>
+                <#break>
+            <#default>
+                <referenceType>source reference</referenceType>
+                <#break>
+        </#switch>
+        <messageReference>
+            <@generateMessageSeries msg=ref.msg></@generateMessageSeries>
+        </messageReference>
+        <header xlink:href="#PR.${id}"></header>
+    </S124:S124_References>
+</#macro>
 
         /*
     <#if references?has_content>
@@ -125,21 +260,28 @@ public class S124ModelToGmlConverter {
         </#list>
     </#if>
 
-        */
+*/
+    }
+
+    private NavigationalWarningFeaturePartType generateNavWarnPart(MessagePartVo partVo, String lang, String id, String mrn) {
+        NavigationalWarningFeaturePartType navigationalWarningFeaturePartType = s124ObjectFactory.createNavigationalWarningFeaturePartType();
+        navigationalWarningFeaturePartType.setId(String.format("%s.%d", id, partVo.getIndexNo()+1));
 
         // ---
 
-        JAXBElement<DatasetType> dataSet = s124ObjectFactory.createDataSet(gml);
-        return dataSet;
-    }
+        /*
+            TODO
 
-    private NavigationalWarningFeaturePartType generateNavWarnPart(MessagePartVo partVo, int index, String id, String mrn, String lang) {
-        NavigationalWarningFeaturePartType navigationalWarningFeaturePartType = s124ObjectFactory.createNavigationalWarningFeaturePartType();
-        navigationalWarningFeaturePartType.setId(id + "." + partVo.getIndexNo() + 1);
+            Former: "<id>urn:mrn:iho:nw:dk:nw-015-17.1</id> "
 
-        MessagePartDescVo partDesc = partVo.getDesc(lang);
+            FeatureObjectIdentifier featureObjectIdentifier = s100ObjectFactory.createFeatureObjectIdentifier();
+            featureObjectIdentifier.setAgency("DMA");
+            featureObjectIdentifier.setFeatureIdentificationNumber(-1);
+            featureObjectIdentifier.setFeatureIdentificationSubdivision(-1);
+            navigationalWarningFeaturePartType.setFeatureObjectIdentifier(featureObjectIdentifier);
+        */
 
-        navigationalWarningFeaturePartType.setId(mrn + "." + (index + 1));
+        // ---
 
         if (partVo.getGeometry() != null && partVo.getGeometry().getFeatures() != null) {
             Stream.of(partVo.getGeometry().getFeatures()).forEach(feature -> {
@@ -147,15 +289,10 @@ public class S124ModelToGmlConverter {
             });
         }
 
-/*
+        // ---
 
+        MessagePartDescVo partDesc = partVo.getDesc(lang);
 
-    <#if partVo.geometry?? && partVo.geometry.features?has_content>
-        <#list partVo.geometry.features as feature>
-            <@generateGeometry g=feature.geometry></@generateGeometry>
-        </#list>
-    </#if>
-    */
         if (partDesc != null && StringUtils.isNotBlank(partDesc.getDetails())) {
             WarningInformationType warningInformationType = s124ObjectFactory.createWarningInformationType();
             warningInformationType.setLanguage(partDesc.getLang());
@@ -229,10 +366,9 @@ public class S124ModelToGmlConverter {
 
         // ---
 
-        /*
-    <header xlink:href = "#PR.${id}" ></header >
-</#macro >
-*/
+        ReferenceType referenceType = gmlObjectFactory.createReferenceType();
+        referenceType.setHref(String.format("#PR.%s", id));
+        navigationalWarningFeaturePartType.setHeader(referenceType);
 
         // ---
 
@@ -392,109 +528,6 @@ public class S124ModelToGmlConverter {
             throw new RuntimeException("Unsupported: " + g.getClass().getName());
 
         return geometry;
-    }
-
-    private void generatePreamble(DatasetType datasetType, String lang, String mrn, String id, SystemMessageVo msg) {
-        NWPreambleType nwPreambleType = s124ObjectFactory.createNWPreambleType();
-
-        datasetType.setId(id);
-
-        // ---
-
-        MessageSeriesIdentifierType messageSeriesIdentifierType = s124ObjectFactory.createMessageSeriesIdentifierType();
-        messageSeriesIdentifierType.setWarningIdentifier(mrn);
-        messageSeriesIdentifierType.setWarningNumber(msg.getNumber() != null ? msg.getNumber() : -1);
-        messageSeriesIdentifierType.setYear(msg.getYear() != null ? msg.getYear() % 100 : 0);
-        messageSeriesIdentifierType.setCountry("DK");
-
-        switch (msg.getType()) {
-            case LOCAL_WARNING:
-                messageSeriesIdentifierType.setNameOfSeries("Danish Nav Warn");
-                messageSeriesIdentifierType.setWarningType(WarningType.LOCAL_NAVIGATIONAL_WARNING);
-                break;
-            case COASTAL_WARNING:
-                messageSeriesIdentifierType.setNameOfSeries("Danish Nav Warn");
-                messageSeriesIdentifierType.setWarningType(WarningType.COASTAL_NAVIGATIONAL_WARNING);
-                break;
-            case SUBAREA_WARNING:
-                messageSeriesIdentifierType.setNameOfSeries("Danish Nav Warn");
-                messageSeriesIdentifierType.setWarningType(WarningType.SUB_AREA_NAVIGATIONAL_WARNING);
-                break;
-            case NAVAREA_WARNING:
-                messageSeriesIdentifierType.setNameOfSeries("Danish Nav Warn");
-                messageSeriesIdentifierType.setWarningType(WarningType.NAVAREA_NAVIGATIONAL_WARNING);
-                break;
-            default:
-                log.warn("Messages of type {} not mapped.", msg.getType().name());
-        }
-
-        // ---
-
-        if (lang.equalsIgnoreCase("da"))
-            messageSeriesIdentifierType.setProductionAgency("SØFARTSSTYRELSEN");
-        else
-            messageSeriesIdentifierType.setProductionAgency("DANISH MARITIME AUTHORITY");
-
-        nwPreambleType.setMessageSeriesIdentifier(messageSeriesIdentifierType);
-        nwPreambleType.setId("PR." + id);
-
-        // ---
-
-        MessageDescVo msgDesc = msg.getDesc(lang);
-
-        if (msgDesc != null && !StringUtils.isBlank(msgDesc.getTitle())) {
-            TitleType titleType = s124ObjectFactory.createTitleType();
-            titleType.setLanguage(msgDesc.getLang());
-            titleType.setText(msgDesc.getTitle());
-            nwPreambleType.getTitle().add(titleType);
-        }
-
-        // ---
-
-        GregorianCalendar publicationDate = new GregorianCalendar();
-        publicationDate.setTime(msg.getPublishDateFrom());
-        try {
-            nwPreambleType.setPublicationDate(DatatypeFactory.newInstance().newXMLGregorianCalendar(publicationDate));
-        } catch (DatatypeConfigurationException e) {
-            log.error(e.getMessage(), e);
-        }
-
-        // ---
-
-        msg.getAreas().forEach(area -> {
-            GeneralAreaType generalAreaType = generateArea(s124ObjectFactory.createGeneralAreaType(), area, area, "en");
-            nwPreambleType.getGeneralArea().add(generalAreaType);
-
-            LocalityType localityType = generateLocality(s124ObjectFactory.createLocalityType(), area, area, "en");
-            nwPreambleType.getLocality().add(localityType);
-        });
-
-        // ---
-
-        msg.getParts().forEach(part -> {
-            ReferenceType referenceType = gmlObjectFactory.createReferenceType();
-            referenceType.setHref(String.format("#%s.%d", id, part.getIndexNo() + 1));
-            nwPreambleType.getTheWarningPart().add(referenceType);
-        });
-
-        /*
-            TODO referenced messages
-
-        <#if references?has_content>
-            <#list references as ref>
-                <theWarningPart xlink:href="#${id}.${ref?index + partNo + 1}"></theWarningPart>
-            </#list>
-        </#if>
-         */
-
-        // ---
-
-        JAXBElement<NWPreambleType> nwPreambleTypeElement = s124ObjectFactory.createNWPreamble(nwPreambleType);
-
-        IMemberType imember = s124ObjectFactory.createIMemberType();
-        imember.setInformationType(nwPreambleTypeElement);
-
-        datasetType.getImemberOrMember().add(imember);
     }
 
     private LocalityType generateLocality(LocalityType localityType, AreaVo area, AreaVo rootArea, String lang) {
