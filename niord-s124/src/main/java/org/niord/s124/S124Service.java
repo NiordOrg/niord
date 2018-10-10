@@ -20,19 +20,30 @@ import _int.iho.s124.gml.cs0._0.DatasetType;
 import freemarker.cache.ClassTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
+import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.message.Message;
+import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.model.message.MainType;
 import org.niord.model.message.ReferenceVo;
+import org.niord.model.message.Status;
+import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.xml.bind.JAXBElement;
 import java.io.StringWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static java.util.Arrays.asList;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 
 /**
@@ -49,32 +60,61 @@ import java.util.*;
 @Stateless
 public class S124Service {
 
+    private NiordApp app;
+
+    private Logger log;
+
     private MessageService messageService;
 
     private S124ModelToGmlConverter modelToGmlConverter;
-
-    private NiordApp app;
 
     @SuppressWarnings("unused")
     public S124Service() {}
 
     @Inject
-    public S124Service(MessageService messageService, S124ModelToGmlConverter modelToGmlConverter, NiordApp app) {
+    public S124Service(Logger log, MessageService messageService, S124ModelToGmlConverter modelToGmlConverter, NiordApp app) {
+        this.log = log;
         this.messageService = messageService;
         this.modelToGmlConverter = modelToGmlConverter;
         this.app = app;
     }
 
-    public List<String> generateGML(String language) {
-        Message message = messageService.resolveMessage("NW-015-17");
+    public List<String> generateGMLv2(String messageId, String language) {
+        List<Message> messages;
 
-        JAXBElement<DatasetType> dataSet = modelToGmlConverter.toGml(message, language);
-        String gml = modelToGmlConverter.toString(dataSet);
+        if (isBlank(messageId))
+            messages = findMostRecentPublishMessages();
+        else
+            messages = asList(messageService.resolveMessage(messageId));
 
-        List<String> gmls = new LinkedList<>();
-        gmls.add(gml);
+        log.debug("Found {} messages", messages.size());
+
+        List<String> gmls = new ArrayList<>(messages.size());
+
+        messages.forEach(message -> {
+            try {
+                JAXBElement<DatasetType> dataSet = modelToGmlConverter.toGml(message, language);
+                String gml = modelToGmlConverter.toString(dataSet);
+                gmls.add(gml);
+            } catch(RuntimeException e) {
+                log.error(e.getMessage());
+            }
+        });
 
         return gmls;
+    }
+
+    private List<Message> findMostRecentPublishMessages() {
+        List<Message> messages;
+        MessageSearchParams params = new MessageSearchParams()
+                .statuses(Status.PUBLISHED);
+        params.maxSize(100);
+
+        messages = messageService.search(params)
+                .getData().stream()
+                .filter(m -> StringUtils.isNotBlank(m.getLegacyId()))
+                .collect(Collectors.toList());
+        return messages;
     }
 
     /**
@@ -88,13 +128,12 @@ public class S124Service {
         Message message = messageService.resolveMessage(messageId);
 
         // Validate the message
-        if (message == null) {
+        if (message == null)
             throw new IllegalArgumentException("Message not found " + messageId);
-        } else if (message.getMainType() == MainType.NM) {
-            throw new IllegalArgumentException("Sadly, S-124 does not currently support Notices to Mariners T&P :-(");
-        } else if (message.getNumber() == null) {
-            throw new IllegalArgumentException("Sadly, S-124 does not currently support un-numbered navigational warnings :-(");
-        }
+        if (message.getMainType() == MainType.NM)
+            throw new IllegalArgumentException("S-124 does not support Notices to Mariners T&P: " + messageId + " " + message.getShortId() + " " + message.getUid());
+        if (message.getNumber() == null)
+            throw new IllegalArgumentException("S-124 does not support un-numbered navigational warnings: " + messageId + " " + message.getShortId() + " " + message.getUid());
 
         // Ensure we use a valid language
         language = app.getLanguage(language);

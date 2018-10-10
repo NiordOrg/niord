@@ -24,9 +24,14 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import java.io.StringWriter;
 import java.lang.Boolean;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.stream.Stream;
 
+import static com.google.common.collect.Lists.reverse;
+import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -59,7 +64,7 @@ public class S124ModelToGmlConverter {
         try {
             JAXBContext context = JAXBContext.newInstance(element.getValue().getClass());
             Marshaller mar = context.createMarshaller();
-            mar.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+            mar.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.FALSE);
             mar.marshal(element, sw);
             return sw.toString();
         } catch (PropertyException e) {
@@ -317,7 +322,7 @@ public class S124ModelToGmlConverter {
 
         if (partVo.getGeometry() != null && partVo.getGeometry().getFeatures() != null) {
             Stream.of(partVo.getGeometry().getFeatures()).forEach(feature -> {
-                navigationalWarningFeaturePartType.getGeometry().add(createGeometry(id, feature.getGeometry()).get(0));
+                navigationalWarningFeaturePartType.getGeometry().addAll(createGeometry(id, feature.getGeometry()));
             });
         }
 
@@ -430,7 +435,7 @@ public class S124ModelToGmlConverter {
             Double[] boxedCoords = ArrayUtils.toObject(coords);
 
             DirectPositionType directPositionType = gmlObjectFactory.createDirectPositionType();
-            directPositionType.getValue().addAll(Arrays.asList(boxedCoords));
+            directPositionType.getValue().addAll(reverse(asList(boxedCoords)));
 
             PointType pointType = s100ObjectFactory.createPointType();
             pointType.setId(nextGeomId(id));
@@ -525,9 +530,9 @@ public class S124ModelToGmlConverter {
             geometry.add(p);
         } else if (g instanceof MultiPointVo) {
             double[][] coords = ((MultiPointVo) g).getCoordinates();
-            for (double[] coord : coords) {
+            for (int i = 0; i < coords.length; i++) {
                 PointCurveSurface p = s124ObjectFactory.createPointCurveSurface();
-                p.setPointProperty(generatePoint(id, ((PointVo) g).getCoordinates()));
+                p.setPointProperty(generatePoint(id, coords[i]));
                 geometry.add(p);
             }
         } else if (g instanceof LineStringVo) {
