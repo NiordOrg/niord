@@ -1,5 +1,6 @@
 package org.niord.s124;
 
+import _int.iho.s100gml._1.FeatureObjectIdentifier;
 import _int.iho.s100gml._1.PointPropertyType;
 import _int.iho.s100gml._1.PointType;
 import _int.iho.s124.gml.cs0._0.*;
@@ -252,6 +253,7 @@ public class S124ModelToGmlConverter {
         messageSeriesIdentifierType.setWarningNumber(warningNumber);
         messageSeriesIdentifierType.setYear(year);
         messageSeriesIdentifierType.setCountry("DK");
+        messageSeriesIdentifierType.setProductionAgency(productionAgency(lang));
 
         switch (type) {
             case LOCAL_WARNING:
@@ -274,31 +276,24 @@ public class S124ModelToGmlConverter {
                 log.warn("Messages of type {} not mapped.", type.name());
         }
 
-        if (lang.equalsIgnoreCase("da"))
-            messageSeriesIdentifierType.setProductionAgency("SØFARTSSTYRELSEN");
-        else
-            messageSeriesIdentifierType.setProductionAgency("DANISH MARITIME AUTHORITY");
-
         return messageSeriesIdentifierType;
     }
 
     private NavigationalWarningFeaturePartType createNavWarnPart(MessagePartVo partVo, String lang, String id, String mrn) {
         NavigationalWarningFeaturePartType navigationalWarningFeaturePartType = s124ObjectFactory.createNavigationalWarningFeaturePartType();
-        navigationalWarningFeaturePartType.setId(String.format("%s.%d", id, partVo.getIndexNo()+1));
+        navigationalWarningFeaturePartType.setId(String.format("%s.%d", id, partVo.getIndexNo() + 1));
 
         // ---
 
         /*
             TODO
-
             Former: "<id>urn:mrn:iho:nw:dk:nw-015-17.1</id> "
-
-            FeatureObjectIdentifier featureObjectIdentifier = s100ObjectFactory.createFeatureObjectIdentifier();
-            featureObjectIdentifier.setAgency("DMA");
-            featureObjectIdentifier.setFeatureIdentificationNumber(-1);
-            featureObjectIdentifier.setFeatureIdentificationSubdivision(-1);
-            navigationalWarningFeaturePartType.setFeatureObjectIdentifier(featureObjectIdentifier);
         */
+        FeatureObjectIdentifier featureObjectIdentifier = s100ObjectFactory.createFeatureObjectIdentifier();
+        featureObjectIdentifier.setFeatureIdentificationNumber(-1);
+        featureObjectIdentifier.setFeatureIdentificationSubdivision(-1);
+        featureObjectIdentifier.setAgency(productionAgency(lang));
+        navigationalWarningFeaturePartType.setFeatureObjectIdentifier(featureObjectIdentifier);
 
         // ---
 
@@ -327,7 +322,7 @@ public class S124ModelToGmlConverter {
         List<DateIntervalVo> eventDatesVo = partVo.getEventDates();
         if (eventDatesVo != null && eventDatesVo.size() > 0) {
             if (eventDatesVo.size() > 1)
-                log.warn("There are " + eventDatesVo.size()+ " event dates - but XML only supports one.");
+                log.warn("There are " + eventDatesVo.size() + " event dates - but XML only supports one.");
 
             DateIntervalVo eventDateVo = eventDatesVo.get(0);
             boolean allDay = eventDateVo.getAllDay() == Boolean.TRUE;
@@ -461,7 +456,7 @@ public class S124ModelToGmlConverter {
     }
 
     private void addSurface(List<PointCurveSurface> geometry, String id, double[][][] coords) {
-        for (int i = 0;  i < coords.length; i++) {
+        for (int i = 0; i < coords.length; i++) {
             addSurface(geometry, id, coords[i], i == 0);
         }
     }
@@ -590,12 +585,22 @@ public class S124ModelToGmlConverter {
     }
 
     private String lang(String lang) {
-        switch(lang.toLowerCase()) {
+        switch (lang.toLowerCase()) {
             case "da":
                 return "dan";
             case "en":
             default:
                 return "eng";
+        }
+    }
+
+    private String productionAgency(String lang) {
+        switch (lang.toLowerCase()) {
+            case "da":
+                return "SØFARTSSTYRELSEN";
+            case "en":
+            default:
+                return "DANISH MARITIME AUTHORITY";
         }
     }
 
