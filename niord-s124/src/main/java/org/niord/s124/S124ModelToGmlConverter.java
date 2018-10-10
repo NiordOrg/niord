@@ -111,23 +111,7 @@ public class S124ModelToGmlConverter {
     }
 
     private void addEnvelope(DatasetType datasetType, Message message) {
-        double[] bbox = GeoJsonUtils.computeBBox(message.toGeoJson());
-        if (bbox != null) {
-            DirectPositionType lowerCorner = new DirectPositionType();
-            lowerCorner.getValue().addAll(Lists.newArrayList(bbox[1], bbox[0]));
-
-            DirectPositionType upperCorner = new DirectPositionType();
-            upperCorner.getValue().addAll(Lists.newArrayList(bbox[3], bbox[2]));
-
-            EnvelopeType envelopeType = new EnvelopeType();
-            envelopeType.setSrsName("EPSG:4326");
-            envelopeType.setLowerCorner(lowerCorner);
-            envelopeType.setUpperCorner(upperCorner);
-
-            BoundingShapeType boundingShapeType = new BoundingShapeType();
-            boundingShapeType.setEnvelope(envelopeType);
-            datasetType.setBoundedBy(boundingShapeType);
-        }
+        datasetType.setBoundedBy(createBoundingBox(message.toGeoJson()));
     }
 
     private void addPreamble(DatasetType datasetType, String lang, String id, String mrn, SystemMessageVo msg) {
@@ -247,6 +231,29 @@ public class S124ModelToGmlConverter {
         }
     }
 
+    private BoundingShapeType createBoundingBox(FeatureCollectionVo[] geoJson) {
+        BoundingShapeType boundingShapeType = null;
+
+        double[] bbox = GeoJsonUtils.computeBBox(geoJson);
+        if (bbox != null) {
+            DirectPositionType lowerCorner = new DirectPositionType();
+            lowerCorner.getValue().addAll(Lists.newArrayList(bbox[1], bbox[0]));
+
+            DirectPositionType upperCorner = new DirectPositionType();
+            upperCorner.getValue().addAll(Lists.newArrayList(bbox[3], bbox[2]));
+
+            EnvelopeType envelopeType = new EnvelopeType();
+            envelopeType.setSrsName("EPSG:4326");
+            envelopeType.setLowerCorner(lowerCorner);
+            envelopeType.setUpperCorner(upperCorner);
+
+            boundingShapeType = new BoundingShapeType();
+            boundingShapeType.setEnvelope(envelopeType);
+        }
+
+        return boundingShapeType;
+    }
+
     private MessageSeriesIdentifierType createMessageSeries(Type type, int warningNumber, int year, String mrn, String lang) {
         MessageSeriesIdentifierType messageSeriesIdentifierType = s124ObjectFactory.createMessageSeriesIdentifierType();
         messageSeriesIdentifierType.setWarningIdentifier(mrn);
@@ -294,6 +301,17 @@ public class S124ModelToGmlConverter {
         featureObjectIdentifier.setFeatureIdentificationSubdivision(-1);
         featureObjectIdentifier.setAgency(productionAgency(lang));
         navigationalWarningFeaturePartType.setFeatureObjectIdentifier(featureObjectIdentifier);
+
+        // ---
+
+        FeatureCollectionVo featureCollectionVo = new FeatureCollectionVo();
+        featureCollectionVo.setFeatures(partVo.getGeometry().getFeatures());
+
+        BoundingShapeType bbox = createBoundingBox(new FeatureCollectionVo[]{featureCollectionVo});
+
+        BoundingShapeType boundingShapeType = gmlObjectFactory.createBoundingShapeType();
+        boundingShapeType.setEnvelope(bbox.getEnvelope());
+        navigationalWarningFeaturePartType.setBoundedBy(boundingShapeType);
 
         // ---
 
