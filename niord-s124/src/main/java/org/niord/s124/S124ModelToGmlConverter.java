@@ -168,10 +168,10 @@ public class S124ModelToGmlConverter {
         // ---
 
         msg.getAreas().forEach(area -> {
-            GeneralAreaType generalAreaType = createArea(s124ObjectFactory.createGeneralAreaType(), area, area, "en");
+            GeneralAreaType generalAreaType = createArea(s124ObjectFactory.createGeneralAreaType(), area, lang);
             nwPreambleType.getGeneralArea().add(generalAreaType);
 
-            LocalityType localityType = createLocality(s124ObjectFactory.createLocalityType(), area, area, "en");
+            LocalityType localityType = createLocality(s124ObjectFactory.createLocalityType(), area, lang);
             nwPreambleType.getLocality().add(localityType);
         });
 
@@ -540,7 +540,7 @@ public class S124ModelToGmlConverter {
         return geometry;
     }
 
-    private LocalityType createLocality(LocalityType localityType, AreaVo area, AreaVo rootArea, String lang) {
+    private LocalityType createLocality(LocalityType localityType, AreaVo area, String lang) {
         AreaDescVo areaDesc = area.getDesc(lang);
         if (areaDesc != null && areaDesc.getName() != null) {
             LocationNameType locationNameType = s124ObjectFactory.createLocationNameType();
@@ -549,14 +549,14 @@ public class S124ModelToGmlConverter {
             localityType.getLocationName().add(locationNameType);
         }
 
-        if (area.getParent() != null) {
-            createLocality(localityType, area.getParent(), rootArea, lang);
+        if (area.getParent() != null && localityType.getLocationName().size() == 0) {
+            createLocality(localityType, area.getParent(), lang);
         }
 
         return localityType;
     }
 
-    private GeneralAreaType createArea(GeneralAreaType generalAreaType, AreaVo msgArea, AreaVo area, String lang) {
+    private GeneralAreaType createArea(GeneralAreaType generalAreaType, AreaVo area, String lang) {
         AreaDescVo enAreaDesc = area.getDesc(lang);
 
         log.info(enAreaDesc.getName() + " " + area.getParent());
@@ -582,7 +582,7 @@ public class S124ModelToGmlConverter {
             }
 
             if (area.getParent() != null) {
-                generalAreaType = createArea(generalAreaType, msgArea, area.getParent(), lang);
+                generalAreaType = createArea(generalAreaType, area.getParent(), lang);
             }
         }
 
