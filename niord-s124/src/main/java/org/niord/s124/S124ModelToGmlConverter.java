@@ -197,23 +197,11 @@ public class S124ModelToGmlConverter {
             nwPreambleType.getTheWarningPart().add(referenceType);
         });
 
-        /*
-            TODO referenced messages
-
-        <#if references?has_content>
-            <#list references as ref>
-                <theWarningPart xlink:href="#${id}.${ref?index + partNo + 1}"></theWarningPart>
-            </#list>
-        </#if>
-         */
-
         // ---
 
         JAXBElement<NWPreambleType> nwPreambleTypeElement = s124ObjectFactory.createNWPreamble(nwPreambleType);
-
         IMemberType imember = s124ObjectFactory.createIMemberType();
         imember.setInformationType(nwPreambleTypeElement);
-
         datasetType.getImemberOrMember().add(imember);
     }
 
@@ -231,10 +219,20 @@ public class S124ModelToGmlConverter {
         });
     }
 
-    private void generateReferences() {
+    private void generateReferences(DatasetType gml) {
         /*
+        TODO
+        How to map in new model?
+
+        ReferencesType referencesType = s124ObjectFactory.createReferencesType();
+
+
+        IMemberType imemberType = s124ObjectFactory.createIMemberType();
+        gml.getImemberOrMember().add(imemberType);
+
+
         <#macro generateReference ref index>
-    <S124:S124_References gml:id="${id}.${index + 1}">
+        <S124:S124_References gml:id="${id}.${index + 1}">
         <id>${mrn}.${index + 1}</id>
         <#switch ref.type>
             <#case "CANCELLATION">
@@ -248,19 +246,17 @@ public class S124ModelToGmlConverter {
             <@generateMessageSeries msg=ref.msg></@generateMessageSeries>
         </messageReference>
         <header xlink:href="#PR.${id}"></header>
-    </S124:S124_References>
-</#macro>
+        </S124:S124_References>
+        </#macro>
 
-        /*
-    <#if references?has_content>
-        <#list references as ref>
+        <#if references?has_content>
+          <#list references as ref>
             <imember>
                 <@generateReference ref=ref index=ref?index + partNo></@generateReference>
             </imember>
-        </#list>
-    </#if>
-
-*/
+          </#list>
+        </#if>
+        */
     }
 
     private NavigationalWarningFeaturePartType generateNavWarnPart(MessagePartVo partVo, String lang, String id, String mrn) {
