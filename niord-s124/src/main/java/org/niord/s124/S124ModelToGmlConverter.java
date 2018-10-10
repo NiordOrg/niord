@@ -80,7 +80,8 @@ public class S124ModelToGmlConverter {
         // Ensure we use a valid lang
         final String lang = app.getLanguage(_lang);
 
-        //
+        // ---
+
         SystemMessageVo msg = message.toVo(SystemMessageVo.class, Message.MESSAGE_DETAILS_FILTER);
         msg.sort(lang);
 
@@ -93,8 +94,6 @@ public class S124ModelToGmlConverter {
         // ---
 
         final DatasetType gml = new DatasetType();
-
-        // ---
 
         addEnvelope(gml, message);
 
@@ -151,7 +150,7 @@ public class S124ModelToGmlConverter {
 
         if (msgDesc != null && !StringUtils.isBlank(msgDesc.getTitle())) {
             TitleType titleType = s124ObjectFactory.createTitleType();
-            titleType.setLanguage(msgDesc.getLang());
+            titleType.setLanguage(lang(msgDesc.getLang()));
             titleType.setText(msgDesc.getTitle());
             nwPreambleType.getTitle().add(titleType);
         }
@@ -315,7 +314,7 @@ public class S124ModelToGmlConverter {
 
         if (partDesc != null && StringUtils.isNotBlank(partDesc.getDetails())) {
             WarningInformationType warningInformationType = s124ObjectFactory.createWarningInformationType();
-            warningInformationType.setLanguage(partDesc.getLang());
+            warningInformationType.setLanguage(lang(partDesc.getLang()));
             warningInformationType.setText(partDesc.getDetails());
             navigationalWarningFeaturePartType.getWarningInformation().add(warningInformationType);
         }
@@ -545,7 +544,7 @@ public class S124ModelToGmlConverter {
         AreaDescVo areaDesc = area.getDesc(lang);
         if (areaDesc != null && areaDesc.getName() != null) {
             LocationNameType locationNameType = s124ObjectFactory.createLocationNameType();
-            locationNameType.setLanguage(lang);
+            locationNameType.setLanguage(lang(lang));
             locationNameType.setText(areaDesc.getName());
             localityType.getLocationName().add(locationNameType);
         }
@@ -588,6 +587,16 @@ public class S124ModelToGmlConverter {
         }
 
         return generalAreaType;
+    }
+
+    private String lang(String lang) {
+        switch(lang.toLowerCase()) {
+            case "da":
+                return "dan";
+            case "en":
+            default:
+                return "eng";
+        }
     }
 
     private String nextGeomId(String id) {
