@@ -86,7 +86,7 @@ public class S124ModelToGmlConverter {
         if (msg.getParts() != null)
             generateFeatureParts(gml, lang, id, mrn, msg.getParts());
 
-        generateReferences();
+        generateReferences(gml);
 
         // ---
 
@@ -409,7 +409,7 @@ public class S124ModelToGmlConverter {
         return pointPropertyType;
     }
 
-    private _int.iho.s100gml._1.CurvePropertyType generateCurve(String id, double[][] coords) {
+    private _int.iho.s100gml._1.CurvePropertyType generateCurve(List<PointCurveSurface> geometry, String id, double[][] coords) {
         _int.iho.s100gml._1.CurvePropertyType curvePropertyType = null;
 
         if (coords != null && coords.length > 1) {
@@ -431,10 +431,20 @@ public class S124ModelToGmlConverter {
 
         }
 
+        PointCurveSurface p = s124ObjectFactory.createPointCurveSurface();
+        p.setCurveProperty(curvePropertyType);
+        geometry.add(p);
+
         return curvePropertyType;
     }
 
-    private _int.iho.s100gml._1.SurfacePropertyType generateSurface(String id, double[][] coords, boolean isFirst) {
+    private void generateSurface(List<PointCurveSurface> geometry, String id, double[][][] coords) {
+        for (int i = 0;  i < coords.length; i++) {
+            generateSurface(geometry, id, coords[i], i == 0);
+        }
+    }
+
+    private void generateSurface(List<PointCurveSurface> geometry, String id, double[][] coords, boolean isFirst) {
         _int.iho.s100gml._1.SurfacePropertyType surfacePropertyType = null;
 
         if (coords != null && coords.length > 0) {
@@ -466,7 +476,9 @@ public class S124ModelToGmlConverter {
             }
         }
 
-        return surfacePropertyType;
+        PointCurveSurface p = s124ObjectFactory.createPointCurveSurface();
+        p.setSurfaceProperty(surfacePropertyType);
+        geometry.add(p);
     }
 
     private List<PointCurveSurface> generateGeometry(String id, GeometryVo g) {
@@ -485,41 +497,21 @@ public class S124ModelToGmlConverter {
             }
         } else if (g instanceof LineStringVo) {
             double[][] coords = ((LineStringVo) g).getCoordinates();
-            _int.iho.s100gml._1.CurvePropertyType curvePropertyType = generateCurve(id, coords);
-
-            PointCurveSurface p = s124ObjectFactory.createPointCurveSurface();
-            p.setCurveProperty(curvePropertyType);
-            geometry.add(p);
+            generateCurve(geometry, id, coords);
         } else if (g instanceof MultiLineStringVo) {
-            double[][][] coords = ((MultiLineStringVo) g).getCoordinates();
-            for (int i = 0; i < coords.length; i++) {
-                _int.iho.s100gml._1.CurvePropertyType curvePropertyType = generateCurve(id, coords[i]);
-                PointCurveSurface p = s124ObjectFactory.createPointCurveSurface();
-                p.setCurveProperty(curvePropertyType);
-                geometry.add(p);
+            double[][][] coordss = ((MultiLineStringVo) g).getCoordinates();
+            for (int i = 0; i < coordss.length; i++) {
+                generateCurve(geometry, id, coordss[i]);
             }
         } else if (g instanceof PolygonVo) {
-            double[][][] coords = ((PolygonVo) g).getCoordinates();
-            for (int i = 0; i < coords.length; i++) {
-                _int.iho.s100gml._1.SurfacePropertyType surfacePropertyType = generateSurface(id, coords[i], i == 0);
-                PointCurveSurface p = s124ObjectFactory.createPointCurveSurface();
-                p.setSurfaceProperty(surfacePropertyType);
-                geometry.add(p);
-            }
+            generateSurface(geometry, id, ((PolygonVo) g).getCoordinates());
         } else if (g instanceof MultiPolygonVo) {
-            throw new RuntimeException("NYI: " + g.getClass().getName());
-            /*
-            <#list g.coordinates as coords>
-                <@generateSurface coords=coords></@generateSurface>
-            </#list>
-            */
+            double[][][][] coordss = ((MultiPolygonVo) g).getCoordinates();
+            for (int i = 0; i < coordss.length; i++) {
+                generateSurface(geometry, id, coordss[i]);
+            }
         } else if (g instanceof GeometryCollectionVo) {
-            throw new RuntimeException("NYI: " + g.getClass().getName());
-            /*
-             <#list g.geometries as geom>
-                <@generateGeometry g=geom></@generateGeometry>
-            </#list>
-             */
+            Stream.of(((GeometryCollectionVo) g).getGeometries()).forEach(g1 -> geometry.addAll(generateGeometry(id, g1)));
         } else
             throw new RuntimeException("Unsupported: " + g.getClass().getName());
 
