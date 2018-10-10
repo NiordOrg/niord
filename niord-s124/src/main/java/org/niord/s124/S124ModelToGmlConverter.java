@@ -52,6 +52,22 @@ public class S124ModelToGmlConverter {
         this.s124ObjectFactory = s124ObjectFactory;
     }
 
+    public String toString(JAXBElement element) {
+        StringWriter sw = new StringWriter();
+
+        try {
+            JAXBContext context = JAXBContext.newInstance(element.getValue().getClass());
+            Marshaller mar = context.createMarshaller();
+            mar.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+            mar.marshal(element, sw);
+            return sw.toString();
+        } catch (PropertyException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        } catch (JAXBException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
     public JAXBElement<DatasetType> toGml(Message message, String _lang) {
         requireNonNull(message);
 
@@ -80,21 +96,21 @@ public class S124ModelToGmlConverter {
 
         // ---
 
-        generateEnvelope(gml, message);
+        addEnvelope(gml, message);
 
-        generatePreamble(gml, lang, id, mrn, msg);
+        addPreamble(gml, lang, id, mrn, msg);
 
         if (msg.getParts() != null)
-            generateFeatureParts(gml, lang, id, mrn, msg.getParts());
+            addFeatureParts(gml, lang, id, mrn, msg.getParts());
 
-        generateReferences(gml, lang, msg, mrn);
+        addReferences(gml, lang, msg, mrn);
 
         // ---
 
         return s124ObjectFactory.createDataSet(gml);
     }
 
-    private void generateEnvelope(DatasetType datasetType, Message message) {
+    private void addEnvelope(DatasetType datasetType, Message message) {
         double[] bbox = GeoJsonUtils.computeBBox(message.toGeoJson());
         if (bbox != null) {
             DirectPositionType lowerCorner = new DirectPositionType();
@@ -114,7 +130,7 @@ public class S124ModelToGmlConverter {
         }
     }
 
-    private void generatePreamble(DatasetType datasetType, String lang, String id, String mrn, SystemMessageVo msg) {
+    private void addPreamble(DatasetType datasetType, String lang, String id, String mrn, SystemMessageVo msg) {
         NWPreambleType nwPreambleType = s124ObjectFactory.createNWPreambleType();
 
         datasetType.setId(id);
@@ -124,7 +140,7 @@ public class S124ModelToGmlConverter {
         final int warningNumber = msg.getNumber() != null ? msg.getNumber() : -1;
         final int year = msg.getYear() != null ? msg.getYear() % 100 : 0;
         final Type type = msg.getType();
-        MessageSeriesIdentifierType messageSeriesIdentifierType = generateMessageSeries(type, warningNumber, year, mrn, lang);
+        MessageSeriesIdentifierType messageSeriesIdentifierType = createMessageSeries(type, warningNumber, year, mrn, lang);
 
         nwPreambleType.setMessageSeriesIdentifier(messageSeriesIdentifierType);
         nwPreambleType.setId("PR." + id);
@@ -153,10 +169,10 @@ public class S124ModelToGmlConverter {
         // ---
 
         msg.getAreas().forEach(area -> {
-            GeneralAreaType generalAreaType = generateArea(s124ObjectFactory.createGeneralAreaType(), area, area, "en");
+            GeneralAreaType generalAreaType = createArea(s124ObjectFactory.createGeneralAreaType(), area, area, "en");
             nwPreambleType.getGeneralArea().add(generalAreaType);
 
-            LocalityType localityType = generateLocality(s124ObjectFactory.createLocalityType(), area, area, "en");
+            LocalityType localityType = createLocality(s124ObjectFactory.createLocalityType(), area, area, "en");
             nwPreambleType.getLocality().add(localityType);
         });
 
@@ -176,7 +192,62 @@ public class S124ModelToGmlConverter {
         datasetType.getImemberOrMember().add(imember);
     }
 
-    private MessageSeriesIdentifierType generateMessageSeries(Type type, int warningNumber, int year, String mrn, String lang) {
+    private void addFeatureParts(DatasetType gml, String lang, String id, String mrn, List<MessagePartVo> parts) {
+        parts.forEach(part -> {
+            if (part.getGeometry() != null && part.getGeometry().getFeatures() != null && part.getGeometry().getFeatures().length > 0) {
+                NavigationalWarningFeaturePartType navigationalWarningFeaturePartType = createNavWarnPart(part, lang, id, mrn);
+                JAXBElement<NavigationalWarningFeaturePartType> navigationalWarningFeaturePart = s124ObjectFactory.createNavigationalWarningFeaturePart(navigationalWarningFeaturePartType);
+                MemberType memberType = s124ObjectFactory.createMemberType();
+                memberType.setAbstractFeature(navigationalWarningFeaturePart);
+                gml.getImemberOrMember().add(memberType);
+            } else {
+                log.error("S124_InformationNoticePart not supported.");
+            }
+        });
+    }
+
+    private void addReferences(DatasetType gml, String lang, SystemMessageVo msg, String mrn) {
+        final int warningNumber = msg.getNumber() != null ? msg.getNumber() : -1;
+        final int year = msg.getYear() != null ? msg.getYear() % 100 : 0;
+        final Type type = msg.getType();
+
+        List<ReferenceVo> referencesVo = msg.getReferences();
+        if (referencesVo != null) {
+            referencesVo.forEach(referenceVo -> {
+                ReferencesType referencesType = s124ObjectFactory.createReferencesType();
+
+                switch (referenceVo.getType()) {
+                    case CANCELLATION:
+                        referencesType.setReference(_int.iho.s124.gml.cs0._0.ReferenceType.CANCELLATION);
+                        break;
+                    //case REPETITION:
+                    //case REPETITION_NEW_TIME:
+                    //    referencesType.setReference(_int.iho.s124.gml.cs0._0.ReferenceType.REPETITION);
+                    //    break;
+                    //case UPDATE:
+                    //    referencesType.setReference(_int.iho.s124.gml.cs0._0.ReferenceType.UPDATE);
+                    //    break;
+                    //case REFERENCE:
+                    //    referencesType.setReference(_int.iho.s124.gml.cs0._0.ReferenceType.SOURCE_REFERENCE);
+                    //    break;
+                    default:
+                        referencesType.setReference(_int.iho.s124.gml.cs0._0.ReferenceType.SOURCE_REFERENCE);
+                }
+
+                MessageSeriesIdentifierType messageSeriesIdentifer = createMessageSeries(type, warningNumber, year, mrn, lang);
+                referencesType.getMessageSeriesIdentifier().add(messageSeriesIdentifer);
+
+                // ---
+
+                IMemberType imember = s124ObjectFactory.createIMemberType();
+                JAXBElement<ReferencesType> references = s124ObjectFactory.createReferences(referencesType);
+                imember.setInformationType(references);
+                gml.getImemberOrMember().add(imember);
+            });
+        }
+    }
+
+    private MessageSeriesIdentifierType createMessageSeries(Type type, int warningNumber, int year, String mrn, String lang) {
         MessageSeriesIdentifierType messageSeriesIdentifierType = s124ObjectFactory.createMessageSeriesIdentifierType();
         messageSeriesIdentifierType.setWarningIdentifier(mrn);
         messageSeriesIdentifierType.setWarningNumber(warningNumber);
@@ -212,62 +283,7 @@ public class S124ModelToGmlConverter {
         return messageSeriesIdentifierType;
     }
 
-    private void generateFeatureParts(DatasetType gml, String lang, String id, String mrn, List<MessagePartVo> parts) {
-        parts.forEach(part -> {
-            if (part.getGeometry() != null && part.getGeometry().getFeatures() != null && part.getGeometry().getFeatures().length > 0) {
-                NavigationalWarningFeaturePartType navigationalWarningFeaturePartType = generateNavWarnPart(part, lang, id, mrn);
-                JAXBElement<NavigationalWarningFeaturePartType> navigationalWarningFeaturePart = s124ObjectFactory.createNavigationalWarningFeaturePart(navigationalWarningFeaturePartType);
-                MemberType memberType = s124ObjectFactory.createMemberType();
-                memberType.setAbstractFeature(navigationalWarningFeaturePart);
-                gml.getImemberOrMember().add(memberType);
-            } else {
-                log.error("S124_InformationNoticePart not supported.");
-            }
-        });
-    }
-
-    private void generateReferences(DatasetType gml, String lang, SystemMessageVo msg, String mrn) {
-        final int warningNumber = msg.getNumber() != null ? msg.getNumber() : -1;
-        final int year = msg.getYear() != null ? msg.getYear() % 100 : 0;
-        final Type type = msg.getType();
-
-        List<ReferenceVo> referencesVo = msg.getReferences();
-        if (referencesVo != null) {
-            referencesVo.forEach(referenceVo -> {
-                ReferencesType referencesType = s124ObjectFactory.createReferencesType();
-
-                switch (referenceVo.getType()) {
-                    case CANCELLATION:
-                        referencesType.setReference(_int.iho.s124.gml.cs0._0.ReferenceType.CANCELLATION);
-                        break;
-                    //case REPETITION:
-                    //case REPETITION_NEW_TIME:
-                    //    referencesType.setReference(_int.iho.s124.gml.cs0._0.ReferenceType.REPETITION);
-                    //    break;
-                    //case UPDATE:
-                    //    referencesType.setReference(_int.iho.s124.gml.cs0._0.ReferenceType.UPDATE);
-                    //    break;
-                    //case REFERENCE:
-                    //    referencesType.setReference(_int.iho.s124.gml.cs0._0.ReferenceType.SOURCE_REFERENCE);
-                    //    break;
-                    default:
-                        referencesType.setReference(_int.iho.s124.gml.cs0._0.ReferenceType.SOURCE_REFERENCE);
-                }
-
-                MessageSeriesIdentifierType messageSeriesIdentifer = generateMessageSeries(type, warningNumber, year, mrn, lang);
-                referencesType.getMessageSeriesIdentifier().add(messageSeriesIdentifer);
-
-                // ---
-
-                IMemberType imember = s124ObjectFactory.createIMemberType();
-                JAXBElement<ReferencesType> references = s124ObjectFactory.createReferences(referencesType);
-                imember.setInformationType(references);
-                gml.getImemberOrMember().add(imember);
-            });
-        }
-    }
-
-    private NavigationalWarningFeaturePartType generateNavWarnPart(MessagePartVo partVo, String lang, String id, String mrn) {
+    private NavigationalWarningFeaturePartType createNavWarnPart(MessagePartVo partVo, String lang, String id, String mrn) {
         NavigationalWarningFeaturePartType navigationalWarningFeaturePartType = s124ObjectFactory.createNavigationalWarningFeaturePartType();
         navigationalWarningFeaturePartType.setId(String.format("%s.%d", id, partVo.getIndexNo()+1));
 
@@ -289,7 +305,7 @@ public class S124ModelToGmlConverter {
 
         if (partVo.getGeometry() != null && partVo.getGeometry().getFeatures() != null) {
             Stream.of(partVo.getGeometry().getFeatures()).forEach(feature -> {
-                navigationalWarningFeaturePartType.getGeometry().add(generateGeometry(id, feature.getGeometry()).get(0));
+                navigationalWarningFeaturePartType.getGeometry().add(createGeometry(id, feature.getGeometry()).get(0));
             });
         }
 
@@ -379,7 +395,7 @@ public class S124ModelToGmlConverter {
         return navigationalWarningFeaturePartType;
     }
 
-    private DirectPositionListType generateCoordinates(double[][] coords) {
+    private DirectPositionListType createCoordinates(double[][] coords) {
         DirectPositionListType directPositionListType = gmlObjectFactory.createDirectPositionListType();
 
         List<Double> coordColl = new ArrayList<>(coords.length * 2);
@@ -394,7 +410,6 @@ public class S124ModelToGmlConverter {
         directPositionListType.getValue().addAll(coordColl);
         return directPositionListType;
     }
-
 
     private PointPropertyType generatePoint(String id, double[] coords) {
         PointPropertyType pointPropertyType = null;
@@ -417,11 +432,11 @@ public class S124ModelToGmlConverter {
         return pointPropertyType;
     }
 
-    private _int.iho.s100gml._1.CurvePropertyType generateCurve(List<PointCurveSurface> geometry, String id, double[][] coords) {
+    private _int.iho.s100gml._1.CurvePropertyType createCurve(List<PointCurveSurface> geometry, String id, double[][] coords) {
         _int.iho.s100gml._1.CurvePropertyType curvePropertyType = null;
 
         if (coords != null && coords.length > 1) {
-            DirectPositionListType directPositionListType = generateCoordinates(coords);
+            DirectPositionListType directPositionListType = createCoordinates(coords);
 
             LineStringSegmentType lineStringSegmentType = gmlObjectFactory.createLineStringSegmentType();
             lineStringSegmentType.setPosList(directPositionListType);
@@ -446,13 +461,13 @@ public class S124ModelToGmlConverter {
         return curvePropertyType;
     }
 
-    private void generateSurface(List<PointCurveSurface> geometry, String id, double[][][] coords) {
+    private void addSurface(List<PointCurveSurface> geometry, String id, double[][][] coords) {
         for (int i = 0;  i < coords.length; i++) {
-            generateSurface(geometry, id, coords[i], i == 0);
+            addSurface(geometry, id, coords[i], i == 0);
         }
     }
 
-    private void generateSurface(List<PointCurveSurface> geometry, String id, double[][] coords, boolean isFirst) {
+    private void addSurface(List<PointCurveSurface> geometry, String id, double[][] coords, boolean isFirst) {
         _int.iho.s100gml._1.SurfacePropertyType surfacePropertyType = null;
 
         if (coords != null && coords.length > 0) {
@@ -470,7 +485,7 @@ public class S124ModelToGmlConverter {
             surfacePatchArrayPropertyType.getAbstractSurfacePatch().add(gmlObjectFactory.createPolygonPatch(polygonPatchType));
 
             LinearRingType linearRingType = gmlObjectFactory.createLinearRingType();
-            linearRingType.setPosList(generateCoordinates(coords));
+            linearRingType.setPosList(createCoordinates(coords));
 
             AbstractRingPropertyType abstractRingPropertyType = gmlObjectFactory.createAbstractRingPropertyType();
             abstractRingPropertyType.setAbstractRing(gmlObjectFactory.createAbstractRing(linearRingType));
@@ -489,7 +504,7 @@ public class S124ModelToGmlConverter {
         geometry.add(p);
     }
 
-    private List<PointCurveSurface> generateGeometry(String id, GeometryVo g) {
+    private List<PointCurveSurface> createGeometry(String id, GeometryVo g) {
         List<PointCurveSurface> geometry = Lists.newArrayList();
 
         if (g instanceof PointVo) {
@@ -505,28 +520,28 @@ public class S124ModelToGmlConverter {
             }
         } else if (g instanceof LineStringVo) {
             double[][] coords = ((LineStringVo) g).getCoordinates();
-            generateCurve(geometry, id, coords);
+            createCurve(geometry, id, coords);
         } else if (g instanceof MultiLineStringVo) {
             double[][][] coordss = ((MultiLineStringVo) g).getCoordinates();
             for (int i = 0; i < coordss.length; i++) {
-                generateCurve(geometry, id, coordss[i]);
+                createCurve(geometry, id, coordss[i]);
             }
         } else if (g instanceof PolygonVo) {
-            generateSurface(geometry, id, ((PolygonVo) g).getCoordinates());
+            addSurface(geometry, id, ((PolygonVo) g).getCoordinates());
         } else if (g instanceof MultiPolygonVo) {
             double[][][][] coordss = ((MultiPolygonVo) g).getCoordinates();
             for (int i = 0; i < coordss.length; i++) {
-                generateSurface(geometry, id, coordss[i]);
+                addSurface(geometry, id, coordss[i]);
             }
         } else if (g instanceof GeometryCollectionVo) {
-            Stream.of(((GeometryCollectionVo) g).getGeometries()).forEach(g1 -> geometry.addAll(generateGeometry(id, g1)));
+            Stream.of(((GeometryCollectionVo) g).getGeometries()).forEach(g1 -> geometry.addAll(createGeometry(id, g1)));
         } else
             throw new RuntimeException("Unsupported: " + g.getClass().getName());
 
         return geometry;
     }
 
-    private LocalityType generateLocality(LocalityType localityType, AreaVo area, AreaVo rootArea, String lang) {
+    private LocalityType createLocality(LocalityType localityType, AreaVo area, AreaVo rootArea, String lang) {
         AreaDescVo areaDesc = area.getDesc(lang);
         if (areaDesc != null && areaDesc.getName() != null) {
             LocationNameType locationNameType = s124ObjectFactory.createLocationNameType();
@@ -536,13 +551,13 @@ public class S124ModelToGmlConverter {
         }
 
         if (area.getParent() != null) {
-            generateLocality(localityType, area.getParent(), rootArea, lang);
+            createLocality(localityType, area.getParent(), rootArea, lang);
         }
 
         return localityType;
     }
 
-    private GeneralAreaType generateArea(GeneralAreaType generalAreaType, AreaVo msgArea, AreaVo area, String lang) {
+    private GeneralAreaType createArea(GeneralAreaType generalAreaType, AreaVo msgArea, AreaVo area, String lang) {
         AreaDescVo enAreaDesc = area.getDesc(lang);
 
         log.info(enAreaDesc.getName() + " " + area.getParent());
@@ -568,33 +583,17 @@ public class S124ModelToGmlConverter {
             }
 
             if (area.getParent() != null) {
-                generalAreaType = generateArea(generalAreaType, msgArea, area.getParent(), lang);
+                generalAreaType = createArea(generalAreaType, msgArea, area.getParent(), lang);
             }
         }
 
         return generalAreaType;
     }
 
-    private int nextGeomId = 1;
-
     private String nextGeomId(String id) {
         return String.format("G.%s.%d", id, nextGeomId++);
     }
 
-    public String toString(JAXBElement element) {
-        StringWriter sw = new StringWriter();
-
-        try {
-            JAXBContext context = JAXBContext.newInstance(element.getValue().getClass());
-            Marshaller mar = context.createMarshaller();
-            mar.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-            mar.marshal(element, sw);
-            return sw.toString();
-        } catch (PropertyException e) {
-            throw new RuntimeException(e.getMessage(), e);
-        } catch (JAXBException e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
-    }
+    private int nextGeomId = 1;
 
 }
