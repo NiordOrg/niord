@@ -18,6 +18,7 @@ package org.niord.s124;
 
 import _int.iho.s124.gml.cs0._0.DatasetType;
 import org.niord.core.message.Message;
+import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageService;
 import org.slf4j.Logger;
 
@@ -28,6 +29,7 @@ import javax.xml.bind.JAXBException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
@@ -94,12 +96,14 @@ public class S124Service {
                 validateAgainstSchema(dataSet);
                 String gml = modelToGmlConverter.toString(dataSet);
                 gmls.add(gml);
+                log.info(format("Message %s (%s) included in GML output", message.getShortId(), message.getUid()));
             } catch(RuntimeException e) {
+                log.warn(format("Message %s (%s) not included in GML output", message.getShortId(), message.getUid()));
                 if (messages.size() == 1) {
                     log.debug(e.getMessage(), e);
                     throw e;
                 } else {
-                    log.error(String.format("%s [%s]", e.getMessage(), e.getClass().getName()));
+                    log.error(format("%s [%s]", e.getMessage(), e.getClass().getName()));
                 }
             }
         });
@@ -119,10 +123,16 @@ public class S124Service {
         List<Message> messages = null;
 
         if (id != null) {
-            String messageId = String.format("NW-%03d-17", id);  // TODO how to map integer to DMA NW shortId format NW-015-17?
+            String messageId = format("NW-%03d-17", id);  // TODO how to map integer to DMA NW shortId format NW-015-17?
 
             Message message = messageService.resolveMessage(messageId);
             messages = message != null ? singletonList(message) : emptyList();
+        } else if (wkt != null) {
+            MessageSearchParams params = new MessageSearchParams().extent(wkt);
+            if (params.getExtent() == null)
+                throw new IllegalStateException(format("Could not parse WKT \"%s\"", wkt));
+
+            messages = messageService.search(params).getData();
         }
 
         return messages;
@@ -135,7 +145,7 @@ public class S124Service {
     private void validateAgainstSchema(JAXBElement<DatasetType> dataSet) {
         try {
             List<S124GmlValidator.ValidationError> validationErrors = s124GmlValidator.validateAgainstSchema(dataSet);
-            validationErrors.forEach(err -> log.warn(String.format("%8s [%d:%d]: %s", err.getType(), err.getLineNumber(), err.getColumnNumber(), err.getMessage())));
+            validationErrors.forEach(err -> log.warn(format("%8s [%d:%d]: %s", err.getType(), err.getLineNumber(), err.getColumnNumber(), err.getMessage())));
         } catch (JAXBException e) {
             log.error(e.getMessage(), e);
         }
