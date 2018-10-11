@@ -17,11 +17,8 @@ package org.niord.s124;
 
 
 import _int.iho.s124.gml.cs0._0.DatasetType;
-import org.apache.commons.lang.StringUtils;
 import org.niord.core.message.Message;
-import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageService;
-import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
@@ -30,10 +27,9 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
-import static org.apache.commons.lang3.StringUtils.isBlank;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 
 /**
@@ -51,36 +47,44 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 public class S124Service {
 
     private Logger log;
-    private MessageService messageService;
     private S124ModelToGmlConverter modelToGmlConverter;
     private S124GmlValidator s124GmlValidator;
+    private MessageService messageService;
 
     @SuppressWarnings("unused")
     public S124Service() {}
 
     @Inject
-    public S124Service(Logger log, MessageService messageService, S124ModelToGmlConverter modelToGmlConverter, S124GmlValidator s124GmlValidator) {
+    public S124Service(Logger log, S124ModelToGmlConverter modelToGmlConverter, S124GmlValidator s124GmlValidator, MessageService messageService) {
         this.log = log;
-        this.messageService = messageService;
         this.modelToGmlConverter = modelToGmlConverter;
         this.s124GmlValidator = s124GmlValidator;
+        this.messageService = messageService;
     }
 
     /**
-     * Generates S-124 compliant GML for the message
-     * @param messageId the message
+     * Find messages matching the supplied parameters and generate GML XML compliant with S-124 for these.
+     * @param id The message id to process.
+     * @param status Process messages with this status.
+     * @param wkt Processes messages matching this well-known-text.
+     * @param language Generate GML with texts in this language.
+     * @return Strings with XML GML compliant with S-124.
+     */
+    public List<String> generateGML(Integer id, Integer status, String wkt, String language) {
+        List<Message> messages = findMessages(id, status, wkt);
+        List<String> gmls = generateGML(messages, language);
+        return gmls;
+    }
+
+    /**
+     * Generates S-124 compliant GML for the supplies messages
+     * @param messages the messages to convert to GML
      * @param language the language
      * @return the generated GML
      */
-    public List<String> generateGML(String messageId, String language) {
-        List<Message> messages;
-
-        if (isBlank(messageId))
-            messages = findMostRecentPublishedMessages();
-        else
-            messages = asList(messageService.resolveMessage(messageId));
-
-        log.debug("Found {} messages", messages.size());
+    public List<String> generateGML(List<Message> messages, String language) {
+        if (messages.isEmpty())
+            throw new IllegalArgumentException("No messages.");
 
         List<String> gmls = new ArrayList<>(messages.size());
 
@@ -91,13 +95,43 @@ public class S124Service {
                 String gml = modelToGmlConverter.toString(dataSet);
                 gmls.add(gml);
             } catch(RuntimeException e) {
-                log.error(e.getMessage());
+                if (messages.size() == 1) {
+                    log.debug(e.getMessage(), e);
+                    throw e;
+                } else {
+                    log.error(String.format("%s [%s]", e.getMessage(), e.getClass().getName()));
+                }
             }
         });
 
         return gmls;
     }
 
+    /**
+     * Find messages based on id, status or wkt.
+     *
+     * @param id search for messages matching this id.
+     * @param status search for messages matching this status.
+     * @param wkt search for messages matching this well-known-text.
+     * @return A list of matching messages
+     */
+    private List<Message> findMessages(Integer id, Integer status, String wkt) {
+        List<Message> messages = null;
+
+        if (id != null) {
+            String messageId = String.format("NW-%03d-17", id);  // TODO how to map integer to DMA NW shortId format NW-015-17?
+
+            Message message = messageService.resolveMessage(messageId);
+            messages = message != null ? singletonList(message) : emptyList();
+        }
+
+        return messages;
+    }
+
+    /**
+     * Validate JAXB DataSet element against built-in S-124 XSD's
+     * @param dataSet the Dataset to validate
+     */
     private void validateAgainstSchema(JAXBElement<DatasetType> dataSet) {
         try {
             List<S124GmlValidator.ValidationError> validationErrors = s124GmlValidator.validateAgainstSchema(dataSet);
@@ -105,19 +139,6 @@ public class S124Service {
         } catch (JAXBException e) {
             log.error(e.getMessage(), e);
         }
-    }
-
-    private List<Message> findMostRecentPublishedMessages() {
-        List<Message> messages;
-        MessageSearchParams params = new MessageSearchParams()
-                .statuses(Status.PUBLISHED);
-        params.maxSize(100);
-
-        messages = messageService.search(params)
-                .getData().stream()
-                .filter(m -> StringUtils.isNotBlank(m.getLegacyId()))
-                .collect(Collectors.toList());
-        return messages;
     }
 
 }
