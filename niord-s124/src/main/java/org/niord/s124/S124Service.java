@@ -108,7 +108,7 @@ public class S124Service {
     private void validateAgainstSchema(JAXBElement<DatasetType> dataSet) {
         try {
             List<S124GmlValidator.ValidationError> validationErrors = s124GmlValidator.validateAgainstSchema(dataSet);
-            validationErrors.forEach(validationError -> log.warn(validationError.getMessage()));
+            validationErrors.forEach(err -> log.warn(String.format("%8s [%d:%d]: %s", err.getType(), err.getLineNumber(), err.getColumnNumber(), err.getMessage())));
         } catch (JAXBException e) {
             log.error(e.getMessage(), e);
         }
