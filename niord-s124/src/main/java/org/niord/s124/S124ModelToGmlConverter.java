@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.Lists.reverse;
@@ -158,7 +159,7 @@ public class S124ModelToGmlConverter {
         // ---
 
         msg.getAreas().forEach(area -> {
-            GeneralAreaType generalAreaType = createArea(s124ObjectFactory.createGeneralAreaType(), area, lang);
+            GeneralAreaType generalAreaType = createArea(s124ObjectFactory.createGeneralAreaType(), area);
             nwPreambleType.getGeneralArea().add(generalAreaType);
 
             LocalityType localityType = createLocality(s124ObjectFactory.createLocalityType(), area, lang);
@@ -265,7 +266,7 @@ public class S124ModelToGmlConverter {
         messageSeriesIdentifierType.setWarningNumber(warningNumber);
         messageSeriesIdentifierType.setYear(year);
         messageSeriesIdentifierType.setCountry("DK");
-        messageSeriesIdentifierType.setProductionAgency(productionAgency(lang));
+        messageSeriesIdentifierType.setProductionAgency("111");
 
         switch (type) {
             case LOCAL_WARNING:
@@ -302,9 +303,9 @@ public class S124ModelToGmlConverter {
             Former: "<id>urn:mrn:iho:nw:dk:nw-015-17.1</id> "
         */
         FeatureObjectIdentifier featureObjectIdentifier = s100ObjectFactory.createFeatureObjectIdentifier();
-        featureObjectIdentifier.setFeatureIdentificationNumber(-1);
-        featureObjectIdentifier.setFeatureIdentificationSubdivision(-1);
-        featureObjectIdentifier.setAgency(productionAgency(lang));
+        featureObjectIdentifier.setFeatureIdentificationNumber(9999);
+        featureObjectIdentifier.setFeatureIdentificationSubdivision(9999);
+        featureObjectIdentifier.setAgency("99");
         navigationalWarningFeaturePartType.setFeatureObjectIdentifier(featureObjectIdentifier);
 
         // ---
@@ -574,33 +575,43 @@ public class S124ModelToGmlConverter {
         return localityType;
     }
 
-    private GeneralAreaType createArea(GeneralAreaType generalAreaType, AreaVo area, String lang) {
-        AreaDescVo enAreaDesc = area.getDesc(lang);
+    private GeneralAreaType createArea(final GeneralAreaType generalAreaType, final AreaVo area) {
+        AreaDescVo enAreaDesc = area.getDesc("en");
+        String areaName = enAreaDesc.getName();
+        log.debug(areaName + " " + area.getParent());
 
-        log.info(enAreaDesc.getName() + " " + area.getParent());
+        if (!isBlank(areaName)) {
+            Function<String, LocationNameType> produceLocationNameType = text -> {
+                LocationNameType lnt = s124ObjectFactory.createLocationNameType();
+                generalAreaType.getLocationName().add(lnt);
+                lnt.setLanguage(lang("en"));
+                lnt.setText(text);
+                return lnt;
+            };
 
-        if (!isBlank(enAreaDesc.getName())) {
-            switch (enAreaDesc.getName()) {
+            LocationNameType locationNameType = null;
+
+            switch (areaName) {
                 case "The Baltic Sea":
-                    generalAreaType.setOcalityIdentifier("Baltic sea");
+                    locationNameType = produceLocationNameType.apply("Baltic sea");
                     break;
                 case "Skagerrak":
-                    generalAreaType.setOcalityIdentifier("Skagerrak");
+                    locationNameType = produceLocationNameType.apply("Skagerrak");
                     break;
                 case "Kattegat":
-                    generalAreaType.setOcalityIdentifier("Kattegat");
+                    locationNameType = produceLocationNameType.apply("Kattegat");
                     break;
                 case "The Sound":
-                    generalAreaType.setOcalityIdentifier("The Sound");
+                    locationNameType = produceLocationNameType.apply("The Sound");
                     break;
                 case "The Great Belt":
                 case "The Little Belt":
-                    generalAreaType.setOcalityIdentifier("The Belts");
+                    locationNameType = produceLocationNameType.apply("The Belts");
                     break;
             }
 
-            if (area.getParent() != null) {
-                generalAreaType = createArea(generalAreaType, area.getParent(), lang);
+            if (area.getParent() != null && locationNameType == null) {
+                return createArea(generalAreaType, area.getParent());
             }
         }
 
@@ -614,16 +625,6 @@ public class S124ModelToGmlConverter {
             case "en":
             default:
                 return "eng";
-        }
-    }
-
-    private String productionAgency(String lang) {
-        switch (lang.toLowerCase()) {
-            case "da":
-                return "SØFARTSSTYRELSEN";
-            case "en":
-            default:
-                return "DANISH MARITIME AUTHORITY";
         }
     }
 
