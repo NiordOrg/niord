@@ -1,9 +1,11 @@
 package org.niord.s124;
 
+import org.slf4j.Logger;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import javax.inject.Inject;
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -13,28 +15,44 @@ import javax.xml.bind.util.JAXBSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.List;
 
+import static java.util.Objects.requireNonNull;
+
 public class S124GmlValidator {
 
-    private final Validator validator;
+    private Validator validator;
+    private Logger log;
 
-    @SuppressWarnings("unused")
-    public S124GmlValidator() throws SAXException {
-        Schema mySchema = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI).newSchema(new File("src/main/resources/xsd/S124/1.0/20180910/S124.xsd"));
-        validator = mySchema.newValidator();
+    public S124GmlValidator() {
+        // CDI
+    }
+
+    @Inject
+    public S124GmlValidator(Logger log) {
+        this.log = log;
+
+        SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        try {
+            Schema schema = schemaFactory.newSchema(this.getClass().getResource("/xsd/S124/1.0/20180910/S124.xsd"));
+            this.log.info("Found S-124 XSD schema");
+            validator = schema.newValidator();
+        } catch (SAXException e) {
+            this.log.error(e.getMessage());
+        }
     }
 
     public List<ValidationError> validateAgainstSchema(JAXBElement<?> jaxbElement) throws JAXBException {
+        requireNonNull(jaxbElement);
+        requireNonNull(validator);
+
         JAXBContext jaxbContext = JAXBContext.newInstance(jaxbElement.getValue().getClass());
         JAXBSource source = new JAXBSource(jaxbContext, jaxbElement);
 
         List<ValidationError> validationErrors = new LinkedList<>();
-
         validator.setErrorHandler(new ErrorHandler() {
             @Override
             public void warning(SAXParseException e) {

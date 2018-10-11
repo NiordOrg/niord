@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,23 +61,22 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 @Stateless
 public class S124Service {
 
-    private NiordApp app;
-
     private Logger log;
-
+    private NiordApp app;
     private MessageService messageService;
-
     private S124ModelToGmlConverter modelToGmlConverter;
+    private S124GmlValidator s124GmlValidator;
 
     @SuppressWarnings("unused")
     public S124Service() {}
 
     @Inject
-    public S124Service(Logger log, MessageService messageService, S124ModelToGmlConverter modelToGmlConverter, NiordApp app) {
+    public S124Service(Logger log, MessageService messageService, S124ModelToGmlConverter modelToGmlConverter, NiordApp app, S124GmlValidator s124GmlValidator) {
         this.log = log;
         this.messageService = messageService;
         this.modelToGmlConverter = modelToGmlConverter;
         this.app = app;
+        this.s124GmlValidator = s124GmlValidator;
     }
 
     public List<String> generateGMLv2(String messageId, String language) {
@@ -94,6 +94,7 @@ public class S124Service {
         messages.forEach(message -> {
             try {
                 JAXBElement<DatasetType> dataSet = modelToGmlConverter.toGml(message, language);
+                validateAgainstSchema(dataSet);
                 String gml = modelToGmlConverter.toString(dataSet);
                 gmls.add(gml);
             } catch(RuntimeException e) {
@@ -102,6 +103,15 @@ public class S124Service {
         });
 
         return gmls;
+    }
+
+    private void validateAgainstSchema(JAXBElement<DatasetType> dataSet) {
+        try {
+            List<S124GmlValidator.ValidationError> validationErrors = s124GmlValidator.validateAgainstSchema(dataSet);
+            validationErrors.forEach(validationError -> log.warn(validationError.getMessage()));
+        } catch (JAXBException e) {
+            log.error(e.getMessage(), e);
+        }
     }
 
     private List<Message> findMostRecentPublishMessages() {
