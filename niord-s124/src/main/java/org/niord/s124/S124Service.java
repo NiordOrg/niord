@@ -17,18 +17,10 @@ package org.niord.s124;
 
 
 import _int.iho.s124.gml.cs0._0.DatasetType;
-import freemarker.cache.ClassTemplateLoader;
-import freemarker.template.Configuration;
-import freemarker.template.Template;
 import org.apache.commons.lang.StringUtils;
-import org.niord.core.NiordApp;
-import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageService;
-import org.niord.core.message.vo.SystemMessageVo;
-import org.niord.model.message.MainType;
-import org.niord.model.message.ReferenceVo;
 import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
@@ -36,11 +28,8 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
-import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -62,7 +51,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 public class S124Service {
 
     private Logger log;
-    private NiordApp app;
     private MessageService messageService;
     private S124ModelToGmlConverter modelToGmlConverter;
     private S124GmlValidator s124GmlValidator;
@@ -71,19 +59,24 @@ public class S124Service {
     public S124Service() {}
 
     @Inject
-    public S124Service(Logger log, MessageService messageService, S124ModelToGmlConverter modelToGmlConverter, NiordApp app, S124GmlValidator s124GmlValidator) {
+    public S124Service(Logger log, MessageService messageService, S124ModelToGmlConverter modelToGmlConverter, S124GmlValidator s124GmlValidator) {
         this.log = log;
         this.messageService = messageService;
         this.modelToGmlConverter = modelToGmlConverter;
-        this.app = app;
         this.s124GmlValidator = s124GmlValidator;
     }
 
-    public List<String> generateGMLv2(String messageId, String language) {
+    /**
+     * Generates S-124 compliant GML for the message
+     * @param messageId the message
+     * @param language the language
+     * @return the generated GML
+     */
+    public List<String> generateGML(String messageId, String language) {
         List<Message> messages;
 
         if (isBlank(messageId))
-            messages = findMostRecentPublishMessages();
+            messages = findMostRecentPublishedMessages();
         else
             messages = asList(messageService.resolveMessage(messageId));
 
@@ -114,7 +107,7 @@ public class S124Service {
         }
     }
 
-    private List<Message> findMostRecentPublishMessages() {
+    private List<Message> findMostRecentPublishedMessages() {
         List<Message> messages;
         MessageSearchParams params = new MessageSearchParams()
                 .statuses(Status.PUBLISHED);
@@ -127,103 +120,4 @@ public class S124Service {
         return messages;
     }
 
-    /**
-     * Generates S-124 compliant GML for the message
-     * @param messageId the message
-     * @param language the language
-     * @return the generated GML
-     */
-    public String generateGML(String messageId, String language) throws Exception {
-
-        Message message = messageService.resolveMessage(messageId);
-
-        // Validate the message
-        if (message == null)
-            throw new IllegalArgumentException("Message not found " + messageId);
-        if (message.getMainType() == MainType.NM)
-            throw new IllegalArgumentException("S-124 does not support Notices to Mariners T&P: " + messageId + " " + message.getShortId() + " " + message.getUid());
-        if (message.getNumber() == null)
-            throw new IllegalArgumentException("S-124 does not support un-numbered navigational warnings: " + messageId + " " + message.getShortId() + " " + message.getUid());
-
-        // Ensure we use a valid language
-        language = app.getLanguage(language);
-
-        SystemMessageVo msg = message.toVo(
-                SystemMessageVo.class,
-                Message.MESSAGE_DETAILS_FILTER);
-        msg.sort(language);
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("msg", msg);
-        data.put("language", language);
-
-        double[] bbox = GeoJsonUtils.computeBBox(message.toGeoJson());
-        if (bbox != null) {
-            data.put("bbox", bbox);
-        }
-
-        data.put("references", referencedMessages(msg, language));
-
-        Configuration cfg = new Configuration(Configuration.getVersion());
-        cfg.setTemplateLoader(new ClassTemplateLoader(getClass(), "/templates/gml"));
-
-        StringWriter result = new StringWriter();
-        Template fmTemplate = cfg.getTemplate("generate-s124.ftl");
-
-        fmTemplate.process(data, result);
-        return result.toString();
-    }
-
-
-    /**
-     * Returns resolved message references
-     * @param message the message to return resolved message references for
-     * @return the resolved message references
-     */
-    private List<MessageReferenceVo> referencedMessages(SystemMessageVo message, String language) {
-        List<MessageReferenceVo> result = new ArrayList<>();
-        if (message.getReferences() != null) {
-            for (ReferenceVo ref : message.getReferences()) {
-                try {
-                    Message refMsg = messageService.resolveMessage(ref.getMessageId());
-                    if (refMsg != null && refMsg.getMainType() == MainType.NW && refMsg.getNumber() != null) {
-                        SystemMessageVo msg = refMsg.toVo(
-                                SystemMessageVo.class,
-                                Message.MESSAGE_DETAILS_FILTER);
-                        msg.sort(language);
-                        result.add(new MessageReferenceVo(msg, ref));
-                    }
-                } catch (Exception ignored) {
-                }
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Utility class used for message references, including the referenced message
-     */
-    @SuppressWarnings("unused")
-    public static class MessageReferenceVo extends ReferenceVo {
-
-        SystemMessageVo msg;
-
-        public MessageReferenceVo() {
-        }
-
-        public MessageReferenceVo(SystemMessageVo msg, ReferenceVo reference) {
-            this.msg = msg;
-            setMessageId(reference.getMessageId());
-            setType(reference.getType());
-            setDescs(reference.getDescs());
-        }
-
-        public SystemMessageVo getMsg() {
-            return msg;
-        }
-
-        public void setMsg(SystemMessageVo msg) {
-            this.msg = msg;
-        }
-    }
 }

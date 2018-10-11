@@ -58,7 +58,7 @@ public class S124ApiServiceImpl implements S124ApiService {
             if (id != null)
                 messageId = String.format("NW-%03d-17", id);  // TODO how to map integer to DMA NW shortId format NW-015-17?
 
-            List<String> gmls = s124Service.generateGMLv2(messageId, language);
+            List<String> gmls = s124Service.generateGML(messageId, language);
             log.info("Produced {} gmls", gmls.size());
 
             responseObject.setMessageId(requestId);
