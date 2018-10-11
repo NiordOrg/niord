@@ -506,7 +506,7 @@ public class S124ModelToGmlConverter {
             linearRingType.setPosList(createCoordinates(coords));
 
             AbstractRingPropertyType abstractRingPropertyType = gmlObjectFactory.createAbstractRingPropertyType();
-            abstractRingPropertyType.setAbstractRing(gmlObjectFactory.createAbstractRing(linearRingType));
+            abstractRingPropertyType.setAbstractRing(gmlObjectFactory.createLinearRing(linearRingType));
 
             if (isFirst) {
                 JAXBElement<AbstractRingPropertyType> element = gmlObjectFactory.createExterior(abstractRingPropertyType);
