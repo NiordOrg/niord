@@ -46,6 +46,9 @@ public class S124ModelToGmlConverter {
     private _int.iho.s100gml._1.ObjectFactory s100ObjectFactory;
     private _int.iho.s124.gml.cs0._0.ObjectFactory s124ObjectFactory;
 
+    private int nextGmlObjectId = 1;
+    private int nextGeomId = 1;
+
     public S124ModelToGmlConverter() {
         // CDI
     }
@@ -226,6 +229,7 @@ public class S124ModelToGmlConverter {
 
                 MessageSeriesIdentifierType messageSeriesIdentifer = createMessageSeries(type, warningNumber, year, mrn, lang);
                 referencesType.getMessageSeriesIdentifier().add(messageSeriesIdentifer);
+                referencesType.setId(nextGmlObjectId("REF"));
 
                 // ---
 
@@ -632,6 +636,8 @@ public class S124ModelToGmlConverter {
         return String.format("G.%s.%d", id, nextGeomId++);
     }
 
-    private int nextGeomId = 1;
+    private String nextGmlObjectId(String id) {
+        return String.format("O.%s.%d", id, nextGmlObjectId++);
+    }
 
 }
