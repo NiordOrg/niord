@@ -5,6 +5,7 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
@@ -17,11 +18,13 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
+@ApplicationScoped
 public class S124GmlValidator {
 
     private Validator validator;
@@ -37,9 +40,13 @@ public class S124GmlValidator {
 
         SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         try {
-            Schema schema = schemaFactory.newSchema(this.getClass().getResource("/xsd/S124/1.0/20180910/S124.xsd"));
-            this.log.info("Found S-124 XSD schema");
+            this.log.debug("Searching for S-124 XSD schema");
+            URL schemaResource = this.getClass().getResource("/xsd/S124/1.0/20180910/S124.xsd");
+            this.log.info("Loading S-124 XSD schema");
+            Schema schema = schemaFactory.newSchema(schemaResource);
+            this.log.debug("Creating S-124 XSD schema validator");
             validator = schema.newValidator();
+            this.log.info("Created S-124 XSD schema validator");
         } catch (SAXException e) {
             this.log.error(e.getMessage());
         }
