@@ -145,7 +145,11 @@ public class S124Service {
     private void validateAgainstSchema(JAXBElement<DatasetType> dataSet) {
         try {
             List<S124GmlValidator.ValidationError> validationErrors = s124GmlValidator.validateAgainstSchema(dataSet);
-            validationErrors.forEach(err -> log.warn(format("%8s [%d:%d]: %s", err.getType(), err.getLineNumber(), err.getColumnNumber(), err.getMessage())));
+
+            if (validationErrors.isEmpty())
+                log.info("No schema validation errors found.");
+            else
+                validationErrors.forEach(err -> log.warn(format("%8s [%d:%d]: %s", err.getType(), err.getLineNumber(), err.getColumnNumber(), err.getMessage())));
         } catch (JAXBException e) {
             log.error(e.getMessage(), e);
         }
