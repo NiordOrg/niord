@@ -88,7 +88,7 @@
                         </goals>
                         <configuration>
                             <tasks>
-                                <delete file="${project.build.directory}/generated-sources/swagger/main/java/org/niord/s124/rest/generated/RestApplication.java" />
+                                <delete file="${project.build.directory}/classes/org/niord/s124/rest/generated/RestApplication.class" />
                             </tasks>
                         </configuration>
                     </execution>
