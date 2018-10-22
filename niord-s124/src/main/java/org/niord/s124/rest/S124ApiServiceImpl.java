@@ -12,6 +12,7 @@ import javax.inject.Inject;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.SecurityContext;
 import java.time.OffsetDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -57,8 +58,9 @@ public class S124ApiServiceImpl implements S124ApiService {
 
         // ---
 
+        List<String> gmls = Collections.EMPTY_LIST;
         try {
-            List<String> gmls = s124Service.generateGML(id, status, wkt, language);
+            gmls = s124Service.generateGML(id, status, wkt, language);
 
             responseObject.setMessageId(requestId);
             responseObject.setTimestamp(OffsetDateTime.now());
@@ -68,8 +70,8 @@ public class S124ApiServiceImpl implements S124ApiService {
             log.error(errorMessage, t);
             return Response.status(500).entity(new ApiResponseMessage(ApiResponseMessage.ERROR, errorMessage)).build();
         } finally {
-            final long endTime = System.nanoTime();
-            log.info("requestId {} processed in {} msecs", requestId, (endTime-startTime)/1e6);
+            final int duration = (int) ((System.nanoTime() - startTime) / 1e6);
+            log.info("requestId {} processed in {} msecs, {} gmls produced", requestId, duration, gmls.size());
         }
 
         //return Response.status(OK).type(MediaType.TEXT_XML_TYPE).entity(responseObject.getMessages().get(0)).build();

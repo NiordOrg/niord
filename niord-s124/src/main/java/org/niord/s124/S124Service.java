@@ -30,8 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
+import static java.util.Collections.*;
 
 
 /**
@@ -86,7 +85,7 @@ public class S124Service {
      */
     public List<String> generateGML(List<Message> messages, String language) {
         if (messages.isEmpty())
-            throw new IllegalArgumentException("No messages.");
+            return EMPTY_LIST;
 
         List<String> gmls = new ArrayList<>(messages.size());
 
