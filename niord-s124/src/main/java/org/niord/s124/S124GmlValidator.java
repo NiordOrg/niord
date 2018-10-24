@@ -78,7 +78,9 @@ public class S124GmlValidator {
         });
 
         try {
-            validator.validate(source);
+            synchronized (validator) {
+                validator.validate(source);
+            }
         } catch (SAXException e) {
             validationErrors.add(new ValidationError("UNKNOWN", e.getMessage(), null, null));
         } catch (IOException e) {
