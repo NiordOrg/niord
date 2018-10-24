@@ -10,16 +10,13 @@ import net.opengis.gml._3.ReferenceType;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
-import org.niord.core.NiordApp;
 import org.niord.core.geojson.GeoJsonUtils;
-import org.niord.core.message.Message;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.model.geojson.*;
 import org.niord.model.message.*;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
 import javax.xml.bind.*;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
@@ -34,33 +31,25 @@ import java.util.stream.Stream;
 
 import static com.google.common.collect.Lists.reverse;
 import static java.util.Arrays.asList;
-import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-@RequestScoped
 public class S124ModelToGmlConverter {
 
-    private NiordApp app;
-    private Logger log;
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
-    private net.opengis.gml._3.ObjectFactory gmlObjectFactory;
-    private _int.iho.s100gml._1.ObjectFactory s100ObjectFactory;
-    private _int.iho.s124.gml.cs0._0.ObjectFactory s124ObjectFactory;
+    private final net.opengis.gml._3.ObjectFactory gmlObjectFactory;
+    private final _int.iho.s100gml._1.ObjectFactory s100ObjectFactory;
+    private final _int.iho.s124.gml.cs0._0.ObjectFactory s124ObjectFactory;
 
     private int nextGmlObjectId = 1;
     private int nextGeomId = 1;
 
-    public S124ModelToGmlConverter() {
-        // CDI
-    }
+    private boolean used = false;
 
-    @Inject
-    public S124ModelToGmlConverter(Logger log, NiordApp niordApp, net.opengis.gml._3.ObjectFactory gmlObjectFactory, _int.iho.s100gml._1.ObjectFactory s100ObjectFactory, _int.iho.s124.gml.cs0._0.ObjectFactory s124ObjectFactory) {
-        this.log = log;
-        this.app = niordApp;
-        this.gmlObjectFactory = gmlObjectFactory;
-        this.s100ObjectFactory = s100ObjectFactory;
-        this.s124ObjectFactory = s124ObjectFactory;
+    public S124ModelToGmlConverter() {
+        this.gmlObjectFactory = new net.opengis.gml._3.ObjectFactory();
+        this.s100ObjectFactory = new _int.iho.s100gml._1.ObjectFactory();
+        this.s124ObjectFactory = new _int.iho.s124.gml.cs0._0.ObjectFactory();
     }
 
     public String toString(JAXBElement element) {
@@ -79,22 +68,10 @@ public class S124ModelToGmlConverter {
         }
     }
 
-    public JAXBElement<DatasetType> toGml(Message message, String _lang) {
-        requireNonNull(message);
+    public JAXBElement<DatasetType> toGml(SystemMessageVo msg, FeatureCollectionVo[] geoJson, String lang) {
 
-        // Validate the message
-        if (message.getMainType() == MainType.NM)
-            throw new IllegalArgumentException("Sadly, S-124 does not currently support Notices to Mariners T&P :-(");
-        if (message.getNumber() == null)
-            throw new IllegalArgumentException("Sadly, S-124 does not currently support un-numbered navigational warnings :-(");
-
-        // Ensure we use a valid lang
-        final String lang = app.getLanguage(_lang);
-
-        // ---
-
-        SystemMessageVo msg = message.toVo(SystemMessageVo.class, Message.MESSAGE_DETAILS_FILTER);
-        msg.sort(lang);
+        if (used == true)
+            throw new IllegalStateException("This instance of " + this.getClass().getSimpleName() + " has already been used.");
 
         // ---
 
@@ -106,7 +83,7 @@ public class S124ModelToGmlConverter {
 
         final DatasetType gml = new DatasetType();
 
-        addEnvelope(gml, message);
+        addEnvelope(gml, geoJson);
 
         addPreamble(gml, lang, id, mrn, msg);
 
@@ -117,11 +94,15 @@ public class S124ModelToGmlConverter {
 
         // ---
 
-        return s124ObjectFactory.createDataSet(gml);
+        JAXBElement<DatasetType> dataSet = s124ObjectFactory.createDataSet(gml);
+
+        used = true;
+
+        return dataSet;
     }
 
-    private void addEnvelope(DatasetType datasetType, Message message) {
-        datasetType.setBoundedBy(createBoundingBox(message.toGeoJson()));
+    private void addEnvelope(DatasetType datasetType, FeatureCollectionVo[] geoJson) {
+        datasetType.setBoundedBy(createBoundingBox(geoJson));
     }
 
     private void addPreamble(DatasetType datasetType, String lang, String id, String mrn, SystemMessageVo msg) {

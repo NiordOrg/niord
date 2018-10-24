@@ -17,16 +17,22 @@ package org.niord.s124;
 
 
 import _int.iho.s124.gml.cs0._0.DatasetType;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.niord.core.NiordApp;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageService;
+import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.model.geojson.FeatureCollectionVo;
+import org.niord.model.message.MainType;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
-import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import static java.lang.String.format;
@@ -48,26 +54,30 @@ import static java.util.Collections.*;
 public class S124Service {
 
     private Logger log;
-    private S124ModelToGmlConverter modelToGmlConverter;
+
+    private NiordApp app;
+
     private S124GmlValidator s124GmlValidator;
     private MessageService messageService;
 
     @SuppressWarnings("unused")
-    public S124Service() {}
+    public S124Service() {
+    }
 
     @Inject
-    public S124Service(Logger log, S124ModelToGmlConverter modelToGmlConverter, S124GmlValidator s124GmlValidator, MessageService messageService) {
+    public S124Service(Logger log, NiordApp app, S124GmlValidator s124GmlValidator, MessageService messageService) {
         this.log = log;
-        this.modelToGmlConverter = modelToGmlConverter;
+        this.app = app;
         this.s124GmlValidator = s124GmlValidator;
         this.messageService = messageService;
     }
 
     /**
      * Find messages matching the supplied parameters and generate GML XML compliant with S-124 for these.
-     * @param id The message id to process.
-     * @param status Process messages with this status.
-     * @param wkt Processes messages matching this well-known-text.
+     *
+     * @param id       The message id to process.
+     * @param status   Process messages with this status.
+     * @param wkt      Processes messages matching this well-known-text.
      * @param language Generate GML with texts in this language.
      * @return Strings with XML GML compliant with S-124.
      */
@@ -79,26 +89,62 @@ public class S124Service {
 
     /**
      * Generates S-124 compliant GML for the supplies messages
-     * @param messages the messages to convert to GML
-     * @param language the language
+     *
+     * @param messages  the messages to convert to GML
+     * @param _language the language
      * @return the generated GML
      */
-    public List<String> generateGML(List<Message> messages, String language) {
+    public List<String> generateGML(List<Message> messages, String _language) {
+        final String language = app.getLanguage(_language); // Ensure we use a valid lang
+
         if (messages.isEmpty())
             return EMPTY_LIST;
 
-        List<String> gmls = new ArrayList<>(messages.size());
+        List<ImmutablePair<SystemMessageVo, FeatureCollectionVo[]>> valueObjects = toValueObjects(messages, language);
+        List<String> gmls = toGmlStrings(valueObjects, language);
+
+        return gmls;
+    }
+
+    private List<ImmutablePair<SystemMessageVo, FeatureCollectionVo[]>> toValueObjects(List<Message> messages, String language) {
+        List<ImmutablePair<SystemMessageVo, FeatureCollectionVo[]>> valueObjects = new LinkedList<>();
 
         messages.forEach(message -> {
+            // Validate the message
+            if (message.getMainType() == MainType.NM)
+                log.error("S-124 does not currently support Notices to Mariners T&P :-( " + message.getUid());
+            else if (message.getNumber() == null)
+                log.error("S-124 does not currently support un-numbered navigational warnings :-( " + message.getUid());
+            else {
+                SystemMessageVo msg = message.toVo(SystemMessageVo.class, Message.MESSAGE_DETAILS_FILTER);
+                msg.sort(language);
+
+                valueObjects.add(new ImmutablePair<>(msg, message.toGeoJson()));
+            }
+        });
+
+        return valueObjects;
+    }
+
+    private List<String> toGmlStrings(List<ImmutablePair<SystemMessageVo, FeatureCollectionVo[]>> valueObjects, String language) {
+        List<String> gmls = Collections.synchronizedList(new LinkedList<>());
+
+        valueObjects.parallelStream().forEach(vo -> {
+            S124ModelToGmlConverter modelToGmlConverter = new S124ModelToGmlConverter();
+
+            final SystemMessageVo messageVo = vo.left;
+            final FeatureCollectionVo[] featureCollectionVos = vo.right;
+
             try {
-                JAXBElement<DatasetType> dataSet = modelToGmlConverter.toGml(message, language);
+                JAXBElement<DatasetType> dataSet = modelToGmlConverter.toGml(messageVo, featureCollectionVos, language);
                 validateAgainstSchema(dataSet);
                 String gml = modelToGmlConverter.toString(dataSet);
+
                 gmls.add(gml);
-                log.info(format("Message %s (%s) included in GML output", message.getShortId(), message.getUid()));
-            } catch(RuntimeException e) {
-                log.warn(format("Message %s (%s) not included in GML output", message.getShortId(), message.getUid()));
-                if (messages.size() == 1) {
+                log.debug(format("Message %s (%s) included in GML output", messageVo.getShortId(), messageVo.getId()));
+            } catch (RuntimeException e) {
+                log.warn(format("Message %s (%s) not included in GML output", messageVo.getShortId(), messageVo.getId()));
+                if (valueObjects.size() == 1) {
                     log.debug(e.getMessage(), e);
                     throw e;
                 } else {
@@ -113,9 +159,9 @@ public class S124Service {
     /**
      * Find messages based on id, status or wkt.
      *
-     * @param id search for messages matching this id.
+     * @param id     search for messages matching this id.
      * @param status search for messages matching this status.
-     * @param wkt search for messages matching this well-known-text.
+     * @param wkt    search for messages matching this well-known-text.
      * @return A list of matching messages
      */
     private List<Message> findMessages(Integer id, Integer status, String wkt) {
@@ -139,16 +185,18 @@ public class S124Service {
 
     /**
      * Validate JAXB DataSet element against built-in S-124 XSD's
+     *
      * @param dataSet the Dataset to validate
      */
     private void validateAgainstSchema(JAXBElement<DatasetType> dataSet) {
         try {
+            String id = dataSet.getValue().getId();
             List<S124GmlValidator.ValidationError> validationErrors = s124GmlValidator.validateAgainstSchema(dataSet);
 
             if (validationErrors.isEmpty())
-                log.info("No schema validation errors found.");
+                log.debug("{}: No schema validation errors found.", id);
             else
-                validationErrors.forEach(err -> log.warn(format("%8s [%d:%d]: %s", err.getType(), err.getLineNumber(), err.getColumnNumber(), err.getMessage())));
+                validationErrors.forEach(err -> log.warn(format("Schema validation error: %8s: %s: %s", err.getType(), id, err.getMessage())));
         } catch (JAXBException e) {
             log.error(e.getMessage(), e);
         }
