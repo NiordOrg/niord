@@ -46,9 +46,6 @@ import static java.util.Collections.*;
  * <p>
  * The S-124 XSD area based on the format used by the STM-project at
  * http://stmvalidation.eu/schemas/ ("Area Exchange Format")
- *
- * TODO: When a more mature version has been implemented, the Freemarker template execution should
- *       use the {@code FmTemplateService} for DB-backed template execution.
  */
 @Stateless
 public class S124Service {
