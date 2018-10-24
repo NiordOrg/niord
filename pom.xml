@@ -18,6 +18,7 @@
         <jackson.version>2.9.7</jackson.version>
         <swagger.version>1.5.21</swagger.version>
         <batik.version>1.8</batik.version>
+        <jsoup.version>1.11.3</jsoup.version>
     </properties>
 
     <dependencyManagement>

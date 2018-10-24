@@ -9,6 +9,7 @@ import net.opengis.gml._3.*;
 import net.opengis.gml._3.ReferenceType;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jsoup.Jsoup;
 import org.niord.core.NiordApp;
 import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.message.Message;
@@ -338,7 +339,7 @@ public class S124ModelToGmlConverter {
         if (partDesc != null && StringUtils.isNotBlank(partDesc.getDetails())) {
             WarningInformationType warningInformationType = s124ObjectFactory.createWarningInformationType();
             warningInformationType.setLanguage(lang(partDesc.getLang()));
-            warningInformationType.setText(partDesc.getDetails());
+            warningInformationType.setText(asPlainText(partDesc.getDetails()));
             navigationalWarningFeaturePartType.getWarningInformation().add(warningInformationType);
         }
 
@@ -638,6 +639,18 @@ public class S124ModelToGmlConverter {
 
     private String nextGmlObjectId(String id) {
         return String.format("O.%s.%d", id, nextGmlObjectId++);
+    }
+
+    private String asPlainText(String string) {
+        return isHtml(string) ? htmlToPlainText(string) : string;
+    }
+
+    private boolean isHtml(String string) {
+        return string.contains("<") || string.contains("&");
+    }
+
+    private String htmlToPlainText(String html) {
+        return Jsoup.parse(html).text();
     }
 
 }
