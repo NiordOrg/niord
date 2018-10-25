@@ -31,9 +31,12 @@ import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.String.format;
 import static java.util.Collections.*;
@@ -104,6 +107,8 @@ public class S124Service {
     }
 
     private List<ImmutablePair<SystemMessageVo, FeatureCollectionVo[]>> toValueObjects(List<Message> messages, String language) {
+        final Instant start = Instant.now();
+
         List<ImmutablePair<SystemMessageVo, FeatureCollectionVo[]>> valueObjects = new LinkedList<>();
 
         messages.forEach(message -> {
@@ -120,11 +125,18 @@ public class S124Service {
             }
         });
 
+        final Instant finish = Instant.now();
+        log.info("Spent {} msecs converting JPA objects to value objects.", Duration.between(start, finish).toMillis());
+
         return valueObjects;
     }
 
     private List<String> toGmlStrings(List<ImmutablePair<SystemMessageVo, FeatureCollectionVo[]>> valueObjects, String language) {
         List<String> gmls = Collections.synchronizedList(new LinkedList<>());
+
+        final AtomicLong accumulatedConversionDuration = new AtomicLong();
+        final AtomicLong accumulatedValidationDuration = new AtomicLong();
+        final AtomicLong accumulatedToStringDuration = new AtomicLong();
 
         valueObjects.parallelStream().forEach(vo -> {
             S124ModelToGmlConverter modelToGmlConverter = new S124ModelToGmlConverter();
@@ -133,11 +145,19 @@ public class S124Service {
             final FeatureCollectionVo[] featureCollectionVos = vo.right;
 
             try {
+                long start = System.nanoTime();
                 JAXBElement<DatasetType> dataSet = modelToGmlConverter.toGml(messageVo, featureCollectionVos, language);
-                validateAgainstSchema(dataSet);
-                String gml = modelToGmlConverter.toString(dataSet);
+                accumulatedConversionDuration.addAndGet(System.nanoTime() - start);
 
+                start = System.nanoTime();
+                validateAgainstSchema(dataSet);
+                accumulatedValidationDuration.addAndGet(System.nanoTime() - start);
+
+                start = System.nanoTime();
+                String gml = modelToGmlConverter.toString(dataSet);
                 gmls.add(gml);
+                accumulatedToStringDuration.addAndGet(System.nanoTime() - start);
+
                 log.debug(format("Message %s (%s) included in GML output", messageVo.getShortId(), messageVo.getId()));
             } catch (RuntimeException e) {
                 log.warn(format("Message %s (%s) not included in GML output", messageVo.getShortId(), messageVo.getId()));
@@ -149,6 +169,10 @@ public class S124Service {
                 }
             }
         });
+
+        log.info("Spent a total of {} CPU-msecs converting Niord model to GML", (long) (accumulatedConversionDuration.get() / 1e6));
+        log.info("Spent a total of {} CPU-msecs validating GML against S-124 XSDSchema", (long) (accumulatedValidationDuration.get() / 1e6));
+        log.info("Spent a total of {} CPU-msecs converting GML to Strings", (long) (accumulatedToStringDuration.get() / 1e6));
 
         return gmls;
     }
