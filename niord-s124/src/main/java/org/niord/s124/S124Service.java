@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.String.format;
 import static java.util.Collections.*;
+import static org.niord.model.message.Status.PUBLISHED;
 
 
 /**
@@ -194,7 +195,7 @@ public class S124Service {
             Message message = messageService.resolveMessage(messageId);
             messages = message != null ? singletonList(message) : emptyList();
         } else if (wkt != null) {
-            MessageSearchParams params = new MessageSearchParams().extent(wkt);
+            MessageSearchParams params = new MessageSearchParams().extent(wkt).statuses(PUBLISHED);
             if (params.getExtent() == null)
                 throw new IllegalStateException(format("Could not parse WKT \"%s\"", wkt));
 
