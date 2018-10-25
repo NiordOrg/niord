@@ -53,8 +53,13 @@ public class S124ApiServiceImpl implements S124ApiService {
         if (status != null)
             return Response.status(501).entity(new ApiResponseMessage(ApiResponseMessage.ERROR, "'status' query parameter not yet supported.")).build();
 
-        if (Stream.of(id, status, wkt).filter(o -> o != null).count() > 1)
-            return Response.status(501).entity(new ApiResponseMessage(ApiResponseMessage.ERROR, "Only one query parameter is allowed.")).build();
+        final int nArgs = (int) Stream.of(id, status, wkt).filter(o -> o != null).count();
+
+        if (nArgs == 0)
+            return Response.status(501).entity(new ApiResponseMessage(ApiResponseMessage.ERROR, "No query parameters. 'id', 'wkt', or 'status' expected.")).build();
+
+        if (nArgs > 1)
+            return Response.status(501).entity(new ApiResponseMessage(ApiResponseMessage.ERROR, "Only one query parameter is currently allowed.")).build();
 
         // ---
 
