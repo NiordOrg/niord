@@ -38,8 +38,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.String.format;
 import static java.util.Collections.*;
+import static org.niord.model.message.MainType.NW;
 import static org.niord.model.message.Status.PUBLISHED;
 
 
@@ -172,7 +174,7 @@ public class S124Service {
         });
 
         log.info("Spent a total of {} CPU-msecs converting Niord model to GML", (long) (accumulatedConversionDuration.get() / 1e6));
-        log.info("Spent a total of {} CPU-msecs validating GML against S-124 XSDSchema", (long) (accumulatedValidationDuration.get() / 1e6));
+        log.info("Spent a total of {} CPU-msecs validating GML against S-124 XSD Schema", (long) (accumulatedValidationDuration.get() / 1e6));
         log.info("Spent a total of {} CPU-msecs converting GML to Strings", (long) (accumulatedToStringDuration.get() / 1e6));
 
         return gmls;
@@ -195,7 +197,7 @@ public class S124Service {
             Message message = messageService.resolveMessage(messageId);
             messages = message != null ? singletonList(message) : emptyList();
         } else if (wkt != null) {
-            MessageSearchParams params = new MessageSearchParams().extent(wkt).statuses(PUBLISHED);
+            MessageSearchParams params = new MessageSearchParams().mainTypes(newHashSet(NW)).extent(wkt).statuses(PUBLISHED);
             if (params.getExtent() == null)
                 throw new IllegalStateException(format("Could not parse WKT \"%s\"", wkt));
 
