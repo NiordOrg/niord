@@ -25,6 +25,7 @@ import org.niord.core.message.MessageService;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.message.MainType;
+import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
 import javax.ejb.Stateless;
@@ -33,16 +34,13 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.String.format;
 import static java.util.Collections.*;
 import static org.niord.model.message.MainType.NW;
-import static org.niord.model.message.Status.PUBLISHED;
 
 
 /**
@@ -62,6 +60,9 @@ public class S124Service {
 
     private S124GmlValidator s124GmlValidator;
     private MessageService messageService;
+
+    private final static Status[] PUBLIC_STATUSES = Arrays.stream(Status.values()).filter(s -> s.isPublic()).toArray(Status[]::new);
+    private final static Set<MainType> SUPPORTED_MAIN_TYPES = newHashSet(NW);
 
     @SuppressWarnings("unused")
     public S124Service() {
@@ -197,7 +198,7 @@ public class S124Service {
             Message message = messageService.resolveMessage(messageId);
             messages = message != null ? singletonList(message) : emptyList();
         } else if (wkt != null) {
-            MessageSearchParams params = new MessageSearchParams().mainTypes(newHashSet(NW)).extent(wkt).statuses(PUBLISHED);
+            MessageSearchParams params = new MessageSearchParams().mainTypes(SUPPORTED_MAIN_TYPES).statuses(PUBLIC_STATUSES).extent(wkt);
             if (params.getExtent() == null)
                 throw new IllegalStateException(format("Could not parse WKT \"%s\"", wkt));
 
