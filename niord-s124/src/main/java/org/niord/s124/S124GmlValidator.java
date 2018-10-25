@@ -1,5 +1,6 @@
 package org.niord.s124;
 
+import _int.iho.s124.gml.cs0._0.DatasetType;
 import org.slf4j.Logger;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
@@ -27,7 +28,7 @@ import static java.util.Objects.requireNonNull;
 @ApplicationScoped
 public class S124GmlValidator {
 
-    private Validator validator;
+    private Schema schema;
     private Logger log;
 
     public S124GmlValidator() {
@@ -43,10 +44,8 @@ public class S124GmlValidator {
             this.log.debug("Searching for S-124 XSD schema");
             URL schemaResource = this.getClass().getResource("/xsd/S124/1.0/20180910/S124.xsd");
             this.log.info("Loading S-124 XSD schema");
-            Schema schema = schemaFactory.newSchema(schemaResource);
-            this.log.debug("Creating S-124 XSD schema validator");
-            validator = schema.newValidator();
-            this.log.info("Created S-124 XSD schema validator");
+            schema = schemaFactory.newSchema(schemaResource);
+            this.log.info("Loaded and parsed S-124 XSD schema");
         } catch (SAXException e) {
             this.log.error(e.getMessage());
         }
@@ -54,33 +53,17 @@ public class S124GmlValidator {
 
     public List<ValidationError> validateAgainstSchema(JAXBElement<?> jaxbElement) throws JAXBException {
         requireNonNull(jaxbElement);
-        requireNonNull(validator);
+        requireNonNull(schema);
 
         JAXBContext jaxbContext = JAXBContext.newInstance(jaxbElement.getValue().getClass());
         JAXBSource source = new JAXBSource(jaxbContext, jaxbElement);
 
         List<ValidationError> validationErrors = new LinkedList<>();
-        validator.setErrorHandler(new ErrorHandler() {
-            @Override
-            public void warning(SAXParseException e) {
-                validationErrors.add(new ValidationError("WARNING", e.getMessage(), e.getLineNumber(), e.getColumnNumber()));
-            }
-
-            @Override
-            public void fatalError(SAXParseException e) {
-                validationErrors.add(new ValidationError("FATAL", e.getMessage(), e.getLineNumber(), e.getColumnNumber()));
-            }
-
-            @Override
-            public void error(SAXParseException e) {
-                validationErrors.add(new ValidationError("ERROR", e.getMessage(), e.getLineNumber(), e.getColumnNumber()));
-            }
-        });
 
         try {
-            synchronized (validator) {
-                validator.validate(source);
-            }
+            Validator validator = createAndConfigureValidator(validationErrors);
+            validator.validate(source);
+            log.info("S-124 XSD schema validation completed for {} (thread {})", ((JAXBElement<DatasetType>) jaxbElement).getValue().getId(), Thread.currentThread().getId());
         } catch (SAXException e) {
             validationErrors.add(new ValidationError("UNKNOWN", e.getMessage(), null, null));
         } catch (IOException e) {
@@ -121,26 +104,37 @@ public class S124GmlValidator {
             return columnNumber;
         }
 
-        @Override
-        public String toString() {
-            StringBuffer sb = new StringBuffer();
-
-            sb.append(type);
-            sb.append(": ");
-            sb.append("Line ");
-            sb.append(lineNumber != null ? lineNumber : -1);
-            sb.append(", column ");
-            sb.append(columnNumber != null ? columnNumber : -1);
-            sb.append(": ");
-            sb.append(message);
-
-            return sb.toString();
-        }
-
         private final String type;
         private final String message;
         private final Integer lineNumber;
         private final Integer columnNumber;
+    }
+
+    private Validator createAndConfigureValidator(List<ValidationError> validationErrors) {
+        log.debug("Creating S-124 XSD schema validator {}", Thread.currentThread().getId());
+
+        Validator validator = schema.newValidator();
+
+        validator.setErrorHandler(new ErrorHandler() {
+            @Override
+            public void warning(SAXParseException e) {
+                validationErrors.add(new ValidationError("WARNING", e.getMessage(), e.getLineNumber(), e.getColumnNumber()));
+            }
+
+            @Override
+            public void fatalError(SAXParseException e) {
+                validationErrors.add(new ValidationError("FATAL", e.getMessage(), e.getLineNumber(), e.getColumnNumber()));
+            }
+
+            @Override
+            public void error(SAXParseException e) {
+                validationErrors.add(new ValidationError("ERROR", e.getMessage(), e.getLineNumber(), e.getColumnNumber()));
+            }
+        });
+
+        log.debug("Created S-124 XSD schema validator {}", Thread.currentThread().getId());
+
+        return validator;
     }
 
 }
