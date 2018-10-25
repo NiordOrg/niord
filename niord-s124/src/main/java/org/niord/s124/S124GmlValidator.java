@@ -42,7 +42,7 @@ public class S124GmlValidator {
         SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         try {
             this.log.debug("Searching for S-124 XSD schema");
-            URL schemaResource = this.getClass().getResource("/xsd/S124/1.0/20180910/S124.xsd");
+            URL schemaResource = this.getClass().getResource("/xsd/S124/0.2.4/20181016/S124.xsd");
             this.log.info("Loading S-124 XSD schema");
             schema = schemaFactory.newSchema(schemaResource);
             this.log.info("Loaded and parsed S-124 XSD schema");

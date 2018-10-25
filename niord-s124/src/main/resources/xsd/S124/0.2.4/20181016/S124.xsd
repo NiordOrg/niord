@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:S100="http://www.iho.int/s100gml/1.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns="http://www.iho.int/S124/gml/cs0/0.1" xmlns:S100EXT="http://www.iho.int/s100gml/1.0+EXT" targetNamespace="http://www.iho.int/S124/gml/cs0/0.1" elementFormDefault="unqualified" version="0.1-20180531">
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:S100="http://www.iho.int/s100gml/1.0"
+		   xmlns:gml="http://www.opengis.net/gml/3.2" xmlns="http://www.iho.int/S124/gml/cs0/0.1"
+		   targetNamespace="http://www.iho.int/S124/gml/cs0/0.1" elementFormDefault="unqualified"
+		   version="0.1-20180531">
 <!--
 =============================================================================================
 S100 XML/GML Schema for S-124 (Navigational Warning & Notice to Mariners).                   
@@ -13,6 +16,7 @@ THIS IS A DRAFT AND NO WARRANTIES ARE GIVEN TO ACCURACY OR FUNCTION OF THIS DOCU
 
 Document history
 Draft 0.2.3	20180717 Draft based on S-124 UML as is on 20180717. Will be updated to comply with S-100 v4.0.0 when available.
+Draft 0.2.4 20181016 Draft based on S-124 UML as is on 20181016. Removed NtM components to comply with WWNWS10 decisions. Added support for no message on hand inforce bulletins. Various minor issues corrected.
 
 ==================================================================================================
 -->
@@ -71,7 +75,7 @@ Draft 0.2.3	20180717 Draft based on S-124 UML as is on 20180717. Will be updated
 	</xs:simpleType>
 	<xs:simpleType name="MRN">
 		<xs:annotation>
-			<xs:documentation>Marine Resource Name identifier, based on URN. Note that the NID, including the mrn: prefix can be no more than 31 characters long (STM project restriction)</xs:documentation>
+			<xs:documentation>Marine Resource Name identifier, based on URN.</xs:documentation>
 		</xs:annotation>
 		<xs:restriction base="xs:string">
 			<xs:pattern value="urn:mrn:[A-Za-z0-9][A-Za-z0-9-]{0,27}:[A-Za-z0-9()+,\-.:=@;$_!*'%/?#]+"/>
@@ -475,9 +479,9 @@ The complete information about the restriction(s), actually held in handbooks or
 		</xs:restriction>
 	</xs:simpleType>
 	
-	<xs:simpleType name="referenceType">
+	<xs:simpleType name="referenceCategoryType">
 		<xs:annotation>
-			<xs:documentation>Type of reference.</xs:documentation>
+			<xs:documentation>Category of reference.</xs:documentation>
 		</xs:annotation>
 		<xs:restriction base="xs:string">
 			<xs:enumeration value="cancellation">
@@ -573,31 +577,6 @@ The complete information about the restriction(s), actually held in handbooks or
 				<xs:documentation>A list of serial numbers of those local warnings are remains in effect. (Adopted from S-53, 2.2.6)</xs:documentation>
 			</xs:annotation>
 			</xs:enumeration>
-			<xs:enumeration value="temporary notice to mariner">
-			<xs:annotation>
-				<xs:documentation>A notice used to promulgate navigationally significant information that will remain valid only for a limited period. (Adopted from S-4, B-633.1)</xs:documentation>
-			</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="preliminary notice to mariner">
-			<xs:annotation>
-				<xs:documentation>A notice issued to promulgate navigationally significant data early to the mariner. (Adopted from S-4, B-634.1)</xs:documentation>
-			</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="miscellaneous notice to mariner">
-			<xs:annotation>
-				<xs:documentation>Notice used to promulgate important new information of significance to the mariner which is not otherwise presented on charts. (Adopted from S-4, B-635.1). </xs:documentation>
-			</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="permanent notice to mariner">
-			<xs:annotation>
-				<xs:documentation>Notice intended to assist in keeping nautical charts and nautical publications, such as sailing directions, lists of lights, notices to mariners, tide tables and all other nautical publications necessary for the intended voyage up to date. (Adopted from S-4, B-630.1)</xs:documentation>
-			</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="temporary and preliminary notice to mariner in force bulletin">
-			<xs:annotation>
-				<xs:documentation>A list of serial numbers of those temporary and preliminary notice to mariners that remains in effect. (Adopted from S-53, 2.2.6, S-4, B-633.5 and B-634.7)</xs:documentation>
-			</xs:annotation>
-			</xs:enumeration>
 		</xs:restriction>
 	</xs:simpleType>
 	
@@ -636,22 +615,6 @@ The complete information about the restriction(s), actually held in handbooks or
 				<xs:sequence>
 					<xs:element name="warningInformation" type="warningInformationType" minOccurs="1" maxOccurs="unbounded"/>
 					<xs:element name="header" type="gml:ReferenceType" minOccurs="1" maxOccurs="1"/>
-				</xs:sequence>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
-	
-	<xs:element name="NoticeToMarinersFeaturePart" type="NoticeToMarinersFeaturePartType" substitutionGroup="FeatureType"/>
-	<xs:complexType name="NoticeToMarinersFeaturePartType">
-		<xs:annotation>
-			<xs:documentation>The geographically located information part of a Notice to Mariners.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="FeatureType">
-				<xs:sequence>
-					<xs:element name="graphic" type="graphicType" minOccurs="0" maxOccurs="unbounded"/>
-					<xs:element name="information" type="informationType" minOccurs="0" maxOccurs="unbounded"/>
-					<xs:element name="header" type="gml:ReferenceType" minOccurs="0" maxOccurs="unbounded"/>
 				</xs:sequence>
 			</xs:extension>
 		</xs:complexContent>
@@ -703,9 +666,13 @@ The complete information about the restriction(s), actually held in handbooks or
 			<xs:extension base="InformationTypeType">
 				<xs:sequence>
 					<xs:element name="messageSeriesIdentifier" type="messageSeriesIdentifierType" minOccurs="1" maxOccurs="unbounded"/>
-					<xs:element name="reference" type="referenceType" minOccurs="1" maxOccurs="1"/>
-					<xs:element name="theWarning" type="gml:ReferenceType" minOccurs="0" maxOccurs="unbounded"/>
-					<xs:element name="theNotice" type="gml:ReferenceType" minOccurs="0" maxOccurs="unbounded"/>
+					<xs:element name="referenceCategory" type="referenceCategoryType" minOccurs="1" maxOccurs="1"/>
+					<xs:element name="noMessageOnHand" type="xs:boolean" minOccurs="1" maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>An indication of no active message. When boolean value equal true it means there are no active message.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="theWarning" type="gml:ReferenceType" minOccurs="1" maxOccurs="1"/>
 				</xs:sequence>
 			</xs:extension>
 		</xs:complexContent>
@@ -741,29 +708,6 @@ The complete information about the restriction(s), actually held in handbooks or
 					<xs:element name="generalArea" type="generalAreaType" minOccurs="1" maxOccurs="unbounded"/>
 					<xs:element name="theReferences" type="gml:ReferenceType" minOccurs="0" maxOccurs="unbounded"/>
 					<xs:element name="theWarningPart" type="gml:ReferenceType" minOccurs="0" maxOccurs="unbounded"/>
-				</xs:sequence>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
-
-	<xs:element name="NMPreamble" type="NMPreambleType" substitutionGroup="Preamble"/>
-	<xs:complexType name="NMPreambleType">
-		<xs:annotation>
-			<xs:documentation>Preamble information for Navigational Warnings.</xs:documentation>
-		</xs:annotation>
-		<xs:complexContent>
-			<xs:extension base="PreambleType">
-				<xs:sequence>
-					<xs:element name="generalArea" type="generalAreaType" minOccurs="0" maxOccurs="unbounded"/>
-					<xs:element name="sourceAuthority" type="sourceAuthorityType" minOccurs="1" maxOccurs="1"/>
-					<xs:element name="originalInformation" type="xs:boolean" minOccurs="1" maxOccurs="1">
-						<xs:annotation>
-							<xs:documentation>Indication that the Notice to Mariners is from an original source (that is not previously published by another national hydrographic office). S-4 B-631.6 </xs:documentation>
-							<xs:documentation>	Boolean. A True value is an indication that the information is original.</xs:documentation>
-						</xs:annotation>
-					</xs:element>
-					<xs:element name="theNoticePart" type="gml:ReferenceType" minOccurs="0" maxOccurs="unbounded"/>
-					<xs:element name="theReferences" type="gml:ReferenceType" minOccurs="0" maxOccurs="unbounded"/>
 				</xs:sequence>
 			</xs:extension>
 		</xs:complexContent>

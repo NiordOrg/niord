@@ -36,7 +36,7 @@
             <namespace:prefix name="S100" />
         </jaxb:bindings>
     </jaxb:bindings>
-    <jaxb:bindings schemaLocation="xsd/S124/1.0/20180910/S124.xsd">
+    <jaxb:bindings schemaLocation="xsd/S124/0.2.4/20181016/S124.xsd">
         <jaxb:bindings>
             <namespace:prefix name="S124" />
         </jaxb:bindings>

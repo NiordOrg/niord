@@ -36,7 +36,7 @@
                         <xjbSource>src/main/resources/global.xjb</xjbSource>
                     </xjbSources>
                     <sources>
-                        <source>${basedir}/src/main/resources/xsd/S124/1.0/20180910/S124.xsd</source>
+                        <source>${basedir}/src/main/resources/xsd/S124/0.2.4/20181016/S124.xsd</source>
                     </sources>
                     <clearOutputDir>true</clearOutputDir>
                 </configuration>

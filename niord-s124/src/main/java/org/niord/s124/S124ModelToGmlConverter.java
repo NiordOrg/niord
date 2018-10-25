@@ -193,20 +193,20 @@ public class S124ModelToGmlConverter {
 
                 switch (referenceVo.getType()) {
                     case CANCELLATION:
-                        referencesType.setReference(_int.iho.s124.gml.cs0._0.ReferenceType.CANCELLATION);
+                        referencesType.setReferenceCategory(_int.iho.s124.gml.cs0._0.ReferenceCategoryType.CANCELLATION);
                         break;
                     //case REPETITION:
                     //case REPETITION_NEW_TIME:
-                    //    referencesType.setReference(_int.iho.s124.gml.cs0._0.ReferenceType.REPETITION);
+                    //    referencesType.setReferenceCategory(_int.iho.s124.gml.cs0._0.ReferenceCategoryType.REPETITION);
                     //    break;
                     //case UPDATE:
-                    //    referencesType.setReference(_int.iho.s124.gml.cs0._0.ReferenceType.UPDATE);
+                    //    referencesType.setReferenceCategory(_int.iho.s124.gml.cs0._0.ReferenceCategoryType.UPDATE);
                     //    break;
                     //case REFERENCE:
-                    //    referencesType.setReference(_int.iho.s124.gml.cs0._0.ReferenceType.SOURCE_REFERENCE);
+                    //    referencesType.setReferenceCategory(_int.iho.s124.gml.cs0._0.ReferenceCategoryType.SOURCE_REFERENCE);
                     //    break;
                     default:
-                        referencesType.setReference(_int.iho.s124.gml.cs0._0.ReferenceType.SOURCE_REFERENCE);
+                        referencesType.setReferenceCategory(_int.iho.s124.gml.cs0._0.ReferenceCategoryType.SOURCE_REFERENCE);
                 }
 
                 MessageSeriesIdentifierType messageSeriesIdentifer = createMessageSeries(type, warningNumber, year, mrn, lang);
