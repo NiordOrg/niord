@@ -23,6 +23,8 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.settings.Setting;
+import org.niord.core.settings.SettingsService;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.message.MainType;
 import org.niord.model.message.Status;
@@ -45,7 +47,6 @@ import static java.lang.String.format;
 import static java.util.Collections.*;
 import static org.niord.model.message.MainType.NW;
 
-
 /**
  * Service for converting Niord navigational warnings to S-124 GML
  * <p>
@@ -58,11 +59,15 @@ import static org.niord.model.message.MainType.NW;
 public class S124Service {
 
     private Logger log;
-
     private NiordApp app;
-
-    private S124GmlValidator s124GmlValidator;
+    private SettingsService settingsService;
     private MessageService messageService;
+    private S124GmlValidator s124GmlValidator;
+
+    private static final Setting VALIDATE_OUTBOUND_GML_AGAINST_SCHEMA =
+            new Setting("s124ValidateOutbound", "true")
+                    .description("The base application server URI")
+                    .editable(true);
 
     private final static Status[] PUBLIC_STATUSES = new Status[]{Status.PUBLISHED}; // Arrays.stream(Status.values()).filter(s -> s.isPublic()).toArray(Status[]::new);
     private final static Set<MainType> SUPPORTED_MAIN_TYPES = newHashSet(NW);
@@ -72,11 +77,12 @@ public class S124Service {
     }
 
     @Inject
-    public S124Service(Logger log, NiordApp app, S124GmlValidator s124GmlValidator, MessageService messageService) {
+    public S124Service(Logger log, NiordApp app, SettingsService settingsService, MessageService messageService, S124GmlValidator s124GmlValidator) {
         this.log = log;
         this.app = app;
-        this.s124GmlValidator = s124GmlValidator;
+        this.settingsService = settingsService;
         this.messageService = messageService;
+        this.s124GmlValidator = s124GmlValidator;
     }
 
     /**
@@ -156,9 +162,13 @@ public class S124Service {
                 JAXBElement<DatasetType> dataSet = modelToGmlConverter.toGml(messageVo, featureCollectionVos, language);
                 accumulatedConversionDuration.addAndGet(System.nanoTime() - start);
 
-                start = System.nanoTime();
-                validateAgainstSchema(dataSet);
-                accumulatedValidationDuration.addAndGet(System.nanoTime() - start);
+                if (settingsService.getBoolean("s124ValidateOutbound")) {
+                    start = System.nanoTime();
+                    validateAgainstSchema(dataSet);
+                    accumulatedValidationDuration.addAndGet(System.nanoTime() - start);
+                } else {
+                    log.debug("Validation out outbound S-124 messages is disabled");
+                }
 
                 start = System.nanoTime();
                 String gml = modelToGmlConverter.toString(dataSet);
