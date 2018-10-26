@@ -34,7 +34,10 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.google.common.collect.Sets.newHashSet;
@@ -61,7 +64,7 @@ public class S124Service {
     private S124GmlValidator s124GmlValidator;
     private MessageService messageService;
 
-    private final static Status[] PUBLIC_STATUSES = Arrays.stream(Status.values()).filter(s -> s.isPublic()).toArray(Status[]::new);
+    private final static Status[] PUBLIC_STATUSES = new Status[]{Status.PUBLISHED}; // Arrays.stream(Status.values()).filter(s -> s.isPublic()).toArray(Status[]::new);
     private final static Set<MainType> SUPPORTED_MAIN_TYPES = newHashSet(NW);
 
     @SuppressWarnings("unused")
