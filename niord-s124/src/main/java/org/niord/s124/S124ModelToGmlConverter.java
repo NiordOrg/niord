@@ -454,12 +454,13 @@ public class S124ModelToGmlConverter {
             CurveSegmentArrayPropertyType curveSegmentArrayPropertyType = gmlObjectFactory.createCurveSegmentArrayPropertyType();
             curveSegmentArrayPropertyType.getAbstractCurveSegment().add(lineStringSegment);
 
-            curvePropertyType = s100ObjectFactory.createCurvePropertyType();
-            CurveType curveType = s100ObjectFactory.createCurveType();
+            _int.iho.s100gml._1.CurveType curveType = s100ObjectFactory.createCurveType();
             curveType.setId(nextGeomId(id));
             curveType.setSrsName("EPSG:4326");
             curveType.setSegments(curveSegmentArrayPropertyType);
 
+            curvePropertyType = s100ObjectFactory.createCurvePropertyType();
+            curvePropertyType.setCurve(curveType);
         }
 
         PointCurveSurface p = s124ObjectFactory.createPointCurveSurface();
