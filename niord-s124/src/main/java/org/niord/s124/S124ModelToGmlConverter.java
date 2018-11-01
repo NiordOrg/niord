@@ -212,6 +212,11 @@ public class S124ModelToGmlConverter {
                 MessageSeriesIdentifierType messageSeriesIdentifer = createMessageSeries(type, warningNumber, year, mrn, lang);
                 referencesType.getMessageSeriesIdentifier().add(messageSeriesIdentifer);
                 referencesType.setId(nextGmlObjectId("REF"));
+                referencesType.setNoMessageOnHand(false);
+
+                ReferenceType referenceType = gmlObjectFactory.createReferenceType();
+                referenceType.setHref(String.format("#DK.%s", referenceVo.getMessageId()));
+                referencesType.setTheWarning(referenceType);
 
                 // ---
 
