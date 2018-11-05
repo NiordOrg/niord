@@ -12,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.message.vo.SystemMessageVo;
+import org.niord.core.util.TimeUtils;
 import org.niord.model.geojson.*;
 import org.niord.model.message.*;
 import org.slf4j.Logger;
@@ -199,7 +200,7 @@ public class S124ModelToGmlConverter {
                             final Type refType = referencedMessageVo.getType();
                             final String refMrn = toMrn(referencedMessageVo);
                             final int refWarningNumber = referencedMessageVo.getNumber();
-                            final int refYear = referencedMessageVo.getCreated().getYear() - 100;
+                            final int refYear = TimeUtils.getCalendarField(referencedMessageVo.getPublishDateFrom(), Calendar.YEAR);
 
                             if (refType.getMainType() == NW) {
                                 ReferencesType referencesType = s124ObjectFactory.createReferencesType();
