@@ -17,16 +17,17 @@ package org.niord.s124;
 
 
 import _int.iho.s124.gml.cs0._0.DatasetType;
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.niord.core.NiordApp;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageService;
+import org.niord.core.message.Reference;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.message.MainType;
+import org.niord.model.message.MessageVo;
 import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
@@ -36,10 +37,7 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.google.common.collect.Sets.newHashSet;
@@ -113,16 +111,16 @@ public class S124Service {
         if (messages.isEmpty())
             return EMPTY_LIST;
 
-        List<ImmutablePair<SystemMessageVo, FeatureCollectionVo[]>> valueObjects = toValueObjects(messages, language);
+        List<RelatedValueObjects> valueObjects = toValueObjects(messages, language);
         List<String> gmls = toGmlStrings(valueObjects, language);
 
         return gmls;
     }
 
-    private List<ImmutablePair<SystemMessageVo, FeatureCollectionVo[]>> toValueObjects(List<Message> messages, String language) {
+    private List<RelatedValueObjects> toValueObjects(List<Message> messages, String language) {
         final Instant start = Instant.now();
 
-        List<ImmutablePair<SystemMessageVo, FeatureCollectionVo[]>> valueObjects = new LinkedList<>();
+        List<RelatedValueObjects> valueObjects = new LinkedList<>();
 
         messages.forEach(message -> {
             // Validate the message
@@ -131,10 +129,30 @@ public class S124Service {
             else if (message.getNumber() == null)
                 log.error("S-124 does not currently support un-numbered navigational warnings :-( " + message.getUid());
             else {
+                // Load all entities we need from the database and convert to VO's
                 SystemMessageVo msg = message.toVo(SystemMessageVo.class, Message.MESSAGE_DETAILS_FILTER);
                 msg.sort(language);
 
-                valueObjects.add(new ImmutablePair<>(msg, message.toGeoJson()));
+                List<MessageVo> referencedMessageVosArray = new ArrayList<>();
+
+                List<Reference> references = message.getReferences();
+                if (references != null) {
+                    message.getReferences().forEach(refMsg -> {
+                        List<Message> referencedMessages = messageService.findByShortId(refMsg.getMessageId());
+                        if (referencedMessages.isEmpty()) {
+                            log.error("Referenced messages {} not found for {}", refMsg.getMessageId(), message.getId());
+                        } else {
+                            if (referencedMessages.size() > 1)
+                                log.warn("{} instances of {} found in database", referencedMessages.size(), refMsg.getMessageId());
+
+                            Message referencedMessage = referencedMessages.get(0);
+                            MessageVo referencedMessageVo = referencedMessage.toVo(MessageVo.class, Message.MESSAGE_DETAILS_FILTER);
+                            referencedMessageVosArray.add(referencedMessageVo);
+                        }
+                    });
+                }
+
+                valueObjects.add(new RelatedValueObjects(msg, message.toGeoJson(), referencedMessageVosArray.toArray(new MessageVo[referencedMessageVosArray.size()])));
             }
         });
 
@@ -144,7 +162,7 @@ public class S124Service {
         return valueObjects;
     }
 
-    private List<String> toGmlStrings(List<ImmutablePair<SystemMessageVo, FeatureCollectionVo[]>> valueObjects, String language) {
+    private List<String> toGmlStrings(List<RelatedValueObjects> valueObjects, String language) {
         List<String> gmls = Collections.synchronizedList(new LinkedList<>());
 
         final AtomicLong accumulatedConversionDuration = new AtomicLong();
@@ -152,14 +170,15 @@ public class S124Service {
         final AtomicLong accumulatedToStringDuration = new AtomicLong();
 
         valueObjects.parallelStream().forEach(vo -> {
-            S124ModelToGmlConverter modelToGmlConverter = new S124ModelToGmlConverter();
+            final S124ModelToGmlConverter modelToGmlConverter = new S124ModelToGmlConverter();
 
-            final SystemMessageVo messageVo = vo.left;
-            final FeatureCollectionVo[] featureCollectionVos = vo.right;
+            final SystemMessageVo messageVo = vo.msgVo;
+            final FeatureCollectionVo[] featureCollectionVos = vo.featureCollectionVos;
+            final MessageVo[] referencedMessageVos = vo.referencedMessageVos;
 
             try {
                 long start = System.nanoTime();
-                JAXBElement<DatasetType> dataSet = modelToGmlConverter.toGml(messageVo, featureCollectionVos, language);
+                JAXBElement<DatasetType> dataSet = modelToGmlConverter.toGml(messageVo, featureCollectionVos, referencedMessageVos, language);
                 accumulatedConversionDuration.addAndGet(System.nanoTime() - start);
 
                 if (settingsService.getBoolean("s124ValidateOutbound")) {
@@ -237,6 +256,18 @@ public class S124Service {
                 validationErrors.forEach(err -> log.warn(format("Schema validation error: %8s: %s: %s", err.getType(), id, err.getMessage())));
         } catch (JAXBException e) {
             log.error(e.getMessage(), e);
+        }
+    }
+
+    private class RelatedValueObjects {
+        private final SystemMessageVo msgVo;
+        private final FeatureCollectionVo[] featureCollectionVos;
+        private final MessageVo[] referencedMessageVos;
+
+        private RelatedValueObjects(SystemMessageVo msgVo, FeatureCollectionVo[] featureCollectionVos, MessageVo[] referencedMessageVos) {
+            this.msgVo = msgVo;
+            this.featureCollectionVos = featureCollectionVos;
+            this.referencedMessageVos = referencedMessageVos;
         }
     }
 

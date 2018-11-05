@@ -22,16 +22,14 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import java.io.StringWriter;
 import java.lang.Boolean;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.Lists.reverse;
 import static java.util.Arrays.asList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.niord.model.message.MainType.NW;
 
 public class S124ModelToGmlConverter {
 
@@ -67,16 +65,19 @@ public class S124ModelToGmlConverter {
         }
     }
 
-    public JAXBElement<DatasetType> toGml(SystemMessageVo msg, FeatureCollectionVo[] geoJson, String lang) {
+    public JAXBElement<DatasetType> toGml(SystemMessageVo msg, FeatureCollectionVo[] geoJson, MessageVo[] referencedMessageVos, String lang) {
 
         if (used == true)
             throw new IllegalStateException("This instance of " + this.getClass().getSimpleName() + " has already been used.");
 
+        used = true;
+
         // ---
+
+        final String mrn = toMrn(msg);
 
         final String internalId = msg.getShortId() != null ? msg.getShortId() : msg.getId();
         final String id = "DK." + internalId;
-        final String mrn = "urn:mrn:iho:" + msg.getMainType().name().toLowerCase() + ":dk:" + internalId.toLowerCase();
 
         // ---
 
@@ -89,13 +90,11 @@ public class S124ModelToGmlConverter {
         if (msg.getParts() != null)
             addFeatureParts(gml, lang, id, mrn, msg.getParts());
 
-        addReferences(gml, lang, msg, mrn);
+        addReferences(gml, lang, msg, referencedMessageVos, mrn);
 
         // ---
 
         JAXBElement<DatasetType> dataSet = s124ObjectFactory.createDataSet(gml);
-
-        used = true;
 
         return dataSet;
     }
@@ -180,49 +179,70 @@ public class S124ModelToGmlConverter {
         });
     }
 
-    private void addReferences(DatasetType gml, String lang, SystemMessageVo msg, String mrn) {
-        final int warningNumber = msg.getNumber() != null ? msg.getNumber() : -1;
-        final int year = msg.getYear() != null ? msg.getYear() % 100 : 0;
-        final Type type = msg.getType();
-
+    private void addReferences(DatasetType gml, String lang, SystemMessageVo msg, MessageVo[] referencedMessageVos, String mrn) {
         List<ReferenceVo> referencesVo = msg.getReferences();
+
         if (referencesVo != null) {
             referencesVo.forEach(referenceVo -> {
-                ReferencesType referencesType = s124ObjectFactory.createReferencesType();
+                if (referenceVo != null) {
 
-                switch (referenceVo.getType()) {
-                    case CANCELLATION:
-                        referencesType.setReferenceCategory(_int.iho.s124.gml.cs0._0.ReferenceCategoryType.CANCELLATION);
-                        break;
-                    //case REPETITION:
-                    //case REPETITION_NEW_TIME:
-                    //    referencesType.setReferenceCategory(_int.iho.s124.gml.cs0._0.ReferenceCategoryType.REPETITION);
-                    //    break;
-                    //case UPDATE:
-                    //    referencesType.setReferenceCategory(_int.iho.s124.gml.cs0._0.ReferenceCategoryType.UPDATE);
-                    //    break;
-                    //case REFERENCE:
-                    //    referencesType.setReferenceCategory(_int.iho.s124.gml.cs0._0.ReferenceCategoryType.SOURCE_REFERENCE);
-                    //    break;
-                    default:
-                        referencesType.setReferenceCategory(_int.iho.s124.gml.cs0._0.ReferenceCategoryType.SOURCE_REFERENCE);
+                    // Lookup reference to get more details
+                    String referencedMessageId = referenceVo.getMessageId();
+                    if (referencedMessageId != null) {
+                        Optional<MessageVo> referencedMessageVoOptional = Stream.of(referencedMessageVos).filter(referencedMessageVo -> referencedMessageId.equals(referencedMessageVo.getShortId())).findAny();
+
+                        if (!referencedMessageVoOptional.isPresent()) {
+                            log.error("Could not find referenced message {}", referencedMessageId);
+                        } else {
+                            MessageVo referencedMessageVo = referencedMessageVoOptional.get();
+
+                            final Type refType = referencedMessageVo.getType();
+                            final String refMrn = toMrn(referencedMessageVo);
+                            final int refWarningNumber = referencedMessageVo.getNumber();
+                            final int refYear = referencedMessageVo.getCreated().getYear() - 100;
+
+                            if (refType.getMainType() == NW) {
+                                ReferencesType referencesType = s124ObjectFactory.createReferencesType();
+                                referencesType.setId(String.format("REF.DK.%s", referencedMessageId));
+                                referencesType.setNoMessageOnHand(false);
+
+                                ReferenceType referenceType = gmlObjectFactory.createReferenceType();
+                                referenceType.setHref(String.format("#DK.%s", referencedMessageId));
+                                referencesType.setTheWarning(referenceType);
+
+                                MessageSeriesIdentifierType messageSeriesIdentifer = createMessageSeries(refType, refWarningNumber, refYear, refMrn, lang);
+                                referencesType.getMessageSeriesIdentifier().add(messageSeriesIdentifer);
+
+                                switch (referenceVo.getType()) {
+                                    case CANCELLATION:
+                                        referencesType.setReferenceCategory(_int.iho.s124.gml.cs0._0.ReferenceCategoryType.CANCELLATION);
+                                        break;
+                                    case REPETITION:
+                                    case REPETITION_NEW_TIME:
+                                        referencesType.setReferenceCategory(_int.iho.s124.gml.cs0._0.ReferenceCategoryType.REPETITION);
+                                        break;
+                                    case UPDATE:
+                                        referencesType.setReferenceCategory(_int.iho.s124.gml.cs0._0.ReferenceCategoryType.UPDATE);
+                                        break;
+                                    case REFERENCE:
+                                        referencesType.setReferenceCategory(_int.iho.s124.gml.cs0._0.ReferenceCategoryType.SOURCE_REFERENCE);
+                                        break;
+                                    default:
+                                        referencesType.setReferenceCategory(_int.iho.s124.gml.cs0._0.ReferenceCategoryType.SOURCE_REFERENCE);
+                                }
+
+                                IMemberType imember = s124ObjectFactory.createIMemberType();
+                                JAXBElement<ReferencesType> references = s124ObjectFactory.createReferences(referencesType);
+                                imember.setInformationType(references);
+                                gml.getImemberOrMember().add(imember);
+                            } else
+                                log.warn("References to main type {} ({}) are not supported. Seen on: {}", refType.getMainType(), refMrn, mrn);
+
+                        }
+                    } else {
+                        log.error("Missing reference messageId on NW: {}", mrn);
+                    }
                 }
-
-                MessageSeriesIdentifierType messageSeriesIdentifer = createMessageSeries(type, warningNumber, year, mrn, lang);
-                referencesType.getMessageSeriesIdentifier().add(messageSeriesIdentifer);
-                referencesType.setId(String.format("REF.DK.%s", referenceVo.getMessageId()));
-                referencesType.setNoMessageOnHand(false);
-
-                ReferenceType referenceType = gmlObjectFactory.createReferenceType();
-                referenceType.setHref(String.format("#DK.%s", referenceVo.getMessageId()));
-                referencesType.setTheWarning(referenceType);
-
-                // ---
-
-                IMemberType imember = s124ObjectFactory.createIMemberType();
-                JAXBElement<ReferencesType> references = s124ObjectFactory.createReferences(referencesType);
-                imember.setInformationType(references);
-                gml.getImemberOrMember().add(imember);
             });
         }
     }
@@ -251,28 +271,28 @@ public class S124ModelToGmlConverter {
     }
 
     private MessageSeriesIdentifierType createMessageSeries(Type type, int warningNumber, int year, String mrn, String lang) {
+        if (type.getMainType() != NW)
+            log.warn("References with main type {} are not support", type.getMainType());
+
         MessageSeriesIdentifierType messageSeriesIdentifierType = s124ObjectFactory.createMessageSeriesIdentifierType();
         messageSeriesIdentifierType.setWarningIdentifier(mrn);
         messageSeriesIdentifierType.setWarningNumber(warningNumber);
         messageSeriesIdentifierType.setYear(year);
         messageSeriesIdentifierType.setCountry("DK");
         messageSeriesIdentifierType.setProductionAgency("111");
+        messageSeriesIdentifierType.setNameOfSeries("Danish Nav Warn");
 
         switch (type) {
             case LOCAL_WARNING:
-                messageSeriesIdentifierType.setNameOfSeries("Danish Nav Warn");
                 messageSeriesIdentifierType.setWarningType(WarningType.LOCAL_NAVIGATIONAL_WARNING);
                 break;
             case COASTAL_WARNING:
-                messageSeriesIdentifierType.setNameOfSeries("Danish Nav Warn");
                 messageSeriesIdentifierType.setWarningType(WarningType.COASTAL_NAVIGATIONAL_WARNING);
                 break;
             case SUBAREA_WARNING:
-                messageSeriesIdentifierType.setNameOfSeries("Danish Nav Warn");
                 messageSeriesIdentifierType.setWarningType(WarningType.SUB_AREA_NAVIGATIONAL_WARNING);
                 break;
             case NAVAREA_WARNING:
-                messageSeriesIdentifierType.setNameOfSeries("Danish Nav Warn");
                 messageSeriesIdentifierType.setWarningType(WarningType.NAVAREA_NAVIGATIONAL_WARNING);
                 break;
             default:
@@ -607,6 +627,12 @@ public class S124ModelToGmlConverter {
         }
 
         return generalAreaType;
+    }
+
+    private String toMrn(MessageVo msg) {
+        final String internalId = msg.getShortId() != null ? msg.getShortId() : msg.getId();
+        final String mrn = "urn:mrn:iho:" + msg.getMainType().name().toLowerCase() + ":dk:" + internalId.toLowerCase();
+        return mrn;
     }
 
     private String lang(String lang) {
