@@ -142,13 +142,24 @@ public class S124ModelToGmlConverter {
 
         // ---
 
-        msg.getAreas().forEach(area -> {
-            GeneralAreaType generalAreaType = createArea(s124ObjectFactory.createGeneralAreaType(), area);
+            List<AreaVo> areas = msg.getAreas();
+
+        if (!areas.isEmpty()) {
+            if (areas.size() > 1)
+                log.warn("{} has {} areas - check that S-124 output is valid", mrn, areas.size());
+
+            AreaVo locality = areas.get(0);
+            AreaVo lowestLevelGeneralArea = locality.getParent();
+
+            GeneralAreaType generalAreaType = createArea(s124ObjectFactory.createGeneralAreaType(), lowestLevelGeneralArea);
+            Collections.reverse(generalAreaType.getLocationName());
             nwPreambleType.getGeneralArea().add(generalAreaType);
 
-            LocalityType localityType = createLocality(s124ObjectFactory.createLocalityType(), area, lang);
+            LocalityType localityType = createLocality(s124ObjectFactory.createLocalityType(), locality, lang);
             nwPreambleType.getLocality().add(localityType);
-        });
+        } else {
+            log.error("{} has no area information", mrn);
+        }
 
         // ---
 
@@ -595,37 +606,35 @@ public class S124ModelToGmlConverter {
         if (!isBlank(areaName)) {
             Function<String, LocationNameType> produceLocationNameType = text -> {
                 LocationNameType lnt = s124ObjectFactory.createLocationNameType();
-                generalAreaType.getLocationName().add(lnt);
                 lnt.setLanguage(lang("en"));
                 lnt.setText(text);
                 return lnt;
             };
 
-            LocationNameType locationNameType = null;
-
             switch (areaName) {
                 case "The Baltic Sea":
-                    locationNameType = produceLocationNameType.apply("Baltic sea");
+                    generalAreaType.getLocationName().add(produceLocationNameType.apply("Baltic sea"));
                     break;
                 case "Skagerrak":
-                    locationNameType = produceLocationNameType.apply("Skagerrak");
+                    generalAreaType.getLocationName().add(produceLocationNameType.apply("Skagerrak"));
                     break;
                 case "Kattegat":
-                    locationNameType = produceLocationNameType.apply("Kattegat");
+                    generalAreaType.getLocationName().add(produceLocationNameType.apply("Kattegat"));
                     break;
                 case "The Sound":
-                    locationNameType = produceLocationNameType.apply("The Sound");
+                    generalAreaType.getLocationName().add(produceLocationNameType.apply("The Sound"));
                     break;
                 case "The Great Belt":
                 case "The Little Belt":
-                    locationNameType = produceLocationNameType.apply("The Belts");
+                    generalAreaType.getLocationName().add(produceLocationNameType.apply("The Belts"));
                     break;
-            }
-
-            if (area.getParent() != null && locationNameType == null) {
-                return createArea(generalAreaType, area.getParent());
+                default:
+                    generalAreaType.getLocationName().add(produceLocationNameType.apply(areaName));
             }
         }
+
+        if (area.getParent() != null)
+            return createArea(generalAreaType, area.getParent());
 
         return generalAreaType;
     }
