@@ -151,9 +151,8 @@ public class S124ModelToGmlConverter {
             AreaVo locality = areas.get(0);
             AreaVo lowestLevelGeneralArea = locality.getParent();
 
-            GeneralAreaType generalAreaType = createArea(s124ObjectFactory.createGeneralAreaType(), lowestLevelGeneralArea);
-            Collections.reverse(generalAreaType.getLocationName());
-            nwPreambleType.getGeneralArea().add(generalAreaType);
+            createGeneralArea(nwPreambleType.getGeneralArea(), lowestLevelGeneralArea);
+            Collections.reverse(nwPreambleType.getGeneralArea());
 
             LocalityType localityType = createLocality(s124ObjectFactory.createLocalityType(), locality, lang);
             nwPreambleType.getLocality().add(localityType);
@@ -598,12 +597,15 @@ public class S124ModelToGmlConverter {
         return localityType;
     }
 
-    private GeneralAreaType createArea(final GeneralAreaType generalAreaType, final AreaVo area) {
+    private void createGeneralArea(final List<GeneralAreaType> generalAreasType, final AreaVo area) {
         AreaDescVo enAreaDesc = area.getDesc("en");
         String areaName = enAreaDesc.getName();
         log.debug(areaName + " " + area.getParent());
 
         if (!isBlank(areaName)) {
+            GeneralAreaType generalAreaType = s124ObjectFactory.createGeneralAreaType();
+            generalAreasType.add(generalAreaType);
+
             Function<String, LocationNameType> produceLocationNameType = text -> {
                 LocationNameType lnt = s124ObjectFactory.createLocationNameType();
                 lnt.setLanguage(lang("en"));
@@ -634,9 +636,7 @@ public class S124ModelToGmlConverter {
         }
 
         if (area.getParent() != null)
-            return createArea(generalAreaType, area.getParent());
-
-        return generalAreaType;
+            createGeneralArea(generalAreasType, area.getParent());
     }
 
     private String toMrn(MessageVo msg) {
