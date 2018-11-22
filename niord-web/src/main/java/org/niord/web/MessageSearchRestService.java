@@ -22,13 +22,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.security.annotation.SecurityDomain;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
-import org.niord.core.message.Message;
-import org.niord.core.message.MessageIdMatch;
-import org.niord.core.message.MessageSearchParams;
-import org.niord.core.message.MessageSeries;
-import org.niord.core.message.MessageService;
-import org.niord.core.message.MessageTag;
-import org.niord.core.message.MessageTagService;
+import org.niord.core.message.*;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.publication.PublicationService;
 import org.niord.core.user.UserService;
@@ -42,11 +36,7 @@ import javax.annotation.security.PermitAll;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import java.util.Collections;
 import java.util.List;
@@ -187,7 +177,7 @@ public class MessageSearchRestService {
         }
 
         // Adjust the date interval so that is the beginning of the from-date and end of the to-date.
-        if (currentDomain != null) {
+        if (currentDomain != null && params.getIgnoreTimeOfDay() != Boolean.FALSE) {
             params.adjustDateInterval(currentDomain.timeZone());
         }
 

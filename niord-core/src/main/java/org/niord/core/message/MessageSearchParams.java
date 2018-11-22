@@ -29,13 +29,7 @@ import org.niord.model.search.PagedSearchParamsVo;
 
 import javax.servlet.http.HttpServletRequest;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -80,6 +74,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
     String domain;
     String messageId;
     Integer referenceLevels;
+    Boolean ignoreTimeOfDay;
     Date from;
     Date to;
     DateType dateType;
@@ -151,6 +146,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
                 .promulgationTypes(toSet(reqParams.get("promulgationType"), Function.identity()))
                 .messageId(getParameterValues(reqParams, "messageId"))
                 .referenceLevels(checkNull(getParameterValues(reqParams, "referenceLevels"), Integer::valueOf))
+                .ignoreTimeOfDay((Boolean)checkNull(getParameterValues(reqParams, "ignoreTimeOfDay"), Boolean::valueOf))
                 .from((Long)checkNull(getParameterValues(reqParams, "fromDate"), Long::valueOf))
                 .to((Long)checkNull(getParameterValues(reqParams, "toDate"), Long::valueOf))
                 .dateType(checkNull(getParameterValues(reqParams, "dateType"), DateType::valueOf))
@@ -177,7 +173,6 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
         return params;
     }
-
 
     /**
      * If no explicit sort order is specified, sort by domain sort order
@@ -278,6 +273,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
         if (domain != null) { desc.add(String.format("Domain: %s", domain)); }
         if (isNotBlank(messageId)) { desc.add(String.format("Ref. message: %s", messageId)); }
         if (referenceLevels != null) { desc.add(String.format("Ref. levels: %d", referenceLevels)); }
+        if (ignoreTimeOfDay != null) { desc.add(String.format("Ignore time of day: %s", ignoreTimeOfDay)); }
         if (from != null) { desc.add(String.format("From: %s", new SimpleDateFormat(DATE_FORMAT).format(from))); }
         if (to != null) { desc.add(String.format("To: %s", new SimpleDateFormat(DATE_FORMAT).format(to))); }
         if (dateType != null) { desc.add(String.format("Date Type: %s", dateType)); }
@@ -348,6 +344,15 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     public MessageSearchParams referenceLevels(Integer referenceLevels) {
         this.referenceLevels = referenceLevels;
+        return this;
+    }
+
+    public Boolean getIgnoreTimeOfDay() {
+        return ignoreTimeOfDay;
+    }
+
+    public MessageSearchParams ignoreTimeOfDay(Boolean ignoreTimeOfDay) {
+        this.ignoreTimeOfDay = ignoreTimeOfDay;
         return this;
     }
 
