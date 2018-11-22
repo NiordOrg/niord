@@ -68,7 +68,7 @@ angular.module('niord.conf')
             'menu.filter.aton' : 'AtoN',
             'menu.filter.chart' : 'Chart',
             'menu.filter.area' : 'Area',
-            'menu.filter.date' : 'Date',
+            'menu.filter.date' : 'Date and Time',
             'menu.filter.save' : 'Save Filter...',
             'menu.filter.clear' : 'Clear Filter',
             'menu.action' : 'Action',
