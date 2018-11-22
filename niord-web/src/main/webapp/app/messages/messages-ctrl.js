@@ -441,6 +441,7 @@ angular.module('niord.messages')
                     if (s.date.fromDate || s.date.toDate) {
                         params += '&dateType=' + s.date.dateType;
                     }
+                    params += '&ignoreTimeOfDay=false';
                 }
 
                 // Add sorting
