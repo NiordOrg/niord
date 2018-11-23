@@ -1253,14 +1253,12 @@ angular.module('niord.common')
                     return date
                 });
 
-
                 ctrl.$parsers.push(function () {
                     if (!picker.date()) {
                         return null;
                     }
                     return picker.date().valueOf();
                 });
-
 
                 /** If a time parameter has been specified, adjust the date accordingly **/
                 function adjustTime() {
@@ -1287,18 +1285,22 @@ angular.module('niord.common')
                     return millis;
                 }
 
-                if (scope.time == undefined) {
+                if (!scope.time) {
+                    var numEvents = 0;
+
                     if (scope.defaultTimeStartOfDay == true) {
                         element.bind('dp.change', function (e) {
-                            if (e.oldDate == undefined && e.date != undefined) {
+                            if (!e.oldDate && e.date && numEvents > 0) {
                                 $(element).data('DateTimePicker').date(moment().startOf('day').utc().toDate());
                             }
+                            numEvents++;
                         });
                     } else if (scope.defaultTimeStartOfDay == false) {
                         element.bind('dp.change', function (e) {
-                            if (e.oldDate == undefined && e.date != undefined) {
+                            if (!e.oldDate && e.date && numEvents > 0) {
                                 $(element).data('DateTimePicker').date(moment().utc().toDate());
                             }
+                            numEvents++;
                         });
                     } else if (scope.defaultTimeStartOfDay == undefined) {
                     }
