@@ -339,6 +339,37 @@ angular.module('niord.editor')
             $scope.saveMessage = function () {
                 // Perform a couple of validations
                 var msg = $scope.message;
+
+                function numNavtexTransmittersSelected(msg) {
+                    var numNavtexTransmittersSelected = 0;
+                    for (var p in msg.promulgations) {
+                        var promulgation = msg.promulgations[p];
+                        if (promulgation["@class"].endsWith("NavtexMessagePromulgationVo")) {
+                            var transmitters = promulgation.transmitters;
+                            for (var t in transmitters) {
+                                if (transmitters[t] == true) {
+                                    numNavtexTransmittersSelected++;
+                                }
+                            }
+                        }
+                    }
+                    return numNavtexTransmittersSelected;
+                }
+
+                function promulgateNavtex(msg) {
+                    var promulgateNavtex = false;
+                    for (var p in msg.promulgations) {
+                        var promulgation = msg.promulgations[p];
+                        if (promulgation["@class"].endsWith("NavtexMessagePromulgationVo")) {
+                            promulgateNavtex = promulgation.promulgate;
+                        }
+                    }
+                    return promulgateNavtex;
+                }
+
+                var numNavtexTransmittersSelected = numNavtexTransmittersSelected(msg);
+                var promulgateNavtex = promulgateNavtex(msg);
+
                 if (!msg.mainType || !msg.type) {
                     growl.error("Please specify message type before saving", { ttl: 5000 });
                     return;
@@ -348,13 +379,16 @@ angular.module('niord.editor')
                 } else if (msg.publishDateFrom && msg.publishDateTo && msg.publishDateFrom > msg.publishDateTo) {
                     growl.error("Invalid publish date interval", {ttl: 5000});
                     return;
+                } else if (promulgateNavtex == true && numNavtexTransmittersSelected == 0) {
+                    growl.warning("No NAVTEX transmitters selected", {ttl: 5000})
+                } else if (promulgateNavtex == true && numNavtexTransmittersSelected > 1) {
+                    growl.warning("Multiple NAVTEX transmitters selected", {ttl: 5000})
                 }
 
                 // When saving a verified message, it will be reset to status draft. Confirm this
                 if (msg.status === 'VERIFIED' && !confirm(LangService.translate('editor.save_verified'))) {
                     return;
                 }
-
 
                 // Prevent double-submissions
                 $scope.messageSaving = true;
