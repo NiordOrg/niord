@@ -880,7 +880,7 @@ angular.module('niord.common')
 
     }])
 
-        
+
     /**
      * Emits a flag image
      */
@@ -1193,7 +1193,8 @@ angular.module('niord.common')
                 placeholder:    '@',
                 size:           '@',
                 icon:           '@',
-                tabIndex:       '='
+                tabIndex:       '=',
+                defaultTimeStartOfDay: '='
             },
             template : '<div class="input-group date" data-date-format="l">'
                      + '  <input type="text" class="input-{{size}} form-control" />'
@@ -1208,6 +1209,7 @@ angular.module('niord.common')
 
                 var input = element.find("input");
 
+                scope.defaultTimeStartOfDay = scope.defaultTimeStartOfDay || false;
                 scope.icon = scope.icon || 'glyphicon-calendar';
                 scope.size = scope.size || 'sm';
                 scope.format = scope.format || "DD/MM/YYYY HH:mm";
@@ -1236,11 +1238,25 @@ angular.module('niord.common')
 
                 var picker = $(element).datetimepicker({
                     locale: locale,
-                    useCurrent: true,
                     showTodayButton: true,
                     showClear: true
                 }).data('DateTimePicker');
 
+                if (scope.time == undefined) {
+                    if (scope.defaultTimeStartOfDay) {
+                        $(element).on('dp.change', function (e) {
+                            if (e.oldDate == undefined && e.date != undefined) {
+                                $(element).data('DateTimePicker').date(moment().startOf('day').utc().toDate());
+                            }
+                        });
+                    } else {
+                        $(element).on('dp.change', function (e) {
+                            if (e.oldDate == undefined && e.date != undefined) {
+                                $(element).data('DateTimePicker').date(moment().utc().toDate());
+                            }
+                        });
+                    }
+                }
 
                 ctrl.$formatters.push(function (modelValue) {
                     var date;
