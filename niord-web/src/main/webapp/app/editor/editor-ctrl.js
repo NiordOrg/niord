@@ -1500,6 +1500,8 @@ angular.module('niord.editor')
             function canPublish() {
                 var msg = $scope.message;
                 var error = '';
+
+                // Check for missing fields
                 if (!msg.type) {
                     error += '<li>Type</li>';
                 }
@@ -1526,6 +1528,19 @@ angular.module('niord.editor')
                     growl.error("Missing fields:\n<ul>" + error + "</ul>", {ttl: 5000});
                     return false;
                 }
+
+                // Check for invalid fields
+                if (msg.mainType == 'NM' && (msg.type == 'TEMPORARY_NOTICE' || msg.type == 'PRELIMINARY_NOTICE')) {
+                    if (msg.followUpDate < new Date().getTime()) {
+                        error +=  '<li>Follow-up date is not in the future</li>'
+                    }
+                }
+                if (error.length > 0) {
+                    growl.error("Invalid fields:\n<ul>" + error + "</ul>", {ttl: 5000});
+                    return false;
+                }
+
+                // Return message can be published
                 return true;
             }
 
