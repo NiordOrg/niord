@@ -1517,6 +1517,11 @@ angular.module('niord.editor')
                         }
                     }
                 }
+                if (msg.mainType == 'NM' && (msg.type == 'TEMPORARY_NOTICE' || msg.type == 'PRELIMINARY_NOTICE')) {
+                    if (! msg.followUpDate) {
+                        error +=  '<li>Follow-up date</li>'
+                    }
+                }
                 if (error.length > 0) {
                     growl.error("Missing fields:\n<ul>" + error + "</ul>", {ttl: 5000});
                     return false;
