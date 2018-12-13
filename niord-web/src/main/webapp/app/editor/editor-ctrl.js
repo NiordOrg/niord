@@ -24,9 +24,9 @@ angular.module('niord.editor')
      * Main message editor controller
      */
     .controller('EditorCtrl', ['$scope', '$rootScope', '$window', '$stateParams', '$state', '$http', '$timeout', '$uibModal', 'growl',
-            'MessageService', 'LangService', 'MapService', 'UploadFileService', 'AtonService',
+            'MessageService', 'LangService', 'MapService', 'UploadFileService', 'AtonService', 'MessageUtilsService',
         function ($scope, $rootScope, $window, $stateParams, $state, $http, $timeout, $uibModal, growl,
-                  MessageService, LangService, MapService, UploadFileService, AtonService) {
+                  MessageService, LangService, MapService, UploadFileService, AtonService, MessageUtilsService) {
             'use strict';
 
             $scope.message = undefined;
@@ -339,36 +339,8 @@ angular.module('niord.editor')
             $scope.saveMessage = function () {
                 // Perform a couple of validations
                 var msg = $scope.message;
-
-                function numNavtexTransmittersSelected(msg) {
-                    var numNavtexTransmittersSelected = 0;
-                    for (var p in msg.promulgations) {
-                        var promulgation = msg.promulgations[p];
-                        if (promulgation["@class"].endsWith("NavtexMessagePromulgationVo")) {
-                            var transmitters = promulgation.transmitters;
-                            for (var t in transmitters) {
-                                if (transmitters[t] == true) {
-                                    numNavtexTransmittersSelected++;
-                                }
-                            }
-                        }
-                    }
-                    return numNavtexTransmittersSelected;
-                }
-
-                function promulgateNavtex(msg) {
-                    var promulgateNavtex = false;
-                    for (var p in msg.promulgations) {
-                        var promulgation = msg.promulgations[p];
-                        if (promulgation["@class"].endsWith("NavtexMessagePromulgationVo")) {
-                            promulgateNavtex = promulgation.promulgate;
-                        }
-                    }
-                    return promulgateNavtex;
-                }
-
-                var numNavtexTransmittersSelected = numNavtexTransmittersSelected(msg);
-                var promulgateNavtex = promulgateNavtex(msg);
+                var _numNavtexTransmittersSelected = MessageUtilsService.numNavtexTransmittersSelected(msg);
+                var _promulgateNavtex = MessageUtilsService.promulgateNavtex(msg);
 
                 if (!msg.mainType || !msg.type) {
                     growl.error("Please specify message type before saving", { ttl: 5000 });
@@ -379,10 +351,10 @@ angular.module('niord.editor')
                 } else if (msg.publishDateFrom && msg.publishDateTo && msg.publishDateFrom > msg.publishDateTo) {
                     growl.error("Invalid publish date interval", {ttl: 5000});
                     return;
-                } else if (promulgateNavtex == true && numNavtexTransmittersSelected == 0) {
-                    growl.warning("No NAVTEX transmitters selected", {ttl: 5000})
-                } else if (promulgateNavtex == true && numNavtexTransmittersSelected > 1) {
-                    growl.warning("Multiple NAVTEX transmitters selected", {ttl: 5000})
+                } else if (_promulgateNavtex == true && _numNavtexTransmittersSelected == 0) {
+                    growl.warning("No NAVTEX transmitters selected", {ttl: 8000})
+                } else if (_promulgateNavtex == true && _numNavtexTransmittersSelected > 1) {
+                    growl.warning("Multiple NAVTEX transmitters selected", {ttl: 8000})
                 }
 
                 // When saving a verified message, it will be reset to status draft. Confirm this
@@ -1480,8 +1452,8 @@ angular.module('niord.editor')
     /*******************************************************************
      * EditorCtrl sub-controller that handles message status changes.
      *******************************************************************/
-    .controller('EditorStatusCtrl', ['$scope', '$rootScope', '$state', 'growl', 'MessageService', 'LangService', 'DialogService',
-        function ($scope, $rootScope, $state, growl, MessageService, LangService, DialogService) {
+    .controller('EditorStatusCtrl', ['$scope', '$rootScope', '$state', 'growl', 'MessageService', 'LangService', 'DialogService', 'MessageUtilsService',
+        function ($scope, $rootScope, $state, growl, MessageService, LangService, DialogService, MessageUtilsService) {
             'use strict';
 
             $scope.previewLang = $rootScope.language;
@@ -1571,6 +1543,15 @@ angular.module('niord.editor')
                 }
                 if (error.length > 0) {
                     growl.error("Invalid fields:\n<ul>" + error + "</ul>", {ttl: 5000});
+                    return false;
+                }
+
+                // Check at least one NAVTEX transmitter is selected (if NAVTEX promulgation is chosen)
+                var _promulgateNavtex = MessageUtilsService.promulgateNavtex(msg);
+                var _numNavtexTransmittersSelected = MessageUtilsService.numNavtexTransmittersSelected(msg);
+
+                if (_promulgateNavtex == true && _numNavtexTransmittersSelected == 0) {
+                    growl.error("No NAVTEX transmitters selected", {ttl: 5000});
                     return false;
                 }
 

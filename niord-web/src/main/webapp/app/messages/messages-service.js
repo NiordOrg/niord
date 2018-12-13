@@ -766,7 +766,6 @@ angular.module('niord.messages')
     }])
 
 
-
     /**
      * Interface for calling the application server
      */
@@ -793,4 +792,43 @@ angular.module('niord.messages')
             }
 
         };
-    }]);
+    }])
+
+    /**
+     * Non-server related common functions for messages
+     */
+    .factory('MessageUtilsService', function() {
+        var root = {};
+
+        // Count the number of NAVTEX transmitters selected for promulgation
+        root.numNavtexTransmittersSelected = function(msg) {
+            var numNavtexTransmittersSelected = 0;
+            for (var p in msg.promulgations) {
+                var promulgation = msg.promulgations[p];
+                if (promulgation["@class"].endsWith("NavtexMessagePromulgationVo")) {
+                    var transmitters = promulgation.transmitters;
+                    for (var t in transmitters) {
+                        if (transmitters[t] == true) {
+                            numNavtexTransmittersSelected++;
+                        }
+                    }
+                }
+            }
+            return numNavtexTransmittersSelected;
+        };
+
+        // Return true if NAVTEX is chosen for promulgation
+        root.promulgateNavtex = function(msg) {
+            var promulgateNavtex = false;
+            for (var p in msg.promulgations) {
+                var promulgation = msg.promulgations[p];
+                if (promulgation["@class"].endsWith("NavtexMessagePromulgationVo")) {
+                    promulgateNavtex = promulgation.promulgate;
+                }
+            }
+            return promulgateNavtex;
+        };
+
+        return root;
+
+    });
