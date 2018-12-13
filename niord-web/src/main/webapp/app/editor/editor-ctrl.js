@@ -352,9 +352,9 @@ angular.module('niord.editor')
                     growl.error("Invalid publish date interval", {ttl: 5000});
                     return;
                 } else if (_promulgateNavtex == true && _numNavtexTransmittersSelected == 0) {
-                    growl.warning("No NAVTEX transmitters selected", {ttl: 5000})
+                    growl.warning("No NAVTEX transmitters selected", {ttl: 8000})
                 } else if (_promulgateNavtex == true && _numNavtexTransmittersSelected > 1) {
-                    growl.warning("Multiple NAVTEX transmitters selected", {ttl: 5000})
+                    growl.warning("Multiple NAVTEX transmitters selected", {ttl: 8000})
                 }
 
                 // When saving a verified message, it will be reset to status draft. Confirm this
