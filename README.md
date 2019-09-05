@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.com/NiordOrg/niord.svg?branch=master)](https://travis-ci.com/NiordOrg/niord)
 # niord
 
 The niord project contains the common code-base for the NW + NM T&P editing and publishing system.
