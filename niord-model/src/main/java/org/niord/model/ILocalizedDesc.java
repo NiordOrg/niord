@@ -22,18 +22,21 @@ public interface ILocalizedDesc {
 
     /**
      * Returns the language of this descriptive entity
+     *
      * @return the language of this descriptive entity
      */
     String getLang();
 
     /**
      * Sets the language of this descriptive entity
+     *
      * @param lang the language of this descriptive entity
      */
     void setLang(String lang);
 
     /**
      * Returns if this descriptive entity is defined, i.e. has at least one non-blank field
+     *
      * @return if this descriptive entity is defined
      */
     @SuppressWarnings("unused")
@@ -41,12 +44,14 @@ public interface ILocalizedDesc {
 
     /**
      * Copies the description values from the desc entity to this entity
+     *
      * @param desc the description entity to copy from
      */
     void copyDesc(ILocalizedDesc desc);
-    
+
     /**
      * Utility method that returns if at least one of the given fields in non-blank
+     *
      * @param fields the list of fields to check
      * @return if at least one of the given fields in non-blank
      */

@@ -34,11 +34,19 @@ public class MultiLineStringVo extends GeometryVo {
 
     private double[][][] coordinates;
 
+    /**
+     * Instantiates a new Multi line string vo.
+     */
     @SuppressWarnings("unused")
     public MultiLineStringVo() {
         setType("MultiLineString");
     }
 
+    /**
+     * Instantiates a new Multi line string vo.
+     *
+     * @param coordinates the coordinates
+     */
     public MultiLineStringVo(double[][][] coordinates) {
         this();
         this.coordinates = coordinates;
@@ -50,10 +58,20 @@ public class MultiLineStringVo extends GeometryVo {
         visitCoordinates(coordinates, handler);
     }
 
+    /**
+     * Get coordinates double [ ] [ ] [ ].
+     *
+     * @return the double [ ] [ ] [ ]
+     */
     public double[][][] getCoordinates() {
         return coordinates;
     }
 
+    /**
+     * Sets coordinates.
+     *
+     * @param coordinates the coordinates
+     */
     public void setCoordinates(double[][][] coordinates) {
         this.coordinates = coordinates;
     }

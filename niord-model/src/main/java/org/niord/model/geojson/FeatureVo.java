@@ -41,7 +41,9 @@ public class FeatureVo extends GeoJsonVo {
     private Map<String, Object> properties = new HashMap<>();
 
 
-    /** Constructor **/
+    /**
+     * Constructor
+     */
     public FeatureVo() {
         setType("Feature");
     }
@@ -55,27 +57,57 @@ public class FeatureVo extends GeoJsonVo {
         }
     }
 
+    /**
+     * Gets id.
+     *
+     * @return the id
+     */
     public Object getId() {
         return id;
     }
 
+    /**
+     * Sets id.
+     *
+     * @param id the id
+     */
     public void setId(Object id) {
         this.id = id;
     }
 
+    /**
+     * Gets geometry.
+     *
+     * @return the geometry
+     */
     @XmlElementRef
     public GeometryVo getGeometry() {
         return geometry;
     }
 
+    /**
+     * Sets geometry.
+     *
+     * @param geometry the geometry
+     */
     public void setGeometry(GeometryVo geometry) {
         this.geometry = geometry;
     }
 
+    /**
+     * Gets properties.
+     *
+     * @return the properties
+     */
     public Map<String, Object> getProperties() {
         return properties;
     }
 
+    /**
+     * Sets properties.
+     *
+     * @param properties the properties
+     */
     public void setProperties(Map<String, Object> properties) {
         this.properties = properties;
     }

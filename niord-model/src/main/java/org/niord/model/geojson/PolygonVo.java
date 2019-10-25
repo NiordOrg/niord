@@ -34,11 +34,19 @@ public class PolygonVo extends GeometryVo {
 
     private double[][][] coordinates;
 
+    /**
+     * Instantiates a new Polygon vo.
+     */
     @SuppressWarnings("unused")
     public PolygonVo() {
         setType("Polygon");
     }
 
+    /**
+     * Instantiates a new Polygon vo.
+     *
+     * @param coordinates the coordinates
+     */
     public PolygonVo(double[][][] coordinates) {
         this();
         this.coordinates = coordinates;
@@ -50,10 +58,20 @@ public class PolygonVo extends GeometryVo {
         visitCoordinates(coordinates, handler);
     }
 
+    /**
+     * Get coordinates double [ ] [ ] [ ].
+     *
+     * @return the double [ ] [ ] [ ]
+     */
     public double[][][] getCoordinates() {
         return coordinates;
     }
 
+    /**
+     * Sets coordinates.
+     *
+     * @param coordinates the coordinates
+     */
     public void setCoordinates(double[][][] coordinates) {
         this.coordinates = coordinates;
     }

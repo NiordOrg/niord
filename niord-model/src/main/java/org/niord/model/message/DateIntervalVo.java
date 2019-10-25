@@ -31,11 +31,22 @@ import java.util.Date;
 @SuppressWarnings("unused")
 public class DateIntervalVo implements IJsonSerializable {
 
+    /**
+     * The All day.
+     */
     Boolean allDay;
+    /**
+     * The From date.
+     */
     Date fromDate;
+    /**
+     * The To date.
+     */
     Date toDate;
 
-    /** Returns a filtered copy of this entity **/
+    /**
+     * Returns a filtered copy of this entity  @return the date interval vo
+     */
     @SuppressWarnings("all")
     public DateIntervalVo copy() {
         DateIntervalVo dateInterval = new DateIntervalVo();
@@ -45,7 +56,11 @@ public class DateIntervalVo implements IJsonSerializable {
         return dateInterval;
     }
 
-    /** Returns if the given date is within this interval **/
+    /**
+     * Returns if the given date is within this interval  @param date the date
+     *
+     * @return the boolean
+     */
     public boolean containsDate(Date date) {
         if (fromDate != null && toDate != null) {
             return date.after(fromDate) && date.before(toDate);
@@ -59,28 +74,57 @@ public class DateIntervalVo implements IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /**
+     * Gets all day.
+     *
+     * @return the all day
+     */
 
     public Boolean getAllDay() {
         return allDay;
     }
 
+    /**
+     * Sets all day.
+     *
+     * @param allDay the all day
+     */
     public void setAllDay(Boolean allDay) {
         this.allDay = allDay;
     }
 
+    /**
+     * Gets from date.
+     *
+     * @return the from date
+     */
     public Date getFromDate() {
         return fromDate;
     }
 
+    /**
+     * Sets from date.
+     *
+     * @param fromDate the from date
+     */
     public void setFromDate(Date fromDate) {
         this.fromDate = fromDate;
     }
 
+    /**
+     * Gets to date.
+     *
+     * @return the to date
+     */
     public Date getToDate() {
         return toDate;
     }
 
+    /**
+     * Sets to date.
+     *
+     * @param toDate the to date
+     */
     public void setToDate(Date toDate) {
         this.toDate = toDate;
     }

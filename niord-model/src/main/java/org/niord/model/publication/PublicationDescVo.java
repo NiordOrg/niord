@@ -31,11 +31,29 @@ import javax.xml.bind.annotation.XmlType;
 @SuppressWarnings("unused")
 public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
 
+    /**
+     * The Lang.
+     */
     String lang;
+    /**
+     * The Title.
+     */
     String title;
+    /**
+     * The Title format.
+     */
     String titleFormat;
+    /**
+     * The Link.
+     */
     String link;
+    /**
+     * The File name.
+     */
     String fileName;
+    /**
+     * The Message publication format.
+     */
     String messagePublicationFormat;
 
 
@@ -72,42 +90,92 @@ public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
         this.lang = lang;
     }
 
+    /**
+     * Gets title.
+     *
+     * @return the title
+     */
     public String getTitle() {
         return title;
     }
 
+    /**
+     * Sets title.
+     *
+     * @param title the title
+     */
     public void setTitle(String title) {
         this.title = title;
     }
 
+    /**
+     * Gets title format.
+     *
+     * @return the title format
+     */
     public String getTitleFormat() {
         return titleFormat;
     }
 
+    /**
+     * Sets title format.
+     *
+     * @param titleFormat the title format
+     */
     public void setTitleFormat(String titleFormat) {
         this.titleFormat = titleFormat;
     }
 
+    /**
+     * Gets link.
+     *
+     * @return the link
+     */
     public String getLink() {
         return link;
     }
 
+    /**
+     * Sets link.
+     *
+     * @param link the link
+     */
     public void setLink(String link) {
         this.link = link;
     }
 
+    /**
+     * Gets file name.
+     *
+     * @return the file name
+     */
     public String getFileName() {
         return fileName;
     }
 
+    /**
+     * Sets file name.
+     *
+     * @param fileName the file name
+     */
     public void setFileName(String fileName) {
         this.fileName = fileName;
     }
 
+    /**
+     * Gets message publication format.
+     *
+     * @return the message publication format
+     */
     public String getMessagePublicationFormat() {
         return messagePublicationFormat;
     }
 
+    /**
+     * Sets message publication format.
+     *
+     * @param messagePublicationFormat the message publication format
+     */
     public void setMessagePublicationFormat(String messagePublicationFormat) {
         this.messagePublicationFormat = messagePublicationFormat;
     }

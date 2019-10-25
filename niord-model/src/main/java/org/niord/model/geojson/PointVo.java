@@ -34,11 +34,19 @@ public class PointVo extends GeometryVo {
 
     private double[] coordinates;
 
+    /**
+     * Instantiates a new Point vo.
+     */
     @SuppressWarnings("unused")
     public PointVo() {
         setType("Point");
     }
 
+    /**
+     * Instantiates a new Point vo.
+     *
+     * @param coordinates the coordinates
+     */
     public PointVo(double[] coordinates) {
         this();
         this.coordinates = coordinates;
@@ -50,10 +58,20 @@ public class PointVo extends GeometryVo {
         visitCoordinates(coordinates, handler);
     }
 
+    /**
+     * Get coordinates double [ ].
+     *
+     * @return the double [ ]
+     */
     public double[] getCoordinates() {
         return coordinates;
     }
 
+    /**
+     * Sets coordinates.
+     *
+     * @param coordinates the coordinates
+     */
     public void setCoordinates(double[] coordinates) {
         this.coordinates = coordinates;
     }

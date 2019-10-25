@@ -36,15 +36,37 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSerializable {
 
+    /**
+     * The Index no.
+     */
     int indexNo;
+    /**
+     * The Type.
+     */
     MessagePartType type;
+    /**
+     * The Event dates.
+     */
     List<DateIntervalVo> eventDates;
+    /**
+     * The Geometry.
+     */
     FeatureCollectionVo geometry;
+    /**
+     * The Descs.
+     */
     List<MessagePartDescVo> descs;
+    /**
+     * The Hide subject.
+     */
     Boolean hideSubject;
 
 
-    /** Returns a filtered copy of this entity **/
+    /**
+     * Returns a filtered copy of this entity  @param filter the filter
+     *
+     * @return the message part vo
+     */
     public MessagePartVo copy(DataFilter filter) {
 
         DataFilter compFilter = filter.forComponent("MessagePart");
@@ -81,6 +103,9 @@ public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSeri
      * copied to a temporary folder until the message is saved.
      * <p>
      * The repository paths may occur in e.g. embedded images and links.
+     *
+     * @param repoPath1 the repo path 1
+     * @param repoPath2 the repo path 2
      */
     public void rewriteRepoPath(String repoPath1, String repoPath2) {
         if (getDescs() != null) {
@@ -93,6 +118,11 @@ public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSeri
     }
 
 
+    /**
+     * Check create event dates list.
+     *
+     * @return the list
+     */
     public List<DateIntervalVo> checkCreateEventDates() {
         if (eventDates == null) {
             eventDates = new ArrayList<>();
@@ -104,36 +134,75 @@ public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSeri
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /**
+     * Gets type.
+     *
+     * @return the type
+     */
 
     public MessagePartType getType() {
         return type;
     }
 
+    /**
+     * Sets type.
+     *
+     * @param type the type
+     */
     public void setType(MessagePartType type) {
         this.type = type;
     }
 
+    /**
+     * Gets index no.
+     *
+     * @return the index no
+     */
     public int getIndexNo() {
         return indexNo;
     }
 
+    /**
+     * Sets index no.
+     *
+     * @param indexNo the index no
+     */
     public void setIndexNo(int indexNo) {
         this.indexNo = indexNo;
     }
 
+    /**
+     * Gets event dates.
+     *
+     * @return the event dates
+     */
     public List<DateIntervalVo> getEventDates() {
         return eventDates;
     }
 
+    /**
+     * Sets event dates.
+     *
+     * @param eventDates the event dates
+     */
     public void setEventDates(List<DateIntervalVo> eventDates) {
         this.eventDates = eventDates;
     }
 
+    /**
+     * Gets geometry.
+     *
+     * @return the geometry
+     */
     public FeatureCollectionVo getGeometry() {
         return geometry;
     }
 
+    /**
+     * Sets geometry.
+     *
+     * @param geometry the geometry
+     */
     public void setGeometry(FeatureCollectionVo geometry) {
         this.geometry = geometry;
     }
@@ -148,10 +217,20 @@ public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSeri
         this.descs = descs;
     }
 
+    /**
+     * Gets hide subject.
+     *
+     * @return the hide subject
+     */
     public Boolean getHideSubject() {
         return hideSubject;
     }
 
+    /**
+     * Sets hide subject.
+     *
+     * @param hideSubject the hide subject
+     */
     public void setHideSubject(Boolean hideSubject) {
         this.hideSubject = hideSubject;
     }

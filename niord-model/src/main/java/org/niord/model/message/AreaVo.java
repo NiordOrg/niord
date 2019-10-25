@@ -36,14 +36,33 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable {
 
+    /**
+     * The Id.
+     */
     Integer id;
+    /**
+     * The Mrn.
+     */
     String mrn;
+    /**
+     * The Active.
+     */
     boolean active = true;
+    /**
+     * The Parent.
+     */
     AreaVo parent;
+    /**
+     * The Descs.
+     */
     List<AreaDescVo> descs;
 
 
-    /** Returns a filtered copy of this entity **/
+    /**
+     * Returns a filtered copy of this entity  @param filter the filter
+     *
+     * @return the area vo
+     */
     public AreaVo copy(DataFilter filter) {
         DataFilter compFilter = filter.forComponent("Area");
 
@@ -73,37 +92,76 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /**
+     * Gets id.
+     *
+     * @return the id
+     */
 
     @XmlAttribute
     public Integer getId() {
         return id;
     }
 
+    /**
+     * Sets id.
+     *
+     * @param id the id
+     */
     public void setId(Integer id) {
         this.id = id;
     }
 
+    /**
+     * Gets mrn.
+     *
+     * @return the mrn
+     */
     public String getMrn() {
         return mrn;
     }
 
+    /**
+     * Sets mrn.
+     *
+     * @param mrn the mrn
+     */
     public void setMrn(String mrn) {
         this.mrn = mrn;
     }
 
+    /**
+     * Is active boolean.
+     *
+     * @return the boolean
+     */
     public boolean isActive() {
         return active;
     }
 
+    /**
+     * Sets active.
+     *
+     * @param active the active
+     */
     public void setActive(boolean active) {
         this.active = active;
     }
 
+    /**
+     * Gets parent.
+     *
+     * @return the parent
+     */
     public AreaVo getParent() {
         return parent;
     }
 
+    /**
+     * Sets parent.
+     *
+     * @param parent the parent
+     */
     public void setParent(AreaVo parent) {
         this.parent = parent;
     }

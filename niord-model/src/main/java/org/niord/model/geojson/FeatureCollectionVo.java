@@ -41,7 +41,9 @@ public class FeatureCollectionVo extends GeoJsonVo {
     private FeatureVo[] features;
 
 
-    /** Constructor **/
+    /**
+     * Constructor
+     */
     public FeatureCollectionVo() {
         setType("FeatureCollection");
     }
@@ -61,6 +63,7 @@ public class FeatureCollectionVo extends GeoJsonVo {
      * Returns a combined geometry for the whole feature collection. If no feature is defined, null is returned.
      * If a single feature is defined, the geometry feature is returned.
      * Otherwise, a combined geometry collection of all feature geometries is returned.
+     *
      * @return the combined geometry for the feature
      */
     public GeometryVo toGeometry() {
@@ -80,19 +83,39 @@ public class FeatureCollectionVo extends GeoJsonVo {
     }
 
 
+    /**
+     * Gets id.
+     *
+     * @return the id
+     */
     public Object getId() {
         return id;
     }
 
+    /**
+     * Sets id.
+     *
+     * @param id the id
+     */
     public void setId(Object id) {
         this.id = id;
     }
 
+    /**
+     * Get features feature vo [ ].
+     *
+     * @return the feature vo [ ]
+     */
     @XmlElementRef
     public FeatureVo[] getFeatures() {
         return features;
     }
 
+    /**
+     * Sets features.
+     *
+     * @param features the features
+     */
     public void setFeatures(FeatureVo[] features) {
         this.features = features;
     }

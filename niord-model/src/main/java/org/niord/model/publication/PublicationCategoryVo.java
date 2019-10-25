@@ -35,9 +35,21 @@ import java.util.List;
 })
 public class PublicationCategoryVo implements ILocalizable<PublicationCategoryDescVo>, IJsonSerializable {
 
+    /**
+     * The Category id.
+     */
     String categoryId;
+    /**
+     * The Priority.
+     */
     Integer priority;
+    /**
+     * The Publish.
+     */
     Boolean publish;
+    /**
+     * The Descs.
+     */
     List<PublicationCategoryDescVo> descs;
 
 
@@ -51,7 +63,12 @@ public class PublicationCategoryVo implements ILocalizable<PublicationCategoryDe
     }
 
 
-    /** Returns a filtered copy of this entity **/
+    /**
+     * Returns a filtered copy of this entity
+     * @param filter the filter
+     *
+     * @return the publication category vo
+     */
     public PublicationCategoryVo copy(DataFilter filter) {
 
         PublicationCategoryVo category = new PublicationCategoryVo();
@@ -65,28 +82,57 @@ public class PublicationCategoryVo implements ILocalizable<PublicationCategoryDe
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /**
+     * Gets category id.
+     *
+     * @return the category id
+     */
 
     public String getCategoryId() {
         return categoryId;
     }
 
+    /**
+     * Sets category id.
+     *
+     * @param categoryId the category id
+     */
     public void setCategoryId(String categoryId) {
         this.categoryId = categoryId;
     }
 
+    /**
+     * Gets priority.
+     *
+     * @return the priority
+     */
     public Integer getPriority() {
         return priority;
     }
 
+    /**
+     * Sets priority.
+     *
+     * @param priority the priority
+     */
     public void setPriority(Integer priority) {
         this.priority = priority;
     }
 
+    /**
+     * Gets publish.
+     *
+     * @return the publish
+     */
     public Boolean getPublish() {
         return publish;
     }
 
+    /**
+     * Sets publish.
+     *
+     * @param publish the publish
+     */
     public void setPublish(Boolean publish) {
         this.publish = publish;
     }

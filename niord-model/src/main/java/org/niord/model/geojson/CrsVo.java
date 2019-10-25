@@ -33,18 +33,38 @@ public class CrsVo implements IJsonSerializable {
 
     private Properties properties = new Properties();
 
+    /**
+     * Gets type.
+     *
+     * @return the type
+     */
     public String getType() {
         return type;
     }
 
+    /**
+     * Sets type.
+     *
+     * @param type the type
+     */
     public void setType(String type) {
         this.type = type;
     }
 
+    /**
+     * Gets properties.
+     *
+     * @return the properties
+     */
     public Properties getProperties() {
 		return properties;
 	}
 
+    /**
+     * Sets properties.
+     *
+     * @param properties the properties
+     */
     public void setProperties(Properties properties) {
 		this.properties = properties;
 	}

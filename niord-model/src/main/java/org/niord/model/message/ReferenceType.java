@@ -23,13 +23,30 @@ import java.util.Set;
  * The type of reference
  */
 public enum ReferenceType {
+    /**
+     * Reference reference type.
+     */
     REFERENCE,
+    /**
+     * Repetition reference type.
+     */
     REPETITION,
+    /**
+     * Repetition new time reference type.
+     */
     REPETITION_NEW_TIME,
+    /**
+     * Cancellation reference type.
+     */
     CANCELLATION,
+    /**
+     * Update reference type.
+     */
     UPDATE;
 
-    /** Returns all statuses that will cause the referenced message to be cancelled **/
+    /**
+     * Returns all statuses that will cause the referenced message to be cancelled  @return the set
+     */
     public static Set<ReferenceType> cancelsReferencedMessage() {
         return new HashSet<>(Arrays.asList(REPETITION, REPETITION_NEW_TIME, CANCELLATION, UPDATE));
     }

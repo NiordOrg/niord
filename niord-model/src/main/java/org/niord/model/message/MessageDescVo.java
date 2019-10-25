@@ -30,11 +30,29 @@ import javax.xml.bind.annotation.XmlType;
 @SuppressWarnings("unused")
 public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
 
+    /**
+     * The Lang.
+     */
     String lang;
+    /**
+     * The Title.
+     */
     String title;
+    /**
+     * The Vicinity.
+     */
     String vicinity;
+    /**
+     * The Publication.
+     */
     String publication;
+    /**
+     * The Internal publication.
+     */
     String internalPublication;
+    /**
+     * The Source.
+     */
     String source;
 
     /** {@inheritDoc} */
@@ -69,42 +87,92 @@ public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {
         this.lang = lang;
     }
 
+    /**
+     * Gets title.
+     *
+     * @return the title
+     */
     public String getTitle() {
         return title;
     }
 
+    /**
+     * Sets title.
+     *
+     * @param title the title
+     */
     public void setTitle(String title) {
         this.title = title;
     }
 
+    /**
+     * Gets vicinity.
+     *
+     * @return the vicinity
+     */
     public String getVicinity() {
         return vicinity;
     }
 
+    /**
+     * Sets vicinity.
+     *
+     * @param vicinity the vicinity
+     */
     public void setVicinity(String vicinity) {
         this.vicinity = vicinity;
     }
 
+    /**
+     * Gets publication.
+     *
+     * @return the publication
+     */
     public String getPublication() {
         return publication;
     }
 
+    /**
+     * Sets publication.
+     *
+     * @param publication the publication
+     */
     public void setPublication(String publication) {
         this.publication = publication;
     }
 
+    /**
+     * Gets internal publication.
+     *
+     * @return the internal publication
+     */
     public String getInternalPublication() {
         return internalPublication;
     }
 
+    /**
+     * Sets internal publication.
+     *
+     * @param internalPublication the internal publication
+     */
     public void setInternalPublication(String internalPublication) {
         this.internalPublication = internalPublication;
     }
 
+    /**
+     * Gets source.
+     *
+     * @return the source
+     */
     public String getSource() {
         return source;
     }
 
+    /**
+     * Sets source.
+     *
+     * @param source the source
+     */
     public void setSource(String source) {
         this.source = source;
     }

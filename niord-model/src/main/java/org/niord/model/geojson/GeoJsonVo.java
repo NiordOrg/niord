@@ -73,11 +73,17 @@ public abstract class GeoJsonVo implements IJsonSerializable {
 
     /**
      * Visits all included coordinates and executes the handler
+     *
      * @param handler the handler
      */
     public abstract void visitCoordinates(Consumer<double[]> handler);
 
-    /** Utility method used for visiting multidimensional arrays of coordinates */
+    /**
+     * Utility method used for visiting multidimensional arrays of coordinates  @param <T>  the type parameter
+     *
+     * @param coords  the coords
+     * @param handler the handler
+     */
     static <T> void visitCoordinates(T coords, Consumer<double[]> handler) {
         if (coords != null) {
             if (coords instanceof double[]) {
@@ -100,7 +106,10 @@ public abstract class GeoJsonVo implements IJsonSerializable {
         }
     }
 
-    /** Computes the bounding box of the geometry **/
+    /**
+     * Computes the bounding box of the geometry
+     * @return the double [ ]
+     */
     public double[] computeBBox() {
         // TODO: Naive implementation - cater with border cases later...
         double[] bbox = { Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE };
@@ -113,33 +122,66 @@ public abstract class GeoJsonVo implements IJsonSerializable {
         return bbox;
     }
 
-    /** Computes the center of the geometry **/
+    /**
+     * Computes the center of the geometry
+     * @return the double [ ]
+     */
     public double[] computeCenter() {
         double[] bbox = computeBBox();
         return new double[]{(bbox[0] + bbox[2]) / 2.0, (bbox[1] + bbox[3]) / 2.0};
     }
 
+    /**
+     * Gets type.
+     *
+     * @return the type
+     */
     @JsonIgnore // @JsonTypeInfo will add the "type" property as a discriminator field
     public String getType() {
         return type;
     }
 
+    /**
+     * Sets type.
+     *
+     * @param type the type
+     */
     public void setType(String type) {
         this.type = type;
     }
 
+    /**
+     * Gets crs.
+     *
+     * @return the crs
+     */
     public CrsVo getCrs() {
         return crs;
     }
 
+    /**
+     * Sets crs.
+     *
+     * @param crs the crs
+     */
     public void setCrs(CrsVo crs) {
         this.crs = crs;
     }
 
+    /**
+     * Get bbox double [ ].
+     *
+     * @return the double [ ]
+     */
     public double[] getBbox() {
         return bbox;
     }
 
+    /**
+     * Sets bbox.
+     *
+     * @param bbox the bbox
+     */
     public void setBbox(double[] bbox) {
         this.bbox = bbox;
     }

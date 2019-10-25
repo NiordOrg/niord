@@ -22,31 +22,49 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Immutable filter object used to define, in a textual manner, which part of an entity should be copied.<br/>
+ * Immutable filter object used to define, in a textual manner, which part of an entity should be copied.<br>
  * Example usage:
  * <ul>
- *     <li>When converting an entity class to a value object (VO).</li>
+ * <li>When converting an entity class to a value object (VO).</li>
  * </ul>
- * <p>
- *
+ * <br>
+ * <br>
  * The data filter contains two types of information:
  * <ul>
- *     <li>A language: This is assumed to be the same for an entire operation and
- *         specifies which localized description records to include. If undefined, all languages are included.</li>
- *     <li>A list of fields. The fields can be specific fields, such as "parentId" or more
- *         abstract specifications such as "details" or "all".<br/>
- *         Also, the fields may have a component prefix, such as "Area.parent" or "*.*" </li>
+ * <li>A language: This is assumed to be the same for an entire operation and
+ * specifies which localized description records to include. If undefined, all languages are included.</li>
+ * <li>A list of fields. The fields can be specific fields, such as "parentId" or more
+ * abstract specifications such as "details" or "all".<br>
+ * Also, the fields may have a component prefix, such as "Area.parent" or "*.*" </li>
  * </ul>
  */
 @SuppressWarnings("unused")
 public class DataFilter {
 
-    // Standard values for specific fields to include
+    /**
+     * The constant ALL.
+     */
+// Standard values for specific fields to include
     public static final String ALL          = "*";
+    /**
+     * The constant PARENT.
+     */
     public static final String PARENT       = "parent";
+    /**
+     * The constant PARENT_ID.
+     */
     public static final String PARENT_ID    = "parentId";
+    /**
+     * The constant CHILDREN.
+     */
     public static final String CHILDREN     = "children";
+    /**
+     * The constant GEOMETRY.
+     */
     public static final String GEOMETRY     = "geometry";
+    /**
+     * The constant DETAILS.
+     */
     public static final String DETAILS      = "details";
 
     private UserResolver user;
@@ -120,7 +138,9 @@ public class DataFilter {
     }
 
 
-    /** Returns the current language setting of the data filter */
+    /**
+     * Returns the current language setting of the data filter  @return the lang
+     */
     public String getLang() {
         return lang;
     }
@@ -318,7 +338,19 @@ public class DataFilter {
      * DataFilter, checks can be made on the current user and roles.
      */
     public interface UserResolver {
+        /**
+         * Gets principal.
+         *
+         * @return the principal
+         */
         Principal getPrincipal();
+
+        /**
+         * Is user in role boolean.
+         *
+         * @param role the role
+         * @return the boolean
+         */
         boolean isUserInRole(String role);
     }
 }

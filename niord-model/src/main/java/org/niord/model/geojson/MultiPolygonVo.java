@@ -34,11 +34,19 @@ public class MultiPolygonVo extends GeometryVo {
 
     private double[][][][] coordinates;
 
+    /**
+     * Instantiates a new Multi polygon vo.
+     */
     @SuppressWarnings("unused")
     public MultiPolygonVo() {
         setType("MultiPolygon");
     }
 
+    /**
+     * Instantiates a new Multi polygon vo.
+     *
+     * @param coordinates the coordinates
+     */
     public MultiPolygonVo(double[][][][] coordinates) {
         this();
         this.coordinates = coordinates;
@@ -50,10 +58,20 @@ public class MultiPolygonVo extends GeometryVo {
         visitCoordinates(coordinates, handler);
     }
 
+    /**
+     * Get coordinates double [ ] [ ] [ ] [ ].
+     *
+     * @return the double [ ] [ ] [ ] [ ]
+     */
     public double[][][][] getCoordinates() {
         return coordinates;
     }
 
+    /**
+     * Sets coordinates.
+     *
+     * @param coordinates the coordinates
+     */
     public void setCoordinates(double[][][][] coordinates) {
         this.coordinates = coordinates;
     }

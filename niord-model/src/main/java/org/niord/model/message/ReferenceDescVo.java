@@ -29,7 +29,13 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(propOrder = { "description" })
 public class ReferenceDescVo implements ILocalizedDesc, IJsonSerializable {
 
+    /**
+     * The Lang.
+     */
     String lang;
+    /**
+     * The Description.
+     */
     String description;
 
     /** {@inheritDoc} */
@@ -59,10 +65,20 @@ public class ReferenceDescVo implements ILocalizedDesc, IJsonSerializable {
         this.lang = lang;
     }
 
+    /**
+     * Gets description.
+     *
+     * @return the description
+     */
     public String getDescription() {
         return description;
     }
 
+    /**
+     * Sets description.
+     *
+     * @param description the description
+     */
     public void setDescription(String description) {
         this.description = description;
     }

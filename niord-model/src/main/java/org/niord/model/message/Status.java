@@ -53,12 +53,16 @@ public enum Status {
     DELETED;
 
 
-    /** Returns if the status is public, i.e. one of the statusses that unauthorized users can view **/
+    /**
+     * Returns if the status is public, i.e. one of the statusses that unauthorized users can view  @return the boolean
+     */
     public boolean isPublic() {
         return this == PUBLISHED || this == CANCELLED || this == EXPIRED;
     }
 
-    /** Returns if the status is a draft status, i.e. DRAFT or VERIFIED **/
+    /**
+     * Returns if the status is a draft status, i.e. DRAFT or VERIFIED  @return the boolean
+     */
     public boolean isDraft() {
         return this == DRAFT || this == VERIFIED;
     }

@@ -30,8 +30,17 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(propOrder = { "name", "description" })
 public class PublicationCategoryDescVo implements ILocalizedDesc, IJsonSerializable {
 
+    /**
+     * The Lang.
+     */
     String lang;
+    /**
+     * The Name.
+     */
     String name;
+    /**
+     * The Description.
+     */
     String description;
 
     /** {@inheritDoc} */
@@ -64,18 +73,38 @@ public class PublicationCategoryDescVo implements ILocalizedDesc, IJsonSerializa
         this.lang = lang;
     }
 
+    /**
+     * Gets name.
+     *
+     * @return the name
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Sets name.
+     *
+     * @param name the name
+     */
     public void setName(String name) {
         this.name = name;
     }
 
+    /**
+     * Gets description.
+     *
+     * @return the description
+     */
     public String getDescription() {
         return description;
     }
 
+    /**
+     * Sets description.
+     *
+     * @param description the description
+     */
     public void setDescription(String description) {
         this.description = description;
     }

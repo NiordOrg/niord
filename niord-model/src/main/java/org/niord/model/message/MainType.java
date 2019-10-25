@@ -24,17 +24,27 @@ import java.util.stream.Collectors;
  * The type of the message series identifier
  */
 public enum MainType {
+    /**
+     * Nw main type.
+     */
     NW,
+    /**
+     * Nm main type.
+     */
     NM;
 
-    /** Returns all the sub-type implied by this main type */
+    /**
+     * Returns all the sub-type implied by this main type  @return the types
+     */
     public Set<Type> getTypes() {
         return Arrays.stream(Type.values())
                 .filter(t -> t.getMainType() == this)
                 .collect(Collectors.toSet());
     }
 
-    /** Returns a sub-type implied by this main type */
+    /**
+     * Returns a sub-type implied by this main type  @return the type
+     */
     public Type anyType() {
         return getTypes().iterator().next();
     }

@@ -32,12 +32,25 @@ import java.util.List;
 })
 public class ReferenceVo implements ILocalizable<ReferenceDescVo>, IJsonSerializable {
 
+    /**
+     * The Message id.
+     */
     String messageId;
+    /**
+     * The Type.
+     */
     ReferenceType type;
+    /**
+     * The Descs.
+     */
     List<ReferenceDescVo> descs;
 
 
-    /** Returns a filtered copy of this entity **/
+    /**
+     * Returns a filtered copy of this entity  @param filter the filter
+     *
+     * @return the reference vo
+     */
     public ReferenceVo copy(DataFilter filter) {
         ReferenceVo reference = new ReferenceVo();
         reference.setMessageId(messageId);
@@ -58,20 +71,39 @@ public class ReferenceVo implements ILocalizable<ReferenceDescVo>, IJsonSerializ
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /**
+     * Gets message id.
+     *
+     * @return the message id
+     */
 
     public String getMessageId() {
         return messageId;
     }
 
+    /**
+     * Sets message id.
+     *
+     * @param messageId the message id
+     */
     public void setMessageId(String messageId) {
         this.messageId = messageId;
     }
 
+    /**
+     * Gets type.
+     *
+     * @return the type
+     */
     public ReferenceType getType() {
         return type;
     }
 
+    /**
+     * Sets type.
+     *
+     * @param type the type
+     */
     public void setType(ReferenceType type) {
         this.type = type;
     }

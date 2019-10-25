@@ -29,21 +29,37 @@ import java.util.stream.Stream;
 
 /**
  * Used for pagination of search results
+ *
+ * @param <T> the type parameter
  */
 @SuppressWarnings("unused")
 public class PagedSearchResultVo<T> implements IJsonSerializable {
 
+    /**
+     * The Data.
+     */
     List<T> data = new ArrayList<>();
+    /**
+     * The Total.
+     */
     long total;
+    /**
+     * The Size.
+     */
     int size;
 
-    // Optionally, specify a description - e.g. textual description of the search criteria
+    /**
+     * The Description.
+     */
+// Optionally, specify a description - e.g. textual description of the search criteria
     String description;
 
     /**
      * Paginates a content list according to the page number and size specified by the search parameters
+     *
+     * @param <T>     the type parameter
      * @param content the list to paginate
-     * @param params the search parameters
+     * @param params  the search parameters
      * @return the paged result
      */
     public static <T> PagedSearchResultVo<T> paginate(List<T> content, PagedSearchParamsVo params) {
@@ -53,9 +69,11 @@ public class PagedSearchResultVo<T> implements IJsonSerializable {
 
     /**
      * Paginates a content list according to the page number and size
+     *
+     * @param <T>     the type parameter
      * @param content the list to paginate
-     * @param page the page number
-     * @param size the page size
+     * @param page    the page number
+     * @param size    the page size
      * @return the paged result
      */
     public static <T> PagedSearchResultVo<T> paginate(List<T> content, int page, int size) {
@@ -65,9 +83,11 @@ public class PagedSearchResultVo<T> implements IJsonSerializable {
 
     /**
      * Paginates a content list according to the page number and size
-     * @param content the list to paginate
-     * @param page the page number
-     * @param size the page size
+     *
+     * @param <T>        the type parameter
+     * @param content    the list to paginate
+     * @param page       the page number
+     * @param size       the page size
      * @param comparator the comparator
      * @return the paged result
      */
@@ -78,10 +98,12 @@ public class PagedSearchResultVo<T> implements IJsonSerializable {
 
     /**
      * Paginates a data list according to the page number and size
-     * @param data the list to paginate
-     * @param page the page number
-     * @param size the page size
-     * @param filter an optional filter
+     *
+     * @param <T>        the type parameter
+     * @param data       the list to paginate
+     * @param page       the page number
+     * @param size       the page size
+     * @param filter     an optional filter
      * @param comparator the comparator
      * @return the paged result
      */
@@ -111,6 +133,9 @@ public class PagedSearchResultVo<T> implements IJsonSerializable {
 
     /**
      * Maps the data of this search result
+     *
+     * @param <S>    the type parameter
+     * @param mapper the mapper
      * @return the mapped result
      */
     public <S> PagedSearchResultVo<S> map(Function<T, S> mapper) {
@@ -129,6 +154,11 @@ public class PagedSearchResultVo<T> implements IJsonSerializable {
         return result;
     }
 
+    /**
+     * Update size paged search result vo.
+     *
+     * @return the paged search result vo
+     */
     public PagedSearchResultVo<T> updateSize() {
         size = data.size();
         if (total < size) {
@@ -137,34 +167,74 @@ public class PagedSearchResultVo<T> implements IJsonSerializable {
         return this;
     }
 
+    /**
+     * Gets data.
+     *
+     * @return the data
+     */
     public List<T> getData() {
         return data;
     }
 
+    /**
+     * Sets data.
+     *
+     * @param data the data
+     */
     public void setData(List<T> data) {
         this.data = data;
     }
 
+    /**
+     * Gets total.
+     *
+     * @return the total
+     */
     public long getTotal() {
         return total;
     }
 
+    /**
+     * Sets total.
+     *
+     * @param total the total
+     */
     public void setTotal(long total) {
         this.total = total;
     }
 
+    /**
+     * Gets size.
+     *
+     * @return the size
+     */
     public int getSize() {
         return size;
     }
 
+    /**
+     * Sets size.
+     *
+     * @param size the size
+     */
     public void setSize(int size) {
         this.size = size;
     }
 
+    /**
+     * Gets description.
+     *
+     * @return the description
+     */
     public String getDescription() {
         return description;
     }
 
+    /**
+     * Sets description.
+     *
+     * @param description the description
+     */
     public void setDescription(String description) {
         this.description = description;
     }

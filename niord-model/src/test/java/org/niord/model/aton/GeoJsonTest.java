@@ -31,7 +31,9 @@ import javax.xml.bind.Marshaller;
  */
 public class GeoJsonTest {
 
-    /** Test generating XML from GeoJson */
+    /**
+     * Test generating XML from GeoJson  @throws Exception the exception
+     */
     @Test
     public void testGeoJsonXml() throws Exception {
 

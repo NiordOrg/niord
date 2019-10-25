@@ -29,7 +29,13 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(propOrder = { "caption" })
 public class AttachmentDescVo implements ILocalizedDesc, IJsonSerializable {
 
+    /**
+     * The Lang.
+     */
     String lang;
+    /**
+     * The Caption.
+     */
     String caption;
 
     /** {@inheritDoc} */
@@ -59,10 +65,20 @@ public class AttachmentDescVo implements ILocalizedDesc, IJsonSerializable {
         this.lang = lang;
     }
 
+    /**
+     * Gets caption.
+     *
+     * @return the caption
+     */
     public String getCaption() {
         return caption;
     }
 
+    /**
+     * Sets caption.
+     *
+     * @param caption the caption
+     */
     public void setCaption(String caption) {
         this.caption = caption;
     }

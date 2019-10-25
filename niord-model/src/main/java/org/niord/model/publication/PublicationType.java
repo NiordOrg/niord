@@ -21,16 +21,24 @@ package org.niord.model.publication;
  */
 public enum PublicationType {
 
-    /** No link or file is specified directly **/
+    /**
+     * No link or file is specified directly
+     */
     NONE,
 
-    /** The publication resource is defined via a link **/
+    /**
+     * The publication resource is defined via a link
+     */
     LINK,
 
-    /** The publication resource is uploaded to the Niord repository **/
+    /**
+     * The publication resource is uploaded to the Niord repository
+     */
     REPOSITORY,
 
-    /** The publication resource is defined via a message report and possibly uploaded to the Niord repository **/
+    /**
+     * The publication resource is defined via a message report and possibly uploaded to the Niord repository
+     */
     MESSAGE_REPORT
 
 }

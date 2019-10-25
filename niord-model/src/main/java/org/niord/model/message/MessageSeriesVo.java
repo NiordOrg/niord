@@ -33,11 +33,21 @@ import javax.xml.bind.annotation.XmlType;
 @SuppressWarnings("unused")
 public class MessageSeriesVo implements IJsonSerializable {
 
+    /**
+     * The Series id.
+     */
     String seriesId;
+    /**
+     * The Main type.
+     */
     MainType mainType;
 
 
-    /** Returns a filtered copy of this entity **/
+    /**
+     * Returns a filtered copy of this entity  @param filter the filter
+     *
+     * @return the message series vo
+     */
     public MessageSeriesVo copy(DataFilter filter) {
 
         DataFilter compFilter = filter.forComponent("MessageSeries");
@@ -53,20 +63,39 @@ public class MessageSeriesVo implements IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /**
+     * Gets series id.
+     *
+     * @return the series id
+     */
 
     public String getSeriesId() {
         return seriesId;
     }
 
+    /**
+     * Sets series id.
+     *
+     * @param seriesId the series id
+     */
     public void setSeriesId(String seriesId) {
         this.seriesId = seriesId;
     }
 
+    /**
+     * Gets main type.
+     *
+     * @return the main type
+     */
     public MainType getMainType() {
         return mainType;
     }
 
+    /**
+     * Sets main type.
+     *
+     * @param mainType the main type
+     */
     public void setMainType(MainType mainType) {
         this.mainType = mainType;
     }

@@ -20,18 +20,45 @@ package org.niord.model.message;
  */
 public enum Type {
 
-    // NtM types
+    /**
+     * The Permanent notice.
+     */
+// NtM types
     PERMANENT_NOTICE(MainType.NM),
+    /**
+     * Temporary notice type.
+     */
     TEMPORARY_NOTICE(MainType.NM),
+    /**
+     * Preliminary notice type.
+     */
     PRELIMINARY_NOTICE(MainType.NM),
+    /**
+     * Miscellaneous notice type.
+     */
     MISCELLANEOUS_NOTICE(MainType.NM),
-    
-    // NW types
+
+    /**
+     * The Coastal warning.
+     */
+// NW types
     COASTAL_WARNING(MainType.NW),
+    /**
+     * Subarea warning type.
+     */
     SUBAREA_WARNING(MainType.NW),
+    /**
+     * Navarea warning type.
+     */
     NAVAREA_WARNING(MainType.NW),
+    /**
+     * Local warning type.
+     */
     LOCAL_WARNING(MainType.NW);
 
+    /**
+     * The Main type.
+     */
     MainType mainType;
 
     /** Constructor */
@@ -39,7 +66,9 @@ public enum Type {
         this.mainType = mainType;
     }
 
-    /** Returns the main type, i.e. either NW or NM, of this type */
+    /**
+     * Returns the main type, i.e. either NW or NM, of this type  @return the main type
+     */
     public MainType getMainType() {
         return mainType;
     }

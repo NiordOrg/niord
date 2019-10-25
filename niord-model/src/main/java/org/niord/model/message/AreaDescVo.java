@@ -29,7 +29,13 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(propOrder = { "name" })
 public class AreaDescVo implements ILocalizedDesc, IJsonSerializable {
 
+    /**
+     * The Lang.
+     */
     String lang;
+    /**
+     * The Name.
+     */
     String name;
 
     /** {@inheritDoc} */
@@ -59,10 +65,20 @@ public class AreaDescVo implements ILocalizedDesc, IJsonSerializable {
         this.lang = lang;
     }
 
+    /**
+     * Gets name.
+     *
+     * @return the name
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Sets name.
+     *
+     * @param name the name
+     */
     public void setName(String name) {
         this.name = name;
     }

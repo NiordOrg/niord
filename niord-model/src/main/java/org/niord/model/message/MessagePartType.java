@@ -21,10 +21,28 @@ package org.niord.model.message;
  */
 public enum MessagePartType {
 
+    /**
+     * Details message part type.
+     */
     DETAILS,
+    /**
+     * Time message part type.
+     */
     TIME,
+    /**
+     * Positions message part type.
+     */
     POSITIONS,
+    /**
+     * Note message part type.
+     */
     NOTE,
+    /**
+     * Prohibition message part type.
+     */
     PROHIBITION,
+    /**
+     * Signals message part type.
+     */
     SIGNALS
 }

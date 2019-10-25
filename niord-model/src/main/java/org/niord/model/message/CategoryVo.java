@@ -35,14 +35,33 @@ import java.util.List;
 })
 @SuppressWarnings("unused")
 public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializable {
+    /**
+     * The Id.
+     */
     Integer id;
+    /**
+     * The Mrn.
+     */
     String mrn;
+    /**
+     * The Active.
+     */
     boolean active = true;
+    /**
+     * The Parent.
+     */
     CategoryVo parent;
+    /**
+     * The Descs.
+     */
     List<CategoryDescVo> descs;
 
 
-    /** Returns a filtered copy of this entity **/
+    /**
+     * Returns a filtered copy of this entity  @param filter the filter
+     *
+     * @return the category vo
+     */
     public CategoryVo copy(DataFilter filter) {
 
         DataFilter compFilter = filter.forComponent("Category");
@@ -73,37 +92,76 @@ public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializab
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /**
+     * Gets id.
+     *
+     * @return the id
+     */
 
     @XmlAttribute
     public Integer getId() {
         return id;
     }
 
+    /**
+     * Sets id.
+     *
+     * @param id the id
+     */
     public void setId(Integer id) {
         this.id = id;
     }
 
+    /**
+     * Gets mrn.
+     *
+     * @return the mrn
+     */
     public String getMrn() {
         return mrn;
     }
 
+    /**
+     * Sets mrn.
+     *
+     * @param mrn the mrn
+     */
     public void setMrn(String mrn) {
         this.mrn = mrn;
     }
 
+    /**
+     * Is active boolean.
+     *
+     * @return the boolean
+     */
     public boolean isActive() {
         return active;
     }
 
+    /**
+     * Sets active.
+     *
+     * @param active the active
+     */
     public void setActive(boolean active) {
         this.active = active;
     }
 
+    /**
+     * Gets parent.
+     *
+     * @return the parent
+     */
     public CategoryVo getParent() {
         return parent;
     }
 
+    /**
+     * Sets parent.
+     *
+     * @param parent the parent
+     */
     public void setParent(CategoryVo parent) {
         this.parent = parent;
     }

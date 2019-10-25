@@ -31,8 +31,17 @@ import javax.xml.bind.annotation.XmlType;
 @SuppressWarnings("unused")
 public class MessagePartDescVo implements ILocalizedDesc, IJsonSerializable {
 
+    /**
+     * The Lang.
+     */
     String lang;
+    /**
+     * The Subject.
+     */
     String subject;
+    /**
+     * The Details.
+     */
     String details;
 
     /** {@inheritDoc} */
@@ -64,18 +73,38 @@ public class MessagePartDescVo implements ILocalizedDesc, IJsonSerializable {
         this.lang = lang;
     }
 
+    /**
+     * Gets subject.
+     *
+     * @return the subject
+     */
     public String getSubject() {
         return subject;
     }
 
+    /**
+     * Sets subject.
+     *
+     * @param subject the subject
+     */
     public void setSubject(String subject) {
         this.subject = subject;
     }
 
+    /**
+     * Gets details.
+     *
+     * @return the details
+     */
     public String getDetails() {
         return details;
     }
 
+    /**
+     * Sets details.
+     *
+     * @param details the details
+     */
     public void setDetails(String details) {
         this.details = details;
     }

@@ -34,11 +34,19 @@ public class MultiPointVo extends GeometryVo {
 
     private double[][] coordinates;
 
+    /**
+     * Instantiates a new Multi point vo.
+     */
     @SuppressWarnings("unused")
     public MultiPointVo() {
         setType("MultiPoint");
     }
 
+    /**
+     * Instantiates a new Multi point vo.
+     *
+     * @param coordinates the coordinates
+     */
     public MultiPointVo(double[][] coordinates) {
         this();
         this.coordinates = coordinates;
@@ -50,10 +58,20 @@ public class MultiPointVo extends GeometryVo {
         visitCoordinates(coordinates, handler);
     }
 
+    /**
+     * Get coordinates double [ ] [ ].
+     *
+     * @return the double [ ] [ ]
+     */
     public double[][] getCoordinates() {
         return coordinates;
     }
 
+    /**
+     * Sets coordinates.
+     *
+     * @param coordinates the coordinates
+     */
     public void setCoordinates(double[][] coordinates) {
         this.coordinates = coordinates;
     }

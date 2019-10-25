@@ -23,23 +23,28 @@ import java.util.stream.Collectors;
 
 /**
  * Interface to be implemented by localized entities
+ *
+ * @param <D> the type parameter
  */
 public interface ILocalizable<D extends ILocalizedDesc> {
 
     /**
      * Returns the list of localized descriptions
+     *
      * @return the list of localized descriptions
      */
     List<D> getDescs();
 
     /**
      * Sets the list of localized descriptions
+     *
      * @param descs the list of localized descriptions
      */
     void setDescs(List<D> descs);
 
     /**
      * Returns the list of localized descriptions and creates the list if necessary
+     *
      * @return the list of localized descriptions
      */
     default List<D> checkCreateDescs() {
@@ -122,6 +127,7 @@ public interface ILocalizable<D extends ILocalizedDesc> {
 
     /**
      * Copies the descriptive fields of the list of descriptions
+     *
      * @param descs the description entities to copy
      */
     default void copyDescs(List<D> descs) {
@@ -133,6 +139,7 @@ public interface ILocalizable<D extends ILocalizedDesc> {
     /**
      * Copies the descriptive fields of the list of descriptions.
      * Subsequently removes descriptive entities left blank.
+     *
      * @param descs the description entities to copy
      */
     default void copyDescsAndRemoveBlanks(List<D> descs) {
@@ -147,6 +154,7 @@ public interface ILocalizable<D extends ILocalizedDesc> {
 
     /**
      * Sorts the descriptive entities to ensure that the given language is first
+     *
      * @param lang the language to sort first
      */
     default void sortDescs(final String lang) {

@@ -30,11 +30,11 @@ package org.niord.core.util;
  *
  * What coordinate conversions do we need for TMS Global Mercator tiles::
  *
- * LatLon <-> Meters <-> Pixels <-> Tile
+ * LatLon &lt;-&gt; Meters &lt;-&gt; Pixels &lt;-&gt; Tile
  *
  * WGS84 coordinates Spherical Mercator Pixels in pyramid Tiles in pyramid
  * lat/lon XY in metres XY pixels Z zoom XYZ from TMS EPSG:4326 EPSG:900913
- * .----. --------- -- TMS / \ <-> | | <-> /----/ <-> Google \ / | | /--------/
+ * .----. --------- -- TMS / \ &lt;-&gt; | | &lt;-&gt; /----/ &lt;-&gt; Google \ / | | /--------/
  * QuadTree ----- --------- /------------/ KML, public WebMapService Web Clients
  * TileMapService
  *

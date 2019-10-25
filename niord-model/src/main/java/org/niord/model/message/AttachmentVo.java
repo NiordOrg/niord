@@ -35,19 +35,61 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class AttachmentVo implements ILocalizable<AttachmentDescVo>, IJsonSerializable {
 
-    public enum AttachmentDisplayType {ABOVE, BELOW, SEPARATE_PAGE}
+    /**
+     * The enum Attachment display type.
+     */
+    public enum AttachmentDisplayType {/**
+     * Above attachment display type.
+     */
+    ABOVE,
+        /**
+         * Below attachment display type.
+         */
+        BELOW,
+        /**
+         * Separate page attachment display type.
+         */
+        SEPARATE_PAGE}
 
+    /**
+     * The Type.
+     */
     String type;
+    /**
+     * The Path.
+     */
     String path;
+    /**
+     * The File name.
+     */
     String fileName;
+    /**
+     * The File size.
+     */
     Long fileSize;
+    /**
+     * The Display.
+     */
     AttachmentDisplayType display;
+    /**
+     * The Width.
+     */
     String width;
+    /**
+     * The Height.
+     */
     String height;
+    /**
+     * The Descs.
+     */
     List<AttachmentDescVo> descs;
 
 
-    /** Returns a filtered copy of this entity **/
+    /**
+     * Returns a filtered copy of this entity  @param filter the filter
+     *
+     * @return the attachment vo
+     */
     public AttachmentVo copy(DataFilter filter) {
 
         DataFilter compFilter = filter.forComponent("Attachment");
@@ -79,6 +121,9 @@ public class AttachmentVo implements ILocalizable<AttachmentDescVo>, IJsonSerial
      * Rewrites the attachments from one repository path to another.
      * This happens when a message is edited and its associated repository folder gets
      * copied to a temporary folder until the message is saved.
+     *
+     * @param repoPath1 the repo path 1
+     * @param repoPath2 the repo path 2
      */
     public void rewriteRepoPath(String repoPath1, String repoPath2) {
         if (path != null) {
@@ -88,60 +133,129 @@ public class AttachmentVo implements ILocalizable<AttachmentDescVo>, IJsonSerial
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /**
+     * Gets type.
+     *
+     * @return the type
+     */
 
     public String getType() {
         return type;
     }
 
+    /**
+     * Sets type.
+     *
+     * @param type the type
+     */
     public void setType(String type) {
         this.type = type;
     }
 
+    /**
+     * Gets path.
+     *
+     * @return the path
+     */
     public String getPath() {
         return path;
     }
 
+    /**
+     * Sets path.
+     *
+     * @param path the path
+     */
     public void setPath(String path) {
         this.path = path;
     }
 
+    /**
+     * Gets file name.
+     *
+     * @return the file name
+     */
     public String getFileName() {
         return fileName;
     }
 
+    /**
+     * Sets file name.
+     *
+     * @param fileName the file name
+     */
     public void setFileName(String fileName) {
         this.fileName = fileName;
     }
 
+    /**
+     * Gets file size.
+     *
+     * @return the file size
+     */
     public Long getFileSize() {
         return fileSize;
     }
 
+    /**
+     * Sets file size.
+     *
+     * @param fileSize the file size
+     */
     public void setFileSize(Long fileSize) {
         this.fileSize = fileSize;
     }
 
+    /**
+     * Gets display.
+     *
+     * @return the display
+     */
     public AttachmentDisplayType getDisplay() {
         return display;
     }
 
+    /**
+     * Sets display.
+     *
+     * @param display the display
+     */
     public void setDisplay(AttachmentDisplayType display) {
         this.display = display;
     }
 
+    /**
+     * Gets width.
+     *
+     * @return the width
+     */
     public String getWidth() {
         return width;
     }
 
+    /**
+     * Sets width.
+     *
+     * @param width the width
+     */
     public void setWidth(String width) {
         this.width = width;
     }
 
+    /**
+     * Gets height.
+     *
+     * @return the height
+     */
     public String getHeight() {
         return height;
     }
 
+    /**
+     * Sets height.
+     *
+     * @param height the height
+     */
     public void setHeight(String height) {
         this.height = height;
     }

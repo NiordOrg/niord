@@ -34,11 +34,19 @@ public class LineStringVo extends GeometryVo {
 
     private double[][] coordinates;
 
+    /**
+     * Instantiates a new Line string vo.
+     */
     @SuppressWarnings("unused")
     public LineStringVo() {
         setType("LineString");
     }
 
+    /**
+     * Instantiates a new Line string vo.
+     *
+     * @param coordinates the coordinates
+     */
     public LineStringVo(double[][] coordinates) {
         this();
         this.coordinates = coordinates;
@@ -50,10 +58,20 @@ public class LineStringVo extends GeometryVo {
         visitCoordinates(coordinates, handler);
     }
 
+    /**
+     * Get coordinates double [ ] [ ].
+     *
+     * @return the double [ ] [ ]
+     */
     public double[][] getCoordinates() {
         return coordinates;
     }
 
+    /**
+     * Sets coordinates.
+     *
+     * @param coordinates the coordinates
+     */
     public void setCoordinates(double[][] coordinates) {
         this.coordinates = coordinates;
     }

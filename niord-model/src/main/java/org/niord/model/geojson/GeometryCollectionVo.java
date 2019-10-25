@@ -35,11 +35,19 @@ public class GeometryCollectionVo extends GeometryVo {
 
     private GeometryVo[] geometries;
 
+    /**
+     * Instantiates a new Geometry collection vo.
+     */
     @SuppressWarnings("unused")
     public GeometryCollectionVo() {
         setType("GeometryCollection");
     }
 
+    /**
+     * Instantiates a new Geometry collection vo.
+     *
+     * @param geometries the geometries
+     */
     public GeometryCollectionVo(GeometryVo[] geometries) {
         this();
         this.geometries = geometries;
@@ -55,11 +63,21 @@ public class GeometryCollectionVo extends GeometryVo {
         }
     }
 
+    /**
+     * Get geometries geometry vo [ ].
+     *
+     * @return the geometry vo [ ]
+     */
     @XmlElementRef
     public GeometryVo[] getGeometries() {
         return geometries;
     }
 
+    /**
+     * Sets geometries.
+     *
+     * @param geometries the geometries
+     */
     public void setGeometries(GeometryVo[] geometries) {
         this.geometries = geometries;
     }
