@@ -1452,6 +1452,7 @@ angular.module('niord.editor')
 
             $scope.previewLang = $rootScope.language;
             $scope.isEditor = $rootScope.hasRole('editor');
+            $scope.isAdmin = $rootScope.hasRole('admin');
 
             /** Create a preview message, i.e. a message sorted to the currently selected language **/
             $scope.updatePreviewMessage = function () {
