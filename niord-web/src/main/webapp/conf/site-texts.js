@@ -48,6 +48,8 @@ angular.module('niord.conf')
             'footer.link': 'http://efficiensea2.org',
             'footer.disclaimer': 'Disclaimer',
             'footer.cookies': 'Cookies',
+            'footer.accessibility': 'Accessibility',
+            'footer.accessibility_link': 'https://www.was.digst.dk/nautiskinformation-soefartsstyrelsen-dk',
 
             'front_page.welcome': 'Welcome to the',
             'front_page.brand': 'Nautical Information Directory',
