@@ -167,7 +167,7 @@ public class CategoryService extends TreeBaseService<Category> {
 
         // Compute the sort order
         List<Order> sortOrders = new ArrayList<>();
-        if (params.TREE_SORT_ORDER.equals(params.getSortBy())) {
+        if (CategorySearchParams.TREE_SORT_ORDER.equals(params.getSortBy())) {
             Arrays.asList("treeSortOrder", "siblingSortOrder", "id")
                     .forEach(field -> {
                         if (params.getSortOrder() == PagedSearchParamsVo.SortOrder.ASC) {
