@@ -1,0 +1,29 @@
+version: "3.9"
+
+services:
+  niord-mysql:
+    image: mysql:${MYSQL_VERSION:-8.0.22}
+    container_name: niord-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-mysql}
+    ports:
+      - "3306"
+    volumes:
+      - ./create-db.sql:/docker-entrypoint-initdb.d/create-db.sql #Script for initializing db
+      - ${NIORD_HOME:-~/.niord}/mysql:/var/lib/mysql #Set location of database
+    cap_add:
+      - SYS_NICE  # Disables som mbind warnings
+
+  niord-keycloak:
+    image: jboss/keycloak:${KEYCLOAK_VERSION:-12.0.1}
+    container_name: niord-keycloak
+    restart: unless-stopped
+    environment:
+      DB_VENDOR: MYSQL
+      DB_ADDR: niord-mysql #The mysql service we have exposed
+      DB_DATABASE: niordkc
+      DB_USER: niordkc
+      DB_PASSWORD: niordkc 
+    depends_on:
+      - niord-mysql
