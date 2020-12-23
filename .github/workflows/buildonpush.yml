@@ -1,6 +1,7 @@
 name: Java CI
 
 on: [push]
+
 jobs:
   build:
     runs-on: ubuntu-16.04
@@ -15,4 +16,4 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: ${{ matrix.java }}
-      - run: java -cp java HelloWorldApp
+      - run: mvn --batch-mode --update-snapshots verify
