@@ -17,12 +17,12 @@
 package org.niord.core.geojson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.operation.buffer.BufferOp;
 import org.apache.commons.lang.StringUtils;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.crs.DefaultGeographicCRS;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.operation.buffer.BufferOp;
 import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.geojson.FeatureVo;

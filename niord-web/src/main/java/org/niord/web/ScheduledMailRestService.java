@@ -18,7 +18,7 @@ package org.niord.web;
 
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.security.annotation.SecurityDomain;
+import org.jboss.ejb3.annotation.SecurityDomain;
 import org.niord.core.mail.ScheduledMail;
 import org.niord.core.mail.ScheduledMailSearchParams;
 import org.niord.core.mail.ScheduledMailService;

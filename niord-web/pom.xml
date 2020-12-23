@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.niord</groupId>
         <artifactId>niord-parent</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>2.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -25,25 +25,25 @@
         <dependency>
             <groupId>org.niord</groupId>
             <artifactId>niord-josm-seachart</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>2.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>org.niord</groupId>
             <artifactId>niord-model</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>2.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>org.niord</groupId>
             <artifactId>niord-core</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>2.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
             <groupId>org.niord</groupId>
             <artifactId>niord-s124</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>2.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -53,10 +53,10 @@
         </dependency>
 
         <dependency>
-            <groupId>org.picketbox</groupId>
-            <artifactId>picketbox</artifactId>
-            <version>4.9.6.Final</version>
-            <scope>provided</scope>
+            <groupId>org.jboss.ejb3</groupId>
+            <artifactId>jboss-ejb3-ext-api</artifactId>
+            <version>2.2.0.Final</version>
+            <scope>compile</scope>
         </dependency>
 
         <!-- CORS support -->
@@ -71,6 +71,12 @@
             <groupId>io.swagger</groupId>
             <artifactId>swagger-jaxrs</artifactId>
             <version>${swagger.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.ejb3</groupId>
+            <artifactId>jboss-ejb3-ext-api</artifactId>
+            <version>2.2.0.Final</version>
+            <scope>compile</scope>
         </dependency>
 
     </dependencies>
@@ -102,7 +108,7 @@
             <plugin>
                 <groupId>org.wildfly.plugins</groupId>
                 <artifactId>wildfly-maven-plugin</artifactId>
-                <version>1.0.2.Final</version>
+                <version>2.1.0.Beta1</version>
             </plugin>
 
             <!-- Swagger integration -->
