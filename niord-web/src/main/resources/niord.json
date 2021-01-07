@@ -14,8 +14,15 @@
     "editable"    : true
   },
   {
-    "key"         : "authServerUrl",
-    "description" : "The Keycloak URL",
+    "key"         : "authServerUrlInternal",
+    "description" : "The internal Keycloak URL that we call",
+    "value"       : "/auth",
+    "web"         : false,
+    "editable"    : true
+  },
+  {
+    "key"         : "authServerUrlExternal",
+    "description" : "The external Keycloak URL that we redirect to",
     "value"       : "/auth",
     "web"         : false,
     "editable"    : true

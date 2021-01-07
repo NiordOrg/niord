@@ -15,9 +15,21 @@
  */
 package org.niord.core.keycloak;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.PublicKey;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.ejb.Stateless;
+import javax.inject.Inject;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -54,19 +66,9 @@ import org.niord.core.user.vo.UserVo;
 import org.niord.core.util.WebUtils;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 /**
@@ -87,8 +89,12 @@ public class KeycloakIntegrationService {
     SettingsService settingsService;
 
     @Inject
-    @Setting(value = "authServerUrl", defaultValue = "/auth", description = "The Keycloak server url")
-    String authServerUrl;
+    @Setting(value = "authServerUrlInternal", defaultValue = "/auth", description = "The Keycloak server url")
+    String authServerUrlInternal;
+
+    @Inject
+    @Setting(value = "authServerUrlExternal", defaultValue = "/auth", description = "The Keycloak server url")
+    String authServerUrlExternal;
 
     @Inject
     @Setting(value = "authServerRealmKey", description = "The public key associated with the Niord realm in Keycloak")
@@ -111,9 +117,9 @@ public class KeycloakIntegrationService {
 
     /** Computes the fully-qualified URL to the Keycloak server */
     private String resolveAuthServerUrl() {
-        String url = authServerUrl;
+        String url = authServerUrlInternal;
         if (StringUtils.isBlank(url)) {
-            throw new RuntimeException("No authServerUrl setting defined");
+            throw new RuntimeException("No authServerUrlInternal setting defined");
         }
 
         // Handle relative auth server url
@@ -195,7 +201,7 @@ public class KeycloakIntegrationService {
         cfg.setRealm(KEYCLOAK_REALM);
         cfg.setRealmKey(getKeycloakPublicRealmKey());
         cfg.setBearerOnly(true);
-        cfg.setAuthServerUrl(authServerUrl);
+        cfg.setAuthServerUrl(authServerUrlInternal);
         cfg.setSslRequired(authServerSslRequired);
         cfg.setResource(domainId);
         cfg.setUseResourceRoleMappings(true);
@@ -217,7 +223,7 @@ public class KeycloakIntegrationService {
         cfg.put("realm", KEYCLOAK_REALM);
         cfg.put("realm-public-key", getKeycloakPublicRealmKey());
         cfg.put("public-client", true);
-        cfg.put("auth-server-url", authServerUrl);
+        cfg.put("auth-server-url", authServerUrlExternal);
         cfg.put("ssl-required", authServerSslRequired);
         cfg.put("resource", KEYCLOAK_WEB_CLIENT);
         cfg.put("use-resource-role-mappings", true);
