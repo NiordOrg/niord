@@ -53,7 +53,7 @@ public class JsonUtils {
      * @param typeRef the type reference
      * @return the parsed data
      */
-    public static <T> T fromJson(String data, TypeReference typeRef) throws IOException {
+    public static <T> T fromJson(String data, TypeReference<T> typeRef) throws IOException {
 
         if (data == null) {
             return null;
@@ -112,7 +112,7 @@ public class JsonUtils {
         }
 
         ObjectMapper jsonMapper = new ObjectMapper();
-        return jsonMapper.readValue(path.toFile(), typeRef);
+        return (T)jsonMapper.readValue(path.toFile(), typeRef);
     }
 
 

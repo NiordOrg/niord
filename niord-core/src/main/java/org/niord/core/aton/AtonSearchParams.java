@@ -16,7 +16,7 @@
 
 package org.niord.core.aton;
 
-import com.vividsolutions.jts.geom.Geometry;
+import org.locationtech.jts.geom.Geometry;
 import org.niord.core.geojson.JtsConverter;
 import org.niord.model.search.PagedSearchParamsVo;
 

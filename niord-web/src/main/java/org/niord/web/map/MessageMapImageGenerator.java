@@ -15,9 +15,9 @@
  */
 package org.niord.web.map;
 
-import com.vividsolutions.jts.awt.PointShapeFactory;
-import com.vividsolutions.jts.awt.ShapeWriter;
-import com.vividsolutions.jts.geom.Geometry;
+import org.locationtech.jts.awt.PointShapeFactory;
+import org.locationtech.jts.awt.ShapeWriter;
+import org.locationtech.jts.geom.Geometry;
 import org.niord.core.NiordApp;
 import org.niord.core.geojson.FeatureName;
 import org.niord.core.geojson.GeoJsonUtils;

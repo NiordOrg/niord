@@ -15,13 +15,13 @@
  */
 package org.niord.core.db;
 
-import com.vividsolutions.jts.geom.Geometry;
-import org.hibernate.jpa.criteria.CriteriaBuilderImpl;
-import org.hibernate.jpa.criteria.ParameterRegistry;
-import org.hibernate.jpa.criteria.Renderable;
-import org.hibernate.jpa.criteria.compile.RenderingContext;
-import org.hibernate.jpa.criteria.expression.LiteralExpression;
-import org.hibernate.jpa.criteria.predicate.AbstractSimplePredicate;
+import org.hibernate.query.criteria.internal.CriteriaBuilderImpl;
+import org.hibernate.query.criteria.internal.ParameterRegistry;
+import org.hibernate.query.criteria.internal.Renderable;
+import org.hibernate.query.criteria.internal.compile.RenderingContext;
+import org.hibernate.query.criteria.internal.expression.LiteralExpression;
+import org.hibernate.query.criteria.internal.predicate.AbstractSimplePredicate;
+import org.locationtech.jts.geom.Geometry;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Expression;

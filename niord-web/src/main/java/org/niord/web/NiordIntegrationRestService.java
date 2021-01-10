@@ -18,7 +18,7 @@ package org.niord.web;
 
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.security.annotation.SecurityDomain;
+import org.jboss.ejb3.annotation.SecurityDomain;
 import org.niord.core.integration.NiordIntegration;
 import org.niord.core.integration.NiordIntegrationService;
 import org.niord.core.integration.vo.NiordIntegrationVo;

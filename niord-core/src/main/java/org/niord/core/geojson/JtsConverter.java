@@ -16,29 +16,11 @@
 
 package org.niord.core.geojson;
 
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryCollection;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.LinearRing;
-import com.vividsolutions.jts.geom.MultiLineString;
-import com.vividsolutions.jts.geom.MultiPoint;
-import com.vividsolutions.jts.geom.MultiPolygon;
-import com.vividsolutions.jts.geom.Point;
-import com.vividsolutions.jts.geom.Polygon;
-import com.vividsolutions.jts.geom.PrecisionModel;
-import com.vividsolutions.jts.io.ParseException;
-import com.vividsolutions.jts.io.WKTReader;
 import org.apache.commons.lang.StringUtils;
-import org.niord.model.geojson.GeometryCollectionVo;
-import org.niord.model.geojson.GeometryVo;
-import org.niord.model.geojson.LineStringVo;
-import org.niord.model.geojson.MultiLineStringVo;
-import org.niord.model.geojson.MultiPointVo;
-import org.niord.model.geojson.MultiPolygonVo;
-import org.niord.model.geojson.PointVo;
-import org.niord.model.geojson.PolygonVo;
+import org.locationtech.jts.geom.*;
+import org.locationtech.jts.io.ParseException;
+import org.locationtech.jts.io.WKTReader;
+import org.niord.model.geojson.*;
 
 /**
  * Utility functions for converting between the Niord and JTS GeoJSON representations
