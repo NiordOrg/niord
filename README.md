@@ -11,6 +11,7 @@ The niord project contains the common code-base for the NW + NM T&P editing and 
 
 ## Development setup
 
+In order to run Niord you will need both a Keycloak instance (for user management) and a Wildfly instance
 
 ### Create Database
 
