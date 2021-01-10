@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/NiordOrg/niord/workflows/Java CI/badge.svg)](badge)
+[![Build Status](https://github.com/NiordOrg/niord/workflows/Java%20CI/badge.svg)](https://github.com/NiordOrg/niord/actions)
 # niord
 
 The niord project contains the common code-base for the NW + NM T&P editing and publishing system.
