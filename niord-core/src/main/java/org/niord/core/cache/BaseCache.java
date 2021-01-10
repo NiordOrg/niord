@@ -17,8 +17,6 @@ package org.niord.core.cache;
 
 import org.infinispan.Cache;
 import org.infinispan.configuration.cache.Configuration;
-import org.infinispan.configuration.global.GlobalConfiguration;
-import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.slf4j.Logger;
@@ -44,14 +42,10 @@ public abstract class BaseCache<K, V> {
     @PostConstruct
     public void initCacheContainer() {
         if (cacheContainer == null) {
-            GlobalConfiguration globalConfiguration = new GlobalConfigurationBuilder()
-                    .nonClusteredDefault() //Helper method that gets you a default constructed GlobalConfiguration, preconfigured for use in LOCAL mode
-                    .globalJmxStatistics().allowDuplicateDomains(true)
-                    .build(); //Builds  the GlobalConfiguration object
+            cacheContainer = new DefaultCacheManager();
+            cacheContainer.defineConfiguration(getCacheId(), createCacheConfiguration());
+            cacheContainer.start();
 
-            Configuration localConfiguration = createCacheConfiguration();
-
-            cacheContainer = new DefaultCacheManager(globalConfiguration, localConfiguration, true);
             log.info("Init cache container");
         }
     }

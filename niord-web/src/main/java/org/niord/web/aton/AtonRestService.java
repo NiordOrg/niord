@@ -17,7 +17,7 @@ package org.niord.web.aton;
 
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.security.annotation.SecurityDomain;
+import org.jboss.ejb3.annotation.SecurityDomain;
 import org.niord.core.aton.AtonDefaultsService;
 import org.niord.core.aton.AtonNode;
 import org.niord.core.aton.AtonSearchParams;

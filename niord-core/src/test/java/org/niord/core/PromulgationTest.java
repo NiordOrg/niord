@@ -17,6 +17,7 @@
 package org.niord.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import org.junit.Assert;
 import org.junit.Test;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
@@ -36,7 +37,10 @@ public class PromulgationTest {
         data.setTweet("Stein Bagger som president!");
 
         ObjectMapper mapper = new ObjectMapper();
-        //mapper.enableDefaultTypingAsProperty(ObjectMapper.DefaultTyping.JAVA_LANG_OBJECT, "@type");
+        mapper.setPolymorphicTypeValidator(BasicPolymorphicTypeValidator
+                .builder()
+                .allowIfBaseType(BaseMessagePromulgationVo.class)
+                .build());
         String json = mapper.writeValueAsString(data);
 
         System.out.println("JSON " + json);

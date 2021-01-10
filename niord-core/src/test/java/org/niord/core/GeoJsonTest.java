@@ -19,6 +19,7 @@ package org.niord.core;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
+import org.locationtech.jts.geom.Geometry;
 import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.geojson.JtsConverter;
 import org.niord.core.geojson.PlainTextConverter;
@@ -64,7 +65,7 @@ public class GeoJsonTest {
             geometry.visitCoordinates(counter);
             System.out.println("#coords = " + counter);
 
-            com.vividsolutions.jts.geom.Geometry jts = JtsConverter.toJts(geometry);
+            Geometry jts = JtsConverter.toJts(geometry);
             System.out.println("-> JTS " + jts);
             geometry = JtsConverter.fromJts(jts);
             System.out.println("<- JTS " + geometry);

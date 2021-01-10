@@ -16,6 +16,7 @@
 
 package org.niord.core.db;
 
+
 /**
  * Bizarrely, using the proper MySQL56SpatialDialect class (or MySQL56InnoDBSpatialDialect) will cause an error.
  * And, alas, MySQLSpatialDialect will not give very precise results, since is only matches the
@@ -30,15 +31,14 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.hibernate.boot.model.TypeContributions;
-import org.hibernate.dialect.MySQLDialect;
 import org.hibernate.dialect.function.StandardSQLFunction;
-
 import org.hibernate.service.ServiceRegistry;
 import org.hibernate.spatial.GeolatteGeometryType;
 import org.hibernate.spatial.JTSGeometryType;
 import org.hibernate.spatial.SpatialDialect;
 import org.hibernate.spatial.SpatialFunction;
 import org.hibernate.spatial.SpatialRelation;
+import org.hibernate.spatial.dialect.mysql.MySQL56SpatialDialect;
 import org.hibernate.spatial.dialect.mysql.MySQLGeometryTypeDescriptor;
 import org.hibernate.type.StandardBasicTypes;
 
@@ -47,13 +47,15 @@ import org.hibernate.type.StandardBasicTypes;
  *
  * @author Karel Maesen, Boni Gopalan
  */
-public class MySQLSpatialDialect extends MySQLDialect implements SpatialDialect {
+public class MySQLSpatialDialect extends MySQL56SpatialDialect implements SpatialDialect {
 
     /**
      * Constructs an instance
      */
     public MySQLSpatialDialect() {
         super();
+      //  registerColumnType(Types.NULL, "null");
+      //  registerHibernateType(Types.NULL, "null");
         registerColumnType(
                 MySQLGeometryTypeDescriptor.INSTANCE.getSqlType(),
                 "GEOMETRY"

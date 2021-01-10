@@ -18,7 +18,7 @@ package org.niord.web;
 
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.security.annotation.SecurityDomain;
+import org.jboss.ejb3.annotation.SecurityDomain;
 import org.niord.core.NiordApp;
 import org.niord.core.dictionary.DictionaryService;
 import org.niord.core.mail.Mail.MailRecipient;

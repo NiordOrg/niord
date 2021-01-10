@@ -15,10 +15,10 @@
  */
 package org.niord.web;
 
-import com.vividsolutions.jts.geom.Geometry;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.security.annotation.SecurityDomain;
+import org.jboss.ejb3.annotation.SecurityDomain;
+import org.locationtech.jts.geom.Geometry;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
