@@ -3,43 +3,7 @@
 
 The niord project contains the common code-base for the NW + NM T&P editing and publishing system.
 
-## Prerequisites
-
-* Java 11
-* Maven 3
-* Docker
-
-## Development setup
-
-In order to run Niord you will need both a Keycloak instance (for user management) and a Wildfly instance
-
-### Create Database
-
-The first step
-
-Create a database that 
-
-
-
-Create the initial database, one for the niord application and one for the standalone keycloak
-
-> docker exec -i niord-mysql mysql -uroot -pmysql < create-db.sql
-
-You can just ignore the warning message
-
-
-* MySQL 5.7.10+ (NB: proper spatial support is a requirement)
-* JBoss Wildfly 10+
-* JBoss Keycloak 1.9+
-
-The [niord-appsrv](https://github.com/NiordOrg/niord-appsrv) project contains scripts for installing and configuring 
-Wildfly + Keycloak for a development set-up.
-
-
-## Deployment
-
-Once Wildfly has been set up and configured, 
-
+http://docs.niord.org/dev-guide/guide.html describes how you set it up.
 
 ## Country-specific Implementations
 
