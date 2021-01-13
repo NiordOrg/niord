@@ -1,7 +1,9 @@
 [![Build Status](https://github.com/NiordOrg/niord/workflows/Java%20CI/badge.svg)](https://github.com/NiordOrg/niord/actions)
-# niord
+# Niord
 
-The niord project contains the common code-base for the NW + NM T&P editing and publishing system.
+The niord repository contains the common code-base for the NW + NM T&P editing and publishing system.
+
+## Development Setup
 
 To get started with developing Niord you need to check out the developer guide at 
 http://docs.niord.org/dev-guide/guide.html.
