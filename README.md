@@ -3,7 +3,8 @@
 
 The niord project contains the common code-base for the NW + NM T&P editing and publishing system.
 
-http://docs.niord.org/dev-guide/guide.html describes how you set it up.
+To get started with developing Niord you need to check out the developer guide at 
+http://docs.niord.org/dev-guide/guide.html.
 
 ## Country-specific Implementations
 
