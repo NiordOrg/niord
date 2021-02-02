@@ -27,6 +27,8 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * An AtoN OSM seamark node.
@@ -149,6 +151,20 @@ public class AtonNodeVo implements IJsonSerializable {
         result = 31 * result + (timestamp != null ? timestamp.hashCode() : 0);
         result = 31 * result + Arrays.hashCode(tags);
         return result;
+    }
+
+    /**
+     * Checks whether the current node is for a virtual AtoN.
+     * @return
+     */
+    public boolean isVAtoN() {
+        if(tags == null) {
+            return false;
+        }
+        return Stream.of(Optional.of(tags).orElse(new AtonTagVo[0]))
+                .filter(tag -> tag.k.equals("seamark:type") && tag.v.equals("virtual_aton"))
+                .findAny()
+                .isPresent();
     }
 
     /*************************/
