@@ -16,15 +16,14 @@
 
 package org.niord.web.aton;
 
+import javax.enterprise.context.ApplicationScoped;
+
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.eviction.EvictionStrategy;
-import org.infinispan.eviction.EvictionType;
 import org.infinispan.util.concurrent.IsolationLevel;
 import org.niord.core.cache.BaseCache;
-
-import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Provides a cache of blank tiles.
@@ -51,9 +50,11 @@ public class AtonBlankTileCache extends BaseCache<String, String> {
         return new ConfigurationBuilder()
                 .clustering().cacheMode(CacheMode.LOCAL)
                 .locking().isolationLevel(IsolationLevel.REPEATABLE_READ)
-                .eviction().type(EvictionType.COUNT).size(MAX_ENTRIES).strategy(EvictionStrategy.LRU)
+                //.eviction().type(EvictionType.COUNT).size(MAX_ENTRIES).strategy(EvictionStrategy.LRU)
+                .memory().maxCount(MAX_ENTRIES).whenFull(EvictionStrategy.REMOVE)
                 .expiration().lifespan(LIFESPAN)
                 .build();
     }
 
 }
+
