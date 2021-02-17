@@ -209,7 +209,7 @@ public class MessageTagService extends BaseService {
         criteriaHelper.equals(tagRoot.get("locked"), params.getLocked());
 
         // Type filtering
-        Set<MessageTagType> types = params.getTypes() != null ? params.getTypes() : new HashSet<>();
+        Set<MessageTagType> types = params.getTypes() != null ? new HashSet<>(params.getTypes()) : new HashSet<>();
         if (types.isEmpty()) {
             types.add(PUBLIC);
             types.add(DOMAIN);
