@@ -30,6 +30,7 @@ import org.niord.core.db.CriteriaHelper;
 import org.niord.core.db.SpatialWithinPredicate;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.service.BaseService;
+import org.niord.core.user.UserService;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
@@ -53,6 +54,9 @@ public class AtonService extends BaseService {
 
     @Inject
     private Logger log;
+
+    @Inject
+    private UserService userService;
 
     /*************************/
     /** NEW Aton Model      **/
@@ -110,6 +114,77 @@ public class AtonService extends BaseService {
      */
     public List<AtonNode> findByAtonUids(String... atonUids) {
         return findByTagValues(AtonTag.TAG_ATON_UID, atonUids);
+    }
+
+
+    /**
+     * Creates a new database entry for the provided AtoN.
+     * @param aton The AtoN to be created
+     * @return The created AtoN node object
+     */
+    public AtonNode createAton(AtonNode aton) throws Exception {
+        // Make sure a duplicate AtoN does not exist
+        AtonNode orig = findByAtonUid(aton.getAtonUid());
+        if (Objects.nonNull(orig)) {
+            throw new Exception("The AtoN cannot be created as it already exists");
+        }
+
+        // Make sure the AtoN's UID is valid
+        if(!checkAtonUID(aton)) {
+            throw new Exception("The UID of an AtoN should not be empty or with whitespaces.");
+        }
+
+        // Fill in the user information
+        Optional.of(this.userService.currentUser()).ifPresent(user -> {
+            aton.setUid(user.getId());
+            aton.setUser(user.getUsername());
+        });
+
+        // Persist the new object
+        em.persist(aton);
+
+        // And return the updated AtoN
+        return aton;
+    }
+
+
+    /**
+     * Updated an existing database entry for the provided AtoN.
+     * @param aton The AtoN to be updated
+     * @return The updated AtoN node object
+     */
+    public AtonNode updateAton(AtonNode aton) throws Exception {
+        // Find the original AtoN entry
+        AtonNode orig = findByAtonUid(aton.getAtonUid());
+        if (Objects.isNull(orig)) {
+            throw new Exception("The AtoN cannot be updated as it does not exist");
+        }
+
+        // Persist the new object
+        orig.updateNode(aton);
+        em.persist(orig);
+
+        // And return the updated AtoN
+        return orig;
+    }
+
+
+    /**
+     * Deletes the AtoN that matches the provided AtoN UID identifier.
+     * @param atonUid The UID of the AtoN to be deleted
+     */
+    public boolean deleteAton(String atonUid) throws Exception {
+        // Find the original AtoN entry
+        AtonNode orig = findByAtonUid(atonUid);
+        if (Objects.isNull(orig)) {
+            throw new Exception("The AtoN cannot be deleted as it does not exist");
+        }
+
+        // Delete the AtoN entry
+        em.remove(orig);
+
+        // Return success
+        return true;
     }
 
 
@@ -317,6 +392,25 @@ public class AtonService extends BaseService {
         return an.stream()
                 .map(BaseEntity::getId)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Checks whether the provided AtoN's UID conforms to the norms. That is
+     * non empty and without whitespaces.
+     * @param aton The AtoN whose UID will be checked
+     * @return Whether the AtoN's UID conforms to the norms
+     */
+    private boolean checkAtonUID(AtonNode aton) {
+        // Check that the UID is not null
+        if(StringUtils.trimToNull(aton.getAtonUid()) == null) {
+            return false;
+        }
+        // Check that we don't have any white spaces
+        if(!aton.getAtonUid().matches("\\S+")) {
+            return false;
+        }
+        // Return success
+        return true;
     }
 
 }
