@@ -46,6 +46,10 @@ public class AtonIconRenderer {
 		Arrays.stream(aton.getTags()).forEach(t -> map.addTag(t.getK(), t.getV()));
 		map.tagsDone(0);
 
+		// VAtoN are slightly bigger so be mindful
+		int zoom = 16;
+		double factor = (aton.isVAtoN()? 0.72 : 1.16) * s / Renderer.symbolScale[zoom];
+
 		if ("PNG".equalsIgnoreCase(format)) {
 
             BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
@@ -54,8 +58,8 @@ public class AtonIconRenderer {
 			Renderer.reRender(
                     g2,
                     new Rectangle(x, y, w, h),
-                    16,
-                    s / Renderer.symbolScale[16],
+					zoom,
+					factor,
                     map,
                     new Context(w, h, x, y));
 
@@ -73,8 +77,8 @@ public class AtonIconRenderer {
 				Renderer.reRender(
                         svgGenerator,
                         new Rectangle(x, y, w, h),
-                        16,
-                        s / Renderer.symbolScale[16],
+						zoom,
+						factor,
                         map,
                         new Context(w, h, x, y));
 
@@ -109,6 +113,8 @@ public class AtonIconRenderer {
 		public boolean clip() {
 			return false;
 		}
+
+		public int grid() { return 0; }
 
 		public Color background(S57map map) {
 			return new Color(0, true);

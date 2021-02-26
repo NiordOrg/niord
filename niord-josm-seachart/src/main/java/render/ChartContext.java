@@ -13,14 +13,24 @@ import java.awt.Color;
 import java.awt.geom.Point2D;
 
 import s57.S57map;
-import s57.S57map.*;
+import s57.S57map.Feature;
+import s57.S57map.Snode;
 
+/**
+ * @author Malcolm Herring
+ */
 public interface ChartContext {
-	public enum RuleSet { ALL, BASE, SEAMARK }
+	enum RuleSet { ALL, BASE, SEAMARK }
 
 	Point2D getPoint(Snode coord);
+
 	double mile(Feature feature);
+
 	boolean clip();
+
+	int grid();
+
 	Color background(S57map map);
+
 	RuleSet ruleset();
 }

@@ -11,13 +11,27 @@ package s57;
 
 import java.util.ArrayList;
 
-import s57.S57map.*;
-import s57.S57obj.*;
+import s57.S57map.AttMap;
+import s57.S57map.Edge;
+import s57.S57map.Feature;
+import s57.S57map.ObjTab;
+import s57.S57map.Pflag;
+import s57.S57map.Prim;
+import s57.S57map.Rflag;
+import s57.S57map.Snode;
+import s57.S57obj.Obj;
 
-public class S57box { //S57 bounding box truncation
-	
-	enum Ext {I, N, W, S, E }
-	
+/**
+ * @author Malcolm Herring
+ */
+public final class S57box { //S57 bounding box truncation
+	private S57box() {
+		// Hide default constructor for utilities classes
+	}
+	// CHECKSTYLE.OFF: LineLength
+
+	enum Ext { I, N, W, S, E }
+
 	static Ext getExt(S57map map, double lat, double lon) {
 		if ((lat >= map.bounds.maxlat) && (lon < map.bounds.maxlon)) {
 			return Ext.N;
@@ -27,9 +41,10 @@ public class S57box { //S57 bounding box truncation
 			return Ext.S;
 		} else if (lon >= map.bounds.maxlon) {
 			return Ext.E;
-		}		return Ext.I;
+		}
+		return Ext.I;
 	}
-	
+
 	public static void bBox(S57map map) {
 		/* Truncations
 		 * Points: delete point features outside BB
@@ -54,6 +69,7 @@ public class S57box { //S57 bounding box truncation
 				sbound = ebound = Ext.I;
 			}
 		}
+
 		if (map.features.get(Obj.COALNE) != null) {
 			ArrayList<Feature> coasts = new ArrayList<>();
 			ArrayList<Land> lands = new ArrayList<>();
@@ -61,12 +77,12 @@ public class S57box { //S57 bounding box truncation
 				map.features.put(Obj.LNDARE, new ArrayList<Feature>());
 			}
 			for (Feature feature : map.features.get(Obj.COALNE)) {
-				Feature land = map.new Feature();
+				Feature land = new Feature();
 				land.id = ++map.xref;
 				land.type = Obj.LNDARE;
 				land.reln = Rflag.MASTER;
-				land.objs.put(Obj.LNDARE, map.new ObjTab());
-				land.objs.get(Obj.LNDARE).put(0, map.new AttMap());
+				land.objs.put(Obj.LNDARE, new ObjTab());
+				land.objs.get(Obj.LNDARE).put(0, new AttMap());
 				if (feature.geom.prim == Pflag.AREA) {
 					land.geom = feature.geom;
 					map.features.get(Obj.LNDARE).add(land);
@@ -133,41 +149,39 @@ public class S57box { //S57 bounding box truncation
 				lands.remove(island);
 			}
 			for (Land land : lands) {
-				Edge nedge = map.new Edge();
+				Edge nedge = new Edge();
 				nedge.first = land.last;
 				nedge.last = land.first;
 				Ext bound = land.ebound;
 				while (bound != land.sbound) {
 					switch (bound) {
-					case N:
-						nedge.nodes.add(1l);
-						bound = Ext.W;
-						break;
-					case W:
-						nedge.nodes.add(2l);
-						bound = Ext.S;
-						break;
-					case S:
-						nedge.nodes.add(3l);
-						bound = Ext.E;
-						break;
-					case E:
-						nedge.nodes.add(4l);
-						bound = Ext.N;
-						break;
-					default:
-						continue;
+						case N:
+							nedge.nodes.add(1L);
+							bound = Ext.W;
+							break;
+						case W:
+							nedge.nodes.add(2L);
+							bound = Ext.S;
+							break;
+						case S:
+							nedge.nodes.add(3L);
+							bound = Ext.E;
+							break;
+						case E:
+							nedge.nodes.add(4L);
+							bound = Ext.N;
+							break;
+						default:
+							continue;
 					}
 				}
 				map.edges.put(++map.xref, nedge);
-				land.land.geom.elems.add(map.new Prim(map.xref));
+				land.land.geom.elems.add(new Prim(map.xref));
 				land.land.geom.comps.get(0).size++;
 				land.land.geom.prim = Pflag.AREA;
 				map.features.get(Obj.LNDARE).add(land.land);
 			}
 		}
 		return;
-
 	}
-
 }
