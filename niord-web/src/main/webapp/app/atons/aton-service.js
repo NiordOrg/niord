@@ -72,9 +72,9 @@ angular.module('niord.atons')
             /** Compute which icon to display for a given AtoN */
             getAtonOLIcon: function(aton, zoom) {
                 var iconUrl = computeAtonIconUrl(aton);
-                var scale = Math.min(1.0, Math.max(0.7, zoom / 20.0));
+                var scale = Math.min(1.0, Math.max(0.8, zoom / 20.0));
                 return new ol.style.Icon({
-                    anchor: [ 0.33333333, 0.666666667 ],
+                    anchor: [ 0.5, 0.5 ],
                     scale: scale,
                     opacity: 1.0,
                     src: iconUrl
@@ -86,7 +86,7 @@ angular.module('niord.atons')
             getAtonSelectionOLIcon: function() {
                 return new ol.style.Icon({
                     anchor: [0.5, 0.5],
-                    scale: 0.2,
+                    scale: 0.35,
                     opacity: 1.0,
                     src: '/img/aton/select.png'
                 })
