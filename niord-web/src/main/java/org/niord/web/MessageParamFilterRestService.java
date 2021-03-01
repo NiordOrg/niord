@@ -26,6 +26,7 @@ import org.niord.core.user.UserService;
 import org.niord.core.message.vo.MessageParamFilterVo;
 import org.slf4j.Logger;
 
+import javax.annotation.security.PermitAll;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -45,6 +46,7 @@ import java.util.stream.Collectors;
 @Path("/filters")
 @Stateless
 @SecurityDomain("keycloak")
+@PermitAll
 public class MessageParamFilterRestService {
 
     @Inject
@@ -99,7 +101,7 @@ public class MessageParamFilterRestService {
 
     /** Creates a new filter from the given template */
     @POST
-    @Path("/filter/")
+    @Path("/filter")
     @Consumes("application/json;charset=UTF-8")
     @Produces("application/json;charset=UTF-8")
     @GZIP
