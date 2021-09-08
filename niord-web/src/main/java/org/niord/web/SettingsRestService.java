@@ -113,9 +113,14 @@ public class SettingsRestService extends AbstractBatchableRestService {
     @Consumes("application/json")
     @Produces("application/json")
     public SettingVo updateSetting(@PathParam("key") String key, SettingVo settingVo) throws Exception {
+<<<<<<< HEAD
         String voKey = settingVo.getKey();
         if (!Objects.equals(key, voKey)) {
             log.info("key=" + key + ", settingVo.key=" + voKey);
+=======
+        if (!Objects.equals(key, settingVo.getKey())) {
+            log.error("key=" + key + ", settingVo.key=" + settingVo.getKey());
+>>>>>>> 4587be543f9e7e3e5332cc323ba6fbdf15b290cb
             throw new WebApplicationException(400);
         }
         Setting setting = settingVo.toEntity();
