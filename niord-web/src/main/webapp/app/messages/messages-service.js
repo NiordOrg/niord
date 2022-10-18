@@ -23,8 +23,8 @@ angular.module('niord.messages')
     /**
      * Interface for calling the application server
      */
-    .factory('MessageService', [ '$rootScope', '$state', '$http', '$window', '$uibModal', 'AnalyticsService',
-        function($rootScope, $state, $http, $window, $uibModal, AnalyticsService) {
+    .factory('MessageService', [ '$rootScope', '$http', '$window', '$uibModal',
+        function($rootScope, $http, $window, $uibModal) {
         'use strict';
 
         function extractMessageIds(messages) {
@@ -544,12 +544,7 @@ angular.module('niord.messages')
                 var that = this;
                 that.messagePrintDialog(1, false).result
                     .then(function (printParams) {
-                        var url = '/rest/message-reports/message/' + messageId + '.pdf?' + printParams;
-
-                        // Log the event to Google Analytics
-                        AnalyticsService.logEvent('PDF', 'generate-list-report', url);
-
-                        $window.location = url;
+                        $window.location = '/rest/message-reports/message/' + messageId + '.pdf?' + printParams;
                     });
             },
 

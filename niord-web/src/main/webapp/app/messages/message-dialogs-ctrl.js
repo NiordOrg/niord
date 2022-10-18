@@ -23,10 +23,8 @@ angular.module('niord.messages')
     /*******************************************************************
      * Controller that handles displaying message details in a dialog
      *******************************************************************/
-    .controller('MessageDialogCtrl', ['$scope', '$window', 'growl', 'MessageService', 'AnalyticsService',
-                'messageId', 'messages', 'selection',
-        function ($scope, $window, growl, MessageService, AnalyticsService,
-                  messageId, messages, selection) {
+    .controller('MessageDialogCtrl', ['$scope', '$window', 'growl', 'MessageService', 'messageId', 'messages', 'selection',
+        function ($scope, $window, growl, MessageService, messageId, messages, selection) {
             'use strict';
 
             $scope.warning = undefined;
@@ -107,9 +105,6 @@ angular.module('niord.messages')
                             })
                         }
 
-                        // Log the event to Google Analytics
-                        var label = $scope.msg.shortId || $scope.msg.id;
-                        AnalyticsService.logEvent('Message', 'show-details', label);
                     })
                     .error(function () {
                         $scope.msg = undefined;
