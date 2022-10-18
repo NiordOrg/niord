@@ -15,7 +15,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jboss.bom.version>13.0.0.Final</jboss.bom.version>
         <keycloak.version>11.0.2</keycloak.version>
-        <jackson.version>2.12.1</jackson.version>
+        <jackson.version>2.13.4.1</jackson.version>
         <swagger.version>1.6.2</swagger.version>
         <batik.version>1.13</batik.version>
     </properties>
