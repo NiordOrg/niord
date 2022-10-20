@@ -29,8 +29,10 @@ stages:
         - task: Bash@3
           inputs:
             targetType: 'inline'
-            script: 'git clone https://github.com/NiordOrg/niord.git'
-        # - checkout: niord
+            script: |
+              echo $(Build.SourceBranch).
+              git clone -b origin/ $(Build.SourceBranch) https://github.com/NiordOrg/niord.git
+              git status
         - task: Maven@3
           inputs:
             mavenPomFile: 'pom.xml'
