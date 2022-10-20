@@ -17,11 +17,11 @@
 # - master
 
 stages:
-  - stage: Build niord a
-    displayName: Build niord stage
+  - stage: Build_niord
+    displayName: Build niord application
     jobs:
     - job: Building_niord_job
-
+      displayName: Build niord
       pool:
         vmImage: ubuntu-latest
 
