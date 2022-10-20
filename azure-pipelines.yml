@@ -26,18 +26,33 @@ stages:
         vmImage: ubuntu-latest
 
       steps:
+        - script: 'wget https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip'
+
+        - task: ExtractFiles@1
+          displayName: 'Unzip Maven'
+          inputs:
+              archiveFilePatterns: 'apache-maven-3.6.3-bin.zip'
+              destinationFolder: '$(build.sourcesdirectory)/maven'
+
+        - task: Maven@3
+          displayName: 'Build niord using mvn 3.6.3'
+          inputs:
+            mavenPomFile: 'pom.xml'
+            mavenOptions: '-Xmx3072m'
+            javaHomeOption: 'JDKVersion'
+            jdkVersionOption: '1.11'
+            jdkArchitectureOption: 'x64'
+            mavenVersionOption: 'Path'
+            mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
+            mavenSetM2Home: true
+            publishJUnitResults: true
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            goals: 'package'
         - task: Bash@3
           inputs:
             targetType: 'inline'
             script: |
-              mvn --version
-              java -version
-              # git clone -b origin/ $(Build.SourceBranch) https://github.com/NiordOrg/niord.git
-              # git status
-        - task: Bash@3
-          inputs:
-            targetType: 'inline'
-            script: 'sudo mvn clean install'
+              sudo mvn clean install
         - task: Maven@3
           inputs:
             mavenPomFile: 'pom.xml'
