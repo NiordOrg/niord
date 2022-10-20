@@ -26,7 +26,11 @@ stages:
         vmImage: ubuntu-latest
 
       steps:
-        - script: 'wget https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip'
+        - task: Bash@3
+          displayName: Download Maven
+          inputs:
+            targetType: 'inline'
+            script: 'wget https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip'
 
         - task: ExtractFiles@1
           displayName: 'Unzip Maven'
@@ -35,7 +39,7 @@ stages:
               destinationFolder: '$(build.sourcesdirectory)/maven'
 
         - task: Maven@3
-          displayName: 'Build niord using mvn 3.6.3'
+          displayName: 'Build niord'
           retryCountOnTaskFailure: 3
           inputs:
             mavenPomFile: 'pom.xml'
@@ -57,7 +61,7 @@ stages:
             script: |
               ls -R
         - task: Bash@3
-          displayName: Clone niord dk repo
+          displayName: Clone niord-dk repo
           inputs:
             targetType: 'inline'
             script: 'git clone https://github.com/NiordOrg/niord-dk.git'
@@ -69,19 +73,12 @@ stages:
               ls -R
               echo " "
               ls $(build.sourcesdirectory)/maven/apache-maven-3.6.3
-        - script: 'wget https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip'
-
-        - task: ExtractFiles@1
-          displayName: 'Unzip Maven'
-          inputs:
-              archiveFilePatterns: 'apache-maven-3.6.3-bin.zip'
-              destinationFolder: '$(build.sourcesdirectory)/maven'
-
+        
         - task: Maven@3
-          displayName: 'Build niord using mvn 3.6.3'
+          displayName: 'Build niord-dk'
           retryCountOnTaskFailure: 3
           inputs:
-            mavenPomFile: 'pom.xml'
+            mavenPomFile: './niord-dk/pom.xml'
             mavenOptions: '-Xmx3072m'
             javaHomeOption: 'JDKVersion'
             jdkVersionOption: '1.11'
