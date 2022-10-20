@@ -1,9 +1,9 @@
-resources:
-  repositories:
-  - repository: niord # The name used to reference this repository in the checkout step
-    type: github
-    endpoint: https://github.com/NiordOrg/niord.git
-    name: niord
+# resources:
+#   repositories:
+#   - repository: niord # The name used to reference this repository in the checkout step
+#     type: github
+#     endpoint: https://github.com/NiordOrg/niord.git
+#     name: niord
   # - repository: niord-dk
   #   type: github
   #   endpoint: https://github.com/NiordOrg/niord-dk.git
@@ -26,7 +26,11 @@ stages:
         vmImage: ubuntu-latest
 
       steps:
-        - checkout: niord
+        - task: Bash@3
+          inputs:
+            targetType: 'inline'
+            script: 'git clone https://github.com/NiordOrg/niord.git'
+        # - checkout: niord
         - task: Maven@3
           inputs:
             mavenPomFile: 'pom.xml'
