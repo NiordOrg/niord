@@ -22,71 +22,56 @@ stages:
           inputs:
               archiveFilePatterns: 'apache-maven-3.6.3-bin.zip'
               destinationFolder: '$(build.sourcesdirectory)/maven'
-        - task: Bash@3
-          displayName: 'Build replacement'
+        - task: Maven@3
+          displayName: 'Build niord'
+          retryCountOnTaskFailure: 3
           inputs:
-            targetType: 'inline'
-            script: |
-              echo "Build replacement"
-              mkdir target
-              touch ./target/output.txt
-        - task: Bash@3
-          displayName: DEBUG
-          inputs:
-            targetType: 'inline'
-            script: |
-              ls -R
-        # - task: Maven@3
-        #   displayName: 'Build niord'
-        #   retryCountOnTaskFailure: 3
-        #   inputs:
-        #     mavenPomFile: 'pom.xml'
-        #     mavenOptions: '-Xmx3072m'
-        #     javaHomeOption: 'JDKVersion'
-        #     jdkVersionOption: '1.11'
-        #     jdkArchitectureOption: 'x64'
-        #     mavenVersionOption: 'Path'
-        #     mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
-        #     mavenSetM2Home: true
-        #     publishJUnitResults: true
-        #     testResultsFiles: '**/surefire-reports/TEST-*.xml'
-        #     goals: 'clean install'
+            mavenPomFile: 'pom.xml'
+            mavenOptions: '-Xmx3072m'
+            javaHomeOption: 'JDKVersion'
+            jdkVersionOption: '1.11'
+            jdkArchitectureOption: 'x64'
+            mavenVersionOption: 'Path'
+            mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
+            mavenSetM2Home: true
+            publishJUnitResults: true
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            goals: 'clean install'
 
-    - job: Building_niord_dk_job
-      dependsOn: Building_niord_job
-      displayName: Build niord-dk
-      pool:
-        vmImage: ubuntu-latest
-
-      steps:
         - task: Bash@3
           displayName: Clone niord-dk repo
           inputs:
             targetType: 'inline'
             script: 'git clone https://github.com/NiordOrg/niord-dk.git'
+        
+        - task: Maven@3
+          displayName: 'Build niord-dk'
+          retryCountOnTaskFailure: 3
+          inputs:
+            mavenPomFile: './niord-dk/pom.xml'
+            mavenOptions: '-Xmx3072m'
+            javaHomeOption: 'JDKVersion'
+            jdkVersionOption: '1.11'
+            jdkArchitectureOption: 'x64'
+            mavenVersionOption: 'Path'
+            mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
+            mavenSetM2Home: true
+            publishJUnitResults: true
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            goals: '-P dist clean install'
+            
         - task: Bash@3
-          displayName: DEBUG
           inputs:
             targetType: 'inline'
-            script: |
-              ls -R
-              ls -R $(Build.ArtifactStagingDirectory)
-        
-        # - task: Maven@3
-        #   displayName: 'Build niord-dk'
-        #   retryCountOnTaskFailure: 3
-        #   inputs:
-        #     mavenPomFile: './niord-dk/pom.xml'
-        #     mavenOptions: '-Xmx3072m'
-        #     javaHomeOption: 'JDKVersion'
-        #     jdkVersionOption: '1.11'
-        #     jdkArchitectureOption: 'x64'
-        #     mavenVersionOption: 'Path'
-        #     mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
-        #     mavenSetM2Home: true
-        #     publishJUnitResults: true
-        #     testResultsFiles: '**/surefire-reports/TEST-*.xml'
-        #     goals: '-P dist clean install'
+            script: 'ls -R'
+          
+        - task: CopyFiles@2
+          inputs:
+            SourceFolder: './niord-dk/niord-dk-web/target'
+            Contents: 'niord-dk-web.war'
+            TargetFolder: '$(Build.ArtifactStagingDirectory)'
+            OverWrite: true
+            
   - stage: Build_Wildfly
     displayName: Build Wildfly
     jobs:
