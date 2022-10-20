@@ -30,6 +30,12 @@ stages:
               echo "Build replacement"
               mkdir target
               touch ./target/output.txt
+        - task: Bash@3
+          displayName: DEBUG
+          inputs:
+            targetType: 'inline'
+            script: |
+              ls -R
         # - task: Maven@3
         #   displayName: 'Build niord'
         #   retryCountOnTaskFailure: 3
@@ -64,6 +70,7 @@ stages:
             targetType: 'inline'
             script: |
               ls -R
+              ls -R $(Build.ArtifactStagingDirectory)
         
         # - task: Maven@3
         #   displayName: 'Build niord-dk'
