@@ -1,9 +1,9 @@
 resources:
   repositories:
-  - repository: https://github.com/NiordOrg/niord # The name used to reference this repository in the checkout step
+  - repository: niord # The name used to reference this repository in the checkout step
     type: github
-    endpoint: Niord(2)
-    name: NiordOrg/niord
+    endpoint: https://github.com/NiordOrg/niord.git
+    name: niord
   # - repository: niord-dk
   #   type: github
   #   endpoint: https://github.com/NiordOrg/niord-dk.git
