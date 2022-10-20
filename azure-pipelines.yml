@@ -26,26 +26,6 @@ stages:
         vmImage: ubuntu-latest
 
       steps:
-        - task: Bash@3
-          displayName: DEBUG
-          inputs:
-            targetType: 'inline'
-            script: |
-              ls -R
-        - task: Bash@3
-          displayName: Clone niord dk repo
-          inputs:
-            targetType: 'inline'
-            script: 'git clone https://github.com/NiordOrg/niord-dk.git'
-        - task: Bash@3
-          displayName: DEBUG
-          inputs:
-            targetType: 'inline'
-            script: |
-              ls -R
-              echo " "
-              ls $(build.sourcesdirectory)/maven/apache-maven-3.6.3
-
         - script: 'wget https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip'
 
         - task: ExtractFiles@1
@@ -76,6 +56,25 @@ stages:
         vmImage: ubuntu-latest
 
       steps:
+        - task: Bash@3
+          displayName: DEBUG
+          inputs:
+            targetType: 'inline'
+            script: |
+              ls -R
+        - task: Bash@3
+          displayName: Clone niord dk repo
+          inputs:
+            targetType: 'inline'
+            script: 'git clone https://github.com/NiordOrg/niord-dk.git'
+        - task: Bash@3
+          displayName: DEBUG
+          inputs:
+            targetType: 'inline'
+            script: |
+              ls -R
+              echo " "
+              ls $(build.sourcesdirectory)/maven/apache-maven-3.6.3
         - script: 'wget https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip'
 
         - task: ExtractFiles@1
