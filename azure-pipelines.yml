@@ -47,12 +47,6 @@ stages:
 
       steps:
         - task: Bash@3
-          displayName: DEBUG
-          inputs:
-            targetType: 'inline'
-            script: |
-              ls -R
-        - task: Bash@3
           displayName: Clone niord-dk repo
           inputs:
             targetType: 'inline'
@@ -63,8 +57,6 @@ stages:
             targetType: 'inline'
             script: |
               ls -R
-              echo " "
-              ls $(build.sourcesdirectory)/maven/apache-maven-3.6.3
         
         - task: Maven@3
           displayName: 'Build niord-dk'
