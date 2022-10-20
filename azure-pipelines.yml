@@ -17,7 +17,7 @@
 # - master
 
 stages:
-  - stage: Build_niord_stage
+  - stage: Build niord a
     displayName: Build niord stage
     jobs:
     - job: Building_niord_job
@@ -30,9 +30,10 @@ stages:
           inputs:
             targetType: 'inline'
             script: |
-              echo $(Build.SourceBranch).
-              git clone -b origin/ $(Build.SourceBranch) https://github.com/NiordOrg/niord.git
-              git status
+              mvn --version
+              java -version
+              # git clone -b origin/ $(Build.SourceBranch) https://github.com/NiordOrg/niord.git
+              # git status
         - task: Maven@3
           inputs:
             mavenPomFile: 'pom.xml'
