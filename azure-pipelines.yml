@@ -2,14 +2,14 @@ resources:
   repositories:
   - repository: niord # The name used to reference this repository in the checkout step
     type: github
-    endpoint: https://github.com/NiordOrg
+    endpoint: https://github.com/NiordOrg/niord.git
     name: NiordOrg/niord
   - repository: niord-dk
     type: github
-    endpoint: https://github.com/NiordOrg
+    endpoint: https://github.com/NiordOrg/niord-dk.git
     name: NiordOrg/niord-dk
   - repository: MyAzureReposGitRepository # In a different organization
-    endpoint: https://github.com/NiordOrg
+    endpoint: https://github.com/NiordOrg/niord-wildfly.git
     type: github
     name: NiordOrg/niord-wildfly
 
