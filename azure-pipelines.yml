@@ -34,6 +34,10 @@ stages:
               java -version
               # git clone -b origin/ $(Build.SourceBranch) https://github.com/NiordOrg/niord.git
               # git status
+        - task: Bash@3
+          inputs:
+            targetType: 'inline'
+            script: 'sudo mvn clean install'
         - task: Maven@3
           inputs:
             mavenPomFile: 'pom.xml'
