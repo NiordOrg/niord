@@ -18,7 +18,7 @@
 
 stages:
   - stage: Build_niord
-    displayName: Build niord application
+    displayName: Build niord application(niord -> niord-dk)
     jobs:
     - job: Building_niord_job
       displayName: Build niord
@@ -50,12 +50,6 @@ stages:
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
             goals: 'clean install'
 
-    - job: Building_niord_dk_job
-      displayName: Build niord-dk
-      pool:
-        vmImage: ubuntu-latest
-
-      steps:
         - task: Bash@3
           displayName: DEBUG
           inputs:
