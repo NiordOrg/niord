@@ -17,7 +17,7 @@
 # - master
 
 stages:
-  - stage: Build niord stage
+  - stage: Build_niord_stage
     displayName: Build niord stage
     jobs:
     - job: Building-niord-job
