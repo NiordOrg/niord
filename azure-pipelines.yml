@@ -1,22 +1,20 @@
 resources:
   repositories:
-  - repository: niord # The name used to reference this repository in the checkout step
+  - repository: https://github.com/NiordOrg/niord # The name used to reference this repository in the checkout step
     type: github
-    endpoint: https://github.com/NiordOrg/niord.git
+    endpoint: Niord(2)
     name: NiordOrg/niord
-  - repository: niord-dk
-    type: github
-    endpoint: https://github.com/NiordOrg/niord-dk.git
-    name: NiordOrg/niord-dk
-  - repository: MyAzureReposGitRepository # In a different organization
-    endpoint: https://github.com/NiordOrg/niord-wildfly.git
-    type: github
-    name: NiordOrg/niord-wildfly
+  # - repository: niord-dk
+  #   type: github
+  #   endpoint: https://github.com/NiordOrg/niord-dk.git
+  #   name: NiordOrg/niord-dk
+  # - repository: MyAzureReposGitRepository # In a different organization
+  #   endpoint: https://github.com/NiordOrg/niord-wildfly.git
+  #   type: github
+  #   name: NiordOrg/niord-wildfly
 
-trigger:
-- master
-
-
+# trigger:
+# - master
 
 stages:
   - stage: Build niord stage
