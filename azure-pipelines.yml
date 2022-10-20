@@ -68,7 +68,7 @@ stages:
             mavenSetM2Home: true
             publishJUnitResults: true
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
-            goals: 'clean package'
+            goals: 'clean install'
 
     - job: Building_niord_dk_job
       displayName: Build niord-dk
@@ -98,4 +98,4 @@ stages:
             mavenSetM2Home: true
             publishJUnitResults: true
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
-            goals: '-P dist clean package'
+            goals: '-P dist clean install'
