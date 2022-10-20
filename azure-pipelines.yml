@@ -20,7 +20,7 @@ stages:
   - stage: Build_niord_stage
     displayName: Build niord stage
     jobs:
-    - job: Building-niord-job
+    - job: Building_niord_job
 
       pool:
         vmImage: ubuntu-latest
