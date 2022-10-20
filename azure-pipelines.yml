@@ -22,22 +22,29 @@ stages:
           inputs:
               archiveFilePatterns: 'apache-maven-3.6.3-bin.zip'
               destinationFolder: '$(build.sourcesdirectory)/maven'
-
-        - task: Maven@3
-          displayName: 'Build niord'
-          retryCountOnTaskFailure: 3
+        - task: Bash@3
+          displayName: 'Build replacement'
           inputs:
-            mavenPomFile: 'pom.xml'
-            mavenOptions: '-Xmx3072m'
-            javaHomeOption: 'JDKVersion'
-            jdkVersionOption: '1.11'
-            jdkArchitectureOption: 'x64'
-            mavenVersionOption: 'Path'
-            mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
-            mavenSetM2Home: true
-            publishJUnitResults: true
-            testResultsFiles: '**/surefire-reports/TEST-*.xml'
-            goals: 'clean install'
+            targetType: 'inline'
+            script: |
+              echo "Build replacement"
+              mkdir target
+              touch ./target/output.txt
+        # - task: Maven@3
+        #   displayName: 'Build niord'
+        #   retryCountOnTaskFailure: 3
+        #   inputs:
+        #     mavenPomFile: 'pom.xml'
+        #     mavenOptions: '-Xmx3072m'
+        #     javaHomeOption: 'JDKVersion'
+        #     jdkVersionOption: '1.11'
+        #     jdkArchitectureOption: 'x64'
+        #     mavenVersionOption: 'Path'
+        #     mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
+        #     mavenSetM2Home: true
+        #     publishJUnitResults: true
+        #     testResultsFiles: '**/surefire-reports/TEST-*.xml'
+        #     goals: 'clean install'
 
     - job: Building_niord_dk_job
       dependsOn: Building_niord_job
@@ -58,18 +65,57 @@ stages:
             script: |
               ls -R
         
-        - task: Maven@3
-          displayName: 'Build niord-dk'
-          retryCountOnTaskFailure: 3
+        # - task: Maven@3
+        #   displayName: 'Build niord-dk'
+        #   retryCountOnTaskFailure: 3
+        #   inputs:
+        #     mavenPomFile: './niord-dk/pom.xml'
+        #     mavenOptions: '-Xmx3072m'
+        #     javaHomeOption: 'JDKVersion'
+        #     jdkVersionOption: '1.11'
+        #     jdkArchitectureOption: 'x64'
+        #     mavenVersionOption: 'Path'
+        #     mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
+        #     mavenSetM2Home: true
+        #     publishJUnitResults: true
+        #     testResultsFiles: '**/surefire-reports/TEST-*.xml'
+        #     goals: '-P dist clean install'
+  - stage: Build_Wildfly
+    displayName: Build Wildfly
+    jobs:
+    - job: Build_wildfly
+      displayName: Build wildfly
+      pool:
+        vmImage: ubuntu-latest
+
+      steps:
+      - task: Bash@3
+        displayName: Clone niord-wildfly repo
+        inputs:
+          targetType: 'inline'
+          script: 'git clone https://github.com/NiordOrg/niord-wildfly.git'
+      - task: Bash@3
+        displayName: Build wildfly
+        inputs:
+          targetType: 'inline'
+          script: './niord-wildfly/build/build-wildfly.sh'
+
+
+    - job: cp_niord_war
+      dependsOn: Build_wildfly
+      displayName: Copy niord image to wildfly
+      pool:
+        vmImage: ubuntu-latest
+        
+      steps:
+        - task: Bash@3
+          displayName: DEBUG
           inputs:
-            mavenPomFile: './niord-dk/pom.xml'
-            mavenOptions: '-Xmx3072m'
-            javaHomeOption: 'JDKVersion'
-            jdkVersionOption: '1.11'
-            jdkArchitectureOption: 'x64'
-            mavenVersionOption: 'Path'
-            mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
-            mavenSetM2Home: true
-            publishJUnitResults: true
-            testResultsFiles: '**/surefire-reports/TEST-*.xml'
-            goals: '-P dist clean install'
+            targetType: 'inline'
+            script: |
+              ls -R
+        - task: Bash@3
+          displayName: Copy script
+          inputs:
+            targetType: 'inline'
+            script: 'cp ./niord-dk/niord-dk-web/target/niord-dk-web.war ./niord-wildfly/wildfly-$(wildflu_version).Final/standalone/deployments/'
