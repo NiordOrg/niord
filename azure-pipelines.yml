@@ -1,18 +1,3 @@
-# resources:
-#   repositories:
-#   - repository: niord # The name used to reference this repository in the checkout step
-#     type: github
-#     endpoint: https://github.com/NiordOrg/niord.git
-#     name: niord
-  # - repository: niord-dk
-  #   type: github
-  #   endpoint: https://github.com/NiordOrg/niord-dk.git
-  #   name: NiordOrg/niord-dk
-  # - repository: MyAzureReposGitRepository # In a different organization
-  #   endpoint: https://github.com/NiordOrg/niord-wildfly.git
-  #   type: github
-  #   name: NiordOrg/niord-wildfly
-
 # trigger:
 # - master
 
@@ -54,6 +39,13 @@ stages:
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
             goals: 'clean install'
 
+    - job: Building_niord_dk_job
+      dependsOn: Building_niord_job
+      displayName: Build niord-dk
+      pool:
+        vmImage: ubuntu-latest
+
+      steps:
         - task: Bash@3
           displayName: DEBUG
           inputs:
