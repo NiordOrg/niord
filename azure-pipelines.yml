@@ -1,0 +1,42 @@
+resources:
+  repositories:
+  - repository: niord # The name used to reference this repository in the checkout step
+    type: github
+    endpoint: https://github.com/NiordOrg
+    name: NiordOrg/niord
+  - repository: niord-dk
+    type: github
+    endpoint: https://github.com/NiordOrg
+    name: NiordOrg/niord-dk
+  - repository: MyAzureReposGitRepository # In a different organization
+    endpoint: https://github.com/NiordOrg
+    type: github
+    name: NiordOrg/niord-wildfly
+
+trigger:
+- master
+
+
+
+stages:
+  - stage: Build niord stage
+    displayName: Build niord stage
+    jobs:
+    - job: Building-niord-job
+
+      pool:
+        vmImage: ubuntu-latest
+
+      steps:
+        - checkout: niord
+        - task: Maven@3
+          inputs:
+            mavenPomFile: 'pom.xml'
+            mavenOptions: '-Xmx3072m'
+            javaHomeOption: 'JDKVersion'
+            jdkVersionOption: '1.8'
+            jdkArchitectureOption: 'x64'
+            publishJUnitResults: true
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            goals: 'package'
+
