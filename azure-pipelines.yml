@@ -74,7 +74,7 @@ stages:
         - task: PublishPipelineArtifact@1
           inputs:
             targetPath: ./niord-dk/niord-dk-web/target
-            artifactName: app
+            artifactName: niordDKBuild
 
 
   - stage: Build_Wildfly
