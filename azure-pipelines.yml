@@ -68,8 +68,9 @@ stages:
           inputs:
             targetType: 'inline'
             script: |
-              mkdir -p niord-dk/niord-dk-web/target/
-              touch ./niord-dk/niord-dk-web/target/niord-dk-web.war'
+              mkdir -p niord-dk/niord-dk-web/target
+              ls -R
+              touch niord-dk/niord-dk-web/target/niord-dk-web.war'
         - task: CopyFiles@2
           inputs:
             SourceFolder: './niord-dk/niord-dk-web/target'
