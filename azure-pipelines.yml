@@ -77,8 +77,12 @@ stages:
             Contents: 'niord-dk-web.war'
             TargetFolder: '$(Build.ArtifactStagingDirectory)'
             OverWrite: true
+        - publish: '$(Build.ArtifactStagingDirectory)/niord-dk-web.war'
+          displayName: 'Publish niord-dk for later usage'
+          artifact: niordDKBuild
 
   - stage: Build_Wildfly
+    dependsOn: Build_Niord
     displayName: Build Wildfly
     jobs:
     - job: Build_wildfly
@@ -103,6 +107,8 @@ stages:
           targetType: 'inline'
           script: |
             ls -R
+      - download: current
+        artifact: niordDKBuild
       - task: Bash@3
         displayName: DEBUG artifactory
         inputs:
