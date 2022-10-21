@@ -60,17 +60,6 @@ stages:
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
             goals: '-P dist clean install'
             
-        - task: Bash@3
-          inputs:
-            targetType: 'inline'
-            script: 'ls -R'
-        # - task: Bash@3
-        #   inputs:
-        #     targetType: 'inline'
-        #     script: |
-        #       mkdir -p niord-dk/niord-dk-web/target
-        #       touch niord-dk/niord-dk-web/target/niord-dk-web.war
-        #       ls -R niord-dk/niord-dk-web/target
         - task: PublishPipelineArtifact@1
           displayName: 'Publish build artifact'
           inputs:
