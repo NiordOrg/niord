@@ -109,6 +109,12 @@ stages:
             ls -R
       - download: current
         artifact: niordDKBuild
+      - task: DownloadPipelineArtifact@2
+        inputs:
+          buildType: 'current'
+          artifactName: 'niordDKBuild'
+          itemPattern: 'niord-dk-web.war'
+          targetPath: '$(Build.ArtifactStagingDirectory)'
       - task: Bash@3
         displayName: DEBUG artifactory
         inputs:
