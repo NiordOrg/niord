@@ -22,21 +22,21 @@ stages:
           inputs:
               archiveFilePatterns: 'apache-maven-3.6.3-bin.zip'
               destinationFolder: '$(build.sourcesdirectory)/maven'
-        # - task: Maven@3
-        #   displayName: 'Build niord'
-        #   retryCountOnTaskFailure: 3
-        #   inputs:
-        #     mavenPomFile: 'pom.xml'
-        #     mavenOptions: '-Xmx3072m'
-        #     javaHomeOption: 'JDKVersion'
-        #     jdkVersionOption: '1.11'
-        #     jdkArchitectureOption: 'x64'
-        #     mavenVersionOption: 'Path'
-        #     mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
-        #     mavenSetM2Home: true
-        #     publishJUnitResults: true
-        #     testResultsFiles: '**/surefire-reports/TEST-*.xml'
-        #     goals: 'clean install'
+        - task: Maven@3
+          displayName: 'Build niord'
+          retryCountOnTaskFailure: 3
+          inputs:
+            mavenPomFile: 'pom.xml'
+            mavenOptions: '-Xmx3072m'
+            javaHomeOption: 'JDKVersion'
+            jdkVersionOption: '1.11'
+            jdkArchitectureOption: 'x64'
+            mavenVersionOption: 'Path'
+            mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
+            mavenSetM2Home: true
+            publishJUnitResults: true
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            goals: 'clean install'
 
         - task: Bash@3
           displayName: Clone niord-dk repo
@@ -44,34 +44,35 @@ stages:
             targetType: 'inline'
             script: 'git clone https://github.com/NiordOrg/niord-dk.git'
         
-        # - task: Maven@3
-        #   displayName: 'Build niord-dk'
-        #   retryCountOnTaskFailure: 3
-        #   inputs:
-        #     mavenPomFile: './niord-dk/pom.xml'
-        #     mavenOptions: '-Xmx3072m'
-        #     javaHomeOption: 'JDKVersion'
-        #     jdkVersionOption: '1.11'
-        #     jdkArchitectureOption: 'x64'
-        #     mavenVersionOption: 'Path'
-        #     mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
-        #     mavenSetM2Home: true
-        #     publishJUnitResults: true
-        #     testResultsFiles: '**/surefire-reports/TEST-*.xml'
-        #     goals: '-P dist clean install'
+        - task: Maven@3
+          displayName: 'Build niord-dk'
+          retryCountOnTaskFailure: 3
+          inputs:
+            mavenPomFile: './niord-dk/pom.xml'
+            mavenOptions: '-Xmx3072m'
+            javaHomeOption: 'JDKVersion'
+            jdkVersionOption: '1.11'
+            jdkArchitectureOption: 'x64'
+            mavenVersionOption: 'Path'
+            mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
+            mavenSetM2Home: true
+            publishJUnitResults: true
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            goals: '-P dist clean install'
             
         - task: Bash@3
           inputs:
             targetType: 'inline'
             script: 'ls -R'
-        - task: Bash@3
-          inputs:
-            targetType: 'inline'
-            script: |
-              mkdir -p niord-dk/niord-dk-web/target
-              touch niord-dk/niord-dk-web/target/niord-dk-web.war
-              ls -R niord-dk/niord-dk-web/target
+        # - task: Bash@3
+        #   inputs:
+        #     targetType: 'inline'
+        #     script: |
+        #       mkdir -p niord-dk/niord-dk-web/target
+        #       touch niord-dk/niord-dk-web/target/niord-dk-web.war
+        #       ls -R niord-dk/niord-dk-web/target
         - task: PublishPipelineArtifact@1
+          displayName: 'Publish build artifact'
           inputs:
             targetPath: ./niord-dk/niord-dk-web/target
             artifactName: niordDKBuild
@@ -99,26 +100,16 @@ stages:
           targetType: 'inline'
           script: './niord-wildfly/build/build-wildfly.sh'
 
-      - task: Bash@3
-        displayName: DEBUG
-        inputs:
-          targetType: 'inline'
-          script: |
-            ls -R
       - task: DownloadPipelineArtifact@2
+        displayName: 'Download niord build artifact'
         inputs:
           artifact: niordDKBuild
           path: .
 
-      - task: Bash@3
-        displayName: DEBUG
-        inputs:
-          targetType: 'inline'
-          script: |
-            ls -R
-
       - task: CopyFiles@2
         inputs:
-          SourceFolder: '$(Build.ArtifactStagingDirectory)'
-          Contents: 'niord-dk-web.war'
-          TargetFolder: './niord-wildfly/wildfly-$(wildflu_version).Final/standalone/deployments'
+          SourceFolder: .
+          Contents: niord-dk-web.war
+          TargetFolder: './niord-wildfly/wildfly-$(wildfly_version).Final/standalone/deployments'
+          
+      # now need to build docker image
