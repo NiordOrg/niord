@@ -71,14 +71,16 @@ stages:
               mkdir -p niord-dk/niord-dk-web/target
               touch niord-dk/niord-dk-web/target/niord-dk-web.war
               ls -R niord-dk/niord-dk-web/target
-        - task: CopyFiles@2
-          inputs:
-            SourceFolder: './niord-dk/niord-dk-web/target'
-            Contents: 'niord-dk-web.war'
-            TargetFolder: '$(Build.ArtifactStagingDirectory)'
-            OverWrite: true
-        - publish: '$(Build.ArtifactStagingDirectory)/niord-dk-web.war'
-          displayName: 'Publish niord-dk for later usage'
+        # - task: CopyFiles@2
+        #   inputs:
+        #     SourceFolder: './niord-dk/niord-dk-web/target'
+        #     Contents: 'niord-dk-web.war'
+        #     TargetFolder: '$(Build.ArtifactStagingDirectory)'
+        #     OverWrite: true
+        # - publish: '$(Build.ArtifactStagingDirectory)/niord-dk-web.war'
+        #   displayName: 'Publish niord-dk for later usage'
+        #   artifact: niordDKBuild
+        - publish: 'niord-dk/niord-dk-web/target/niord-dk-web.war'
           artifact: niordDKBuild
 
   - stage: Build_Wildfly
@@ -109,12 +111,12 @@ stages:
             ls -R
       - download: current
         artifact: niordDKBuild
-      - task: DownloadPipelineArtifact@2
-        inputs:
-          buildType: 'current'
-          artifactName: 'niordDKBuild'
-          itemPattern: 'niord-dk-web.war'
-          targetPath: '$(Build.ArtifactStagingDirectory)'
+      # - task: DownloadPipelineArtifact@2
+      #   inputs:
+      #     buildType: 'current'
+      #     artifactName: 'niordDKBuild'
+      #     itemPattern: 'niord-dk-web.war'
+      #     targetPath: '$(Build.ArtifactStagingDirectory)'
       - task: Bash@3
         displayName: DEBUG artifactory
         inputs:
