@@ -108,6 +108,7 @@ stages:
       - task: DownloadPipelineArtifact@2
         inputs:
           artifact: niordDKBuild
+          path: .
 
       - task: Bash@3
         displayName: DEBUG
