@@ -101,4 +101,16 @@ stages:
           Contents: niord-dk-web.war
           TargetFolder: './niord-wildfly/wildfly-$(wildfly_version).Final/standalone/deployments'
           
-      # now need to build docker image
+      - task: Docker@2
+        displayName: 'Build and push image'
+        inputs:
+          containerRegistry: '$(container-registry)'
+          repository: 'niord-appsrv'
+          Dockerfile: './niord-wildfly/Dockerfile'
+          tags: '$(Build.BuildNumber)'
+
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish Docker-Compose'
+        inputs:
+          targetPath: './niord-wildfly/docker-compose.yml'
+          artifact: niord-appsrv
