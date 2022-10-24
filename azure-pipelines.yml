@@ -81,7 +81,7 @@ stages:
         displayName: Clone niord-wildfly repo
         inputs:
           targetType: 'inline'
-          script: 'git clone https://github.com/NiordOrg/niord-wildfly.git'
+          script: 'git clone --branch $(niord-wildfly-branch) https://github.com/NiordOrg/niord-wildfly.git'
 
       - task: Bash@3
         displayName: Build wildfly
@@ -101,13 +101,17 @@ stages:
           Contents: niord-dk-web.war
           TargetFolder: './niord-wildfly/wildfly-$(wildfly_version).Final/standalone/deployments'
           
+      - task: Bash@3
+        inputs:
+          targetType: 'inline'
+          script: 'cd niord-wildfly'
+
       - task: Docker@2
         displayName: 'Build and push image'
         inputs:
-          command: 'build'
-          # containerRegistry: '$(container-registry)'
+          containerRegistry: '$(container-registry)'
           repository: 'niord-appsrv'
-          Dockerfile: './niord-wildfly/Dockerfile'
+          Dockerfile: './Dockerfile'
           tags: '$(Build.BuildNumber)'
 
       - task: PublishPipelineArtifact@1
