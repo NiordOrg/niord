@@ -104,7 +104,8 @@ stages:
       - task: Docker@2
         displayName: 'Build and push image'
         inputs:
-          containerRegistry: '$(container-registry)'
+          command: 'build'
+          # containerRegistry: '$(container-registry)'
           repository: 'niord-appsrv'
           Dockerfile: './niord-wildfly/Dockerfile'
           tags: '$(Build.BuildNumber)'
