@@ -1,0 +1,116 @@
+# trigger:
+# - master
+
+stages:
+  - stage: Build_niord
+    displayName: Build niord application(niord -> niord-dk)
+    jobs:
+    - job: Building_niord_job
+      displayName: Build niord
+      pool:
+        vmImage: ubuntu-latest
+
+      steps:
+        - task: Bash@3
+          displayName: Download Maven
+          inputs:
+            targetType: 'inline'
+            script: 'wget https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip'
+
+        - task: ExtractFiles@1
+          displayName: 'Unzip Maven'
+          inputs:
+              archiveFilePatterns: 'apache-maven-3.6.3-bin.zip'
+              destinationFolder: '$(build.sourcesdirectory)/maven'
+        - task: Maven@3
+          displayName: 'Build niord'
+          retryCountOnTaskFailure: 3
+          inputs:
+            mavenPomFile: 'pom.xml'
+            mavenOptions: '-Xmx3072m'
+            javaHomeOption: 'JDKVersion'
+            jdkVersionOption: '1.11'
+            jdkArchitectureOption: 'x64'
+            mavenVersionOption: 'Path'
+            mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
+            mavenSetM2Home: true
+            publishJUnitResults: true
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            goals: 'clean install'
+
+        - task: Bash@3
+          displayName: Clone niord-dk repo
+          inputs:
+            targetType: 'inline'
+            script: 'git clone https://github.com/NiordOrg/niord-dk.git'
+        
+        - task: Maven@3
+          displayName: 'Build niord-dk'
+          retryCountOnTaskFailure: 3
+          inputs:
+            mavenPomFile: './niord-dk/pom.xml'
+            mavenOptions: '-Xmx3072m'
+            javaHomeOption: 'JDKVersion'
+            jdkVersionOption: '1.11'
+            jdkArchitectureOption: 'x64'
+            mavenVersionOption: 'Path'
+            mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
+            mavenSetM2Home: true
+            publishJUnitResults: true
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            goals: '-P dist clean install'
+            
+        - task: PublishPipelineArtifact@1
+          displayName: 'Publish build artifact'
+          inputs:
+            targetPath: ./niord-dk/niord-dk-web/target
+            artifactName: niordDKBuild
+
+  - stage: Build_Wildfly
+    dependsOn: Build_Niord
+    displayName: Build Wildfly
+    jobs:
+    - job: Build_wildfly
+      displayName: Build wildfly
+      pool:
+        vmImage: ubuntu-latest
+
+      steps:
+      - task: Bash@3
+        displayName: Clone niord-wildfly repo
+        inputs:
+          targetType: 'inline'
+          script: 'git clone --branch $(niord-wildfly-branch) https://github.com/NiordOrg/niord-wildfly.git'
+
+      - task: Bash@3
+        displayName: Build wildfly
+        inputs:
+          targetType: 'inline'
+          script: './niord-wildfly/build/build-wildfly.sh'
+
+      - task: DownloadPipelineArtifact@2
+        displayName: 'Download niord build artifact'
+        inputs:
+          artifact: niordDKBuild
+          path: .
+
+      - task: CopyFiles@2
+        inputs:
+          SourceFolder: .
+          Contents: niord-dk-web.war
+          TargetFolder: './niord-wildfly/wildfly-$(wildfly_version).Final/standalone/deployments'
+
+      - task: Docker@2
+        displayName: 'Build and push image'
+        inputs:
+          containerRegistry: '$(container-registry)'
+          repository: 'niord-appsrv'
+          Dockerfile: './niord-wildfly/Dockerfile'
+          buildContext: './niord-wildfly'
+          tags: '$(Build.BuildNumber)'
+
+      - task: PublishPipelineArtifact@1
+        displayName: 'Publish Docker-Compose'
+        inputs:
+          targetPath: './niord-wildfly/docker-compose.yml'
+          artifact: niord-appsrv
