@@ -1,5 +1,5 @@
-# trigger:
-# - master
+trigger:
+- nc-develop
 
 stages:
   - stage: Build_niord
