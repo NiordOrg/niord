@@ -134,6 +134,7 @@ var auth = {};
 /**
  * Will bootstrap Keycloak and register the "Auth" service
  * @param angularAppName the angular modules
+ * @param onLoad type of keycloak init
  */
 function bootstrapKeycloak(angularAppName, onLoad) {
     var keycloak = new Keycloak('/conf/keycloak.json');
@@ -142,6 +143,7 @@ function bootstrapKeycloak(angularAppName, onLoad) {
     var initProps = {};
     if (onLoad) {
         initProps.onLoad = onLoad;
+        initProps.checkLoginIframe = false;
     }
 
     keycloak.init(
