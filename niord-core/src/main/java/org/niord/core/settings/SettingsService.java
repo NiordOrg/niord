@@ -74,7 +74,6 @@ public class SettingsService extends BaseService {
     @PostConstruct
     public void loadSettingsFromPropertiesFile() {
         try {
-
             // Read the settings from the "/niord.json" classpath file
             Map<String, Setting> settingMap = loadSettingsFromClasspath();
 
@@ -93,7 +92,7 @@ public class SettingsService extends BaseService {
             settingMap.values().forEach(s -> {
                 s.updateType();
                 em.persist(s);
-                log.info(String.format("Loaded setting %s from niord.json", s.getKey()));
+                log.info(String.format("Loaded setting %s = %s from niord.json", s.getKey(), s.getValue().toString()));
             });
 
         } catch (Exception e) {
@@ -217,9 +216,11 @@ public class SettingsService extends BaseService {
      */
     public Object peek(String key) {
         Objects.requireNonNull(key, "Must specify valid setting key");
+        log.info(String.format("Peek start. Key = %s.", key));
 
         // If a corresponding system property is set, it takes precedence
         if (System.getProperty(key) != null) {
+            log.info(String.format("Peek system value. Property: %s has system value %s. Return", key, System.getProperty(key).toString()));
             return System.getProperty(key);
         }
 
@@ -234,6 +235,7 @@ public class SettingsService extends BaseService {
             result = expandSettingValue((String)result);
         }
 
+        log.info(String.format("Peek finished. Key = %s return value %s", key, result.toString()));
         return result;
     }
 
