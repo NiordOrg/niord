@@ -122,6 +122,7 @@ public class SettingsService extends BaseService {
             log.info(String.format("niordHome value is null. Defaulting to value from settingMap(DB) = %s.", settingMap.get("niord.home").getValue().toString()));
             niordHome = settingMap.get("niord.home").getValue();
         }
+        if (niordHome != null && niordHome instanceof String) {
             niordHome = expandSettingValue((String)niordHome);
             log.info(String.format("niordHome value is not null. Expanding setting value to = %s.", niordHome));
 
