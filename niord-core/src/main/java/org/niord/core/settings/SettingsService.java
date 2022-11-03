@@ -115,19 +115,30 @@ public class SettingsService extends BaseService {
 
     /** Called upon startup. Read the settings from the "${niord.home}/niord.json" file and update the settingMap */
     private Map<String, Setting> loadSettingsFromNiordHome(Map<String, Setting> settingMap) throws IOException {
+        log.info("loadSettingsFromNiordHome start");
+
         Object niordHome = peek("niord.home");
         if (niordHome == null && settingMap.containsKey("niord.home")) {
+            log.info(String.format("niordHome value is null. Defaulting to value from settingMap(DB) = %s.", settingMap.get("niord.home").getValue().toString()));
             niordHome = settingMap.get("niord.home").getValue();
         }
-        if (niordHome != null && niordHome instanceof String) {
             niordHome = expandSettingValue((String)niordHome);
+            log.info(String.format("niordHome value is not null. Expanding setting value to = %s.", niordHome));
+
             Path niordFile = Paths.get(niordHome.toString(), "niord.json");
+            log.info(String.format("loadSettingsFromNiordHome generate filepath. Setting file path = %s", niordFile.toAbsolutePath()));
+
             if (Files.exists(niordFile) && Files.isRegularFile(niordFile)) {
+                log.info("loadSettingsFromNiordHome. File exists. ");
+
                 List<Setting> settings = mapper.readValue(
                         niordFile.toFile(),
                         new TypeReference<List<Setting>>(){});
                 // Update (and overwrite) the setting map with these settings
-                settings.forEach(s -> settingMap.put(s.getKey(), s));
+                settings.forEach(s -> {
+                        settingMap.put(s.getKey(), s);
+                        log.info(String.format("loadSettingsFromNiordHome. Loaded setting %s = %s from %s", s.getKey(), s.getValue().toString(), niordFile.toAbsolutePath()));
+                    });
             }
         }
         return settingMap;
