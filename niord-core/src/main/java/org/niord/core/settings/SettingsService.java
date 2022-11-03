@@ -124,22 +124,17 @@ public class SettingsService extends BaseService {
         }
         if (niordHome != null && niordHome instanceof String) {
             niordHome = expandSettingValue((String)niordHome);
-            log.info(String.format("niordHome value is not null. Expanding setting value to = %s.", niordHome));
-
             Path niordFile = Paths.get(niordHome.toString(), "niord.json");
-            log.info(String.format("loadSettingsFromNiordHome generate filepath. Setting file path = %s", niordFile.toAbsolutePath()));
+            log.info(String.format("loadSettingsFromNiordHome generate filepath from environment variable. Expecting settings file in location %s", niordFile.toAbsolutePath()));
 
             if (Files.exists(niordFile) && Files.isRegularFile(niordFile)) {
-                log.info("loadSettingsFromNiordHome. File exists. ");
+                log.info("loadSettingsFromNiordHome. File exists. Loading settings");
 
                 List<Setting> settings = mapper.readValue(
                         niordFile.toFile(),
                         new TypeReference<List<Setting>>(){});
                 // Update (and overwrite) the setting map with these settings
-                settings.forEach(s -> {
-                        settingMap.put(s.getKey(), s);
-                        log.info(String.format("loadSettingsFromNiordHome. Loaded setting %s = %s from %s", s.getKey(), s.getValue().toString(), niordFile.toAbsolutePath()));
-                    });
+                settings.forEach(s -> settingMap.put(s.getKey(), s));
             }
         }
         return settingMap;
@@ -228,7 +223,6 @@ public class SettingsService extends BaseService {
      */
     public Object peek(String key) {
         Objects.requireNonNull(key, "Must specify valid setting key");
-        log.info(String.format("Peek start. Key = %s.", key));
 
         // If a corresponding system property is set, it takes precedence
         if (System.getProperty(key) != null) {
