@@ -17,7 +17,7 @@
 package org.niord.core;
 
 
-import jdk.nashorn.api.scripting.JSObject;
+import org.openjdk.nashorn.api.scripting.JSObject;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;

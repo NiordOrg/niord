@@ -10,7 +10,7 @@
     <name>Niord parent project</name>
 
     <properties>
-        <java.min.version>11</java.min.version>
+        <java.min.version>17</java.min.version>
         <maven.min.version>3.0.0</maven.min.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jboss.bom.version>13.0.0.Final</jboss.bom.version>
@@ -114,6 +114,14 @@
             <version>2.3.1</version>
         </dependency>
 
+        <!-- Java 17 dependencies -->
+        <!-- Nashorn no longer included, use openjdk-nashorn instead -->
+        <dependency>
+            <groupId>org.openjdk.nashorn</groupId>
+            <artifactId>nashorn-core</artifactId>
+            <version>15.4</version>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>junit</groupId>
@@ -157,7 +165,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
-                <version>2.1.1</version>
+                <version>3.3.2</version>
                 <configuration>
                     <failOnMissingWebXml>false</failOnMissingWebXml>
                 </configuration>
