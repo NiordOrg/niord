@@ -181,8 +181,4 @@
         <module>niord-web</module>
     </modules>
 
-    <prerequisites>
-        <maven>${maven.min.version}</maven>
-    </prerequisites>
-
-</project>    
+</project>
