@@ -15,12 +15,12 @@ stages:
           displayName: Download Maven
           inputs:
             targetType: 'inline'
-            script: 'wget https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.zip'
+            script: 'wget https://archive.apache.org/dist/maven/maven-3/$(maven-version)/binaries/apache-maven-$(maven-version)-bin.zip'
 
         - task: ExtractFiles@1
           displayName: 'Unzip Maven'
           inputs:
-              archiveFilePatterns: 'apache-maven-3.6.3-bin.zip'
+              archiveFilePatterns: 'apache-maven-$(maven-version)-bin.zip'
               destinationFolder: '$(build.sourcesdirectory)/maven'
         - task: Maven@3
           displayName: 'Build niord'
@@ -32,7 +32,7 @@ stages:
             jdkVersionOption: '1.11'
             jdkArchitectureOption: 'x64'
             mavenVersionOption: 'Path'
-            mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
+            mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-$(maven-version)'
             mavenSetM2Home: true
             publishJUnitResults: true
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
@@ -54,7 +54,7 @@ stages:
             jdkVersionOption: '1.11'
             jdkArchitectureOption: 'x64'
             mavenVersionOption: 'Path'
-            mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-3.6.3'
+            mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-$(maven-version)'
             mavenSetM2Home: true
             publishJUnitResults: true
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
