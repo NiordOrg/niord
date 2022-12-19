@@ -17,6 +17,12 @@ stages:
             targetType: 'inline'
             script: 'wget https://archive.apache.org/dist/maven/maven-3/$(maven-version)/binaries/apache-maven-$(maven-version)-bin.zip'
 
+       - task: Bash@3
+          displayName: Maven - version check
+          inputs:
+            targetType: 'inline'
+            script: 'mvn -version'
+
         - task: ExtractFiles@1
           displayName: 'Unzip Maven'
           inputs:
