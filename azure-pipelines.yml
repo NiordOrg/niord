@@ -29,12 +29,7 @@ stages:
           inputs:
             targetType: 'inline'
             script: 'ls /$(build.sourcesdirectory)/maven/apache-maven-$(maven-version)/bin'
-        - task: Bash@3
-          displayName: Maven - version check
-          inputs:
-            targetType: 'inline'
-            script: '.$(build.sourcesdirectory)/maven/apache-maven-$(maven-version)/bin/mvn -version'
-
+            
         - task: Maven@3
           displayName: 'Build niord'
           retryCountOnTaskFailure: 3
