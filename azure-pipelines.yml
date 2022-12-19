@@ -15,7 +15,7 @@ stages:
           displayName: Download Maven
           inputs:
             targetType: 'inline'
-            script: 'wget https://archive.apache.org/dist/maven/maven-3/$(maven-version)/binaries/apache-maven-$(maven-version)-bin.zip'
+            script: 'wget https://archive.apache.org/dist/maven/maven-3/$(maven-version)/binaries/apache-maven-$(maven-version)-bin.tar.gz'
 
 
         - task: ExtractFiles@1
