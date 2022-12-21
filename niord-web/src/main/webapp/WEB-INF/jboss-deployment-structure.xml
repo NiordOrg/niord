@@ -5,6 +5,7 @@
             <!--module name="org.dom4j"/-->
             <module name="org.keycloak.keycloak-adapter-spi"/>
             <module name="org.apache.httpcomponents"/>
+            <module name="jdk.dynalink"/>
         </dependencies>
     </deployment>
 </jboss-deployment-structure>
