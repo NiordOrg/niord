@@ -29,7 +29,13 @@ stages:
           inputs:
             targetType: 'inline'
             script: 'ls /$(build.sourcesdirectory)/maven/apache-maven-$(maven-version)/bin'
-            
+        
+        - task: Bash@3
+          displayName: Verify Java
+          inputs:
+            targetType: 'inline'
+            script: 'java -version'
+
         - task: Maven@3
           displayName: 'Build niord'
           retryCountOnTaskFailure: 3
