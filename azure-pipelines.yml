@@ -24,24 +24,6 @@ stages:
               archiveFilePatterns: 'apache-maven-$(maven-version)-bin.tar.gz'
               destinationFolder: '$(build.sourcesdirectory)/maven'
 
-        - task: Bash@3
-          displayName: ls unzip
-          inputs:
-            targetType: 'inline'
-            script: 'ls /$(build.sourcesdirectory)/maven/apache-maven-$(maven-version)/bin'
-        
-        - task: Bash@3
-          displayName: Verify Java
-          inputs:
-            targetType: 'inline'
-            script: 'java -version'
-        
-        - task: Bash@3
-          displayName: Verify Java
-          inputs:
-            targetType: 'inline'
-            script: 'java -version'
-
         - task: Maven@3
           displayName: 'Build niord'
           retryCountOnTaskFailure: 3
@@ -71,7 +53,7 @@ stages:
             mavenPomFile: './niord-dk/pom.xml'
             mavenOptions: '-Xmx3072m'
             javaHomeOption: 'JDKVersion'
-            jdkVersionOption: '1.11'
+            jdkVersionOption: '1.17'
             jdkArchitectureOption: 'x64'
             mavenVersionOption: 'Path'
             mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-$(maven-version)'
