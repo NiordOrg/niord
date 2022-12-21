@@ -37,11 +37,11 @@ stages:
             script: 'java -version'
 
 
-        - task: JavaToolInstaller@0
+        - task: Bash@3
+          displayName: Install Java 17 from public repo
           inputs:
-            versionSpec: '17'
-            jdkArchitectureOption: 'x32'
-            jdkSourceOption: 'PreInstalled'
+            targetType: 'inline'
+            script: 'apt install openjdk-17-jdk'
         
         - task: Bash@3
           displayName: Verify Java
