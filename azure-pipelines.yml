@@ -36,6 +36,19 @@ stages:
             targetType: 'inline'
             script: 'java -version'
 
+
+        - task: JavaToolInstaller@0
+          inputs:
+            versionSpec: '17'
+            jdkArchitectureOption: 'x32'
+            jdkSourceOption: 'PreInstalled'
+        
+        - task: Bash@3
+          displayName: Verify Java
+          inputs:
+            targetType: 'inline'
+            script: 'java -version'
+
         - task: Maven@3
           displayName: 'Build niord'
           retryCountOnTaskFailure: 3
