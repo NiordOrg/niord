@@ -85,6 +85,25 @@ stages:
           script: 'git clone --branch $(niord-wildfly-branch) https://github.com/NiordOrg/niord-wildfly.git'
 
       - task: Bash@3
+        displayName: Download Maven
+        inputs:
+          targetType: 'inline'
+          script: 'wget https://archive.apache.org/dist/maven/maven-3/$(maven-version)/binaries/apache-maven-$(maven-version)-bin.tar.gz'
+
+      - task: ExtractFiles@1
+        displayName: 'Unzip Maven'
+        inputs:
+            archiveFilePatterns: 'apache-maven-$(maven-version)-bin.tar.gz'
+            destinationFolder: '$(build.sourcesdirectory)/maven'
+      - task: Bash@3
+        inputs:
+          targetType: 'inline'
+          script: |
+            apt-get remove maven
+            export PATH="$(build.sourcesdirectory)/maven/bin:$PATH"
+            mvn -v
+
+      - task: Bash@3
         displayName: Build wildfly
         inputs:
           targetType: 'inline'
