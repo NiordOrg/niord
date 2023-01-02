@@ -96,6 +96,7 @@ stages:
             archiveFilePatterns: 'apache-maven-$(maven-version)-bin.tar.gz'
             destinationFolder: '$(build.sourcesdirectory)/maven'
       - task: Bash@3
+        displayName: 'Add Maven to PATH'
         inputs:
           targetType: 'inline'
           script: |
