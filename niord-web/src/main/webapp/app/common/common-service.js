@@ -244,6 +244,7 @@ angular.module('niord.common')
 
 
     /**
+<<<<<<< HEAD
      * Interface for logging to Google Analytics
      */
     .factory('AnalyticsService', [ '$rootScope', '$window', '$location',
@@ -317,6 +318,8 @@ angular.module('niord.common')
 
 
     /**
+=======
+>>>>>>> parent of 41db6673 (Improve Google Analytics integration)
      * The modalService is very much inspired by (even copied from):
      * http://weblogs.asp.net/dwahlin/building-an-angularjs-modal-service
      */
