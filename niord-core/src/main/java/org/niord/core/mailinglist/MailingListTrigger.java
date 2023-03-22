@@ -58,7 +58,7 @@ import static org.niord.core.mailinglist.TriggerType.STATUS_CHANGE;
 @NamedQueries({
         @NamedQuery(name = "MailingListTrigger.findPendingScheduledTriggers",
                 query = "SELECT t FROM MailingListTrigger t where t.type = 'SCHEDULED' "
-                        + " and t.mailingList.active = true and t.nextScheduledExecution < current_timestamp"),
+                        + " and t.mailingList.active = true and t.nextScheduledExecution < :time"),
         @NamedQuery(name = "MailingListTrigger.findStatusChangeTriggers",
                 query = "SELECT t FROM MailingListTrigger t join t.statusChanges s where t.type = 'STATUS_CHANGE' "
                         + " and t.mailingList.active = true and s = :status"),

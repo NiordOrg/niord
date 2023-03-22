@@ -32,6 +32,7 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Root;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -226,6 +227,7 @@ public class MailingListService extends BaseService {
      */
     public List<MailingListTrigger> findPendingScheduledTriggers() {
         return em.createNamedQuery("MailingListTrigger.findPendingScheduledTriggers", MailingListTrigger.class)
+                .setParameter("time", new Date())
                 .getResultList();
     }
 
