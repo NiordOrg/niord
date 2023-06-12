@@ -15,6 +15,7 @@
  */
 package org.niord.core.repo;
 
+import io.quarkus.scheduler.Scheduled;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileUploadException;
@@ -26,7 +27,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
 import org.niord.core.settings.annotation.Setting;
 import org.niord.core.user.Roles;
 import org.niord.core.util.WebUtils;
@@ -37,32 +37,14 @@ import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
-import javax.ejb.Schedule;
-import javax.ejb.Singleton;
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.DirectoryStream;
@@ -71,12 +53,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static org.niord.core.settings.Setting.Type;
 
@@ -94,15 +71,11 @@ import static org.niord.core.settings.Setting.Type;
  * </p>
  */
 @javax.ws.rs.Path("/repo")
-@Singleton
+@ApplicationScoped
 @Lock(LockType.READ)
-@SecurityDomain("keycloak")
 @PermitAll
 @SuppressWarnings("unused")
 public class RepositoryService {
-
-    @Context
-    ServletContext servletContext;
 
     @Inject
     @Setting(value="repoRootPath", defaultValue="${niord.home}/repo", description="The root directory of the Niord repository")
@@ -553,7 +526,7 @@ public class RepositoryService {
      * @return the file items
      */
     public List<FileItem> parseFileUploadRequest(HttpServletRequest request) throws FileUploadException {
-        FileItemFactory factory = newDiskFileItemFactory(servletContext);
+        FileItemFactory factory = newDiskFileItemFactory(request.getServletContext());
         ServletFileUpload upload = new ServletFileUpload(factory);
         upload.setFileSizeMax(fileUploadMaxSize);
         upload.setSizeMax(fileUploadMaxSize);
@@ -564,8 +537,8 @@ public class RepositoryService {
     /**
      * Every hour, check the repo "temp" root, and delete old files and folders
      */
-    @Schedule(persistent = false, second = "50", minute = "22", hour = "*")
-    public void cleanUpTempRoot() {
+    @Scheduled(cron="50 22 * * * ?")
+    void cleanUpTempRoot() {
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DATE, -1);
         File[] files = getTempRepoRoot().toFile().listFiles();

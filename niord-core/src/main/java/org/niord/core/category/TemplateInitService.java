@@ -19,6 +19,8 @@ package org.niord.core.category;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
 import javax.annotation.PostConstruct;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
@@ -30,8 +32,7 @@ import static org.niord.core.category.StandardParamType.STANDARD_PARAM_TYPES;
 /**
  * Checks that standard parameter types have been defined
  */
-@Singleton
-@Startup
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class TemplateInitService extends BaseService {
 

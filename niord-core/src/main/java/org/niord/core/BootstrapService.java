@@ -20,18 +20,19 @@ import org.niord.core.domain.Domain;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.annotation.PostConstruct;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 
 /**
  * In case Niord has been started up on a fresh database
  * this service will ensure that there is a "niord-client-master" domain
  * present, that may be used for bootstrapping and setting up the system.
  */
-@Singleton
-@Startup
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class BootstrapService extends BaseService {
 
@@ -39,6 +40,7 @@ public class BootstrapService extends BaseService {
     Logger log;
 
     @PostConstruct
+    @Transactional
     void init() {
 
         // If no domains have been defined (fresh database), create

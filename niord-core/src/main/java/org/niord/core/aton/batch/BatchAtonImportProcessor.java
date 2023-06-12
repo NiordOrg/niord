@@ -21,6 +21,7 @@ import org.niord.core.aton.AtonTag;
 import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.core.batch.AbstractItemHandler;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -29,7 +30,8 @@ import javax.inject.Named;
  *
  * TODO: we should probably detach the original AtoN looked up in processItem()
  */
-@Named
+@Dependent
+@Named("batchAtonImportProcessor")
 public class BatchAtonImportProcessor extends AbstractItemHandler {
 
     @Inject

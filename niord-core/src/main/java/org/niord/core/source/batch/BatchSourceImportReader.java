@@ -21,6 +21,7 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.source.vo.SourceVo;
 import org.niord.core.util.JsonUtils;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Named;
 import java.io.Serializable;
 import java.nio.file.Path;
@@ -58,7 +59,8 @@ import java.util.List;
  * ]
  * </pre>
  */
-@Named
+@Dependent
+@Named("batchSourceImportReader")
 public class BatchSourceImportReader extends AbstractItemHandler {
 
     List<SourceVo> sources;

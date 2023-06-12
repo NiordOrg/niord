@@ -28,19 +28,15 @@ import org.niord.core.promulgation.vo.TwitterMessagePromulgationVo;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MessageDescVo;
 import org.niord.model.message.Status;
-import twitter4j.GeoLocation;
-import twitter4j.StatusUpdate;
-import twitter4j.Twitter;
-import twitter4j.TwitterException;
-import twitter4j.TwitterFactory;
+import twitter4j.*;
 import twitter4j.auth.AccessToken;
 
 import javax.ejb.Asynchronous;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
@@ -48,8 +44,7 @@ import java.util.Arrays;
 /**
  * Manages Twitter message promulgations
  */
-@Singleton
-@Startup
+@ApplicationScoped
 @Lock(LockType.READ)
 @SuppressWarnings("unused")
 public class TwitterPromulgationService extends BasePromulgationService {
@@ -160,6 +155,7 @@ public class TwitterPromulgationService extends BasePromulgationService {
 
 
     /** Creates a Twitter settings entity from the given template **/
+    @Transactional
     public TwitterSettings createSettings(TwitterSettings settings) throws Exception {
 
         String typeId = settings.getPromulgationType().getTypeId();

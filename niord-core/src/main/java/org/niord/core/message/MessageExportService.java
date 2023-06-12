@@ -28,7 +28,7 @@ import org.niord.model.message.AttachmentVo;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import java.io.BufferedOutputStream;
@@ -44,7 +44,7 @@ import java.util.zip.ZipOutputStream;
 /**
  * Exports a message search result as a Zip archive including attachments
  */
-@Stateless
+@RequestScoped
 public class MessageExportService {
 
     @Inject

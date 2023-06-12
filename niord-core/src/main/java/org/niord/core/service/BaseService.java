@@ -22,6 +22,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.transaction.Transactional;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 /**
  * DAO-like base class for services that work on work on {@linkplain BaseEntity}
  */
+@Transactional
 @SuppressWarnings("unused")
 public abstract class BaseService {
 
@@ -81,7 +83,7 @@ public abstract class BaseService {
      * Persists or updates the given entity
      *
      * @param entity the entity to persist or update
-     * @return thed update entity
+     * @return the updated entity
      */
     public <E extends BaseEntity> E saveEntity(E entity) {
         if (entity.isPersisted()) {
@@ -149,12 +151,25 @@ public abstract class BaseService {
     }
 
     /**
+     * Returns a list of persisted entities
+     * @param entityType the class
+     * @param entities the list of entities to look up persisted entities for
+     * @return the list of corresponding persisted entities
+     */
+    public <E extends BaseEntity> Set<E> persistedSet(Class<E> entityType, Set<E> entities) {
+        return entities.stream()
+                .map(e -> getByPrimaryKey(entityType, e.getId()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    /**
      * Returns a list of persisted entities for the given IDs
      * @param entityType the class
      * @param ids the list of IDs to look up persisted entities for
      * @return the list of corresponding persisted entities
      */
-    public <ID extends Serializable, E extends BaseEntity<ID>> List<E> persistedListForIds(Class<E> entityType, List<ID> ids) {
+    public <ID extends Serializable, E extends BaseEntity<ID>> List<E> persistedListForIds(Class<E> entityType, List<Integer> ids) {
         return ids.stream()
                 .map(id -> getByPrimaryKey(entityType, id))
                 .filter(Objects::nonNull)

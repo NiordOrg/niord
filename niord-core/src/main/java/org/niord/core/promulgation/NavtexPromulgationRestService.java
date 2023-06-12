@@ -19,7 +19,6 @@ package org.niord.core.promulgation;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
 import org.niord.core.promulgation.vo.NavtexMessagePromulgationVo;
 import org.niord.core.promulgation.vo.NavtexTransmitterVo;
 import org.niord.core.user.Roles;
@@ -28,19 +27,9 @@ import org.niord.model.DataFilter;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
-import javax.ejb.Stateless;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.*;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -51,8 +40,7 @@ import static org.niord.core.promulgation.NavtexPromulgationService.NAVTEX_LINE_
  * REST interface to managing NAVTEX transmitters
  */
 @Path("/promulgation/navtex")
-@Stateless
-@SecurityDomain("keycloak")
+@RequestScoped
 @RolesAllowed(Roles.SYSADMIN)
 @SuppressWarnings("unused")
 public class NavtexPromulgationRestService {

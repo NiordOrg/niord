@@ -16,7 +16,9 @@
 
 package org.niord.core.mail;
 
+import io.quarkus.scheduler.Scheduled;
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.service.BaseService;
@@ -33,14 +35,10 @@ import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
-import javax.enterprise.concurrent.ManagedExecutorService;
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import javax.persistence.criteria.*;
+import javax.transaction.Transactional;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -52,8 +50,7 @@ import static org.niord.core.settings.Setting.Type.Integer;
 /**
  * Interface for handling schedule mails
  */
-@Singleton
-@Startup
+@ApplicationScoped
 @Lock(LockType.READ)
 @SuppressWarnings("unused")
 public class ScheduledMailService extends BaseService {
@@ -79,10 +76,11 @@ public class ScheduledMailService extends BaseService {
     /**
      * NB: Niord defines its own managed executor service to limit the number of threads,
      * and thus, the number of concurrent SMTP connections.
+     *
+     * Since moving to quarkus, we can use the default managed executor
      */
-    @Resource(lookup = "java:jboss/ee/concurrency/executor/MailExecutorService")
-    ManagedExecutorService managedExecutorService;
-
+    @Inject
+    ManagedExecutor managedExecutor;
 
     /**
      * Searches the filtered set of scheduled mails
@@ -181,9 +179,10 @@ public class ScheduledMailService extends BaseService {
     /**
      * Called every minute to process scheduled mails
      */
-    @Schedule(persistent=false, second="24", minute="*", hour = "*")
+    @Scheduled(cron="24 * * * * ?")
     @Lock(LockType.WRITE)
-    public void sendPendingMails() {
+    @Transactional
+    void sendPendingMails() {
 
         // Send at most "maxMailsPerMinute" mails at a time
         List<Integer> scheduledMailIds = getPendingMails().stream()
@@ -200,7 +199,7 @@ public class ScheduledMailService extends BaseService {
                     .collect(Collectors.toList());
 
             try {
-                managedExecutorService.invokeAll(tasks);
+                managedExecutor.invokeAll(tasks);
             } catch (InterruptedException e) {
                 log.error("Error sending scheduled emails: " + scheduledMailIds, e);
             }
@@ -215,10 +214,11 @@ public class ScheduledMailService extends BaseService {
      * However, this will fail because of a missing mail - recipient "delete on cascade" FK constraint.
      * Using JPAs CascadeType.ALL for the relation does NOT work in this case.
      */
-    @Schedule(persistent=false, second="48", minute="28", hour = "05")
+    @Scheduled(cron="48 28 5 * * ?")
     @Lock(LockType.WRITE)
+    @Transactional
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
-    private void deleteExpiredMails() {
+    void deleteExpiredMails() {
 
         // If expiryDate is 0 (actually, non-positive), never delete mails
         if (mailDeleteAfterDays <= 0) {
@@ -269,6 +269,7 @@ public class ScheduledMailService extends BaseService {
         }
 
         /** {@inheritDoc} **/
+        @Transactional
         @Override
         public ScheduledMail call() {
             try {

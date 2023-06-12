@@ -34,6 +34,7 @@ import java.util.Objects;
  * and sub-pages.
  */
 @Entity
+@Indexed
 @Table(indexes = {
         @Index(name = "aton_tag_k", columnList="k"),
         @Index(name = "aton_tag_v", columnList="v")
@@ -53,7 +54,7 @@ public class AtonTag extends BaseEntity<Integer> {
     @NotNull
     String k;
 
-    @Field
+    @FullTextField
     String v;
 
     @ManyToOne

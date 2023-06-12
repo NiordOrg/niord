@@ -16,7 +16,7 @@
 package org.niord.model.geojson;
 
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -28,17 +28,16 @@ import java.util.function.Consumer;
  * GeoJSON FeatureCollection, as defined in the specification:
  * hhttp://geojson.org/geojson-spec.html#feature-objects
  */
-@ApiModel(
-        value = "FeatureCollection",
-        parent = GeoJsonVo.class,
+@Schema(
+        name = "FeatureCollection",
         description = "GeoJson FeatureCollection type"
 )
 @XmlRootElement(name = "featureCollection")
 public class FeatureCollectionVo extends GeoJsonVo {
 
     // NB: "id" not directly mentioned in specification, but it's useful...
-    private Object id;
-    private FeatureVo[] features;
+    Object id;
+    FeatureVo[] features;
 
 
     /** Constructor **/

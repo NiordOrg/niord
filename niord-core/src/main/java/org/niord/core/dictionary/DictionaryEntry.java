@@ -65,7 +65,7 @@ public class DictionaryEntry extends BaseEntity<Integer> implements ILocalizable
 
     /** Constructor */
     public DictionaryEntry(DictionaryEntryVo entry) {
-        this.id = entry.getId();
+        this.setId(entry.getId());
         this.key = entry.getKey();
         this.atonFilter = entry.getAtonFilter();
         if (entry.getDescs() != null) {
@@ -95,7 +95,7 @@ public class DictionaryEntry extends BaseEntity<Integer> implements ILocalizable
         DataFilter compFilter = filter.forComponent(DictionaryEntry.class);
 
         DictionaryEntryVo entry = new DictionaryEntryVo();
-        entry.setId(id);
+        entry.setId(this.getId());
         entry.setKey(key);
         entry.setAtonFilter(atonFilter);
         if (!descs.isEmpty()) {

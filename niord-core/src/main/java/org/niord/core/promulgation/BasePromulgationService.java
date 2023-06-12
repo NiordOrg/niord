@@ -25,27 +25,28 @@ import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
 import javax.annotation.PostConstruct;
+import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
 /**
  * Base class for the different types of promulgation services, such as NavtexPromulgationService, etc.
  * <p>
- * NB: Subclasses must annotated with @Singleton and @Startup to properly register the promulgation service
- *     with the PromulgationManager
+ * NB: Subclasses must annotated with @ApplicationContext and handle @Observes StartupEvent events to
+ *     properly register the promulgation service with the PromulgationManager
  */
 public abstract class BasePromulgationService extends BaseService {
 
     @Inject
-    Logger log;
+    public Logger log;
 
     @Inject
-    PromulgationManager promulgationManager;
+    public PromulgationManager promulgationManager;
 
     @Inject
-    DomainService domainService;
+    public DomainService domainService;
 
     @Inject
-    NiordApp app;
+    public NiordApp app;
 
 
     /***************************************/

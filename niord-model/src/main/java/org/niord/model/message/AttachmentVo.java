@@ -15,7 +15,7 @@
  */
 package org.niord.model.message;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * Value object for the {@code Attachment} model entity
  */
-@ApiModel(value = "Attachment", description = "Message attachment model")
+@Schema(name = "Attachment", description = "Message attachment model")
 @XmlRootElement(name = "attachment")
 @XmlType(propOrder = {
         "type", "fileName", "path", "fileSize", "display", "width", "height", "descs"

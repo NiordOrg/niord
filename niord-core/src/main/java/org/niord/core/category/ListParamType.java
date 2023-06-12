@@ -55,7 +55,7 @@ public class ListParamType extends ParamType {
     @Override
     public ListParamTypeVo toVo(DataFilter filter) {
         ListParamTypeVo paramType = new ListParamTypeVo();
-        paramType.setId(id);
+        paramType.setId(this.getId());
         paramType.setName(name);
         paramType.setValues(values.stream()
             .map(v -> v.toVo(filter))

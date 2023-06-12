@@ -62,7 +62,7 @@ public class Source extends BaseEntity<Integer> implements ILocalizable<SourceDe
 
     /** Constructor */
     public Source(SourceVo source) {
-        this.id = source.getId();
+        this.setId(source.getId());
         this.active = source.isActive();
         if (source.getDescs() != null) {
             source.getDescs().stream()
@@ -82,7 +82,7 @@ public class Source extends BaseEntity<Integer> implements ILocalizable<SourceDe
     /** Converts this entity to a value object */
     public SourceVo toVo(DataFilter dataFilter) {
         SourceVo source = new SourceVo();
-        source.setId(id);
+        source.setId(this.getId());
         source.setActive(active);
 
         if (!descs.isEmpty()) {

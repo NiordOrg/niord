@@ -55,7 +55,7 @@ public class BaseMessagePromulgation<P extends BaseMessagePromulgationVo>
     /** Constructor **/
     public BaseMessagePromulgation(P promulgation) {
         this();
-        this.id = promulgation.getId();
+        this.setId(promulgation.getId());
         this.type = new PromulgationType(promulgation.getType());
         this.promulgate = promulgation.isPromulgate();
     }
@@ -70,7 +70,7 @@ public class BaseMessagePromulgation<P extends BaseMessagePromulgationVo>
     /** Returns a value object for this entity */
     protected P toVo(P vo) {
         vo.setType(type.toVo(DataFilter.get()));
-        vo.setId(id);
+        vo.setId(this.getId());
         vo.setPromulgate(promulgate);
         return vo;
     }

@@ -22,20 +22,21 @@ import org.niord.core.service.BaseService;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import javax.transaction.Transactional;
 import java.util.List;
 
 /**
  * Defines the API for accessing contacts
  */
-@Stateless
+@RequestScoped
 @SuppressWarnings("unused")
 public class ContactService extends BaseService {
 
@@ -147,6 +148,7 @@ public class ContactService extends BaseService {
      * @param contact the Contact template
      * @return the newly created contact
      */
+    @Transactional
     public Contact createContact(Contact contact) {
         Contact original = findByEmail(contact.getEmail());
         if (original != null) {
@@ -174,6 +176,7 @@ public class ContactService extends BaseService {
      * @param contact the Contact template
      * @return the newly created contact
      */
+    @Transactional
     public Contact updateContact(Contact contact) {
         Contact original = findById(contact.getId());
         if (original == null) {
@@ -194,6 +197,7 @@ public class ContactService extends BaseService {
      * @return if the contact was deleted
      * @noinspection all
      */
+    @Transactional
     public boolean deleteContact(Integer id) {
         Contact original = findById(id);
         if (original != null) {

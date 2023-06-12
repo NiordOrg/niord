@@ -17,12 +17,10 @@ package org.niord.core.util;
 
 import org.apache.commons.lang.StringUtils;
 import org.jsoup.Jsoup;
-import org.jsoup.examples.HtmlToPlainText;
-import org.jsoup.helper.StringUtil;
+import org.jsoup.internal.StringUtil;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
-import org.jsoup.select.NodeTraversor;
 import org.jsoup.select.NodeVisitor;
 import org.w3c.tidy.Tidy;
 
@@ -32,11 +30,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.StringReader;
-import java.io.StringWriter;
+import java.io.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
@@ -65,12 +59,12 @@ public class TextUtils {
                 Document doc = Jsoup.parse(html);
 
                 // Do not use the following as it paginates each line to 80 characters
-                //return new HtmlToPlainText().getPlainText(doc.body()).trim();
+                return new HtmlToPlainText().getPlainText(doc.body()).trim();
 
-                FormattingVisitor formatter = new FormattingVisitor();
-                NodeTraversor traversor = new NodeTraversor(formatter);
-                traversor.traverse(doc);
-                return formatter.toString();
+                //FormattingVisitor formatter = new FormattingVisitor();
+                //NodeTraversor traversor = new NodeTraversor(formatter);
+                //traversor.traverse(doc);
+                //return formatter.toString();
             } catch (Exception ignored) {
             }
         }

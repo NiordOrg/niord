@@ -15,7 +15,7 @@
  */
 package org.niord.model.geojson;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.function.Consumer;
@@ -24,15 +24,14 @@ import java.util.function.Consumer;
  * GeoJSON MultiPoint, as defined in the specification:
  * http://geojson.org/geojson-spec.html#multipoint
  */
-@ApiModel(
-        value = "MultiPoint",
-        parent = GeoJsonVo.class,
+@Schema(
+        name = "MultiPoint",
         description = "GeoJson MultiPoint type"
 )
 @XmlRootElement(name = "multiPoint")
 public class MultiPointVo extends GeometryVo {
 
-    private double[][] coordinates;
+    double[][] coordinates;
 
     @SuppressWarnings("unused")
     public MultiPointVo() {

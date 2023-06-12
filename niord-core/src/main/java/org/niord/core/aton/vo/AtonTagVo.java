@@ -20,6 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.model.IJsonSerializable;
 
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  * An AtoN OSM seamark node tag.
@@ -49,6 +50,7 @@ import javax.xml.bind.annotation.XmlAttribute;
  * </pre>
  */
 @SuppressWarnings("unused")
+@XmlRootElement(name = "tag")
 public class AtonTagVo implements IJsonSerializable {
 
     String k;
@@ -56,6 +58,7 @@ public class AtonTagVo implements IJsonSerializable {
 
     /** No-arg constructor */
     public AtonTagVo() {
+
     }
 
     /** Key-value constructor */

@@ -16,7 +16,7 @@
 
 package org.niord.model.publication;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * Publication Category
  */
-@ApiModel(value = "PublicationCategory", description = "Publication category model")
+@Schema(name = "PublicationCategory", description = "Publication category model")
 @XmlRootElement(name = "publicationCategory")
 @XmlType(propOrder = {
         "categoryId", "priority", "publish", "descs"

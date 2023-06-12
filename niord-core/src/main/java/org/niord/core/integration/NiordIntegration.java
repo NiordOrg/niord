@@ -77,7 +77,7 @@ public class NiordIntegration extends BaseEntity<Integer> {
      * @param integration the Niord integration value object
      */
     public NiordIntegration(NiordIntegrationVo integration) {
-        this.id = integration.getId();
+        this.setId(integration.getId());
         this.url = integration.getUrl();
         this.active = integration.isActive();
         this.assignNewUids = integration.isAssignNewUids();
@@ -92,7 +92,7 @@ public class NiordIntegration extends BaseEntity<Integer> {
     /** Converts this entity to a value object */
     public NiordIntegrationVo toVo() {
         NiordIntegrationVo integration = new NiordIntegrationVo();
-        integration.setId(id);
+        integration.setId(this.getId());
         integration.setUrl(url);
         integration.setActive(active);
         integration.setAssignNewUids(assignNewUids);

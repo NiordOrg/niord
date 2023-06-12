@@ -70,7 +70,7 @@ public class Contact extends VersionedEntity<Integer> implements IMailable {
     /** Converts this entity to a value object */
     public ContactVo toVo() {
         ContactVo contact = new ContactVo();
-        contact.setId(id);
+        contact.setId(this.getId());
         contact.setEmail(email);
         contact.setName(name);
         contact.setLanguage(language);

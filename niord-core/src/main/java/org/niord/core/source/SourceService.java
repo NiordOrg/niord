@@ -20,8 +20,9 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -31,7 +32,7 @@ import java.util.stream.Collectors;
 /**
  * Business interface for accessing sources
  */
-@Stateless
+@RequestScoped
 @SuppressWarnings("unused")
 public class SourceService extends BaseService {
 
@@ -164,6 +165,7 @@ public class SourceService extends BaseService {
      * @param source the source to update
      * @return the updated source
      */
+    @Transactional
     public Source updateSource(Source source) {
         Source original = findById(source.getId());
         if (original == null) {
@@ -185,6 +187,7 @@ public class SourceService extends BaseService {
      * @param source the source to create
      * @return the created source
      */
+    @Transactional
     public Source createSource(Source source) {
         if (!source.isNew()) {
             throw new IllegalArgumentException("Cannot create source with existing ID "
@@ -199,6 +202,7 @@ public class SourceService extends BaseService {
      * Deletes the source with the given ID
      * @param id the id of the source to delete
      */
+    @Transactional
     public boolean deleteSource(Integer id) {
 
         Source source = findById(id);

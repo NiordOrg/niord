@@ -18,6 +18,7 @@ package org.niord.core.batch.script;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.util.CdiUtils;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.persistence.EntityManager;
@@ -33,7 +34,8 @@ import java.util.stream.Collectors;
 /**
  * Execute the script file
  */
-@Named
+@Dependent
+@Named("batchScriptExecutorProcessor")
 public class BatchScriptExecutorProcessor extends AbstractItemHandler {
 
     private static Class<?>[] SCRIPT_CLASSES = { CdiUtils.class };

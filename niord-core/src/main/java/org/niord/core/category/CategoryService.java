@@ -268,6 +268,7 @@ public class CategoryService extends TreeBaseService<Category> {
      * @param category the template category to update the original with
      * @return the updated category
      */
+    @Transactional
     public Category updateCategoryData(Category original, Category category) {
 
         original.setType(category.getType());
@@ -323,6 +324,7 @@ public class CategoryService extends TreeBaseService<Category> {
      * @param parentId the id of the parent category
      * @return the created category
      */
+    @Transactional
     public Category createCategory(Category category, Integer parentId) {
 
         if (parentId != null) {

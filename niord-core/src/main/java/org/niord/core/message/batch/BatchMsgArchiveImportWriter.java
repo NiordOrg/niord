@@ -22,6 +22,7 @@ import org.niord.core.message.batch.BatchMsgArchiveImportProcessor.ExtractedArch
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.model.DataFilter;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.List;
@@ -34,7 +35,8 @@ import java.util.List;
  * the batch job file, "msg-archive-import.xml" is only processing one message
  * at a time before committing. Not fast but more secure.
  */
-@Named
+@Dependent
+@Named("batchMsgArchiveImportWriter")
 public class BatchMsgArchiveImportWriter extends AbstractMessageImportWriter {
 
     @Inject

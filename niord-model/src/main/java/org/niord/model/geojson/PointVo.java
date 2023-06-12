@@ -15,7 +15,7 @@
  */
 package org.niord.model.geojson;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.xml.bind.annotation.XmlRootElement;
 import java.util.function.Consumer;
@@ -24,15 +24,14 @@ import java.util.function.Consumer;
  * GeoJSON Point, as defined in the specification:
  * http://geojson.org/geojson-spec.html#point
  */
-@ApiModel(
-        value = "Point",
-        parent = GeoJsonVo.class,
+@Schema(
+        name = "Point",
         description = "GeoJson Point type"
 )
 @XmlRootElement(name = "point")
 public class PointVo extends GeometryVo {
 
-    private double[] coordinates;
+    double[] coordinates;
 
     @SuppressWarnings("unused")
     public PointVo() {

@@ -42,7 +42,7 @@ public abstract class TreeBaseEntity<E extends TreeBaseEntity<E>> extends Versio
     @SuppressWarnings("all")
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
     @OrderBy("siblingSortOrder ASC")
-    protected  List<E> children = new ArrayList<>();
+    protected List<E> children = new ArrayList<>();
 
     @Column(length = 256)
     protected String lineage;

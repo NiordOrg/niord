@@ -21,6 +21,7 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.mailinglist.vo.MailingListVo;
 import org.niord.core.util.JsonUtils;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Named;
 import java.io.Serializable;
 import java.nio.file.Path;
@@ -64,7 +65,8 @@ import java.util.List;
  * ]
  * </pre>
  */
-@Named
+@Dependent
+@Named("batchMailingListImportReader")
 public class BatchMailingListImportReader extends AbstractItemHandler {
 
     List<MailingListVo> mailingLists;

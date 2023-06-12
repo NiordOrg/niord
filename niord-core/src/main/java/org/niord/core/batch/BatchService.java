@@ -627,8 +627,8 @@ public class BatchService extends BaseService {
      * Called every minute to monitor the batch job "[jobName]/in" folders. If a file has been
      * placed in one of these folders, the cause the "jobName" batch job to be started.
      */
-    @Schedule(persistent=false, second="48", minute="*/1", hour="*/1")
-    protected void monitorBatchJobInFolderInitiation() {
+    @Scheduled(cron="48 */1 */1 * * ?")
+    void monitorBatchJobInFolderInitiation() {
 
         // Resolve the list of batch job "in" folders
         List<Path> executionFolders = getBatchJobSubFolders("in");
@@ -660,8 +660,8 @@ public class BatchService extends BaseService {
     /**
      * Called every hour to clean up the batch job "[jobName]/execution" folders for expired files
      */
-    @Schedule(persistent=false, second="30", minute="42", hour="*/1")
-    protected void cleanUpExpiredBatchJobFiles() {
+    @Scheduled(cron="30 42 */1 * * ?")
+    void cleanUpExpiredBatchJobFiles() {
 
         long t0 = System.currentTimeMillis();
 

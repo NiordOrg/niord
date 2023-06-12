@@ -20,13 +20,15 @@ import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
 import org.niord.core.chart.vo.SystemChartVo;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.inject.Named;
 
 /**
  * Filters charts that need to be a added or updated
  */
-@Named
+@Dependent
+@Named("batchChartImportProcessor")
 public class BatchChartImportProcessor extends AbstractItemHandler {
 
     @Inject

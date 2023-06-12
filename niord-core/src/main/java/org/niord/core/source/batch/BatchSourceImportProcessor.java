@@ -21,6 +21,7 @@ import org.niord.core.source.Source;
 import org.niord.core.source.SourceService;
 import org.niord.core.source.vo.SourceVo;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.Objects;
@@ -28,7 +29,8 @@ import java.util.Objects;
 /**
  * Filters sources that need to be a added or updated
  */
-@Named
+@Dependent
+@Named("batchSourceImportProcessor")
 public class BatchSourceImportProcessor extends AbstractItemHandler {
 
     @Inject

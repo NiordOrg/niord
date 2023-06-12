@@ -20,12 +20,14 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.mailinglist.MailingList;
 import org.niord.core.mailinglist.vo.MailingListVo;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Named;
 
 /**
  * Converts the mailing list value object into a mailing list entity template
  */
-@Named
+@Dependent
+@Named("batchMailingListImportProcessor")
 public class BatchMailingListImportProcessor extends AbstractItemHandler {
 
     /** {@inheritDoc} **/

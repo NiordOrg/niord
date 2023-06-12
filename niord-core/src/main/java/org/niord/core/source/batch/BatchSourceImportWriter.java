@@ -20,20 +20,24 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.source.Source;
 import org.niord.core.source.SourceService;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.transaction.Transactional;
 import java.util.List;
 
 /**
  * Persists the sources to the database
  */
-@Named
+@Dependent
+@Named("batchSourceImportWriter")
 public class BatchSourceImportWriter extends AbstractItemHandler {
 
     @Inject
     SourceService sourceService;
 
     /** {@inheritDoc} **/
+    @Transactional
     @Override
     public void writeItems(List<Object> items) throws Exception {
         long t0 = System.currentTimeMillis();

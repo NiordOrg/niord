@@ -50,7 +50,7 @@ public abstract class ParamType extends BaseEntity<Integer> {
 
     /** Constructor **/
     public ParamType(ParamTypeVo type) {
-        this.id = type.getId();
+        this.setId(type.getId());
         this.name = type.getName();
     }
 

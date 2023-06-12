@@ -244,8 +244,8 @@ public class BatchSetService {
      * Called every minute to monitor the "batch-sets" folder. If a batch-set zip file has been
      * placed in this folder, the batch-set gets executed.
      */
-    @Schedule(persistent=false, second="24", minute="*/1", hour="*/1")
-    protected void monitorBatchJobInFolderInitiation() {
+    @Scheduled(cron="24 */1 */1 * * ?")
+    void monitorBatchJobInFolderInitiation() {
 
         Path batchSetsFolder = batchService.getBatchJobRoot().resolve(BATCH_SETS_FOLDER);
 

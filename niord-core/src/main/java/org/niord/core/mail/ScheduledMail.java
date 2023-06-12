@@ -124,7 +124,7 @@ public class ScheduledMail extends BaseEntity<Integer> {
         DataFilter compFilter = filter.forComponent(ScheduledMail.class);
 
         ScheduledMailVo mail = new ScheduledMailVo();
-        mail.setId(id);
+        mail.setId(this.getId());
         mail.setCreated(created);
         mail.setSendDate(sendDate);
         mail.setStatus(status);

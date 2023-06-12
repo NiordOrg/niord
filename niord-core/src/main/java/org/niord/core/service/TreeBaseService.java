@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 /**
  * DAO-like base class for services that work on work on {@linkplain TreeBaseEntity} entities
  */
-@SuppressWarnings("unused")
 public abstract class TreeBaseService<E extends TreeBaseEntity<E>> extends BaseService {
 
     @Inject

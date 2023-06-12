@@ -21,13 +21,15 @@ import org.niord.core.script.ScriptResource;
 import org.niord.core.script.ScriptResourceService;
 import org.niord.core.script.vo.ScriptResourceVo;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.inject.Named;
 
 /**
  * Converts the script resource value object into a script resource entity template
  */
-@Named
+@Dependent
+@Named("batchScriptResourceImportProcessor")
 public class BatchScriptResourceImportProcessor extends AbstractItemHandler {
 
     @Inject

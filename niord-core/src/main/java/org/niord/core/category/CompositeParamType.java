@@ -55,7 +55,7 @@ public class CompositeParamType extends ParamType {
     @Override
     public CompositeParamTypeVo toVo(DataFilter filter) {
         CompositeParamTypeVo paramType = new CompositeParamTypeVo();
-        paramType.setId(id);
+        paramType.setId(this.getId());
         paramType.setName(name);
         paramType.setTemplateParams(templateParams.stream()
             .map(v -> v.toVo(filter))

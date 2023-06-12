@@ -64,7 +64,7 @@ public class MessageParamFilter extends BaseEntity<Integer> {
      * Constructor
      */
     public MessageParamFilter(MessageParamFilterVo filter) {
-        this.id = filter.getId();
+        this.setId(filter.getId());
         this.name = filter.getName();
         this.parameters = filter.getParameters();
     }
@@ -73,7 +73,7 @@ public class MessageParamFilter extends BaseEntity<Integer> {
     /** Converts this entity to a value object */
     public MessageParamFilterVo toVo() {
         MessageParamFilterVo filter = new MessageParamFilterVo();
-        filter.setId(id);
+        filter.setId(this.getId());
         filter.setName(name);
         filter.setParameters(parameters);
         return filter;

@@ -15,7 +15,7 @@
  */
 package org.niord.model.message;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * Value object for the {@code Area} model entity
  */
-@ApiModel(value = "Area", description = "Hierarchical area model")
+@Schema(name = "Area", description = "Hierarchical area model")
 @XmlRootElement(name = "area")
 @XmlType(propOrder = {
         "mrn", "active", "parent", "descs"

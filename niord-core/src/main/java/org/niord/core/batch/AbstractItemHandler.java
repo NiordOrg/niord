@@ -68,7 +68,7 @@ public abstract class AbstractItemHandler implements ItemReader, ItemProcessor, 
             return log;
         }
 
-        log = Logger.getLogger(getClass().getSimpleName());
+        log = Logger.getLogger(this.getClass().getSimpleName());
 
 
         // Store the log in the transient user data, so that it can be properly closed after the batch job is complete.

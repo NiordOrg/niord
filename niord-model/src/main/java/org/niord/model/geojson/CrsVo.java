@@ -15,7 +15,7 @@
  */
 package org.niord.model.geojson;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.IJsonSerializable;
 
 import javax.xml.bind.annotation.XmlType;
@@ -25,13 +25,16 @@ import java.util.Properties;
  * Implementation of the Coordinate Reference System, as defined in
  * http://geojson.org/geojson-spec.html#coordinate-reference-system-objects
  */
-@ApiModel(value = "Crs", description = "GeoJson Coordinate Reference System")
+@Schema(
+        name = "Crs",
+        description = "GeoJson Coordinate Reference System"
+)
 @XmlType(name = "crs")
 public class CrsVo implements IJsonSerializable {
 
-    private String type;
+    String type;
+    Properties properties = new Properties();
 
-    private Properties properties = new Properties();
 
     public String getType() {
         return type;

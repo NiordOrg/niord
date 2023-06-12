@@ -17,16 +17,16 @@ package org.niord.core.sequence;
 
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.persistence.EntityManager;
 
 /**
  * Provides an interface for managing sequences
  */
-@Stateless
+@RequestScoped
 @SuppressWarnings("unused")
 public class SequenceService {
 

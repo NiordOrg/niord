@@ -15,6 +15,7 @@
  */
 package org.niord.core.message;
 
+import io.quarkus.scheduler.Scheduled;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
@@ -25,25 +26,11 @@ import org.niord.core.user.User;
 import org.niord.core.user.UserService;
 import org.slf4j.Logger;
 
-import javax.ejb.Schedule;
-import javax.ejb.Stateless;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Order;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import javax.persistence.criteria.*;
+import javax.transaction.Transactional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.niord.core.message.vo.MessageTagVo.MessageTagType.*;
@@ -56,7 +43,7 @@ import static org.niord.model.search.PagedSearchParamsVo.SortOrder.DESC;
  * Message tags can either be tied to a user or be shared, so the set of tags
  * that a specific user can work on, is her own tags + the shared tags.
  */
-@Stateless
+@RequestScoped
 @SuppressWarnings("unused")
 public class MessageTagService extends BaseService {
 
@@ -209,7 +196,7 @@ public class MessageTagService extends BaseService {
         criteriaHelper.equals(tagRoot.get("locked"), params.getLocked());
 
         // Type filtering
-        Set<MessageTagType> types = params.getTypes() != null ? params.getTypes() : new HashSet<>();
+        Set<MessageTagType> types = params.getTypes() != null ? new HashSet<>(params.getTypes()) : new HashSet<>();
         if (types.isEmpty()) {
             types.add(PUBLIC);
             types.add(DOMAIN);
@@ -282,6 +269,7 @@ public class MessageTagService extends BaseService {
      * @param tag the new message tag
      * @return the persisted message tag
      */
+    @Transactional
     public MessageTag createMessageTag(MessageTag tag) {
 
         // Ensure that is has a proper tag ID
@@ -310,6 +298,7 @@ public class MessageTagService extends BaseService {
      * @param messageUids the new message UIDs
      * @return the persisted message tag
      */
+    @Transactional
     public MessageTag createTempMessageTag(Integer ttl, List<String> messageUids) {
         // Compute expiry time
         int minutes = ttl == null ? TEMP_TAG_EXPIRY_MINUTES : ttl;
@@ -338,6 +327,7 @@ public class MessageTagService extends BaseService {
      * @param tag the message tag to update
      * @return the persisted message tag
      */
+    @Transactional
     public MessageTag updateMessageTag(MessageTag tag) {
         MessageTag original = findTag(tag.getTagId());
         if (original == null) {
@@ -364,6 +354,7 @@ public class MessageTagService extends BaseService {
      * @param tagId the ID of the message tag to delete
      * @return if the message tag was deleted
      */
+    @Transactional
     public boolean deleteMessageTag(String tagId) {
 
         MessageTag original = findTag(tagId);
@@ -381,6 +372,7 @@ public class MessageTagService extends BaseService {
      * @param tagId the ID of the message tag to clear
      * @return if the message tag was deleted
      */
+    @Transactional
     public boolean clearMessageTag(String tagId) {
 
         MessageTag original = findTag(tagId);
@@ -401,6 +393,7 @@ public class MessageTagService extends BaseService {
      * @param messageUids the UIDs of the messages to add
      * @return the updated message tag
      */
+    @Transactional
     public MessageTag addMessageToTag(String tagId, List<String> messageUids) {
         MessageTag tag = findTag(tagId);
         if (tag == null) {
@@ -430,6 +423,7 @@ public class MessageTagService extends BaseService {
      * @param messageUids the UIDs the messages to remove
      * @return the updated message tag
      */
+    @Transactional
     public MessageTag removeMessageFromTag(String tagId, List<String> messageUids) {
         MessageTag tag = findTag(tagId);
         if (tag == null) {
@@ -440,7 +434,6 @@ public class MessageTagService extends BaseService {
         for (Message message : messagesForUids(messageUids)) {
             if (tag.getMessages().contains(message)) {
                 tag.getMessages().remove(message);
-                message.getTags().remove(tag);
             }
         }
 
@@ -472,8 +465,8 @@ public class MessageTagService extends BaseService {
     /**
      * Every hour, expired message tags will be removed
      */
-    @Schedule(persistent=false, second="22", minute="22", hour="*/1")
-    private void removeExpiredMessageTags() {
+    @Scheduled(cron="22 22 */1 * * ?")
+    void removeExpiredMessageTags() {
         List<MessageTag> expiredTags = em.createNamedQuery("MessageTag.findExpiredMessageTags", MessageTag.class)
                 .getResultList();
         if (!expiredTags.isEmpty()) {

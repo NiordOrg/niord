@@ -21,13 +21,15 @@ import org.niord.core.area.vo.SystemAreaVo;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.model.DataFilter;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.inject.Named;
 
 /**
  * Filters areas that need to be a added or updated
  */
-@Named
+@Dependent
+@Named("batchAreaImportProcessor")
 public class BatchAreaImportProcessor extends AbstractItemHandler {
 
     @Inject

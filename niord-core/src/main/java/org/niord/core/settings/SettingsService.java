@@ -17,25 +17,29 @@ package org.niord.core.settings;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.quarkus.runtime.StartupEvent;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.cache.CacheElement;
 import org.niord.core.service.BaseService;
 import org.niord.core.util.JsonUtils;
 import org.slf4j.Logger;
 
-import javax.annotation.PostConstruct;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
 import javax.enterprise.inject.Produces;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -47,9 +51,8 @@ import static org.keycloak.util.JsonSerialization.mapper;
  * This bean can either be injected directly,
  * or the {@code @Setting} annotation can be used.
  */
-@Singleton
+@ApplicationScoped
 @Lock(LockType.READ)
-@Startup
 @SuppressWarnings("unused")
 public class SettingsService extends BaseService {
 
@@ -71,8 +74,8 @@ public class SettingsService extends BaseService {
      *
      * Lastly, persists all the loaded settings that do not already exists in the database.
      */
-    @PostConstruct
-    public void loadSettingsFromPropertiesFile() {
+    @Transactional
+    void init(@Observes StartupEvent ev) {
         try {
             // Read the settings from the "/niord.json" classpath file
             Map<String, Setting> settingMap = loadSettingsFromClasspath();
@@ -103,7 +106,8 @@ public class SettingsService extends BaseService {
 
 
     /** Called upon startup. Read the settings from the "/niord.json" classpath file */
-    private Map<String, Setting> loadSettingsFromClasspath() throws IOException {
+    @Transactional
+    Map<String, Setting> loadSettingsFromClasspath() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         List<Setting> settings = mapper.readValue(
                 getClass().getResource(SETTINGS_FILE),
@@ -114,7 +118,8 @@ public class SettingsService extends BaseService {
 
 
     /** Called upon startup. Read the settings from the "${niord.home}/niord.json" file and update the settingMap */
-    private Map<String, Setting> loadSettingsFromNiordHome(Map<String, Setting> settingMap) throws IOException {
+    @Transactional
+    Map<String, Setting> loadSettingsFromNiordHome(Map<String, Setting> settingMap) throws IOException {
         log.info("loadSettingsFromNiordHome start");
 
         Object niordHome = peek("niord.home");
@@ -177,6 +182,7 @@ public class SettingsService extends BaseService {
      * @param setting the source
      * @return the associated value
      */
+    @Transactional
     public Object get(Setting setting) {
         Objects.requireNonNull(setting, "Must specify valid setting");
 
@@ -189,19 +195,23 @@ public class SettingsService extends BaseService {
         CacheElement<Object> value = settingsCache.getCache().get(setting.getKey());
 
         // No cached value
-        if (value == null) {
-            Setting result = em.find(Setting.class, setting.getKey());
-            if (result == null) {
-                result = new Setting(setting);
-                em.persist(result);
-            }
-            value = new CacheElement<>(result.getValue());
+        try {
+            if (value == null) {
+                Setting result = em.find(Setting.class, setting.getKey());
+                if (result == null) {
+                    result = new Setting(setting);
+                    em.persist(result);
+                }
+                value = new CacheElement<>(result.getValue());
 
 
-            // Cache it.
-            if (setting.isCached()) {
-                settingsCache.getCache().put(setting.getKey(), value);
+                // Cache it.
+                if (setting.isCached()) {
+                    settingsCache.getCache().put(setting.getKey(), value);
+                }
             }
+        } catch (IllegalStateException ex) {
+            return "/";
         }
 
         // Check if we need to substitute with system properties. Only applies to String-based settings.

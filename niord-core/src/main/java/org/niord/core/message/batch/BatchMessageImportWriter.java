@@ -19,6 +19,7 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTag;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.List;
@@ -26,7 +27,8 @@ import java.util.List;
 /**
  * Persists the NWs to the database
  */
-@Named
+@Dependent
+@Named("batchMessageImportWriter")
 public class BatchMessageImportWriter extends AbstractMessageImportWriter {
 
     @Inject

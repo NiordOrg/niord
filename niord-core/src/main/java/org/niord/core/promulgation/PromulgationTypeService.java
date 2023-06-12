@@ -27,12 +27,10 @@ import org.niord.core.service.BaseService;
 import org.niord.model.message.Type;
 import org.slf4j.Logger;
 
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Root;
+import javax.persistence.criteria.*;
+import javax.transaction.Transactional;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -51,6 +49,7 @@ import java.util.stream.Collectors;
  * In turn, messages are associated with a list of {@linkplain BaseMessagePromulgation}-derived entities that
  * are each tied to a promulgation type.
  */
+@RequestScoped
 public class PromulgationTypeService extends BaseService {
 
     @Inject
@@ -241,6 +240,7 @@ public class PromulgationTypeService extends BaseService {
      * @param type the template for the new promulgation type
      * @return the newly created promulgation type
      */
+    @Transactional
     public PromulgationType createPromulgationType(PromulgationType type) {
         PromulgationType original = getPromulgationType(type.getTypeId());
         if (original != null) {
@@ -261,6 +261,7 @@ public class PromulgationTypeService extends BaseService {
      * @param type the template for the updated promulgation type
      * @return the updated promulgation type
      */
+    @Transactional
     public PromulgationType updatePromulgationType(PromulgationType type) {
 
         PromulgationType original = getPromulgationType(type.getTypeId());
@@ -295,6 +296,7 @@ public class PromulgationTypeService extends BaseService {
      * @return if the promulgation type was deleted
      * @noinspection all
      */
+    @Transactional
     public boolean deletePromulgationType(String typeId) {
         PromulgationType original = getPromulgationType(typeId);
         if (original != null) {

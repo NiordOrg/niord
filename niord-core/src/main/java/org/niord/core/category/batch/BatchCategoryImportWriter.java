@@ -19,14 +19,17 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.category.Category;
 import org.niord.core.category.CategoryService;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.transaction.Transactional;
 import java.util.List;
 
 /**
  * Persists the categories to the database
  */
-@Named
+@Dependent
+@Named("batchCategoryImportWriter")
 public class BatchCategoryImportWriter extends AbstractItemHandler {
 
     @Inject
@@ -34,6 +37,7 @@ public class BatchCategoryImportWriter extends AbstractItemHandler {
 
     /** {@inheritDoc} **/
     @Override
+    @Transactional
     public void writeItems(List<Object> items) throws Exception {
         long t0 = System.currentTimeMillis();
         for (Object i : items) {

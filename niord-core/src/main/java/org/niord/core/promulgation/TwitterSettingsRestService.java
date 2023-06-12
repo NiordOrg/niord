@@ -18,27 +18,19 @@ package org.niord.core.promulgation;
 
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
 import org.niord.core.promulgation.vo.TwitterSettingsVo;
 import org.niord.core.user.Roles;
 
 import javax.annotation.security.RolesAllowed;
-import javax.ejb.Stateless;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 
 /**
  * REST interface for managing Twitter settings
  */
 @Path("/promulgation/twitter-settings")
-@Stateless
-@SecurityDomain("keycloak")
+@RequestScoped
 @RolesAllowed(Roles.SYSADMIN)
 @SuppressWarnings("unused")
 public class TwitterSettingsRestService {

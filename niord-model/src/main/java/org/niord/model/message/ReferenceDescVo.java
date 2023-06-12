@@ -15,7 +15,7 @@
  */
 package org.niord.model.message;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizedDesc;
 
@@ -25,7 +25,7 @@ import javax.xml.bind.annotation.XmlType;
 /**
  * The entity description VO
  */
-@ApiModel(value = "ReferenceDesc", description = "Translatable fields of the Reference model")
+@Schema(name = "ReferenceDesc", description = "Translatable fields of the Reference model")
 @XmlType(propOrder = { "description" })
 public class ReferenceDescVo implements ILocalizedDesc, IJsonSerializable {
 

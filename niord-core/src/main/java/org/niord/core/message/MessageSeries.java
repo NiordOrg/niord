@@ -23,14 +23,7 @@ import org.niord.model.message.MainType;
 import org.niord.model.message.MessageSeriesVo;
 import org.niord.model.message.Type;
 
-import javax.persistence.Cacheable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.HashSet;

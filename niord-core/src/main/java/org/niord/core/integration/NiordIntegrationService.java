@@ -16,12 +16,13 @@
 
 package org.niord.core.integration;
 
+import io.quarkus.scheduler.Scheduled;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
-import javax.ejb.Schedule;
-import javax.ejb.Stateless;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 import java.util.Calendar;
 import java.util.List;
 
@@ -31,7 +32,7 @@ import java.util.List;
  * The service will periodically import public messages from other Niord serves as defined
  * by the {@code NiordIntegration} entity
  */
-@Stateless
+@RequestScoped
 @SuppressWarnings("unused")
 public class NiordIntegrationService extends BaseService {
 
@@ -77,6 +78,7 @@ public class NiordIntegrationService extends BaseService {
      * @param integration the Niord integration point template
      * @return a new Niord integration point from the given template
      */
+    @Transactional
     public NiordIntegration createNiordIntegration(NiordIntegration integration) {
         // Sanity checks
         if (integration == null || integration.isPersisted()) {
@@ -96,6 +98,7 @@ public class NiordIntegrationService extends BaseService {
      * @param integration the Niord integration point template
      * @return the persisted Niord integration
      */
+    @Transactional
     public NiordIntegration updateNiordIntegration(NiordIntegration integration) {
         NiordIntegration original = findById(integration.getId());
         if (original == null) {
@@ -123,6 +126,7 @@ public class NiordIntegrationService extends BaseService {
      * @return if the message was deleted
      * @noinspection all
      */
+    @Transactional
     public boolean deleteNiordIntegration(Integer id) {
 
         NiordIntegration original = findById(id);
@@ -151,8 +155,8 @@ public class NiordIntegrationService extends BaseService {
     /**
      * Called every minute and processes the next pending Niord Integration
      */
-    @Schedule(persistent=false, second="51", minute="*/1", hour="*")
-    private void processNextPendingNiordIntegration() {
+    @Scheduled(cron="51 */1 * * * ?")
+    void processNextPendingNiordIntegration() {
         List<NiordIntegration> integrations = getPendingNiordIntegrations();
         if (!integrations.isEmpty()) {
             processNiordIntegration(integrations.get(0).getId());
@@ -163,6 +167,7 @@ public class NiordIntegrationService extends BaseService {
     /**
      * Processes the given Niord Integration
      */
+    @Transactional
     public void processNiordIntegration(Integer id) {
 
         NiordIntegration integration = findById(id);

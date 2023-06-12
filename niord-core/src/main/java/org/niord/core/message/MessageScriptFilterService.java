@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 
 import javax.ejb.Lock;
 import javax.ejb.LockType;
-import javax.ejb.Singleton;
+import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Example:
  * "(msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) && msg.status == Status.PUBLISHED"
  */
-@Singleton
+@ApplicationScoped
 @Lock(LockType.READ)
 @SuppressWarnings("unused")
 public class MessageScriptFilterService extends BaseService {

@@ -20,6 +20,7 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.promulgation.PromulgationType;
 import org.niord.core.promulgation.PromulgationTypeService;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.List;
@@ -27,7 +28,8 @@ import java.util.List;
 /**
  * Persists the templates to the database
  */
-@Named
+@Dependent
+@Named("batchPromulgationTypeImportWriter")
 public class BatchPromulgationTypeImportWriter extends AbstractItemHandler {
 
     @Inject

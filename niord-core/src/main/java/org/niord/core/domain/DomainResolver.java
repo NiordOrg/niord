@@ -18,6 +18,7 @@ package org.niord.core.domain;
 import org.keycloak.adapters.spi.HttpFacade;
 
 import javax.servlet.http.HttpServletRequest;
+import io.vertx.core.http.HttpServerRequest;
 import java.util.ServiceLoader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,6 +55,13 @@ public interface DomainResolver {
     String resolveDomain(HttpServletRequest request);
 
     /**
+     * Resolves the current domain, i.e. Keycloak Client, from the request
+     * @param request the request to resolve the domain from
+     * @return the domain or null if un-resolved
+     */
+    String resolveDomain(HttpServerRequest request);
+
+    /**
      * Implementation of the DomainResolver interface, that uses the "NiordDomain" request header
      * to resolve the domain
      */
@@ -70,6 +78,11 @@ public interface DomainResolver {
         /** {@inheritDoc} */
         @Override
         public String resolveDomain(HttpServletRequest request) {
+            return request.getHeader(DOMAIN_HEADER);
+        }
+
+        @Override
+        public String resolveDomain(HttpServerRequest request) {
             return request.getHeader(DOMAIN_HEADER);
         }
     }
@@ -106,6 +119,12 @@ public interface DomainResolver {
         @Override
         public String resolveDomain(HttpServletRequest request) {
             return resolveDomain(request.getRequestURI());
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public String resolveDomain(HttpServerRequest request) {
+            return resolveDomain(request.uri());
         }
     }
 }

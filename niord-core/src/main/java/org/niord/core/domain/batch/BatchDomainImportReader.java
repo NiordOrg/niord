@@ -20,6 +20,7 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.util.JsonUtils;
 import org.niord.core.domain.vo.DomainVo;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Named;
 import java.io.Serializable;
 import java.nio.file.Path;
@@ -38,7 +39,8 @@ import java.util.List;
  * TBD
  * </pre>
  */
-@Named
+@Dependent
+@Named("batchDomainImportReader")
 public class BatchDomainImportReader extends AbstractItemHandler {
 
     List<DomainVo> domains;

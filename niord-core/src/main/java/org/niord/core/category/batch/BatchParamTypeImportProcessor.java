@@ -20,13 +20,15 @@ import org.niord.core.category.ParamType;
 import org.niord.core.category.TemplateExecutionService;
 import org.niord.core.category.vo.ParamTypeVo;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.inject.Named;
 
 /**
  * Processes parameter types
  */
-@Named
+@Dependent
+@Named("batchParamTypeImportProcessor")
 public class BatchParamTypeImportProcessor extends AbstractItemHandler {
 
     @Inject

@@ -15,6 +15,7 @@
  */
 package org.niord.core.area;
 
+import io.quarkus.scheduler.Scheduled;
 import org.apache.commons.lang.StringUtils;
 import org.locationtech.jts.geom.Geometry;
 import org.niord.core.area.vo.SystemAreaVo.AreaMessageSorting;
@@ -30,25 +31,10 @@ import org.niord.core.settings.SettingsService;
 import org.niord.model.search.PagedSearchParamsVo;
 import org.slf4j.Logger;
 
-import javax.ejb.Schedule;
-import javax.ejb.Stateless;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Order;
-import javax.persistence.criteria.Path;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import javax.persistence.criteria.*;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -57,7 +43,7 @@ import static org.niord.core.area.AreaSearchParams.TREE_SORT_ORDER;
 /**
  * Business interface for accessing Niord areas
  */
-@Stateless
+@RequestScoped
 @SuppressWarnings("unused")
 public class AreaService extends TreeBaseService<Area> {
 
@@ -495,9 +481,9 @@ public class AreaService extends TreeBaseService<Area> {
      *
      * @return if the sort order was updated
      */
-    @Schedule(persistent = false, second = "3", minute = "13", hour = "*")
-    public boolean recomputeTreeSortOrder() {
-        return recomputeTreeSortOrder(SETTING_AREA_LAST_UPDATED);
+    @Scheduled(cron="13 3 * * * ?")
+    public void recomputeTreeSortOrder() {
+        recomputeTreeSortOrder(SETTING_AREA_LAST_UPDATED);
     }
 
 

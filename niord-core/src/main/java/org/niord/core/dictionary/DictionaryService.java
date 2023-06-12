@@ -47,13 +47,14 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
 
 /**
  * Business interface for accessing dictionaries
  */
-@Singleton
+@ApplicationScoped
 @Lock(LockType.READ)
-@Startup
 @SuppressWarnings("unused")
 public class DictionaryService extends BaseService {
 
@@ -122,6 +123,7 @@ public class DictionaryService extends BaseService {
      * @param entry the template dictionary entry to add
      * @return the added dictionary entry
      */
+    @Transactional
     @Lock(LockType.WRITE)
     public DictionaryEntry createEntry(String name, DictionaryEntry entry) {
         Dictionary dict = findByName(name);
@@ -159,6 +161,7 @@ public class DictionaryService extends BaseService {
      * @param entry the template dictionary entry to update
      * @return the updated dictionary entry
      */
+    @Transactional
     @Lock(LockType.WRITE)
     public DictionaryEntry updateEntry(String name, DictionaryEntry entry) {
         Dictionary dict = findByName(name);
@@ -192,6 +195,7 @@ public class DictionaryService extends BaseService {
      * @return if the entry was deleted
      */
     @Lock(LockType.WRITE)
+    @Transactional
     public boolean deleteEntry(String name, String key) {
         Dictionary dict = findByName(name);
         if (dict == null) {
@@ -440,6 +444,7 @@ public class DictionaryService extends BaseService {
      * Imports a dictionary from the given template
      * @param dictionary the dictionary to import
      */
+    @Transactional
     public Dictionary importDictionary(Dictionary dictionary) {
         long t0 = System.currentTimeMillis();
 

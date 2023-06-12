@@ -20,6 +20,7 @@ import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.core.aton.vo.AtonOsmVo;
 import org.niord.core.batch.AbstractItemHandler;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Named;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -62,7 +63,8 @@ import java.util.logging.Level;
  *   &lt;/osm&gt;
  * </pre>
  */
-@Named
+@Dependent
+@Named("batchAtonImportReader")
 public class BatchAtonImportReader extends AbstractItemHandler {
 
     private AtonNodeVo[] atons;

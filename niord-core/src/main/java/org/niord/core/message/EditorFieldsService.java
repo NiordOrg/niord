@@ -28,13 +28,9 @@ import org.niord.core.settings.SettingsService;
 import org.niord.core.util.JsonUtils;
 import org.niord.model.message.MainType;
 
-import javax.ejb.Stateless;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * A wrapper around editor fields settings.
@@ -50,7 +46,7 @@ import java.util.Map;
  *     <li>User attribute editor fields: NW or NM specific editor fields. Defined in user Keycloak "other claims" attributes.</li>
  * </ol>
  */
-@Stateless
+@RequestScoped
 public class EditorFieldsService extends BaseService {
 
     /** These settings are all defined in niord.json **/

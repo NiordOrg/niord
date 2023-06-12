@@ -482,7 +482,7 @@ public class MessageLuceneIndex extends BaseService {
     private void setLastUpdated(Date date, IndexWriter writer) {
         Map<String,String> userData = new HashMap<>();
         userData.put(LUCENE_LAST_UPDATE, String.valueOf(date.getTime()));
-        writer.setCommitData(userData);
+        writer.setLiveCommitData(userData.entrySet());
     }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Danish Maritime Authority.
+ * Copyright 2016 Danish Maritime Authority.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.niord.core.category.batch;
 
-import org.niord.core.batch.AbstractItemHandler;
+package org.niord.core.web;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Named;
-import java.util.List;
+import javax.ws.rs.core.SecurityContext;
 
 /**
- * The parameter types have already been persisted by the processor
+ * The SecurityContextProvider Interface.
+ *
+ * This interface defines the structure of the SecurityContextProvider components
+ * that will retrieve and return the currently authenticated user.
+ *
+ * @author Nikolaos Vastardis (email: Nikolaos.Vastardis@gla-rad.org)
  */
-@Dependent
-@Named("batchParamTypeImportWriter")
-public class BatchParamTypeImportWriter extends AbstractItemHandler {
+public interface SecurityContextProvider {
 
-    /** {@inheritDoc} **/
-    @Override
-    public void writeItems(List<Object> items) throws Exception {
-    }
+    SecurityContext getSecurityContext();
+
 }

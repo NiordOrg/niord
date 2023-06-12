@@ -24,6 +24,7 @@ import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.repo.RepositoryService;
 import org.niord.model.search.PagedSearchResultVo;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.File;
@@ -72,7 +73,8 @@ import java.util.zip.ZipFile;
  * }
  * </pre>
  */
-@Named
+@Dependent
+@Named("batchMsgArchiveImportReader")
 public class BatchMsgArchiveImportReader extends AbstractItemHandler {
 
     List<ExtractedArchiveMessageVo> messages;

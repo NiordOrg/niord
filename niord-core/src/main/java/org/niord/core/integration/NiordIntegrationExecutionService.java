@@ -37,11 +37,7 @@ import org.niord.core.chart.ChartService;
 import org.niord.core.geojson.FeatureService;
 import org.niord.core.integration.vo.MessageSeriesMappingVo;
 import org.niord.core.integration.vo.NiordIntegrationVo;
-import org.niord.core.message.Message;
-import org.niord.core.message.MessageSearchParams;
-import org.niord.core.message.MessageSeries;
-import org.niord.core.message.MessageSeriesService;
-import org.niord.core.message.MessageService;
+import org.niord.core.message.*;
 import org.niord.core.service.BaseService;
 import org.niord.core.util.WebUtils;
 import org.niord.model.message.MessageVo;
@@ -49,24 +45,19 @@ import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
 import javax.ejb.Asynchronous;
-import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * Handles the actual Niord integration execution
  */
-@Stateless
+@RequestScoped
 @SuppressWarnings("unused")
 public class NiordIntegrationExecutionService extends BaseService {
 

@@ -22,25 +22,20 @@ import org.niord.core.db.SpatialIntersectsPredicate;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import javax.transaction.Transactional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Business interface for accessing sea charts
  */
-@Stateless
+@RequestScoped
 @SuppressWarnings("unused")
 public class ChartService extends BaseService {
 
@@ -162,6 +157,7 @@ public class ChartService extends BaseService {
      * @param chart    the template chart to update the original from
      * @return the updated chart
      */
+    @Transactional
     public Chart updateChart(Chart original, Chart chart) {
         // Copy the chart data
         original.setInternationalNumber(chart.getInternationalNumber());
@@ -194,6 +190,7 @@ public class ChartService extends BaseService {
      * @param chart the chart to create
      * @return the created chart
      */
+    @Transactional
     public Chart createChart(Chart chart) {
         Chart original = findByChartNumber(chart.getChartNumber());
         if (original != null) {
@@ -227,6 +224,7 @@ public class ChartService extends BaseService {
      * Deletes the chart
      * @param chartNumber the id of the chart to delete
      */
+    @Transactional
     public boolean deleteChart(String chartNumber) {
 
         Chart chart = findByChartNumber(chartNumber);

@@ -15,7 +15,7 @@
  */
 package org.niord.model.geojson;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -25,15 +25,14 @@ import java.util.function.Consumer;
  * GeoJSON GeometryCollection, as defined in the specification:
  * http://geojson.org/geojson-spec.html#geometry-collection
  */
-@ApiModel(
-        value = "GeometryCollection",
-        parent = GeoJsonVo.class,
+@Schema(
+        name = "GeometryCollection",
         description = "GeoJson GeometryCollection type"
 )
 @XmlRootElement(name = "geometryCollection")
 public class GeometryCollectionVo extends GeometryVo {
 
-    private GeometryVo[] geometries;
+    GeometryVo[] geometries;
 
     @SuppressWarnings("unused")
     public GeometryCollectionVo() {

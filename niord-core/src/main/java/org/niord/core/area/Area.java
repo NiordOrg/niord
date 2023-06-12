@@ -25,21 +25,8 @@ import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.message.AreaVo;
 
-import javax.persistence.Cacheable;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.Transient;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import javax.persistence.*;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -114,12 +101,12 @@ public class Area extends TreeBaseEntity<Area> implements ILocalizable<AreaDesc>
 
         DataFilter compFilter = filter.forComponent(Area.class);
 
-        this.mrn = area.getMrn();
-        this.active = area.isActive();
-        this.id = area.getId();
+        this.setMrn(area.getMrn());
+        this.setActive(area.isActive());
+        this.setId(area.getId());
 
         if (compFilter.includeParent() && area.getParent() != null) {
-            parent = new Area(area.getParent(), filter);
+            setParent(new Area(area.getParent(), filter));
         }
         if (area.getDescs() != null) {
             area.getDescs()
@@ -157,7 +144,7 @@ public class Area extends TreeBaseEntity<Area> implements ILocalizable<AreaDesc>
         DataFilter compFilter = filter.forComponent(Area.class);
 
         A area = newInstance(clz);
-        area.setId(id);
+        area.setId(this.getId());
         area.setMrn(mrn);
         area.setActive(active);
 
@@ -181,13 +168,13 @@ public class Area extends TreeBaseEntity<Area> implements ILocalizable<AreaDesc>
             }
 
             if (compFilter.includeChildren()) {
-                children.forEach(child -> sysArea.checkCreateChildren().add(child.toVo(SystemAreaVo.class, filter)));
+                getChildren().forEach(child -> sysArea.checkCreateChildren().add(child.toVo(SystemAreaVo.class, filter)));
             }
         }
 
-        if (compFilter.includeParent() && parent != null) {
-            area.setParent(parent.toVo(clz, filter));
-        } else if (compFilter.includeParentId() && parent != null) {
+        if (compFilter.includeParent() && getParent() != null) {
+            area.setParent(getParent().toVo(clz, filter));
+        } else if (compFilter.includeParentId() && getParent() != null) {
             AreaVo parent = new AreaVo();
             parent.setId(parent.getId());
             area.setParent(parent);

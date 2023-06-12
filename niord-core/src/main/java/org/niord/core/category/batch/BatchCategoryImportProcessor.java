@@ -21,13 +21,15 @@ import org.niord.core.category.CategoryService;
 import org.niord.core.category.vo.SystemCategoryVo;
 import org.niord.model.DataFilter;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 import javax.inject.Named;
 
 /**
  * Filters categories that need to be a added or updated
  */
-@Named
+@Dependent
+@Named("batchCategoryImportProcessor")
 public class BatchCategoryImportProcessor extends AbstractItemHandler {
 
     @Inject

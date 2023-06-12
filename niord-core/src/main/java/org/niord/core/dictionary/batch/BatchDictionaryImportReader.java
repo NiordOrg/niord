@@ -21,6 +21,7 @@ import org.niord.core.chart.vo.SystemChartVo;
 import org.niord.core.dictionary.vo.ExportedDictionaryVo;
 import org.niord.core.util.JsonUtils;
 
+import javax.enterprise.context.Dependent;
 import javax.inject.Named;
 import java.io.Serializable;
 import java.nio.file.Path;
@@ -53,7 +54,8 @@ import java.util.List;
  * ]
  * </pre>
  */
-@Named
+@Dependent
+@Named("batchDictionaryImportReader")
 public class BatchDictionaryImportReader extends AbstractItemHandler {
 
     List<ExportedDictionaryVo> dictionaries;

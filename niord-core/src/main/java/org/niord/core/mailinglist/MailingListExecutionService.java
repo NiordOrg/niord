@@ -38,19 +38,14 @@ import org.niord.core.service.BaseService;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.niord.core.mail.ScheduledMailRecipient.RecipientType.TO;
@@ -59,7 +54,7 @@ import static org.niord.core.script.ScriptResource.Type.FM;
 /**
  * Handles execution of mailing list triggers
  */
-@Stateless
+@RequestScoped
 public class MailingListExecutionService extends BaseService {
 
     @Inject
@@ -206,6 +201,7 @@ public class MailingListExecutionService extends BaseService {
      * Computes the next scheduled execution of the given trigger
      * @param triggerId the ID of the scheduled mailing list trigger to execute
      */
+    @Transactional
     @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
     public void computeNextScheduledExecution(Integer triggerId) {
 
@@ -230,6 +226,7 @@ public class MailingListExecutionService extends BaseService {
      * @param trigger the scheduled mailing list trigger to execute
      * @param persist whether to persist the mails or not
      */
+    @Transactional
     public List<ScheduledMail> executeScheduledTrigger(MailingListTrigger trigger, boolean persist) throws Exception {
 
         if (trigger.getType() != TriggerType.SCHEDULED) {

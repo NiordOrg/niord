@@ -86,7 +86,7 @@ public class FiringPeriod extends VersionedEntity<Integer> implements Comparable
     /** Constructor */
     public FiringPeriod(Area area, FiringPeriodVo firingPeriod) {
         this.area = area;
-        this.id = firingPeriod.getId();
+        this.setId(firingPeriod.getId());
         this.legacyId = firingPeriod.getLegacyId();
         this.fromDate = firingPeriod.getFromDate();
         this.toDate = firingPeriod.getToDate();
@@ -108,7 +108,7 @@ public class FiringPeriod extends VersionedEntity<Integer> implements Comparable
     @SuppressWarnings("all")
     public FiringPeriodVo toVo() {
         FiringPeriodVo firingPeriod = new FiringPeriodVo();
-        firingPeriod.setId(id);
+        firingPeriod.setId(this.getId());
         firingPeriod.setLegacyId(legacyId);
         firingPeriod.setAreaId(area.getId());
         firingPeriod.setFromDate(fromDate);

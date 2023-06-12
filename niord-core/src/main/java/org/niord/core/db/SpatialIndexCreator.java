@@ -28,8 +28,7 @@ import java.util.List;
  * Creates the spatial indexes needed.
  * Cannot be accommodated with usual JPA annotations, methinks.
  */
-@Singleton
-@Startup
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class SpatialIndexCreator extends BaseService {
 
@@ -41,7 +40,7 @@ public class SpatialIndexCreator extends BaseService {
      * Checks and creates spatial indexes
      */
     @PostConstruct
-    private void createSpatialIndexes() {
+     void createSpatialIndexes() {
 
         try {
             if (!hasIndex("Feature", "feature_geometry_index")) {

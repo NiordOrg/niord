@@ -15,8 +15,8 @@
  */
 package org.niord.model.message;
 
-import io.swagger.annotations.ApiModel;
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 /**
  * Value object for the {@code Message} model entity
  */
-@ApiModel(value = "Message", description = "Main NW and NM message class")
+@Schema(name = "Message", description = "Main NW and NM message class")
 @XmlRootElement(name = "message")
 @XmlType(propOrder = {
         "messageSeries", "number", "shortId", "mainType", "type", "status",

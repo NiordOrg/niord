@@ -76,7 +76,7 @@ public class ScriptResource extends VersionedEntity<Integer>  {
 
     /** Constructor **/
     public ScriptResource(ScriptResourceVo scriptResource) {
-        this.id = scriptResource.getId();
+        this.setId(scriptResource.getId());
         this.type = scriptResource.getType();
         this.path = scriptResource.getPath();
         this.content = scriptResource.getContent();
@@ -87,7 +87,7 @@ public class ScriptResource extends VersionedEntity<Integer>  {
     /** Converts this entity to a value object */
     public ScriptResourceVo toVo() {
         ScriptResourceVo scriptResource = new ScriptResourceVo();
-        scriptResource.setId(id);
+        scriptResource.setId(this.getId());
         scriptResource.setType(type);
         scriptResource.setPath(path);
         scriptResource.setContent(content);

@@ -15,12 +15,16 @@
  */
 package org.niord.core.batch;
 
+import org.jberet.cdi.JobScoped;
 import org.slf4j.Logger;
 
 import javax.batch.api.listener.AbstractJobListener;
 import javax.batch.operations.JobOperator;
 import javax.batch.runtime.BatchRuntime;
 import javax.batch.runtime.context.JobContext;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Dependent;
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.HashMap;
@@ -39,7 +43,8 @@ import java.util.logging.Handler;
  *  &lt;/listeners&gt;
  * </pre>
  */
-@Named
+@Dependent
+@Named("batchJobListener")
 public class BatchJobListener extends AbstractJobListener {
 
     @Inject
@@ -50,7 +55,6 @@ public class BatchJobListener extends AbstractJobListener {
 
     @Inject
     BatchService batchService;
-
 
     /**
      * Fetch the BatchData from the job operator properties, if they exist
@@ -105,7 +109,7 @@ public class BatchJobListener extends AbstractJobListener {
 
                 } catch (Exception ignored) {
                 }
-                log.debug("Closed log for batch item handler " + batchLog.getKey());
+                //log.debug("Closed log for batch item handler " + batchLog.getKey());
             }
         }
     }

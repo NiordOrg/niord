@@ -69,7 +69,7 @@ public class ScriptResourceHistory extends BaseEntity<Integer> {
     /** Converts this entity to a value object */
     public ScriptResourceHistoryVo toVo() {
         ScriptResourceHistoryVo history = new ScriptResourceHistoryVo();
-        history.setTemplateId(id);
+        history.setTemplateId(this.getId());
         if (user != null) {
             history.setUser(user.getName());
         }

@@ -15,12 +15,15 @@
  */
 package org.niord.core;
 
+import io.quarkus.runtime.Quarkus;
+import io.quarkus.runtime.QuarkusApplication;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
+import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
 import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import javax.servlet.ServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,14 +34,18 @@ import java.util.Properties;
 /**
  * Common settings and functionality for the Niord app
  */
-@Stateless
 @SuppressWarnings("unused")
-public class NiordApp {
+public class NiordApp implements QuarkusApplication {
 
     private final static ThreadLocal<String> THREAD_LOCAL_SERVER_NAME = new ThreadLocal<>();
 
     // The possible execution modes of Niord
     public enum ExecutionMode { DEVELOPMENT, TEST, PRODUCTION }
+
+    private static final Setting ORGANISATION =
+            new Setting("organisation", "DMA")
+                    .description("The organisation of the service")
+                    .editable(true);
 
     private static final Setting BASE_URI =
             new Setting("baseUri", "http://localhost:8080")
@@ -59,7 +66,26 @@ public class NiordApp {
                     .web(true);
 
     @Inject
+    Logger log;
+
+    @Inject
     SettingsService settingsService;
+
+    /**
+     * The main running function of the Quarkus application.
+     *
+     * @param args The input arguments provided
+     * @return The exit code
+     * @throws Exception
+     */
+    @Override
+    public int run(String... args) throws Exception {
+        this.log.info("The QUARKUS Niord App is starting up...");
+        // And wait to finish
+        Quarkus.waitForExit();
+        // Finish!!!
+        return 0;
+    }
 
 
     /** Returns the build version **/
@@ -74,6 +100,14 @@ public class NiordApp {
         return "undefined";
     }
 
+
+    /**
+     * Returns the organisation responsible for this application
+     * @return the organisation responsible for this application
+     */
+    public String getOrganisation() {
+        return settingsService.getString(ORGANISATION);
+    }
 
     /**
      * Returns the base URI used to access this application

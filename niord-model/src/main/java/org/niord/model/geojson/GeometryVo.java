@@ -15,6 +15,9 @@
  */
 package org.niord.model.geojson;
 
+import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
 
@@ -22,6 +25,22 @@ import javax.xml.bind.annotation.XmlType;
  * Base Geometry object as defined in the specification:
  * http://geojson.org/geojson-spec.html#geometry-objects
  */
+@Schema(
+        name = "Geometry",
+        description = "Superclass for Geometry types",
+        oneOf = {PointVo.class, MultiPointVo.class, LineStringVo.class, MultiLineStringVo.class,
+                PolygonVo.class, MultiPolygonVo.class, GeometryCollectionVo.class},
+        discriminatorProperty = "type",
+        discriminatorMapping = {
+                @DiscriminatorMapping(value = "Point", schema = PointVo.class),
+                @DiscriminatorMapping(value = "MultiPoint", schema = MultiPointVo.class),
+                @DiscriminatorMapping(value = "LineString", schema = LineStringVo.class),
+                @DiscriminatorMapping(value = "MultiLineString", schema = MultiLineStringVo.class),
+                @DiscriminatorMapping(value = "Polygon", schema = PolygonVo.class),
+                @DiscriminatorMapping(value = "MultiPolygon", schema = MultiPolygonVo.class),
+                @DiscriminatorMapping(value = "GeometryCollection", schema = GeometryCollectionVo.class),
+        }
+)
 @XmlType(name = "geometry")
 @XmlSeeAlso({ PointVo.class, MultiPointVo.class, LineStringVo.class, MultiLineStringVo.class,
         PolygonVo.class, MultiPolygonVo.class, GeometryCollectionVo.class })
