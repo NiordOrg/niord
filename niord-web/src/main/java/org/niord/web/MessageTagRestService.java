@@ -42,6 +42,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -84,7 +85,7 @@ public class MessageTagRestService {
                 .sortOrder(sortOrder)
                 .maxSize(limit);
         if (types != null) {
-            params.types(types);
+            params.types(new LinkedHashSet<>(types));
         }
 
         return messageTagService.searchMessageTags(params).stream()
