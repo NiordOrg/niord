@@ -23,8 +23,8 @@ angular.module('niord.messages')
     /**
      * Interface for calling the application server
      */
-    .factory('MessageService', [ '$rootScope', '$http', '$window', '$uibModal',
-        function($rootScope, $http, $window, $uibModal) {
+    .factory('MessageService', [ '$rootScope', '$state', '$http', '$window', '$uibModal',
+        function($rootScope, $state, $http, $window, $uibModal) {
         'use strict';
 
         function extractMessageIds(messages) {
