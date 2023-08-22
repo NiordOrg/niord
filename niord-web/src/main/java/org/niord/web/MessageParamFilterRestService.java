@@ -26,6 +26,7 @@ import org.niord.core.user.UserService;
 import org.niord.core.message.vo.MessageParamFilterVo;
 import org.slf4j.Logger;
 
+import javax.annotation.security.PermitAll;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -44,7 +45,8 @@ import java.util.stream.Collectors;
  */
 @Path("/filters")
 @Stateless
-//@SecurityDomain("keycloak")
+@SecurityDomain("keycloak")
+@PermitAll
 public class MessageParamFilterRestService {
 
     @Inject
