@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
  */
 @Path("/filters")
 @Stateless
-@SecurityDomain("keycloak")
+//@SecurityDomain("keycloak")
 public class MessageParamFilterRestService {
 
     @Inject
