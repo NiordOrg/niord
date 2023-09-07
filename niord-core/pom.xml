@@ -98,9 +98,9 @@
             <version>0.9.20</version>
         </dependency>
         <dependency>
-            <groupId>net.sf.jtidy</groupId>
+            <groupId>com.github.jtidy</groupId>
             <artifactId>jtidy</artifactId>
-            <version>r938</version>
+            <version>1.0.4</version>
         </dependency>
         <!-- Used for encryption of PDF files: -->
         <dependency>
