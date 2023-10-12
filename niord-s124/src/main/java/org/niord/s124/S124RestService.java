@@ -15,36 +15,29 @@
  */
 package org.niord.s124;
 
-import java.io.InputStream;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.nio.charset.Charset;
-
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
-
 import org.apache.commons.io.IOUtils;
 import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.io.StringWriter;
 
 /**
  * A public REST API for accessing messages as S-124 GML.
@@ -54,10 +47,8 @@ import jakarta.ws.rs.core.Response;
  *     xmllint --noout --schema http://localhost:8080/rest/S-124/S124.xsd http://localhost:8080/rest/S-124/NW-061-17.gml
  * </pre>
  */
-//@Api(value = "/S-124",
-//        description = "Public API for accessing messages as S-124 GML. " +
-//                "NB: Only use this service for test purposes, not for production.",
-//        tags = {"S-124" })
+@RequestScoped
+@Transactional
 @Path("/S-124")
 public class S124RestService {
 
@@ -67,32 +58,24 @@ public class S124RestService {
     @Inject
     S124Service s124Service;
 
-
     /**
      * Returns the S-124 GML representation for the given message
      */
-//    @ApiOperation(
-//            value = "Returns S-124 GML representation for the message." +
-//                    "NB: Only use this service for test purposes, not for production.",
-//            response = String.class,
-//            tags = {"S-124"}
-//    )
-    @Operation(summary = "Returns S-124 GML representation for the message." +
+    @GET
+    @Path("/messages/{messageId}")
+    @Operation(description = "Returns S-124 GML representation for the message. " +
             "NB: Only use this service for test purposes, not for production.")
     @APIResponse(
             responseCode = "200",
             content = @Content(
                     mediaType = MediaType.APPLICATION_JSON,
-                    schema = @Schema(implementation = String.class, type=SchemaType.STRING)
+                    schema = @Schema(implementation = String.class)
             )
     )
-    @GET
-    @Path("/messages/{messageId}")
     @Produces({"application/gml+xml;charset=UTF-8"})
     public Response s124MessageDetails(
-    		@Parameter(description = "The message UID or short ID", example = "NW-061-17")
+            @Parameter(description = "The message UID or short ID", example = "NW-061-17")
             @PathParam("messageId") String messageId,
-
             @Parameter(description = "Two-letter ISO 639-1 language code", example = "en")
             @QueryParam("lang") @DefaultValue("en") String language
 
@@ -164,7 +147,7 @@ public class S124RestService {
 
         try (InputStream in = getClass().getResourceAsStream("/xsd/" + xsdFile)) {
 
-            String xsd = IOUtils.toString(in, Charset.defaultCharset());
+            String xsd = IOUtils.toString(in);
 
             log.info("Returning XSD " + xsdFile);
             return Response.ok(xsd)
