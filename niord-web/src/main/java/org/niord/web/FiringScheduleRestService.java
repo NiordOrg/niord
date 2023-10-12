@@ -16,15 +16,12 @@
 
 package org.niord.web;
 
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
 import org.niord.core.domain.DomainService;
-import org.niord.core.message.Message;
-import org.niord.core.message.MessageSeries;
-import org.niord.core.message.MessageSeriesService;
-import org.niord.core.message.MessageTag;
-import org.niord.core.message.MessageTagService;
+import org.niord.core.message.*;
 import org.niord.core.schedule.FiringExerciseService;
 import org.niord.core.schedule.FiringSchedule;
 import org.niord.core.schedule.FiringScheduleService;
@@ -35,21 +32,10 @@ import org.niord.model.IJsonSerializable;
 import org.niord.model.message.MessageVo;
 import org.slf4j.Logger;
 
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -61,8 +47,8 @@ import java.util.stream.Collectors;
  * REST interface for accessing and updating firing schedules.
  */
 @Path("/firing-schedules")
-@Stateless
-@SecurityDomain("keycloak")
+@RequestScoped
+@Transactional
 @PermitAll
 public class FiringScheduleRestService {
 

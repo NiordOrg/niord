@@ -16,6 +16,8 @@
 
 package org.niord.core.promulgation;
 
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -25,11 +27,9 @@ import org.niord.core.user.Roles;
 import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.ws.rs.*;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;

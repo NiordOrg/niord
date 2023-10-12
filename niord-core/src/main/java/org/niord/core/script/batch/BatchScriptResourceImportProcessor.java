@@ -21,9 +21,9 @@ import org.niord.core.script.ScriptResource;
 import org.niord.core.script.ScriptResourceService;
 import org.niord.core.script.vo.ScriptResourceVo;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 /**
  * Converts the script resource value object into a script resource entity template

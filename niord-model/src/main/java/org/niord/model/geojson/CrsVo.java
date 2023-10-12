@@ -18,7 +18,7 @@ package org.niord.model.geojson;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.IJsonSerializable;
 
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.Properties;
 
 /**

@@ -22,9 +22,9 @@ import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
 import org.slf4j.Logger;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.servlet.ServletRequest;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.servlet.ServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;

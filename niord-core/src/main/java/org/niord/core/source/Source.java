@@ -22,11 +22,11 @@ import org.niord.core.source.vo.SourceVo;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -115,7 +115,7 @@ public class Source extends BaseEntity<Integer> implements ILocalizable<SourceDe
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public boolean isActive() {
         return active;

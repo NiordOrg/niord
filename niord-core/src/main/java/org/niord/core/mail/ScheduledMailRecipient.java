@@ -20,14 +20,14 @@ import org.niord.core.mail.Mail.MailRecipient;
 import org.niord.core.mail.vo.ScheduledMailRecipientVo;
 import org.niord.core.model.BaseEntity;
 
-import javax.mail.Message;
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.ManyToOne;
-import javax.validation.constraints.NotNull;
+import jakarta.mail.Message;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.ManyToOne;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Defines a recipient of a scheduled mail
@@ -95,7 +95,7 @@ public class ScheduledMailRecipient extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public ScheduledMail getMail() {
         return mail;

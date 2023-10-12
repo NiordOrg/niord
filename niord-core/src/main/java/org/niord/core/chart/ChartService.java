@@ -16,19 +16,20 @@
 package org.niord.core.chart;
 
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.query.sqm.NodeBuilder;
 import org.locationtech.jts.geom.Geometry;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.db.SpatialIntersectsPredicate;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-import javax.transaction.Transactional;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -265,9 +266,10 @@ public class ChartService extends BaseService {
         CriteriaHelper<Chart> criteriaHelper = new CriteriaHelper<>(cb, chartQuery);
 
         Predicate geomPredicate = new SpatialIntersectsPredicate(
-                cb,
+                getNodeBuilder(),
                 chartRoot.get("geometry"),
-                geometry);
+                geometry,
+                false);
         criteriaHelper.add(geomPredicate);
 
         // Only search for active charts

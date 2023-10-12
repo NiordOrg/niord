@@ -15,7 +15,7 @@
  */
 package org.niord.core.model;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.io.Serializable;
 
 /**
@@ -42,7 +42,7 @@ public abstract class BaseEntity<ID extends Serializable> {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public ID getId() {
         return this.id;

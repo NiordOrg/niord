@@ -15,17 +15,19 @@
  */
 package org.niord.core.service;
 
+import org.hibernate.query.sqm.NodeBuilder;
 import org.niord.core.model.BaseEntity;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityNotFoundException;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.transaction.Transactional;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.transaction.Transactional;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -67,6 +69,19 @@ public abstract class BaseService {
         } catch (EntityNotFoundException e) {
             return null;
         }
+    }
+
+    /**
+     * Returns the persistence entity manager as a hibernate node builder which
+     * can be used to generate SQM expressions.
+     *
+     * @return the Hibernate SQM node builder
+     */
+    protected NodeBuilder getNodeBuilder() {
+        return Optional.of(em)
+                .filter(NodeBuilder.class::isInstance)
+                .map(NodeBuilder.class::cast)
+                .orElse(null);
     }
 
     /**

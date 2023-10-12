@@ -20,9 +20,9 @@ import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.List;
 
 /**
@@ -73,7 +73,7 @@ public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializab
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     @XmlAttribute
     public Integer getId() {

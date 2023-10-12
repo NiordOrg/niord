@@ -17,8 +17,8 @@ package org.niord.core.mail;
 
 import org.infinispan.Cache;
 
-import javax.activation.DataHandler;
-import javax.mail.MessagingException;
+import jakarta.activation.DataHandler;
+import jakarta.mail.MessagingException;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;

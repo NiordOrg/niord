@@ -23,14 +23,14 @@ import org.niord.core.model.VersionedEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.message.ChartVo;
 
-import javax.persistence.Cacheable;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Index;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import jakarta.persistence.Cacheable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -258,7 +258,7 @@ public class Chart extends VersionedEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getLegacyId() {
         return legacyId;

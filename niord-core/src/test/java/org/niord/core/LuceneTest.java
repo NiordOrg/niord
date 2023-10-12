@@ -17,7 +17,6 @@
 package org.niord.core;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -77,7 +76,7 @@ public class LuceneTest {
         IndexReader reader = DirectoryReader.open(directory);
         assertEquals(1, reader.numDocs());
 
-        analyzer = new SimpleAnalyzer();
+        analyzer = new StandardAnalyzer();
         QueryParser parser = new ComplexPhraseQueryParser("message", analyzer);
         parser.setDefaultOperator(QueryParser.OR_OPERATOR);
         parser.setAllowLeadingWildcard(true); // NB: Expensive!

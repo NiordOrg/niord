@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import io.quarkus.jackson.ObjectMapperCustomizer;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /**
  * Customize the Jackson Mapping Operations.

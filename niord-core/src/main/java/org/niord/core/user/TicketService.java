@@ -27,8 +27,8 @@ import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.slf4j.Logger;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;

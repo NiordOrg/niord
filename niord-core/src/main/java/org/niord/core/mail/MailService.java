@@ -15,22 +15,20 @@
  */
 package org.niord.core.mail;
 
+import jakarta.annotation.Resource;
 import org.niord.core.NiordApp;
 import org.niord.core.service.BaseService;
 import org.niord.core.settings.annotation.Setting;
 import org.slf4j.Logger;
 
-import javax.annotation.Resource;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
-import javax.transaction.Transactional;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.transaction.Transactional;
 import java.util.stream.Collectors;
 
 /**
@@ -152,8 +150,7 @@ public class MailService extends BaseService {
      * @param scheduledMailId the ID of the scheduled mail to send
      * @return the updated mail entity
      */
-    @Transactional
-    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     public ScheduledMail sendScheduledMail(Integer scheduledMailId) {
         try {
             ScheduledMail scheduledMail = em.find(ScheduledMail.class, scheduledMailId);

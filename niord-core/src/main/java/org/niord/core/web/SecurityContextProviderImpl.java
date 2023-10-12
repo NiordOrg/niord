@@ -16,8 +16,8 @@
 
 package org.niord.core.web;
 
-import javax.enterprise.context.RequestScoped;
-import javax.ws.rs.core.SecurityContext;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.ws.rs.core.SecurityContext;
 
 /**
  * The SecurityContextProviderImpl Class

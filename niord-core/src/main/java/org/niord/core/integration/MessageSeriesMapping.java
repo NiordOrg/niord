@@ -19,9 +19,9 @@ package org.niord.core.integration;
 import org.niord.core.integration.vo.MessageSeriesMappingVo;
 import org.niord.core.model.BaseEntity;
 
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Defines which message series to import from the Niord server and
@@ -65,7 +65,7 @@ public class MessageSeriesMapping extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public NiordIntegration getNiordIntegration() {
         return niordIntegration;

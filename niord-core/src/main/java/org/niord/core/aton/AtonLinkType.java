@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Danish Maritime Authority.
+ * Copyright 2023 GLA UK Research and Development Directive
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.niord.core.conf;
-
-import javax.enterprise.inject.Produces;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+package org.niord.core.aton;
 
 /**
- * Produces the niord entity manager, thus available for CDI injection.
+ * The AtoN Link Type enum.
+ * <p/>
+ * As per the requirements of the IHO S-125 and IALA S-201 data products this
+ * includes the following types:
+ * <ul>
+ *     <li>
+ *         AGGREGATION
+ *     </li>
+ *     <li>
+ *         ASSOCIATION
+ *     </li>
+ * </ul>
+ *
+ * @author Nikolaos Vastardis (email: Nikolaos.Vastardis@gla-rad.org)
  */
-@SuppressWarnings("unused")
-public class DatabaseConfiguration {
-
-    @PersistenceContext(name = "niord")
-    EntityManager entityManager;
-
-    @Produces
-    public EntityManager getEntityManager() {
-        return entityManager;
-    }
-
+public enum AtonLinkType {
+    AGGREGATION,
+    ASSOCIATION
 }

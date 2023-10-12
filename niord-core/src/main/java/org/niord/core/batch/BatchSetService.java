@@ -17,6 +17,8 @@
 package org.niord.core.batch;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import io.quarkus.runtime.StartupEvent;
+import io.quarkus.scheduler.Scheduled;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.batch.vo.BatchSetVo;
@@ -24,31 +26,15 @@ import org.niord.core.repo.RepositoryService;
 import org.niord.core.util.JsonUtils;
 import org.slf4j.Logger;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.ejb.Schedule;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.ejb.Timeout;
-import javax.ejb.Timer;
-import javax.ejb.TimerConfig;
-import javax.ejb.TimerService;
-import javax.inject.Inject;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Serializable;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
+import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -63,8 +49,7 @@ import java.util.zip.ZipInputStream;
  * A batch set can either be uploaded from the Admin -> Batch Jobs page or
  * via a "niord.batch-set" System setting.
  */
-@Singleton
-@Startup
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class BatchSetService {
 
@@ -72,9 +57,6 @@ public class BatchSetService {
 
     @Inject
     Logger log;
-
-    @Resource
-    TimerService timerService;
 
     @Inject
     BatchService batchService;
@@ -86,8 +68,7 @@ public class BatchSetService {
     /**
      * Check if a batch set has been specified via the "niord.batch-set" system setting
      **/
-    @PostConstruct
-    public void init() {
+    void init(@Observes StartupEvent ev) {
         if (StringUtils.isNotBlank(System.getProperty("niord.batch-set"))) {
 
             Path path = Paths.get(System.getProperty("niord.batch-set"));
@@ -200,7 +181,15 @@ public class BatchSetService {
                     .append(delay)
                     .append(" ms\n");
 
-            timerService.createSingleActionTimer(delay, new TimerConfig(execution, false));
+            new java.util.Timer().schedule(
+                    new TimerTask() {
+                        @Override
+                        public void run() {
+                            executeBatchSetItem(execution);
+                        }
+                    },
+                    delay
+            );
         }
     }
 
@@ -208,10 +197,7 @@ public class BatchSetService {
     /**
      * Called in order to execute a batch set item
      */
-    @Timeout
-    private void executeBatchSetItem(Timer timer) {
-        BatchSetExecution batchSetExecution = (BatchSetExecution)timer.getInfo();
-
+    private void executeBatchSetItem(BatchSetExecution batchSetExecution) {
         String batchJobName = batchSetExecution.getBatchSetItem().getJobName();
         String batchFileName = batchSetExecution.getBatchSetItem().getFileName();
         Path file = batchSetExecution.getBatchSetSpec().getFolder().resolve(batchFileName);

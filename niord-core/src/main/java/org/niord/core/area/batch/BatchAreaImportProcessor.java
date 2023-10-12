@@ -21,9 +21,9 @@ import org.niord.core.area.vo.SystemAreaVo;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.model.DataFilter;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 /**
  * Filters areas that need to be a added or updated

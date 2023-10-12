@@ -23,13 +23,7 @@ import org.locationtech.jts.geom.Geometry;
 import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.geojson.JtsConverter;
 import org.niord.core.geojson.PlainTextConverter;
-import org.niord.model.geojson.FeatureCollectionVo;
-import org.niord.model.geojson.FeatureVo;
-import org.niord.model.geojson.GeoJsonVo;
-import org.niord.model.geojson.GeometryVo;
-import org.niord.model.geojson.MultiPointVo;
-import org.niord.model.geojson.PointVo;
-import org.niord.model.geojson.PolygonVo;
+import org.niord.model.geojson.*;
 
 import java.io.IOException;
 import java.util.List;

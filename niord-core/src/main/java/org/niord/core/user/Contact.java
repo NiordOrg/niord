@@ -19,12 +19,12 @@ import org.niord.core.mail.IMailable;
 import org.niord.core.model.VersionedEntity;
 import org.niord.core.user.vo.ContactVo;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Index;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
 
 /**
  * Implementation of a contact entity which may e.g. be used in mailing lists, etc.
@@ -92,7 +92,7 @@ public class Contact extends VersionedEntity<Integer> implements IMailable {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     @Override
     public String getName() {

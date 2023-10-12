@@ -15,6 +15,8 @@
  */
 package org.niord.core.dictionary;
 
+import io.quarkus.arc.Lock;
+import io.quarkus.runtime.StartupEvent;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.aton.AtonFilter;
@@ -25,36 +27,23 @@ import org.niord.core.service.BaseService;
 import org.niord.model.DataFilter;
 import org.slf4j.Logger;
 
-import javax.annotation.PostConstruct;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
 import javax.script.ScriptException;
+import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.ResourceBundle;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
 
 /**
  * Business interface for accessing dictionaries
  */
 @ApplicationScoped
-@Lock(LockType.READ)
+@Lock(Lock.Type.READ)
 @SuppressWarnings("unused")
 public class DictionaryService extends BaseService {
 
@@ -68,11 +57,10 @@ public class DictionaryService extends BaseService {
 
     private Map<String, DictionaryVo> cachedDictionaries = new ConcurrentHashMap<>();
 
-    /**
-     * Called when the system starts up.
-     */
-    @PostConstruct
-    private void init() {
+    /** Called upon application startup */
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    @Lock(Lock.Type.WRITE)
+    void init(@Observes StartupEvent ev) {
 
         // Cache all dictionaries
         long t0 = System.currentTimeMillis();
@@ -124,7 +112,7 @@ public class DictionaryService extends BaseService {
      * @return the added dictionary entry
      */
     @Transactional
-    @Lock(LockType.WRITE)
+    @Lock(Lock.Type.WRITE)
     public DictionaryEntry createEntry(String name, DictionaryEntry entry) {
         Dictionary dict = findByName(name);
         if (dict == null) {
@@ -162,7 +150,7 @@ public class DictionaryService extends BaseService {
      * @return the updated dictionary entry
      */
     @Transactional
-    @Lock(LockType.WRITE)
+    @Lock(Lock.Type.WRITE)
     public DictionaryEntry updateEntry(String name, DictionaryEntry entry) {
         Dictionary dict = findByName(name);
         if (dict == null) {
@@ -194,8 +182,8 @@ public class DictionaryService extends BaseService {
      * @param key  the dictionary key to delete
      * @return if the entry was deleted
      */
-    @Lock(LockType.WRITE)
     @Transactional
+    @Lock(Lock.Type.WRITE)
     public boolean deleteEntry(String name, String key) {
         Dictionary dict = findByName(name);
         if (dict == null) {
@@ -317,7 +305,8 @@ public class DictionaryService extends BaseService {
      * Depending on the override parameter, either update the associated dictionary with new entries or overrides all.
      * @param override whether to override all entries or just new ones
      */
-    @Lock(LockType.WRITE)
+    @Transactional
+    @Lock(Lock.Type.WRITE)
     public void loadDefaultResourceBundles(boolean override) {
         // Load default resource bundles into dictionaries
         Arrays.stream(DEFAULT_BUNDLES).forEach(name -> loadResourceBundle(name, override));

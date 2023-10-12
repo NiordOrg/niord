@@ -22,7 +22,7 @@ import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 import org.niord.model.geojson.FeatureCollectionVo;
 
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -104,7 +104,7 @@ public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSeri
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public MessagePartType getType() {
         return type;

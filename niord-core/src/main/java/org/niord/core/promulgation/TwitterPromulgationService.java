@@ -16,6 +16,8 @@
 
 package org.niord.core.promulgation;
 
+import dev.turingcomplete.quarkussimplifiedasync.core.Async;
+import io.quarkus.arc.Lock;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.geojson.GeoJsonUtils;
@@ -31,12 +33,10 @@ import org.niord.model.message.Status;
 import twitter4j.*;
 import twitter4j.auth.AccessToken;
 
-import javax.ejb.Asynchronous;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.transaction.Transactional;
+import jakarta.ejb.LockType;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
@@ -45,7 +45,7 @@ import java.util.Arrays;
  * Manages Twitter message promulgations
  */
 @ApplicationScoped
-@Lock(LockType.READ)
+@Lock(Lock.Type.READ)
 @SuppressWarnings("unused")
 public class TwitterPromulgationService extends BasePromulgationService {
 
@@ -198,7 +198,7 @@ public class TwitterPromulgationService extends BasePromulgationService {
      * Handle Twitter promulgation for the message
      * @param messageUid the UID of the message
      */
-    @Asynchronous
+    @Async
     public void checkPromulgateMessage(String messageUid) {
 
         Message message = messageService.findByUid(messageUid);

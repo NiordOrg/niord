@@ -20,8 +20,8 @@ import org.niord.model.geojson.GeometryVo;
 import org.niord.core.area.AreaType;
 import org.niord.model.message.AreaVo;
 
-import javax.persistence.Column;
-import javax.xml.bind.annotation.XmlAttribute;
+import jakarta.persistence.Column;
+import jakarta.xml.bind.annotation.XmlAttribute;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -76,7 +76,7 @@ public class SystemAreaVo extends AreaVo implements Comparable<SystemAreaVo> {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public AreaType getType() {
         return type;

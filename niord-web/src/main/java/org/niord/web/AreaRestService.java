@@ -15,10 +15,12 @@
  */
 package org.niord.web;
 
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaSearchParams;
 import org.niord.core.area.AreaService;
@@ -32,37 +34,20 @@ import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.geojson.GeometryVo;
 import org.slf4j.Logger;
 
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * REST interface for accessing areas.
  */
 @Path("/areas")
-@Stateless
-@SecurityDomain("keycloak")
+@RequestScoped
+@Transactional
 @PermitAll
 public class AreaRestService extends AbstractBatchableRestService {
 
@@ -278,14 +263,15 @@ public class AreaRestService extends AbstractBatchableRestService {
     @Path("/recompute-tree-sort-order")
     @RolesAllowed(Roles.ADMIN)
     public boolean recomputeTreeSortOrder() {
-        return areaService.recomputeTreeSortOrder();
+        areaService.recomputeTreeSortOrder();
+        return true;
     }
 
 
     /**
      * Imports an uploaded Areas json file
      *
-     * @param request the servlet request
+     * @param input the multi-part form data input request
      * @return a status
      */
     @POST
@@ -293,8 +279,8 @@ public class AreaRestService extends AbstractBatchableRestService {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
     @RolesAllowed(Roles.ADMIN)
-    public String importAreas(@Context HttpServletRequest request) throws Exception {
-        return executeBatchJobFromUploadedFile(request, "area-import");
+    public String importAreas(MultipartFormDataInput input) throws Exception {
+        return executeBatchJobFromUploadedFile(input, "area-import");
     }
 
 

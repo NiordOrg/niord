@@ -21,9 +21,9 @@ import org.niord.core.aton.AtonTag;
 import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.core.batch.AbstractItemHandler;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 /**
  * Filters AtoNs that need to be a added or updated

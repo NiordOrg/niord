@@ -19,9 +19,9 @@ import org.niord.core.category.vo.TemplateParamDescVo;
 import org.niord.core.model.DescEntity;
 import org.niord.model.ILocalizedDesc;
 
-import javax.persistence.Cacheable;
-import javax.persistence.Entity;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Cacheable;
+import jakarta.persistence.Entity;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Localized contents for the TemplateParam entity
@@ -69,7 +69,7 @@ public class TemplateParamDesc extends DescEntity<TemplateParam> {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getName() {
         return name;

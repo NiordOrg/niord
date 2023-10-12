@@ -18,7 +18,7 @@ package org.niord.model.message;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.IJsonSerializable;
 
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.Date;
 
 /**
@@ -59,7 +59,7 @@ public class DateIntervalVo implements IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public Boolean getAllDay() {
         return allDay;

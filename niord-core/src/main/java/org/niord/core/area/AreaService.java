@@ -17,6 +17,7 @@ package org.niord.core.area;
 
 import io.quarkus.scheduler.Scheduled;
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.query.sqm.NodeBuilder;
 import org.locationtech.jts.geom.Geometry;
 import org.niord.core.area.vo.SystemAreaVo.AreaMessageSorting;
 import org.niord.core.db.CriteriaHelper;
@@ -31,9 +32,9 @@ import org.niord.core.settings.SettingsService;
 import org.niord.model.search.PagedSearchParamsVo;
 import org.slf4j.Logger;
 
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.persistence.criteria.*;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.criteria.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -556,9 +557,10 @@ public class AreaService extends TreeBaseService<Area> {
         CriteriaHelper<Area> criteriaHelper = new CriteriaHelper<>(cb, areaQuery);
 
         Predicate geomPredicate = new SpatialIntersectsPredicate(
-                cb,
+                getNodeBuilder(),
                 areaRoot.get("geometry"),
-                geometry);
+                geometry,
+                false);
         criteriaHelper.add(geomPredicate);
 
         // Only search for active charts

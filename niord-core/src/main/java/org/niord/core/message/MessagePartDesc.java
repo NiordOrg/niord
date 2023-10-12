@@ -21,9 +21,9 @@ import org.niord.model.DataFilter;
 import org.niord.model.ILocalizedDesc;
 import org.niord.model.message.MessagePartDescVo;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Lob;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Lob;
 
 /**
  * Localized contents for the MessagePart entity
@@ -89,7 +89,7 @@ public class MessagePartDesc extends DescEntity<MessagePart> {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getSubject() {
         return subject;

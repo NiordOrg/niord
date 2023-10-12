@@ -23,7 +23,7 @@ import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.message.CategoryVo;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -287,7 +287,7 @@ public class Category extends TreeBaseEntity<Category> implements ILocalizable<C
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public CategoryType getType() {
         return type;

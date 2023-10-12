@@ -20,8 +20,8 @@ import org.niord.core.model.BaseEntity;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
+import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
 

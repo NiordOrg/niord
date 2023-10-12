@@ -21,7 +21,7 @@ import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
 import org.niord.core.util.TimeUtils;
 
-import javax.transaction.Transactional;
+import jakarta.transaction.Transactional;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;

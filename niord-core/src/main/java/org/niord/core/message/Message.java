@@ -31,39 +31,11 @@ import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.geojson.FeatureVo;
-import org.niord.model.message.AreaVo;
-import org.niord.model.message.CategoryVo;
-import org.niord.model.message.ChartVo;
-import org.niord.model.message.MainType;
-import org.niord.model.message.MessagePartType;
-import org.niord.model.message.MessageSeriesVo;
-import org.niord.model.message.MessageVo;
-import org.niord.model.message.Status;
-import org.niord.model.message.Type;
+import org.niord.model.message.*;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Index;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderColumn;
-import javax.persistence.PrePersist;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -169,7 +141,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
     Area area;
 
     // The areaSortOrder is used to sort the message within its associated area
-    @Column(columnDefinition = "DOUBLE default 0.0")
+    @Column(columnDefinition = "FLOAT default 0.0")
     double areaSortOrder;
 
     @ManyToMany
@@ -741,7 +713,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public User getCreatedBy() {
         return createdBy;

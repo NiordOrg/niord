@@ -19,9 +19,9 @@ import org.niord.core.promulgation.vo.SafetyNetAreaVo.SafetyNetNavareaAreaVo;
 import org.niord.model.DataFilter;
 import org.niord.model.message.Type;
 
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 /**
  * Used for defining a NAVAREA SafetyNET distribution area.
@@ -121,7 +121,7 @@ public class SafetyNetNavareaArea extends SafetyNetArea {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public NAVAREA getNavarea() {
         return navarea;

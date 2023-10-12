@@ -16,14 +16,12 @@
 
 package org.niord.core.repo;
 
+import io.quarkus.arc.Lock;
 import io.quarkus.runtime.StartupEvent;
 import org.apache.commons.io.FilenameUtils;
 
-import javax.annotation.PostConstruct;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -35,7 +33,7 @@ import java.util.Set;
  * Enlists the supported file types and maps them to icons
  */
 @ApplicationScoped
-@Lock(LockType.READ)
+@Lock(Lock.Type.READ)
 @SuppressWarnings("unused")
 public class FileTypes {
 

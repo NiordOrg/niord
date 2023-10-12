@@ -19,7 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.JpaJsonAttributeConverter;
 import org.niord.model.IJsonSerializable;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 /**
  * Used to persist settings
@@ -127,7 +127,7 @@ public class Setting implements IJsonSerializable {
 
     /*************************/
     /** Method chaining     **/
-    /*************************/
+    /***/
 
     public Setting key(String key) {
         setKey(key);
@@ -166,7 +166,7 @@ public class Setting implements IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getKey() { return key; }
 

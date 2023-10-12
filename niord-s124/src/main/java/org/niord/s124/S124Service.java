@@ -27,8 +27,8 @@ import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.model.message.MainType;
 import org.niord.model.message.ReferenceVo;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
+import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;

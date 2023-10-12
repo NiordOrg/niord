@@ -15,27 +15,25 @@
  */
 package org.niord.core.message;
 
+import dev.turingcomplete.quarkussimplifiedasync.core.Async;
+import io.quarkus.arc.Lock;
+import io.quarkus.runtime.StartupEvent;
+import io.quarkus.scheduler.Scheduled;
+import io.vertx.core.Future;
+import jakarta.annotation.PreDestroy;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.ClassicAnalyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.StringField;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexOptions;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.*;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.MatchAllDocsQuery;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.*;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.niord.core.NiordApp;
@@ -50,29 +48,16 @@ import org.niord.core.util.TextUtils;
 import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
-import javax.ejb.AsyncResult;
-import javax.ejb.Asynchronous;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Schedule;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.ejb.Timeout;
-import javax.ejb.TimerConfig;
-import javax.ejb.TimerService;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Future;
+import java.util.Timer;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.niord.core.settings.Setting.Type.Boolean;
@@ -86,9 +71,8 @@ import static org.niord.core.settings.Setting.Type.Boolean;
  * Note to self: Using "Hibernate Search" for message (as for AtoNs), was ruled out because it would
  * be too complex to index all related entities by language.
  */
-@Singleton
-@Lock(LockType.READ)
-@Startup
+@ApplicationScoped
+@Lock(Lock.Type.READ)
 @SuppressWarnings("unused")
 public class MessageLuceneIndex extends BaseService {
 
@@ -117,9 +101,6 @@ public class MessageLuceneIndex extends BaseService {
     @Inject
     Logger log;
 
-    @Resource
-    TimerService timerService;
-
     @Inject
     MessageService messageService;
 
@@ -136,8 +117,7 @@ public class MessageLuceneIndex extends BaseService {
     /**
      * Initialize the index
      */
-    @PostConstruct
-    private void init() {
+    private void init(@Observes StartupEvent ev) {
         // Create the lucene index directory
         if (!Files.exists(indexFolder)) {
             try {
@@ -157,7 +137,15 @@ public class MessageLuceneIndex extends BaseService {
         }
 
         // Wait 5 seconds before initializing the message index
-        timerService.createSingleActionTimer(5000, new TimerConfig());
+        new Timer().schedule(
+                new TimerTask() {
+                    @Override
+                    public void run() {
+                        updateLuceneIndex();
+                    }
+                },
+                5000
+        );
     }
 
     /**
@@ -175,12 +163,13 @@ public class MessageLuceneIndex extends BaseService {
      * Note to self: It's tempting to use @Lock(WRITE) here. However, that would lock search access
      * to the index while it is being updated, and we really do not want that.
      */
-    @Timeout
-    @Schedule(persistent=false, second="38", minute="*/1", hour="*")
-    private int updateLuceneIndex() {
+    @Transactional
+    @Scheduled(cron="38 */1 * * * ?")
+    @ActivateRequestContext
+    void updateLuceneIndex() {
         lock.lock();
         try {
-            return updateLuceneIndex(LUCENE_MAX_INDEX_COUNT);
+            updateLuceneIndex(LUCENE_MAX_INDEX_COUNT);
         } finally {
             lock.unlock();
         }
@@ -198,7 +187,7 @@ public class MessageLuceneIndex extends BaseService {
      * @return the analyzer to use.
      */
     private Analyzer getAnalyzer() {
-        return new ClassicAnalyzer();
+        return new StandardAnalyzer();
     }
 
 
@@ -409,17 +398,17 @@ public class MessageLuceneIndex extends BaseService {
      */
     private void refreshReader(IndexWriter writer) throws IOException {
         closeReader();
-        reader = DirectoryReader.open(writer, true);
+        reader = DirectoryReader.open(writer, true, true);
     }
 
 
     /**
      * Call this to re-index the message index completely
      */
-    @Asynchronous
+    @Async
     public Future<Integer> recreateIndexAsync() throws IOException {
         int updateCount = recreateIndex();
-        return new AsyncResult<>(updateCount);
+        return Future.succeededFuture(updateCount);
     }
 
 
@@ -450,7 +439,7 @@ public class MessageLuceneIndex extends BaseService {
         try {
             writer = getNewWriter();
             writer.deleteAll();
-            writer.setCommitData(new HashMap<>());
+            writer.setLiveCommitData(new HashMap<String, String>().entrySet());
             writer.commit();
         } finally {
             closeWriter(writer);

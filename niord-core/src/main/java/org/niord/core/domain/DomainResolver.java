@@ -17,7 +17,7 @@ package org.niord.core.domain;
 
 import org.keycloak.adapters.spi.HttpFacade;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import io.vertx.core.http.HttpServerRequest;
 import java.util.ServiceLoader;
 import java.util.regex.Matcher;

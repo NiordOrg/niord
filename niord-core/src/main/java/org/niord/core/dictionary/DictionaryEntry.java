@@ -20,15 +20,15 @@ import org.niord.core.model.BaseEntity;
 import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 
-import javax.persistence.Cacheable;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Cacheable;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -119,7 +119,7 @@ public class DictionaryEntry extends BaseEntity<Integer> implements ILocalizable
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public Dictionary getDictionary() {
         return dictionary;

@@ -19,10 +19,10 @@ package org.niord.core.category;
 import org.niord.core.category.vo.CompositeParamTypeVo;
 import org.niord.model.DataFilter;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderColumn;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderColumn;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -65,7 +65,7 @@ public class CompositeParamType extends ParamType {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public List<TemplateParam> getTemplateParams() {
         return templateParams;

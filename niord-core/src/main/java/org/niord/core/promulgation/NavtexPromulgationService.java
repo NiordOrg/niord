@@ -16,6 +16,7 @@
 
 package org.niord.core.promulgation;
 
+import io.quarkus.arc.Lock;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.db.CriteriaHelper;
@@ -34,12 +35,10 @@ import org.niord.core.util.TimeUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.message.Status;
 
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.persistence.criteria.*;
-import javax.transaction.Transactional;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.criteria.*;
+import jakarta.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -47,7 +46,7 @@ import java.util.stream.Collectors;
  * Manages NAVTEX-via-mailing-lists promulgations
  */
 @ApplicationScoped
-@Lock(LockType.READ)
+@Lock(Lock.Type.READ)
 @SuppressWarnings("unused")
 public class NavtexPromulgationService extends BasePromulgationService {
 

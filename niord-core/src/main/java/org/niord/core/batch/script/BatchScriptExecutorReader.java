@@ -18,8 +18,8 @@ package org.niord.core.batch.script;
 import org.apache.commons.io.FileUtils;
 import org.niord.core.batch.AbstractItemHandler;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Named;
 import java.io.Serializable;
 import java.nio.file.Path;
 

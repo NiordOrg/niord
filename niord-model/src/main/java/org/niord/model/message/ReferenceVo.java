@@ -20,7 +20,7 @@ import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.List;
 
 /**
@@ -58,7 +58,7 @@ public class ReferenceVo implements ILocalizable<ReferenceDescVo>, IJsonSerializ
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getMessageId() {
         return messageId;

@@ -15,10 +15,13 @@
  */
 package org.niord.web.map;
 
-import org.apache.commons.fileupload.FileItem;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.jboss.ejb3.annotation.SecurityDomain;
+import org.jboss.resteasy.annotations.providers.multipart.MultipartForm;
+import org.jboss.resteasy.plugins.providers.multipart.InputPart;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
 import org.niord.core.repo.RepositoryService;
@@ -26,23 +29,14 @@ import org.niord.core.user.Roles;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.slf4j.Logger;
 
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -50,6 +44,7 @@ import java.nio.file.Path;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Returns the map thumbnail image associated with a message.
@@ -61,9 +56,8 @@ import java.util.List;
  * The URL to fetch an image can either be specified via a message ID or a temporary repository path.
  * The latter is used when messages is being edited.
  */
-@javax.ws.rs.Path("/message-map-image")
-@Stateless
-@SecurityDomain("keycloak")
+@jakarta.ws.rs.Path("/message-map-image")
+@RequestScoped
 @PermitAll
 public class MessageMapImageRestService {
 
@@ -89,7 +83,7 @@ public class MessageMapImageRestService {
      * @return the map thumbnail image
      */
     @GET
-    @javax.ws.rs.Path("/{uid}.png")
+    @jakarta.ws.rs.Path("/{uid}.png")
     @Produces("image/png")
     public Response getMessageMapImage(@PathParam("uid") String uid) throws IOException, URISyntaxException {
         try {
@@ -170,7 +164,7 @@ public class MessageMapImageRestService {
      * Updates the map image with a custom image
      */
     @PUT
-    @javax.ws.rs.Path("/{folder:.+}")
+    @jakarta.ws.rs.Path("/{folder:.+}")
     @Consumes("application/json;charset=UTF-8")
     @Produces("text/plain")
     @RolesAllowed(Roles.EDITOR)
@@ -201,36 +195,34 @@ public class MessageMapImageRestService {
     /**
      * Called to upload a custom message map image via a multipart form-data request
      *
-     * @param request the servlet request
+     * @param input the multi-part form input
      * @return a status
      */
     @POST
-    @javax.ws.rs.Path("/{folder:.+}")
+    @jakarta.ws.rs.Path("/{folder:.+}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
     @RolesAllowed(Roles.EDITOR)
-    public String uploadMessageMapImage(@PathParam("folder") String path, @Context HttpServletRequest request) throws Exception {
+    public String uploadMessageMapImage(@PathParam("folder") String path, @MultipartForm MultipartFormDataInput input) throws Exception {
+
+        // Initialise the form parsing parameters
+        final Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
+        final List<InputPart> inputParts = uploadForm.get("file");
 
         // Validate that the path is a temporary repository folder path
         Path folder = repositoryService.validateTempRepoPath(path);
 
-        List<FileItem> items = repositoryService.parseFileUploadRequest(request);
-
-        // Get hold of the first uploaded image
-        FileItem imageItem = items.stream()
-                .filter(item -> !item.isFormField())
+        // Get hold of the first uploaded publication file
+        InputPart imagePart = inputParts.stream()
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new WebApplicationException("No uploaded message image file", 400));
 
-        if (imageItem == null) {
-            throw new WebApplicationException(400);
-        }
         // Construct the file path for the message
         String imageName = String.format("custom_thumb_%d.png", messageMapImageGenerator.getMapImageSize());
         Path imageRepoPath = folder.resolve(imageName);
 
         try {
-            byte[] data = IOUtils.toByteArray(imageItem.getInputStream());
+            byte[] data = IOUtils.toByteArray(imagePart.getBody(InputStream.class, null));
             if (messageMapImageGenerator.generateMessageMapImage(data, imageRepoPath)) {
                 log.info("Generated image thumbnail from uploaded image");
             } else {

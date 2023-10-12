@@ -19,13 +19,13 @@ import org.niord.core.model.BaseEntity;
 import org.niord.core.user.User;
 import org.niord.core.message.vo.MessageParamFilterVo;
 
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Used for persisting a named message parameter filter as defined by a request parameter string.
@@ -82,7 +82,7 @@ public class MessageParamFilter extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getName() {
         return name;

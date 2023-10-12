@@ -21,10 +21,10 @@ import org.niord.core.message.MessageSeries;
 import org.niord.core.model.VersionedEntity;
 import org.niord.core.schedule.vo.FiringScheduleVo;
 
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.validation.constraints.NotNull;
 import java.util.TimeZone;
 
 /**
@@ -105,7 +105,7 @@ public class FiringSchedule extends VersionedEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public Domain getDomain() {
         return domain;

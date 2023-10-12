@@ -21,14 +21,14 @@ import org.niord.core.model.BaseEntity;
 import org.niord.core.report.vo.FmReportVo;
 import org.niord.model.DataFilter;
 
-import javax.persistence.Cacheable;
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.ManyToMany;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Cacheable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -155,7 +155,7 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getReportId() {
         return reportId;

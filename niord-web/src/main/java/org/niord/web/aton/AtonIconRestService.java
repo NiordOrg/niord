@@ -23,13 +23,12 @@ import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.core.repo.RepositoryService;
 import org.slf4j.Logger;
 
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.Response;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -40,14 +39,13 @@ import java.nio.file.Path;
 /**
  * Creates and caches AtoN icons
  */
-@javax.ws.rs.Path("/aton-icon")
-@Startup
-@Singleton
+@jakarta.ws.rs.Path("/aton-icon")
+@ApplicationScoped
 public class AtonIconRestService {
 
     static final String OVERVIEW_ICON_REPO = "aton_icons";
     static final int OVERVIEW_ICON_HEIGHT = 90;
-    static final int OVERVIEW_ICON_WIDTH = 60;
+    static final int OVERVIEW_ICON_WIDTH = 90;
     static final double OVERVIEW_ICON_SCALE = 0.3;
 
     @Inject
@@ -58,7 +56,7 @@ public class AtonIconRestService {
 
 
     @POST
-    @javax.ws.rs.Path("/svg")
+    @jakarta.ws.rs.Path("/svg")
     @Consumes("application/json;charset=UTF-8")
     @Produces("image/svg+xml")
     @GZIP
@@ -93,7 +91,7 @@ public class AtonIconRestService {
 
 
     @GET
-    @javax.ws.rs.Path("/overview")
+    @jakarta.ws.rs.Path("/overview")
     @NoCache
     public Response getAtonOverviewIcon(@Context HttpServletRequest request) throws Exception {
 
@@ -137,8 +135,8 @@ public class AtonIconRestService {
                         out,
                         OVERVIEW_ICON_WIDTH,            // width
                         OVERVIEW_ICON_HEIGHT,           // height
-                        OVERVIEW_ICON_WIDTH / 3,        // x
-                        2 * OVERVIEW_ICON_HEIGHT / 3,   // y
+                        OVERVIEW_ICON_WIDTH / 2,        // x
+                        OVERVIEW_ICON_HEIGHT / 2,       // y
                         OVERVIEW_ICON_SCALE             // scale
                 );
 

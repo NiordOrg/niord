@@ -20,11 +20,11 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.promulgation.vo.TwitterSettingsVo;
 
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Stores the settings for a Twitter promulgation type.
@@ -106,7 +106,7 @@ public class TwitterSettings extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public PromulgationType getPromulgationType() {
         return promulgationType;

@@ -18,9 +18,9 @@ package org.niord.core.promulgation;
 
 import org.niord.core.promulgation.vo.TwitterMessagePromulgationVo;
 
-import javax.persistence.Column;
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 
 /**
  * Defines the message promulgation entity associated with Twitter promulgation
@@ -70,7 +70,7 @@ public class TwitterMessagePromulgation extends BaseMessagePromulgation<TwitterM
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getTweet() {
         return tweet;

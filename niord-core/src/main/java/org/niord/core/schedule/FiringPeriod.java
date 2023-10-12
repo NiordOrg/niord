@@ -21,16 +21,16 @@ import org.niord.core.message.DateInterval;
 import org.niord.core.schedule.vo.FiringPeriodVo;
 import org.niord.core.model.VersionedEntity;
 
-import javax.persistence.Entity;
-import javax.persistence.Index;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
+import jakarta.validation.constraints.NotNull;
 import java.util.Date;
 
 /**
@@ -156,7 +156,7 @@ public class FiringPeriod extends VersionedEntity<Integer> implements Comparable
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getLegacyId() {
         return legacyId;

@@ -16,7 +16,7 @@
 
 package org.niord.core.web;
 
-import javax.ws.rs.core.SecurityContext;
+import jakarta.ws.rs.core.SecurityContext;
 
 /**
  * The SecurityContextProvider Interface.

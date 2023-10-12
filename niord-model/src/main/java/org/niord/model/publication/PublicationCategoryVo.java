@@ -21,8 +21,8 @@ import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.List;
 
 /**
@@ -65,7 +65,7 @@ public class PublicationCategoryVo implements ILocalizable<PublicationCategoryDe
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getCategoryId() {
         return categoryId;

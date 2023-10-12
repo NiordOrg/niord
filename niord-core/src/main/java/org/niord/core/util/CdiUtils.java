@@ -15,7 +15,7 @@
  */
 package org.niord.core.util;
 
-import javax.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.CDI;
 import javax.naming.NamingException;
 
 /**

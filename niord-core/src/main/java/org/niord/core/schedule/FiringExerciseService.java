@@ -35,8 +35,8 @@ import org.niord.core.util.TimeUtils;
 import org.niord.model.message.*;
 import org.slf4j.Logger;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;

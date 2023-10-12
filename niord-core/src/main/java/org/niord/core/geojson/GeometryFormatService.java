@@ -7,8 +7,8 @@ import org.niord.core.script.FmTemplateService;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.message.MessageVo;
 
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.Arrays;
 
 /**

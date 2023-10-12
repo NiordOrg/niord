@@ -17,7 +17,7 @@ package org.niord.core.aton.vo;
 
 import org.niord.model.IJsonSerializable;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlAttribute;
 import java.util.Arrays;
 
 /**
@@ -78,7 +78,7 @@ public class AtonBoundsVo implements IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     @XmlAttribute
     public double getMinlat() {

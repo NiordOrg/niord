@@ -30,8 +30,8 @@ import org.openjdk.nashorn.api.scripting.JSObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import javax.script.*;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -274,7 +274,7 @@ public class JsResourceService extends BaseService {
 
         /*****************************************/
         /** Method-chaining Getters and Setters **/
-        /*****************************************/
+        /***/
 
         public String getResourcePath() {
             return resourcePath;

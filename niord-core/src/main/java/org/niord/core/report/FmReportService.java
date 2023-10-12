@@ -15,6 +15,7 @@
  */
 package org.niord.core.report;
 
+import jakarta.annotation.PostConstruct;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
@@ -23,10 +24,9 @@ import org.niord.core.service.BaseService;
 import org.niord.core.util.TimeUtils;
 import org.slf4j.Logger;
 
-import javax.annotation.PostConstruct;
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.transaction.Transactional;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 

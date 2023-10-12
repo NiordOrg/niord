@@ -21,11 +21,11 @@ import org.niord.core.model.VersionedEntity;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.model.DataFilter;
 
-import javax.persistence.Entity;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.ManyToOne;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.ManyToOne;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Super-class for all types of message promulgation entities.
@@ -94,7 +94,7 @@ public class BaseMessagePromulgation<P extends BaseMessagePromulgationVo>
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public PromulgationType getType() {
         return type;

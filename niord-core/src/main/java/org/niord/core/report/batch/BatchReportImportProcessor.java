@@ -20,8 +20,8 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.report.FmReport;
 import org.niord.core.report.vo.FmReportVo;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Named;
 
 /**
  * Converts the report value object into a report entity template

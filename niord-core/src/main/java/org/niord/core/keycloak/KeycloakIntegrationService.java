@@ -20,12 +20,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.methods.*;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLContextBuilder;
@@ -37,12 +32,7 @@ import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.PublishedRealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.*;
 import org.niord.core.NiordApp;
 import org.niord.core.domain.Domain;
 import org.niord.core.settings.SettingsService;
@@ -54,18 +44,13 @@ import org.niord.core.user.vo.UserVo;
 import org.niord.core.util.WebUtils;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.Principal;
 import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -74,7 +59,7 @@ import java.util.stream.Collectors;
  * <p>
  * "Domains" in Niord are mapped to Keycloak bearer-only clients.
  */
-@Stateless
+@RequestScoped
 public class KeycloakIntegrationService {
 
     public static final String KEYCLOAK_REALM       = "niord";
@@ -85,6 +70,9 @@ public class KeycloakIntegrationService {
 
     @Inject
     SettingsService settingsService;
+
+    @Inject
+    KeycloakAdminClient keycloakAdminClient;
 
     @Inject
     @Setting(value = "authServerUrl", defaultValue = "/auth", description = "The Keycloak server url")
@@ -234,16 +222,7 @@ public class KeycloakIntegrationService {
      * @return the list of Keycloak clients
      */
     private List<ClientRepresentation> getKeycloakDomainClients() throws Exception {
-
-        return executeAdminRequest(
-                new HttpGet(resolveAuthServerRealmUrl() + "/clients"),
-                true, // Add auth header
-                is -> {
-                    List<ClientRepresentation> result = new ObjectMapper()
-                            .readValue(is, new TypeReference<List<ClientRepresentation>>(){});
-                    log.debug("Read clients from Keycloak");
-                    return result;
-                });
+        return this.keycloakAdminClient.getRealmResource().clients().findAll();
     }
 
 
@@ -611,11 +590,11 @@ public class KeycloakIntegrationService {
     private <R> R executeAdminRequest(HttpRequestBase request, boolean auth, KeycloakResponseHandler<R> responseHandler) throws Exception {
 
         if (auth) {
-            KeycloakPrincipal keycloakPrincipal = userService.getCallerPrincipal();
+            Principal keycloakPrincipal = userService.getCallerPrincipal();
             if (keycloakPrincipal == null) {
                 throw new Exception("Unable to execute request " + request.getURI() + ". User not authenticated");
             }
-            request.addHeader("Authorization", "Bearer " + keycloakPrincipal.getKeycloakSecurityContext().getTokenString());
+            request.addHeader("Authorization", "Bearer " + userService.getKeycloakAccessToken());
         }
 
         // For e.g. "*.e-navigation.net", with no intermediate certificates specified, you will get an

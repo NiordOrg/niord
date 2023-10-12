@@ -15,7 +15,7 @@
  */
 package org.niord.core.batch.vo;
 
-import javax.batch.runtime.BatchStatus;
+import jakarta.batch.runtime.BatchStatus;
 import org.niord.model.IJsonSerializable;
 
 import java.util.Date;
@@ -43,7 +43,7 @@ public class BatchExecutionVo implements IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public long getExecutionId() {
         return executionId;

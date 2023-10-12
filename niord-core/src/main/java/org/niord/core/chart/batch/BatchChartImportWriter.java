@@ -19,10 +19,10 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.transaction.Transactional;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.transaction.Transactional;
 import java.util.List;
 
 /**

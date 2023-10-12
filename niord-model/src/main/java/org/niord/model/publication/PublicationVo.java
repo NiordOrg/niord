@@ -22,9 +22,9 @@ import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.Date;
 import java.util.List;
 
@@ -97,7 +97,7 @@ public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSeri
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     @XmlAttribute
     public String getPublicationId() {

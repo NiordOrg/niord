@@ -22,16 +22,16 @@ import org.niord.core.model.BaseEntity;
 import org.niord.core.model.IndexedEntity;
 import org.niord.model.geojson.FeatureVo;
 
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.Index;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.PrePersist;
-import javax.persistence.Table;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -108,7 +108,7 @@ public class Feature extends BaseEntity<Integer> implements IndexedEntity {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getUid() {
         return uid;

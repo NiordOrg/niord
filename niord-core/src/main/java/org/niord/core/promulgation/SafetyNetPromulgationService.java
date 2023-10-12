@@ -16,6 +16,7 @@
 
 package org.niord.core.promulgation;
 
+import io.quarkus.arc.Lock;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.message.Message;
 import org.niord.core.message.vo.SystemMessageVo;
@@ -29,11 +30,9 @@ import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.message.Type;
 
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.transaction.Transactional;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,7 +40,7 @@ import java.util.stream.Collectors;
  * Manages SafetyNET-via-mailing-lists promulgations
  */
 @ApplicationScoped
-@Lock(LockType.READ)
+@Lock(Lock.Type.READ)
 @SuppressWarnings("unused")
 public class SafetyNetPromulgationService
         extends BasePromulgationService {

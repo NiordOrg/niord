@@ -16,14 +16,13 @@
 
 package org.niord.core.message;
 
+import io.quarkus.arc.Lock;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -35,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * "(msg.type == Type.TEMPORARY_NOTICE || msg.type == Type.PRELIMINARY_NOTICE) && msg.status == Status.PUBLISHED"
  */
 @ApplicationScoped
-@Lock(LockType.READ)
+@Lock(Lock.Type.READ)
 @SuppressWarnings("unused")
 public class MessageScriptFilterService extends BaseService {
 

@@ -20,8 +20,8 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.mailinglist.MailingList;
 import org.niord.core.mailinglist.vo.MailingListVo;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Named;
 
 /**
  * Converts the mailing list value object into a mailing list entity template

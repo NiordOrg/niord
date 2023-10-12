@@ -22,8 +22,8 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
 
-import javax.inject.Inject;
-import javax.transaction.Transactional;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.io.IOException;
 
 /**

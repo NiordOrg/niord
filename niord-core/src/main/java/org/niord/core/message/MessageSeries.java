@@ -23,8 +23,8 @@ import org.niord.model.message.MainType;
 import org.niord.model.message.MessageSeriesVo;
 import org.niord.model.message.Type;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -162,7 +162,7 @@ public class MessageSeries extends VersionedEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getSeriesId() {
         return seriesId;

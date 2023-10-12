@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.hibernate.query.sqm.NodeBuilder;
 import org.locationtech.jts.geom.Geometry;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
@@ -51,14 +52,14 @@ import org.niord.model.message.*;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSContext;
-import javax.jms.Session;
-import javax.persistence.Tuple;
-import javax.persistence.criteria.*;
-import javax.transaction.Transactional;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSContext;
+import jakarta.jms.Session;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.criteria.*;
+import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -1068,9 +1069,10 @@ public class MessageService extends BaseService {
             Join<Message, FeatureCollection> fcRoot = partRoot.join("geometry", JoinType.LEFT);
             Join<FeatureCollection, Feature> fRoot = fcRoot.join("features", JoinType.LEFT);
             Predicate geomPredicate = new SpatialIntersectsPredicate(
-                    criteriaHelper.getCriteriaBuilder(),
+                    getNodeBuilder(),
                     fRoot.get("geometry"),
-                    param.getExtent());
+                    param.getExtent(),
+                    false);
 
             if (param.getIncludeNoPos() != null && param.getIncludeNoPos().booleanValue()) {
                 // search for message with no geometry in addition to messages within extent

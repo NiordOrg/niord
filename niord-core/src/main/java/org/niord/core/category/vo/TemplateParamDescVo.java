@@ -18,7 +18,7 @@ package org.niord.core.category.vo;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizedDesc;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlAttribute;
 
 /**
  * The entity description VO
@@ -42,7 +42,7 @@ public class TemplateParamDescVo implements ILocalizedDesc, IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     @XmlAttribute
     @Override

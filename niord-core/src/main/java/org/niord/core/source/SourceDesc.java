@@ -20,8 +20,8 @@ import org.niord.core.model.DescEntity;
 import org.niord.core.source.vo.SourceDescVo;
 import org.niord.model.ILocalizedDesc;
 
-import javax.persistence.Entity;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Entity;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Localized contents for the Source entity
@@ -76,7 +76,7 @@ public class SourceDesc extends DescEntity<Source> {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getName() {
         return name;

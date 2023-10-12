@@ -17,8 +17,8 @@ package org.niord.core.category.batch;
 
 import org.niord.core.batch.AbstractItemHandler;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Named;
 import java.util.List;
 
 /**

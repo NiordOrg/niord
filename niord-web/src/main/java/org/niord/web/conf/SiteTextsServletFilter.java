@@ -22,9 +22,9 @@ import org.niord.core.NiordApp;
 import org.niord.core.dictionary.DictionaryService;
 import org.slf4j.Logger;
 
-import javax.inject.Inject;
-import javax.servlet.annotation.WebFilter;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.inject.Inject;
+import jakarta.servlet.annotation.WebFilter;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.stream.Collectors;

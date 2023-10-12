@@ -26,9 +26,9 @@ import org.niord.core.aton.vo.AtonTagVo;
 import org.niord.core.aton.vo.Iso8601DateXmlAdapter;
 
 import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Marshaller;
+import jakarta.xml.bind.Unmarshaller;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.util.ArrayList;
@@ -81,7 +81,7 @@ public class AtonTest {
 
         Assert.assertNotNull(aton2.getTags());
         Assert.assertEquals(aton2.getTags().length, 10);
-        Assert.assertEquals(aton2.getId(), 672436827L);
+        Assert.assertEquals(aton2.getId(), (Integer)672436827);
 
         Assert.assertEquals(aton, aton2);
     }

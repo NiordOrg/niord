@@ -15,12 +15,12 @@
  */
 package org.niord.core.sequence;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Table;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
@@ -53,7 +53,7 @@ public class SequenceEntity implements Serializable {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     @Id
     @Column(unique = true, nullable = false)

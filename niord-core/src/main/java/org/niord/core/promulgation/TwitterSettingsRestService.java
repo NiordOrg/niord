@@ -16,15 +16,15 @@
 
 package org.niord.core.promulgation;
 
+import jakarta.annotation.security.RolesAllowed;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.niord.core.promulgation.vo.TwitterSettingsVo;
 import org.niord.core.user.Roles;
 
-import javax.annotation.security.RolesAllowed;
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
-import javax.ws.rs.*;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
 
 /**
  * REST interface for managing Twitter settings

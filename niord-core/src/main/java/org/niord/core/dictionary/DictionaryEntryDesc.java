@@ -19,10 +19,10 @@ import org.niord.core.dictionary.vo.DictionaryEntryDescVo;
 import org.niord.core.model.DescEntity;
 import org.niord.model.ILocalizedDesc;
 
-import javax.persistence.Cacheable;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Cacheable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Localized contents for the DictionaryEntry entity
@@ -79,7 +79,7 @@ public class DictionaryEntryDesc extends DescEntity<DictionaryEntry> {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getValue() {
         return value;

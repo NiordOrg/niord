@@ -20,8 +20,8 @@ import org.niord.core.model.DescEntity;
 import org.niord.model.publication.PublicationCategoryDescVo;
 import org.niord.model.ILocalizedDesc;
 
-import javax.persistence.Entity;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Entity;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Localized contents for the PublicationCategory entity
@@ -77,7 +77,7 @@ public class PublicationCategoryDesc extends DescEntity<PublicationCategory> {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getName() {
         return name;

@@ -19,10 +19,10 @@ package org.niord.web;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.niord.core.NiordApp;
 
-import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 
 /**
  * An extremely simple REST endpoint that returns the build version of the Niord back-end

@@ -16,6 +16,7 @@
 
 package org.niord.core.mail;
 
+import io.quarkus.arc.Lock;
 import io.quarkus.scheduler.Scheduled;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.microprofile.context.ManagedExecutor;
@@ -27,18 +28,10 @@ import org.niord.core.util.TimeUtils;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.annotation.Resource;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Schedule;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import javax.persistence.criteria.*;
-import javax.transaction.Transactional;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.criteria.*;
+import jakarta.transaction.Transactional;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -51,7 +44,7 @@ import static org.niord.core.settings.Setting.Type.Integer;
  * Interface for handling schedule mails
  */
 @ApplicationScoped
-@Lock(LockType.READ)
+@Lock(Lock.Type.READ)
 @SuppressWarnings("unused")
 public class ScheduledMailService extends BaseService {
 
@@ -180,7 +173,7 @@ public class ScheduledMailService extends BaseService {
      * Called every minute to process scheduled mails
      */
     @Scheduled(cron="24 * * * * ?")
-    @Lock(LockType.WRITE)
+    @Lock(Lock.Type.WRITE)
     @Transactional
     void sendPendingMails() {
 
@@ -215,9 +208,8 @@ public class ScheduledMailService extends BaseService {
      * Using JPAs CascadeType.ALL for the relation does NOT work in this case.
      */
     @Scheduled(cron="48 28 5 * * ?")
-    @Lock(LockType.WRITE)
-    @Transactional
-    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    @Lock(Lock.Type.WRITE)
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     void deleteExpiredMails() {
 
         // If expiryDate is 0 (actually, non-positive), never delete mails

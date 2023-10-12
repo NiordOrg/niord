@@ -23,13 +23,13 @@ import org.niord.model.message.ReferenceDescVo;
 import org.niord.model.message.ReferenceType;
 import org.niord.model.message.ReferenceVo;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.Index;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -117,7 +117,7 @@ public class Reference extends BaseEntity<Integer> implements ILocalizable<Refer
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public Message getMessage() {
         return message;

@@ -28,8 +28,8 @@ import org.niord.core.settings.SettingsService;
 import org.niord.core.util.JsonUtils;
 import org.niord.model.message.MainType;
 
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.*;
 
 /**

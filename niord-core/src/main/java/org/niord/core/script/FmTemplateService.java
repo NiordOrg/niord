@@ -33,8 +33,8 @@ import org.niord.core.settings.annotation.Setting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
@@ -290,7 +290,7 @@ public class FmTemplateService extends BaseService {
 
         /*****************************************/
         /** Method-chaining Getters and Setters **/
-        /*****************************************/
+        /***/
 
         public String getTemplatePath() {
             return templatePath;

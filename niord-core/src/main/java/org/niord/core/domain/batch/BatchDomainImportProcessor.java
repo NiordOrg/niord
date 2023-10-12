@@ -26,9 +26,9 @@ import org.niord.core.domain.vo.DomainVo;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageSeriesService;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;

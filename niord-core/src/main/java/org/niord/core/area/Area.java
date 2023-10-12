@@ -25,7 +25,7 @@ import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.message.AreaVo;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -287,7 +287,7 @@ public class Area extends TreeBaseEntity<Area> implements ILocalizable<AreaDesc>
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getLegacyId() {
         return legacyId;

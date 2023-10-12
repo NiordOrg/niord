@@ -19,7 +19,7 @@ package org.niord.core.category;
 import org.niord.core.category.vo.StandardParamTypeVo;
 import org.niord.model.DataFilter;
 
-import javax.persistence.Entity;
+import jakarta.persistence.Entity;
 
 /**
  * Entity class for the standard-based template parameter type, i.e.
@@ -61,7 +61,7 @@ public class StandardParamType extends ParamType {
     @Override
     public StandardParamTypeVo toVo(DataFilter filter) {
         StandardParamTypeVo paramType = new StandardParamTypeVo();
-        paramType.setId(id);
+        paramType.setId(this.getId());
         paramType.setName(name);
         return paramType;
     }

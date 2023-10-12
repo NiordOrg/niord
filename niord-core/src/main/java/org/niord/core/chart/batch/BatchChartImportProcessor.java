@@ -20,9 +20,9 @@ import org.niord.core.chart.Chart;
 import org.niord.core.chart.ChartService;
 import org.niord.core.chart.vo.SystemChartVo;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 /**
  * Filters charts that need to be a added or updated

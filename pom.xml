@@ -13,18 +13,17 @@
         <java.min.version>17</java.min.version>
         <maven.min.version>3.0.0</maven.min.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven-deploy-plugin.version>3.0.0-M2</maven-deploy-plugin.version>
-        <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
-        <io.quarkus.version>3.1.1.Final</io.quarkus.version>
-        <quarkus-qpid-jms.version>2.2.0</quarkus-qpid-jms.version>
+        <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
+        <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
+        <io.quarkus.version>3.2.0.Final</io.quarkus.version>
+        <quarkus-qpid-jms.version>2.3.0</quarkus-qpid-jms.version>
 
-        <jboss.bom.version>13.0.0.Final</jboss.bom.version>
-        <keycloak.version>21.1.1</keycloak.version>
+        <keycloak.version>20.0.3</keycloak.version>
         <jackson.version>2.12.1</jackson.version>
-        <swagger.version>1.6.2</swagger.version>
-        <batik.version>1.14</batik.version>
+        <batik.version>1.16</batik.version>
+
+        <hibernate.spatial.version>6.2.5.Final</hibernate.spatial.version>
         <hibernate.search-orm.version>6.1.7.Final</hibernate.search-orm.version>
-        <hibernate.spatial.version>5.6.7.Final</hibernate.spatial.version>
     </properties>
 
     <dependencyManagement>
@@ -44,12 +43,6 @@
             </dependency>
 
             <dependency>
-                <groupId>commons-fileupload</groupId>
-                <artifactId>commons-fileupload</artifactId>
-                <version>1.4</version>
-            </dependency>
-
-            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.13.1</version>
@@ -61,22 +54,15 @@
 
     <dependencies>
         <dependency>
-            <groupId>javax</groupId>
-            <artifactId>javaee-api</artifactId>
-            <version>7.0</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.32</version>
+            <groupId>jakarta.jws</groupId>
+            <artifactId>jakarta.jws-api</artifactId>
+            <version>3.0.0</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-to-slf4j</artifactId>
-            <version>2.17.0</version>
+            <version>2.20.0</version>
         </dependency>
 
         <dependency>
@@ -85,6 +71,23 @@
             <version>2.6</version>
         </dependency>
 
+        <!-- Java 11 dependencies -->
+
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+        </dependency>
+
+
+<!--
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
@@ -104,7 +107,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Java 11 dependencies -->
         <dependency>
             <groupId>org.glassfish.jaxb</groupId>
             <artifactId>jaxb-core</artifactId>
@@ -120,7 +122,7 @@
             <artifactId>jaxb-impl</artifactId>
             <version>2.3.1</version>
         </dependency>
-
+ -->
         <!-- Test -->
         <dependency>
             <groupId>junit</groupId>
@@ -202,8 +204,8 @@
         <module>niord-josm-seachart</module>
         <module>niord-model</module>
         <module>niord-core</module>
-        <!--        <module>niord-s124</module>   <module>niord-web</module>        -->
-
+        <module>niord-s124</module>   
+        <module>niord-web</module>
     </modules>
 
 </project>

@@ -19,8 +19,8 @@ import org.niord.core.model.DescEntity;
 import org.niord.model.ILocalizedDesc;
 import org.niord.model.message.AttachmentDescVo;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 
 /**
  * Localized contents for the Attachment entity
@@ -70,7 +70,7 @@ public class AttachmentDesc extends DescEntity<Attachment> {
 
     /*************************/
     /** Getters and Setters **/
-    /*************************/
+    /***/
 
     public String getCaption() {
         return caption;

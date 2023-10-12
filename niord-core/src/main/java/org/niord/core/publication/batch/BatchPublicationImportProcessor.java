@@ -21,9 +21,9 @@ import org.niord.core.publication.Publication;
 import org.niord.core.publication.PublicationCategoryService;
 import org.niord.core.publication.vo.SystemPublicationVo;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 /**
  * Filters publications that need to be a added or updated

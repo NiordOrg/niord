@@ -16,10 +16,12 @@
 
 package org.niord.web;
 
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.PromulgationManager;
@@ -33,38 +35,20 @@ import org.niord.core.user.Roles;
 import org.niord.core.user.UserService;
 import org.slf4j.Logger;
 
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * REST interface for accessing and managing promulgation types.
  */
 @Path("/promulgations")
-@Stateless
-@SecurityDomain("keycloak")
+@RequestScoped
+@Transactional
 @SuppressWarnings("unused")
 public class PromulgationRestService extends AbstractBatchableRestService {
 
@@ -181,7 +165,7 @@ public class PromulgationRestService extends AbstractBatchableRestService {
     /**
      * Imports an uploaded promulgation types json file
      *
-     * @param request the servlet request
+     * @param input the multi-part form data input request
      * @return a status
      */
     @POST
@@ -189,8 +173,8 @@ public class PromulgationRestService extends AbstractBatchableRestService {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
     @RolesAllowed(Roles.SYSADMIN)
-    public String importReports(@Context HttpServletRequest request) throws Exception {
-        return executeBatchJobFromUploadedFile(request, "promulgation-type-import");
+    public String importReports(MultipartFormDataInput input) throws Exception {
+        return executeBatchJobFromUploadedFile(input, "promulgation-type-import");
     }
 
 

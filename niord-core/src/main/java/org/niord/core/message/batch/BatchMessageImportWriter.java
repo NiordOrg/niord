@@ -19,9 +19,9 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
 import org.niord.core.message.MessageTag;
 
-import javax.enterprise.context.Dependent;
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.util.List;
 
 /**
