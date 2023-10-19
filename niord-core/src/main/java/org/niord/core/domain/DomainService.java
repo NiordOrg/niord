@@ -167,7 +167,7 @@ public class DomainService extends BaseService {
                 Set<String> keycloakClients = keycloakService.getKeycloakDomainIds();
                 domains.forEach(d -> d.setInKeycloak(keycloakClients.contains(d.getDomainId())));
             } catch (Exception e) {
-                log.error("Failed loading Keycloak states for domains" + e);
+                log.error("Failed loading Keycloak states for domains", e);
             }
 
         }

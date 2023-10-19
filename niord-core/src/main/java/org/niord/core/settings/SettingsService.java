@@ -51,7 +51,6 @@ import static org.keycloak.util.JsonSerialization.mapper;
  * or the {@code @Setting} annotation can be used.
  */
 @ApplicationScoped
-@Lock(Lock.Type.READ)
 @SuppressWarnings("unused")
 public class SettingsService extends BaseService {
 

@@ -19,6 +19,7 @@ import io.quarkus.runtime.StartupEvent;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -29,9 +30,13 @@ import jakarta.xml.bind.Unmarshaller;
 import jakarta.xml.bind.annotation.XmlAttribute;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+
+import javax.management.RuntimeErrorException;
 import javax.xml.transform.*;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+
+import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.*;
@@ -102,7 +107,7 @@ public class AtonDefaultsService {
     /**
      * The INT-1-Preset default parsing rules.
      */
-    @ConfigProperty(name = "niord.aton-defaults.int-1-preset.parser", defaultValue = "/aton/aton-osm-defaults.xslt")
+    @ConfigProperty(name = "niord.aton-defaults.int-1-preset.parser", defaultValue = "aton/aton-osm-defaults.xslt")
     private String defaultsParsing;
 
     /**
@@ -114,7 +119,7 @@ public class AtonDefaultsService {
     /**
      * The file name of the INT-1-Present configuration XML.
      */
-    @ConfigProperty(name = "niord.aton-defaults.int-1-preset.fileName", defaultValue = "/aton/INT-1-preset.xml")
+    @ConfigProperty(name = "niord.aton-defaults.int-1-preset.fileName", defaultValue = "aton/INT-1-preset.xml")
     private String int1Preset;
 
     /**
@@ -144,6 +149,17 @@ public class AtonDefaultsService {
                 3000
         );
     }
+    
+    public static void main(String[] args) {
+        AtonDefaultsService ads = new AtonDefaultsService();
+        ads.log = LoggerFactory.getLogger("foo");
+        ads.defaultsParsing = "/aton/aton-osm-defaults.xslt";
+        ads.int1Preset = "/aton/INT-1-preset.xml";
+        ads.generateDefaults();
+        
+        
+        System.out.println("NYE");
+    }
 
     /**
      * Generates the AtoN defaults from the INT-1-preset.xml file
@@ -152,8 +168,16 @@ public class AtonDefaultsService {
         try {
             final long t0 = System.currentTimeMillis();
             final ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-            final Source xsltSource = new StreamSource(classloader.getResourceAsStream(this.defaultsParsing));
-            final Source xmlSource = new StreamSource(classloader.getResourceAsStream(this.int1Preset));
+            InputStream is = classloader.getResourceAsStream(this.defaultsParsing);
+            if (is == null) {
+                throw new RuntimeException("Could not read resource " + this.defaultsParsing);
+            }
+            final Source xsltSource = new StreamSource(is);
+            is = classloader.getResourceAsStream(this.int1Preset);
+            if (is == null) {
+                throw new RuntimeException("Could not read resource " + this.int1Preset);
+            }
+            final Source xmlSource = new StreamSource(is);
 
             // Capture the generated xml as a string
             StringWriter xml = new StringWriter();
@@ -227,6 +251,7 @@ public class AtonDefaultsService {
                 log.trace("Added AtoN S-125 extension defaults in " + (System.currentTimeMillis() - t0) + " ms");
             }
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("Failed creating AtoN defaults in " + e, e);
         }
     }

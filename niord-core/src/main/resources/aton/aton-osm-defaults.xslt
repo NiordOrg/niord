@@ -89,6 +89,9 @@
             <xsl:attribute name="k">
                 <xsl:value-of select="@key"/>
             </xsl:attribute>
+            <xsl:attribute name="text">
+                <xsl:value-of select="@text"/>
+            </xsl:attribute>
             <xsl:apply-templates/>
         </tag>
     </xsl:template>
@@ -97,6 +100,9 @@
         <tag>
             <xsl:attribute name="k">
                 <xsl:value-of select="@key"/>
+            </xsl:attribute>
+            <xsl:attribute name="text">
+                <xsl:value-of select="@text"/>
             </xsl:attribute>
             <xsl:apply-templates/>
         </tag>

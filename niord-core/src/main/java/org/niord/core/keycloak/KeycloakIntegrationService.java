@@ -15,12 +15,27 @@
  */
 package org.niord.core.keycloak;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.Principal;
+import java.security.PublicKey;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.*;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLContextBuilder;
@@ -28,11 +43,16 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.representations.idm.*;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.PublishedRealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.niord.core.NiordApp;
 import org.niord.core.domain.Domain;
 import org.niord.core.settings.SettingsService;
@@ -44,14 +64,12 @@ import org.niord.core.user.vo.UserVo;
 import org.niord.core.util.WebUtils;
 import org.slf4j.Logger;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.Principal;
-import java.security.PublicKey;
-import java.util.*;
-import java.util.stream.Collectors;
 
 
 /**
@@ -92,6 +110,11 @@ public class KeycloakIntegrationService {
     @Inject
     private Logger log;
 
+    
+    static {
+        CryptoIntegration.init(KeycloakIntegrationService.class.getClassLoader());
+    }
+    
 
     /******************************/
     /** Keycloak configuration   **/
