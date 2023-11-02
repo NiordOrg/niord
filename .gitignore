@@ -6,3 +6,5 @@ target/
 .DS_Store
 .idea
 *.iml
+.java-version
+.lucene/

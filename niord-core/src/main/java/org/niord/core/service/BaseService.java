@@ -78,10 +78,13 @@ public abstract class BaseService {
      * @return the Hibernate SQM node builder
      */
     protected NodeBuilder getNodeBuilder() {
-        return Optional.of(em)
-                .filter(NodeBuilder.class::isInstance)
-                .map(NodeBuilder.class::cast)
-                .orElse(null);
+        NodeBuilder nodeBuilder = (NodeBuilder) em.getCriteriaBuilder();
+        
+        return nodeBuilder;
+//        return Optional.of(em)
+//                .filter(NodeBuilder.class::isInstance)
+//                .map(NodeBuilder.class::cast)
+//                .orElse(null);
     }
 
     /**

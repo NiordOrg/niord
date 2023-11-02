@@ -18,6 +18,7 @@ package org.niord.core.settings;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.arc.Lock;
+import io.quarkus.logging.Log;
 import io.quarkus.runtime.StartupEvent;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.cache.CacheElement;
@@ -73,7 +74,9 @@ public class SettingsService extends BaseService {
      * Lastly, persists all the loaded settings that do not already exists in the database.
      */
     @Transactional
+    @Lock(Lock.Type.WRITE)
     void init(@Observes StartupEvent ev) {
+        Log.info("Starting Initialization Settings");
         try {
             // Read the settings from the "/niord.json" classpath file
             Map<String, Setting> settingMap = loadSettingsFromClasspath();
@@ -100,6 +103,7 @@ public class SettingsService extends BaseService {
             // Stop the application starting up
             throw new RuntimeException("Error loading settings from niord.json", e);
         }
+        Log.info("Finished Initializing Settings");
     }
 
 
@@ -117,6 +121,7 @@ public class SettingsService extends BaseService {
 
     /** Called upon startup. Read the settings from the "${niord.home}/niord.json" file and update the settingMap */
     @Transactional
+    @Lock(Lock.Type.READ)
     Map<String, Setting> loadSettingsFromNiordHome(Map<String, Setting> settingMap) throws IOException {
         log.info("loadSettingsFromNiordHome start");
 
@@ -148,6 +153,8 @@ public class SettingsService extends BaseService {
      * Returns all settings that should be emitted to the web application
      * @return all settings that should be emitted to the web application
      */
+    @Transactional
+    @Lock(Lock.Type.READ)
     public List<Setting> getAllForWeb() {
         return em.createNamedQuery("Setting.findAllForWeb", Setting.class)
                 .getResultList();
@@ -157,6 +164,8 @@ public class SettingsService extends BaseService {
      * Returns all settings that are editable on the Settings admin page
      * @return all settings that are editable on the Settings admin page
      */
+    @Transactional
+    @Lock(Lock.Type.READ)
     public List<Setting> getAllEditable() {
         return em.createNamedQuery("Setting.findAllEditable", Setting.class)
                 .getResultList();
@@ -181,6 +190,7 @@ public class SettingsService extends BaseService {
      * @return the associated value
      */
     @Transactional
+    @Lock(Lock.Type.READ)
     public Object get(Setting setting) {
         Objects.requireNonNull(setting, "Must specify valid setting");
 
@@ -229,6 +239,8 @@ public class SettingsService extends BaseService {
      * @param key the setting key
      * @return the associated value
      */
+    @Transactional
+    @Lock(Lock.Type.READ)
     public Object peek(String key) {
         Objects.requireNonNull(key, "Must specify valid setting key");
 
@@ -287,6 +299,7 @@ public class SettingsService extends BaseService {
      * @return the updated setting
      */
     @Lock(Lock.Type.WRITE)
+    @Transactional
     public Setting set(Setting template) {
         Setting setting = em.find(Setting.class, template.getKey());
         if (setting == null) {

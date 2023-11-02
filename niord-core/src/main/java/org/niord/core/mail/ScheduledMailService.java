@@ -86,33 +86,37 @@ public class ScheduledMailService extends BaseService {
 
         PagedSearchResultVo<ScheduledMail> result = new PagedSearchResultVo<>();
 
-        CriteriaBuilder cb = em.getCriteriaBuilder();
+        {
+            CriteriaBuilder cb = em.getCriteriaBuilder();
 
-        // First compute the total number of matching mails
-        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
-        Root<ScheduledMail> countMailRoot = countQuery.from(ScheduledMail.class);
+            // First compute the total number of matching mails
+            CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+            Root<ScheduledMail> countMailRoot = countQuery.from(ScheduledMail.class);
 
-        countQuery.select(cb.count(countMailRoot))
-                .where(buildQueryPredicates(cb, countQuery, countMailRoot, params))
-                .orderBy(cb.desc(countMailRoot.get("created")));
+            countQuery.select(cb.count(countMailRoot)).where(buildQueryPredicates(cb, countQuery, countMailRoot, params))
+                    .orderBy(cb.desc(countMailRoot.get("created")));
 
-        result.setTotal(em.createQuery(countQuery).getSingleResult());
+            result.setTotal(em.createQuery(countQuery).getSingleResult());
 
+        }
 
-        // Then, extract the current page of matches
-        CriteriaQuery<ScheduledMail> query = cb.createQuery(ScheduledMail.class);
-        Root<ScheduledMail> mailRoot = query.from(ScheduledMail.class);
-        query.select(mailRoot)
-                .where(buildQueryPredicates(cb, query, mailRoot, params))
-                .orderBy(cb.desc(countMailRoot.get("created")));
+        {
+            CriteriaBuilder cb = em.getCriteriaBuilder();
 
-        List<ScheduledMail> mails = em.createQuery(query)
-                .setMaxResults(params.getMaxSize())
-                .setFirstResult(params.getPage() * params.getMaxSize())
-                .getResultList();
-        result.setData(mails);
-        result.updateSize();
+            // First compute the total number of matching mails
+            CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
 
+            // Then, extract the current page of matches
+            CriteriaQuery<ScheduledMail> query = cb.createQuery(ScheduledMail.class);
+            Root<ScheduledMail> mailRoot = query.from(ScheduledMail.class);
+            query.select(mailRoot).where(buildQueryPredicates(cb, query, mailRoot, params)).orderBy(cb.desc(mailRoot.get("created")));
+
+            List<ScheduledMail> mails = em.createQuery(query).setMaxResults(params.getMaxSize()).setFirstResult(params.getPage() * params.getMaxSize())
+                    .getResultList();
+            result.setData(mails);
+            result.updateSize();
+
+        }
         log.info("Search [" + params + "] returned " + result.getSize() + " of " + result.getTotal() + " in "
                 + (System.currentTimeMillis() - t0) + " ms");
 
