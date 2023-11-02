@@ -29,8 +29,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -60,16 +62,23 @@ public class WmsProxyServlet extends HttpServlet {
     @Setting(value="wmsProvider", description="The WMS provider")
     String wmsProvider;
 
-    @Inject
-    @Setting(value="wmsServiceName", description="The WMS service name")
-    String wmsServiceName;
+//    @Inject
+//    @Setting(value="wmsServiceName", description="The WMS service name")
+//    String wmsServiceName;
 
-    @Inject
-    @Setting(value="wmsLogin", description="The WMS user name")
-    String wmsLogin;
+    // This field is are no longer used
+//    @Inject
+//    @Setting(value="wmsLogin", description="The WMS user name")
+//    String wmsLogin;
 
+    
+    /**
+     * For historic reasons this field is called password. Sometime around October 2023, Dataforsyningen transitioned to a
+     * token based system instead of username/password based system. To ease the transition we decided to reuse the password
+     * field, instead of introducing a new field.
+     */
     @Inject
-    @Setting(value="wmsPassword", description="The WMS password", type = Password)
+    @Setting(value="wmsPassword", description="The WMS Token", type = Password)
     String wmsPassword;
 
     @Inject
@@ -106,13 +115,12 @@ public class WmsProxyServlet extends HttpServlet {
         WebUtils.cache(response, CACHE_TIMEOUT);
 
         // Check that the WMS provider has been defined using system properties
-        if (StringUtils.isBlank(wmsServiceName) || StringUtils.isBlank(wmsProvider) ||
-                StringUtils.isBlank(wmsLogin) || StringUtils.isBlank(wmsPassword)) {
+        if (StringUtils.isBlank(wmsProvider) ||
+                StringUtils.isBlank(wmsPassword)) {
             response.sendRedirect(BLANK_IMAGE);
             return;
         }
 
-        @SuppressWarnings("unchecked")
         Map<String, String[]> paramMap = request.getParameterMap();
         String params = paramMap
                 .entrySet()
@@ -120,7 +128,7 @@ public class WmsProxyServlet extends HttpServlet {
                 .filter(p -> StringUtils.isBlank(wmsLayers) || !"layers".equalsIgnoreCase(p.getKey()))
                 .map(p -> String.format("%s=%s", p.getKey(), p.getValue()[0]))
                 .collect(Collectors.joining("&"));
-        params += String.format("&SERVICENAME=%s&LOGIN=%s&PASSWORD=%s", wmsServiceName, wmsLogin, wmsPassword);
+        params += String.format("&TOKEN=%s", wmsPassword);
         if (StringUtils.isNotBlank(wmsLayers)) {
             params += String.format("&LAYERS=%s", wmsLayers);
         }
@@ -129,7 +137,12 @@ public class WmsProxyServlet extends HttpServlet {
         log.trace("Loading image " + url);
 
         try {
-            BufferedImage image = ImageIO.read(new URL(url));
+            URL urlUrl = new URL(url);
+            URLConnection con = urlUrl.openConnection();
+            con.setConnectTimeout(20 * 1000);
+            con.setReadTimeout(20 * 1000);
+            InputStream in = con.getInputStream();
+            BufferedImage image = ImageIO.read(in);
             if (image != null) {
                 //image = transformWhiteToTransparent(image);
 
@@ -140,14 +153,14 @@ public class WmsProxyServlet extends HttpServlet {
                 return;
             }
         } catch (Exception e) {
-            log.trace("Failed loading WMS image for URL " + url + ": " + e);
+            log.warn("Failed loading WMS image for URL " + url + ": " + e, e);
         }
 
         // Fall back to return a blank image
         try {
             response.sendRedirect(BLANK_IMAGE);
         } catch (Exception e) {
-            log.trace("Failed returning blank image for URL " + url + ": " + e);
+            log.warn("Failed returning blank image for URL " + url + ": " + e, e);
         }
     }
 
