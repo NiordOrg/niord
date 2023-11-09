@@ -1,5 +1,6 @@
 variables:
-  maven-version: 3.8.6
+  maven-version: "3.8.6"
+  niord-dk-branch-name: "quarkus-upgrade"
 
 stages:
   - stage: Build_niord
@@ -38,7 +39,7 @@ stages:
             mavenSetM2Home: true
             publishJUnitResults: true
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
-            goals: 'clean install'
+            goals: 'clean package'
 
         - task: Bash@3
           displayName: Clone niord-dk repo
@@ -60,79 +61,13 @@ stages:
             mavenSetM2Home: true
             publishJUnitResults: true
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
-            goals: '-P dist clean install'
-            
-        - task: PublishPipelineArtifact@1
-          displayName: 'Publish build artifact'
+            goals: 'clean package'
+
+        - task: Docker@2
+          displayName: 'Build and push image'
           inputs:
-            targetPath: ./niord-dk/niord-dk-web/target
-            artifactName: niordDKBuild
-
-  - stage: Build_Wildfly
-    dependsOn: Build_Niord
-    displayName: Build Wildfly
-    jobs:
-    - job: Build_wildfly
-      displayName: Build wildfly
-      pool:
-        vmImage: ubuntu-latest
-
-      steps:
-      - task: Bash@3
-        displayName: Clone niord-wildfly repo
-        inputs:
-          targetType: 'inline'
-          script: 'git clone --branch $(niord-wildfly-branch) https://github.com/NiordOrg/niord-wildfly.git'
-
-      - task: Bash@3
-        displayName: Download Maven
-        inputs:
-          targetType: 'inline'
-          script: 'wget https://archive.apache.org/dist/maven/maven-3/$(maven-version)/binaries/apache-maven-$(maven-version)-bin.tar.gz'
-
-      - task: ExtractFiles@1
-        displayName: 'Unzip Maven'
-        inputs:
-            archiveFilePatterns: 'apache-maven-$(maven-version)-bin.tar.gz'
-            destinationFolder: '$(build.sourcesdirectory)/maven'
-      - task: Bash@3
-        displayName: 'Add Maven to PATH'
-        inputs:
-          targetType: 'inline'
-          script: |
-            apt-get remove maven
-            export PATH="$(build.sourcesdirectory)/maven/bin:$PATH"
-            mvn -v
-
-      - task: Bash@3
-        displayName: Build wildfly
-        inputs:
-          targetType: 'inline'
-          script: './niord-wildfly/build/build-wildfly.sh'
-
-      - task: DownloadPipelineArtifact@2
-        displayName: 'Download niord build artifact'
-        inputs:
-          artifact: niordDKBuild
-          path: .
-
-      - task: CopyFiles@2
-        inputs:
-          SourceFolder: .
-          Contents: niord-dk-web.war
-          TargetFolder: './niord-wildfly/wildfly-$(wildfly_version).Final/standalone/deployments'
-
-      - task: Docker@2
-        displayName: 'Build and push image'
-        inputs:
-          containerRegistry: '$(container-registry)'
-          repository: 'niord-appsrv'
-          Dockerfile: './niord-wildfly/Dockerfile'
-          buildContext: './niord-wildfly'
-          tags: '$(Build.BuildNumber)'
-
-      - task: PublishPipelineArtifact@1
-        displayName: 'Publish Docker-Compose'
-        inputs:
-          targetPath: './niord-wildfly/docker-compose.yml'
-          artifact: niord-appsrv
+            containerRegistry: '$(container-registry)'
+            repository: 'niord-app'
+            Dockerfile: './niord-dk/niord-dk-web/src/main/Docker/Dockerfile.jvm'
+            buildContext: '/niord-dk/niord-dk-web'
+            tags: '$(Build.BuildNumber)'
