@@ -18,7 +18,6 @@ stages:
             targetType: 'inline'
             script: 'wget https://archive.apache.org/dist/maven/maven-3/$(maven-version)/binaries/apache-maven-$(maven-version)-bin.tar.gz'
 
-
         - task: ExtractFiles@1
           displayName: 'Unzip Maven'
           inputs:
@@ -38,8 +37,8 @@ stages:
             mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-$(maven-version)'
             mavenSetM2Home: true
             publishJUnitResults: true
-            # testResultsFiles: '**/surefire-reports/TEST-*.xml'
-            goals: 'clean package'
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            goals: 'clean install'
 
         - task: Bash@3
           displayName: Clone niord-dk repo
@@ -60,7 +59,7 @@ stages:
             mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-$(maven-version)'
             mavenSetM2Home: true
             publishJUnitResults: true
-            # testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
             goals: 'clean package'
 
         - task: Docker@2
