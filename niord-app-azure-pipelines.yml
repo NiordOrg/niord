@@ -38,7 +38,7 @@ stages:
             mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-$(maven-version)'
             mavenSetM2Home: true
             publishJUnitResults: true
-            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            # testResultsFiles: '**/surefire-reports/TEST-*.xml'
             goals: 'clean package'
 
         - task: Bash@3
@@ -60,7 +60,7 @@ stages:
             mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-$(maven-version)'
             mavenSetM2Home: true
             publishJUnitResults: true
-            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            # testResultsFiles: '**/surefire-reports/TEST-*.xml'
             goals: 'clean package'
 
         - task: Docker@2
