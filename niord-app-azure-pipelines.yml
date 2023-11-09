@@ -1,5 +1,5 @@
-trigger:
-- nc-develop
+variables:
+  maven-version: 3.8.6
 
 stages:
   - stage: Build_niord
