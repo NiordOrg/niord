@@ -67,6 +67,6 @@ stages:
           inputs:
             containerRegistry: '$(container-registry)'
             repository: 'niord-app'
-            Dockerfile: './niord-dk/niord-dk-web/src/main/Docker/Dockerfile.jvm'
+            Dockerfile: './niord-dk/niord-dk-web/src/main/docker/Dockerfile.jvm'
             buildContext: '/niord-dk/niord-dk-web'
             tags: '$(Build.BuildNumber)'
