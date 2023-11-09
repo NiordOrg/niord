@@ -62,12 +62,6 @@ stages:
             testResultsFiles: '**/surefire-reports/TEST-*.xml'
             goals: 'clean package'
 
-        - task: Bash@3
-          displayName: Debug stage
-          inputs:
-            targetType: 'inline'
-            script: 'ls; echo "$(build.sourcesdirectory)"; ls -R;'
-
         - task: Docker@2
           displayName: 'Build and push image'
           inputs:
