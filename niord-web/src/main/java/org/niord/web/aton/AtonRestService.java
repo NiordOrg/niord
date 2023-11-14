@@ -15,26 +15,25 @@
  */
 package org.niord.web.aton;
 
+import org.jboss.ejb3.annotation.SecurityDomain;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
 import org.niord.core.aton.AtonDefaultsService;
 import org.niord.core.aton.AtonNode;
 import org.niord.core.aton.AtonSearchParams;
 import org.niord.core.aton.AtonService;
 import org.niord.core.aton.vo.AtonNodeVo;
+import org.niord.core.user.Roles;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
 import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
 import javax.ejb.Stateless;
 import javax.inject.Inject;
 import javax.ws.rs.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.*;
 
 /**
  * REST interface for accessing AtoNs.
@@ -53,20 +52,6 @@ public class AtonRestService {
 
     @Inject
     AtonDefaultsService atonDefaultsService;
-
-
-    /** Returns the AtoN with the given comma-separated IDs */
-    @GET
-    @Path("/aton/{atonUids}")
-    @Produces("application/json;charset=UTF-8")
-    @GZIP
-    @NoCache
-    public List<AtonNodeVo> getAtons(@PathParam("atonUids") String atonUids) {
-        return atonService.findByAtonUids(atonUids.split(",")).stream()
-                .map(AtonNode::toVo)
-                .collect(Collectors.toList());
-    }
-
 
     /** Returns the AtoNs within the given bounds */
     @GET
@@ -119,6 +104,113 @@ public class AtonRestService {
         PagedSearchResultVo<AtonNode> atons = atonService.search(param);
 
         return atons.map(AtonNode::toVo);
+    }
+
+    /**
+     * Returns the AtoN with the given AtoN UID, which is the seamark reference
+     *
+     * If no AtoN node exists with the given UID, null is returned.
+     *
+     * @param atonUid the AtoN UID
+     * @return the AtoN or null
+     */
+    @GET
+    @Path("/aton/{atonUid}")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    public AtonNodeVo getAton(@PathParam("atonUid") String atonUid) throws Exception {
+
+        AtonNode atonNode = atonService.findByAtonUid(atonUid);
+
+        // Check for nulls
+        if (atonNode == null) {
+            return null;
+        }
+
+        // Return the VO object
+        return atonNode.toVo();
+    }
+
+    /**
+     * Creates a new AtoN node.
+     *
+     * @param aton the AtoN to create
+     * @return the persisted AtoN
+     */
+    @POST
+    @Path("/aton")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed(Roles.EDITOR)
+    public AtonNodeVo createAton(AtonNodeVo aton) {
+        // Reconstruct the internal AtoN node object
+        AtonNode atonNode = new AtonNode(aton);
+
+        log.debug("Creating aton " + aton);
+
+        try {
+            atonNode = atonService.createAton(atonNode);
+        } catch (Exception ex) {
+            throw new WebApplicationException(ex.getMessage(), 400);
+        }
+
+        return atonNode.toVo();
+    }
+
+
+    /**
+     * Updates an AtoN node.
+     *
+     * @param atonUid the UID of the AtoN to be updated
+     * @param aton the AtoN to update
+     * @return the updated AtoN
+     */
+    @PUT
+    @Path("/aton/{atonUid}")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed(Roles.EDITOR)
+    public AtonNodeVo updateAton(@PathParam("atonUid") String atonUid, AtonNodeVo aton) {
+        // Reconstruct the internal AtoN node object
+        AtonNode atonNode = new AtonNode(aton);
+
+        log.debug("Updating aton " + aton);
+
+        try {
+            atonNode = atonService.updateAton(atonNode);
+        } catch (Exception ex) {
+            throw new WebApplicationException(ex.getMessage(), 400);
+        }
+
+        return atonNode.toVo();
+    }
+
+    /**
+     * Delete an AtoN node.
+     *
+     * @param atonUid the UID of the AtoN to be updated
+     * @return the outcome of the operation
+     */
+    @DELETE
+    @Path("/aton/{atonUid}")
+    @Consumes("application/json;charset=UTF-8")
+    @Produces("application/json;charset=UTF-8")
+    @GZIP
+    @NoCache
+    @RolesAllowed(Roles.EDITOR)
+    public boolean deleteAton(@PathParam("atonUid") String atonUid) {
+        log.debug("Deleting aton with UID" + atonUid);
+
+        try {
+            return atonService.deleteAton(atonUid);
+        } catch (Exception ex) {
+            throw new WebApplicationException(ex.getMessage(), 400);
+        }
     }
 
     /**
