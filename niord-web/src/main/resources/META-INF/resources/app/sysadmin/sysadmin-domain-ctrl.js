@@ -41,15 +41,16 @@ angular.module('niord.admin')
 
             /** Computes the Keycloak URL */
             $scope.getKeycloakUrl = function() {
-                // Template http://localhost:8080/auth/admin/master/console/#/realms/niord/clients
+                // Template http://localhost:8080/auth/admin/master/console/#/niord/clients
                 var url = AuthService.keycloak.authServerUrl;
                 if (url.charAt(url.length - 1) !== '/') {
                     url += '/';
                 }
-                return url + 'admin/master/console/#/realms/niord/clients';
+                return url + 'admin/master/console/#/niord/clients';
             };
             $scope.keycloakUrl = $scope.getKeycloakUrl();
 
+            console.log("Keycloak URL = " + $scope.getKeycloakUrl());
 
             /** Loads the domains from the back-end */
             $scope.loadDomains = function() {
