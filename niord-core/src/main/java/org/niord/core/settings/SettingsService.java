@@ -33,6 +33,7 @@ import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -111,9 +112,14 @@ public class SettingsService extends BaseService {
     @Transactional
     Map<String, Setting> loadSettingsFromClasspath() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
+        URL resource = getClass().getResource(SETTINGS_FILE);
+        Log.info("Loading config from file" + resource);
         List<Setting> settings = mapper.readValue(
                 getClass().getResource(SETTINGS_FILE),
                 new TypeReference<List<Setting>>(){});
+        for (Setting s : settings) {
+            Log.info("Loaded setting " + s.getKey() + " = " + s.getValue());
+        }
         return settings.stream()
                 .collect(Collectors.toMap(Setting::getKey, Function.identity()));
     }

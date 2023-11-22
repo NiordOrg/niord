@@ -90,9 +90,6 @@ public class KeycloakIntegrationService {
     SettingsService settingsService;
 
     @Inject
-    KeycloakAdminClient keycloakAdminClient;
-
-    @Inject
     @Setting(value = "authServerUrl", defaultValue = "/auth", description = "The Keycloak server url")
     String authServerUrl;
 
@@ -245,7 +242,16 @@ public class KeycloakIntegrationService {
      * @return the list of Keycloak clients
      */
     private List<ClientRepresentation> getKeycloakDomainClients() throws Exception {
-        return this.keycloakAdminClient.getRealmResource().clients().findAll();
+        return executeAdminRequest(
+                new HttpGet(resolveAuthServerRealmUrl() + "/clients"),
+                true, // Add auth header
+                is -> {
+                    List<ClientRepresentation> result = new ObjectMapper()
+                            .readValue(is, new TypeReference<List<ClientRepresentation>>(){});
+                    log.debug("Read clients from Keycloak");
+                    return result;
+                });
+//        return this.keycloakAdminClient.getRealmResource().clients().findAll();
     }
 
 
