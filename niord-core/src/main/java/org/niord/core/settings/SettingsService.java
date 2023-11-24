@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.arc.Lock;
 import io.quarkus.logging.Log;
+import io.quarkus.runtime.Startup;
 import io.quarkus.runtime.StartupEvent;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.cache.CacheElement;
@@ -30,6 +31,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.spi.InjectionPoint;
+import jakarta.enterprise.inject.spi.ObserverMethod;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.io.IOException;
@@ -76,7 +78,8 @@ public class SettingsService extends BaseService {
      */
     @Transactional
     @Lock(Lock.Type.WRITE)
-    void init(@Observes StartupEvent ev) {
+    @Startup(ObserverMethod.DEFAULT_PRIORITY - 100)
+    void init() {
         Log.info("Starting Initialization Settings");
         try {
             // Read the settings from the "/niord.json" classpath file
@@ -200,9 +203,12 @@ public class SettingsService extends BaseService {
     public Object get(Setting setting) {
         Objects.requireNonNull(setting, "Must specify valid setting");
 
-        // If a corresponding system property is set, it takes precedence
+        // If a corresponding system or environment property is set, it takes precedence
         if (System.getProperty(setting.getKey()) != null) {
             return System.getProperty(setting.getKey());
+        }
+        if (System.getenv(setting.getKey()) != null) {
+            return System.getenv(setting.getKey());
         }
 
         // Look for a cached value
@@ -255,6 +261,12 @@ public class SettingsService extends BaseService {
             log.info(String.format("Peek system value. Property: %s has system value %s. Return", key, System.getProperty(key).toString()));
             return System.getProperty(key);
         }
+        
+        // If a corresponding environment property is set, it takes precedence
+        if (System.getenv(key) != null) {
+            log.info(String.format("Peek Environment value. Property: %s has system value %s. Return", key, System.getenv(key).toString()));
+            return System.getenv(key);
+        }
 
         Setting setting = em.find(Setting.class, key);
         if (setting == null) {
@@ -282,7 +294,11 @@ public class SettingsService extends BaseService {
     private String expandSettingValue(String value) {
         SettingValueExpander valueExpander = new SettingValueExpander(value);
         String token;
+        int liveLockControlCount = 500;
         while ((token = valueExpander.nextToken()) != null) {
+            if (liveLockControlCount--<0) {
+                throw new RuntimeException("Livelock encountered for key " + value);
+            }
             Object setting = peek(token);
             if (setting != null) {
                 valueExpander.replaceToken(token, setting.toString());
@@ -293,6 +309,14 @@ public class SettingsService extends BaseService {
                 valueExpander.replaceToken(token, sysProp);
                 continue;
             }
+
+            sysProp = System.getenv(token);
+            if (StringUtils.isNotBlank(sysProp)) {
+                valueExpander.replaceToken(token, sysProp);
+                continue;
+            }
+            
+            
             valueExpander.replaceToken(token, "");
         }
         return valueExpander.getValue();
