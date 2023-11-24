@@ -68,6 +68,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.quarkus.runtime.util.StringUtil;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 
@@ -93,6 +94,15 @@ public class KeycloakIntegrationService {
     @Setting(value = "authServerUrl", defaultValue = "/auth", description = "The Keycloak server url")
     String authServerUrl;
 
+    /**
+     * When we use docker compose with the app and keycloak in the same stack. The frontend url and backend url are
+     * different. Because the user will access keycloak in the browser typically via localhost:8080/auth. While the app will
+     * call the keycloak server in the docker network.
+     */
+    @Inject
+    @Setting(value = "frontEndAuthServerUrl", description = "The Keycloak frontend server url, if different from the keycloak backend url")
+    String frontendAuthServerUrl;
+    
     @Inject
     @Setting(value = "authServerRealmKey", description = "The public key associated with the Niord realm in Keycloak")
     String authServerRealmKey;
@@ -225,7 +235,11 @@ public class KeycloakIntegrationService {
         cfg.put("realm", KEYCLOAK_REALM);
         cfg.put("realm-public-key", getKeycloakPublicRealmKey());
         cfg.put("public-client", true);
-        cfg.put("auth-server-url", authServerUrl);
+        if (StringUtil.isNullOrEmpty(frontendAuthServerUrl)) {
+            cfg.put("auth-server-url", authServerUrl);  
+        } else {
+            cfg.put("auth-server-url", frontendAuthServerUrl);
+        }
         cfg.put("ssl-required", authServerSslRequired);
         cfg.put("resource", KEYCLOAK_WEB_CLIENT);
         cfg.put("use-resource-role-mappings", true);
