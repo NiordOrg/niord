@@ -18,6 +18,7 @@ package org.niord.core.promulgation;
 
 import org.niord.core.promulgation.vo.NavtexMessagePromulgationVo;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -60,6 +61,7 @@ public class NavtexMessagePromulgation
 
     String preamble;
 
+    @Column(length = 16_777_216)
     @Lob
     String text;
 

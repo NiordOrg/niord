@@ -29,6 +29,8 @@ import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.transaction.Transactional;
+
+import java.util.Properties;
 import java.util.stream.Collectors;
 
 /**
@@ -38,9 +40,9 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class MailService extends BaseService {
 
-    @Resource(name = "java:jboss/mail/Niord")
+    @Inject
     Session mailSession;
-
+    
     @Inject
     @Setting(value = "mailSender", defaultValue = "niord@e-navigation.net",
             description = "The sender e-mail address")
@@ -59,7 +61,6 @@ public class MailService extends BaseService {
 
     @Inject
     NiordApp app;
-
 
     /**
      * Sends an email

@@ -49,7 +49,6 @@ public class ScriptResourceHistory extends BaseEntity<Integer> {
     @Temporal(TemporalType.TIMESTAMP)
     Date created;
 
-    @Lob
     @Column(name = "snapshot", columnDefinition="BLOB")
     byte[] snapshot;
 

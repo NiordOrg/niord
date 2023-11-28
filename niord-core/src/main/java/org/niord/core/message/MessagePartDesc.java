@@ -36,6 +36,7 @@ public class MessagePartDesc extends DescEntity<MessagePart> {
     String subject;
 
     @Lob
+    @Column(length = 16_777_216)
     String details;
 
     /** Constructor */

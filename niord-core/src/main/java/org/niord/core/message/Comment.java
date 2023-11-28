@@ -19,6 +19,7 @@ import org.niord.core.message.vo.CommentVo;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.user.User;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Lob;
@@ -61,6 +62,7 @@ public class Comment extends BaseEntity<Integer> {
     Date acknowledgeDate;
 
     @Lob
+    @Column(length = 16_777_216) 
     String comment;
 
     @ElementCollection

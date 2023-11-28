@@ -19,6 +19,7 @@ package org.niord.core.promulgation;
 import org.niord.core.promulgation.vo.SafetyNetAreaVo;
 import org.niord.core.promulgation.vo.SafetyNetMessagePromulgationVo;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -55,6 +56,7 @@ public class SafetyNetMessagePromulgation
     SafetyNetArea area;
 
     @Lob
+    @Column(length = 16_777_216)
     String text;
 
     // The actual ID assigned to the SafetyNET message by the distributor (e.g. SHOM for NAVAREA II)
