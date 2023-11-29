@@ -15,22 +15,20 @@
  */
 package org.niord.core.batch;
 
-import org.jberet.cdi.JobScoped;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.logging.Handler;
+
 import org.slf4j.Logger;
 
 import jakarta.batch.api.listener.AbstractJobListener;
 import jakarta.batch.operations.JobOperator;
 import jakarta.batch.runtime.BatchRuntime;
 import jakarta.batch.runtime.context.JobContext;
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
-import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.logging.Handler;
 
 /**
  * A listener used for setting up and removing batch job log files.

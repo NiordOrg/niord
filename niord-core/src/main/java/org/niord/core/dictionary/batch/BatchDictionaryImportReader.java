@@ -15,17 +15,18 @@
  */
 package org.niord.core.dictionary.batch;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.niord.core.batch.AbstractItemHandler;
-import org.niord.core.chart.vo.SystemChartVo;
-import org.niord.core.dictionary.vo.ExportedDictionaryVo;
-import org.niord.core.util.JsonUtils;
-
-import jakarta.enterprise.context.Dependent;
-import jakarta.inject.Named;
 import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.List;
+
+import org.niord.core.batch.AbstractItemHandler;
+import org.niord.core.dictionary.vo.ExportedDictionaryVo;
+import org.niord.core.util.JsonUtils;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Named;
 
 /**
  * Reads dictionaries from a dictionaries.json file.
