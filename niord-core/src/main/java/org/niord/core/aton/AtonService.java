@@ -121,83 +121,6 @@ public class AtonService extends BaseService {
 
 
     /**
-     * Creates a new database entry for the provided AtoN.
-     * @param aton The AtoN to be created
-     * @return The created AtoN node object
-     */
-    @Transactional
-    public AtonNode createAton(AtonNode aton) throws Exception {
-        // Make sure a duplicate AtoN does not exist
-        AtonNode orig = findByAtonUid(aton.getAtonUid());
-        if (Objects.nonNull(orig)) {
-            throw new Exception("The AtoN cannot be created as it already exists");
-        }
-
-        // Make sure the AtoN's UID is valid
-        if(!checkAtonUID(aton)) {
-            throw new Exception("The UID of an AtoN should not be empty or with whitespaces.");
-        }
-
-        // Fill in the user information
-        Optional.of(this.userService.currentUser()).ifPresent(user -> {
-            aton.setUid(user.getId());
-            aton.setUser(user.getUsername());
-        });
-
-        // Persist the new object
-        em.persist(aton);
-
-        // And return the updated AtoN
-        return aton;
-    }
-
-
-    /**
-     * Updated an existing database entry for the provided AtoN.
-     * @param aton The AtoN to be updated
-     * @return The updated AtoN node object
-     */
-    @Transactional
-    public AtonNode updateAton(AtonNode aton) throws Exception {
-        // Find the original AtoN entry
-        AtonNode orig = findByAtonUid(aton.getAtonUid());
-        if (Objects.isNull(orig)) {
-            throw new Exception("The AtoN cannot be updated as it does not exist");
-        }
-
-        // Persist the new object
-        orig.updateNode(aton);
-        em.persist(orig);
-
-        // And return the updated AtoN
-        return orig;
-    }
-
-
-    /**
-     * Deletes the AtoN that matches the provided AtoN UID identifier.
-     * @param atonUid The UID of the AtoN to be deleted
-     */
-    @Transactional
-    public boolean deleteAton(String atonUid) throws Exception {
-        // Find the original AtoN entry
-        AtonNode orig = findByAtonUid(atonUid);
-        if (Objects.isNull(orig)) {
-            throw new Exception("The AtoN cannot be deleted as it does not exist");
-        }
-
-        // Remove any links
-        orig.getLinks().forEach(link -> link.getPeers().remove(orig));
-
-        // Delete the AtoN entry
-        em.remove(orig);
-
-        // Return success
-        return true;
-    }
-
-
-    /**
      * Replaces the AtoN DB
      * @param atons the new AtoNs
      */
@@ -335,9 +258,6 @@ public class AtonService extends BaseService {
 
         Root<AtonNode> atonRoot = c.from(AtonNode.class);
 
-        // Never look for children
-        criteriaHelper.add(cb.isNull(atonRoot.get("parent")));
-
         if (StringUtils.isNotBlank(param.getName())) {
             Join<AtonNode, AtonTag> tags = atonRoot.join("tags", JoinType.LEFT);
             criteriaHelper
@@ -345,26 +265,13 @@ public class AtonService extends BaseService {
         }
 
         if (param.getExtent() != null) {
-            criteriaHelper
-                    .add(new SpatialWithinPredicate((NodeBuilder)cb, atonRoot.get("geometry"), param.getExtent(), false));
-        }
-
-        if (!param.getAtonUids().isEmpty()) {
-            Join<AtonNode, AtonTag> tags = atonRoot.join("tags", JoinType.LEFT);
-            criteriaHelper
-                    .equals(tags.get("k"), AtonTag.TAG_ATON_UID)
-                    .in(tags.get("v"), param.getAtonUids());
+            criteriaHelper.add(new SpatialWithinPredicate((NodeBuilder)cb, atonRoot.get("geometry"), param.getExtent(), false));
         }
 
         if (!param.getChartNumbers().isEmpty()) {
             Root<Chart> chartRoot = c.from(Chart.class);
             criteriaHelper
-                    .add(new SpatialWithinPredicate(
-                            getNodeBuilder(),
-                            atonRoot.get("geometry"),
-                            chartRoot.get("geometry"),
-                            false)
-                    )
+                    .add(new SpatialWithinPredicate(getNodeBuilder(), atonRoot.get("geometry"), chartRoot.get("geometry"), false))
                     .in(chartRoot.get("chartNumber"), param.getChartNumbers());
         }
 

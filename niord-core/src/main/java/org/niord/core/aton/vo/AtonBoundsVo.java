@@ -78,7 +78,7 @@ public class AtonBoundsVo implements IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @XmlAttribute
     public double getMinlat() {

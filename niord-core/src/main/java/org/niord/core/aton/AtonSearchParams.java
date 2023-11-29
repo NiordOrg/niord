@@ -38,65 +38,13 @@ public class AtonSearchParams extends PagedSearchParamsVo {
 
     private String name;
     private Geometry extent;
-    private Set<String> atonUids = new HashSet<>();
     private Set<String> chartNumbers = new HashSet<>();
     private Set<Integer> areaIds = new HashSet<>();
     private boolean emptyOnOverflow;
-
-    /**
-     * Returns a MessageSearchParams initialized with parameter values from a URL using "default" parameter names
-     * @param domain the current domain - defines defaults for sorting
-     * @param url the URL
-     * @return the MessageSearchParams initialized with parameter values
-     */
-    public static AtonSearchParams instantiate(Domain domain, String url) {
-        return instantiate(domain, WebUtils.parseParameterMap(url));
-    }
-
-
-    /**
-     * Returns a MessageSearchParams initialized with parameter values from a request using "default" parameter names
-     * @param domain the current domain - defines defaults for sorting
-     * @param req the servlet request
-     * @return the MessageSearchParams initialized with parameter values
-     */
-    public static AtonSearchParams instantiate(Domain domain, HttpServletRequest req) {
-        return instantiate(domain, req.getParameterMap());
-    }
-
-
-    /**
-     * Returns a MessageSearchParams initialized with parameter values from a request parameter map
-     * using "default" parameter names
-     * @param domain the current domain - defines defaults for sorting
-     * @param reqParams the request parameters
-     * @return the MessageSearchParams initialized with parameter values
-     */
-    public static AtonSearchParams instantiate(Domain domain, Map<String, String[]> reqParams) {
-        AtonSearchParams params = new AtonSearchParams();
-        params.name(getParameterValues(reqParams, "name"))
-                .atonUids(toSet(reqParams.get("atonUids"), Function.identity()))
-                .chartNumbers(toSet(reqParams.get("chartNumbers"), Function.identity()))
-                .areaIds(toSet(reqParams.get("areaIds"), Integer::valueOf))
-
-                // Extent parameters
-                .extent(checkNull(getParameterValues(reqParams, "minLat"), Double::valueOf),
-                        checkNull(getParameterValues(reqParams, "minLon"), Double::valueOf),
-                        checkNull(getParameterValues(reqParams, "maxLat"), Double::valueOf),
-                        checkNull(getParameterValues(reqParams, "maxLon"), Double::valueOf))
-
-                // Standard paged search parameters
-                .maxSize(checkNull(getParameterValues(reqParams, "maxSize"), 100, Integer::valueOf))
-                .page(checkNull(getParameterValues(reqParams, "page"), 0, Integer::valueOf))
-                .sortBy(getParameterValues(reqParams, "sortBy"))
-                .sortOrder(checkNull(getParameterValues(reqParams, "sortOrder"), SortOrder::valueOf));
-
-        return params;
-    }
-
+  
     /*******************************************/
     /** Method chaining Getters and Setters   **/
-    /***/
+    /*******************************************/
 
     public String getName() {
         return name;
@@ -118,15 +66,6 @@ public class AtonSearchParams extends PagedSearchParamsVo {
 
     public AtonSearchParams extent(Double minLat, Double minLon, Double maxLat, Double maxLon) {
         this.extent = JtsConverter.toJtsExtent(minLat, minLon, maxLat, maxLon);
-        return this;
-    }
-
-    public Set<String> getAtonUids() {
-        return atonUids;
-    }
-
-    public AtonSearchParams atonUids(Set<String> atonUids) {
-        this.atonUids = atonUids;
         return this;
     }
 

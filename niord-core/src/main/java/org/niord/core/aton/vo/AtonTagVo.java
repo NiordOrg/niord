@@ -58,7 +58,6 @@ public class AtonTagVo implements IJsonSerializable {
 
     /** No-arg constructor */
     public AtonTagVo() {
-
     }
 
     /** Key-value constructor */
@@ -119,4 +118,12 @@ public class AtonTagVo implements IJsonSerializable {
     public void setV(String v) {
         this.v = v;
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public String toString() {
+        return "AtonTagVo [k=" + k + ", v=" + v + "]";
+    }
+    
+    
 }

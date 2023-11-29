@@ -45,7 +45,6 @@ public class AtonTag extends BaseEntity<Integer> {
 
     // Custom AtoN tags
     public static final String TAG_ATON_UID         = "seamark:ref";
-    public static final String TAG_ATON_TYPE        = "seamark:type";
     public static final String TAG_LIGHT_NUMBER     = "seamark:light:ref";
     public static final String TAG_INT_LIGHT_NUMBER = "seamark:light:int_ref";
     public static final String TAG_LOCALITY         = "seamark:locality";
