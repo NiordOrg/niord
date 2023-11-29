@@ -76,7 +76,7 @@ public class SystemAreaVo extends AreaVo implements Comparable<SystemAreaVo> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public AreaType getType() {
         return type;

@@ -70,7 +70,7 @@ public class AttachmentDesc extends DescEntity<Attachment> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getCaption() {
         return caption;

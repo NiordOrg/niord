@@ -157,7 +157,7 @@ public abstract class SafetyNetArea extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public PromulgationType getPromulgationType() {
         return promulgationType;

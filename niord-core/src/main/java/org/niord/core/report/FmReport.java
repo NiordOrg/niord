@@ -155,7 +155,7 @@ public class FmReport extends BaseEntity<Integer> implements Comparable<FmReport
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getReportId() {
         return reportId;

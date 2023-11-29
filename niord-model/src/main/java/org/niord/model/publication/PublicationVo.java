@@ -97,7 +97,7 @@ public class PublicationVo implements ILocalizable<PublicationDescVo>, IJsonSeri
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @XmlAttribute
     public String getPublicationId() {

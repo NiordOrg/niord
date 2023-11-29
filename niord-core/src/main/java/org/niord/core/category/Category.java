@@ -287,7 +287,7 @@ public class Category extends TreeBaseEntity<Category> implements ILocalizable<C
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public CategoryType getType() {
         return type;

@@ -169,7 +169,7 @@ public class MailingList extends VersionedEntity<Integer> implements ILocalizabl
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
 
     public String getMailingListId() {

@@ -117,7 +117,7 @@ public class Reference extends BaseEntity<Integer> implements ILocalizable<Refer
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public Message getMessage() {
         return message;

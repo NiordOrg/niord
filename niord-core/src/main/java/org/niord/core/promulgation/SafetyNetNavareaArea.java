@@ -121,7 +121,7 @@ public class SafetyNetNavareaArea extends SafetyNetArea {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public NAVAREA getNavarea() {
         return navarea;

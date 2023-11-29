@@ -83,7 +83,7 @@ public class SafetyNetRectangularArea extends SafetyNetArea {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getSwCorner() {
         return swCorner;

@@ -148,7 +148,7 @@ public class BatchData extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public Date getCreated() {
         return created;

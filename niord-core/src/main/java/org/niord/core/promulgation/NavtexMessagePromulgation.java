@@ -127,7 +127,7 @@ public class NavtexMessagePromulgation
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public NavtexPriority getPriority() {
         return priority;

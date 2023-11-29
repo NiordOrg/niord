@@ -76,7 +76,7 @@ public class SourceDesc extends DescEntity<Source> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getName() {
         return name;

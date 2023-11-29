@@ -117,7 +117,7 @@ public class ScriptResource extends VersionedEntity<Integer>  {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public Type getType() {
         return type;

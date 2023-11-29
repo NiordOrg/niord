@@ -245,7 +245,7 @@ public class MailingListTrigger extends VersionedEntity<Integer> implements ILoc
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public MailingList getMailingList() {
         return mailingList;

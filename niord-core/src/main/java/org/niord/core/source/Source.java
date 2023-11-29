@@ -115,7 +115,7 @@ public class Source extends BaseEntity<Integer> implements ILocalizable<SourceDe
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public boolean isActive() {
         return active;

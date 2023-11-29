@@ -77,7 +77,7 @@ public class PublicationCategoryDesc extends DescEntity<PublicationCategory> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getName() {
         return name;

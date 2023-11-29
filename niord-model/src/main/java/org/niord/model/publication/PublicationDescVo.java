@@ -59,7 +59,7 @@ public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @XmlAttribute
     @Override

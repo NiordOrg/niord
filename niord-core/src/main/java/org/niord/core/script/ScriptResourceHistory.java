@@ -82,7 +82,7 @@ public class ScriptResourceHistory extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public ScriptResource getResource() {
         return resource;

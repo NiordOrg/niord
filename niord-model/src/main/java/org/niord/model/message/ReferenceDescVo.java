@@ -46,7 +46,7 @@ public class ReferenceDescVo implements ILocalizedDesc, IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @XmlAttribute
     @Override

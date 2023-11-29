@@ -69,7 +69,7 @@ public class ChartVo implements IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getChartNumber() {
         return chartNumber;

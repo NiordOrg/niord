@@ -159,7 +159,7 @@ public class MessageTag extends VersionedEntity<Integer> implements Comparable<M
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getTagId() {
         return tagId;

@@ -70,7 +70,7 @@ public class TwitterMessagePromulgation extends BaseMessagePromulgation<TwitterM
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getTweet() {
         return tweet;

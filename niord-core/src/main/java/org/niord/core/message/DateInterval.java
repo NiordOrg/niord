@@ -137,7 +137,7 @@ public class DateInterval extends BaseEntity<Integer> implements IndexedEntity, 
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public MessagePart getMessagePart() {
         return messagePart;

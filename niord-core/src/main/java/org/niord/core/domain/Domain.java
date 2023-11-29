@@ -293,7 +293,7 @@ public class Domain extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getDomainId() {
         return domainId;

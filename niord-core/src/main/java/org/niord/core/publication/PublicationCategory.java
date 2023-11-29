@@ -125,7 +125,7 @@ public class PublicationCategory extends BaseEntity<Integer> implements ILocaliz
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getCategoryId() {
         return categoryId;

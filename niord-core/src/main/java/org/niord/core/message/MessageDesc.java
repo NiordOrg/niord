@@ -114,7 +114,7 @@ public class MessageDesc extends DescEntity<Message> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getTitle() {
         return title;

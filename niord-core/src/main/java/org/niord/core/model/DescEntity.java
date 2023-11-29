@@ -68,7 +68,7 @@ public abstract class DescEntity<E extends ILocalizable> extends BaseEntity<Inte
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @Override
     public String getLang() {

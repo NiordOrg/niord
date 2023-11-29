@@ -65,7 +65,7 @@ public class CompositeParamType extends ParamType {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public List<TemplateParam> getTemplateParams() {
         return templateParams;

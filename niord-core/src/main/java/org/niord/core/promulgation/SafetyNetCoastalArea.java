@@ -80,7 +80,7 @@ public class SafetyNetCoastalArea extends SafetyNetNavareaArea {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public CoastalArea getCoastalArea() {
         return coastalArea;

@@ -151,7 +151,7 @@ public class User extends VersionedEntity<Integer> implements IMailable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getUsername() {
         return username;

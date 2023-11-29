@@ -108,7 +108,7 @@ public class Feature extends BaseEntity<Integer> implements IndexedEntity {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getUid() {
         return uid;

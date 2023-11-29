@@ -156,7 +156,7 @@ public class FiringPeriod extends VersionedEntity<Integer> implements Comparable
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getLegacyId() {
         return legacyId;

@@ -135,7 +135,7 @@ public class TemplateParam extends BaseEntity<Integer> implements ILocalizable<T
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @Override
     public int getIndexNo() {

@@ -79,7 +79,7 @@ public class SafetyNetCircularArea extends SafetyNetArea {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getCenter() {
         return center;

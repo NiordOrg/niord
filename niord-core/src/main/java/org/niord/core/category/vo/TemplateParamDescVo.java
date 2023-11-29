@@ -42,7 +42,7 @@ public class TemplateParamDescVo implements ILocalizedDesc, IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @XmlAttribute
     @Override

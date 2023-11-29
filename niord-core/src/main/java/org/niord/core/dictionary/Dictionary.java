@@ -92,7 +92,7 @@ public class Dictionary extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getName() {
         return name;

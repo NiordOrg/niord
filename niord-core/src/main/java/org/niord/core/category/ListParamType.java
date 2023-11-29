@@ -65,7 +65,7 @@ public class ListParamType extends ParamType {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public List<DictionaryEntry> getValues() {
         return values;

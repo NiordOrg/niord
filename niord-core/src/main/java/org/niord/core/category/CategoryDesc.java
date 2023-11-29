@@ -69,7 +69,7 @@ public class CategoryDesc extends DescEntity<Category> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getName() {
         return name;

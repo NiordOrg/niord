@@ -90,7 +90,7 @@ public class MessagePartDesc extends DescEntity<MessagePart> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getSubject() {
         return subject;

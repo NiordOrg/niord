@@ -158,7 +158,7 @@ public abstract class TreeBaseEntity<E extends TreeBaseEntity<E>> extends Versio
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public boolean isActive() {
         return active;

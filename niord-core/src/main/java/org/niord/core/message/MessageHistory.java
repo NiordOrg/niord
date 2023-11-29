@@ -94,7 +94,7 @@ public class MessageHistory extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public Message getMessage() {
         return message;

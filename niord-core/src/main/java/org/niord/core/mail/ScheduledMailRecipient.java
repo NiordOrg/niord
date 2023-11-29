@@ -95,7 +95,7 @@ public class ScheduledMailRecipient extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public ScheduledMail getMail() {
         return mail;

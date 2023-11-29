@@ -65,7 +65,7 @@ public class MessageSeriesMapping extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public NiordIntegration getNiordIntegration() {
         return niordIntegration;

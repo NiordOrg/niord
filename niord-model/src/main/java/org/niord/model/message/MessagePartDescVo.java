@@ -51,7 +51,7 @@ public class MessagePartDescVo implements ILocalizedDesc, IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @XmlAttribute
     @Override

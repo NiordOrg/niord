@@ -115,7 +115,7 @@ public class SafetyNetMessagePromulgation
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @Override
     public String getText() {

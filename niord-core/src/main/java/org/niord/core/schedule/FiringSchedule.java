@@ -105,7 +105,7 @@ public class FiringSchedule extends VersionedEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public Domain getDomain() {
         return domain;

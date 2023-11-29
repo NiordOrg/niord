@@ -92,7 +92,7 @@ public class Contact extends VersionedEntity<Integer> implements IMailable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @Override
     public String getName() {

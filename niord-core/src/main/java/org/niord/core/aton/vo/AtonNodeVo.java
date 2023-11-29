@@ -191,7 +191,7 @@ public class AtonNodeVo implements IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @XmlAttribute
     public Integer getId() {

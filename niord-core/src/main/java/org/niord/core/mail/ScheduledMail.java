@@ -248,7 +248,7 @@ public class ScheduledMail extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
 
     public Date getCreated() {

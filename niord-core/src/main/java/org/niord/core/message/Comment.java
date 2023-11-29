@@ -123,7 +123,7 @@ public class Comment extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public Message getMessage() {
         return message;

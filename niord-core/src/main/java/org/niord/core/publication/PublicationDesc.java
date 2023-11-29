@@ -103,7 +103,7 @@ public class PublicationDesc extends DescEntity<Publication> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getTitle() {
         return title;

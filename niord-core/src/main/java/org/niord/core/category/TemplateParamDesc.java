@@ -69,7 +69,7 @@ public class TemplateParamDesc extends DescEntity<TemplateParam> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getName() {
         return name;

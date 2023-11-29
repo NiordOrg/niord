@@ -119,7 +119,7 @@ public class DictionaryEntry extends BaseEntity<Integer> implements ILocalizable
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public Dictionary getDictionary() {
         return dictionary;

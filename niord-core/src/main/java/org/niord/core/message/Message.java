@@ -713,7 +713,7 @@ public class Message extends VersionedEntity<Integer> implements ILocalizable<Me
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public User getCreatedBy() {
         return createdBy;

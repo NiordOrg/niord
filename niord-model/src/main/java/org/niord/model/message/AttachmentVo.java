@@ -88,7 +88,7 @@ public class AttachmentVo implements ILocalizable<AttachmentDescVo>, IJsonSerial
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getType() {
         return type;

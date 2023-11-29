@@ -237,7 +237,7 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @XmlAttribute
     public String getId() {

@@ -79,7 +79,7 @@ public class DictionaryEntryDesc extends DescEntity<DictionaryEntry> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getValue() {
         return value;

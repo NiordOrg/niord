@@ -130,7 +130,7 @@ public class AtonOsmVo implements IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @XmlAttribute
     public float getVersion() {

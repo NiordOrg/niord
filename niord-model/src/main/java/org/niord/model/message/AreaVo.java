@@ -73,7 +73,7 @@ public class AreaVo implements ILocalizable<AreaDescVo>, IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @XmlAttribute
     public Integer getId() {

@@ -59,7 +59,7 @@ public class DateIntervalVo implements IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public Boolean getAllDay() {
         return allDay;

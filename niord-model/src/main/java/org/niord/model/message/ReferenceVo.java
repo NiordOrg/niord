@@ -58,7 +58,7 @@ public class ReferenceVo implements ILocalizable<ReferenceDescVo>, IJsonSerializ
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getMessageId() {
         return messageId;

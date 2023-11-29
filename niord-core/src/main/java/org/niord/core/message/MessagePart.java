@@ -205,7 +205,7 @@ public class MessagePart extends BaseEntity<Integer> implements ILocalizable<Mes
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public Message getMessage() {
         return message;

@@ -42,7 +42,7 @@ public abstract class BaseEntity<ID extends Serializable> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public ID getId() {
         return this.id;

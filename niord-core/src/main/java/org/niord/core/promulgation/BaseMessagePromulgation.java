@@ -94,7 +94,7 @@ public class BaseMessagePromulgation<P extends BaseMessagePromulgationVo>
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public PromulgationType getType() {
         return type;

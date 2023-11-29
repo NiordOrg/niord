@@ -69,7 +69,7 @@ public class MailingListTriggerDesc extends DescEntity<MailingListTrigger> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getSubject() {
         return subject;

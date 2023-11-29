@@ -162,7 +162,7 @@ public class MessageSeries extends VersionedEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getSeriesId() {
         return seriesId;

@@ -104,7 +104,7 @@ public class NavtexTransmitter extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public PromulgationType getPromulgationType() {
         return promulgationType;

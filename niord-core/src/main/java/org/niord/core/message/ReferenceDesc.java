@@ -70,7 +70,7 @@ public class ReferenceDesc extends DescEntity<Reference> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getDescription() {
         return description;

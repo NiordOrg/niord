@@ -53,7 +53,7 @@ public class MessageSeriesVo implements IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getSeriesId() {
         return seriesId;

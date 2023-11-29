@@ -73,7 +73,7 @@ public class MailingListDesc extends DescEntity<MailingList> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getName() {
         return name;

@@ -380,7 +380,7 @@ public class Publication extends VersionedEntity<Integer> implements ILocalizabl
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getPublicationId() {
         return publicationId;

@@ -139,7 +139,7 @@ public class Attachment extends BaseEntity<Integer> implements ILocalizable<Atta
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public Message getMessage() {
         return message;

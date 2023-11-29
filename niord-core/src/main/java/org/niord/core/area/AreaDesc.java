@@ -69,7 +69,7 @@ public class AreaDesc extends DescEntity<Area> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getName() {
         return name;

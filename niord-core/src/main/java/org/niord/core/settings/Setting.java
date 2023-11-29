@@ -166,7 +166,7 @@ public class Setting implements IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getKey() { return key; }
 

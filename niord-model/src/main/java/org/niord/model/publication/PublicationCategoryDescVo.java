@@ -51,7 +51,7 @@ public class PublicationCategoryDescVo implements ILocalizedDesc, IJsonSerializa
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @XmlAttribute
     @Override

@@ -258,7 +258,7 @@ public class Chart extends VersionedEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getLegacyId() {
         return legacyId;

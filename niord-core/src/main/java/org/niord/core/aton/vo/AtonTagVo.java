@@ -99,7 +99,7 @@ public class AtonTagVo implements IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @XmlAttribute
     public String getK() {

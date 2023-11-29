@@ -43,7 +43,7 @@ public class BatchExecutionVo implements IJsonSerializable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public long getExecutionId() {
         return executionId;

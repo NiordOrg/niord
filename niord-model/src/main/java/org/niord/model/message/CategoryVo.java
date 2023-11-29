@@ -73,7 +73,7 @@ public class CategoryVo implements ILocalizable<CategoryDescVo>, IJsonSerializab
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @XmlAttribute
     public Integer getId() {

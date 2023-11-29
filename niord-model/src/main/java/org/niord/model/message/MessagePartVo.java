@@ -104,7 +104,7 @@ public class MessagePartVo implements ILocalizable<MessagePartDescVo>, IJsonSeri
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public MessagePartType getType() {
         return type;

@@ -106,7 +106,7 @@ public class TwitterSettings extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public PromulgationType getPromulgationType() {
         return promulgationType;

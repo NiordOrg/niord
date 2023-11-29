@@ -53,7 +53,7 @@ public class SequenceEntity implements Serializable {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     @Id
     @Column(unique = true, nullable = false)

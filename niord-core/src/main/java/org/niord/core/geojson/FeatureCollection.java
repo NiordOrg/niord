@@ -105,7 +105,7 @@ public class FeatureCollection extends BaseEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getUid() {
         return uid;

@@ -162,7 +162,7 @@ public class PromulgationType extends VersionedEntity<Integer> {
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getTypeId() {
         return typeId;

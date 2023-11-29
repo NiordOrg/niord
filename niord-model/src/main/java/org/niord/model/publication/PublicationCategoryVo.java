@@ -65,7 +65,7 @@ public class PublicationCategoryVo implements ILocalizable<PublicationCategoryDe
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getCategoryId() {
         return categoryId;

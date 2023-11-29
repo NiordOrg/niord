@@ -287,7 +287,7 @@ public class Area extends TreeBaseEntity<Area> implements ILocalizable<AreaDesc>
 
     /*************************/
     /** Getters and Setters **/
-    /***/
+    /*************************/
 
     public String getLegacyId() {
         return legacyId;
