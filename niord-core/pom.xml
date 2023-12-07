@@ -3,21 +3,21 @@
 
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.niord</groupId>
-        <artifactId>niord-parent</artifactId>
+        <groupId>org.niord.base</groupId>
+        <artifactId>niord-base-parent</artifactId>
         <version>3.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>niord-core</artifactId>
+    <artifactId>niord-base-core</artifactId>
     <packaging>jar</packaging>
-    <name>Niord core application</name>
+    <name>Niord-Base Core</name>
 
     <dependencies>
 
         <dependency>
-            <groupId>org.niord</groupId>
-            <artifactId>niord-model</artifactId>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>niord-base-model</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -223,8 +223,8 @@
             <id>osgeo</id>
             <name>OSGeo Release Repository</name>
             <url>https://repo.osgeo.org/repository/release/</url>
-            <snapshots><enabled>false</enabled></snapshots>
-            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled>   <updatePolicy>daily</updatePolicy></snapshots>
+            <releases><enabled>true</enabled>   <updatePolicy>daily</updatePolicy></releases>
         </repository>
     </repositories>
 
