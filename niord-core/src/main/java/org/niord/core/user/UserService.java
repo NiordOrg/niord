@@ -66,7 +66,9 @@ public class UserService extends BaseService {
     /** Current User       **/
     /************************/
 
-
+    public Set<String> currentUserRoles() {
+        return identity.getRoles();
+    }
     /**
      * Returns the current Keycloak principal
      */

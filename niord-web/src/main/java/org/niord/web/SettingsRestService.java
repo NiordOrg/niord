@@ -74,6 +74,8 @@ public class SettingsRestService extends AbstractBatchableRestService {
     public List<SettingVo> getSettings() {
         // If a ticket is defined, check if programmatically
         if (!userService.isCallerInRole(Roles.SYSADMIN)) {
+            log.info("Could not access Settings " + userService.currentUser());
+            log.info("Current roles " + userService.currentUserRoles());
             throw new WebApplicationException(403);
         }
 
