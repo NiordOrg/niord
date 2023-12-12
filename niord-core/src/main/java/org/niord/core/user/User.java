@@ -28,7 +28,7 @@ import jakarta.persistence.*;
  */
 @Entity
 @Cacheable
-@Table(name = "user_account", indexes = {
+@Table(indexes = {
         @Index(name = "user_username", columnList="username", unique = true)
 })
 @NamedQueries({
