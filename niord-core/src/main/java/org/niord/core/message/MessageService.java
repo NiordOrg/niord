@@ -352,7 +352,9 @@ public class MessageService extends BaseService {
         }
 
         // Register who originally created the message
-        message.setCreatedBy(userService.currentUser());
+        User cu = userService.currentUser();
+        log.info("Creating message with user " + cu);
+        message.setCreatedBy(cu);
 
         // Validate various required fields
         if (message.getMessageSeries() == null) {
