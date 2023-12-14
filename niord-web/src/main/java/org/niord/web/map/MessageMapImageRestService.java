@@ -98,9 +98,14 @@ public class MessageMapImageRestService {
             // Check if a custom map image is defined
             if (StringUtils.isNotBlank(message.getThumbnailPath())) {
                 Path imageRepoPath = repositoryService.getRepoRoot().resolve(message.getThumbnailPath());
+                log.info("Checking repo pathA UID" + uid);
+                log.info("Checking repo path0 thumbnail path" + message.getThumbnailPath());
+                log.info("Checking repo path1 " + repositoryService.getRepoRoot());
+                log.info("Checking repo path2 " + imageRepoPath);
                 if (Files.exists(imageRepoPath)) {
                     return redirect(imageRepoPath);
                 }
+                log.info("Directory does not existChecking repo path2 " + imageRepoPath);
             }
 
 
