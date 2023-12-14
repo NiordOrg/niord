@@ -155,7 +155,7 @@ public class FmTemplateService extends BaseService {
             if (!bundles.isEmpty()) {
                 MultiResourceBundleModel resourceBundleModel =  new MultiResourceBundleModel(
                         bundles,
-                        new DefaultObjectWrapperBuilder(Configuration.getVersion()).build());
+                        new DefaultObjectWrapperBuilder(Configuration.VERSION_2_3_31).build());
                 templateBuilder.getData().put(BUNDLE_PROPERTY, resourceBundleModel);
             }
         }
