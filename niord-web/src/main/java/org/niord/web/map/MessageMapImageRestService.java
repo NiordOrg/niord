@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -59,6 +60,7 @@ import java.util.Map;
 @jakarta.ws.rs.Path("/message-map-image")
 @RequestScoped
 @PermitAll
+@Transactional
 public class MessageMapImageRestService {
 
     static final int CACHE_TIMEOUT_MINUTES = 10;
@@ -98,14 +100,9 @@ public class MessageMapImageRestService {
             // Check if a custom map image is defined
             if (StringUtils.isNotBlank(message.getThumbnailPath())) {
                 Path imageRepoPath = repositoryService.getRepoRoot().resolve(message.getThumbnailPath());
-                log.info("Checking repo pathA UID" + uid);
-                log.info("Checking repo path0 thumbnail path" + message.getThumbnailPath());
-                log.info("Checking repo path1 " + repositoryService.getRepoRoot());
-                log.info("Checking repo path2 " + imageRepoPath);
                 if (Files.exists(imageRepoPath)) {
                     return redirect(imageRepoPath);
                 }
-                log.info("Directory does not existChecking repo path2 " + imageRepoPath);
             }
 
 
