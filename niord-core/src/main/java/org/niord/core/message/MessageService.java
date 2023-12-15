@@ -1018,7 +1018,7 @@ public class MessageService extends BaseService {
             }
             // Need to convert them to int as per message.id type
             List<Integer> idsInteger = ids.stream().map(l->l.intValue()).toList();
-            
+            log.info("Found these messages for tree text query '" + param.getQuery() + " " + idsInteger);
             criteriaHelper.in(msgRoot.get("id"), idsInteger);
         }
 
