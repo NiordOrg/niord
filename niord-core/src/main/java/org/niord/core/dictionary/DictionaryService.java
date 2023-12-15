@@ -329,6 +329,9 @@ public class DictionaryService extends BaseService {
                 resource = "/" + resource;
             }
             try (InputStream in = getClass().getResourceAsStream(resource)) {
+                if (in==null) {
+                    throw new RuntimeException("Could not load resource " + resource);
+                }
                 Properties props = new Properties();
                 props.load(new InputStreamReader(in, "UTF-8"));
 
