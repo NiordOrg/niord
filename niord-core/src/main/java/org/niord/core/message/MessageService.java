@@ -1016,7 +1016,10 @@ public class MessageService extends BaseService {
                 log.warn("Error searching lucene index for query " + param.getQuery());
                 ids = Collections.emptyList();
             }
-            criteriaHelper.in(msgRoot.get("id"), ids);
+            // Need to convert them to int as per message.id type
+            List<Integer> idsInteger = ids.stream().map(l->l.intValue()).toList();
+            
+            criteriaHelper.in(msgRoot.get("id"), idsInteger);
         }
 
 
