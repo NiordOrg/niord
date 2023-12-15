@@ -19,8 +19,12 @@
         <quarkus-qpid-jms.version>2.3.0</quarkus-qpid-jms.version>
         <keycloak.version>20.0.3</keycloak.version>
         <batik.version>1.16</batik.version>
-        <hibernate.spatial.version>6.2.5.Final</hibernate.spatial.version>
-        <hibernate.search-orm.version>6.1.7.Final</hibernate.search-orm.version>
+        
+        <infinispan.core.jakarta.version>14.0.12.Final</infinispan.core.jakarta.version>
+        <quarkus.jberet.version>2.2.0</quarkus.jberet.version>
+
+        <hibernate.spatial.version>6.4.0.Final</hibernate.spatial.version>
+        <hibernate.search.backend.lucene.version>6.1.7.Final</hibernate.search.backend.lucene.version>
     </properties>
 
 
