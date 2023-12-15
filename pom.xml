@@ -10,7 +10,7 @@
     <name>Niord-Base Parent</name>
 
     <properties>
-        <java.min.version>17</java.min.version>
+        <java.min.version>21</java.min.version>
         <maven.min.version>3.0.0</maven.min.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
@@ -18,20 +18,23 @@
 
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.2.2.Final</quarkus.platform.version>
+        <quarkus.platform.version>3.6.3</quarkus.platform.version>
 
 
+	    <quarkus.hibernate-search-orm.elasticsearch.version>8.11</quarkus.hibernate-search-orm.elasticsearch.version>
 
-        <quarkus-qpid-jms.version>2.3.0</quarkus-qpid-jms.version>
+        <quarkus-qpid-jms.version>2.4.0</quarkus-qpid-jms.version>
         <keycloak.version>22.0.5</keycloak.version>
         <batik.version>1.16</batik.version>
         <surefire-plugin.version>3.1.2</surefire-plugin.version>
 
-        <infinispan.core.jakarta.version>14.0.12.Final</infinispan.core.jakarta.version>
+        <infinispan.core.jakarta.version>14.0.21.Final</infinispan.core.jakarta.version>
         <quarkus.jberet.version>2.2.0</quarkus.jberet.version>
 
         <hibernate.spatial.version>6.4.0.Final</hibernate.spatial.version>
-        <hibernate.search.backend.lucene.version>6.1.7.Final</hibernate.search.backend.lucene.version>
+        
+        <hibernate.search-orm.version>6.2.2.Final</hibernate.search-orm.version>
+        <hibernate.search.backend.lucene.version>6.2.2.Final</hibernate.search.backend.lucene.version>
     </properties>
 
 
