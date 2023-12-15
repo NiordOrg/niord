@@ -15,7 +15,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
         <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
-        <io.quarkus.version>3.2.0.Final</io.quarkus.version>
+        <io.quarkus.version>3.2.2.Final</io.quarkus.version>
         <quarkus-qpid-jms.version>2.3.0</quarkus-qpid-jms.version>
         <keycloak.version>22.0.5</keycloak.version>
         <batik.version>1.16</batik.version>
