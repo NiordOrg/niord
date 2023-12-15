@@ -17,7 +17,7 @@
         <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
         <io.quarkus.version>3.2.0.Final</io.quarkus.version>
         <quarkus-qpid-jms.version>2.3.0</quarkus-qpid-jms.version>
-        <keycloak.version>20.0.3</keycloak.version>
+        <keycloak.version>22.0.5</keycloak.version>
         <batik.version>1.16</batik.version>
         
         <infinispan.core.jakarta.version>14.0.12.Final</infinispan.core.jakarta.version>
