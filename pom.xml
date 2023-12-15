@@ -15,11 +15,18 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
         <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
-        <io.quarkus.version>3.2.2.Final</io.quarkus.version>
+
+        <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
+        <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+        <quarkus.platform.version>3.2.2.Final</quarkus.platform.version>
+
+
+
         <quarkus-qpid-jms.version>2.3.0</quarkus-qpid-jms.version>
         <keycloak.version>22.0.5</keycloak.version>
         <batik.version>1.16</batik.version>
-        
+        <surefire-plugin.version>2.22.2</surefire-plugin.version>
+
         <infinispan.core.jakarta.version>14.0.12.Final</infinispan.core.jakarta.version>
         <quarkus.jberet.version>2.2.0</quarkus.jberet.version>
 
@@ -73,9 +80,9 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>io.quarkus</groupId>
-                <artifactId>quarkus-bom</artifactId>
-                <version>${io.quarkus.version}</version>
+                <groupId>${quarkus.platform.group-id}</groupId>
+                <artifactId>${quarkus.platform.artifact-id}</artifactId>
+                <version>${quarkus.platform.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
