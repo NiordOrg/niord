@@ -15,11 +15,38 @@
  */
 package org.niord.core.message;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import static java.util.Arrays.asList;
+import static org.niord.core.geojson.Feature.WGS84_SRID;
+import static org.niord.core.message.MessageIdMatch.MatchType.SHORT_ID;
+import static org.niord.core.message.MessageIdMatch.MatchType.TEXT;
+import static org.niord.core.message.MessageIdMatch.MatchType.UID;
+import static org.niord.core.message.MessageSearchParams.CommentsType.ANY;
+import static org.niord.core.message.MessageSearchParams.CommentsType.ANY_UNACK;
+import static org.niord.core.message.MessageSearchParams.CommentsType.OWN;
+import static org.niord.core.message.MessageSearchParams.CommentsType.OWN_UNACK;
+import static org.niord.core.message.vo.SystemMessageSeriesVo.NumberSequenceType.MANUAL;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.hibernate.query.sqm.NodeBuilder;
+import org.hibernate.dialect.Dialect;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateFilter;
 import org.locationtech.jts.geom.Geometry;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
@@ -48,9 +75,19 @@ import org.niord.core.user.User;
 import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
 import org.niord.model.geojson.FeatureCollectionVo;
-import org.niord.model.message.*;
+import org.niord.model.message.AreaVo;
+import org.niord.model.message.CategoryVo;
+import org.niord.model.message.ChartVo;
+import org.niord.model.message.MainType;
+import org.niord.model.message.MessageVo;
+import org.niord.model.message.ReferenceType;
+import org.niord.model.message.Status;
+import org.niord.model.search.PagedSearchParamsVo.SortOrder;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -58,18 +95,15 @@ import jakarta.jms.ConnectionFactory;
 import jakarta.jms.JMSContext;
 import jakarta.jms.Session;
 import jakarta.persistence.Tuple;
-import jakarta.persistence.criteria.*;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Selection;
 import jakarta.transaction.Transactional;
-import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static java.util.Arrays.asList;
-import static org.niord.core.geojson.Feature.WGS84_SRID;
-import static org.niord.core.message.MessageIdMatch.MatchType.*;
-import static org.niord.core.message.MessageSearchParams.CommentsType.*;
-import static org.niord.core.message.vo.SystemMessageSeriesVo.NumberSequenceType.MANUAL;
-import static org.niord.model.search.PagedSearchParamsVo.SortOrder;
 
 /**
  * Business interface for managing messages
@@ -137,6 +171,9 @@ public class MessageService extends BaseService {
     @Inject
     PromulgationManager promulgationManager;
 
+    @Inject
+    @ConfigProperty(name = "quarkus.datasource.db-kind")
+    String dbKind;
 
     /***************************************/
     /** Message Look-up                   **/
@@ -1066,25 +1103,39 @@ public class MessageService extends BaseService {
 
 
         // Geometry
-        if (param.getExtent() != null) {
-//            System.out.println(param.getExtent());
-//            param.getExtent().setSRID(WGS84_SRID);
-//            Join<Message, MessagePart> partRoot = msgRoot.join("parts", JoinType.LEFT);
-//            Join<Message, FeatureCollection> fcRoot = partRoot.join("geometry", JoinType.LEFT);
-//            Join<FeatureCollection, Feature> fRoot = fcRoot.join("features", JoinType.LEFT);
-//            Predicate geomPredicate = new SpatialIntersectsPredicate(
-//                    getNodeBuilder(),
-//                    fRoot.get("geometry"),
-//                    param.getExtent(),
-//                    false);
-//
-//            if (param.getIncludeNoPos() != null && param.getIncludeNoPos().booleanValue()) {
-//                // search for message with no geometry in addition to messages within extent
-//                criteriaHelper.add(builder.or(builder.equal(msgRoot.get("hasGeometry"), false), geomPredicate));
-//            } else {
-//                // Only search for messages within extent
-//                criteriaHelper.add(geomPredicate);
-//            }
+        Geometry extent = param.getExtent();
+        if (extent != null) {
+            // MySQL stores geometry in reverse order
+            // This should probably be optional based on the current
+            if (dbKind.equals("mysql")) {
+                extent = extent.copy();
+                extent.apply(new CoordinateFilter() {
+
+                    @Override
+                    public void filter(Coordinate coord) {
+                        double oldX = coord.x;
+                        coord.x = coord.y;
+                        coord.y = oldX;
+                    }
+                });
+            }
+            extent.setSRID(WGS84_SRID);
+            Join<Message, MessagePart> partRoot = msgRoot.join("parts", JoinType.LEFT);
+            Join<Message, FeatureCollection> fcRoot = partRoot.join("geometry", JoinType.LEFT);
+            Join<FeatureCollection, Feature> fRoot = fcRoot.join("features", JoinType.LEFT);
+            Predicate geomPredicate = new SpatialIntersectsPredicate(
+                    getNodeBuilder(),
+                    fRoot.get("geometry"),
+                    extent,
+                    false);
+
+            if (param.getIncludeNoPos() != null && param.getIncludeNoPos().booleanValue()) {
+                // search for message with no geometry in addition to messages within extent
+                criteriaHelper.add(builder.or(builder.equal(msgRoot.get("hasGeometry"), false), geomPredicate));
+            } else {
+                // Only search for messages within extent
+                criteriaHelper.add(geomPredicate);
+            }
         }
 
 
