@@ -1018,7 +1018,7 @@ public class MessageService extends BaseService {
             }
             // Need to convert them to int as per message.id type
             List<Integer> idsInteger = ids.stream().map(l->l.intValue()).toList();
-            log.info("Found these messages for tree text query '" + param.getQuery() + " " + idsInteger);
+//            log.info("Found these messages for tree text query '" + param.getQuery() + " " + idsInteger);
             criteriaHelper.in(msgRoot.get("id"), idsInteger);
         }
 
@@ -1067,23 +1067,24 @@ public class MessageService extends BaseService {
 
         // Geometry
         if (param.getExtent() != null) {
-            param.getExtent().setSRID(WGS84_SRID);
-            Join<Message, MessagePart> partRoot = msgRoot.join("parts", JoinType.LEFT);
-            Join<Message, FeatureCollection> fcRoot = partRoot.join("geometry", JoinType.LEFT);
-            Join<FeatureCollection, Feature> fRoot = fcRoot.join("features", JoinType.LEFT);
-            Predicate geomPredicate = new SpatialIntersectsPredicate(
-                    getNodeBuilder(),
-                    fRoot.get("geometry"),
-                    param.getExtent(),
-                    false);
-
-            if (param.getIncludeNoPos() != null && param.getIncludeNoPos().booleanValue()) {
-                // search for message with no geometry in addition to messages within extent
-                criteriaHelper.add(builder.or(builder.equal(msgRoot.get("hasGeometry"), false), geomPredicate));
-            } else {
-                // Only search for messages within extent
-                criteriaHelper.add(geomPredicate);
-            }
+//            System.out.println(param.getExtent());
+//            param.getExtent().setSRID(WGS84_SRID);
+//            Join<Message, MessagePart> partRoot = msgRoot.join("parts", JoinType.LEFT);
+//            Join<Message, FeatureCollection> fcRoot = partRoot.join("geometry", JoinType.LEFT);
+//            Join<FeatureCollection, Feature> fRoot = fcRoot.join("features", JoinType.LEFT);
+//            Predicate geomPredicate = new SpatialIntersectsPredicate(
+//                    getNodeBuilder(),
+//                    fRoot.get("geometry"),
+//                    param.getExtent(),
+//                    false);
+//
+//            if (param.getIncludeNoPos() != null && param.getIncludeNoPos().booleanValue()) {
+//                // search for message with no geometry in addition to messages within extent
+//                criteriaHelper.add(builder.or(builder.equal(msgRoot.get("hasGeometry"), false), geomPredicate));
+//            } else {
+//                // Only search for messages within extent
+//                criteriaHelper.add(geomPredicate);
+//            }
         }
 
 
