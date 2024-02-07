@@ -19,14 +19,16 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.dictionary.Dictionary;
 import org.niord.core.dictionary.DictionaryService;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.util.List;
 
 /**
  * Persists the dictionaries to the database
  */
-@Named
+@Dependent
+@Named("batchDictionaryImportWriter")
 public class BatchDictionaryImportWriter extends AbstractItemHandler {
 
     @Inject

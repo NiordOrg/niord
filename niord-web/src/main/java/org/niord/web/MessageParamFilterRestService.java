@@ -16,27 +16,20 @@
 
 package org.niord.web;
 
+import jakarta.annotation.security.PermitAll;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
 import org.niord.core.message.MessageParamFilter;
 import org.niord.core.message.MessageParamFilterService;
+import org.niord.core.message.vo.MessageParamFilterVo;
 import org.niord.core.user.User;
 import org.niord.core.user.UserService;
-import org.niord.core.message.vo.MessageParamFilterVo;
 import org.slf4j.Logger;
 
-import javax.annotation.security.PermitAll;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,8 +37,8 @@ import java.util.stream.Collectors;
  * Allows an authenticated user to fetch and save message list filters.
  */
 @Path("/filters")
-@Stateless
-@SecurityDomain("keycloak")
+@RequestScoped
+@Transactional
 @PermitAll
 public class MessageParamFilterRestService {
 

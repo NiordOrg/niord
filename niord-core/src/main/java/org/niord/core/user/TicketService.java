@@ -27,8 +27,8 @@ import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.slf4j.Logger;
 
-import javax.ejb.Singleton;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
  * If in a subsequent request the ticket is resolved, then the stored ticket data can be trusted to be true
  * even in an un-authorized request.
  */
-@Singleton
+@ApplicationScoped
 public class TicketService extends BaseCache<String, TicketService.TicketData> {
 
     final static long LIFESPAN = 60 * 1000;    // 1 minute

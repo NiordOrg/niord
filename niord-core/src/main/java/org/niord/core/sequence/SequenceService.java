@@ -17,16 +17,15 @@ package org.niord.core.sequence;
 
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 
 /**
  * Provides an interface for managing sequences
  */
-@Stateless
+@RequestScoped
 @SuppressWarnings("unused")
 public class SequenceService {
 
@@ -42,6 +41,7 @@ public class SequenceService {
      * @param sequence the sequence
      * @return the next value
      */
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     public long peekNextValue(Sequence sequence) {
         SequenceEntity seq = em.find(SequenceEntity.class, sequence.getName());
         return seq != null ? seq.getNextValue() : sequence.initialValue();
@@ -52,7 +52,7 @@ public class SequenceService {
      * Resets the next value of the given sequence to the initial value
      * @param sequence the sequence
      */
-    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void resetNextValue(Sequence sequence) {
         SequenceEntity seq = em.find(SequenceEntity.class, sequence.getName());
 
@@ -73,7 +73,7 @@ public class SequenceService {
      * @param sequence the sequence
      * @return the next value
      */
-    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     public long nextValue(Sequence sequence) {
         long nextValue;
         SequenceEntity seq = em.find(SequenceEntity.class, sequence.getName());

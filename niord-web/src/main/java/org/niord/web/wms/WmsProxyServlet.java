@@ -15,18 +15,11 @@
  */
 package org.niord.web.wms;
 
-import org.niord.core.settings.annotation.Setting;
-import org.niord.core.util.WebUtils;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
+import static org.niord.core.settings.Setting.Type.Boolean;
+import static org.niord.core.settings.Setting.Type.Password;
 
-import javax.imageio.ImageIO;
-import javax.inject.Inject;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,8 +29,19 @@ import java.net.URLConnection;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.niord.core.settings.Setting.Type.Boolean;
-import static org.niord.core.settings.Setting.Type.Password;
+import javax.imageio.ImageIO;
+
+import org.apache.commons.lang.StringUtils;
+import org.niord.core.settings.annotation.Setting;
+import org.niord.core.util.WebUtils;
+import org.slf4j.Logger;
+
+
+import jakarta.inject.Inject;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Proxy WMS data

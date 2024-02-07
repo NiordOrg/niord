@@ -35,7 +35,7 @@ import org.niord.model.message.Status;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;

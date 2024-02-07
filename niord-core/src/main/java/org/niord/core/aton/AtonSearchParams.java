@@ -17,11 +17,18 @@
 package org.niord.core.aton;
 
 import org.locationtech.jts.geom.Geometry;
+import org.niord.core.domain.Domain;
 import org.niord.core.geojson.JtsConverter;
+import org.niord.core.util.WebUtils;
 import org.niord.model.search.PagedSearchParamsVo;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+
+import static org.niord.core.util.WebUtils.getParameterValues;
 
 /**
  * AtoN search parameters
@@ -34,7 +41,7 @@ public class AtonSearchParams extends PagedSearchParamsVo {
     private Set<String> chartNumbers = new HashSet<>();
     private Set<Integer> areaIds = new HashSet<>();
     private boolean emptyOnOverflow;
-
+  
     /*******************************************/
     /** Method chaining Getters and Setters   **/
     /*******************************************/

@@ -16,6 +16,8 @@
 package org.niord.core.batch;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import io.quarkiverse.jberet.runtime.QuarkusJobOperator;
+import io.quarkus.scheduler.Scheduled;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.batch.vo.BatchExecutionVo;
@@ -34,11 +36,11 @@ import org.niord.core.util.JsonUtils;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.batch.operations.JobOperator;
-import javax.batch.operations.NoSuchJobException;
-import javax.ejb.Schedule;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
+import jakarta.batch.operations.NoSuchJobException;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.io.*;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -79,7 +81,7 @@ import java.util.zip.GZIPOutputStream;
  * @see <a href="https://issues.jboss.org/browse/WFLY-4988">Error report</a>
  * @see <a href="https://github.com/NiordOrg/niord-dk/tree/master/niord-dk-web">Example solution</a>
  */
-@Stateless
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class BatchService extends BaseService {
 
@@ -96,7 +98,7 @@ public class BatchService extends BaseService {
     DomainService domainService;
 
     @Inject
-    JobOperator jobOperator;
+    QuarkusJobOperator jobOperator;
 
     @Inject
     SequenceService sequenceService;
@@ -159,6 +161,8 @@ public class BatchService extends BaseService {
      *
      * @param jobName the batch job name
      */
+    @Transactional
+    @ActivateRequestContext
     public long startBatchJobWithDeflatedData(String jobName, Object data, String dataFileName, Map<String, Object> properties) throws Exception {
 
         BatchData job = initBatchData(jobName, properties);
@@ -184,6 +188,8 @@ public class BatchService extends BaseService {
      *
      * @param jobName the batch job name
      */
+    @Transactional
+    @ActivateRequestContext
     public long startBatchJobWithJsonData(String jobName, Object data, String dataFileName, Map<String, Object> properties) throws Exception {
 
         BatchData job = initBatchData(jobName, properties);
@@ -205,6 +211,8 @@ public class BatchService extends BaseService {
      *
      * @param jobName the batch job name
      */
+    @Transactional
+    @ActivateRequestContext
     public long startBatchJobWithDataFile(String jobName, InputStream in, String dataFileName, Map<String, Object> properties) throws IOException {
 
         BatchData job = initBatchData(jobName, properties);
@@ -225,6 +233,8 @@ public class BatchService extends BaseService {
      *
      * @param jobName the batch job name
      */
+    @Transactional
+    @ActivateRequestContext
     public long startBatchJobWithDataFile(String jobName, Path file, Map<String, Object> properties) throws IOException {
         if (!Files.isRegularFile(file)) {
             throw new IllegalArgumentException("Invalid file " + file);
@@ -429,7 +439,10 @@ public class BatchService extends BaseService {
         try {
             return em.createNamedQuery("BatchData.findByInstanceId", BatchData.class)
                     .setParameter("instanceId", instanceId)
-                    .getSingleResult();
+                    .getResultList()
+                    .stream()
+                    .max(Comparator.comparing(BatchData::getCreated))
+                    .orElse(null);
         } catch (Exception e) {
             return null;
         }
@@ -503,7 +516,7 @@ public class BatchService extends BaseService {
         // Look up the names from the database
         //noinspection SqlDialectInspection
         return (List<String>) em
-                .createNativeQuery("SELECT DISTINCT JOBNAME FROM JOB_INSTANCE ORDER BY lower(JOBNAME)")
+                .createNativeQuery("SELECT DISTINCT jobName FROM BatchData ORDER BY jobName")
                 .getResultList();
     }
 
@@ -605,11 +618,11 @@ public class BatchService extends BaseService {
             batchType.setName(name);
             try {
                 batchType.setRunningExecutions(jobOperator.getRunningExecutions(name).size());
+                batchType.setInstanceCount(jobOperator.getJobInstanceCount(name));
             } catch (NoSuchJobException ignored) {
                 // When the JVM has restarted the call will fail until the job has executed the first time.
                 // A truly annoying behaviour, given that we use persisted batch jobs.
             }
-            batchType.setInstanceCount(jobOperator.getJobInstanceCount(name));
 
             // Update the global batch status with the batch type
             status.getTypes().add(batchType);
@@ -627,8 +640,8 @@ public class BatchService extends BaseService {
      * Called every minute to monitor the batch job "[jobName]/in" folders. If a file has been
      * placed in one of these folders, the cause the "jobName" batch job to be started.
      */
-    @Schedule(persistent=false, second="48", minute="*/1", hour="*/1")
-    protected void monitorBatchJobInFolderInitiation() {
+    @Scheduled(cron="48 */1 */1 * * ?")
+    void monitorBatchJobInFolderInitiation() {
 
         // Resolve the list of batch job "in" folders
         List<Path> executionFolders = getBatchJobSubFolders("in");
@@ -660,8 +673,8 @@ public class BatchService extends BaseService {
     /**
      * Called every hour to clean up the batch job "[jobName]/execution" folders for expired files
      */
-    @Schedule(persistent=false, second="30", minute="42", hour="*/1")
-    protected void cleanUpExpiredBatchJobFiles() {
+    @Scheduled(cron="30 42 */1 * * ?")
+    void cleanUpExpiredBatchJobFiles() {
 
         long t0 = System.currentTimeMillis();
 

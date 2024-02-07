@@ -16,7 +16,6 @@
 
 package org.niord.core.script;
 
-import jdk.nashorn.api.scripting.JSObject;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.message.MessageService;
@@ -27,16 +26,13 @@ import org.niord.model.message.MainType;
 import org.niord.model.message.MessagePartType;
 import org.niord.model.message.Status;
 import org.niord.model.message.Type;
+import org.openjdk.nashorn.api.scripting.JSObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.script.Bindings;
-import javax.script.ScriptContext;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.SimpleBindings;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import javax.script.*;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +51,7 @@ import java.util.stream.Collectors;
  * </pre>
  * Inspiration from https://bugs.openjdk.java.net/secure/attachment/54881/LoaderTest.java
  */
-@Stateless
+@RequestScoped
 public class JsResourceService extends BaseService {
 
     private static final Class<?>[] SCRIPT_CLASSES  = {
@@ -278,7 +274,7 @@ public class JsResourceService extends BaseService {
 
         /*****************************************/
         /** Method-chaining Getters and Setters **/
-        /*****************************************/
+        /***/
 
         public String getResourcePath() {
             return resourcePath;

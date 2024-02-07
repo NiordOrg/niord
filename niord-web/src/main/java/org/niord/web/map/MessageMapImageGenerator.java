@@ -15,6 +15,7 @@
  */
 package org.niord.web.map;
 
+import io.quarkus.arc.Lock;
 import org.locationtech.jts.awt.PointShapeFactory;
 import org.locationtech.jts.awt.ShapeWriter;
 import org.locationtech.jts.geom.Geometry;
@@ -26,25 +27,13 @@ import org.niord.core.message.Message;
 import org.niord.core.settings.annotation.Setting;
 import org.niord.core.util.GlobalMercator;
 import org.niord.core.util.GraphicsUtils;
+import org.niord.model.geojson.*;
 import org.niord.model.message.MainType;
-import org.niord.model.geojson.FeatureCollectionVo;
-import org.niord.model.geojson.FeatureVo;
-import org.niord.model.geojson.GeometryCollectionVo;
-import org.niord.model.geojson.GeometryVo;
-import org.niord.model.geojson.LineStringVo;
-import org.niord.model.geojson.MultiLineStringVo;
-import org.niord.model.geojson.MultiPointVo;
-import org.niord.model.geojson.MultiPolygonVo;
-import org.niord.model.geojson.PointVo;
-import org.niord.model.geojson.PolygonVo;
 import org.slf4j.Logger;
 
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
+import jakarta.enterprise.context.ApplicationScoped;
 import javax.imageio.ImageIO;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
@@ -63,9 +52,8 @@ import static org.niord.core.settings.Setting.Type.Integer;
 /**
  * Generates message map thumbnail images.
  */
-@Singleton
-@Startup
-@Lock(LockType.READ)
+@ApplicationScoped
+@Lock(Lock.Type.READ)
 public class MessageMapImageGenerator {
 
     static final String STATIC_IMAGE_URL = "%s?center=%f,%f&zoom=%d&size=%dx%d";

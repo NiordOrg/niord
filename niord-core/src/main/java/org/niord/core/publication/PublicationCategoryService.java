@@ -19,14 +19,15 @@ package org.niord.core.publication;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.util.List;
 
 /**
  * Business interface for accessing publication categories
  */
-@Stateless
+@RequestScoped
 @SuppressWarnings("unused")
 public class PublicationCategoryService extends BaseService {
 
@@ -65,6 +66,7 @@ public class PublicationCategoryService extends BaseService {
      * @param category the publication category to update
      * @return the updated publication category
      */
+    @Transactional
     public PublicationCategory updatePublicationCategory(PublicationCategory category) {
         PublicationCategory original = findByCategoryId(category.getCategoryId());
         if (original == null) {
@@ -84,6 +86,7 @@ public class PublicationCategoryService extends BaseService {
      * @param category the publication category to create
      * @return the created publication category
      */
+    @Transactional
     public PublicationCategory createPublicationCategory(PublicationCategory category) {
         if (!category.isNew()) {
             throw new IllegalArgumentException("Cannot create publication category with existing ID "
@@ -116,6 +119,7 @@ public class PublicationCategoryService extends BaseService {
      * Deletes the publication category with the given ID
      * @param categoryId the id of the publication category to delete
      */
+    @Transactional
     public boolean deletePublicationCategory(String categoryId) {
 
         PublicationCategory category = findByCategoryId(categoryId);

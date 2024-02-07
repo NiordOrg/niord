@@ -13,24 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.niord.core.conf;
 
-import javax.enterprise.inject.Produces;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+package org.niord.core.web;
+
+import jakarta.ws.rs.core.SecurityContext;
 
 /**
- * Produces the niord entity manager, thus available for CDI injection.
+ * The SecurityContextProvider Interface.
+ *
+ * This interface defines the structure of the SecurityContextProvider components
+ * that will retrieve and return the currently authenticated user.
+ *
+ * @author Nikolaos Vastardis (email: Nikolaos.Vastardis@gla-rad.org)
  */
-@SuppressWarnings("unused")
-public class DatabaseConfiguration {
+public interface SecurityContextProvider {
 
-    @PersistenceContext(name = "niord")
-    EntityManager entityManager;
-
-    @Produces
-    public EntityManager getEntityManager() {
-        return entityManager;
-    }
+    SecurityContext getSecurityContext();
 
 }

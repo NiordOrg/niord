@@ -23,15 +23,16 @@ import org.niord.core.util.GlobalMercator;
 import org.niord.core.util.GraphicsUtils;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.RequestScoped;
 import javax.imageio.ImageIO;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.GET;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.EntityTag;
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.EntityTag;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
@@ -55,7 +56,8 @@ import java.util.Date;
  *     <li>The tiles have to be 256x256, preventing us from streaming a 1x1 blank tile.</li>
  * </ul>
  */
-@javax.ws.rs.Path("/aton-tiles")
+@jakarta.ws.rs.Path("/aton-tiles")
+@RequestScoped
 public class AtonTileRestService {
 
     static final int        TILE_SIZE           = 256;
@@ -79,7 +81,7 @@ public class AtonTileRestService {
      * Streams the given tile
      */
     @GET
-    @javax.ws.rs.Path("/{z}/{x}/{y}.png")
+    @jakarta.ws.rs.Path("/{z}/{x}/{y}.png")
     public Response streamTile(@PathParam("z") int z, @PathParam("x") int x, @PathParam("y") int y,
                                   @Context Request request) throws IOException {
 

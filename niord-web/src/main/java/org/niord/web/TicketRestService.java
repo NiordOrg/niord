@@ -15,21 +15,17 @@
  */
 package org.niord.web;
 
+import jakarta.annotation.security.PermitAll;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
 import org.niord.core.user.TicketService;
+import org.niord.core.user.UserService;
 import org.slf4j.Logger;
 
-import javax.annotation.Resource;
-import javax.annotation.security.PermitAll;
-import javax.ejb.SessionContext;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
+import jakarta.ejb.SessionContext;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
 import java.util.Set;
 
 /**
@@ -49,15 +45,15 @@ import java.util.Set;
  * even in an un-authorized request.
  */
 @Path("/tickets")
-@Stateless
-@SecurityDomain("keycloak")
+@RequestScoped
+@Transactional
 public class TicketRestService {
-
-    @Resource
-    SessionContext ctx;
 
     @Inject
     Logger log;
+
+    @Inject
+    UserService userService;
 
     @Inject
     TicketService ticketService;
@@ -80,7 +76,7 @@ public class TicketRestService {
         if (roles != null && !roles.isEmpty()) {
             // Ensure that the current user has all the roles that the ticket is requested for
             for (String role : roles) {
-                if (!ctx.isCallerInRole(role)) {
+                if (!userService.isCallerInRole(role)) {
                     throw new WebApplicationException(401);
                 }
             }

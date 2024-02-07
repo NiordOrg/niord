@@ -18,9 +18,9 @@ package org.niord.core.promulgation;
 
 import org.niord.core.promulgation.vo.TwitterMessagePromulgationVo;
 
-import javax.persistence.Column;
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 
 /**
  * Defines the message promulgation entity associated with Twitter promulgation

@@ -21,12 +21,15 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.commons.lang.StringUtils;
 import org.niord.model.IJsonSerializable;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * An AtoN OSM seamark node.
@@ -86,7 +89,7 @@ import java.util.Date;
 @XmlRootElement(name = "node")
 public class AtonNodeVo implements IJsonSerializable {
 
-    int id;
+    Integer id;
     double lat;
     double lon;
     String user;
@@ -95,7 +98,7 @@ public class AtonNodeVo implements IJsonSerializable {
     int version;
     int changeset;
     Date timestamp;
-    private AtonTagVo[] tags;
+    AtonTagVo[] tags;
 
     /**
      * Returns if this AtoN node is a valid seamark
@@ -116,7 +119,7 @@ public class AtonNodeVo implements IJsonSerializable {
 
         AtonNodeVo that = (AtonNodeVo) o;
 
-        if (id != that.id) return false;
+        if (!Objects.equals(id, that.id)) return false;
         if (Double.compare(that.lat, lat) != 0) return false;
         if (Double.compare(that.lon, lon) != 0) return false;
         if (uid != that.uid) return false;
@@ -136,7 +139,7 @@ public class AtonNodeVo implements IJsonSerializable {
     public int hashCode() {
         int result;
         long temp;
-        result = (int) (id ^ (id >>> 32));
+        result = Objects.hashCode(id);
         temp = Double.doubleToLongBits(lat);
         result = 31 * result + (int) (temp ^ (temp >>> 32));
         temp = Double.doubleToLongBits(lon);
@@ -191,11 +194,11 @@ public class AtonNodeVo implements IJsonSerializable {
     /*************************/
 
     @XmlAttribute
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -283,4 +286,13 @@ public class AtonNodeVo implements IJsonSerializable {
     public void setTags(AtonTagVo[] tags) {
         this.tags = tags;
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public String toString() {
+        return "AtonNodeVo [id=" + id + ", lat=" + lat + ", lon=" + lon + ", user=" + user + ", uid=" + uid + ", visible=" + visible + ", version=" + version
+                + ", changeset=" + changeset + ", timestamp=" + timestamp + ", tags=" + Arrays.toString(tags) + "]";
+    }
+    
+    
 }

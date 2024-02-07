@@ -15,17 +15,17 @@
  */
 package org.niord.model.message;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizedDesc;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlType;
 
 /**
  * The message description VO
  */
-@ApiModel(value = "MessageDesc", description = "Translatable fields of the Message model")
+@Schema(name = "MessageDesc", description = "Translatable fields of the Message model")
 @XmlType(propOrder = { "title", "vicinity", "publication", "internalPublication", "source" })
 @SuppressWarnings("unused")
 public class MessageDescVo implements ILocalizedDesc, IJsonSerializable {

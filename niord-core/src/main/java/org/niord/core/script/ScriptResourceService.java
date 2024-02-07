@@ -26,22 +26,18 @@ import org.niord.core.service.BaseService;
 import org.niord.core.user.UserService;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
 /**
  * Main interface for accessing and processing script resource, i.e. Freemarker templates and JavaScript resources
  */
-@Stateless
+@RequestScoped
 public class ScriptResourceService extends BaseService {
 
     @Inject
@@ -60,6 +56,7 @@ public class ScriptResourceService extends BaseService {
      * @param resource the script resource to save
      * @return the saved resource
      */
+    @Transactional
     public ScriptResource saveScriptResource(ScriptResource resource) {
 
         // Update the type from the path extension
@@ -201,6 +198,7 @@ public class ScriptResourceService extends BaseService {
      * @param id the ID of the script resource to delete
      * @noinspection all
      */
+    @Transactional
     public boolean deleteScriptResource(Integer id) {
 
         ScriptResource resource = findById(id);
@@ -277,6 +275,7 @@ public class ScriptResourceService extends BaseService {
      *
      * @param resource the resource to save a snapshot for
      */
+    @Transactional
     public void saveScriptResourceHistory(ScriptResource resource) {
 
         try {

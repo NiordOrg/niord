@@ -15,24 +15,23 @@
  */
 package org.niord.model.geojson;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.function.Consumer;
 
 /**
  * GeoJSON Polygon, as defined in the specification:
  * http://geojson.org/geojson-spec.html#polygon
  */
-@ApiModel(
-        value = "Polygon",
-        parent = GeoJsonVo.class,
+@Schema(
+        name = "Polygon",
         description = "GeoJson Polygon type"
 )
 @XmlRootElement(name = "polygon")
 public class PolygonVo extends GeometryVo {
 
-    private double[][][] coordinates;
+    double[][][] coordinates;
 
     @SuppressWarnings("unused")
     public PolygonVo() {

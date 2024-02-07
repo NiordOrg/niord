@@ -15,24 +15,23 @@
  */
 package org.niord.model.geojson;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.function.Consumer;
 
 /**
  * GeoJSON MultiPolygon, as defined in the specification:
  * http://geojson.org/geojson-spec.html#multipolygon
  */
-@ApiModel(
-        value = "MultiPolygon",
-        parent = GeoJsonVo.class,
+@Schema(
+        name = "MultiPolygon",
         description = "GeoJson MultiPolygon type"
 )
 @XmlRootElement(name = "multiPolygon")
 public class MultiPolygonVo extends GeometryVo {
 
-    private double[][][][] coordinates;
+    double[][][][] coordinates;
 
     @SuppressWarnings("unused")
     public MultiPolygonVo() {

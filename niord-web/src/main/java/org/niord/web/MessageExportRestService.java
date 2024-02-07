@@ -18,11 +18,12 @@ package org.niord.web;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.fileupload.FileItem;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.domain.DomainService;
 import org.niord.core.message.MessageExportService;
@@ -34,20 +35,15 @@ import org.niord.model.IJsonSerializable;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -60,8 +56,8 @@ import java.util.zip.ZipInputStream;
  * REST interface for exporting and importing message archives.
  */
 @Path("/message-io")
-@Stateless
-@SecurityDomain("keycloak")
+@RequestScoped
+@Transactional
 @PermitAll
 @SuppressWarnings("unused")
 public class MessageExportRestService extends AbstractBatchableRestService {
@@ -115,7 +111,7 @@ public class MessageExportRestService extends AbstractBatchableRestService {
     /**
      * Imports an uploaded messages zip archive
      *
-     * @param request the servlet request
+     * @param input the multi-part form data input request
      * @return a status
      */
     @POST
@@ -123,17 +119,17 @@ public class MessageExportRestService extends AbstractBatchableRestService {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
     @RolesAllowed(Roles.ADMIN)
-    public String importMessages(@Context HttpServletRequest request) throws Exception {
-        return executeBatchJobFromUploadedFile(request, "msg-archive-import");
+    public String importMessages(MultipartFormDataInput input) throws Exception {
+        return executeBatchJobFromUploadedFile(input, "msg-archive-import");
     }
 
 
     /** {@inheritDoc} */
     @Override
-    protected void checkBatchJob(String batchJobName, FileItem fileItem, Map<String, Object> params) throws Exception {
+    protected void checkBatchJob(String batchJobName, String filename, InputStream inputStream, Map<String, Object> params) throws Exception {
 
         // Check that the zip file contains a messages.json file
-        if (!checkForMessagesFileInImportArchive(fileItem.getInputStream())) {
+        if (!checkForMessagesFileInImportArchive(inputStream)) {
             throw new Exception("Zip archive is missing a valid messages.json entry");
         }
 

@@ -2,19 +2,19 @@ package org.niord.core.geojson;
 
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
-import org.niord.core.script.FmTemplateService;
 import org.niord.core.message.Message;
+import org.niord.core.script.FmTemplateService;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.message.MessageVo;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.Arrays;
 
 /**
  * Uses the Freemarker template system to format GeoJSON geometries as HTML
  */
-@Stateless
+@RequestScoped
 @SuppressWarnings("unused")
 public class GeometryFormatService {
 

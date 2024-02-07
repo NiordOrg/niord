@@ -15,9 +15,19 @@
  */
 package org.niord.core.keycloak;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.Principal;
+import java.security.PublicKey;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -33,9 +43,9 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.keycloak.KeycloakPrincipal;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -54,19 +64,13 @@ import org.niord.core.user.vo.UserVo;
 import org.niord.core.util.WebUtils;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.quarkus.runtime.util.StringUtil;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 
 
 /**
@@ -74,7 +78,7 @@ import java.util.stream.Collectors;
  * <p>
  * "Domains" in Niord are mapped to Keycloak bearer-only clients.
  */
-@Stateless
+@RequestScoped
 public class KeycloakIntegrationService {
 
     public static final String KEYCLOAK_REALM       = "niord";
@@ -90,6 +94,15 @@ public class KeycloakIntegrationService {
     @Setting(value = "authServerUrl", defaultValue = "/auth", description = "The Keycloak server url")
     String authServerUrl;
 
+    /**
+     * When we use docker compose with the app and keycloak in the same stack. The frontend url and backend url are
+     * different. Because the user will access keycloak in the browser typically via localhost:8080/auth. While the app will
+     * call the keycloak server in the docker network.
+     */
+    @Inject
+    @Setting(value = "frontEndAuthServerUrl", description = "The Keycloak frontend server url, if different from the keycloak backend url")
+    String frontendAuthServerUrl;
+    
     @Inject
     @Setting(value = "authServerRealmKey", description = "The public key associated with the Niord realm in Keycloak")
     String authServerRealmKey;
@@ -104,6 +117,11 @@ public class KeycloakIntegrationService {
     @Inject
     private Logger log;
 
+    
+    static {
+        CryptoIntegration.init(KeycloakIntegrationService.class.getClassLoader());
+    }
+    
 
     /******************************/
     /** Keycloak configuration   **/
@@ -217,7 +235,11 @@ public class KeycloakIntegrationService {
         cfg.put("realm", KEYCLOAK_REALM);
         cfg.put("realm-public-key", getKeycloakPublicRealmKey());
         cfg.put("public-client", true);
-        cfg.put("auth-server-url", authServerUrl);
+        if (StringUtil.isNullOrEmpty(frontendAuthServerUrl)) {
+            cfg.put("auth-server-url", authServerUrl);  
+        } else {
+            cfg.put("auth-server-url", frontendAuthServerUrl);
+        }
         cfg.put("ssl-required", authServerSslRequired);
         cfg.put("resource", KEYCLOAK_WEB_CLIENT);
         cfg.put("use-resource-role-mappings", true);
@@ -234,7 +256,6 @@ public class KeycloakIntegrationService {
      * @return the list of Keycloak clients
      */
     private List<ClientRepresentation> getKeycloakDomainClients() throws Exception {
-
         return executeAdminRequest(
                 new HttpGet(resolveAuthServerRealmUrl() + "/clients"),
                 true, // Add auth header
@@ -244,6 +265,7 @@ public class KeycloakIntegrationService {
                     log.debug("Read clients from Keycloak");
                     return result;
                 });
+//        return this.keycloakAdminClient.getRealmResource().clients().findAll();
     }
 
 
@@ -611,11 +633,11 @@ public class KeycloakIntegrationService {
     private <R> R executeAdminRequest(HttpRequestBase request, boolean auth, KeycloakResponseHandler<R> responseHandler) throws Exception {
 
         if (auth) {
-            KeycloakPrincipal keycloakPrincipal = userService.getCallerPrincipal();
+            Principal keycloakPrincipal = userService.getCallerPrincipal();
             if (keycloakPrincipal == null) {
                 throw new Exception("Unable to execute request " + request.getURI() + ". User not authenticated");
             }
-            request.addHeader("Authorization", "Bearer " + keycloakPrincipal.getKeycloakSecurityContext().getTokenString());
+            request.addHeader("Authorization", "Bearer " + userService.getKeycloakAccessToken());
         }
 
         // For e.g. "*.e-navigation.net", with no intermediate certificates specified, you will get an

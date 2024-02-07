@@ -27,7 +27,7 @@ import org.niord.model.message.Status;
 import org.niord.model.message.Type;
 import org.niord.model.search.PagedSearchParamsVo;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -303,7 +303,7 @@ public class MessageSearchParams extends PagedSearchParamsVo {
 
     /*******************************************/
     /** Method chaining Getters and Setters   **/
-    /*******************************************/
+    /***/
 
     public String getLanguage() {
         return language;

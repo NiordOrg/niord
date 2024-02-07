@@ -18,10 +18,10 @@ package org.niord.core.mail;
 import org.apache.commons.lang.StringUtils;
 import org.infinispan.Cache;
 
-import javax.activation.DataHandler;
-import javax.activation.FileDataSource;
-import javax.mail.MessagingException;
-import javax.mail.util.ByteArrayDataSource;
+import jakarta.activation.DataHandler;
+import jakarta.activation.FileDataSource;
+import jakarta.mail.MessagingException;
+import jakarta.mail.util.ByteArrayDataSource;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;

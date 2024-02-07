@@ -21,6 +21,7 @@ import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagService;
 import org.niord.core.util.TimeUtils;
 
+import jakarta.transaction.Transactional;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -76,6 +77,7 @@ public class PublicationTemplateUpdateCtx {
      * @param name the tag name
      * @return the tag
      */
+    @Transactional
     public MessageTag findOrCreatePublicMessageTag(String name) {
         List<MessageTag> tags = messageTagService.findTagsByTypeAndName(PUBLIC, name);
         if (tags.isEmpty()) {

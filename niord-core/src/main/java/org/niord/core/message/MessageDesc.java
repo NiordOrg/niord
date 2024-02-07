@@ -21,8 +21,8 @@ import org.niord.model.DataFilter;
 import org.niord.model.ILocalizedDesc;
 import org.niord.model.message.MessageDescVo;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
 
 /**
  * Localized contents for the Area entity

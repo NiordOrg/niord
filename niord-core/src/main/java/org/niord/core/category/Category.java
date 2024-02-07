@@ -23,18 +23,7 @@ import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.message.CategoryVo;
 
-import javax.persistence.Cacheable;
-import javax.persistence.CascadeType;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.ManyToMany;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderColumn;
-import javax.persistence.Transient;
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -75,7 +64,7 @@ public class Category extends TreeBaseEntity<Category> implements ILocalizable<C
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "entity", orphanRemoval = true)
     List<CategoryDesc> descs = new ArrayList<>();
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     List<String> editorFields = new ArrayList<>();
 
     String atonFilter;
@@ -130,12 +119,12 @@ public class Category extends TreeBaseEntity<Category> implements ILocalizable<C
 
         DataFilter compFilter = filter.forComponent(Category.class);
 
-        this.id = category.getId();
+        this.setId(category.getId());
         this.mrn = category.getMrn();
         this.active = category.isActive();
 
         if (compFilter.includeParent() && category.getParent() != null) {
-            parent = new Category(category.getParent(), filter);
+            setParent(new Category(category.getParent(), filter));
         }
 
         if (category.getDescs() != null) {
@@ -184,13 +173,13 @@ public class Category extends TreeBaseEntity<Category> implements ILocalizable<C
         DataFilter compFilter = filter.forComponent(Category.class);
 
         C category = newInstance(clz);
-        category.setId(id);
+        category.setId(this.getId());
         category.setMrn(mrn);
         category.setActive(active);
 
-        if (compFilter.includeParent() && parent != null) {
-            category.setParent(parent.toVo(clz, compFilter));
-        } else if (compFilter.includeParentId() && parent != null) {
+        if (compFilter.includeParent() && getParent() != null) {
+            category.setParent(getParent().toVo(clz, compFilter));
+        } else if (compFilter.includeParentId() && getParent() != null) {
             CategoryVo parent = new CategoryVo();
             parent.setId(parent.getId());
             category.setParent(parent);
@@ -209,7 +198,7 @@ public class Category extends TreeBaseEntity<Category> implements ILocalizable<C
             sysCategory.setSiblingSortOrder(siblingSortOrder);
 
             if (compFilter.includeChildren()) {
-                children.forEach(child -> sysCategory.checkCreateChildren().add(child.toVo(SystemCategoryVo.class, compFilter)));
+                getChildren().forEach(child -> sysCategory.checkCreateChildren().add(child.toVo(SystemCategoryVo.class, compFilter)));
             }
 
             if (!editorFields.isEmpty()) {

@@ -16,6 +16,7 @@
 
 package org.niord.core.promulgation;
 
+import io.quarkus.arc.Lock;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.db.CriteriaHelper;
@@ -34,30 +35,18 @@ import org.niord.core.util.TimeUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.message.Status;
 
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.inject.Inject;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.criteria.*;
+import jakarta.transaction.Transactional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Manages NAVTEX-via-mailing-lists promulgations
  */
-@Singleton
-@Startup
-@Lock(LockType.READ)
+@ApplicationScoped
+@Lock(Lock.Type.READ)
 @SuppressWarnings("unused")
 public class NavtexPromulgationService extends BasePromulgationService {
 
@@ -428,6 +417,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
 
     /** Creates a new transmitter */
+    @Transactional
     public NavtexTransmitter createTransmitter(NavtexTransmitter transmitter) {
 
         String typeId = transmitter.getPromulgationType().getTypeId();
@@ -440,6 +430,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
 
     /** Updates an existing transmitter */
+    @Transactional
     public NavtexTransmitter updateTransmitter(NavtexTransmitter transmitter) {
 
         String typeId = transmitter.getPromulgationType().getTypeId();
@@ -454,6 +445,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
     /** Deletes an existing transmitter */
     @SuppressWarnings("all")
+    @Transactional
     public boolean deleteTransmitter(String typeId, String name) {
 
         log.info("Deleting transmitter " + name + " for promulgation type " + typeId);

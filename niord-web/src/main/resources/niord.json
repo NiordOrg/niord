@@ -9,14 +9,14 @@
   {
     "key"         : "baseUri",
     "description" : "The base application server URI",
-    "value"       : "http://localhost:8080",
+    "value"       : "http://localhost:8888",
     "web"         : false,
     "editable"    : true
   },
   {
     "key"         : "authServerUrl",
     "description" : "The Keycloak URL",
-    "value"       : "/auth",
+    "value"       : "http://localhost:8080/auth",
     "web"         : false,
     "editable"    : true
   },

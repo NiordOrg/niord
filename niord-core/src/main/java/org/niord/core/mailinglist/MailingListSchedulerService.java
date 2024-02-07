@@ -15,13 +15,13 @@
  */
 package org.niord.core.mailinglist;
 
+import io.quarkus.scheduler.Scheduled;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
-import javax.ejb.Schedule;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
+import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,8 +49,8 @@ public class MailingListSchedulerService extends BaseService {
     /**
      * Checks every minute if there are pending scheduled mailing list triggers.
      */
-    @Schedule(persistent = false, second = "37", minute = "*/1", hour = "*/1")
-    public void checkExecuteScheduledTriggers() {
+    @Scheduled(cron="37 */1 */1 * * ?")
+    void checkExecuteScheduledTriggers() {
 
         long t0 = System.currentTimeMillis();
 

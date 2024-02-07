@@ -15,7 +15,7 @@
  */
 package org.niord.model;
 
-import javax.persistence.Transient;
+import jakarta.persistence.Transient;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

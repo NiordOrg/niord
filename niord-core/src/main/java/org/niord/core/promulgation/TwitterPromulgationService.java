@@ -16,6 +16,8 @@
 
 package org.niord.core.promulgation;
 
+import dev.turingcomplete.quarkussimplifiedasync.core.Async;
+import io.quarkus.arc.Lock;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.geojson.GeoJsonUtils;
@@ -28,19 +30,13 @@ import org.niord.core.promulgation.vo.TwitterMessagePromulgationVo;
 import org.niord.model.DataFilter;
 import org.niord.model.message.MessageDescVo;
 import org.niord.model.message.Status;
-import twitter4j.GeoLocation;
-import twitter4j.StatusUpdate;
-import twitter4j.Twitter;
-import twitter4j.TwitterException;
-import twitter4j.TwitterFactory;
+import twitter4j.*;
 import twitter4j.auth.AccessToken;
 
-import javax.ejb.Asynchronous;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.inject.Inject;
+import jakarta.ejb.LockType;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
@@ -48,9 +44,8 @@ import java.util.Arrays;
 /**
  * Manages Twitter message promulgations
  */
-@Singleton
-@Startup
-@Lock(LockType.READ)
+@ApplicationScoped
+@Lock(Lock.Type.READ)
 @SuppressWarnings("unused")
 public class TwitterPromulgationService extends BasePromulgationService {
 
@@ -160,6 +155,7 @@ public class TwitterPromulgationService extends BasePromulgationService {
 
 
     /** Creates a Twitter settings entity from the given template **/
+    @Transactional
     public TwitterSettings createSettings(TwitterSettings settings) throws Exception {
 
         String typeId = settings.getPromulgationType().getTypeId();
@@ -202,7 +198,7 @@ public class TwitterPromulgationService extends BasePromulgationService {
      * Handle Twitter promulgation for the message
      * @param messageUid the UID of the message
      */
-    @Asynchronous
+    @Async
     public void checkPromulgateMessage(String messageUid) {
 
         Message message = messageService.findByUid(messageUid);

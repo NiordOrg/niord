@@ -15,15 +15,16 @@
  */
 package org.niord.core.aton;
 
-import org.hibernate.search.annotations.Field;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 import org.niord.core.aton.vo.AtonTagVo;
 import org.niord.core.model.BaseEntity;
 
-import javax.persistence.Entity;
-import javax.persistence.Index;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
 import java.util.Objects;
 
 /**
@@ -34,6 +35,7 @@ import java.util.Objects;
  * and sub-pages.
  */
 @Entity
+@Indexed
 @Table(indexes = {
         @Index(name = "aton_tag_k", columnList="k"),
         @Index(name = "aton_tag_v", columnList="v")
@@ -53,7 +55,7 @@ public class AtonTag extends BaseEntity<Integer> {
     @NotNull
     String k;
 
-    @Field
+    @FullTextField
     String v;
 
     @ManyToOne

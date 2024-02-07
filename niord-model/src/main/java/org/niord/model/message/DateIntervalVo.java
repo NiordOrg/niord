@@ -15,16 +15,16 @@
  */
 package org.niord.model.message;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.IJsonSerializable;
 
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.Date;
 
 /**
  * Represents a single date interval for a message
  */
-@ApiModel(value = "DateInterval", description = "Date interval")
+@Schema(name = "DateInterval", description = "Date interval")
 @XmlType(propOrder = {
         "allDay", "fromDate", "toDate"
 })

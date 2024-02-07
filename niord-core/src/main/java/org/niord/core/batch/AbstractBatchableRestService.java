@@ -15,14 +15,13 @@
  */
 package org.niord.core.batch;
 
-import org.apache.commons.fileupload.FileItem;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.niord.core.repo.RepositoryService;
+import org.niord.core.util.WebUtils;
 import org.slf4j.Logger;
 
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.List;
+import jakarta.inject.Inject;
+import java.io.InputStream;
 import java.util.Map;
 
 /**
@@ -43,38 +42,26 @@ public abstract class AbstractBatchableRestService {
     /**
      * Starts the execution of a batch job from an uploaded file
      *
-     * @param request the servlet request
+     * @param input the multi-part form data input request
      * @param batchJobName the name of the batch job
      * @return a status
      */
-    protected String executeBatchJobFromUploadedFile(HttpServletRequest request, String batchJobName) throws Exception {
+    protected String executeBatchJobFromUploadedFile(MultipartFormDataInput input, String batchJobName) throws Exception {
 
-        StringBuilder txt = new StringBuilder();
-
-        List<FileItem> items = repositoryService.parseFileUploadRequest(request);
-
-        // Collect properties from non-file form parameters
-        Map<String, Object> params = new HashMap<>();
-        items.stream()
-            .filter(FileItem::isFormField)
-            .forEach(item -> {
-                try {
-                    params.put(item.getFieldName(), item.getString("UTF-8"));
-                } catch (Exception ignored) {
-                }
-            });
-
+        // Initialise the form parsing parameters
+        final Map<String, Object> formParams = WebUtils.getMultipartInputFormParams(input);
+        final Map<String, InputStream> formFiles = WebUtils.getMultipartInputFiles(input);
+        final StringBuilder txt = new StringBuilder();
 
         // Start the batch job for each file item
-        items.stream()
-                .filter(item -> !item.isFormField())
-                .forEach(item -> {
+        formFiles.entrySet()
+                .stream()
+                .forEach(fileEntry -> {
                     try {
-                        checkBatchJob(batchJobName, item, params);
-                        startBatchJob(batchJobName, item, params, txt);
+                        checkBatchJob(batchJobName, fileEntry.getKey(), fileEntry.getValue(), formParams);
+                        startBatchJob(batchJobName, fileEntry.getKey(), fileEntry.getValue(), formParams, txt);
                     } catch (Exception e) {
-                        String errorMsg = "Error executing batch job " + batchJobName
-                                    + " with file " + item.getName() + ": " + e.getMessage();
+                        String errorMsg = "Error executing batch job " + batchJobName + " with file " + fileEntry.getKey() + ": " + e.getMessage();
                         log.error(errorMsg, e);
                         txt.append(errorMsg);
                     }
@@ -88,11 +75,12 @@ public abstract class AbstractBatchableRestService {
      * The method should throw an exception to prevent the batch job from running
      *
      * @param batchJobName the batch job name
-     * @param fileItem the file item
+     * @param fileName the file name
+     * @param inputStream the file contents
      * @param params the non-file form parameters
      */
     @SuppressWarnings("unused")
-    protected void checkBatchJob(String batchJobName, FileItem fileItem, Map<String, Object> params) throws Exception {
+    protected void checkBatchJob(String batchJobName, String fileName, InputStream inputStream, Map<String, Object> params) throws Exception {
         // By default, we accept the batch job
     }
 
@@ -100,18 +88,19 @@ public abstract class AbstractBatchableRestService {
      * Starts the batch job on the given file
      *
      * @param batchJobName the batch job name
-     * @param fileItem the file item
+     * @param fileName the file name
+     * @param inputStream the file contents
      * @param params the non-file form parameters
      * @param txt a log of the import
      */
-    private void startBatchJob(String batchJobName, FileItem fileItem, Map<String, Object> params, StringBuilder txt) throws Exception {
+    private void startBatchJob(String batchJobName, String fileName, InputStream inputStream, Map<String, Object> params, StringBuilder txt) throws Exception {
         batchService.startBatchJobWithDataFile(
                 batchJobName,
-                fileItem.getInputStream(),
-                fileItem.getName(),
+                inputStream,
+                fileName,
                 params);
 
-        String message = "Started batch job '" + batchJobName + "' with file " + fileItem.getName();
+        String message = "Started batch job '" + batchJobName + "' with file " + fileName;
         log.info(message);
         txt.append(message);
     }

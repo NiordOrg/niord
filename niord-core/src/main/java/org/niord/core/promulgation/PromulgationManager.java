@@ -16,6 +16,9 @@
 
 package org.niord.core.promulgation;
 
+import io.quarkus.arc.All;
+import io.quarkus.arc.InstanceHandle;
+import io.quarkus.arc.Lock;
 import org.niord.core.NiordApp;
 import org.niord.core.category.TemplateExecutionService;
 import org.niord.core.domain.DomainService;
@@ -24,21 +27,11 @@ import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.PromulgationType.Requirement;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.core.promulgation.vo.PromulgationServiceVo;
-import org.niord.core.util.CdiUtils;
 import org.slf4j.Logger;
 
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.inject.Inject;
-import javax.naming.NamingException;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -46,7 +39,7 @@ import java.util.stream.Collectors;
  * Manages the list of PromulgationServices, such as MailingListPromulgationService, NavtexPromulgationService, etc.
  * <p>
  * The PromulgationManager facilitates a plug-in architecture where all promulgation services must register
- * in a @PostConstruct method.
+ * in an init method, handing the @Observes StartupEvent events.
  * <p>
  * Each promulgation service is associated with a list of {@linkplain PromulgationType} entities.
  * As an example, there may be "NAVTEX-DK" and "NAVTEX-GL" types managed by NAVTEX promulgation service.
@@ -54,9 +47,8 @@ import java.util.stream.Collectors;
  * In turn, messages are associated with a list of {@linkplain BaseMessagePromulgation}-derived entities that
  * are each tied to a promulgation type.
  */
-@Singleton
-@Startup
-@Lock(LockType.READ)
+@ApplicationScoped
+@Lock(Lock.Type.READ)
 @SuppressWarnings("unused")
 public class PromulgationManager {
 
@@ -75,7 +67,11 @@ public class PromulgationManager {
     @Inject
     NiordApp app;
 
-    Map<String, Class<? extends BasePromulgationService>> services = new ConcurrentHashMap<>();
+    @Inject
+    @All
+    List<InstanceHandle<BasePromulgationService>> services;
+
+    Map<String, Class<? extends BasePromulgationService>> serviceRegistry = new ConcurrentHashMap<>();
 
 
     /***************************************/
@@ -88,7 +84,7 @@ public class PromulgationManager {
      * @param service the promulgation service to register
      */
     public void registerPromulgationService(BasePromulgationService service) {
-        services.put(service.getServiceId(), service.getClass());
+        serviceRegistry.put(service.getServiceId(), service.getClass());
         log.info("Registered promulgation service " + service.getServiceId());
     }
 
@@ -98,7 +94,7 @@ public class PromulgationManager {
      * @return the registered set of promulgation services
      */
     public List<PromulgationServiceVo> promulgationServices() {
-        return services.entrySet().stream()
+        return serviceRegistry.entrySet().stream()
                 .map(s -> {
                     BasePromulgationService service = instantiatePromulgationService(s.getValue());
                     String serviceName = service == null ? s.getKey() : service.getServiceName();
@@ -338,22 +334,32 @@ public class PromulgationManager {
      * @param type the promulgation service type
      */
     private BasePromulgationService instantiatePromulgationService(String type) {
-        return instantiatePromulgationService(services.get(type));
+        return instantiatePromulgationService(serviceRegistry.get(type));
     }
 
 
     /**
      * Instantiates the promulgation service bean for the given class.
      * Returns null if the class could not be instantiated
+     *
+     * Note that the provided promulgation service class in Quarkus is actually
+     * a client proxy so we need the super class to get things working...
+     *
+     * !!! ONLY FOR QUARKUS !!!
+     *
      * @param promulgationServiceClass the promulgation service class
      */
-    private <T extends BasePromulgationService> T instantiatePromulgationService(Class<T> promulgationServiceClass) {
-        try {
-            return CdiUtils.getBean(promulgationServiceClass);
-        } catch (NamingException e) {
-            log.warn("Could not instantiate promulgation service for class " + promulgationServiceClass);
+    private <T> BasePromulgationService instantiatePromulgationService(Class<T> promulgationServiceClass) {
+        // Sanity Check
+        if(Objects.isNull(promulgationServiceClass)) {
             return null;
         }
+        return this.services.stream()
+                .filter(InstanceHandle::isAvailable)
+                .filter(handle -> handle.getBean().getBeanClass().equals(promulgationServiceClass.getSuperclass()))
+                .findFirst()
+                .map(InstanceHandle::get)
+                .orElse(null);
     }
 
 }

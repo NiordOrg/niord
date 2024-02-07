@@ -19,20 +19,18 @@ import org.niord.core.message.vo.CommentVo;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.user.User;
 
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.Lob;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.PrePersist;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.validation.constraints.NotNull;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import jakarta.validation.constraints.NotNull;
+import java.util.*;
 
 /**
  * Represents a comment to a messages. Comments can be acknowledged.
@@ -64,6 +62,7 @@ public class Comment extends BaseEntity<Integer> {
     Date acknowledgeDate;
 
     @Lob
+    @Column(length = 16_777_216) 
     String comment;
 
     @ElementCollection
@@ -81,7 +80,7 @@ public class Comment extends BaseEntity<Integer> {
      * Constructor
      **/
     public Comment(CommentVo comment, Message message, User user) {
-        this.id = comment.getId();
+        this.setId(comment.getId());
         this.message = message;
         this.user = user;
         this.comment = comment.getComment();
@@ -94,7 +93,7 @@ public class Comment extends BaseEntity<Integer> {
     /** Converts this entity to a value object */
     public CommentVo toVo() {
         CommentVo vo = new CommentVo();
-        vo.setId(id);
+        vo.setId(this.getId());
         vo.setUser(user.getName());
         vo.setCreated(created);
         vo.setAcknowledgedBy(acknowledgedBy != null ? acknowledgedBy.getName() : null);

@@ -16,28 +16,16 @@
 package org.niord.core.aton;
 
 import org.apache.commons.lang.StringUtils;
-import org.hibernate.search.annotations.Indexed;
-import org.hibernate.search.annotations.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
 import org.locationtech.jts.geom.Geometry;
 import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.core.aton.vo.AtonTagVo;
 import org.niord.core.geojson.JtsConverter;
 import org.niord.core.model.BaseEntity;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.PrePersist;
-import javax.persistence.PreUpdate;
-import javax.persistence.Transient;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import jakarta.persistence.*;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -67,6 +55,7 @@ public class AtonNode extends BaseEntity<Integer> {
 
     double lat;
     double lon;
+    @Column(name="user_name")
     String user;
     int uid;
     boolean visible;
@@ -78,9 +67,8 @@ public class AtonNode extends BaseEntity<Integer> {
     Geometry geometry;
 
     @IndexedEmbedded
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "atonNode", orphanRemoval = true)
+    @OneToMany(mappedBy = "atonNode", cascade = { CascadeType.ALL }, orphanRemoval = true, fetch = FetchType.EAGER)
     List<AtonTag> tags = new ArrayList<>();
-
 
     /** Constructor */
     public AtonNode() {
@@ -90,7 +78,7 @@ public class AtonNode extends BaseEntity<Integer> {
     /** Constructor */
     public AtonNode(AtonNodeVo node) {
         Objects.requireNonNull(node);
-        this.id = node.getId();
+        this.setId(node.getId());
         this.lat = node.getLat();
         this.lon = node.getLon();
         this.user = node.getUser();
@@ -98,7 +86,7 @@ public class AtonNode extends BaseEntity<Integer> {
         this.visible = node.isVisible();
         this.version = node.getVersion();
         this.changeset = node.getChangeset();
-        this.changeset = node.getChangeset();
+        this.timestamp = node.getTimestamp();
         if (node.getTags() != null) {
             setTags(Arrays.stream(node.getTags())
                     .map(t -> new AtonTag(t, AtonNode.this))
@@ -111,7 +99,7 @@ public class AtonNode extends BaseEntity<Integer> {
     /** Converts this entity to a value object */
     public AtonNodeVo toVo() {
         AtonNodeVo vo = new AtonNodeVo();
-        vo.setId(id == null ? 0 : id);
+        vo.setId(this.getId());
         vo.setLat(lat);
         vo.setLon(lon);
         vo.setUser(user);
@@ -230,6 +218,11 @@ public class AtonNode extends BaseEntity<Integer> {
      */
     @Transient
     public boolean hasChanged(AtonNode template) {
+        // Sanity Check
+        if(template == null) {
+            return true;
+        }
+        // Otherwise check per field
         return Math.abs(template.getLat() - lat) > 0.00001 ||
                 Math.abs(template.getLon() - lon) > 0.00001 ||
                 template.isVisible() != visible ||

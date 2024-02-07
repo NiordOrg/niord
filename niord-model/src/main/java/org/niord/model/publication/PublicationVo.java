@@ -16,22 +16,22 @@
 
 package org.niord.model.publication;
 
-import io.swagger.annotations.ApiModel;
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.Date;
 import java.util.List;
 
 /**
  * Value object for the {@code Publication} model entity
  */
-@ApiModel(value = "Publication", description = "Publication model")
+@Schema(name = "Publication", description = "Publication model")
 @XmlRootElement(name = "publication")
 @XmlType(propOrder = {
         "category", "type", "publishDateFrom", "publishDateTo", "descs"

@@ -17,10 +17,7 @@
 package org.niord.core.schedule;
 
 import org.apache.commons.lang.StringUtils;
-import org.niord.core.area.Area;
-import org.niord.core.area.AreaDesc;
-import org.niord.core.area.AreaSearchParams;
-import org.niord.core.area.AreaService;
+import org.niord.core.area.*;
 import org.niord.core.area.vo.SystemAreaVo;
 import org.niord.core.category.Category;
 import org.niord.core.category.CategoryService;
@@ -29,36 +26,22 @@ import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.geojson.Feature;
 import org.niord.core.geojson.FeatureCollection;
-import org.niord.core.message.Message;
-import org.niord.core.message.MessagePart;
-import org.niord.core.message.MessageSeries;
-import org.niord.core.message.MessageSeriesService;
-import org.niord.core.message.MessageService;
-import org.niord.core.message.MessageTag;
+import org.niord.core.message.*;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.schedule.vo.FiringAreaPeriodsVo;
 import org.niord.core.service.BaseService;
 import org.niord.core.util.TimeUtils;
 import org.niord.model.DataFilter;
-import org.niord.core.area.AreaType;
 import org.niord.model.message.MessagePartType;
 import org.niord.model.message.Status;
 import org.niord.model.message.Type;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.ws.rs.WebApplicationException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.TimeZone;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.WebApplicationException;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -71,7 +54,7 @@ import static org.niord.model.search.PagedSearchParamsVo.SortOrder.ASC;
 /**
  * Business interface for accessing Niord firing areas
  */
-@Stateless
+@RequestScoped
 @SuppressWarnings("unused")
 public class FiringScheduleService extends BaseService {
 
@@ -129,6 +112,7 @@ public class FiringScheduleService extends BaseService {
      * @param schedule the firing schedule to create
      * @return the created firing schedule
      */
+    @Transactional
     public FiringSchedule createFiringSchedule(FiringSchedule schedule) {
         if (schedule.isPersisted()) {
             throw new IllegalArgumentException("Cannot create schedule with existing ID " + schedule.getId());
@@ -157,6 +141,7 @@ public class FiringScheduleService extends BaseService {
      * @param schedule the firing schedule to update
      * @return the updated firing schedule
      */
+    @Transactional
     public FiringSchedule updateFiringSchedule(FiringSchedule schedule) {
         FiringSchedule original = findById(schedule.getId());
         if (original == null) {
@@ -190,6 +175,7 @@ public class FiringScheduleService extends BaseService {
      * @param id the ID of the firing schedule to delete
      * @noinspection all
      */
+    @Transactional
     public boolean deleteFiringSchedule(Integer id) {
 
         FiringSchedule schedule = findById(id);
@@ -352,6 +338,7 @@ public class FiringScheduleService extends BaseService {
      * @param templatePeriod the template firing period
      * @return the persisted firing period
      */
+    @Transactional
     public FiringPeriod addFiringPeriod(FiringPeriod templatePeriod) {
         // Validation
         if (templatePeriod.isPersisted()) {
@@ -370,6 +357,7 @@ public class FiringScheduleService extends BaseService {
      * @param templatePeriod the template firing period
      * @return the persisted firing period
      */
+    @Transactional
     public FiringPeriod updateFiringPeriod(FiringPeriod templatePeriod) {
         // Validation
         if (templatePeriod.isNew()) {
@@ -390,6 +378,7 @@ public class FiringScheduleService extends BaseService {
      * Deletes the firing period with the given ID
      * @param id the firing period ID
      */
+    @Transactional
     public boolean deleteFiringPeriod(Integer id) {
 
         FiringPeriod firingPeriod = getByPrimaryKey(FiringPeriod.class, id);
@@ -412,6 +401,7 @@ public class FiringScheduleService extends BaseService {
      * @param messageTag the message tag to assign the messages to
      * @return the list of newly created firing area message templates
      */
+    @Transactional
     public List<Message> generateFiringAreaMessages(MessageSeries messageSeries, MessageTag messageTag) {
 
         // Search for active firing areas for the current domain

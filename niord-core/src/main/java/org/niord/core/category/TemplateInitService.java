@@ -16,13 +16,14 @@
 
 package org.niord.core.category;
 
+import io.quarkus.runtime.StartupEvent;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
-import javax.annotation.PostConstruct;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.util.Arrays;
 
 import static org.niord.core.category.StandardParamType.STANDARD_PARAM_TYPES;
@@ -30,8 +31,7 @@ import static org.niord.core.category.StandardParamType.STANDARD_PARAM_TYPES;
 /**
  * Checks that standard parameter types have been defined
  */
-@Singleton
-@Startup
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class TemplateInitService extends BaseService {
 
@@ -43,8 +43,8 @@ public class TemplateInitService extends BaseService {
 
 
     /** Called when the web application boots up **/
-    @PostConstruct
-    void init() {
+    @Transactional
+    void init(@Observes StartupEvent ev) {
         Arrays.stream(STANDARD_PARAM_TYPES)
                 .forEach(this::checkCreateStandardParamType);
     }

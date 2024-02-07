@@ -101,7 +101,7 @@ public class JtsConverter {
         } else if (g instanceof PolygonVo) {
             return toJtsPolygon(((PolygonVo)g).getCoordinates());
         } else if (g instanceof MultiPointVo) {
-            return factory.createMultiPoint(toJtsCoords(((MultiPointVo)g).getCoordinates()));
+            return factory.createMultiPointFromCoords(toJtsCoords(((MultiPointVo)g).getCoordinates()));
         } else if (g instanceof MultiLineStringVo) {
             return toJtsMultiLineString((MultiLineStringVo)g);
         } else if (g instanceof MultiPolygonVo) {

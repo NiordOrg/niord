@@ -19,14 +19,17 @@ import org.niord.core.aton.AtonNode;
 import org.niord.core.aton.AtonService;
 import org.niord.core.batch.AbstractItemHandler;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.transaction.Transactional;
 import java.util.List;
 
 /**
  * Persists the AtoNs to the database
  */
-@Named
+@Dependent
+@Named("batchAtonImportWriter")
 public class BatchAtonImportWriter extends AbstractItemHandler {
 
     @Inject
@@ -34,6 +37,7 @@ public class BatchAtonImportWriter extends AbstractItemHandler {
 
     /** {@inheritDoc} **/
     @Override
+    @Transactional
     public void writeItems(List<Object> items) throws Exception {
         long t0 = System.currentTimeMillis();
         for (Object i : items) {

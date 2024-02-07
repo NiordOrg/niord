@@ -23,8 +23,8 @@ import org.niord.model.geojson.GeometryVo;
 import org.niord.model.geojson.MultiPointVo;
 import org.niord.model.geojson.PointVo;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Marshaller;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Marshaller;
 
 /**
  * Unit tests for the OSM AtoN model

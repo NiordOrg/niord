@@ -20,8 +20,9 @@ import org.niord.core.user.User;
 import org.niord.core.user.UserService;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -30,7 +31,7 @@ import java.util.Set;
 /**
  * Business interface for managing persisted message parameter filters
  */
-@Stateless
+@RequestScoped
 @SuppressWarnings("unused")
 public class MessageParamFilterService extends BaseService {
 
@@ -113,6 +114,7 @@ public class MessageParamFilterService extends BaseService {
      * @param filter the new message filter
      * @return the persisted message filter
      */
+    @Transactional
     public MessageParamFilter createOrUpdateMessageFilter(MessageParamFilter filter) {
         MessageParamFilter original;
 
@@ -144,6 +146,7 @@ public class MessageParamFilterService extends BaseService {
      * @param id the message filter to delete
      * @return if the message filter was deleted
      */
+    @Transactional
     public boolean deleteMessageFilter(Integer id) {
         User user = userService.currentUser();
 

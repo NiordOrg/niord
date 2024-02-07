@@ -16,29 +16,26 @@
 package org.niord.core.aton;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
-import org.apache.lucene.search.MatchNoDocsQuery;
-import org.hibernate.search.jpa.FullTextEntityManager;
-import org.hibernate.search.jpa.FullTextQuery;
-import org.hibernate.search.jpa.Search;
+import org.hibernate.query.sqm.NodeBuilder;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.scope.SearchScope;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 import org.niord.core.area.Area;
 import org.niord.core.chart.Chart;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.db.SpatialWithinPredicate;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.service.BaseService;
+import org.niord.core.user.UserService;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.persistence.Tuple;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.criteria.*;
+import jakarta.transaction.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -47,12 +44,18 @@ import static org.niord.core.util.LuceneUtils.normalize;
 /**
  * Interface for handling AtoNs
  */
-@Stateless
+@RequestScoped
 @SuppressWarnings("unused")
 public class AtonService extends BaseService {
 
     @Inject
     private Logger log;
+
+    @Inject
+    EntityManager entityManager;
+
+    @Inject
+    private UserService userService;
 
     /*************************/
     /** NEW Aton Model      **/
@@ -65,6 +68,7 @@ public class AtonService extends BaseService {
      * @param value the tag value
      * @return the AtoNs with the given tag key-value
      */
+    @Transactional
     public List<AtonNode> findByTag(String key, String value) {
         return em
                 .createNamedQuery("AtonNode.findByTag", AtonNode.class)
@@ -81,6 +85,7 @@ public class AtonService extends BaseService {
      * @param values the tag values
      * @return the AtoNs with the given tag key and values
      */
+    @Transactional
     public List<AtonNode> findByTagValues(String key, String... values) {
         Set<String> valueSet = new HashSet<>(Arrays.asList(values));
         return em
@@ -96,6 +101,7 @@ public class AtonService extends BaseService {
      * @param atonUid the AtoN UID
      * @return the AtoNs with the given AtoN UID or null if not found
      */
+    @Transactional
     public AtonNode findByAtonUid(String atonUid) {
         return findByTag(AtonTag.TAG_ATON_UID, atonUid).stream()
                 .findFirst()
@@ -108,6 +114,7 @@ public class AtonService extends BaseService {
      * @param atonUids the AtoN UIDs
      * @return the AtoNs with the given AtoN UIDs
      */
+    @Transactional
     public List<AtonNode> findByAtonUids(String... atonUids) {
         return findByTagValues(AtonTag.TAG_ATON_UID, atonUids);
     }
@@ -117,6 +124,7 @@ public class AtonService extends BaseService {
      * Replaces the AtoN DB
      * @param atons the new AtoNs
      */
+    @Transactional
     public void updateAtons(List<AtonNode> atons) {
 
         // Persist new list of AtoNs
@@ -152,6 +160,7 @@ public class AtonService extends BaseService {
      *
      * @return the AtoNs within that matches the search parameters
      */
+    @Transactional
     public PagedSearchResultVo<AtonNode> search(AtonSearchParams param) {
         try {
             //"select count(a) from AtonNode a, Chart c where c.chartNumber in ('101') and within(a.geometry, c.geometry) = true";
@@ -211,6 +220,7 @@ public class AtonService extends BaseService {
      *
      * @return the AtoN lon-lat positions
      */
+    @Transactional
     public List<double[]> searchPositions(AtonSearchParams param) {
         try {
             CriteriaHelper<Tuple> criteriaHelper = CriteriaHelper.initWithTupleQuery(em);
@@ -241,7 +251,7 @@ public class AtonService extends BaseService {
      *
      * @return the AtoNs within that matches the search parameters
      */
-    public <T> Root<AtonNode> buildSearchCriteria(CriteriaHelper<T> criteriaHelper, AtonSearchParams param) {
+    private <T> Root<AtonNode> buildSearchCriteria(CriteriaHelper<T> criteriaHelper, AtonSearchParams param) {
 
         CriteriaBuilder cb = criteriaHelper.getCriteriaBuilder();
         CriteriaQuery<T> c = criteriaHelper.getCriteriaQuery();
@@ -249,31 +259,26 @@ public class AtonService extends BaseService {
         Root<AtonNode> atonRoot = c.from(AtonNode.class);
 
         if (StringUtils.isNotBlank(param.getName())) {
-            /**
             Join<AtonNode, AtonTag> tags = atonRoot.join("tags", JoinType.LEFT);
             criteriaHelper
-                    // .equals(tags.get("k"), AtonTag.TAG_ATON_UID)
-                    .matchText(tags.get("v"), param.getName());
-             **/
-            // Use Hibernate Search to match the name
-            criteriaHelper.in(atonRoot.get("id"), searchAtonTagKeys(param.getName()));
+                    .like(tags.get("v"), normalize(param.getName()));
         }
 
         if (param.getExtent() != null) {
-            criteriaHelper.add(new SpatialWithinPredicate(cb, atonRoot.get("geometry"), param.getExtent()));
+            criteriaHelper.add(new SpatialWithinPredicate((NodeBuilder)cb, atonRoot.get("geometry"), param.getExtent(), false));
         }
 
         if (!param.getChartNumbers().isEmpty()) {
             Root<Chart> chartRoot = c.from(Chart.class);
             criteriaHelper
-                    .add(new SpatialWithinPredicate(cb, atonRoot.get("geometry"), chartRoot.get("geometry")))
+                    .add(new SpatialWithinPredicate(getNodeBuilder(), atonRoot.get("geometry"), chartRoot.get("geometry"), false))
                     .in(chartRoot.get("chartNumber"), param.getChartNumbers());
         }
 
         if (!param.getAreaIds().isEmpty()) {
             Root<Area> areaRoot = c.from(Area.class);
             criteriaHelper
-                    .add(new SpatialWithinPredicate(cb, atonRoot.get("geometry"), areaRoot.get("geometry")))
+                    .add(new SpatialWithinPredicate((NodeBuilder)cb, atonRoot.get("geometry"), areaRoot.get("geometry"), false))
                     .in(areaRoot.get("id"), param.getAreaIds());
         }
 
@@ -287,36 +292,38 @@ public class AtonService extends BaseService {
      * @return the IDs of the AtoN nodes that matches the search criteria
      */
     private List<Integer> searchAtonTagKeys(String value) {
+        // Initialise the search scope to AtoN nodes
+        SearchSession searchSession = Search.session(entityManager);
+        SearchScope<AtonNode> scope = searchSession.scope( AtonNode.class );
 
-        value = normalize(value);
-
-        FullTextEntityManager fullTextEntityManager = Search.getFullTextEntityManager(em);
-
-        // Create a query parser with "or" operator as the default
-        QueryParser parser = new ComplexPhraseQueryParser(
-                "tags.v",
-                new StandardAnalyzer());
-        parser.setDefaultOperator(QueryParser.OR_OPERATOR);
-        parser.setAllowLeadingWildcard(true); // NB: Expensive!
-        org.apache.lucene.search.Query query;
-        try {
-            query = parser.parse(value);
-        } catch (ParseException e) {
-            // Make the client suffer
-            query = new MatchNoDocsQuery();
-        }
-
-        // wrap Lucene query in a javax.persistence.Query
-        FullTextQuery persistenceQuery = fullTextEntityManager.createFullTextQuery(query, AtonNode.class);
-
-        // execute search
-        @SuppressWarnings("unchecked")
-        List<AtonNode> an = (List<AtonNode>)persistenceQuery.getResultList();
-
-        // Returns the ID's of the AtoN nodes
-        return an.stream()
+        // Execute search
+        return searchSession.search( scope )
+                .where(f -> f.wildcard()
+                        .fields("tags.v")
+                        .matching("*" + normalize(value) + "*"))
+                .fetchAllHits()
+                .stream()
                 .map(BaseEntity::getId)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Checks whether the provided AtoN's UID conforms to the norms. That is
+     * non empty and without whitespaces.
+     * @param aton The AtoN whose UID will be checked
+     * @return Whether the AtoN's UID conforms to the norms
+     */
+    private boolean checkAtonUID(AtonNode aton) {
+        // Check that the UID is not null
+        if(StringUtils.trimToNull(aton.getAtonUid()) == null) {
+            return false;
+        }
+        // Check that we don't have any white spaces
+        if(!aton.getAtonUid().matches("\\S+")) {
+            return false;
+        }
+        // Return success
+        return true;
     }
 
 }

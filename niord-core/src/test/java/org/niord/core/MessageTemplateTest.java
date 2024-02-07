@@ -17,21 +17,17 @@
 package org.niord.core;
 
 
-import jdk.nashorn.api.scripting.JSObject;
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.niord.core.category.FieldTemplateProcessor;
+import org.niord.core.category.FieldTemplateProcessor.FieldTemplate;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.vo.PromulgationTypeVo;
 import org.niord.core.promulgation.vo.TwitterMessagePromulgationVo;
-import org.niord.core.category.FieldTemplateProcessor;
-import org.niord.core.category.FieldTemplateProcessor.FieldTemplate;
+import org.openjdk.nashorn.api.scripting.JSObject;
 
-import javax.script.Bindings;
-import javax.script.ScriptContext;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.SimpleBindings;
+import javax.script.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

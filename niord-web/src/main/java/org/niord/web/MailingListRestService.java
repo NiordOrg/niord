@@ -16,52 +16,32 @@
 
 package org.niord.web;
 
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.mail.IMailable;
 import org.niord.core.mail.vo.ScheduledMailVo;
-import org.niord.core.mailinglist.MailingList;
-import org.niord.core.mailinglist.MailingListExecutionService;
-import org.niord.core.mailinglist.MailingListSearchParams;
-import org.niord.core.mailinglist.MailingListService;
-import org.niord.core.mailinglist.MailingListTrigger;
-import org.niord.core.mailinglist.TriggerType;
+import org.niord.core.mailinglist.*;
 import org.niord.core.mailinglist.vo.MailingListReportVo;
 import org.niord.core.mailinglist.vo.MailingListVo;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
-import org.niord.core.user.Contact;
-import org.niord.core.user.ContactService;
-import org.niord.core.user.Roles;
-import org.niord.core.user.User;
-import org.niord.core.user.UserService;
+import org.niord.core.user.*;
 import org.niord.core.user.vo.ContactVo;
 import org.niord.core.user.vo.UserVo;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.slf4j.Logger;
 
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -72,8 +52,8 @@ import java.util.stream.Collectors;
  * REST interface for accessing mailing lists.
  */
 @Path("/mailing-lists")
-@Stateless
-@SecurityDomain("keycloak")
+@RequestScoped
+@Transactional
 @RolesAllowed(Roles.ADMIN)
 public class MailingListRestService extends AbstractBatchableRestService  {
 
@@ -423,7 +403,7 @@ public class MailingListRestService extends AbstractBatchableRestService  {
     /**
      * Imports an uploaded mailing-list json file
      *
-     * @param request the servlet request
+     * @param input the multi-part form data input request
      * @return a status
      */
     @POST
@@ -431,8 +411,8 @@ public class MailingListRestService extends AbstractBatchableRestService  {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
     @RolesAllowed(Roles.SYSADMIN)
-    public String importPublications(@Context HttpServletRequest request) throws Exception {
-        return executeBatchJobFromUploadedFile(request, "mailing-list-import");
+    public String importPublications(MultipartFormDataInput input) throws Exception {
+        return executeBatchJobFromUploadedFile(input, "mailing-list-import");
     }
 
 
@@ -537,7 +517,7 @@ public class MailingListRestService extends AbstractBatchableRestService  {
 
     /***************************************/
     /** Helper Classes                    **/
-    /***************************************/
+    /***/
 
 
     @SuppressWarnings("unused")

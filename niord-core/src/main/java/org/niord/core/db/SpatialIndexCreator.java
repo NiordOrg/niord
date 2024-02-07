@@ -18,30 +18,28 @@ package org.niord.core.db;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
-import javax.annotation.PostConstruct;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.util.List;
 
 /**
  * Creates the spatial indexes needed.
  * Cannot be accommodated with usual JPA annotations, methinks.
+ *
+ * TODO: I don't think we need this any more! PostGIS to the rescue!!!
  */
-@Singleton
-@Startup
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class SpatialIndexCreator extends BaseService {
 
     @Inject
     private Logger log;
 
-
     /**
      * Checks and creates spatial indexes
      */
-    @PostConstruct
-    private void createSpatialIndexes() {
+    private void createSpatialIndexes(/*@Observes StartupEvent ev*/) {
 
         try {
             if (!hasIndex("Feature", "feature_geometry_index")) {

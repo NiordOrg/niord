@@ -21,8 +21,8 @@ import org.niord.core.service.BaseService;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +34,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Feature service
  */
-@Stateless
+@RequestScoped
 @SuppressWarnings("unused")
 public class FeatureService extends BaseService {
 

@@ -19,9 +19,9 @@ import org.niord.core.mailinglist.vo.MailingListTriggerDescVo;
 import org.niord.core.model.DescEntity;
 import org.niord.model.ILocalizedDesc;
 
-import javax.persistence.Cacheable;
-import javax.persistence.Entity;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Cacheable;
+import jakarta.persistence.Entity;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Localized contents for the MailingListTrigger entity

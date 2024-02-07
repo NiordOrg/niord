@@ -20,7 +20,8 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.settings.Setting;
 import org.niord.core.util.JsonUtils;
 
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Named;
 import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.List;
@@ -55,7 +56,8 @@ import java.util.List;
  * ]
  * </pre>
  */
-@Named
+@Dependent
+@Named("batchSettingsImportReader")
 public class BatchSettingsImportReader extends AbstractItemHandler {
 
     List<Setting> settings;

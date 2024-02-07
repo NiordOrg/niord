@@ -22,7 +22,7 @@ import org.infinispan.util.concurrent.IsolationLevel;
 import org.niord.core.cache.BaseCache;
 import org.niord.core.cache.CacheElement;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Implements the settings cache with a default timeout of 1 minute.

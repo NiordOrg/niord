@@ -20,13 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
-import org.niord.core.message.Message;
-import org.niord.core.message.MessageScriptFilterService;
-import org.niord.core.message.MessageSearchParams;
-import org.niord.core.message.MessageSeries;
-import org.niord.core.message.MessageService;
-import org.niord.core.message.MessageTag;
-import org.niord.core.message.MessageTagService;
+import org.niord.core.message.*;
 import org.niord.core.publication.vo.PublicationMainType;
 import org.niord.core.publication.vo.PublicationStatus;
 import org.niord.core.publication.vo.SystemPublicationVo;
@@ -36,45 +30,25 @@ import org.niord.model.message.Status;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.persistence.Tuple;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Order;
-import javax.persistence.criteria.Root;
-import javax.persistence.criteria.Selection;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.criteria.*;
+import jakarta.transaction.Transactional;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.niord.core.publication.vo.PublicationMainType.PUBLICATION;
 import static org.niord.core.publication.vo.PublicationMainType.TEMPLATE;
-import static org.niord.core.publication.vo.PublicationStatus.ACTIVE;
-import static org.niord.core.publication.vo.PublicationStatus.DRAFT;
-import static org.niord.core.publication.vo.PublicationStatus.INACTIVE;
-import static org.niord.core.publication.vo.PublicationStatus.RECORDING;
+import static org.niord.core.publication.vo.PublicationStatus.*;
 import static org.niord.model.message.Status.PUBLISHED;
-import static org.niord.model.publication.PublicationType.LINK;
-import static org.niord.model.publication.PublicationType.MESSAGE_REPORT;
-import static org.niord.model.publication.PublicationType.NONE;
-import static org.niord.model.publication.PublicationType.REPOSITORY;
+import static org.niord.model.publication.PublicationType.*;
 
 /**
  * Business interface for accessing publications
  */
-@Stateless
+@RequestScoped
 @SuppressWarnings("unused")
 public class PublicationService extends BaseService {
 
@@ -397,6 +371,7 @@ public class PublicationService extends BaseService {
      * @param publication the publication to update
      * @return the updated publication
      */
+    @Transactional
     public Publication updatePublication(Publication publication) {
         Publication original = findByPublicationId(publication.getPublicationId());
         if (original == null) {
@@ -427,6 +402,7 @@ public class PublicationService extends BaseService {
      * @param publication the publication to create
      * @return the created publication
      */
+    @Transactional
     public Publication createPublication(Publication publication) {
         if (!publication.isNew()) {
             throw new IllegalArgumentException("Cannot create publication with existing ID "
@@ -482,6 +458,7 @@ public class PublicationService extends BaseService {
      * Deletes the publication with the given ID
      * @param publicationId the id of the publication to delete
      */
+    @Transactional
     public boolean deletePublication(String publicationId) {
 
         Publication publication = findByPublicationId(publicationId);
@@ -499,6 +476,7 @@ public class PublicationService extends BaseService {
      * @param status the new status
      * @return the update publication
      */
+    @Transactional
     public Publication updateStatus(String publicationId, PublicationStatus status) throws Exception {
 
         Publication pub = findByPublicationId(publicationId);

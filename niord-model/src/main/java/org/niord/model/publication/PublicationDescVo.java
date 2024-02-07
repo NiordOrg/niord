@@ -16,17 +16,17 @@
 
 package org.niord.model.publication;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizedDesc;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlType;
 
 /**
  * The entity description VO
  */
-@ApiModel(value = "PublicationDesc", description = "Translatable fields of the Publication model")
+@Schema(name = "PublicationDesc", description = "Translatable fields of the Publication model")
 @XmlType(propOrder = { "title", "titleFormat", "link", "fileName", "messagePublicationFormat" })
 @SuppressWarnings("unused")
 public class PublicationDescVo implements ILocalizedDesc, IJsonSerializable {
