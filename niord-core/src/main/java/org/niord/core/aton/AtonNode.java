@@ -55,7 +55,6 @@ public class AtonNode extends BaseEntity<Integer> {
 
     double lat;
     double lon;
-    @Column(name="user_name")
     String user;
     int uid;
     boolean visible;
