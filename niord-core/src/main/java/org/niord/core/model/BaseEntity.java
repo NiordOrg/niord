@@ -25,7 +25,7 @@ import java.io.Serializable;
 public abstract class BaseEntity<ID extends Serializable> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(unique = true, nullable = false)
     protected ID id;
 
