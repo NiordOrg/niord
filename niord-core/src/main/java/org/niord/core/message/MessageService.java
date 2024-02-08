@@ -35,6 +35,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -71,6 +72,7 @@ import org.niord.core.promulgation.PromulgationType;
 import org.niord.core.publication.PublicationService;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
+import org.niord.core.user.Roles;
 import org.niord.core.user.User;
 import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
@@ -936,7 +938,12 @@ public class MessageService extends BaseService {
      */
     public PagedSearchResultVo<Message> search(MessageSearchParams params) {
 
-        System.out.println("The user " + userService.currentUser().getEmail() + " is current in these roles: " + userService.currentUserRoles());
+        String email = userService.currentUser() == null ? "Unknown" : userService.currentUser().getEmail();
+        System.out.println("The user " + email + " is current in these roles: " + userService.currentUserRoles());
+
+        for (Roles r : Roles.class.getEnumConstants()) {
+            System.out.println("The user " + email + " in role " + r + ": " + userService.isCallerInRole(r.toString()));
+        }
         
         PagedSearchResultVo<Message> result = new PagedSearchResultVo<>();
 
