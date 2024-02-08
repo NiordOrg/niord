@@ -936,6 +936,8 @@ public class MessageService extends BaseService {
      */
     public PagedSearchResultVo<Message> search(MessageSearchParams params) {
 
+        System.out.println("The user " + userService.currentUser().getEmail() + " is current in these roles: " + userService.currentUserRoles());
+        
         PagedSearchResultVo<Message> result = new PagedSearchResultVo<>();
 
         try {
