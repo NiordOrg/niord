@@ -22,6 +22,8 @@ import org.niord.model.ILocalizedDesc;
 import jakarta.persistence.Cacheable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
 
 /**
@@ -30,6 +32,7 @@ import jakarta.validation.constraints.NotNull;
 @Entity
 @Cacheable
 @SuppressWarnings("unused")
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "lang", "entity_id" }))
 public class DictionaryEntryDesc extends DescEntity<DictionaryEntry> {
 
     @NotNull

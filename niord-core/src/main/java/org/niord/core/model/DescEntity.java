@@ -28,7 +28,6 @@ import jakarta.validation.constraints.NotNull;
  * Base class for localizable description entities.
  */
 @MappedSuperclass
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "lang", "entity_id" }))
 @SuppressWarnings("unused")
 public abstract class DescEntity<E extends ILocalizable> extends BaseEntity<Integer> implements ILocalizedDesc {
 

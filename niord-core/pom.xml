@@ -191,11 +191,12 @@
         <dependency>
             <groupId>org.hibernate.search</groupId>
             <artifactId>hibernate-search-mapper-orm-orm6</artifactId>
+            <version>6.2.3.Final</version>
         </dependency>
         <dependency>
             <groupId>org.hibernate.search</groupId>
             <artifactId>hibernate-search-backend-lucene</artifactId>
-            <version>${hibernate.search.backend.lucene.version}</version>
+<!--            <version>${hibernate.search.backend.lucene.version}</version> -->
         </dependency>
 
         <dependency>

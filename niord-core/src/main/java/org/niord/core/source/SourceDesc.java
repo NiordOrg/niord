@@ -21,6 +21,8 @@ import org.niord.core.source.vo.SourceDescVo;
 import org.niord.model.ILocalizedDesc;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.NotNull;
 
 /**
@@ -28,6 +30,7 @@ import jakarta.validation.constraints.NotNull;
  */
 @Entity
 @SuppressWarnings("unused")
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "lang", "entity_id" }))
 public class SourceDesc extends DescEntity<Source> {
 
     @NotNull

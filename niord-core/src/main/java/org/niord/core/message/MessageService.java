@@ -941,9 +941,9 @@ public class MessageService extends BaseService {
         String email = userService.currentUser() == null ? "Unknown" : userService.currentUser().getEmail();
         System.out.println("The user " + email + " is current in these roles: " + userService.currentUserRoles());
 
-        for (Roles r : Roles.class.getEnumConstants()) {
-            System.out.println("The user " + email + " in role " + r + ": " + userService.isCallerInRole(r.toString()));
-        }
+//        for (Roles r : List.of(Roles.SYSADMIN, Roles.) Roles.class.getEnumConstants()) {
+//            System.out.println("The user " + email + " in role " + r + ": " + userService.isCallerInRole(r.toString()));
+//        }
         
         PagedSearchResultVo<Message> result = new PagedSearchResultVo<>();
 
