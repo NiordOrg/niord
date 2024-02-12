@@ -29,6 +29,7 @@ import org.niord.model.message.MainType;
 import org.niord.model.message.Type;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -38,7 +39,7 @@ import java.util.stream.Collectors;
 /**
  * Business interface for managing message series
  */
-@RequestScoped
+@ApplicationScoped
 public class MessageSeriesService extends BaseService {
 
     public static final String NUMBER_SEQUENCE_TYPE_YEARLY = "MESSAGE_SERIES_NUMBER_%s_%d";

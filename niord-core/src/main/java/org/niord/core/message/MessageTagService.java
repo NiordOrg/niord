@@ -26,6 +26,7 @@ import org.niord.core.user.User;
 import org.niord.core.user.UserService;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.criteria.*;
@@ -43,7 +44,7 @@ import static org.niord.model.search.PagedSearchParamsVo.SortOrder.DESC;
  * Message tags can either be tied to a user or be shared, so the set of tags
  * that a specific user can work on, is her own tags + the shared tags.
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class MessageTagService extends BaseService {
 

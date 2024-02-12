@@ -15,23 +15,24 @@
  */
 package org.niord.core.message;
 
-import org.niord.core.service.BaseService;
-import org.niord.core.user.User;
-import org.niord.core.user.UserService;
-import org.slf4j.Logger;
-
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.niord.core.service.BaseService;
+import org.niord.core.user.User;
+import org.niord.core.user.UserService;
+import org.slf4j.Logger;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+
 /**
  * Business interface for managing persisted message parameter filters
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class MessageParamFilterService extends BaseService {
 

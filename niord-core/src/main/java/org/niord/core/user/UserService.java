@@ -28,6 +28,7 @@ import org.niord.core.user.vo.UserVo;
 import org.niord.model.DataFilter.UserResolver;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.json.Json;
@@ -41,7 +42,7 @@ import java.util.stream.Collectors;
 /**
  * Defines the API for accessing users either from the database or from Keycloak
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class UserService extends BaseService {
 

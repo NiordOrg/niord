@@ -27,6 +27,7 @@ import org.niord.core.user.Roles;
 import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -40,7 +41,7 @@ import static org.niord.core.promulgation.NavtexPromulgationService.NAVTEX_LINE_
  * REST interface to managing SafetyNET areas
  */
 @Path("/promulgation/safetynet")
-@RequestScoped
+@ApplicationScoped
 @RolesAllowed(Roles.SYSADMIN)
 @SuppressWarnings("unused")
 public class SafetyNetPromulgationRestService {

@@ -33,6 +33,7 @@ import org.niord.core.settings.annotation.Setting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.io.IOException;
@@ -48,7 +49,7 @@ import static org.niord.core.settings.Setting.Type.Password;
 /**
  * Main interface for accessing and processing Freemarker report templates
  */
-@RequestScoped
+@ApplicationScoped
 public class FmTemplateService extends BaseService {
 
     public static final String LANGUAGE_PROPERTY    = "language";

@@ -27,6 +27,7 @@ import org.niord.core.service.BaseService;
 import org.niord.model.message.Type;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.criteria.*;
@@ -49,7 +50,7 @@ import java.util.stream.Collectors;
  * In turn, messages are associated with a list of {@linkplain BaseMessagePromulgation}-derived entities that
  * are each tied to a promulgation type.
  */
-@RequestScoped
+@ApplicationScoped
 public class PromulgationTypeService extends BaseService {
 
     @Inject

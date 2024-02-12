@@ -30,6 +30,7 @@ import org.niord.model.message.Status;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.Tuple;
@@ -48,7 +49,7 @@ import static org.niord.model.publication.PublicationType.*;
 /**
  * Business interface for accessing publications
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class PublicationService extends BaseService {
 

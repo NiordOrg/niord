@@ -45,6 +45,7 @@ import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
 import jakarta.ejb.Asynchronous;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -56,7 +57,7 @@ import java.util.stream.Collectors;
 /**
  * Handles the actual Niord integration execution
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class NiordIntegrationExecutionService extends BaseService {
 

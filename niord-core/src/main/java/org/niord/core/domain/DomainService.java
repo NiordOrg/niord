@@ -25,6 +25,7 @@ import org.niord.core.user.TicketService;
 import org.niord.core.user.UserService;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -37,7 +38,7 @@ import java.util.stream.Collectors;
 /**
  * Provides an interface for managing application domains
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class DomainService extends BaseService {
 

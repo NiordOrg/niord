@@ -19,6 +19,7 @@ package org.niord.core.publication;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -27,7 +28,7 @@ import java.util.List;
 /**
  * Business interface for accessing publication categories
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class PublicationCategoryService extends BaseService {
 

@@ -69,6 +69,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.quarkus.runtime.util.StringUtil;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 
@@ -78,7 +79,7 @@ import jakarta.inject.Inject;
  * <p>
  * "Domains" in Niord are mapped to Keycloak bearer-only clients.
  */
-@RequestScoped
+@ApplicationScoped
 public class KeycloakIntegrationService {
 
     public static final String KEYCLOAK_REALM       = "niord";

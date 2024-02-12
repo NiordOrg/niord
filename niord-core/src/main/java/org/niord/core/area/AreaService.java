@@ -32,6 +32,7 @@ import org.niord.core.settings.SettingsService;
 import org.niord.model.search.PagedSearchParamsVo;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.criteria.*;
@@ -44,7 +45,7 @@ import static org.niord.core.area.AreaSearchParams.TREE_SORT_ORDER;
 /**
  * Business interface for accessing Niord areas
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class AreaService extends TreeBaseService<Area> {
 

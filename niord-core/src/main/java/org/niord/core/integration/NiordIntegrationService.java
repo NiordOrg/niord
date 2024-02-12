@@ -20,6 +20,7 @@ import io.quarkus.scheduler.Scheduled;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -32,7 +33,7 @@ import java.util.List;
  * The service will periodically import public messages from other Niord serves as defined
  * by the {@code NiordIntegration} entity
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class NiordIntegrationService extends BaseService {
 

@@ -37,6 +37,7 @@ import org.niord.model.message.Status;
 import org.niord.model.message.Type;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -54,7 +55,7 @@ import static org.niord.model.search.PagedSearchParamsVo.SortOrder.ASC;
 /**
  * Business interface for accessing Niord firing areas
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class FiringScheduleService extends BaseService {
 

@@ -30,6 +30,7 @@ import org.openjdk.nashorn.api.scripting.JSObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import javax.script.*;
@@ -51,7 +52,7 @@ import java.util.stream.Collectors;
  * </pre>
  * Inspiration from https://bugs.openjdk.java.net/secure/attachment/54881/LoaderTest.java
  */
-@RequestScoped
+@ApplicationScoped
 public class JsResourceService extends BaseService {
 
     private static final Class<?>[] SCRIPT_CLASSES  = {

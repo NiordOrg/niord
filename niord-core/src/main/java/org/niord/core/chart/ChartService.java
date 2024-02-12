@@ -23,6 +23,7 @@ import org.niord.core.db.SpatialIntersectsPredicate;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -36,7 +37,7 @@ import java.util.stream.Collectors;
 /**
  * Business interface for accessing sea charts
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class ChartService extends BaseService {
 

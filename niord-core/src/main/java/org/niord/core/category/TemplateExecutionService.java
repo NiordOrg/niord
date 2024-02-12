@@ -37,6 +37,7 @@ import org.niord.model.message.MessagePartType;
 import org.niord.model.message.MessagePartVo;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import javax.script.*;
@@ -48,7 +49,7 @@ import java.util.stream.Collectors;
 /**
  * Business interface for executing template categories
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class TemplateExecutionService extends BaseService {
 

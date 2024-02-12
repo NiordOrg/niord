@@ -15,15 +15,17 @@
  */
 package org.niord.core.domain.batch;
 
+import java.util.List;
+
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 
 import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.transaction.Transactional;
-import java.util.List;
 
 /**
  * Persists the domains to the database
@@ -39,6 +41,7 @@ public class BatchDomainImportWriter extends AbstractItemHandler {
     /** {@inheritDoc} **/
     @Transactional
     @Override
+    @ActivateRequestContext
     public void writeItems(List<Object> items) throws Exception {
         long t0 = System.currentTimeMillis();
         for (Object i : items) {

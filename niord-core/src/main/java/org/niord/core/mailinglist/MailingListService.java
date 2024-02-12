@@ -25,6 +25,7 @@ import org.niord.core.user.UserService;
 import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.criteria.*;
@@ -34,7 +35,7 @@ import java.util.List;
 /**
  * Business interface for accessing Niord mailingLists
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class MailingListService extends BaseService {
 

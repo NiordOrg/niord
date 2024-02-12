@@ -30,6 +30,7 @@ import org.niord.core.user.UserService;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -44,7 +45,7 @@ import static org.niord.core.util.LuceneUtils.normalize;
 /**
  * Interface for handling AtoNs
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class AtonService extends BaseService {
 

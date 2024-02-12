@@ -15,16 +15,19 @@
  */
 package org.niord.core.domain.batch;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.niord.core.batch.AbstractItemHandler;
-import org.niord.core.util.JsonUtils;
-import org.niord.core.domain.vo.DomainVo;
-
-import jakarta.enterprise.context.Dependent;
-import jakarta.inject.Named;
 import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.List;
+
+import org.niord.core.batch.AbstractItemHandler;
+import org.niord.core.domain.vo.DomainVo;
+import org.niord.core.util.JsonUtils;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Named;
 
 /**
  * Reads domains from a domains.json file. Only new domains are created, existing domains are ignored.
@@ -48,6 +51,7 @@ public class BatchDomainImportReader extends AbstractItemHandler {
 
     /** {@inheritDoc} **/
     @Override
+    @ActivateRequestContext
     public void open(Serializable prevCheckpointInfo) throws Exception {
 
         // Get hold of the data file
@@ -67,6 +71,7 @@ public class BatchDomainImportReader extends AbstractItemHandler {
 
     /** {@inheritDoc} **/
     @Override
+    @ActivateRequestContext
     public Object readItem() throws Exception {
         if (domainNo < domains.size()) {
             getLog().info("Reading domain no " + domainNo);

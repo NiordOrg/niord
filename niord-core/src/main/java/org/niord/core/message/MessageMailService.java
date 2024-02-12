@@ -28,6 +28,7 @@ import org.niord.core.user.UserService;
 import org.niord.model.message.MessageVo;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.mail.internet.InternetAddress;
@@ -38,7 +39,7 @@ import java.util.List;
 /**
  * Can be used for sending message-related emails
  */
-@RequestScoped
+@ApplicationScoped
 public class MessageMailService extends BaseService {
 
     @Inject

@@ -22,6 +22,7 @@ import org.niord.core.service.BaseService;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -34,7 +35,7 @@ import java.util.List;
 /**
  * Defines the API for accessing contacts
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class ContactService extends BaseService {
 

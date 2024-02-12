@@ -41,21 +41,19 @@ public class NiordDomainSecurityIdentityAugmentor implements SecurityIdentityAug
     /** {@inheritDoc} */
     @Override
     public Uni<SecurityIdentity> augment(SecurityIdentity identity, AuthenticationRequestContext context, Map<String, Object> attributes) {
-        System.out.println("Being Augmented");
         RoutingContext routingContext = HttpSecurityUtils.getRoutingContextAttribute(attributes);
         if (routingContext != null) {
             MultiMap headers = routingContext.request().headers();
             String domain = headers.get("NiordDomain");
             if (domain != null) {
-//                System.out.println("Looking in domain " + domain);
-//                System.out.println("Headers " + headers.names());
                 String authorization = headers.get("Authorization");
-//                System.out.println(authorization);
-                List<String> roles = getRoles(authorization, domain);
-                identity = QuarkusSecurityIdentity.builder(identity).addRoles(new HashSet<>(roles)).build();
+                if (authorization != null) {
+                    List<String> roles = getRoles(authorization, domain);
+                    System.out.println("Updating roles from " + identity.getRoles() + " to " + roles);
+                    identity = QuarkusSecurityIdentity.builder(identity).addRoles(new HashSet<>(roles)).build();
+                    
+                }
             }
-        } else {
-            System.out.println("No RoutingContext");
         }
         return augment(identity, context);
     }

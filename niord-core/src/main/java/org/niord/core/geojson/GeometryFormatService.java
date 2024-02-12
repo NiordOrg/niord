@@ -7,6 +7,7 @@ import org.niord.core.script.FmTemplateService;
 import org.niord.model.geojson.FeatureCollectionVo;
 import org.niord.model.message.MessageVo;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.Arrays;
@@ -14,7 +15,7 @@ import java.util.Arrays;
 /**
  * Uses the Freemarker template system to format GeoJSON geometries as HTML
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class GeometryFormatService {
 

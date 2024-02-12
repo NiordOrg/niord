@@ -17,6 +17,7 @@ package org.niord.core.sequence;
 
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -25,7 +26,7 @@ import jakarta.transaction.Transactional;
 /**
  * Provides an interface for managing sequences
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class SequenceService {
 

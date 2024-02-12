@@ -21,6 +21,7 @@ import org.niord.core.service.BaseService;
 import org.niord.core.settings.annotation.Setting;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.mail.Message;
@@ -36,7 +37,7 @@ import java.util.stream.Collectors;
 /**
  * Interface for sending emails
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class MailService extends BaseService {
 

@@ -91,6 +91,7 @@ import org.slf4j.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.jms.ConnectionFactory;
@@ -110,7 +111,7 @@ import jakarta.transaction.Transactional;
 /**
  * Business interface for managing messages
  */
-@RequestScoped
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class MessageService extends BaseService {
 
@@ -939,8 +940,8 @@ public class MessageService extends BaseService {
     public PagedSearchResultVo<Message> search(MessageSearchParams params) {
 
         String email = userService.currentUser() == null ? "Unknown" : userService.currentUser().getEmail();
-        System.out.println("The user " + email + " is current in these roles: " + userService.currentUserRoles());
-
+        System.out.println("The user " + email + " is current in these roles: " + userService.currentUserRoles() + " for domain " + domainService.currentDomain().getName());
+        
 //        for (Roles r : List.of(Roles.SYSADMIN, Roles.) Roles.class.getEnumConstants()) {
 //            System.out.println("The user " + email + " in role " + r + ": " + userService.isCallerInRole(r.toString()));
 //        }

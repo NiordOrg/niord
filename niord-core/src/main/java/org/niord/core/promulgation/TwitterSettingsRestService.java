@@ -22,6 +22,7 @@ import org.jboss.resteasy.annotations.cache.NoCache;
 import org.niord.core.promulgation.vo.TwitterSettingsVo;
 import org.niord.core.user.Roles;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -30,7 +31,7 @@ import jakarta.ws.rs.*;
  * REST interface for managing Twitter settings
  */
 @Path("/promulgation/twitter-settings")
-@RequestScoped
+@ApplicationScoped
 @RolesAllowed(Roles.SYSADMIN)
 @SuppressWarnings("unused")
 public class TwitterSettingsRestService {

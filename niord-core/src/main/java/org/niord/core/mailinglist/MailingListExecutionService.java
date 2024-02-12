@@ -38,6 +38,7 @@ import org.niord.core.service.BaseService;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -52,7 +53,7 @@ import static org.niord.core.script.ScriptResource.Type.FM;
 /**
  * Handles execution of mailing list triggers
  */
-@RequestScoped
+@ApplicationScoped
 public class MailingListExecutionService extends BaseService {
 
     @Inject

@@ -28,6 +28,7 @@ import org.niord.core.settings.SettingsService;
 import org.niord.core.util.JsonUtils;
 import org.niord.model.message.MainType;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import java.util.*;
@@ -46,7 +47,7 @@ import java.util.*;
  *     <li>User attribute editor fields: NW or NM specific editor fields. Defined in user Keycloak "other claims" attributes.</li>
  * </ol>
  */
-@RequestScoped
+@ApplicationScoped
 public class EditorFieldsService extends BaseService {
 
     /** These settings are all defined in niord.json **/
