@@ -939,13 +939,13 @@ public class MessageService extends BaseService {
      */
     public PagedSearchResultVo<Message> search(MessageSearchParams params) {
 
-        String email = userService.currentUser() == null ? "Unknown" : userService.currentUser().getEmail();
-        System.out.println("The user " + email + " is current in these roles: " + userService.currentUserRoles() + " for domain " + domainService.currentDomain().getName());
-        
-//        for (Roles r : List.of(Roles.SYSADMIN, Roles.) Roles.class.getEnumConstants()) {
-//            System.out.println("The user " + email + " in role " + r + ": " + userService.isCallerInRole(r.toString()));
-//        }
-        
+//        String email = userService.currentUser() == null ? "Unknown" : userService.currentUser().getEmail();
+//        System.out.println("The user " + email + " is current in these roles: " + userService.currentUserRoles() + " for domain " + domainService.currentDomain().getName());
+//        
+////        for (Roles r : List.of(Roles.SYSADMIN, Roles.) Roles.class.getEnumConstants()) {
+////            System.out.println("The user " + email + " in role " + r + ": " + userService.isCallerInRole(r.toString()));
+////        }
+//        
         PagedSearchResultVo<Message> result = new PagedSearchResultVo<>();
 
         try {
