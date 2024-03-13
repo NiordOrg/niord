@@ -53,7 +53,11 @@ angular.module('niord.auth')
                         console.error('session timeout?');
                         AuthService.logout();
                     } else if (response.status === 403) {
-                        console.error('Forbidden');
+						if (response.data && response.data.errorMessage) {
+                            console.error(response.data.errorMessage);
+                        } else {
+                            console.error("Forbidden");
+                        }
                     } else if (response.status === 404) {
                         console.error('Not found');
                     } else if (response.status) {
