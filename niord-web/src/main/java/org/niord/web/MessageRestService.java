@@ -125,6 +125,7 @@ public class MessageRestService  {
     private void checkMessageEditingAccess(Message message, EditOp editOp) {
         Domain domain = domainService.currentDomain();
 
+        log.info("Domain: " + domain + " message: " + message);
         if (domain == null || message == null || !domain.containsMessageSeries(message.getMessageSeries())) {
             throw new WebApplicationException(403);
         }
