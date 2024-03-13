@@ -73,7 +73,7 @@ public class ScriptResourceRestService extends AbstractBatchableRestService {
 
         // If a ticket is defined, check if programmatically
         if (!userService.isCallerInRole(Roles.ADMIN)) {
-            throw new WebApplicationException(403);
+            throw new WebApplicationException("User must be in admin role, was in " + userService.currentUserRoles(), 403);
         }
 
         // If the path parameter has been specified, first attempt to "preload" it from DB or classpath.
