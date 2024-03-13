@@ -130,7 +130,7 @@ public class MessageRestService  {
         }
 
         if (!domain.containsMessageSeries(message.getMessageSeries())) {
-            throw new WebApplicationException("Domain: " + domain.getName() + " does not contain message series " + message.getMessageSeries(), 403);
+            throw new WebApplicationException("Domain: " + domain.getName() + " does not contain message series " + message.getMessageSeries().getSeriesId(), 403);
         }
 
         if (editOp == EditOp.VIEW && !userService.isCallerInRole(Roles.USER)) {
