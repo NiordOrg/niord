@@ -180,6 +180,16 @@ public class UserService extends BaseService {
      * @return True if the caller has the specified role.
      */
     public boolean isCallerInRole(String role) {
+        if (this.identity == null || this.identity.isAnonymous()) {
+
+            // Check if the ticket service has resolved a ticket for the current thread
+            TicketService.TicketData ticketData = ticketService.getTicketDataForCurrentThread();
+            if (ticketData != null && StringUtils.isNotBlank(ticketData.getUser())) {
+                return Arrays.asList(ticketData.getRoles()).contains(role);
+            }
+            return false;
+        }
+        
         return this.identity.hasRole(role);
     }
 
