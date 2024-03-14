@@ -121,6 +121,9 @@ public class ScheduledMail extends BaseEntity<Integer> {
         }
     }
 
+    public ScheduledMail() {
+        new Exception().printStackTrace();
+    }
 
     /** Converts this entity to a value object */
     public ScheduledMailVo toVo(DataFilter filter) {
