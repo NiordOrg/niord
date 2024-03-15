@@ -30,6 +30,8 @@ import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.criteria.*;
 import jakarta.transaction.Transactional;
+
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -228,6 +230,7 @@ public class MailingListService extends BaseService {
      */
     public List<MailingListTrigger> findPendingScheduledTriggers() {
         return em.createNamedQuery("MailingListTrigger.findPendingScheduledTriggers", MailingListTrigger.class)
+                .setParameter("time", new Date())
                 .getResultList();
     }
 
