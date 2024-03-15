@@ -49,7 +49,7 @@ public class NiordDomainSecurityIdentityAugmentor implements SecurityIdentityAug
                 String authorization = headers.get("Authorization");
                 if (authorization != null) {
                     List<String> roles = getRoles(authorization, domain);
-                    System.out.println("Updating roles from " + identity.getRoles() + " to " + roles);
+                    //System.out.println("Updating roles from " + identity.getRoles() + " to " + roles);
                     identity = QuarkusSecurityIdentity.builder(identity).addRoles(new HashSet<>(roles)).build();
                 }
             }
