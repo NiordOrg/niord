@@ -133,7 +133,7 @@ public class CategoryRestService extends AbstractBatchableRestService {
                 .lang(lang);
 
         CategorySearchParams params = new CategorySearchParams();
-        params.sortBy(CategorySearchParams.TREE_SORT_ORDER); // Default order
+        //params.sortBy(CategorySearchParams.TREE_SORT_ORDER); // Default order
         
         params.language(lang)
                 .type(type)
