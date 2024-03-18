@@ -148,26 +148,26 @@ public class CategoryRestService extends AbstractBatchableRestService {
                 .map(c -> c.toVo(SystemCategoryVo.class, filter))
                 .collect(Collectors.toList());
         
-        // A bit of a hack to support alphabetic sort
-        
-        String l = lang == null ? "en" : lang;
-        Comparator<SystemCategoryVo> cmp = new Comparator<>() {
-
-            @Override
-            public int compare(SystemCategoryVo o1, SystemCategoryVo o2) {
-                CategoryDescVo c1 = o1.getDesc(l);
-                CategoryDescVo c2 = o2.getDesc(l);
-                if (Objects.equals(c1, c2)) {
-                    return 0;
-                }
-                if (c1 == null) {
-                    return -1;
-                } else if (c2 == null) {
-                    return 1;
-                }
-                return c1.getName().compareToIgnoreCase(c2.getName());
-            }};
-        Collections.sort(result, cmp);
+//        // A bit of a hack to support alphabetic sort
+//        
+//        String l = lang == null ? "en" : lang;
+//        Comparator<SystemCategoryVo> cmp = new Comparator<>() {
+//
+//            @Override
+//            public int compare(SystemCategoryVo o1, SystemCategoryVo o2) {
+//                CategoryDescVo c1 = o1.getDesc(l);
+//                CategoryDescVo c2 = o2.getDesc(l);
+//                if (Objects.equals(c1, c2)) {
+//                    return 0;
+//                }
+//                if (c1 == null) {
+//                    return -1;
+//                } else if (c2 == null) {
+//                    return 1;
+//                }
+//                return c1.getName().compareToIgnoreCase(c2.getName());
+//            }};
+//        Collections.sort(result, cmp);
         
         return result;
     }
