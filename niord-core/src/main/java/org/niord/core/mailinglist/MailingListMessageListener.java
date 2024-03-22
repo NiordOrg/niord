@@ -16,30 +16,36 @@
 
 package org.niord.core.mailinglist;
 
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.niord.core.model.BaseEntity;
 import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
+import io.quarkus.runtime.ShutdownEvent;
+import io.quarkus.runtime.StartupEvent;
 import jakarta.ejb.ActivationConfigProperty;
 import jakarta.ejb.MessageDriven;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSConsumer;
+import jakarta.jms.JMSContext;
+import jakarta.jms.JMSException;
 import jakarta.jms.MapMessage;
-import jakarta.jms.MessageListener;
-import java.util.List;
-import java.util.stream.Collectors;
+import jakarta.jms.Message;
 
 /**
  * Used for listening for message status updates via JMS
  */
-@MessageDriven(
-        name = "MailingListStatusChangeMDB",
-        activationConfig = {
-                @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
-                @ActivationConfigProperty(propertyName = "destination", propertyValue = "java:/jms/topic/MessageStatusTopic"),
-                @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge")
-        })
 @SuppressWarnings("unused")
-public class MailingListMessageListener implements MessageListener {
+@ApplicationScoped
+public class MailingListMessageListener implements Runnable {
 
     @Inject
     Logger log;
@@ -50,13 +56,38 @@ public class MailingListMessageListener implements MessageListener {
     @Inject
     MailingListExecutionService mailingListExecutionService;
 
+    @Inject
+    ConnectionFactory connectionFactory;
+
+    @ConfigProperty(name = "niord.jms.topic.messagestatustopic", defaultValue = "messageStatus")
+    String messageStatusTopic;
+    
+    private final ExecutorService scheduler = Executors.newSingleThreadExecutor();
+
+    void onStart(@Observes StartupEvent ev) {
+        scheduler.submit(this);
+    }
+
+    void onStop(@Observes ShutdownEvent ev) {
+        scheduler.shutdown();
+    }
+
+    @Override
+    public void run() {
+        try (JMSContext context = connectionFactory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
+            JMSConsumer consumer = context.createConsumer(context.createTopic(messageStatusTopic));
+            while (true) {
+                Message message = consumer.receive();
+                if (message == null) return;
+                onMessage(message);
+            }
+        } 
+    }
 
     /**
      * {@inheritDoc}
      */
-    @Override
     public void onMessage(jakarta.jms.Message message) {
-
         try {
             MapMessage msg = (MapMessage) message;
 
