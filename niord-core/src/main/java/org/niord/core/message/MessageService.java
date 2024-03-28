@@ -723,8 +723,8 @@ public class MessageService extends BaseService {
      * @param message the message
      * @param prevStatus the previous status
      */
-  //  @Transactional
-    private void sendStatusUpdate(Message message, Status prevStatus) {
+    @Transactional
+    void sendStatusUpdate(Message message, Status prevStatus) {
         Map<String, Object> body = new HashMap<>();
         body.put("ID", message.getId());
         body.put("UID", message.getUid());
