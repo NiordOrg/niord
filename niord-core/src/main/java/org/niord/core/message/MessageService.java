@@ -91,6 +91,7 @@ import org.slf4j.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -690,10 +691,13 @@ public class MessageService extends BaseService {
 
         message = saveMessage(message);
 
+        Log.info("Sending status update for message id " + message.getId());
+
         // Broadcast the status change to any listener
         sendStatusUpdate(message, prevStatus);
 
         Thread.sleep(3000);
+        Log.info("Sleep done for message id " + message.getId());
         
         return message;
     }

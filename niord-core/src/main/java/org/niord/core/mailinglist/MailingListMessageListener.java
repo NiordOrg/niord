@@ -93,7 +93,7 @@ public class MailingListMessageListener implements Runnable {
 
             String uid = msg.getString("UID");
             Status status = Status.valueOf(msg.getString("STATUS"));
-
+            log.info("Recieved message with id " + uid);
             log.debug("Received " + status + " message status update for UID: " + uid);
             checkStatusChangeMailingListExecution(uid, status);
 

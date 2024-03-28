@@ -17,6 +17,8 @@
 package org.niord.core.promulgation;
 
 import io.quarkus.arc.Lock;
+import io.quarkus.logging.Log;
+
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.db.CriteriaHelper;
@@ -147,6 +149,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
                         message.getPublishDateFrom(),
                         message.newMessageTokenExpander(null, null)));
             }
+            Log.info("Updating Preemble for message id " + message.getId() + " to " + navtex.getPreamble());
 
             // Update the NAVTEX text
             if (StringUtils.isNotBlank(navtex.getText())) {
