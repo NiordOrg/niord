@@ -690,9 +690,14 @@ public class MessageService extends BaseService {
 
         message = saveMessage(message);
 
+
+        em.flush();
+        
         // Broadcast the status change to any listener
         sendStatusUpdate(message, prevStatus);
 
+        Thread.sleep(3000);
+        
         return message;
     }
 
