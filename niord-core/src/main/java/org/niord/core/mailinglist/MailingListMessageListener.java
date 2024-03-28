@@ -97,7 +97,7 @@ public class MailingListMessageListener implements Runnable {
             // HACK because we cannot get XA transactions working with Quarkus.
             // 10 seconds should be enough to make sure that the DB has been updated
             // In the original JDBC transaction
-            //Thread.sleep(10000);
+            Thread.sleep(10000);
             
             log.debug("Received " + status + " message status update for UID: " + uid);
             checkStatusChangeMailingListExecution(uid, status);
