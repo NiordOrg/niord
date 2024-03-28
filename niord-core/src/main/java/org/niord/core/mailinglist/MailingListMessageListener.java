@@ -93,6 +93,10 @@ public class MailingListMessageListener implements Runnable {
 
             String uid = msg.getString("UID");
             Status status = Status.valueOf(msg.getString("STATUS"));
+            
+            // HACK because we cannot get XA transactions working with Quarkus.
+            Thread.sleep(10000);
+            
             log.info("Recieved message with id " + uid);
             log.debug("Received " + status + " message status update for UID: " + uid);
             checkStatusChangeMailingListExecution(uid, status);
