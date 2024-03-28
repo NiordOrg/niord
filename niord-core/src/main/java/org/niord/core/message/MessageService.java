@@ -693,6 +693,8 @@ public class MessageService extends BaseService {
         // Broadcast the status change to any listener
         sendStatusUpdate(message, prevStatus);
 
+        Thread.sleep(3000);
+        
         return message;
     }
 
@@ -721,6 +723,7 @@ public class MessageService extends BaseService {
      * @param message the message
      * @param prevStatus the previous status
      */
+  //  @Transactional
     private void sendStatusUpdate(Message message, Status prevStatus) {
         Map<String, Object> body = new HashMap<>();
         body.put("ID", message.getId());

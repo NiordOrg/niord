@@ -45,7 +45,18 @@
             <groupId>org.amqphub.quarkus</groupId>
             <artifactId>quarkus-qpid-jms</artifactId>
         </dependency>
+        <!--
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-narayana-jta</artifactId>
+        </dependency>
 
+        <dependency>
+            <groupId>io.quarkiverse.messaginghub</groupId>
+            <artifactId>quarkus-pooled-jms</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+-->
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-core-jakarta</artifactId>
