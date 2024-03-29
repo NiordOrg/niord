@@ -15,6 +15,7 @@
  */
 package org.niord.web.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.commons.lang.StringUtils;
@@ -142,10 +143,14 @@ public class ApiRestService extends AbstractApiService {
                 .getData();
 
         // Depending on the dateFormat param, either use UNIX epoch or ISO-8601
-        StreamingOutput stream = os -> objectMapperForDateFormat(dateFormat).writeValue(os, messages);
+        ObjectMapper om = objectMapperForDateFormat(dateFormat);
+
+        // Serialize directly to JSON string and build the response
+        // We used to do StreamingOutput but Quarkus doesn't support it
+        String json = om.writeValueAsString(messages);
 
         return Response
-                .ok(stream, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
+                .ok(json, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
                 .build();
 
     }
@@ -195,10 +200,14 @@ public class ApiRestService extends AbstractApiService {
             MessageVo result = toMessageVo(message, language, externalize);
 
             // Depending on the dateFormat param, either use UNIX epoch or ISO-8601
-            StreamingOutput stream = os -> objectMapperForDateFormat(dateFormat).writeValue(os, result);
+            ObjectMapper om = objectMapperForDateFormat(dateFormat);
+
+            // Serialize directly to JSON string and build the response
+            // We used to do StreamingOutput but Quarkus doesn't support it
+            String json = om.writeValueAsString(result);
 
             return Response
-                    .ok(stream, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
+                    .ok(json, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
                     .build();
         }
     }
@@ -330,7 +339,7 @@ public class ApiRestService extends AbstractApiService {
 
             @Parameter(description = "The date format to use for JSON date-time encoding. Either 'UNIX_EPOCH' or 'ISO_8601'", example = "UNIX_EPOCH")
             @QueryParam("dateFormat") @DefaultValue("UNIX_EPOCH") JsonDateFormat dateFormat
-    ) {
+    ) throws Exception {
 
         // If from and to-dates are unspecified, return the publications currently active
         if (from == null && to == null) {
@@ -342,10 +351,14 @@ public class ApiRestService extends AbstractApiService {
                 .collect(Collectors.toList());
 
         // Depending on the dateFormat param, either use UNIX epoch or ISO-8601
-        StreamingOutput stream = os -> objectMapperForDateFormat(dateFormat).writeValue(os, publications);
+        ObjectMapper om = objectMapperForDateFormat(dateFormat);
 
+        // Serialize directly to JSON string and build the response
+        // We used to do StreamingOutput but Quarkus doesn't support it
+        String json = om.writeValueAsString(publications);
+        
         return Response
-                .ok(stream, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
+                .ok(json, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
                 .build();
     }
 
@@ -379,7 +392,7 @@ public class ApiRestService extends AbstractApiService {
 
             @Parameter(description = "The date format to use for JSON date-time encoding. Either 'UNIX_EPOCH' or 'ISO_8601'", example = "UNIX_EPOCH")
             @QueryParam("dateFormat") @DefaultValue("UNIX_EPOCH") JsonDateFormat dateFormat
-    ) {
+    ) throws Exception {
 
         Publication publication = super.getPublication(publicationId);
 
@@ -394,10 +407,14 @@ public class ApiRestService extends AbstractApiService {
             PublicationVo result = toPublicationVo(publication, language, externalize);
 
             // Depending on the dateFormat param, either use UNIX epoch or ISO-8601
-            StreamingOutput stream = os -> objectMapperForDateFormat(dateFormat).writeValue(os, result);
+            ObjectMapper om = objectMapperForDateFormat(dateFormat);
+
+            // Serialize directly to JSON string and build the response
+            // We used to do StreamingOutput but Quarkus doesn't support it
+            String json = om.writeValueAsString(result);
 
             return Response
-                    .ok(stream, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
+                    .ok(json, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
                     .build();
         }
     }
