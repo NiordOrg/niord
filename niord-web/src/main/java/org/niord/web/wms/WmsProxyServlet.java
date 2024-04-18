@@ -132,7 +132,9 @@ public class WmsProxyServlet extends HttpServlet {
                 .filter(p -> StringUtils.isBlank(wmsLayers) || !"layers".equalsIgnoreCase(p.getKey()))
                 .map(p -> String.format("%s=%s", p.getKey(), p.getValue()[0]))
                 .collect(Collectors.joining("&"));
-        params += String.format("&TOKEN=%s", wmsPassword);
+        if (!StringUtils.isBlank(wmsPassword)) {
+            params += String.format("&TOKEN=%s", wmsPassword);
+        }
         if (StringUtils.isNotBlank(wmsLayers)) {
             params += String.format("&LAYERS=%s", wmsLayers);
         }
@@ -140,7 +142,6 @@ public class WmsProxyServlet extends HttpServlet {
         String url = wmsProvider + "?" + params;
         
         log.trace("Loading image " + url);
-        log.info("Loading image " + url);
         System.out.println(url);
         try {
             URL urlUrl = new URL(url);
