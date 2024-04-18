@@ -119,8 +119,7 @@ public class WmsProxyServlet extends HttpServlet {
         WebUtils.cache(response, CACHE_TIMEOUT);
 
         // Check that the WMS provider has been defined using system properties
-        if (StringUtils.isBlank(wmsProvider) ||
-                StringUtils.isBlank(wmsPassword)) {
+        if (StringUtils.isBlank(wmsProvider)) {
             response.sendRedirect(BLANK_IMAGE);
             return;
         }
