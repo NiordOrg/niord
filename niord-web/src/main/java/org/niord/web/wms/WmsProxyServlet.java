@@ -138,8 +138,9 @@ public class WmsProxyServlet extends HttpServlet {
         }
 
         String url = wmsProvider + "?" + params;
+        
         log.trace("Loading image " + url);
-
+        System.out.println(url);
         try {
             URL urlUrl = new URL(url);
             URLConnection con = urlUrl.openConnection();
