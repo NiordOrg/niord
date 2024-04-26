@@ -3,84 +3,90 @@
 
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.niord</groupId>
-        <artifactId>niord-parent</artifactId>
-        <version>2.0-SNAPSHOT</version>
+        <groupId>org.niord.base</groupId>
+        <artifactId>niord-base-parent</artifactId>
+        <version>3.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>niord-core</artifactId>
+    <artifactId>niord-base-core</artifactId>
     <packaging>jar</packaging>
-    <name>Niord core application</name>
+    <name>Niord-Base Core</name>
 
     <dependencies>
 
         <dependency>
-            <groupId>org.niord</groupId>
-            <artifactId>niord-model</artifactId>
-            <version>2.0-SNAPSHOT</version>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>niord-base-model</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jaxrs</artifactId>
-            <scope>provided</scope>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-scheduler</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.jboss.ejb3</groupId>
-            <artifactId>jboss-ejb3-ext-api</artifactId>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-oidc</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.jboss.spec.javax.batch</groupId>
-            <artifactId>jboss-batch-api_1.0_spec</artifactId>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-keycloak-admin-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-hibernate-orm-panache</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.amqphub.quarkus</groupId>
+            <artifactId>quarkus-qpid-jms</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-core</artifactId>
-            <version>11.0.6.Final</version>
-            <scope>provided</scope>
+            <artifactId>infinispan-core-jakarta</artifactId>
+            <version>${infinispan.core.jakarta.version}</version>
         </dependency>
 
-        <!-- Contains KeycloakPrincipal -->
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-core</artifactId>
-            <version>${keycloak.version}</version>
-            <scope>provided</scope>
+            <groupId>io.quarkiverse.jberet</groupId>
+            <artifactId>quarkus-jberet</artifactId>
+            <version>${quarkus.jberet.version}</version>
         </dependency>
 
-        <!-- Contains KeycloakDeployment and KeycloakConfigResolver -->
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-adapter-core</artifactId>
-            <version>${keycloak.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-adapter-spi</artifactId>
-            <version>${keycloak.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
-            <groupId>commons-fileupload</groupId>
-            <artifactId>commons-fileupload</artifactId>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-adapter-spi</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.15.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>dev.turingcomplete</groupId>
+            <artifactId>quarkus-simplified-async-extension-vertx</artifactId>
+            <version>1.1.1</version>
         </dependency>
 
         <!-- HTML parsing and PDF generating dependencies -->
         <dependency>
-            <groupId>org.jsoup</groupId>
-            <artifactId>jsoup</artifactId>
-            <version>1.9.2</version>
-        </dependency>
-        <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
-            <version>2.3.23</version>
+            <version>2.3.31</version>
         </dependency>
         <dependency>
             <groupId>org.xhtmlrenderer</groupId>
@@ -168,47 +174,40 @@
         <dependency>
             <groupId>org.geotools</groupId>
             <artifactId>gt-main</artifactId>
-            <version>22.4</version>
+            <version>26.2</version>
         </dependency>
 
 
-        <!-- Hibernate Search -->
+        <!-- Hibernate + Hibernate Search -->
         <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-search-orm</artifactId>
-            <scope>provided</scope>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-hibernate-orm</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-queryparser</artifactId>
-            <version>5.3.1</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- Only used for executing jpa-ql in Intellij! -->
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-core</artifactId>
-            <version>5.4.24.Final</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.hibernate</groupId>
+            <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-spatial</artifactId>
-            <version>5.4.23.Final</version>
-            <!-- Prevent double inclusion of Hibernate -->
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>dom4j</groupId>
-                    <artifactId>dom4j</artifactId>
-                </exclusion>
-            </exclusions>
-            <scope>provided</scope>
+            <version>${hibernate.spatial.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.search</groupId>
+            <artifactId>hibernate-search-mapper-orm-orm6</artifactId>
+            <version>6.2.3.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.search</groupId>
+            <artifactId>hibernate-search-backend-lucene</artifactId>
+<!--            <version>${hibernate.search.backend.lucene.version}</version> -->
+        </dependency>
+
+        <dependency>
+            <groupId>org.openjdk.nashorn</groupId>
+            <artifactId>nashorn-core</artifactId>
+            <version>15.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
         </dependency>
 
     </dependencies>
@@ -217,28 +216,17 @@
     <!-- Add repositories that contains geotools dependencies -->
     <repositories>
         <repository>
-            <id>maven2-repository.dev.java.net</id>
-            <name>Java.net repository</name>
-            <url>https://download.java.net/maven/2</url>
+            <id>maven2-repository.maven.apache.org</id>
+            <name>Maven 2 repository</name>
+            <url>https://repo.maven.apache.org/maven2/</url>
         </repository>
         <repository>
             <id>osgeo</id>
             <name>OSGeo Release Repository</name>
             <url>https://repo.osgeo.org/repository/release/</url>
-            <snapshots><enabled>false</enabled></snapshots>
-            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled>   <updatePolicy>daily</updatePolicy></snapshots>
+            <releases><enabled>true</enabled>   <updatePolicy>daily</updatePolicy></releases>
         </repository>
     </repositories>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.0.0-M7</version>
-        <configuration>
-        <skipTests>true</skipTests>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
+
 </project>

@@ -15,18 +15,20 @@
  */
 package org.niord.core.batch;
 
-import org.slf4j.Logger;
-
-import javax.batch.api.listener.AbstractJobListener;
-import javax.batch.operations.JobOperator;
-import javax.batch.runtime.BatchRuntime;
-import javax.batch.runtime.context.JobContext;
-import javax.inject.Inject;
-import javax.inject.Named;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Handler;
+
+import org.slf4j.Logger;
+
+import jakarta.batch.api.listener.AbstractJobListener;
+import jakarta.batch.operations.JobOperator;
+import jakarta.batch.runtime.BatchRuntime;
+import jakarta.batch.runtime.context.JobContext;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 /**
  * A listener used for setting up and removing batch job log files.
@@ -39,7 +41,8 @@ import java.util.logging.Handler;
  *  &lt;/listeners&gt;
  * </pre>
  */
-@Named
+@Dependent
+@Named("batchJobListener")
 public class BatchJobListener extends AbstractJobListener {
 
     @Inject
@@ -50,7 +53,6 @@ public class BatchJobListener extends AbstractJobListener {
 
     @Inject
     BatchService batchService;
-
 
     /**
      * Fetch the BatchData from the job operator properties, if they exist
@@ -105,7 +107,7 @@ public class BatchJobListener extends AbstractJobListener {
 
                 } catch (Exception ignored) {
                 }
-                log.debug("Closed log for batch item handler " + batchLog.getKey());
+                //log.debug("Closed log for batch item handler " + batchLog.getKey());
             }
         }
     }

@@ -15,6 +15,7 @@
  */
 package org.niord.core.category;
 
+import io.quarkus.scheduler.Scheduled;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.NiordApp;
 import org.niord.core.aton.AtonFilter;
@@ -27,31 +28,19 @@ import org.niord.core.service.TreeBaseService;
 import org.niord.model.search.PagedSearchParamsVo;
 import org.slf4j.Logger;
 
-import javax.ejb.Schedule;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Order;
-import javax.persistence.criteria.Path;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.criteria.*;
 import javax.script.ScriptException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import jakarta.transaction.Transactional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Business interface for accessing Niord categories
  */
-@Stateless
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class CategoryService extends TreeBaseService<Category> {
 
@@ -268,6 +257,7 @@ public class CategoryService extends TreeBaseService<Category> {
      * @param category the template category to update the original with
      * @return the updated category
      */
+    @Transactional
     public Category updateCategoryData(Category original, Category category) {
 
         original.setType(category.getType());
@@ -323,6 +313,7 @@ public class CategoryService extends TreeBaseService<Category> {
      * @param parentId the id of the parent category
      * @return the created category
      */
+    @Transactional
     public Category createCategory(Category category, Integer parentId) {
 
         if (parentId != null) {
@@ -375,6 +366,7 @@ public class CategoryService extends TreeBaseService<Category> {
      * Deletes the category and sub-categories
      * @param categoryId the id of the category to delete
      */
+    @Transactional
     public boolean deleteCategory(Integer categoryId) {
 
         Category category = getByPrimaryKey(Category.class, categoryId);
@@ -486,6 +478,18 @@ public class CategoryService extends TreeBaseService<Category> {
             category = findByName(desc.getName(), desc.getLang(), parentId);
         }
 
+        // Check if we can find the category domain
+        if(templateCategory.getDomains() != null && !templateCategory.getDomains().isEmpty()) {
+            templateCategory.setDomains(templateCategory
+                    .getDomains()
+                    .stream()
+                    .map(domain -> Optional.ofNullable(domain)
+                            .map(Domain::getDomainId)
+                            .map(this.domainService::findByDomainId)
+                            .orElse(domain))
+                    .collect(Collectors.toList()));
+        }
+
         // Create the category if no matching category was found
         if (create && category == null) {
             category = createCategory(templateCategory, parentId);
@@ -531,9 +535,9 @@ public class CategoryService extends TreeBaseService<Category> {
      *
      * @return if the sort order was updated
      */
-    @Schedule(persistent = false, second = "13", minute = "23", hour = "*")
-    public boolean recomputeTreeSortOrder() {
-        return recomputeTreeSortOrder(SETTING_CATEGORY_LAST_UPDATED);
+    @Scheduled(cron="13 23 * * * ?")
+    public void recomputeTreeSortOrder() {
+        recomputeTreeSortOrder(SETTING_CATEGORY_LAST_UPDATED);
     }
 
 

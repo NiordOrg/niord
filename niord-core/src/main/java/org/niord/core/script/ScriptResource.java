@@ -20,15 +20,15 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.model.VersionedEntity;
 import org.niord.core.script.vo.ScriptResourceVo;
 
-import javax.persistence.Cacheable;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Lob;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Cacheable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Lob;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.validation.constraints.NotNull;
 
 import static org.niord.core.script.ScriptResource.Type.FM;
 import static org.niord.core.script.ScriptResource.Type.JS;
@@ -43,11 +43,11 @@ import static org.niord.core.script.ScriptResource.Type.JS;
         @NamedQuery(name="ScriptResource.findByPath",
                 query="SELECT t FROM ScriptResource t where lower(t.path) = lower(:path)"),
         @NamedQuery(name="ScriptResource.findByTypes",
-                query="SELECT t FROM ScriptResource t where t.type in (:types) order by lower(t.path)"),
+                query="SELECT t FROM ScriptResource t where t.type in (:types) order by t.path"),
         @NamedQuery(name="ScriptResource.findAll",
-                query="SELECT t FROM ScriptResource t order by lower(t.path)"),
+                query="SELECT t FROM ScriptResource t order by t.path"),
         @NamedQuery(name="ScriptResource.findAllPaths",
-                query="SELECT t.path FROM ScriptResource t order by lower(t.path)")
+                query="SELECT t.path FROM ScriptResource t order by t.path")
 })
 @SuppressWarnings("unused")
 public class ScriptResource extends VersionedEntity<Integer>  {
@@ -66,6 +66,7 @@ public class ScriptResource extends VersionedEntity<Integer>  {
     String path;
 
     @Lob
+    @Column(name = "content", columnDefinition="longtext")
     String content;
 
 
@@ -76,7 +77,7 @@ public class ScriptResource extends VersionedEntity<Integer>  {
 
     /** Constructor **/
     public ScriptResource(ScriptResourceVo scriptResource) {
-        this.id = scriptResource.getId();
+        this.setId(scriptResource.getId());
         this.type = scriptResource.getType();
         this.path = scriptResource.getPath();
         this.content = scriptResource.getContent();
@@ -87,7 +88,7 @@ public class ScriptResource extends VersionedEntity<Integer>  {
     /** Converts this entity to a value object */
     public ScriptResourceVo toVo() {
         ScriptResourceVo scriptResource = new ScriptResourceVo();
-        scriptResource.setId(id);
+        scriptResource.setId(this.getId());
         scriptResource.setType(type);
         scriptResource.setPath(path);
         scriptResource.setContent(content);

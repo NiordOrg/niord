@@ -15,17 +15,17 @@
  */
 package org.niord.model.message;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 
 /**
  * Represents a chart
  */
-@ApiModel(value = "Chart", description = "Sea chart model")
+@Schema(name = "Chart", description = "Sea chart model")
 @XmlRootElement(name = "chart")
 @XmlType(propOrder = {
         "chartNumber", "internationalNumber", "active", "scale", "name"

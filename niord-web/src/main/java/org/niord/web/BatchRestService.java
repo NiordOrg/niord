@@ -15,12 +15,13 @@
  */
 package org.niord.web;
 
-import org.apache.commons.fileupload.FileItem;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.niord.core.batch.BatchService;
 import org.niord.core.batch.BatchSetService;
 import org.niord.core.batch.vo.BatchInstanceVo;
@@ -30,42 +31,33 @@ import org.niord.core.repo.IconSize;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.user.Roles;
 import org.niord.core.user.UserService;
+import org.niord.core.util.WebUtils;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * API for accessing the batch functionality
  */
 @Path("/batch")
-@Stateless
-@SecurityDomain("keycloak")
+@RequestScoped
+@Transactional
 public class BatchRestService {
 
     @Inject
@@ -297,7 +289,7 @@ public class BatchRestService {
     /**
      * Imports an uploaded messages zip archive
      *
-     * @param request the servlet request
+     * @param input the multi-part form data input request
      * @return a status
      */
     @POST
@@ -305,32 +297,32 @@ public class BatchRestService {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
     @RolesAllowed(Roles.SYSADMIN)
-    public String executeBatchSet(@Context HttpServletRequest request) throws Exception {
+    public String executeBatchSet(MultipartFormDataInput input) throws Exception {
 
-        StringBuilder txt = new StringBuilder();
-
-        List<FileItem> items = repositoryService.parseFileUploadRequest(request);
+        // Initialise the form parsing parameters
+        final Map<String, InputStream> formFiles = WebUtils.getMultipartInputFiles(input);
+        final StringBuilder txt = new StringBuilder();
 
         // Start the batch job for each file item
-        items.stream()
-                .filter(item -> !item.isFormField())
+        formFiles.entrySet()
+                .stream()
                 .forEach(item -> {
                     try {
                         txt.append("Processing batch-set zip-file: ")
-                                .append(item.getName())
+                                .append(item.getKey())
                                 .append("\n");
-                        batchSetService.extractAndExecuteBatchSetArchive(item.getInputStream(), txt);
+                        batchSetService.extractAndExecuteBatchSetArchive(item.getValue(), txt);
                     } catch (Exception e) {
                         String errorMsg = "Error processing batch-set zip-file "
-                                + item.getName() + ": " + e.getMessage();
+                                + item.getKey()
+                                + ": "
+                                + e.getMessage();
                         log.error(errorMsg, e);
                         txt.append(errorMsg);
                     }
                 });
 
         return txt.toString();
-
-
     }
 
 

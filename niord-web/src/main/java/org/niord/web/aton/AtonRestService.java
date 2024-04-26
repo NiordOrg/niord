@@ -15,33 +15,29 @@
  */
 package org.niord.web.aton;
 
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
-import org.niord.core.aton.AtonDefaultsService;
-import org.niord.core.aton.AtonNode;
-import org.niord.core.aton.AtonSearchParams;
-import org.niord.core.aton.AtonService;
+import org.niord.core.aton.*;
 import org.niord.core.aton.vo.AtonNodeVo;
+import org.niord.core.user.Roles;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.annotation.security.PermitAll;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.ws.rs.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * REST interface for accessing AtoNs.
  */
 @Path("/atons")
-@Stateless
-@SecurityDomain("keycloak")
+@RequestScoped
 @PermitAll
 public class AtonRestService {
 

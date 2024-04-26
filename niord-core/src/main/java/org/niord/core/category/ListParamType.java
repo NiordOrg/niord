@@ -20,9 +20,9 @@ import org.niord.core.category.vo.ListParamTypeVo;
 import org.niord.core.dictionary.DictionaryEntry;
 import org.niord.model.DataFilter;
 
-import javax.persistence.Entity;
-import javax.persistence.ManyToMany;
-import javax.persistence.OrderColumn;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OrderColumn;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -55,7 +55,7 @@ public class ListParamType extends ParamType {
     @Override
     public ListParamTypeVo toVo(DataFilter filter) {
         ListParamTypeVo paramType = new ListParamTypeVo();
-        paramType.setId(id);
+        paramType.setId(this.getId());
         paramType.setName(name);
         paramType.setValues(values.stream()
             .map(v -> v.toVo(filter))

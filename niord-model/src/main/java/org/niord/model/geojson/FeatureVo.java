@@ -16,10 +16,10 @@
 package org.niord.model.geojson;
 
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
-import javax.xml.bind.annotation.XmlElementRef;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlElementRef;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -28,17 +28,16 @@ import java.util.function.Consumer;
  * GeoJSON Feature, as defined in the specification:
  * http://geojson.org/geojson-spec.html#feature-objects
  */
-@ApiModel(
-        value = "Feature",
-        parent = GeoJsonVo.class,
+@Schema(
+        name = "Feature",
         description = "GeoJson Feature type"
 )
 @XmlRootElement(name = "feature")
 public class FeatureVo extends GeoJsonVo {
 
-    private Object id;
-    private GeometryVo geometry;
-    private Map<String, Object> properties = new HashMap<>();
+    Object id;
+    GeometryVo geometry;
+    Map<String, Object> properties = new HashMap<>();
 
 
     /** Constructor **/

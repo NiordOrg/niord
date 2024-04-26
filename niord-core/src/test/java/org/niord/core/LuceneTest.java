@@ -16,8 +16,11 @@
 
 package org.niord.core;
 
+import static org.junit.Assert.assertEquals;
+
+import java.io.IOException;
+
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -33,13 +36,8 @@ import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.RAMDirectory;
+import org.apache.lucene.store.*;
 import org.junit.Test;
-
-import java.io.IOException;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Lucene test
@@ -55,7 +53,7 @@ public class LuceneTest {
         // However, in the current version of Lucene, I can only get this scenario to work with
         // SimpleAnalyzer for the QueryParser :-(
 
-        Directory directory = new RAMDirectory();
+        Directory directory = new ByteBuffersDirectory();
         Analyzer analyzer = new StandardAnalyzer();
         IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
         iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
@@ -77,7 +75,7 @@ public class LuceneTest {
         IndexReader reader = DirectoryReader.open(directory);
         assertEquals(1, reader.numDocs());
 
-        analyzer = new SimpleAnalyzer();
+        analyzer = new StandardAnalyzer();
         QueryParser parser = new ComplexPhraseQueryParser("message", analyzer);
         parser.setDefaultOperator(QueryParser.OR_OPERATOR);
         parser.setAllowLeadingWildcard(true); // NB: Expensive!

@@ -21,14 +21,14 @@ import org.niord.core.integration.vo.MessageSeriesMappingVo;
 import org.niord.core.integration.vo.NiordIntegrationVo;
 import org.niord.core.model.BaseEntity;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -77,7 +77,7 @@ public class NiordIntegration extends BaseEntity<Integer> {
      * @param integration the Niord integration value object
      */
     public NiordIntegration(NiordIntegrationVo integration) {
-        this.id = integration.getId();
+        this.setId(integration.getId());
         this.url = integration.getUrl();
         this.active = integration.isActive();
         this.assignNewUids = integration.isAssignNewUids();
@@ -92,7 +92,7 @@ public class NiordIntegration extends BaseEntity<Integer> {
     /** Converts this entity to a value object */
     public NiordIntegrationVo toVo() {
         NiordIntegrationVo integration = new NiordIntegrationVo();
-        integration.setId(id);
+        integration.setId(this.getId());
         integration.setUrl(url);
         integration.setActive(active);
         integration.setAssignNewUids(assignNewUids);

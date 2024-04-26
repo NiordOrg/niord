@@ -15,9 +15,39 @@
  */
 package org.niord.core.message;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import static java.util.Arrays.asList;
+import static org.niord.core.geojson.Feature.WGS84_SRID;
+import static org.niord.core.message.MessageIdMatch.MatchType.SHORT_ID;
+import static org.niord.core.message.MessageIdMatch.MatchType.TEXT;
+import static org.niord.core.message.MessageIdMatch.MatchType.UID;
+import static org.niord.core.message.MessageSearchParams.CommentsType.ANY;
+import static org.niord.core.message.MessageSearchParams.CommentsType.ANY_UNACK;
+import static org.niord.core.message.MessageSearchParams.CommentsType.OWN;
+import static org.niord.core.message.MessageSearchParams.CommentsType.OWN_UNACK;
+import static org.niord.core.message.vo.SystemMessageSeriesVo.NumberSequenceType.MANUAL;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.hibernate.dialect.Dialect;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateFilter;
 import org.locationtech.jts.geom.Geometry;
 import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
@@ -42,6 +72,7 @@ import org.niord.core.promulgation.PromulgationType;
 import org.niord.core.publication.PublicationService;
 import org.niord.core.repo.RepositoryService;
 import org.niord.core.service.BaseService;
+import org.niord.core.user.Roles;
 import org.niord.core.user.User;
 import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
@@ -53,51 +84,34 @@ import org.niord.model.message.MainType;
 import org.niord.model.message.MessageVo;
 import org.niord.model.message.ReferenceType;
 import org.niord.model.message.Status;
+import org.niord.model.search.PagedSearchParamsVo.SortOrder;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.annotation.Resource;
-import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.inject.Inject;
-import javax.jms.JMSContext;
-import javax.jms.Topic;
-import javax.persistence.Tuple;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-import javax.persistence.criteria.Selection;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
-import static java.util.Arrays.asList;
-import static org.niord.core.geojson.Feature.WGS84_SRID;
-import static org.niord.core.message.MessageIdMatch.MatchType.*;
-import static org.niord.core.message.MessageSearchParams.CommentsType.*;
-import static org.niord.core.message.vo.SystemMessageSeriesVo.NumberSequenceType.MANUAL;
-import static org.niord.model.search.PagedSearchParamsVo.SortOrder;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSContext;
+import jakarta.jms.Session;
+import jakarta.persistence.Tuple;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Selection;
+import jakarta.transaction.Transactional;
 
 /**
  * Business interface for managing messages
  */
-@Stateless
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class MessageService extends BaseService {
 
@@ -119,10 +133,10 @@ public class MessageService extends BaseService {
     private Logger log;
 
     @Inject
-    JMSContext jmsContext;
+    ConnectionFactory connectionFactory;
 
-    @Resource(mappedName = "java:/jms/topic/MessageStatusTopic")
-    Topic messageStatusTopic;
+    @ConfigProperty(name = "niord.jms.topic.messagestatustopic", defaultValue = "messageStatus")
+    String messageStatusTopic;
 
     @Inject
     UserService userService;
@@ -160,6 +174,9 @@ public class MessageService extends BaseService {
     @Inject
     PromulgationManager promulgationManager;
 
+    @Inject
+    @ConfigProperty(name = "quarkus.datasource.db-kind")
+    String dbKind;
 
     /***************************************/
     /** Message Look-up                   **/
@@ -321,12 +338,12 @@ public class MessageService extends BaseService {
         if (!includeDeleted) {
             searchShortIdSql += "and m.status != 'DELETED' ";
         }
-        searchShortIdSql += "order by locate(lower(:sort), lower(m.shortId)) asc, m.updated desc ";
         em.createQuery(searchShortIdSql, Message.class)
                 .setParameter("term", "%" + txt + "%")
-                .setParameter("sort", txt)
                 .setMaxResults(maxGroupCount)
                 .getResultList()
+                .stream()
+                .sorted(Comparator.comparing(Message::getShortId, (id1, id2) -> id1.indexOf(txt) < id2.indexOf(txt) ? 1 : 0).thenComparing(Message::getUpdated))
                 .forEach(m -> result.add(new MessageIdMatch(m.getShortId(), SHORT_ID, m, lang)));
 
         return  result;
@@ -366,6 +383,7 @@ public class MessageService extends BaseService {
      * @param message the template for the message to create
      * @return the new message
      */
+    @Transactional
     public Message createMessage(Message message) throws Exception {
 
         // Validate the message
@@ -435,7 +453,7 @@ public class MessageService extends BaseService {
      * @param message the template for the message to update
      * @return the updated message
      */
-    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    @Transactional
     public Message updateMessage(Message message) throws Exception {
 
         Message original = findByUid(message.getUid());
@@ -621,7 +639,7 @@ public class MessageService extends BaseService {
      * @param uid the UID of the message
      * @param status    the status
      */
-    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    @Transactional
     public Message updateStatus(String uid, Status status) throws Exception {
         Date now = new Date();
         Message message = findByUid(uid);
@@ -672,9 +690,11 @@ public class MessageService extends BaseService {
 
         message = saveMessage(message);
 
+        em.flush();
+        
         // Broadcast the status change to any listener
         sendStatusUpdate(message, prevStatus);
-
+        
         return message;
     }
 
@@ -709,8 +729,8 @@ public class MessageService extends BaseService {
         body.put("UID", message.getUid());
         body.put("STATUS", message.getStatus().name());
         body.put("PREV_STATUS", prevStatus.name());
-        try {
-            jmsContext.createProducer().send(messageStatusTopic, body);
+        try (JMSContext jmsContext = connectionFactory.createContext(Session.AUTO_ACKNOWLEDGE)){
+            jmsContext.createProducer().send(jmsContext.createTopic(messageStatusTopic), body);
         } catch (Exception e) {
             log.error("Failed sending JMS: " + e, e);
         }
@@ -921,6 +941,13 @@ public class MessageService extends BaseService {
      */
     public PagedSearchResultVo<Message> search(MessageSearchParams params) {
 
+//        String email = userService.currentUser() == null ? "Unknown" : userService.currentUser().getEmail();
+//        System.out.println("The user " + email + " is current in these roles: " + userService.currentUserRoles() + " for domain " + domainService.currentDomain().getName());
+//        
+////        for (Roles r : List.of(Roles.SYSADMIN, Roles.) Roles.class.getEnumConstants()) {
+////            System.out.println("The user " + email + " in role " + r + ": " + userService.isCallerInRole(r.toString()));
+////        }
+//        
         PagedSearchResultVo<Message> result = new PagedSearchResultVo<>();
 
         try {
@@ -1038,7 +1065,10 @@ public class MessageService extends BaseService {
                 log.warn("Error searching lucene index for query " + param.getQuery());
                 ids = Collections.emptyList();
             }
-            criteriaHelper.in(msgRoot.get("id"), ids);
+            // Need to convert them to int as per message.id type
+            List<Integer> idsInteger = ids.stream().map(l->l.intValue()).toList();
+//            log.info("Found these messages for tree text query '" + param.getQuery() + " " + idsInteger);
+            criteriaHelper.in(msgRoot.get("id"), idsInteger);
         }
 
 
@@ -1085,15 +1115,31 @@ public class MessageService extends BaseService {
 
 
         // Geometry
-        if (param.getExtent() != null) {
-            param.getExtent().setSRID(WGS84_SRID);
+        Geometry extent = param.getExtent();
+        if (extent != null) {
+            // MySQL stores geometry in reverse order
+            // This should probably be optional based on the current
+            if (dbKind.equals("mysql")) {
+                extent = extent.copy();
+                extent.apply(new CoordinateFilter() {
+
+                    @Override
+                    public void filter(Coordinate coord) {
+                        double oldX = coord.x;
+                        coord.x = coord.y;
+                        coord.y = oldX;
+                    }
+                });
+            }
+            extent.setSRID(WGS84_SRID);
             Join<Message, MessagePart> partRoot = msgRoot.join("parts", JoinType.LEFT);
             Join<Message, FeatureCollection> fcRoot = partRoot.join("geometry", JoinType.LEFT);
             Join<FeatureCollection, Feature> fRoot = fcRoot.join("features", JoinType.LEFT);
             Predicate geomPredicate = new SpatialIntersectsPredicate(
-                    criteriaHelper.getCriteriaBuilder(),
+                    getNodeBuilder(),
                     fRoot.get("geometry"),
-                    param.getExtent());
+                    extent,
+                    false);
 
             if (param.getIncludeNoPos() != null && param.getIncludeNoPos().booleanValue()) {
                 // search for message with no geometry in addition to messages within extent
@@ -1380,6 +1426,7 @@ public class MessageService extends BaseService {
      *
      * @param message the message to save a snapshot for
      */
+    @Transactional
     public void saveHistory(Message message) {
 
         try {

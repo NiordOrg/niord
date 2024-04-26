@@ -16,10 +16,12 @@
 
 package org.niord.web;
 
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.script.ScriptResource;
 import org.niord.core.script.ScriptResourceHistory;
@@ -30,23 +32,10 @@ import org.niord.core.user.Roles;
 import org.niord.core.user.UserService;
 import org.slf4j.Logger;
 
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -56,8 +45,7 @@ import java.util.stream.Collectors;
  * REST interface for accessing script resources, such as Freemarker templates and JavaScript Resources.
  */
 @Path("/script-resources")
-@Stateless
-@SecurityDomain("keycloak")
+@RequestScoped
 @RolesAllowed(Roles.SYSADMIN)
 @SuppressWarnings("unused")
 public class ScriptResourceRestService extends AbstractBatchableRestService {
@@ -85,7 +73,7 @@ public class ScriptResourceRestService extends AbstractBatchableRestService {
 
         // If a ticket is defined, check if programmatically
         if (!userService.isCallerInRole(Roles.ADMIN)) {
-            throw new WebApplicationException(403);
+            throw new WebApplicationException("User must be in admin role, was in " + userService.currentUserRoles(), 403);
         }
 
         // If the path parameter has been specified, first attempt to "preload" it from DB or classpath.
@@ -164,7 +152,7 @@ public class ScriptResourceRestService extends AbstractBatchableRestService {
     /**
      * Imports an uploaded script resources json file
      *
-     * @param request the servlet request
+     * @param input the multi-part form data input request
      * @return a status
      */
     @POST
@@ -172,8 +160,8 @@ public class ScriptResourceRestService extends AbstractBatchableRestService {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
     @RolesAllowed(Roles.SYSADMIN)
-    public String importScriptResources(@Context HttpServletRequest request) throws Exception {
-        return executeBatchJobFromUploadedFile(request, "script-resource-import");
+    public String importScriptResources(MultipartFormDataInput input) throws Exception {
+        return executeBatchJobFromUploadedFile(input, "script-resource-import");
     }
 
 

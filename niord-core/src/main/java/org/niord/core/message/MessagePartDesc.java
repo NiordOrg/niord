@@ -21,21 +21,25 @@ import org.niord.model.DataFilter;
 import org.niord.model.ILocalizedDesc;
 import org.niord.model.message.MessagePartDescVo;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Lob;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Lob;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 /**
  * Localized contents for the MessagePart entity
  */
 @Entity
 @SuppressWarnings("unused")
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "lang", "entity_id" }))
 public class MessagePartDesc extends DescEntity<MessagePart> {
 
     @Column(length = 500)
     String subject;
 
     @Lob
+    @Column(length = 16_777_216)
     String details;
 
     /** Constructor */

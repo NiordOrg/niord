@@ -19,7 +19,8 @@ package org.niord.core.aton.vo;
 import org.apache.commons.lang.StringUtils;
 import org.niord.model.IJsonSerializable;
 
-import javax.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
  * An AtoN OSM seamark node tag.
@@ -49,6 +50,7 @@ import javax.xml.bind.annotation.XmlAttribute;
  * </pre>
  */
 @SuppressWarnings("unused")
+@XmlRootElement(name = "tag")
 public class AtonTagVo implements IJsonSerializable {
 
     String k;
@@ -116,4 +118,12 @@ public class AtonTagVo implements IJsonSerializable {
     public void setV(String v) {
         this.v = v;
     }
+
+    /** {@inheritDoc} */
+    @Override
+    public String toString() {
+        return "AtonTagVo [k=" + k + ", v=" + v + "]";
+    }
+    
+    
 }

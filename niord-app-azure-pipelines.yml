@@ -1,0 +1,72 @@
+variables:
+  maven-version: "3.8.6"
+  niord-dk-branch-name: "quarkus-upgrade"
+
+stages:
+  - stage: Build_niord
+    displayName: Build niord application(niord -> niord-dk)
+    jobs:
+    - job: Building_niord_job
+      displayName: Build niord
+      pool:
+        vmImage: ubuntu-latest
+
+      steps:
+        - task: Bash@3
+          displayName: Download Maven
+          inputs:
+            targetType: 'inline'
+            script: 'wget https://archive.apache.org/dist/maven/maven-3/$(maven-version)/binaries/apache-maven-$(maven-version)-bin.tar.gz'
+
+        - task: ExtractFiles@1
+          displayName: 'Unzip Maven'
+          inputs:
+              archiveFilePatterns: 'apache-maven-$(maven-version)-bin.tar.gz'
+              destinationFolder: '$(build.sourcesdirectory)/maven'
+
+        - task: Maven@3
+          displayName: 'Build niord'
+          retryCountOnTaskFailure: 3
+          inputs:
+            mavenPomFile: 'pom.xml'
+            mavenOptions: '-Xmx3072m'
+            javaHomeOption: 'JDKVersion'
+            jdkVersionOption: '1.21'
+            jdkArchitectureOption: 'x64'
+            mavenVersionOption: 'Path'
+            mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-$(maven-version)'
+            mavenSetM2Home: true
+            publishJUnitResults: true
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            goals: 'clean install'
+
+        - task: Bash@3
+          displayName: Clone niord-dk repo
+          inputs:
+            targetType: 'inline'
+            script: 'git clone -b master https://github.com/NiordOrg/niord-dk.git'
+        
+        - task: Maven@3
+          displayName: 'Build niord-dk'
+          retryCountOnTaskFailure: 3
+          inputs:
+            mavenPomFile: './niord-dk/pom.xml'
+            mavenOptions: '-Xmx3072m'
+            javaHomeOption: 'JDKVersion'
+            jdkVersionOption: '1.21'
+            jdkArchitectureOption: 'x64'
+            mavenVersionOption: 'Path'
+            mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-$(maven-version)'
+            mavenSetM2Home: true
+            publishJUnitResults: true
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            goals: 'clean package'
+
+        - task: Docker@2
+          displayName: 'Build and push image'
+          inputs:
+            containerRegistry: '$(container-registry)'
+            repository: 'niord-app'
+            Dockerfile: '$(build.sourcesdirectory)/niord-dk/niord-dk-web/src/main/docker/Dockerfile.jvm'
+            buildContext: '$(build.sourcesdirectory)/niord-dk/niord-dk-web'
+            tags: '$(Build.BuildNumber)'

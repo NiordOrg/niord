@@ -15,21 +15,21 @@
  */
 package org.niord.s124;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.IOUtils;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.slf4j.Logger;
 
-import javax.inject.Inject;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -48,10 +48,8 @@ import java.io.StringWriter;
  *     xmllint --noout --schema http://localhost:8080/rest/S-124/S124.xsd http://localhost:8080/rest/S-124/NW-061-17.gml
  * </pre>
  */
-@Api(value = "/S-124",
-        description = "Public API for accessing messages as S-124 GML. " +
-                "NB: Only use this service for test purposes, not for production.",
-        tags = {"S-124" })
+@ApplicationScoped
+@Transactional
 @Path("/S-124")
 public class S124RestService {
 
@@ -61,24 +59,25 @@ public class S124RestService {
     @Inject
     S124Service s124Service;
 
-
     /**
      * Returns the S-124 GML representation for the given message
      */
-    @ApiOperation(
-            value = "Returns S-124 GML representation for the message." +
-                    "NB: Only use this service for test purposes, not for production.",
-            response = String.class,
-            tags = {"S-124"}
-    )
     @GET
     @Path("/messages/{messageId}")
+    @Operation(description = "Returns S-124 GML representation for the message. " +
+            "NB: Only use this service for test purposes, not for production.")
+    @APIResponse(
+            responseCode = "200",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = String.class)
+            )
+    )
     @Produces({"application/gml+xml;charset=UTF-8"})
     public Response s124MessageDetails(
-            @ApiParam(value = "The message UID or short ID", example = "NW-061-17")
+            @Parameter(description = "The message UID or short ID", example = "NW-061-17")
             @PathParam("messageId") String messageId,
-
-            @ApiParam(value = "Two-letter ISO 639-1 language code", example = "en")
+            @Parameter(description = "Two-letter ISO 639-1 language code", example = "en")
             @QueryParam("lang") @DefaultValue("en") String language
 
     ) throws Exception {

@@ -19,13 +19,14 @@ package org.niord.core.promulgation;
 import org.niord.core.promulgation.vo.SafetyNetAreaVo;
 import org.niord.core.promulgation.vo.SafetyNetMessagePromulgationVo;
 
-import javax.persistence.DiscriminatorValue;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Lob;
-import javax.persistence.ManyToOne;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Lob;
+import jakarta.persistence.ManyToOne;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Defines the message promulgation entity associated with SafetyNET mailing list promulgations
@@ -55,6 +56,7 @@ public class SafetyNetMessagePromulgation
     SafetyNetArea area;
 
     @Lob
+    @Column(length = 16_777_216)
     String text;
 
     // The actual ID assigned to the SafetyNET message by the distributor (e.g. SHOM for NAVAREA II)

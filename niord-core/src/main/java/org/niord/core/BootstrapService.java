@@ -16,30 +16,31 @@
 
 package org.niord.core;
 
+import io.quarkus.runtime.StartupEvent;
 import org.niord.core.domain.Domain;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
-import javax.annotation.PostConstruct;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 
 /**
  * In case Niord has been started up on a fresh database
  * this service will ensure that there is a "niord-client-master" domain
  * present, that may be used for bootstrapping and setting up the system.
  */
-@Singleton
-@Startup
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class BootstrapService extends BaseService {
 
     @Inject
     Logger log;
 
-    @PostConstruct
-    void init() {
+    /** Called upon application startup */
+    @Transactional
+    void init(@Observes StartupEvent ev) {
 
         // If no domains have been defined (fresh database), create
         // a Master domain that can be used whilst setting up the system
@@ -59,5 +60,7 @@ public class BootstrapService extends BaseService {
      */
     @SuppressWarnings("all")
     private void handleUpgrade() {
+        // Nothing for now
     }
+
 }

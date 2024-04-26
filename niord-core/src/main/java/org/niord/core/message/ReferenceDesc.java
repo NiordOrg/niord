@@ -19,14 +19,17 @@ import org.niord.core.model.DescEntity;
 import org.niord.model.ILocalizedDesc;
 import org.niord.model.message.ReferenceDescVo;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 /**
  * Localized contents for the Reference entity
  */
 @Entity
 @SuppressWarnings("unused")
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "lang", "entity_id" }))
 public class ReferenceDesc extends DescEntity<Reference> {
 
     @Column(length = 512)

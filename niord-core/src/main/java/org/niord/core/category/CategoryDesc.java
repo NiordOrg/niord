@@ -19,9 +19,11 @@ import org.niord.core.model.DescEntity;
 import org.niord.model.ILocalizedDesc;
 import org.niord.model.message.CategoryDescVo;
 
-import javax.persistence.Cacheable;
-import javax.persistence.Entity;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Cacheable;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Localized contents for the Category entity
@@ -29,6 +31,7 @@ import javax.validation.constraints.NotNull;
 @Entity
 @Cacheable
 @SuppressWarnings("unused")
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "lang", "entity_id" }))
 public class CategoryDesc extends DescEntity<Category> {
 
     @NotNull

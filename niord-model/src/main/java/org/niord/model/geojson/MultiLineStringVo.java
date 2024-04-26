@@ -15,24 +15,23 @@
  */
 package org.niord.model.geojson;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.function.Consumer;
 
 /**
  * GeoJSON MultiLineString, as defined in the specification:
  * http://geojson.org/geojson-spec.html#multilinestring
  */
-@ApiModel(
-        value = "MultiLineString",
-        parent = GeoJsonVo.class,
+@Schema(
+        name = "MultiLineString",
         description = "GeoJson MultiLineString type"
 )
 @XmlRootElement(name = "multiLineString")
 public class MultiLineStringVo extends GeometryVo {
 
-    private double[][][] coordinates;
+    double[][][] coordinates;
 
     @SuppressWarnings("unused")
     public MultiLineStringVo() {

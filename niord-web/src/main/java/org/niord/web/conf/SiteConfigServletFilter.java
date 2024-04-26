@@ -23,9 +23,9 @@ import org.niord.core.domain.vo.DomainVo;
 import org.niord.web.DomainRestService;
 import org.slf4j.Logger;
 
-import javax.inject.Inject;
-import javax.servlet.annotation.WebFilter;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.inject.Inject;
+import jakarta.servlet.annotation.WebFilter;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**

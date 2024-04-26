@@ -21,14 +21,17 @@ import org.niord.model.DataFilter;
 import org.niord.model.ILocalizedDesc;
 import org.niord.model.message.MessageDescVo;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 /**
  * Localized contents for the Area entity
  */
 @Entity
 @SuppressWarnings("unused")
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "lang", "entity_id" }))
 public class MessageDesc extends DescEntity<Message> {
 
     @Column(length = 1024)

@@ -15,12 +15,13 @@
  */
 package org.niord.core.batch;
 
-import javax.annotation.PostConstruct;
-import javax.batch.api.chunk.ItemProcessor;
-import javax.batch.api.chunk.ItemReader;
-import javax.batch.api.chunk.ItemWriter;
-import javax.batch.runtime.context.JobContext;
-import javax.inject.Inject;
+import jakarta.annotation.PostConstruct;
+
+import jakarta.batch.api.chunk.ItemProcessor;
+import jakarta.batch.api.chunk.ItemReader;
+import jakarta.batch.api.chunk.ItemWriter;
+import jakarta.batch.runtime.context.JobContext;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Path;
@@ -68,7 +69,7 @@ public abstract class AbstractItemHandler implements ItemReader, ItemProcessor, 
             return log;
         }
 
-        log = Logger.getLogger(getClass().getSimpleName());
+        log = Logger.getLogger(this.getClass().getSimpleName());
 
 
         // Store the log in the transient user data, so that it can be properly closed after the batch job is complete.

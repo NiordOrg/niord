@@ -15,65 +15,128 @@
  */
 package org.niord.core.db;
 
-import org.hibernate.query.criteria.internal.CriteriaBuilderImpl;
-import org.hibernate.query.criteria.internal.ParameterRegistry;
-import org.hibernate.query.criteria.internal.Renderable;
-import org.hibernate.query.criteria.internal.compile.RenderingContext;
-import org.hibernate.query.criteria.internal.expression.LiteralExpression;
-import org.hibernate.query.criteria.internal.predicate.AbstractSimplePredicate;
+import jakarta.persistence.criteria.Expression;
+import org.hibernate.dialect.Dialect;
+import org.hibernate.dialect.HSQLDialect;
+import org.hibernate.query.sqm.NodeBuilder;
+import org.hibernate.query.sqm.SemanticQueryWalker;
+import org.hibernate.query.sqm.sql.SqmTranslator;
+import org.hibernate.query.sqm.tree.SqmCopyContext;
+import org.hibernate.query.sqm.tree.expression.SqmExpression;
+import org.hibernate.query.sqm.tree.expression.SqmFunction;
+import org.hibernate.query.sqm.tree.predicate.AbstractNegatableSqmPredicate;
+import org.hibernate.query.sqm.tree.predicate.SqmBooleanExpressionPredicate;
+import org.hibernate.query.sqm.tree.predicate.SqmNegatablePredicate;
+import org.hibernate.query.sqm.tree.predicate.SqmNullnessPredicate;
 import org.locationtech.jts.geom.Geometry;
 
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Expression;
 import java.io.Serializable;
+import java.util.Optional;
 
 /**
  * Predicate for checking if one geometry is within another
+ *
+ * @author Nikolaos Vastardis (email: Nikolaos.Vastardis@gla-rad.org)
  */
-public class SpatialWithinPredicate extends AbstractSimplePredicate implements Serializable {
+public class SpatialWithinPredicate extends AbstractNegatableSqmPredicate implements Serializable {
 
-    private final Expression<Geometry> geom1;
-    private final Expression<Geometry> geom2;
-
-    /** Constructor */
-    public SpatialWithinPredicate(CriteriaBuilder cb, Expression<Geometry> geom1, Geometry geom2) {
-        this(
-                cb,
-                geom1,
-                new LiteralExpression<>((CriteriaBuilderImpl)cb, geom2));
-    }
+    // Class Variables
+    private final Expression<Geometry> geom1Exp;
+    private final Expression<Geometry> geom2Exp;
+    private final SqmFunction<Boolean> function;
 
     /** Constructor */
-    public SpatialWithinPredicate(CriteriaBuilder cb, Expression<Geometry> geom1, Expression<Geometry> geom2) {
-        super((CriteriaBuilderImpl)cb);
-        this.geom1 = geom1;
-        this.geom2 = geom2;
+    public SpatialWithinPredicate(NodeBuilder nodeBuilder, Expression<Geometry> geom1Exp, Geometry geom2, boolean negated) {
+        super(negated, nodeBuilder);
+        this.geom1Exp = geom1Exp;
+        this.geom2Exp = nodeBuilder.literal(geom2);
+        function = nodeBuilder.function("within", Boolean.class, new Expression[]{this.getGeom1Exp(), this.getGeom2Exp()});
     }
 
-    public Expression<Geometry> getGeom1() {
-        return geom1;
+    public SpatialWithinPredicate(NodeBuilder nodeBuilder, Expression<Geometry> geom1Exp, Expression<Geometry> geom2Exp, boolean negated) {
+        super(negated, nodeBuilder);
+        this.geom1Exp = geom1Exp;
+        this.geom2Exp = geom2Exp;
+        function = nodeBuilder.function("within", Boolean.class, new Expression[]{this.getGeom1Exp(), this.getGeom2Exp()});
     }
 
-    public Expression<Geometry> getGeom2() {
-        return geom2;
+    /**
+     * Returns the first geometry as an SQM expression if it is valid.
+     *
+     * @return the first geometry as an SQM expression
+     */
+    public SqmExpression<Geometry> getGeom1Exp() {
+        return Optional.ofNullable(this.geom1Exp)
+                .filter(SqmExpression.class::isInstance)
+                .map(SqmExpression.class::cast)
+                .orElse(null);
+    }
+
+    /**
+     * Returns the second geometry as an SQM expression if it is valid.
+     *
+     * @return the second geometry as an SQM expression
+     */
+    public SqmExpression<Geometry> getGeom2Exp() {
+        return Optional.ofNullable(this.geom2Exp)
+                .filter(SqmExpression.class::isInstance)
+                .map(SqmExpression.class::cast)
+                .orElse(null);
     }
 
     /** {@inheritDoc} */
     @Override
-    public void registerParameters(ParameterRegistry registry) {
-        // Unused
+    public SpatialWithinPredicate copy(SqmCopyContext context) {
+        final SpatialWithinPredicate existing = context.getCopy(this);
+        if (existing != null) return existing;
+        final SpatialWithinPredicate predicate = context.registerCopy(
+                this,
+                new SpatialWithinPredicate(
+                        (NodeBuilder) nodeBuilder(),
+                        this.getGeom1Exp().copy(context),
+                        this.getGeom2Exp().copy(context),
+                        isNegated()
+                )
+        );
+        copyTo(predicate, context);
+        return predicate;
     }
 
     /** {@inheritDoc} */
     @Override
-    @SuppressWarnings("all")
-    public String render(boolean isNegated, RenderingContext renderingContext) {
-        StringBuilder buffer = new StringBuilder();
-        buffer.append(" within(")
-                .append(((Renderable) getGeom1()).render(renderingContext))
-                .append(", ")
-                .append(((Renderable) getGeom2()).render(renderingContext))
-                .append(") = true ");
-        return buffer.toString();
+    public <T> T accept(SemanticQueryWalker<T> walker) {
+        if (walker instanceof SqmTranslator<?>) {
+            Dialect dialect = ((SqmTranslator<?>) walker).getCreationContext().getSessionFactory().getJdbcServices().getDialect();
+            if (dialect instanceof HSQLDialect) {
+                return walker.visitIsNullPredicate(new SqmNullnessPredicate(
+                        function,
+                        !isNegated(),
+                        nodeBuilder()
+                ));
+            } else {
+                return walker.visitBooleanExpressionPredicate(new SqmBooleanExpressionPredicate(
+                        function,
+                        isNegated(),
+                        nodeBuilder()
+                ));
+            }
+        }
+        return function.accept(walker);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void appendHqlString(StringBuilder sb) {
+        function.appendHqlString(sb);
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected SqmNegatablePredicate createNegatedNode() {
+        return new SpatialWithinPredicate(
+                nodeBuilder(),
+                this.getGeom1Exp(),
+                this.getGeom2Exp(),
+                !isNegated());
     }
 }

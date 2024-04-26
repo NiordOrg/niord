@@ -37,27 +37,19 @@ import org.niord.model.message.MessagePartType;
 import org.niord.model.message.MessagePartVo;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.script.Bindings;
-import javax.script.ScriptContext;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-import javax.script.SimpleBindings;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import javax.script.*;
+import jakarta.transaction.Transactional;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Business interface for executing template categories
  */
-@Stateless
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class TemplateExecutionService extends BaseService {
 
@@ -138,6 +130,7 @@ public class TemplateExecutionService extends BaseService {
      * @param type the parameter type value object
      * @return the new entity
      */
+    @Transactional
     public ParamType createParamType(ParamType type) {
 
         // Ensure validity of the type name
@@ -159,6 +152,7 @@ public class TemplateExecutionService extends BaseService {
      * @param type the parameter type value object
      * @return the updated entity
      */
+    @Transactional
     public ParamType updateParamType(ParamType type) {
 
         ParamType original = getParamType(type.getId());
@@ -187,6 +181,7 @@ public class TemplateExecutionService extends BaseService {
      * @param id the id of the parameter type to delete
      * @noinspection all
      */
+    @Transactional
     public boolean deleteParamType(Integer id) {
 
         ParamType type = getByPrimaryKey(ParamType.class, id);

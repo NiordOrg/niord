@@ -20,7 +20,7 @@ import org.apache.commons.lang.StringUtils;
 import org.niord.core.util.WebUtils;
 import org.niord.model.search.PagedSearchParamsVo;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -92,7 +92,7 @@ public class MessagePrintParams extends PagedSearchParamsVo {
 
     /*******************************************/
     /** Method chaining Getters and Setters   **/
-    /*******************************************/
+    /***/
 
 
     public String getReport() {

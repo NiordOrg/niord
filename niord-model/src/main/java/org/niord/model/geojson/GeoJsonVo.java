@@ -19,24 +19,22 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.IJsonSerializable;
 
-import javax.xml.bind.annotation.XmlSeeAlso;
-import javax.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.XmlSeeAlso;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.util.function.Consumer;
 
 /**
  * Base GeoJSON object as defined in the specification:
  * http://geojson.org/geojson-spec.html#geojson-objects
  */
-@ApiModel(
-        value = "GeoJson",
+@Schema(
+        name = "GeoJson",
         description = "Superclass for GeoJson types",
-        discriminator = "type",
-        subTypes = { PointVo.class, MultiPointVo.class, LineStringVo.class, MultiLineStringVo.class,
-                PolygonVo.class, MultiPolygonVo.class, GeometryCollectionVo.class, FeatureVo.class, FeatureCollectionVo.class
-        }
+        anyOf = {FeatureVo.class, FeatureCollectionVo.class, GeometryVo.class }
 )
 @JsonTypeInfo(property = "type", use = JsonTypeInfo.Id.NAME)
 @JsonSubTypes({
@@ -58,9 +56,9 @@ public abstract class GeoJsonVo implements IJsonSerializable {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    private String type;
-    private CrsVo crs;
-    private double[] bbox;
+    String type;
+    CrsVo crs;
+    double[] bbox;
 
     /** {@inheritDoc} */
     public String toString() {

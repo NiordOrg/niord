@@ -21,15 +21,17 @@ import org.niord.core.aton.AtonTag;
 import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.core.batch.AbstractItemHandler;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 /**
  * Filters AtoNs that need to be a added or updated
  *
  * TODO: we should probably detach the original AtoN looked up in processItem()
  */
-@Named
+@Dependent
+@Named("batchAtonImportProcessor")
 public class BatchAtonImportProcessor extends AbstractItemHandler {
 
     @Inject

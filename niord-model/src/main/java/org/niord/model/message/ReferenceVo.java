@@ -15,18 +15,18 @@
  */
 package org.niord.model.message;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.List;
 
 /**
  * Defines a reference from one Message to another
  */
-@ApiModel(value = "Reference", description = "A message reference")
+@Schema(name = "Reference", description = "A message reference")
 @XmlType(propOrder = {
         "messageId", "type", "descs"
 })

@@ -16,7 +16,10 @@
 
 package org.niord.core.mail;
 
+import io.quarkus.arc.Lock;
+import io.quarkus.scheduler.Scheduled;
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.microprofile.context.ManagedExecutor;
 import org.niord.core.db.CriteriaHelper;
 import org.niord.core.model.BaseEntity;
 import org.niord.core.service.BaseService;
@@ -25,22 +28,10 @@ import org.niord.core.util.TimeUtils;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.annotation.Resource;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Schedule;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.enterprise.concurrent.ManagedExecutorService;
-import javax.inject.Inject;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.criteria.*;
+import jakarta.transaction.Transactional;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -52,9 +43,8 @@ import static org.niord.core.settings.Setting.Type.Integer;
 /**
  * Interface for handling schedule mails
  */
-@Singleton
-@Startup
-@Lock(LockType.READ)
+@ApplicationScoped
+@Lock(Lock.Type.READ)
 @SuppressWarnings("unused")
 public class ScheduledMailService extends BaseService {
 
@@ -79,10 +69,11 @@ public class ScheduledMailService extends BaseService {
     /**
      * NB: Niord defines its own managed executor service to limit the number of threads,
      * and thus, the number of concurrent SMTP connections.
+     *
+     * Since moving to quarkus, we can use the default managed executor
      */
-    @Resource(lookup = "java:jboss/ee/concurrency/executor/MailExecutorService")
-    ManagedExecutorService managedExecutorService;
-
+    @Inject
+    ManagedExecutor managedExecutor;
 
     /**
      * Searches the filtered set of scheduled mails
@@ -95,33 +86,37 @@ public class ScheduledMailService extends BaseService {
 
         PagedSearchResultVo<ScheduledMail> result = new PagedSearchResultVo<>();
 
-        CriteriaBuilder cb = em.getCriteriaBuilder();
+        {
+            CriteriaBuilder cb = em.getCriteriaBuilder();
 
-        // First compute the total number of matching mails
-        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
-        Root<ScheduledMail> countMailRoot = countQuery.from(ScheduledMail.class);
+            // First compute the total number of matching mails
+            CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+            Root<ScheduledMail> countMailRoot = countQuery.from(ScheduledMail.class);
 
-        countQuery.select(cb.count(countMailRoot))
-                .where(buildQueryPredicates(cb, countQuery, countMailRoot, params))
-                .orderBy(cb.desc(countMailRoot.get("created")));
+            countQuery.select(cb.count(countMailRoot)).where(buildQueryPredicates(cb, countQuery, countMailRoot, params))
+                    .orderBy(cb.desc(countMailRoot.get("created")));
 
-        result.setTotal(em.createQuery(countQuery).getSingleResult());
+            result.setTotal(em.createQuery(countQuery).getSingleResult());
 
+        }
 
-        // Then, extract the current page of matches
-        CriteriaQuery<ScheduledMail> query = cb.createQuery(ScheduledMail.class);
-        Root<ScheduledMail> mailRoot = query.from(ScheduledMail.class);
-        query.select(mailRoot)
-                .where(buildQueryPredicates(cb, query, mailRoot, params))
-                .orderBy(cb.desc(countMailRoot.get("created")));
+        {
+            CriteriaBuilder cb = em.getCriteriaBuilder();
 
-        List<ScheduledMail> mails = em.createQuery(query)
-                .setMaxResults(params.getMaxSize())
-                .setFirstResult(params.getPage() * params.getMaxSize())
-                .getResultList();
-        result.setData(mails);
-        result.updateSize();
+            // First compute the total number of matching mails
+            CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
 
+            // Then, extract the current page of matches
+            CriteriaQuery<ScheduledMail> query = cb.createQuery(ScheduledMail.class);
+            Root<ScheduledMail> mailRoot = query.from(ScheduledMail.class);
+            query.select(mailRoot).where(buildQueryPredicates(cb, query, mailRoot, params)).orderBy(cb.desc(mailRoot.get("created")));
+
+            List<ScheduledMail> mails = em.createQuery(query).setMaxResults(params.getMaxSize()).setFirstResult(params.getPage() * params.getMaxSize())
+                    .getResultList();
+            result.setData(mails);
+            result.updateSize();
+
+        }
         log.info("Search [" + params + "] returned " + result.getSize() + " of " + result.getTotal() + " in "
                 + (System.currentTimeMillis() - t0) + " ms");
 
@@ -181,9 +176,10 @@ public class ScheduledMailService extends BaseService {
     /**
      * Called every minute to process scheduled mails
      */
-    @Schedule(persistent=false, second="24", minute="*", hour = "*")
-    @Lock(LockType.WRITE)
-    public void sendPendingMails() {
+    @Scheduled(cron="24 * * * * ?")
+    @Lock(Lock.Type.WRITE)
+    @Transactional
+    void sendPendingMails() {
 
         // Send at most "maxMailsPerMinute" mails at a time
         List<Integer> scheduledMailIds = getPendingMails().stream()
@@ -200,7 +196,7 @@ public class ScheduledMailService extends BaseService {
                     .collect(Collectors.toList());
 
             try {
-                managedExecutorService.invokeAll(tasks);
+                managedExecutor.invokeAll(tasks);
             } catch (InterruptedException e) {
                 log.error("Error sending scheduled emails: " + scheduledMailIds, e);
             }
@@ -215,10 +211,10 @@ public class ScheduledMailService extends BaseService {
      * However, this will fail because of a missing mail - recipient "delete on cascade" FK constraint.
      * Using JPAs CascadeType.ALL for the relation does NOT work in this case.
      */
-    @Schedule(persistent=false, second="48", minute="28", hour = "05")
-    @Lock(LockType.WRITE)
-    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
-    private void deleteExpiredMails() {
+    @Scheduled(cron="48 28 5 * * ?")
+    @Lock(Lock.Type.WRITE)
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
+    void deleteExpiredMails() {
 
         // If expiryDate is 0 (actually, non-positive), never delete mails
         if (mailDeleteAfterDays <= 0) {
@@ -269,6 +265,7 @@ public class ScheduledMailService extends BaseService {
         }
 
         /** {@inheritDoc} **/
+        @Transactional
         @Override
         public ScheduledMail call() {
             try {

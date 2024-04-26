@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 /**
  * Can be used as a base class for search parameters for paged search results
  */
-@SuppressWarnings("unused")
 public abstract class PagedSearchParamsVo implements IJsonSerializable {
 
     public enum SortOrder { ASC, DESC }
@@ -40,7 +39,10 @@ public abstract class PagedSearchParamsVo implements IJsonSerializable {
 
     /** Helper method */
     public static  <T> Set<T> toSet(Set<T> arg) {
-        return arg == null ? new HashSet<>() : arg;
+        // We create a new HashSet from arg, because we need it to be mutable as some
+        // of the existing code depends on it.
+        // Wildfly would inject mutable containers, but Quarkus injects immutable containers
+        return arg == null ? new HashSet<>() : new HashSet<>(arg);
     }
 
     /** Helper method */

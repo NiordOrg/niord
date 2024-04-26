@@ -19,13 +19,13 @@ import org.niord.core.model.BaseEntity;
 import org.niord.core.user.User;
 import org.niord.core.message.vo.MessageParamFilterVo;
 
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Used for persisting a named message parameter filter as defined by a request parameter string.
@@ -64,7 +64,7 @@ public class MessageParamFilter extends BaseEntity<Integer> {
      * Constructor
      */
     public MessageParamFilter(MessageParamFilterVo filter) {
-        this.id = filter.getId();
+        this.setId(filter.getId());
         this.name = filter.getName();
         this.parameters = filter.getParameters();
     }
@@ -73,7 +73,7 @@ public class MessageParamFilter extends BaseEntity<Integer> {
     /** Converts this entity to a value object */
     public MessageParamFilterVo toVo() {
         MessageParamFilterVo filter = new MessageParamFilterVo();
-        filter.setId(id);
+        filter.setId(this.getId());
         filter.setName(name);
         filter.setParameters(parameters);
         return filter;

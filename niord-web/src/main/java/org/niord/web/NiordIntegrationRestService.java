@@ -16,27 +16,19 @@
 
 package org.niord.web;
 
+import jakarta.annotation.security.RolesAllowed;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
 import org.niord.core.integration.NiordIntegration;
 import org.niord.core.integration.NiordIntegrationService;
 import org.niord.core.integration.vo.NiordIntegrationVo;
 import org.niord.core.user.Roles;
 import org.slf4j.Logger;
 
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -45,8 +37,8 @@ import java.util.stream.Collectors;
  * REST interface for accessing and managing promulgation types.
  */
 @Path("/niord-integrations")
-@Stateless
-@SecurityDomain("keycloak")
+@RequestScoped
+@Transactional
 @RolesAllowed(Roles.ADMIN)
 @SuppressWarnings("unused")
 public class NiordIntegrationRestService {

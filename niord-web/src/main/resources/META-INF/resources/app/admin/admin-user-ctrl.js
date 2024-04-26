@@ -52,12 +52,12 @@ angular.module('niord.admin')
                 $scope.loadMailingLists();
 
                 // Computes the Keycloak URL
-                // Template: http://localhost:8080/auth/admin/master/console/#/realms/niord/clients
+                // Template: http://localhost:8080/auth/admin/master/console/#/niord/clients
                 $scope.keycloakUrl = AuthService.keycloak.authServerUrl;
                 if ($scope.keycloakUrl.charAt($scope.keycloakUrl.length - 1) !== '/') {
                     $scope.keycloakUrl += '/';
                 }
-                $scope.keycloakUrl += 'admin/master/console/#/realms/niord/clients';
+                $scope.keycloakUrl += 'admin/master/console/#/niord/clients';
             };
 
 

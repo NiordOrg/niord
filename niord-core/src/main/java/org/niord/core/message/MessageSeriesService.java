@@ -29,24 +29,17 @@ import org.niord.model.message.MainType;
 import org.niord.model.message.Type;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * Business interface for managing message series
  */
-@Stateless
+@ApplicationScoped
 public class MessageSeriesService extends BaseService {
 
     public static final String NUMBER_SEQUENCE_TYPE_YEARLY = "MESSAGE_SERIES_NUMBER_%s_%d";
@@ -176,6 +169,7 @@ public class MessageSeriesService extends BaseService {
      * @param series the new message series
      * @return the persisted message series
      */
+    @Transactional
     public MessageSeries createMessageSeries(MessageSeries series) {
         MessageSeries original = findBySeriesId(series.getSeriesId());
         if (original != null) {
@@ -193,6 +187,7 @@ public class MessageSeriesService extends BaseService {
      * @param series the message series to update
      * @return the persisted message series
      */
+    @Transactional
     public MessageSeries updateMessageSeries(MessageSeries series) {
         MessageSeries original = findBySeriesId(series.getSeriesId());
         if (original == null) {
@@ -221,6 +216,7 @@ public class MessageSeriesService extends BaseService {
      * @return if the message was deleted
      * @noinspection all
      */
+    @Transactional
     public boolean deleteMessageSeries(String seriesId) {
 
         // TODO: Check if there are message with the given message series

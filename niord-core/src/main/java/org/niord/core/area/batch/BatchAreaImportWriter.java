@@ -19,14 +19,17 @@ import org.niord.core.area.Area;
 import org.niord.core.area.AreaService;
 import org.niord.core.batch.AbstractItemHandler;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.transaction.Transactional;
 import java.util.List;
 
 /**
  * Persists the areas to the database
  */
-@Named
+@Dependent
+@Named("batchAreaImportWriter")
 public class BatchAreaImportWriter extends AbstractItemHandler {
 
     @Inject
@@ -34,6 +37,7 @@ public class BatchAreaImportWriter extends AbstractItemHandler {
 
     /** {@inheritDoc} **/
     @Override
+    @Transactional
     public void writeItems(List<Object> items) throws Exception {
         long t0 = System.currentTimeMillis();
         for (Object i : items) {

@@ -25,19 +25,19 @@ import org.niord.core.user.UserService;
 import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Root;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.persistence.criteria.*;
+import jakarta.transaction.Transactional;
+
+import java.util.Date;
 import java.util.List;
 
 /**
  * Business interface for accessing Niord mailingLists
  */
-@Stateless
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class MailingListService extends BaseService {
 
@@ -140,6 +140,7 @@ public class MailingListService extends BaseService {
      * @param mailingList the mailing list to update
      * @return the updated mailing list
      */
+    @Transactional
     public MailingList updateMailingList(MailingList mailingList) {
         final MailingList original = findByMailingListId(mailingList.getMailingListId());
         if (original == null) {
@@ -165,6 +166,7 @@ public class MailingListService extends BaseService {
      * @return the updated mailing list
      * @noinspection all
      */
+    @Transactional
     public MailingList updateMailingListRecipients(MailingList mailingList) {
         MailingList original = findByMailingListId(mailingList.getMailingListId());
         if (original == null) {
@@ -186,6 +188,7 @@ public class MailingListService extends BaseService {
      * @param mailingList the mailing list to create
      * @return the created mailing list
      */
+    @Transactional
     public MailingList createMailingList(MailingList mailingList) {
         MailingList original = findByMailingListId(mailingList.getMailingListId());
         if (original != null) {
@@ -208,6 +211,7 @@ public class MailingListService extends BaseService {
      * @param mailingListId the id of the mailing list to delete
      * @noinspection all
      */
+    @Transactional
     public boolean deleteMailingList(String mailingListId) {
 
         MailingList mailingList = findByMailingListId(mailingListId);
@@ -226,6 +230,7 @@ public class MailingListService extends BaseService {
      */
     public List<MailingListTrigger> findPendingScheduledTriggers() {
         return em.createNamedQuery("MailingListTrigger.findPendingScheduledTriggers", MailingListTrigger.class)
+                .setParameter("time", new Date())
                 .getResultList();
     }
 

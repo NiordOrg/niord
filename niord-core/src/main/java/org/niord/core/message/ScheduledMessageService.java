@@ -15,6 +15,7 @@
  */
 package org.niord.core.message;
 
+import io.quarkus.scheduler.Scheduled;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
 import org.niord.core.service.BaseService;
@@ -22,10 +23,8 @@ import org.niord.core.util.TimeUtils;
 import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
-import javax.ejb.Schedule;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -43,8 +42,7 @@ import static org.niord.model.message.Status.VERIFIED;
  *     <li>Checks for verified messages with a publishDateFrom in the past and publishes these.</li>
  * </ul>
  */
-@Singleton
-@Startup
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class ScheduledMessageService extends BaseService {
 
@@ -61,8 +59,8 @@ public class ScheduledMessageService extends BaseService {
     /**
      * Called every minute to update expire published messages where publishDateTo is in the past
      */
-    @Schedule(persistent = false, second = "27", minute = "*", hour = "*")
-    public void checkForExpirablePublishedMessages() {
+    @Scheduled(cron="28 * * * * ?")
+    void checkForExpirablePublishedMessages() {
 
         // We want to treat messages with timestamps within the same minute equally, so, reset the seconds
         Date now = TimeUtils.resetSeconds(new Date());
@@ -86,8 +84,8 @@ public class ScheduledMessageService extends BaseService {
     /**
      * Called every minute to publish messages with a VERIFIED status and a defined publishDateFrom in the past
      */
-    @Schedule(persistent = false, second = "37", minute = "*", hour = "*")
-    public void checkForPublishableMessages() {
+    @Scheduled(cron="37 * * * * ?")
+    void checkForPublishableMessages() {
 
         // We want to treat messages with timestamps within the same minute equally, so, reset the seconds
         Date now = TimeUtils.resetSeconds(new Date());

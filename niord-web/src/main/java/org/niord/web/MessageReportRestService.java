@@ -16,20 +16,22 @@
 
 package org.niord.web;
 
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.niord.core.NiordApp;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.domain.DomainService;
-import org.niord.core.report.FmReport;
-import org.niord.core.report.FmReportService;
-import org.niord.core.script.FmTemplateService;
-import org.niord.core.script.FmTemplateService.ProcessFormat;
-import org.niord.core.report.vo.FmReportVo;
 import org.niord.core.message.MessagePrintParams;
 import org.niord.core.message.MessageSearchParams;
 import org.niord.core.message.MessageService;
+import org.niord.core.report.FmReport;
+import org.niord.core.report.FmReportService;
+import org.niord.core.report.vo.FmReportVo;
+import org.niord.core.script.FmTemplateService;
+import org.niord.core.script.FmTemplateService.ProcessFormat;
 import org.niord.core.user.Roles;
 import org.niord.core.user.UserService;
 import org.niord.model.DataFilter;
@@ -37,39 +39,24 @@ import org.niord.model.message.MessageVo;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * REST interface for generating PDF message reports.
  */
 @Path("/message-reports")
-@Stateless
-@SecurityDomain("keycloak")
+@RequestScoped
+@Transactional
 @PermitAll
 @SuppressWarnings("unused")
 public class MessageReportRestService extends AbstractBatchableRestService {
@@ -208,7 +195,7 @@ public class MessageReportRestService extends AbstractBatchableRestService {
     /**
      * Imports an uploaded reports json file
      *
-     * @param request the servlet request
+     * @param input the multi-part form data input request
      * @return a status
      */
     @POST
@@ -216,8 +203,8 @@ public class MessageReportRestService extends AbstractBatchableRestService {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
     @RolesAllowed(Roles.SYSADMIN)
-    public String importReports(@Context HttpServletRequest request) throws Exception {
-        return executeBatchJobFromUploadedFile(request, "report-import");
+    public String importReports(MultipartFormDataInput input) throws Exception {
+        return executeBatchJobFromUploadedFile(input, "report-import");
     }
 
 

@@ -27,8 +27,9 @@ import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.model.message.MainType;
 import org.niord.model.message.ReferenceVo;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -47,7 +48,7 @@ import java.util.Map;
  * TODO: When a more mature version has been implemented, the Freemarker template execution should
  *       use the {@code FmTemplateService} for DB-backed template execution.
  */
-@Stateless
+@ApplicationScoped
 public class S124Service {
 
     @Inject

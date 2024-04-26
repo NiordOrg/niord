@@ -25,19 +25,19 @@ import org.niord.model.DataFilter;
 import org.niord.model.ILocalizable;
 import org.niord.model.message.Status;
 
-import javax.persistence.CascadeType;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.OrderColumn;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderColumn;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -58,7 +58,7 @@ import static org.niord.core.mailinglist.TriggerType.STATUS_CHANGE;
 @NamedQueries({
         @NamedQuery(name = "MailingListTrigger.findPendingScheduledTriggers",
                 query = "SELECT t FROM MailingListTrigger t where t.type = 'SCHEDULED' "
-                        + " and t.mailingList.active = true and t.nextScheduledExecution < current_timestamp"),
+                        + " and t.mailingList.active = true and t.nextScheduledExecution < :time"),
         @NamedQuery(name = "MailingListTrigger.findStatusChangeTriggers",
                 query = "SELECT t FROM MailingListTrigger t join t.statusChanges s where t.type = 'STATUS_CHANGE' "
                         + " and t.mailingList.active = true and s = :status"),

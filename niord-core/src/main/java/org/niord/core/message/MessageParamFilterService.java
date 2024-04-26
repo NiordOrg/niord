@@ -15,22 +15,24 @@
  */
 package org.niord.core.message;
 
-import org.niord.core.service.BaseService;
-import org.niord.core.user.User;
-import org.niord.core.user.UserService;
-import org.slf4j.Logger;
-
-import javax.ejb.Stateless;
-import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.niord.core.service.BaseService;
+import org.niord.core.user.User;
+import org.niord.core.user.UserService;
+import org.slf4j.Logger;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+
 /**
  * Business interface for managing persisted message parameter filters
  */
-@Stateless
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class MessageParamFilterService extends BaseService {
 
@@ -113,6 +115,7 @@ public class MessageParamFilterService extends BaseService {
      * @param filter the new message filter
      * @return the persisted message filter
      */
+    @Transactional
     public MessageParamFilter createOrUpdateMessageFilter(MessageParamFilter filter) {
         MessageParamFilter original;
 
@@ -144,6 +147,7 @@ public class MessageParamFilterService extends BaseService {
      * @param id the message filter to delete
      * @return if the message filter was deleted
      */
+    @Transactional
     public boolean deleteMessageFilter(Integer id) {
         User user = userService.currentUser();
 

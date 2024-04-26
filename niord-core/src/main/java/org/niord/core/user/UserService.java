@@ -16,10 +16,10 @@
 
 package org.niord.core.user;
 
+import io.quarkus.oidc.runtime.OidcJwtCallerPrincipal;
+import io.quarkus.security.identity.SecurityIdentity;
 import org.apache.commons.lang.StringUtils;
-import org.keycloak.KeycloakPrincipal;
-import org.keycloak.KeycloakSecurityContext;
-import org.keycloak.representations.AccessToken;
+import org.jose4j.jwt.JwtClaims;
 import org.niord.core.domain.Domain;
 import org.niord.core.keycloak.KeycloakIntegrationService;
 import org.niord.core.service.BaseService;
@@ -28,18 +28,13 @@ import org.niord.core.user.vo.UserVo;
 import org.niord.model.DataFilter.UserResolver;
 import org.slf4j.Logger;
 
-import javax.annotation.Resource;
-import javax.ejb.SessionContext;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import java.security.Principal;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.transaction.Transactional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -47,7 +42,7 @@ import java.util.stream.Collectors;
 /**
  * Defines the API for accessing users either from the database or from Keycloak
  */
-@Stateless
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class UserService extends BaseService {
 
@@ -58,46 +53,42 @@ public class UserService extends BaseService {
     @Inject
     private Logger log;
 
-    @Resource
-    SessionContext ctx;
-
     @Inject
     TicketService ticketService;
 
     @Inject
     KeycloakIntegrationService keycloakIntegrationService;
 
+    @Inject
+    SecurityIdentity identity;
+
 
     /************************/
     /** Current User       **/
     /************************/
 
-
+    public Set<String> currentUserRoles() {
+        return identity.getRoles();
+    }
     /**
      * Returns the current Keycloak principal
      */
-    public KeycloakPrincipal getCallerPrincipal() {
-        Principal principal = ctx.getCallerPrincipal();
-
-        // Handle un-authenticated case
-        if (principal == null || !(principal instanceof KeycloakPrincipal)) {
-            return null;
-        }
-
-        return (KeycloakPrincipal) principal;
+    public OidcJwtCallerPrincipal getCallerPrincipal() {
+        return Optional.ofNullable(identity)
+                .map(SecurityIdentity::getPrincipal)
+                .filter(OidcJwtCallerPrincipal.class::isInstance)
+                .map(OidcJwtCallerPrincipal.class::cast)
+                .orElse(null);
     }
 
 
     /**
      * Returns the current Keycloak Access Token
      */
-    public AccessToken getKeycloakAccessToken() {
-        KeycloakPrincipal keycloakPrincipal = getCallerPrincipal();
-        if (keycloakPrincipal != null) {
-            KeycloakSecurityContext ctx = keycloakPrincipal.getKeycloakSecurityContext();
-            return ctx.getToken();
-        }
-        return null;
+    public String getKeycloakAccessToken() {
+        return Optional.ofNullable(getCallerPrincipal())
+                .map(OidcJwtCallerPrincipal::getRawToken)
+                .orElse(null);
     }
 
 
@@ -105,11 +96,10 @@ public class UserService extends BaseService {
      * Returns the user attributes, i.e. the "other claims" map of the current Keycloak principal
      */
     public Map<String, Object> getUserAttributes() {
-        AccessToken accessToken = getKeycloakAccessToken();
-        if (accessToken != null) {
-            return accessToken.getOtherClaims();
-        }
-        return new HashMap<>();
+        return Optional.ofNullable(getCallerPrincipal())
+                .map(OidcJwtCallerPrincipal::getClaims)
+                .map(JwtClaims::getClaimsMap)
+                .orElseGet(() -> new HashMap<>());
     }
 
 
@@ -120,15 +110,20 @@ public class UserService extends BaseService {
      * @return all the Keycloak domain IDs where the current user has the given role
      */
     public Set<String> getKeycloakDomainIdsForRole(String role) {
-        AccessToken accessToken = getKeycloakAccessToken();
-        if (accessToken != null) {
-            Map<String, AccessToken.Access> accessMap = accessToken.getResourceAccess();
-            return accessMap.entrySet().stream()
-                    .filter(kv -> kv.getValue().isUserInRole(role))
-                    .map(Map.Entry::getKey)
-                    .collect(Collectors.toSet());
-        }
-        return new HashSet<>();
+        return Optional.ofNullable(this.getCallerPrincipal())
+                .map(OidcJwtCallerPrincipal::getClaims)
+                .map(claims -> claims.getClaimValue("resource_access"))
+                .filter(JsonObject.class::isInstance)
+                .map(JsonObject.class::cast)
+                .map(JsonObject::entrySet)
+                .orElse(Collections.emptySet())
+                .stream()
+                .filter(entry -> entry.getValue()
+                        .asJsonObject()
+                        .getJsonArray("roles")
+                        .contains(Json.createValue(role)))
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
     }
 
 
@@ -138,11 +133,9 @@ public class UserService extends BaseService {
      *
      * @return the currently authenticated user
      */
+    @Transactional
     public User currentUser() {
-
-        // Get the current Keycloak principal
-        KeycloakPrincipal keycloakPrincipal = getCallerPrincipal();
-        if (keycloakPrincipal == null) {
+        if (this.identity == null || this.identity.isAnonymous()) {
 
             // Check if the ticket service has resolved a ticket for the current thread
             TicketService.TicketData ticketData = ticketService.getTicketDataForCurrentThread();
@@ -153,20 +146,17 @@ public class UserService extends BaseService {
             }
         }
 
-        @SuppressWarnings("all")
-        AccessToken token = keycloakPrincipal.getKeycloakSecurityContext().getToken();
-
-        User user = findByUsername(token.getPreferredUsername());
+        User user = findByUsername(this.getCallerPrincipal().getName());
 
         if (user == null) {
             // New user
-            user = new User(token);
+            user = new User(this.getCallerPrincipal());
             user = saveEntity(user);
             log.info("Created new user " + user);
 
-        } else if (user.userChanged(token)) {
+        } else if (user.userChanged(this.getCallerPrincipal())) {
             // User data updated
-            user.copyToken(token);
+            user.copyToken(this.getCallerPrincipal());
             user = saveEntity(user);
             log.info("Updated user " + user);
         }
@@ -190,8 +180,17 @@ public class UserService extends BaseService {
      * @return True if the caller has the specified role.
      */
     public boolean isCallerInRole(String role) {
-        return ctx.isCallerInRole(role) ||
-                ticketService.validateRolesForCurrentThread(role);
+        if (this.identity == null || this.identity.isAnonymous()) {
+
+            // Check if the ticket service has resolved a ticket for the current thread
+            TicketService.TicketData ticketData = ticketService.getTicketDataForCurrentThread();
+            if (ticketData != null && StringUtils.isNotBlank(ticketData.getUser())) {
+                return Arrays.asList(ticketData.getRoles()).contains(role);
+            }
+            return false;
+        }
+        
+        return this.identity.hasRole(role);
     }
 
 

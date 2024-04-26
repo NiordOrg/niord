@@ -22,15 +22,15 @@ import org.niord.core.promulgation.vo.NavtexTransmitterVo;
 import org.niord.model.DataFilter;
 import org.niord.model.message.AreaVo;
 
-import javax.persistence.Cacheable;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OrderColumn;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Cacheable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OrderColumn;
+import jakarta.validation.constraints.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
                         + " and lower(t.name) = lower(:name)"),
         @NamedQuery(name="NavtexTransmitter.findByType",
                 query="SELECT t FROM NavtexTransmitter t where t.promulgationType.typeId = :typeId "
-                        + " order by lower(t.name) asc")
+                        + " order by t.name asc")
 })
 @SuppressWarnings("unused")
 public class NavtexTransmitter extends BaseEntity<Integer> {

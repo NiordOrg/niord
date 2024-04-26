@@ -19,11 +19,11 @@ package org.niord.core.promulgation;
 import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
-import javax.ejb.ActivationConfigProperty;
-import javax.ejb.MessageDriven;
-import javax.inject.Inject;
-import javax.jms.MapMessage;
-import javax.jms.MessageListener;
+import jakarta.ejb.ActivationConfigProperty;
+import jakarta.ejb.MessageDriven;
+import jakarta.inject.Inject;
+import jakarta.jms.MapMessage;
+import jakarta.jms.MessageListener;
 
 /**
  * Used for listening for message status updates via JMS
@@ -49,7 +49,7 @@ public class TwitterMessageListener implements MessageListener {
      * {@inheritDoc}
      */
     @Override
-    public void onMessage(javax.jms.Message message) {
+    public void onMessage(jakarta.jms.Message message) {
 
         try {
             MapMessage msg = (MapMessage) message;

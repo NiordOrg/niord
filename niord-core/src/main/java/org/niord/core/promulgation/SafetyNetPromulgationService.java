@@ -16,6 +16,7 @@
 
 package org.niord.core.promulgation;
 
+import io.quarkus.arc.Lock;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.message.Message;
 import org.niord.core.message.vo.SystemMessageVo;
@@ -29,20 +30,17 @@ import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.message.Type;
 
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * Manages SafetyNET-via-mailing-lists promulgations
  */
-@Singleton
-@Startup
-@Lock(LockType.READ)
+@ApplicationScoped
+@Lock(Lock.Type.READ)
 @SuppressWarnings("unused")
 public class SafetyNetPromulgationService
         extends BasePromulgationService {
@@ -286,6 +284,7 @@ public class SafetyNetPromulgationService
 
 
     /** Creates a new SafetyNET area */
+    @Transactional
     public SafetyNetArea createArea(SafetyNetArea area) {
 
         String typeId = area.getPromulgationType().getTypeId();
@@ -297,6 +296,7 @@ public class SafetyNetPromulgationService
 
 
     /** Updates an existing SafetyNET area */
+    @Transactional
     public SafetyNetArea updateArea(SafetyNetArea area) {
 
         String typeId = area.getPromulgationType().getTypeId();
@@ -311,6 +311,7 @@ public class SafetyNetPromulgationService
 
     /** Deletes an existing SafetyNET area */
     @SuppressWarnings("all")
+    @Transactional
     public boolean deleteArea(String typeId, String name) {
 
         log.info("Deleting SafetyNET area " + name + " for promulgation type " + typeId);

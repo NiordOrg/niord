@@ -17,11 +17,11 @@ package org.niord.core.mail;
 
 import com.steadystate.css.parser.CSSOMParser;
 import org.jsoup.Jsoup;
-import org.jsoup.examples.HtmlToPlainText;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
+import org.niord.core.util.HtmlToPlainText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.css.sac.CSSException;

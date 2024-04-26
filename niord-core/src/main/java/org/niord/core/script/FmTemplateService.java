@@ -33,20 +33,13 @@ import org.niord.core.settings.annotation.Setting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.ResourceBundle;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.niord.core.settings.Setting.Type.Boolean;
@@ -56,7 +49,7 @@ import static org.niord.core.settings.Setting.Type.Password;
 /**
  * Main interface for accessing and processing Freemarker report templates
  */
-@Stateless
+@ApplicationScoped
 public class FmTemplateService extends BaseService {
 
     public static final String LANGUAGE_PROPERTY    = "language";
@@ -163,7 +156,7 @@ public class FmTemplateService extends BaseService {
             if (!bundles.isEmpty()) {
                 MultiResourceBundleModel resourceBundleModel =  new MultiResourceBundleModel(
                         bundles,
-                        new DefaultObjectWrapperBuilder(Configuration.getVersion()).build());
+                        new DefaultObjectWrapperBuilder(Configuration.VERSION_2_3_31).build());
                 templateBuilder.getData().put(BUNDLE_PROPERTY, resourceBundleModel);
             }
         }
@@ -298,7 +291,7 @@ public class FmTemplateService extends BaseService {
 
         /*****************************************/
         /** Method-chaining Getters and Setters **/
-        /*****************************************/
+        /***/
 
         public String getTemplatePath() {
             return templatePath;

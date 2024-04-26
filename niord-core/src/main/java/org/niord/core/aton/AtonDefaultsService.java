@@ -15,24 +15,28 @@
  */
 package org.niord.core.aton;
 
+import io.quarkus.runtime.StartupEvent;
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.ejb.*;
-import javax.inject.Inject;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.transform.Result;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
+
+import javax.management.RuntimeErrorException;
+import javax.xml.transform.*;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+
+import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.*;
@@ -90,19 +94,40 @@ import java.util.stream.Collectors;
  * </pre>
  *
  */
-@Singleton
-@Startup
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class AtonDefaultsService {
 
+    /**
+     * The default logger.
+     */
     @Inject
     private Logger log;
 
-    @Resource
-    TimerService timerService;
+    /**
+     * The INT-1-Preset default parsing rules.
+     */
+    @ConfigProperty(name = "niord.aton-defaults.int-1-preset.parser", defaultValue = "aton/aton-osm-defaults.xslt")
+    private String defaultsParsing;
 
-    // TODO: Inject from setting
-    private IalaBuoyageSystem ialaSystem = IalaBuoyageSystem.IALA_A;
+    /**
+     * The IALA System to be skipped during the defaults parsing.
+     */
+    @ConfigProperty(name = "niord.aton-defaults.int-1-preset.iala-skip-system", defaultValue = "IALA-A")
+    private IalaBuoyageSystem ialaSkipSystem;
+
+    /**
+     * The file name of the INT-1-Present configuration XML.
+     */
+    @ConfigProperty(name = "niord.aton-defaults.int-1-preset.fileName", defaultValue = "aton/INT-1-preset.xml")
+    private String int1Preset;
+
+    /**
+     * Additional configuration files to append information to the INT-1-present
+     * configuration.
+     */
+    @ConfigProperty(name = "niord.aton-defaults.int-1-preset.extensions")
+    private Optional<List<String>> getInt1PresetExts;
 
     private OsmDefaults osmDefaults;
 
@@ -112,21 +137,47 @@ public class AtonDefaultsService {
 
 
     /** Called upon application startup */
-    @PostConstruct
-    public void init() {
+    public void init(@Observes StartupEvent ev) {
         // In order not to stall webapp deployment, wait 3 seconds before initializing the defaults
-        timerService.createSingleActionTimer(3000, new TimerConfig());
+        new java.util.Timer().schedule(
+                new TimerTask() {
+                    @Override
+                    public void run() {
+                        generateDefaults();
+                    }
+                },
+                3000
+        );
+    }
+    
+    public static void main(String[] args) {
+        AtonDefaultsService ads = new AtonDefaultsService();
+        ads.log = LoggerFactory.getLogger("foo");
+        ads.defaultsParsing = "/aton/aton-osm-defaults.xslt";
+        ads.int1Preset = "/aton/INT-1-preset.xml";
+        ads.generateDefaults();
+        
+        
+        System.out.println("NYE");
     }
 
     /**
      * Generates the AtoN defaults from the INT-1-preset.xml file
      */
-    @Timeout
     private void generateDefaults() {
         try {
-            long t0 = System.currentTimeMillis();
-            Source xsltSource = new StreamSource(getClass().getResourceAsStream("/aton/aton-osm-defaults.xslt"));
-            Source xmlSource = new StreamSource(getClass().getResourceAsStream("/aton/INT-1-preset.xml"));
+            final long t0 = System.currentTimeMillis();
+            final ClassLoader classloader = Thread.currentThread().getContextClassLoader();
+            InputStream is = classloader.getResourceAsStream(this.defaultsParsing);
+            if (is == null) {
+                throw new RuntimeException("Could not read resource " + this.defaultsParsing);
+            }
+            final Source xsltSource = new StreamSource(is);
+            is = classloader.getResourceAsStream(this.int1Preset);
+            if (is == null) {
+                throw new RuntimeException("Could not read resource " + this.int1Preset);
+            }
+            final Source xmlSource = new StreamSource(is);
 
             // Capture the generated xml as a string
             StringWriter xml = new StringWriter();
@@ -135,28 +186,31 @@ public class AtonDefaultsService {
             // Execute the xslt
             TransformerFactory transFact = TransformerFactory.newInstance();
             Transformer trans = transFact.newTransformer(xsltSource);
-            trans.setParameter("ialaSkipSystem", ialaSystem.other().toString());
+            trans.setParameter("ialaSkipSystem", this.ialaSkipSystem.other().toString());
             trans.transform(xmlSource, result);
 
             // Fix spelling mistakes
             String resultXml = xml.toString();
             resultXml = resultXml
                     .replace("topamrk", "topmark")
-                    .replace("patern", "pattern");
+                    .replace("patern", "pattern")
+                    .replace("Supplimentary", "Supplementary");
 
             // Read in the result as OsmDefaults data
             JAXBContext jaxbContext = JAXBContext.newInstance(OsmDefaults.class);
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-            osmDefaults = (OsmDefaults) unmarshaller.unmarshal(new StringReader(resultXml));
+            this.osmDefaults = (OsmDefaults) unmarshaller.unmarshal(new StringReader(resultXml));
 
             // Build look-up tables for fast access
-            osmDefaults.getTagValues().stream()
-                    .forEach(tv -> osmTagValues.put(tv.getId(), tv));
-            osmDefaults.getNodeTypes().stream()
-                    .forEach(nt -> osmNodeTypes.put(nt.getName(), nt));
+            this.osmDefaults.getTagValues().stream()
+                    .forEach(tv -> this.osmTagValues.put(tv.getId(), tv));
+            this.osmDefaults.getNodeTypes().stream()
+                    .forEach(nt -> this.osmNodeTypes.put(nt.getName(), nt));
 
             log.trace("Created AtoN defaults in " + (System.currentTimeMillis() - t0) +  " ms");
+           
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("Failed creating AtoN defaults in " + e, e);
         }
     }

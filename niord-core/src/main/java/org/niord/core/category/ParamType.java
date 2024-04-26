@@ -20,12 +20,12 @@ import org.niord.core.category.vo.ParamTypeVo;
 import org.niord.core.model.BaseEntity;
 import org.niord.model.DataFilter;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Inheritance;
-import javax.persistence.InheritanceType;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
 
 /**
  * Base class for the template list parameter type and composite parameter type
@@ -33,7 +33,7 @@ import javax.persistence.NamedQuery;
 @Entity
 @NamedQueries({
         @NamedQuery(name  = "ParamType.findAll",
-                query = "select t from ParamType t order by lower(t.name) asc"),
+                query = "select t from ParamType t order by t.name asc"),
         @NamedQuery(name  = "ParamType.findByName",
                 query = "select t from ParamType t where t.name = :name")
 })
@@ -50,7 +50,7 @@ public abstract class ParamType extends BaseEntity<Integer> {
 
     /** Constructor **/
     public ParamType(ParamTypeVo type) {
-        this.id = type.getId();
+        this.setId(type.getId());
         this.name = type.getName();
     }
 

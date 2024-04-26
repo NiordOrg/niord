@@ -21,8 +21,8 @@ import org.niord.core.NiordApp;
 import org.niord.core.script.FmTemplateService;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
+import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
 
 /**
  * Interface for translating light characters to text.

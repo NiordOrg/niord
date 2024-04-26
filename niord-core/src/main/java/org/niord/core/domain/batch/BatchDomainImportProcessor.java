@@ -26,8 +26,10 @@ import org.niord.core.domain.vo.DomainVo;
 import org.niord.core.message.MessageSeries;
 import org.niord.core.message.MessageSeriesService;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.control.ActivateRequestContext;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -35,7 +37,8 @@ import java.util.stream.Collectors;
 /**
  * Filters domains that need to be a added or updated
  */
-@Named
+@Dependent
+@Named("batchDomainImportProcessor")
 public class BatchDomainImportProcessor extends AbstractItemHandler {
 
     @Inject
@@ -52,6 +55,7 @@ public class BatchDomainImportProcessor extends AbstractItemHandler {
 
     /** {@inheritDoc} **/
     @Override
+    @ActivateRequestContext
     public Object processItem(Object item) throws Exception {
 
         DomainVo domainVo = (DomainVo) item;

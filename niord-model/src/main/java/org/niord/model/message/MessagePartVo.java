@@ -16,20 +16,20 @@
 
 package org.niord.model.message;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 import org.niord.model.geojson.FeatureCollectionVo;
 
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Value object for the {@code MessagePart} model entity
  */
-@ApiModel(value = "MessagePart", description = "Main NW and NM message part class")
+@Schema(name = "MessagePart", description = "Main NW and NM message part class")
 @XmlType(propOrder = {
         "indexNo", "type", "eventDates", "geometry", "descs", "hideSubject"
 })

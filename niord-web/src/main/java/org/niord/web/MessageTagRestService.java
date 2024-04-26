@@ -16,9 +16,10 @@
 
 package org.niord.web;
 
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
 import org.niord.core.message.MessageTag;
 import org.niord.core.message.MessageTagSearchParams;
 import org.niord.core.message.MessageTagService;
@@ -27,21 +28,10 @@ import org.niord.core.user.Roles;
 import org.niord.model.search.PagedSearchParamsVo.SortOrder;
 import org.slf4j.Logger;
 
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -51,8 +41,8 @@ import java.util.stream.Collectors;
  * API for accessing message tags, used for grouping a fixed set of messages.
  */
 @Path("/tags")
-@Stateless
-@SecurityDomain("keycloak")
+@RequestScoped
+@Transactional
 @PermitAll
 public class MessageTagRestService {
 

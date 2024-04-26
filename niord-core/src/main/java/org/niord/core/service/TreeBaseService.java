@@ -20,7 +20,7 @@ import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
 import org.slf4j.Logger;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
 /**
  * DAO-like base class for services that work on work on {@linkplain TreeBaseEntity} entities
  */
-@SuppressWarnings("unused")
 public abstract class TreeBaseService<E extends TreeBaseEntity<E>> extends BaseService {
 
     @Inject
@@ -88,7 +87,14 @@ public abstract class TreeBaseService<E extends TreeBaseEntity<E>> extends BaseS
         }
 
         // Save the entity
+        // TODO: For some reason this doesn't update the parent/child
+        //       relationship so as a temporary fix, we do this manually until
+        //       we figure out what the hell is going on!
         saveEntity(entity);
+        em.createQuery(String.format("UPDATE %s a set a.parent = :parent WHERE a.id = :id", entity.getClass().getName()))
+                .setParameter("parent", entity.getParent())
+                .setParameter("id", entity.getId())
+                .executeUpdate();
         em.flush();
 
         // Update all lineages

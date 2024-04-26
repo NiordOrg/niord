@@ -25,8 +25,10 @@ import org.niord.core.user.TicketService;
 import org.niord.core.user.UserService;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -36,7 +38,7 @@ import java.util.stream.Collectors;
 /**
  * Provides an interface for managing application domains
  */
-@Stateless
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class DomainService extends BaseService {
 
@@ -166,7 +168,7 @@ public class DomainService extends BaseService {
                 Set<String> keycloakClients = keycloakService.getKeycloakDomainIds();
                 domains.forEach(d -> d.setInKeycloak(keycloakClients.contains(d.getDomainId())));
             } catch (Exception e) {
-                log.error("Failed loading Keycloak states for domains" + e);
+                log.error("Failed loading Keycloak states for domains", e);
             }
 
         }
@@ -215,6 +217,7 @@ public class DomainService extends BaseService {
      * @param domain the domain to update
      * @return the updated domain
      */
+    @Transactional
     public Domain updateDomain(Domain domain) {
         Domain original = findByDomainId(domain.getDomainId());
         if (original == null) {
@@ -254,6 +257,7 @@ public class DomainService extends BaseService {
      * @param domain the domain to create
      * @return the created domain
      */
+    @Transactional
     public Domain createDomain(Domain domain, @SuppressWarnings("all") boolean createInKeycloak) {
         Domain original = findByDomainId(domain.getDomainId());
         if (original != null) {
@@ -290,6 +294,7 @@ public class DomainService extends BaseService {
      * @param domainId the ID of the domain to delete
      * @noinspection all
      */
+    @Transactional
     public boolean deleteDomain(String domainId) {
 
         Domain domain = findByDomainId(domainId);

@@ -15,9 +15,16 @@
  */
 package org.niord.web;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.ejb3.annotation.SecurityDomain;
+import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.niord.core.aton.vo.AtonNodeVo;
 import org.niord.core.batch.AbstractBatchableRestService;
 import org.niord.core.category.Category;
@@ -29,37 +36,33 @@ import org.niord.core.domain.vo.DomainVo;
 import org.niord.core.user.Roles;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
+import org.niord.model.message.CategoryDescVo;
 import org.slf4j.Logger;
 
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
 
 /**
  * REST interface for accessing categories.
  */
 @Path("/categories")
-@Stateless
-@SecurityDomain("keycloak")
+@RequestScoped
+@Transactional
 @PermitAll
 public class CategoryRestService extends AbstractBatchableRestService {
 
@@ -130,6 +133,8 @@ public class CategoryRestService extends AbstractBatchableRestService {
                 .lang(lang);
 
         CategorySearchParams params = new CategorySearchParams();
+        //params.sortBy(CategorySearchParams.TREE_SORT_ORDER); // Default order
+        
         params.language(lang)
                 .type(type)
                 .name(name)
@@ -141,9 +146,32 @@ public class CategoryRestService extends AbstractBatchableRestService {
 
         log.info(String.format("Searching for categories %s", params));
 
-        return categoryService.searchCategories(params).stream()
+        List<SystemCategoryVo> result = categoryService.searchCategories(params).stream()
                 .map(c -> c.toVo(SystemCategoryVo.class, filter))
                 .collect(Collectors.toList());
+        
+//        // A bit of a hack to support alphabetic sort
+//        
+//        String l = lang == null ? "en" : lang;
+//        Comparator<SystemCategoryVo> cmp = new Comparator<>() {
+//
+//            @Override
+//            public int compare(SystemCategoryVo o1, SystemCategoryVo o2) {
+//                CategoryDescVo c1 = o1.getDesc(l);
+//                CategoryDescVo c2 = o2.getDesc(l);
+//                if (Objects.equals(c1, c2)) {
+//                    return 0;
+//                }
+//                if (c1 == null) {
+//                    return -1;
+//                } else if (c2 == null) {
+//                    return 1;
+//                }
+//                return c1.getName().compareToIgnoreCase(c2.getName());
+//            }};
+//        Collections.sort(result, cmp);
+        
+        return result;
     }
 
 
@@ -320,14 +348,15 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Path("/recompute-tree-sort-order")
     @RolesAllowed(Roles.SYSADMIN)
     public boolean recomputeTreeSortOrder() {
-        return categoryService.recomputeTreeSortOrder();
+        categoryService.recomputeTreeSortOrder();
+        return true;
     }
 
 
     /**
      * Imports an uploaded Categories json file
      *
-     * @param request the servlet request
+     * @param input the multi-part form data input request
      * @return a status
      */
     @POST
@@ -335,8 +364,8 @@ public class CategoryRestService extends AbstractBatchableRestService {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces("text/plain")
     @RolesAllowed(Roles.SYSADMIN)
-    public String importCategories(@Context HttpServletRequest request) throws Exception {
-        return executeBatchJobFromUploadedFile(request, "category-import");
+    public String importCategories(MultipartFormDataInput input) throws Exception {
+        return executeBatchJobFromUploadedFile(input, "category-import");
     }
 
 

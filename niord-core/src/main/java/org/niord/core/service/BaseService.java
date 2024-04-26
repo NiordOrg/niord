@@ -15,22 +15,26 @@
  */
 package org.niord.core.service;
 
+import org.hibernate.query.sqm.NodeBuilder;
 import org.niord.core.model.BaseEntity;
 
-import javax.inject.Inject;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityNotFoundException;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.transaction.Transactional;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * DAO-like base class for services that work on work on {@linkplain BaseEntity}
  */
+@Transactional
 @SuppressWarnings("unused")
 public abstract class BaseService {
 
@@ -68,6 +72,22 @@ public abstract class BaseService {
     }
 
     /**
+     * Returns the persistence entity manager as a hibernate node builder which
+     * can be used to generate SQM expressions.
+     *
+     * @return the Hibernate SQM node builder
+     */
+    protected NodeBuilder getNodeBuilder() {
+        NodeBuilder nodeBuilder = (NodeBuilder) em.getCriteriaBuilder();
+        
+        return nodeBuilder;
+//        return Optional.of(em)
+//                .filter(NodeBuilder.class::isInstance)
+//                .map(NodeBuilder.class::cast)
+//                .orElse(null);
+    }
+
+    /**
      * Removes the given entity from the database
      *
      * @param entity the entity to remove
@@ -81,7 +101,7 @@ public abstract class BaseService {
      * Persists or updates the given entity
      *
      * @param entity the entity to persist or update
-     * @return thed update entity
+     * @return the updated entity
      */
     public <E extends BaseEntity> E saveEntity(E entity) {
         if (entity.isPersisted()) {
@@ -149,12 +169,25 @@ public abstract class BaseService {
     }
 
     /**
+     * Returns a list of persisted entities
+     * @param entityType the class
+     * @param entities the list of entities to look up persisted entities for
+     * @return the list of corresponding persisted entities
+     */
+    public <E extends BaseEntity> Set<E> persistedSet(Class<E> entityType, Set<E> entities) {
+        return entities.stream()
+                .map(e -> getByPrimaryKey(entityType, e.getId()))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    /**
      * Returns a list of persisted entities for the given IDs
      * @param entityType the class
      * @param ids the list of IDs to look up persisted entities for
      * @return the list of corresponding persisted entities
      */
-    public <ID extends Serializable, E extends BaseEntity<ID>> List<E> persistedListForIds(Class<E> entityType, List<ID> ids) {
+    public <ID extends Serializable, E extends BaseEntity<ID>> List<E> persistedListForIds(Class<E> entityType, List<Integer> ids) {
         return ids.stream()
                 .map(id -> getByPrimaryKey(entityType, id))
                 .filter(Objects::nonNull)

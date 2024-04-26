@@ -16,29 +16,6 @@
 
 package org.niord.core.mail;
 
-import org.apache.commons.lang.StringUtils;
-import org.niord.core.mail.vo.ScheduledMailVo;
-import org.niord.core.model.BaseEntity;
-import org.niord.core.util.GzipUtils;
-import org.niord.core.util.TimeUtils;
-import org.niord.model.DataFilter;
-
-import javax.mail.internet.InternetAddress;
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Index;
-import javax.persistence.Lob;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.PrePersist;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
-import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -46,6 +23,31 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang.StringUtils;
+import org.niord.core.mail.vo.ScheduledMailVo;
+import org.niord.core.model.BaseEntity;
+import org.niord.core.util.GzipUtils;
+import org.niord.core.util.TimeUtils;
+import org.niord.model.DataFilter;
+
+import jakarta.mail.internet.InternetAddress;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Index;
+import jakarta.persistence.Lob;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
+import jakarta.persistence.Transient;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Defines a scheduled mail placed in a mail queue. The mail is comprised of:
@@ -96,6 +98,7 @@ public class ScheduledMail extends BaseEntity<Integer> {
     /** The mail contents is stored in compressed form to preserve space **/
     @NotNull
     @Lob
+    @Column(columnDefinition = "LONGBLOB")
     byte[] contents;
 
     @NotNull
@@ -118,13 +121,15 @@ public class ScheduledMail extends BaseEntity<Integer> {
         }
     }
 
+    public ScheduledMail() {
+    }
 
     /** Converts this entity to a value object */
     public ScheduledMailVo toVo(DataFilter filter) {
         DataFilter compFilter = filter.forComponent(ScheduledMail.class);
 
         ScheduledMailVo mail = new ScheduledMailVo();
-        mail.setId(id);
+        mail.setId(this.getId());
         mail.setCreated(created);
         mail.setSendDate(sendDate);
         mail.setStatus(status);

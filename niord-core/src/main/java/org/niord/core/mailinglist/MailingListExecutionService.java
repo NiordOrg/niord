@@ -38,19 +38,13 @@ import org.niord.core.service.BaseService;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.niord.core.mail.ScheduledMailRecipient.RecipientType.TO;
@@ -59,7 +53,7 @@ import static org.niord.core.script.ScriptResource.Type.FM;
 /**
  * Handles execution of mailing list triggers
  */
-@Stateless
+@ApplicationScoped
 public class MailingListExecutionService extends BaseService {
 
     @Inject
@@ -92,7 +86,7 @@ public class MailingListExecutionService extends BaseService {
      * @param triggerId the ID of the status change mailing list trigger to execute
      * @param messageUid the message UID to execute the trigger for
      */
-    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void executeStatusChangeTrigger(Integer triggerId, String messageUid) throws Exception {
 
         // Look up the trigger
@@ -190,7 +184,7 @@ public class MailingListExecutionService extends BaseService {
      * Executes the scheduled mailing list trigger for the given message
      * @param triggerId the ID of the scheduled mailing list trigger to execute
      */
-    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void executeScheduledTrigger(Integer triggerId) throws Exception {
 
         MailingListTrigger trigger = getByPrimaryKey(MailingListTrigger.class, triggerId);
@@ -206,7 +200,7 @@ public class MailingListExecutionService extends BaseService {
      * Computes the next scheduled execution of the given trigger
      * @param triggerId the ID of the scheduled mailing list trigger to execute
      */
-    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void computeNextScheduledExecution(Integer triggerId) {
 
         MailingListTrigger trigger = getByPrimaryKey(MailingListTrigger.class, triggerId);
@@ -230,6 +224,7 @@ public class MailingListExecutionService extends BaseService {
      * @param trigger the scheduled mailing list trigger to execute
      * @param persist whether to persist the mails or not
      */
+    @Transactional
     public List<ScheduledMail> executeScheduledTrigger(MailingListTrigger trigger, boolean persist) throws Exception {
 
         if (trigger.getType() != TriggerType.SCHEDULED) {

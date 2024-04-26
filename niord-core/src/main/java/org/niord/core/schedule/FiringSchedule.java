@@ -21,10 +21,10 @@ import org.niord.core.message.MessageSeries;
 import org.niord.core.model.VersionedEntity;
 import org.niord.core.schedule.vo.FiringScheduleVo;
 
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToOne;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.validation.constraints.NotNull;
 import java.util.TimeZone;
 
 /**
@@ -72,7 +72,7 @@ public class FiringSchedule extends VersionedEntity<Integer> {
 
     /** Constructor */
     public FiringSchedule(FiringScheduleVo schedule) {
-        this.id = schedule.getId();
+        this.setId(schedule.getId());
         this.domain = new Domain(schedule.getDomain());
         this.targetDomain = new Domain(schedule.getTargetDomain());
         this.targetMessageSeries = new MessageSeries(schedule.getTargetSeriesId());
@@ -84,7 +84,7 @@ public class FiringSchedule extends VersionedEntity<Integer> {
     /** Converts this entity to a value object */
     public FiringScheduleVo toVo() {
         FiringScheduleVo schedule = new FiringScheduleVo();
-        schedule.setId(id);
+        schedule.setId(this.getId());
         schedule.setDomain(domain.toVo());
         schedule.setTargetDomain(targetDomain.toVo());
         schedule.setTargetSeriesId(targetMessageSeries.getSeriesId());

@@ -15,8 +15,8 @@
  */
 package org.niord.core.conf;
 
-import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.spi.InjectionPoint;
+import jakarta.enterprise.inject.Produces;
+import jakarta.enterprise.inject.spi.InjectionPoint;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.Map;

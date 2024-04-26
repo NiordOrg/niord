@@ -15,15 +15,15 @@
  */
 package org.niord.model.message;
 
-import io.swagger.annotations.ApiModel;
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 /**
  * Value object for the {@code Message} model entity
  */
-@ApiModel(value = "Message", description = "Main NW and NM message class")
+@Schema(name = "Message", description = "Main NW and NM message class")
 @XmlRootElement(name = "message")
 @XmlType(propOrder = {
         "messageSeries", "number", "shortId", "mainType", "type", "status",
@@ -191,7 +191,7 @@ public class MessageVo implements ILocalizable<MessageDescVo>, IJsonSerializable
 
     /*************************/
     /** Collection Handling **/
-    /*************************/
+    /***/
 
     public List<MessagePartVo> checkCreateParts() {
         if (parts == null) {

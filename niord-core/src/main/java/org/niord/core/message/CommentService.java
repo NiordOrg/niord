@@ -20,15 +20,17 @@ import org.niord.core.service.BaseService;
 import org.niord.core.user.User;
 import org.slf4j.Logger;
 
-import javax.ejb.Stateless;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.util.Date;
 import java.util.List;
 
 /**
  * Business interface for managing message comments
  */
-@Stateless
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class CommentService extends BaseService {
 
@@ -54,6 +56,7 @@ public class CommentService extends BaseService {
      * @param comment the comment template
      * @return the persisted message comment
      */
+    @Transactional
     public Comment createComment(Comment comment) {
         if (comment.getMessage() == null || comment.getUser() == null) {
             throw new IllegalArgumentException("Message or user not defined");
@@ -72,6 +75,7 @@ public class CommentService extends BaseService {
      * @param comment the comment to update
      * @return the updated message comment
      */
+    @Transactional
     public Comment updateComment(Comment comment) {
         Comment original = getByPrimaryKey(Comment.class, comment.getId());
         if (original == null) {
@@ -97,6 +101,7 @@ public class CommentService extends BaseService {
      * @param commentId the ID of the comment to acknowledge
      * @return the acknowledged message comment
      */
+    @Transactional
     public Comment acknowledgeComment(User user, Integer commentId) {
         if (user == null) {
             throw new IllegalArgumentException("User must be defined");

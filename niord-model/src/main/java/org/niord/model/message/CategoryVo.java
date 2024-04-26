@@ -15,20 +15,20 @@
  */
 package org.niord.model.message;
 
-import io.swagger.annotations.ApiModel;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.niord.model.DataFilter;
 import org.niord.model.IJsonSerializable;
 import org.niord.model.ILocalizable;
 
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.XmlAttribute;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.List;
 
 /**
  * Value object for the {@code Category} model entity
  */
-@ApiModel(value = "Category", description = "Hierarchical category model")
+@Schema(name = "Category", description = "Hierarchical category model")
 @XmlRootElement(name = "category")
 @XmlType(propOrder = {
         "mrn", "active", "parent", "descs"

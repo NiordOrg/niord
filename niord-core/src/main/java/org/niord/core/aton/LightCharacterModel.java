@@ -120,7 +120,7 @@ public class LightCharacterModel {
         }
 
         /*************************/
-        /** Getters and Setters **/
+    /** Getters and Setters **/
         /*************************/
 
         public String getPhase() {

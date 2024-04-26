@@ -17,25 +17,32 @@ package org.niord.core.settings;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.quarkus.arc.Lock;
+import io.quarkus.logging.Log;
+import io.quarkus.runtime.Startup;
+import io.quarkus.runtime.StartupEvent;
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.cache.CacheElement;
 import org.niord.core.service.BaseService;
 import org.niord.core.util.JsonUtils;
 import org.slf4j.Logger;
 
-import javax.annotation.PostConstruct;
-import javax.ejb.Lock;
-import javax.ejb.LockType;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.enterprise.inject.Produces;
-import javax.enterprise.inject.spi.InjectionPoint;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Produces;
+import jakarta.enterprise.inject.spi.InjectionPoint;
+import jakarta.enterprise.inject.spi.ObserverMethod;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -47,9 +54,7 @@ import static org.keycloak.util.JsonSerialization.mapper;
  * This bean can either be injected directly,
  * or the {@code @Setting} annotation can be used.
  */
-@Singleton
-@Lock(LockType.READ)
-@Startup
+@ApplicationScoped
 @SuppressWarnings("unused")
 public class SettingsService extends BaseService {
 
@@ -71,8 +76,11 @@ public class SettingsService extends BaseService {
      *
      * Lastly, persists all the loaded settings that do not already exists in the database.
      */
-    @PostConstruct
-    public void loadSettingsFromPropertiesFile() {
+    @Transactional
+    @Lock(Lock.Type.WRITE)
+    @Startup(ObserverMethod.DEFAULT_PRIORITY - 100)
+    void init() {
+        Log.info("Starting Initialization Settings");
         try {
             // Read the settings from the "/niord.json" classpath file
             Map<String, Setting> settingMap = loadSettingsFromClasspath();
@@ -99,22 +107,31 @@ public class SettingsService extends BaseService {
             // Stop the application starting up
             throw new RuntimeException("Error loading settings from niord.json", e);
         }
+        Log.info("Finished Initializing Settings");
     }
 
 
     /** Called upon startup. Read the settings from the "/niord.json" classpath file */
-    private Map<String, Setting> loadSettingsFromClasspath() throws IOException {
+    @Transactional
+    Map<String, Setting> loadSettingsFromClasspath() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
+        URL resource = getClass().getResource(SETTINGS_FILE);
+        Log.info("Loading config from file" + resource);
         List<Setting> settings = mapper.readValue(
                 getClass().getResource(SETTINGS_FILE),
                 new TypeReference<List<Setting>>(){});
+        for (Setting s : settings) {
+            Log.info("Loaded setting " + s.getKey() + " = " + s.getValue());
+        }
         return settings.stream()
                 .collect(Collectors.toMap(Setting::getKey, Function.identity()));
     }
 
 
     /** Called upon startup. Read the settings from the "${niord.home}/niord.json" file and update the settingMap */
-    private Map<String, Setting> loadSettingsFromNiordHome(Map<String, Setting> settingMap) throws IOException {
+    @Transactional
+    @Lock(Lock.Type.READ)
+    Map<String, Setting> loadSettingsFromNiordHome(Map<String, Setting> settingMap) throws IOException {
         log.info("loadSettingsFromNiordHome start");
 
         Object niordHome = peek("niord.home");
@@ -145,6 +162,8 @@ public class SettingsService extends BaseService {
      * Returns all settings that should be emitted to the web application
      * @return all settings that should be emitted to the web application
      */
+    @Transactional
+    @Lock(Lock.Type.READ)
     public List<Setting> getAllForWeb() {
         return em.createNamedQuery("Setting.findAllForWeb", Setting.class)
                 .getResultList();
@@ -154,6 +173,8 @@ public class SettingsService extends BaseService {
      * Returns all settings that are editable on the Settings admin page
      * @return all settings that are editable on the Settings admin page
      */
+    @Transactional
+    @Lock(Lock.Type.READ)
     public List<Setting> getAllEditable() {
         return em.createNamedQuery("Setting.findAllEditable", Setting.class)
                 .getResultList();
@@ -177,31 +198,40 @@ public class SettingsService extends BaseService {
      * @param setting the source
      * @return the associated value
      */
+    @Transactional
+    @Lock(Lock.Type.READ)
     public Object get(Setting setting) {
         Objects.requireNonNull(setting, "Must specify valid setting");
 
-        // If a corresponding system property is set, it takes precedence
+        // If a corresponding system or environment property is set, it takes precedence
         if (System.getProperty(setting.getKey()) != null) {
             return System.getProperty(setting.getKey());
+        }
+        if (System.getenv(setting.getKey()) != null) {
+            return System.getenv(setting.getKey());
         }
 
         // Look for a cached value
         CacheElement<Object> value = settingsCache.getCache().get(setting.getKey());
 
         // No cached value
-        if (value == null) {
-            Setting result = em.find(Setting.class, setting.getKey());
-            if (result == null) {
-                result = new Setting(setting);
-                em.persist(result);
-            }
-            value = new CacheElement<>(result.getValue());
+        try {
+            if (value == null) {
+                Setting result = em.find(Setting.class, setting.getKey());
+                if (result == null) {
+                    result = new Setting(setting);
+                    em.persist(result);
+                }
+                value = new CacheElement<>(result.getValue());
 
 
-            // Cache it.
-            if (setting.isCached()) {
-                settingsCache.getCache().put(setting.getKey(), value);
+                // Cache it.
+                if (setting.isCached()) {
+                    settingsCache.getCache().put(setting.getKey(), value);
+                }
             }
+        } catch (IllegalStateException ex) {
+            return "/";
         }
 
         // Check if we need to substitute with system properties. Only applies to String-based settings.
@@ -221,6 +251,8 @@ public class SettingsService extends BaseService {
      * @param key the setting key
      * @return the associated value
      */
+    @Transactional
+    @Lock(Lock.Type.READ)
     public Object peek(String key) {
         Objects.requireNonNull(key, "Must specify valid setting key");
 
@@ -228,6 +260,12 @@ public class SettingsService extends BaseService {
         if (System.getProperty(key) != null) {
             log.info(String.format("Peek system value. Property: %s has system value %s. Return", key, System.getProperty(key).toString()));
             return System.getProperty(key);
+        }
+        
+        // If a corresponding environment property is set, it takes precedence
+        if (System.getenv(key) != null) {
+            log.info(String.format("Peek Environment value. Property: %s has system value %s. Return", key, System.getenv(key).toString()));
+            return System.getenv(key);
         }
 
         Setting setting = em.find(Setting.class, key);
@@ -256,7 +294,11 @@ public class SettingsService extends BaseService {
     private String expandSettingValue(String value) {
         SettingValueExpander valueExpander = new SettingValueExpander(value);
         String token;
+        int liveLockControlCount = 500;
         while ((token = valueExpander.nextToken()) != null) {
+            if (liveLockControlCount--<0) {
+                throw new RuntimeException("Livelock encountered for key " + value);
+            }
             Object setting = peek(token);
             if (setting != null) {
                 valueExpander.replaceToken(token, setting.toString());
@@ -267,6 +309,14 @@ public class SettingsService extends BaseService {
                 valueExpander.replaceToken(token, sysProp);
                 continue;
             }
+
+            sysProp = System.getenv(token);
+            if (StringUtils.isNotBlank(sysProp)) {
+                valueExpander.replaceToken(token, sysProp);
+                continue;
+            }
+            
+            
             valueExpander.replaceToken(token, "");
         }
         return valueExpander.getValue();
@@ -278,7 +328,8 @@ public class SettingsService extends BaseService {
      * @param template the setting to update
      * @return the updated setting
      */
-    @Lock(LockType.WRITE)
+    @Lock(Lock.Type.WRITE)
+    @Transactional
     public Setting set(Setting template) {
         Setting setting = em.find(Setting.class, template.getKey());
         if (setting == null) {

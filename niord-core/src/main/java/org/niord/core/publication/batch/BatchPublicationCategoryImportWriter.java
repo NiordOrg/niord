@@ -20,20 +20,24 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.publication.PublicationCategory;
 import org.niord.core.publication.PublicationCategoryService;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import jakarta.transaction.Transactional;
 import java.util.List;
 
 /**
  * Persists the publication categories to the database
  */
-@Named
+@Dependent
+@Named("batchPublicationCategoryImportWriter")
 public class BatchPublicationCategoryImportWriter extends AbstractItemHandler {
 
     @Inject
     PublicationCategoryService publicationCategoryService;
 
     /** {@inheritDoc} **/
+    @Transactional
     @Override
     public void writeItems(List<Object> items) throws Exception {
         long t0 = System.currentTimeMillis();

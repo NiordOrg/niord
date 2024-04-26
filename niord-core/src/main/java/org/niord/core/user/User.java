@@ -15,20 +15,13 @@
  */
 package org.niord.core.user;
 
+import io.quarkus.oidc.runtime.OidcJwtCallerPrincipal;
 import org.apache.commons.lang.StringUtils;
-import org.keycloak.representations.AccessToken;
 import org.niord.core.mail.IMailable;
 import org.niord.core.model.VersionedEntity;
 import org.niord.core.user.vo.UserVo;
 
-import javax.persistence.Cacheable;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Index;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
-import javax.persistence.Transient;
+import jakarta.persistence.*;
 
 /**
  * Implementation of a user entity
@@ -69,8 +62,8 @@ public class User extends VersionedEntity<Integer> implements IMailable {
 
 
     /** Constructor **/
-    public User(AccessToken token) {
-        copyToken(token);
+    public User(OidcJwtCallerPrincipal principal) {
+        copyToken(principal);
     }
 
 
@@ -81,21 +74,21 @@ public class User extends VersionedEntity<Integer> implements IMailable {
 
 
     /** Copies the access token user values into this entity */
-    public void copyToken(AccessToken token) {
-        setUsername(token.getPreferredUsername());
-        setFirstName(token.getGivenName());
-        setLastName(token.getFamilyName());
-        setEmail(token.getEmail());
+    public void copyToken(OidcJwtCallerPrincipal principal) {
+        setUsername(principal.getName());
+        setFirstName(principal.getClaim("given_name"));
+        setLastName(principal.getClaim("family_name"));
+        setEmail(principal.getClaim("email"));
         //setLanguage(token.getLocale()); // NB: Keycloak locale not currently used
     }
 
 
     /** Returns if the user data has changed **/
-    public boolean userChanged(AccessToken token) {
-        return !StringUtils.equals(username, token.getPreferredUsername()) ||
-                !StringUtils.equals(firstName, token.getGivenName()) ||
-                !StringUtils.equals(lastName, token.getFamilyName()) ||
-                !StringUtils.equals(email, token.getEmail());
+    public boolean userChanged(OidcJwtCallerPrincipal principal) {
+        return !StringUtils.equals(username, principal.getName()) ||
+                !StringUtils.equals(firstName, principal.getClaim("given_name")) ||
+                !StringUtils.equals(lastName, principal.getClaim("family_name")) ||
+                !StringUtils.equals(email, principal.getClaim("email"));
                 //!StringUtils.equals(language, token.getLocale()); // NB: Keycloak locale not currently used
     }
 

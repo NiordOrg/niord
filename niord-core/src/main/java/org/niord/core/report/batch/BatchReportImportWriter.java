@@ -20,14 +20,16 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.report.FmReport;
 import org.niord.core.report.FmReportService;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.util.List;
 
 /**
  * Persists the reports to the database
  */
-@Named
+@Dependent
+@Named("batchReportImportWriter")
 public class BatchReportImportWriter extends AbstractItemHandler {
 
     @Inject

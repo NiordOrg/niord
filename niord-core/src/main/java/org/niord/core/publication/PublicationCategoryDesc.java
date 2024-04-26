@@ -20,14 +20,17 @@ import org.niord.core.model.DescEntity;
 import org.niord.model.publication.PublicationCategoryDescVo;
 import org.niord.model.ILocalizedDesc;
 
-import javax.persistence.Entity;
-import javax.validation.constraints.NotNull;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * Localized contents for the PublicationCategory entity
  */
 @Entity
 @SuppressWarnings("unused")
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "lang", "entity_id" }))
 public class PublicationCategoryDesc extends DescEntity<PublicationCategory> {
 
     @NotNull

@@ -19,9 +19,9 @@ import org.niord.core.promulgation.vo.SafetyNetAreaVo.SafetyNetCoastalAreaVo;
 import org.niord.model.DataFilter;
 import org.niord.model.message.Type;
 
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 
 /**
  * Used for defining a coastal SafetyNET distribution area.

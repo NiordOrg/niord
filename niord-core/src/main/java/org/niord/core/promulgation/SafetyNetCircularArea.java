@@ -19,7 +19,7 @@ import org.niord.core.promulgation.vo.SafetyNetAreaVo.SafetyNetCircularAreaVo;
 import org.niord.model.DataFilter;
 import org.niord.model.message.Type;
 
-import javax.persistence.Entity;
+import jakarta.persistence.Entity;
 
 /**
  * Used for defining a circular SafetyNET distribution area.

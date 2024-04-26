@@ -32,8 +32,9 @@ import org.niord.core.settings.Setting;
 import org.niord.core.settings.SettingsService;
 import org.niord.model.message.Status;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,7 +43,8 @@ import java.util.List;
  * <p>
  * Messages are always imported with the status "DRAFT" and may never be used to update existing messages.
  */
-@Named
+@Dependent
+@Named("batchMessageImportProcessor")
 public class BatchMessageImportProcessor extends AbstractItemHandler {
 
     private static final Setting DEFAULT_SERIES_ID = new Setting("batchMessageSeriesId")

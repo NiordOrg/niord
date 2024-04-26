@@ -18,15 +18,17 @@ package org.niord.core.batch.script;
 import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.settings.SettingsService;
 
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import java.util.List;
 import java.util.logging.Level;
 
 /**
  * Updates the values of the settings
  */
-@Named
+@Dependent
+@Named("batchScriptExecutorWriter")
 public class BatchScriptExecutorWriter extends AbstractItemHandler {
 
     @Inject

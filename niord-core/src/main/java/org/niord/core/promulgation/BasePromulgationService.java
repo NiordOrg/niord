@@ -16,36 +16,33 @@
 
 package org.niord.core.promulgation;
 
+import io.quarkus.runtime.StartupEvent;
 import org.niord.core.NiordApp;
-import org.niord.core.domain.DomainService;
 import org.niord.core.message.Message;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.promulgation.vo.BaseMessagePromulgationVo;
 import org.niord.core.service.BaseService;
 import org.slf4j.Logger;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
+import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
 
 /**
  * Base class for the different types of promulgation services, such as NavtexPromulgationService, etc.
  * <p>
- * NB: Subclasses must annotated with @Singleton and @Startup to properly register the promulgation service
- *     with the PromulgationManager
+ * NB: Subclasses must annotated with @ApplicationContext and handle @Observes StartupEvent events to
+ *     properly register the promulgation service with the PromulgationManager
  */
 public abstract class BasePromulgationService extends BaseService {
 
     @Inject
-    Logger log;
+    public Logger log;
 
     @Inject
-    PromulgationManager promulgationManager;
+    public PromulgationManager promulgationManager;
 
     @Inject
-    DomainService domainService;
-
-    @Inject
-    NiordApp app;
+    public NiordApp app;
 
 
     /***************************************/
@@ -56,8 +53,7 @@ public abstract class BasePromulgationService extends BaseService {
     /**
      * Registers the promulgation service with the promulgation manager
      */
-    @PostConstruct
-    public void init() {
+    public void init(@Observes StartupEvent ev) {
         promulgationManager.registerPromulgationService(this);
     }
 

@@ -22,8 +22,8 @@ import org.infinispan.util.concurrent.IsolationLevel;
 import org.niord.core.cache.BaseCache;
 import org.slf4j.Logger;
 
-import javax.ejb.Singleton;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.net.URL;
 
 /**
@@ -38,8 +38,8 @@ import java.net.URL;
  * be used to wrap the original data source.
  * The content is only loaded once and then cached in this cache.
  */
-@Singleton
-public class MailAttachmentCache extends BaseCache<URL, CachedUrlData> {
+@ApplicationScoped
+public class    MailAttachmentCache extends BaseCache<URL, CachedUrlData> {
 
     final static long LIFESPAN = 5 * 60 * 1000; // 5 minutes
     final static String CACHE_ID = "mailAttachmentCache";

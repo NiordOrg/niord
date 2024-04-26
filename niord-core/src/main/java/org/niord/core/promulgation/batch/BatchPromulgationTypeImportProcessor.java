@@ -20,12 +20,14 @@ import org.niord.core.batch.AbstractItemHandler;
 import org.niord.core.promulgation.PromulgationType;
 import org.niord.core.promulgation.vo.PromulgationTypeVo;
 
-import javax.inject.Named;
+import jakarta.enterprise.context.Dependent;
+import jakarta.inject.Named;
 
 /**
  * Converts the promulgation type value object into a promulgation type entity template
  */
-@Named
+@Dependent
+@Named("batchPromulgationTypeImportProcessor")
 public class BatchPromulgationTypeImportProcessor extends AbstractItemHandler {
 
     /** {@inheritDoc} **/
