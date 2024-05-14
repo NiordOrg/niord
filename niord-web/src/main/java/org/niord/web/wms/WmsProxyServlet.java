@@ -119,8 +119,7 @@ public class WmsProxyServlet extends HttpServlet {
         WebUtils.cache(response, CACHE_TIMEOUT);
 
         // Check that the WMS provider has been defined using system properties
-        if (StringUtils.isBlank(wmsProvider) ||
-                StringUtils.isBlank(wmsPassword)) {
+        if (StringUtils.isBlank(wmsProvider)) {
             response.sendRedirect(BLANK_IMAGE);
             return;
         }
@@ -132,14 +131,16 @@ public class WmsProxyServlet extends HttpServlet {
                 .filter(p -> StringUtils.isBlank(wmsLayers) || !"layers".equalsIgnoreCase(p.getKey()))
                 .map(p -> String.format("%s=%s", p.getKey(), p.getValue()[0]))
                 .collect(Collectors.joining("&"));
-        params += String.format("&TOKEN=%s", wmsPassword);
+        if (!StringUtils.isBlank(wmsPassword)) {
+            params += String.format("&TOKEN=%s", wmsPassword);
+        }
         if (StringUtils.isNotBlank(wmsLayers)) {
             params += String.format("&LAYERS=%s", wmsLayers);
         }
 
         String url = wmsProvider + "?" + params;
+        
         log.trace("Loading image " + url);
-
         try {
             URL urlUrl = new URL(url);
             URLConnection con = urlUrl.openConnection();
