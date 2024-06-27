@@ -180,6 +180,7 @@
         <module>niord-model</module>
         <module>niord-core</module>
         <module>niord-s124</module>   
+        <module>niord-s124-madame</module>   
         <module>niord-web</module>
     </modules>
 

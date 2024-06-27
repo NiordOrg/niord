@@ -15,6 +15,13 @@
  */
 package org.niord.core.message.vo;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageTokenExpander;
@@ -24,13 +31,6 @@ import org.niord.core.util.UidUtils;
 import org.niord.model.message.MessagePartType;
 import org.niord.model.message.MessagePartVo;
 import org.niord.model.message.MessageVo;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Extends the {@linkplain MessageVo} model with system-specific fields and attributes.
@@ -308,6 +308,7 @@ public class SystemMessageVo extends MessageVo implements IRepoBackedVo {
     }
 
     public void setPromulgations(List<BaseMessagePromulgationVo> promulgations) {
+        List.copyOf(promulgations); // checks for null
         this.promulgations = promulgations;
     }
 }

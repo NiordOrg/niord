@@ -38,6 +38,12 @@
             <version>${project.version}</version>
         </dependency>
         
+        <dependency>
+            <groupId>org.niord.base</groupId>
+            <artifactId>niord-base-s124-madame</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
                 <dependency>
             <groupId>org.niord.base</groupId>
             <artifactId>niord-base-josm-seachart</artifactId>

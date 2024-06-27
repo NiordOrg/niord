@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.niord.s124;
+package org.niord.s124madame;
 
 import java.io.InputStream;
 import java.io.StringReader;
@@ -56,7 +56,7 @@ import jakarta.ws.rs.core.Response;
  */
 @ApplicationScoped
 @Transactional
-@Path("/S-124")
+@Path("/S-124-MaDaMe")
 public class S124RestService {
 
     @Inject
@@ -70,8 +70,7 @@ public class S124RestService {
      */
     @GET
     @Path("/messages/{messageId}")
-    @Operation(description = "Returns S-124 GML representation for the message. " +
-            "NB: Only use this service for test purposes, not for production.")
+    @Operation(description = "Returns S-124 GML representation for the message.")
     @APIResponse(
             responseCode = "200",
             content = @Content(
