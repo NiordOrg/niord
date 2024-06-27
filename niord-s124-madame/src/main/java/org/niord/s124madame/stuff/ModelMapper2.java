@@ -22,7 +22,7 @@ package org.niord.s124madame.stuff;
 public class ModelMapper2 {
 
     private final net.opengis.gml._3.ObjectFactory gmlObjectFactory = new net.opengis.gml._3.ObjectFactory();
-    private final _int.iho.s125.s100.gml.base._5_0.ObjectFactory s100ObjectFactory = new _int.iho.s125.s100.gml.base._5_0.ObjectFactory();
+    private final _int.iho.s124.s100.gml.base._5_0.ObjectFactory s100ObjectFactory = new _int.iho.s124.s100.gml.base._5_0.ObjectFactory();
     private final _int.iho.s124._1.ObjectFactory s124ObjectFactory = new _int.iho.s124._1.ObjectFactory();
 
 }
