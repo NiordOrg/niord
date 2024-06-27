@@ -65,7 +65,7 @@ import _int.iho.s124.s100.gml.profiles._5_0.impl.PosImpl;
 public class MyMapper {
 
     private static final net.opengis.gml._3.ObjectFactory gmlObjectFactory = new net.opengis.gml._3.ObjectFactory();
-    private static final _int.iho.s125.s100.gml.base._5_0.ObjectFactory s100ObjectFactory = new _int.iho.s125.s100.gml.base._5_0.ObjectFactory();
+    private static final _int.iho.s124.s100.gml.base._5_0.ObjectFactory s100ObjectFactory = new _int.iho.s124.s100.gml.base._5_0.ObjectFactory();
     private static final _int.iho.s124._1.ObjectFactory s124ObjectFactory = new _int.iho.s124._1.ObjectFactory();
 
     _int.iho.s124.s100.gml.profiles._5_0.ObjectFactory profileFactory = new _int.iho.s124.s100.gml.profiles._5_0.ObjectFactory();
