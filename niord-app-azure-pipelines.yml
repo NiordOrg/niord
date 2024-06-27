@@ -28,7 +28,7 @@ stages:
           displayName: Clone baleen repo
           inputs:
             targetType: 'inline'
-            script: 'git clone -b master https://github.com/dma-dk/baleen.git'
+            script: 'git clone -b main https://github.com/dma-dk/baleen.git'
         
         - task: Maven@3
           displayName: 'Build Baleen'
