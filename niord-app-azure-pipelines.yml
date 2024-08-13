@@ -43,7 +43,7 @@ stages:
           displayName: Clone niord-dk repo
           inputs:
             targetType: 'inline'
-            script: 'git clone -b $(niord-wildfly-branch) https://github.com/NiordOrg/niord-dk.git'
+            script: 'git clone -b $(niord-dk-branch-name) https://github.com/NiordOrg/niord-dk.git'
         
         - task: Maven@3
           displayName: 'Build niord-dk'
