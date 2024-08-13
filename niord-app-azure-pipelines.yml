@@ -1,6 +1,5 @@
 variables:
   maven-version: "3.8.6"
-  niord-dk-branch-name: "quarkus-upgrade"
 
 stages:
   - stage: Build_niord
