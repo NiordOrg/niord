@@ -15,12 +15,20 @@
  */
 package org.niord.core.message;
 
-import dev.turingcomplete.quarkussimplifiedasync.core.Async;
-import io.quarkus.arc.Lock;
-import io.quarkus.runtime.StartupEvent;
-import io.quarkus.scheduler.Scheduled;
-import io.vertx.core.Future;
-import jakarta.annotation.PreDestroy;
+import static org.niord.core.settings.Setting.Type.Boolean;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -28,12 +36,20 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.document.StringField;
-import org.apache.lucene.index.*;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexOptions;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
-import org.apache.lucene.search.*;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.niord.core.NiordApp;
@@ -48,19 +64,17 @@ import org.niord.core.util.TextUtils;
 import org.niord.model.message.Status;
 import org.slf4j.Logger;
 
+import dev.turingcomplete.quarkussimplifiedasync.core.Async;
+import io.quarkus.arc.Lock;
+import io.quarkus.runtime.StartupEvent;
+import io.quarkus.scheduler.Scheduled;
+import io.vertx.core.Future;
+import jakarta.annotation.PreDestroy;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.control.ActivateRequestContext;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Timer;
-import java.util.*;
-import java.util.concurrent.locks.ReentrantLock;
-
-import static org.niord.core.settings.Setting.Type.Boolean;
 
 /**
  * A Lucene index used for free-text searching all messages.
@@ -444,6 +458,8 @@ public class MessageLuceneIndex extends BaseService {
         } finally {
             closeWriter(writer);
         }
+        log.info(String.format("Lucene index deleted, lastUpdated is %s", getLastUpdated().toString()));
+
     }
 
 
@@ -492,6 +508,7 @@ public class MessageLuceneIndex extends BaseService {
         try {
             // Find all messages changed since the lastUpdated time stamp
             List<Message> updatedMessages = findUpdatedMessages(lastUpdated, maxIndexCount);
+            log.debug(String.format("Found %d messages to index", updatedMessages.size()));
             if (updatedMessages.size() == 0) {
                 return 0;
             }

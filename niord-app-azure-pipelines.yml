@@ -1,6 +1,5 @@
 variables:
   maven-version: "3.8.6"
-  niord-dk-branch-name: "quarkus-upgrade"
 
 stages:
   - stage: Build_niord
@@ -66,7 +65,7 @@ stages:
           displayName: Clone niord-dk repo
           inputs:
             targetType: 'inline'
-            script: 'git clone -b master https://github.com/NiordOrg/niord-dk.git'
+            script: 'git clone -b $(niord-dk-branch-name) https://github.com/NiordOrg/niord-dk.git'
         
         - task: Maven@3
           displayName: 'Build niord-dk'

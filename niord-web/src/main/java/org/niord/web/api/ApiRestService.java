@@ -15,9 +15,18 @@
  */
 package org.niord.web.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.xml.transform.Result;
+import javax.xml.transform.stream.StreamResult;
+
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
@@ -38,22 +47,24 @@ import org.niord.model.message.MainType;
 import org.niord.model.message.MessageVo;
 import org.niord.model.publication.PublicationVo;
 import org.niord.model.search.PagedSearchResultVo;
+import org.slf4j.Logger;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.StreamingOutput;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.SchemaOutputResolver;
-import javax.xml.transform.Result;
-import javax.xml.transform.stream.StreamResult;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * A public REST API for accessing message and publications Niord data.
@@ -70,6 +81,9 @@ import java.util.stream.Collectors;
 @Transactional
 @SuppressWarnings("unused")
 public class ApiRestService extends AbstractApiService {
+
+    @Inject
+    Logger log;
 
     /**
      * The format to use for dates in generated JSON
@@ -131,6 +145,18 @@ public class ApiRestService extends AbstractApiService {
             @QueryParam("dateFormat") @DefaultValue("UNIX_EPOCH") JsonDateFormat dateFormat
 
     ) throws Exception {
+        log.debug("Messages-Params Request parameters: " +
+                "lang={}, domain={}, messageSeries={}, publication={}, " +
+                "areaId={}, mainType={}, wkt={}, externalize={}, dateFormat={}",
+                language,
+                domainIds,
+                messageSeries,
+                publicationIds,
+                areaIds,
+                mainTypes,
+                wkt,
+                externalize,
+                dateFormat);
 
         // Perform the search
         PagedSearchResultVo<Message> searchResult =
@@ -356,7 +382,7 @@ public class ApiRestService extends AbstractApiService {
         // Serialize directly to JSON string and build the response
         // We used to do StreamingOutput but Quarkus doesn't support it
         String json = om.writeValueAsString(publications);
-        
+
         return Response
                 .ok(json, MediaType.APPLICATION_JSON_TYPE.withCharset("utf-8"))
                 .build();
