@@ -14,20 +14,6 @@
     <packaging>jar</packaging>
     <name>Niord-Base S-124 Library</name>
 
-    <repositories>
-        <repository>
-            <id>github-snapshots</id>
-            <name>GitHub Baleen</name>
-            <url>https://maven.pkg.github.com/dma-dk/baleen</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-    </repositories>
-
     <dependencies>
 
         <dependency>
@@ -36,11 +22,11 @@
             <version>${project.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>dk.dma.baleen</groupId>
-            <artifactId>baleen-s124</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
+<dependency>
+    <groupId>dk.dma.baleen</groupId>
+    <artifactId>baleen-s124-xml-bindings</artifactId>
+    <version>1.0-SNAPSHOT</version>
+</dependency>
 
     </dependencies>
 
