@@ -138,6 +138,20 @@ public class S124RestService {
         }
     }
 
+    @GET
+    @Path("/messages/{messageId}")
+    @Operation(description = "Returns S-124 GML representation for the message. " +
+            "NB: Only use this service for test purposes, not for production.")
+    @APIResponse(
+            responseCode = "200",
+            content = @Content(
+                    mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = String.class)
+            )
+    )
+    public String s124MessageDetails() {
+        return "Foo";
+}
 
     /**
      * {@inheritDoc}

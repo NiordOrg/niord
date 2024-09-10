@@ -28,28 +28,41 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
+import org.niord.core.geojson.Feature;
 import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.geojson.GeoJsonUtils;
+import org.niord.core.message.DateInterval;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageDesc;
 import org.niord.core.message.MessagePart;
+import org.niord.core.message.MessagePartDesc;
 import org.niord.core.message.Reference;
+import org.niord.core.model.DescEntity;
 import org.niord.model.message.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import _int.iho.s124._1.Dataset;
 import _int.iho.s124._1.Dataset.Members;
+import _int.iho.s124._1.DateEndType;
+import _int.iho.s124._1.DateStartType;
+import _int.iho.s124._1.FixedDateRangeType;
 import _int.iho.s124._1.MessageSeriesIdentifierType;
 import _int.iho.s124._1.NAVWARNPart;
+import _int.iho.s124._1.NAVWARNPart.Geometry;
 import _int.iho.s124._1.NAVWARNPreamble;
 import _int.iho.s124._1.NAVWARNTitleType;
 import _int.iho.s124._1.NavwarnTypeGeneralType;
 import _int.iho.s124._1.References;
+import _int.iho.s124._1.WarningInformationType;
 import _int.iho.s124._1.WarningTypeLabel;
 import _int.iho.s124._1.WarningTypeType;
 import _int.iho.s124._1.impl.DatasetImpl;
+import _int.iho.s124.s100.gml.base._5_0.CurveProperty;
 import _int.iho.s124.s100.gml.base._5_0.DataSetIdentificationType;
+import _int.iho.s124.s100.gml.base._5_0.PointProperty;
+import _int.iho.s124.s100.gml.base._5_0.S100SpatialAttributeType;
+import _int.iho.s124.s100.gml.base._5_0.SurfaceProperty;
 import _int.iho.s124.s100.gml.base._5_0.impl.DataSetIdentificationTypeImpl;
 import _int.iho.s124.s100.gml.profiles._5_0.BoundingShapeType;
 import _int.iho.s124.s100.gml.profiles._5_0.EnvelopeType;
@@ -68,17 +81,17 @@ public class MyMapper {
     private static final _int.iho.s124.s100.gml.base._5_0.ObjectFactory s100ObjectFactory = new _int.iho.s124.s100.gml.base._5_0.ObjectFactory();
     private static final _int.iho.s124._1.ObjectFactory s124ObjectFactory = new _int.iho.s124._1.ObjectFactory();
 
-    _int.iho.s124.s100.gml.profiles._5_0.ObjectFactory profileFactory = new _int.iho.s124.s100.gml.profiles._5_0.ObjectFactory();
-
-    private int nextGeomId = 1;
+    String country = "DK";
 
     String lang;
 
-    String country = "DK";
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
+
+    private int nextGeomId = 1;
 
     String productionAgency = "Danish Maritime Authorities";
 
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+    _int.iho.s124.s100.gml.profiles._5_0.ObjectFactory profileFactory = new _int.iho.s124.s100.gml.profiles._5_0.ObjectFactory();
 
     /**
      * For easy generation of the bounding shapes for the Dataset or individual features, we are using this function.
@@ -156,20 +169,23 @@ public class MyMapper {
         Members members = s124ObjectFactory.createDatasetMembers();
         ds.setMembers(members);
 
-        NAVWARNPreamble preamble = toNAVWARNPreamble(message);
+        NAVWARNPreamble preamble = toDataModelNAVWARNPreamble(message);
         members.getNAVWARNPreamblesAndReferencesAndNAVWARNParts().add(preamble);
 
-        List<NAVWARNPart> parts = getParts(message);
+        List<NAVWARNPart> parts = new ArrayList<>();
+        for (MessagePart p : message.getParts()) {
+            parts.add(toDataModelNAVWARNPart(message, p));
+        }
 
         parts.forEach(p -> {
             members.getNAVWARNPreamblesAndReferencesAndNAVWARNParts().add(p);
             ReferenceType rt = profileFactory.createReferenceType();
             rt.setHref("#" + preamble.getId());
-            //Reres124ObjectFactory.createFeatureReferenceType();
+            // Reres124ObjectFactory.createFeatureReferenceType();
             p.setHeader(rt);
         });
 
-        List<References> references = toReferences(message);
+        List<References> references = toDataModelReferences(message);
 
 //        p.getTheReferences().
         // References
@@ -177,22 +193,151 @@ public class MyMapper {
         return ds;
     }
 
-    private List<NAVWARNPart> getParts(Message message) {
-        List<NAVWARNPart> parts = new ArrayList<>();
-        for (MessagePart p : message.getParts()) {
-            FeatureCollection fc = p.getGeometry();
-            if (fc != null && !fc.getFeatures().isEmpty()) {
-                NAVWARNPart part = s124ObjectFactory.createNAVWARNPart();
-
-//                ReferencesType
-//                parts.add(part);
-            }
-        }
-        return parts;
-    }
-
     private String nextGeomId(String id) {
         return String.format("G.%s.%d", id, nextGeomId++);
+    }
+
+    private boolean showDesc(DescEntity<?> de) {
+        return de.getLang().equals("en");
+    }
+
+    private NAVWARNPart toDataModelNAVWARNPart(Message message, MessagePart messagePart) {
+        NAVWARNPart part = s124ObjectFactory.createNAVWARNPart();
+
+        // From AbstractGMLType
+        part.setId(toMrn(message) + "." + messagePart.getIndexNo());
+
+        // From AbstractFeatureType
+        part.setBoundedBy(S125DatasetBuilder.generateBoundingShape(messagePart));
+
+        /********************************* Complex Attributes *********************************/
+
+        /************ featureName: featureName[0..*] ************/
+
+        /************ featureReference: featureReference [0..*] ************/
+
+        /************ fixedDateRange: fixedDateRange [0..*] ************/
+
+        for (DateInterval di : messagePart.getEventDates()) {
+            FixedDateRangeType fdrt = toComplexFixedDateRange(di);
+            part.getFixedDateRanges().add(fdrt);
+        }
+
+        /************ warningInformation: WarningInformationType ************/
+        WarningInformationType wit = s124ObjectFactory.createWarningInformationType();
+
+        MessagePartDesc mpd = messagePart.getDesc("en");
+
+        // wit.setLanguage( "en"); //TODO fix
+        // wit.setText(asPlainText(partDesc.getDetails()));
+
+        part.setWarningInformation(wit);
+
+        /********************************* Spatial Attributes *********************************/
+
+        /************ geometry: Point, Curve, Surface [0..*] (ordered} ************/
+        FeatureCollection fc = messagePart.getGeometry();
+        if (fc != null && !fc.getFeatures().isEmpty()) {
+            for (Feature f : fc.getFeatures()) {
+                List<S100SpatialAttributeType> l = new GeometryS125Converter().geometryToS124PointCurveSurfaceGeometry(f.getGeometry());
+                for (S100SpatialAttributeType s : l) {
+                    Geometry geo = s124ObjectFactory.createNAVWARNPartGeometry();
+                    switch (s) {
+                    case SurfaceProperty sp -> geo.setSurfaceProperty(sp);
+                    case PointProperty sp -> geo.setPointProperty(sp);
+                    case CurveProperty sp -> geo.setCurveProperty(sp);
+                    default -> throw new UnsupportedOperationException("Cannot deal with " + s);
+                    }
+                    part.getGeometries().add(geo);
+                }
+
+            }
+        }
+
+        /********************************* Simple Attributes *********************************/
+
+        /************ restriction: NAVWARNPartRestrictionType 0..1] ************/
+        part.setRestriction(null);
+
+        return part;
+    }
+
+    private NAVWARNPreamble toDataModelNAVWARNPreamble(Message msg) {
+        NAVWARNPreamble p = s124ObjectFactory.createNAVWARNPreamble();
+
+        // From AbstractGMLType
+        p.setId(toMessageId(msg));
+
+        /********************************* Complex Types *********************************/
+
+        /************ affectedChartPublications: affectedChartPublications [0..*) ************/
+
+//        p.getAffectedChartPublications()
+        /************ generalArea: generalArea [1..*] (ordered) ************/
+
+//        if (msg.getAreas() != null) {
+//            for (Area a : msg.getAreas()) {
+//                a.getChildren()t
+//            }
+//        }
+//        msg.getAreas();
+//
+//        p.getGeneralAreas().
+
+        /************ locality: locality [0..*] (ordered} ************/
+
+        // p.getLocalities()
+
+        /************ messageSeriesidentifier: messageSeriesidentifier ************/
+        p.setMessageSeriesIdentifier(toMessageSeriesIdentifierType(msg));
+
+        /************ NAVWARNtitle: NAVWARNtitle [O..*] ************/
+        MessageDesc md = msg.getDesc(lang);
+        if (md != null && !StringUtils.isBlank(md.getTitle())) {
+            NAVWARNTitleType titleType = s124ObjectFactory.createNAVWARNTitleType();
+            titleType.setLanguage(lang(md.getLang()));
+            titleType.setText(md.getTitle());
+            p.setNAVWARNTitle(titleType);
+        }
+
+        /********************************* Simple Attributes *********************************/
+
+        /************ cancellationDate: dateTime 0..1] ************/
+        if (msg.getPublishDateTo() != null) {
+            p.setCancellationDate(toOtherLocalDateTime(msg.getPublishDateTo()));
+        }
+
+        /************ intService: Boolean ************/
+        // TODO, All but local warning?
+        p.setIntService(false);
+
+        /************ navwarnTypeGeneral: navwarnTypeGeneral ************/
+        NavwarnTypeGeneralType ngt = s124ObjectFactory.createNavwarnTypeGeneralType();
+        ngt.setCode("AAA");
+        ngt.setValue("BBB");
+        p.setNavwarnTypeGeneral(ngt);
+
+        /************ publicationTime: dateTime ************/
+        p.setPublicationTime(toOtherLocalDateTime(msg.getPublishDateFrom()));
+        return p;
+    }
+
+    private List<References> toDataModelReferences(Message message) {
+        List<References> result = new ArrayList<>();
+        List<Reference> references = message.getReferences();
+        if (references != null) {
+            for (Reference r : references) {
+                Message refMessage = r.getMessage();
+                if (refMessage.getMainType() == NW) {
+                    References gmlreferences = s124ObjectFactory.createReferences();
+                    gmlreferences.setId(String.format(toMessageId(refMessage)));
+                    gmlreferences.setNoMessageOnHand(false);
+                    gmlreferences.getMessageSeriesIdentifiers().add(toMessageSeriesIdentifierType(refMessage));
+                    result.add(gmlreferences);
+                }
+            }
+        }
+        return result;
     }
 
     private String toMessageId(Message msg) {
@@ -213,122 +358,96 @@ public class MyMapper {
         messageSeriesIdentifer.setYear(BigInteger.valueOf(refYear));
         messageSeriesIdentifer.setCountryName(country);
         messageSeriesIdentifer.setAgencyResponsibleForProduction(productionAgency);
+
+        // TODO maybe we need a proper name for the message series
         messageSeriesIdentifer.setNameOfSeries(message.getMessageSeries().getSeriesId());
 
         messageSeriesIdentifer.setWarningIdentifier(toMrn(message));
         messageSeriesIdentifer.setWarningNumber(BigInteger.valueOf(message.getNumber()));
-        messageSeriesIdentifer.setWarningType(toWarningTypeType(message.getType()));
+        messageSeriesIdentifer.setWarningType(toComplexTypeWarningTypeType(message.getType()));
 
         return messageSeriesIdentifer;
     }
 
-    private String toMrn(Message msg) {
-        String internalId = msg.getShortId() != null ? msg.getShortId() : msg.getId().toString();
-        return "urn:mrn:iho:" + msg.getMainType().name().toLowerCase() + ":dk:" + internalId.toLowerCase();
-    }
-
-    private NAVWARNPreamble toNAVWARNPreamble(Message msg) {
-        NAVWARNPreamble p = s124ObjectFactory.createNAVWARNPreamble();
-
-        p.setId(toMessageId(msg));
-
-        // TODO, All but local warning?
-        p.setIntService(false);
-
-        p.setMessageSeriesIdentifier(toMessageSeriesIdentifierType(msg));
-
-        MessageDesc md = msg.getDesc(lang);
-        if (md != null && !StringUtils.isBlank(md.getTitle())) {
-            NAVWARNTitleType titleType = s124ObjectFactory.createNAVWARNTitleType();
-            titleType.setLanguage(lang(md.getLang()));
-            titleType.setText(md.getTitle());
-            p.setNAVWARNTitle(titleType);
-        }
-
-        NavwarnTypeGeneralType ngt = s124ObjectFactory.createNavwarnTypeGeneralType();
-        ngt.setCode("AAA");
-        ngt.setValue("BBB");
-        p.setNavwarnTypeGeneral(ngt);
-
-        // Dates
-        if (msg.getPublishDateTo() != null) {
-            p.setCancellationDate(toLocalDateTime(msg.getPublishDateTo()));
-        }
-        p.setPublicationTime(toLocalDateTime(msg.getPublishDateFrom()));
-
-//        final int warningNumber = msg.getNumber() != null ? msg.getNumber() : -1;
-//        final int year = msg.getYear() != null ? msg.getYear() % 100 : 0;
-//        final Type type = msg.getType();
-//
-//        MessageSeriesIdentifierType messageSeriesIdentifierType = createMessageSeries(type, warningNumber, year, mrn, lang);
-//
-//        nwPreambleType.setMessageSeriesIdentifier(messageSeriesIdentifierType);
-//        nwPreambleType.setId("PR." + id);
-
-        // ---
-
-        // ---
-
-        // Set publication time
-
-        return p;
-    }
-
-    private String toPlainText(String string) {
+    private String toOtherPlainText(String string) {
         return isHtml(string) ? htmlToPlainText(string) : string;
     }
 
-    private List<References> toReferences(Message message) {
-        List<References> result = new ArrayList<>();
-        List<Reference> references = message.getReferences();
-        if (references != null) {
-            for (Reference r : references) {
-                Message refMessage = r.getMessage();
-                if (refMessage.getMainType() == NW) {
-                    References gmlreferences = s124ObjectFactory.createReferences();
-                    gmlreferences.setId(String.format(toMessageId(refMessage)));
-                    gmlreferences.setNoMessageOnHand(false);
-                    gmlreferences.getMessageSeriesIdentifiers().add(toMessageSeriesIdentifierType(refMessage));
-                    result.add(gmlreferences);
-                }
-            }
+    private FixedDateRangeType toComplexFixedDateRange(DateInterval type) {
+        FixedDateRangeType result = s124ObjectFactory.createFixedDateRangeType();
+
+        // We only exports the actual dates, so we ignore type.getAllDay.
+        Date fromDate = type.getFromDate();
+        Date toDate = type.getFromDate();
+
+        if (fromDate != null) {
+            DateStartType dst = s124ObjectFactory.createDateStartType();
+            dst.setDate(fromDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+            result.setDateStart(dst);
+        }
+
+        if (toDate != null) {
+            DateEndType det = s124ObjectFactory.createDateEndType();
+            det.setDate(toDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+            result.setDateEnd(det);
         }
         return result;
     }
 
-    private WarningTypeType toWarningTypeType(Type type) {
-        WarningTypeType wtt = s124ObjectFactory.createWarningTypeType();
-
+    private WarningTypeType toComplexTypeWarningTypeType(Type type) {
+        WarningTypeType result = s124ObjectFactory.createWarningTypeType();
         switch (type) {
         case LOCAL_WARNING:
-            wtt.setValue(WarningTypeLabel.LOCAL_NAVIGATIONAL_WARNING);
-            wtt.setCode(BigInteger.valueOf(1));
+            result.setValue(WarningTypeLabel.LOCAL_NAVIGATIONAL_WARNING);
+            result.setCode(BigInteger.valueOf(1));
             break;
         case COASTAL_WARNING:
-            wtt.setValue(WarningTypeLabel.COASTAL_NAVIGATIONAL_WARNING);
-            wtt.setCode(BigInteger.valueOf(2));
+            result.setValue(WarningTypeLabel.COASTAL_NAVIGATIONAL_WARNING);
+            result.setCode(BigInteger.valueOf(2));
             break;
         case SUBAREA_WARNING:
-            wtt.setValue(WarningTypeLabel.SUB_AREA_NAVIGATIONAL_WARNING);
-            wtt.setCode(BigInteger.valueOf(3));
+            result.setValue(WarningTypeLabel.SUB_AREA_NAVIGATIONAL_WARNING);
+            result.setCode(BigInteger.valueOf(3));
             break;
         case NAVAREA_WARNING:
-            wtt.setValue(WarningTypeLabel.NAVAREA_NAVIGATIONAL_WARNING);
-            wtt.setCode(BigInteger.valueOf(4));
+            result.setValue(WarningTypeLabel.NAVAREA_NAVIGATIONAL_WARNING);
+            result.setCode(BigInteger.valueOf(4));
             break;
         default:
             log.warn("Messages of type {} not mapped.", type.name());
         }
-        return wtt;
+        return result;
     }
 
     public static Dataset map(S124DatasetInfo dataset, Message message) {
         return new MyMapper().map0(dataset, message);
     }
 
-    private static LocalDateTime toLocalDateTime(Date date) {
+    private static String toMrn(Message msg) {
+        String internalId = msg.getShortId() != null ? msg.getShortId() : msg.getId().toString();
+        return "urn:mrn:iho:" + msg.getMainType().name().toLowerCase() + ":dk:" + internalId.toLowerCase();
+    }
+
+    private static LocalDateTime toOtherLocalDateTime(Date date) {
         Instant instant = date.toInstant();
         return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 
     }
 }
+
+// Dates
+
+//final int warningNumber = msg.getNumber() != null ? msg.getNumber() : -1;
+//final int year = msg.getYear() != null ? msg.getYear() % 100 : 0;
+//final Type type = msg.getType();
+//
+//MessageSeriesIdentifierType messageSeriesIdentifierType = createMessageSeries(type, warningNumber, year, mrn, lang);
+//
+//nwPreambleType.setMessageSeriesIdentifier(messageSeriesIdentifierType);
+//nwPreambleType.setId("PR." + id);
+
+// ---
+
+// ---
+
+// Set publication time
