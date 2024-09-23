@@ -16,13 +16,24 @@
 
 package org.niord.web;
 
-import jakarta.annotation.security.PermitAll;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.niord.core.domain.Domain;
 import org.niord.core.domain.DomainService;
-import org.niord.core.message.*;
+import org.niord.core.message.Message;
+import org.niord.core.message.MessageIdMatch;
+import org.niord.core.message.MessageSearchParams;
+import org.niord.core.message.MessageSeries;
+import org.niord.core.message.MessageService;
+import org.niord.core.message.MessageTag;
+import org.niord.core.message.MessageTagService;
 import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.core.publication.PublicationService;
 import org.niord.core.user.UserService;
@@ -32,17 +43,17 @@ import org.niord.model.message.Status;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
 
+import jakarta.annotation.security.PermitAll;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * REST interface for searching messages.
@@ -51,7 +62,6 @@ import java.util.stream.Collectors;
 @RequestScoped
 @Transactional
 @PermitAll
-@SuppressWarnings("unused")
 public class MessageSearchRestService {
 
 

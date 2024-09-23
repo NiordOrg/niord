@@ -145,18 +145,18 @@ public class ApiRestService extends AbstractApiService {
             @QueryParam("dateFormat") @DefaultValue("UNIX_EPOCH") JsonDateFormat dateFormat
 
     ) throws Exception {
-        log.debug("Messages-Params Request parameters: " +
-                "lang={}, domain={}, messageSeries={}, publication={}, " +
-                "areaId={}, mainType={}, wkt={}, externalize={}, dateFormat={}",
-                language,
-                domainIds,
-                messageSeries,
-                publicationIds,
-                areaIds,
-                mainTypes,
-                wkt,
-                externalize,
-                dateFormat);
+//        log.debug("Messages-Params Request parameters: " +
+//                "lang={}, domain={}, messageSeries={}, publication={}, " +
+//                "areaId={}, mainType={}, wkt={}, externalize={}, dateFormat={}",
+//                language,
+//                domainIds,
+//                messageSeries,
+//                publicationIds,
+//                areaIds,
+//                mainTypes,
+//                wkt,
+//                externalize,
+//                dateFormat);
 
         // Perform the search
         PagedSearchResultVo<Message> searchResult =
