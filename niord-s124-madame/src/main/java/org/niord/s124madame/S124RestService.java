@@ -96,7 +96,7 @@ public class S124RestService {
             // Pretty print the result
             result = prettyPrint(result);
 
-            log.info("Generated GML for message " + messageId + " in " + (System.currentTimeMillis() - t0) + " ms");
+           // log.info("Generated GML for message " + messageId + " in " + (System.currentTimeMillis() - t0) + " ms");
             return Response.ok(result)
                     .type("application/gml+xml;charset=UTF-8")
                     .build();
