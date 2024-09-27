@@ -136,10 +136,10 @@ public class MyMapper {
     private String lang(String lang) {
         switch (lang.toLowerCase()) {
         case "da":
-            return "dan";
+            return "da";
         case "en":
         default:
-            return "eng";
+            return "en";
         }
     }
 
