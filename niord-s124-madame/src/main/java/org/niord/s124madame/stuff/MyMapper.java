@@ -238,11 +238,11 @@ public class MyMapper {
         MessagePartDesc mpd = messagePart.getDesc("en");
 
         InformationType it = s124ObjectFactory.createInformationType();
-        it.setLanguage("en");
-        // htmlToPlainText(mpd.getDetails())
-        it.setText(sb.toString());
-
+        it.setLanguage(mpd.getLang());
+        it.setHeadline(mpd.getSubject());
+        it.setText(htmlToPlainText(mpd.getDetails()));
         wit.setInformation(it);
+
         part.setWarningInformation(wit);
 
         /********************************* Spatial Attributes *********************************/
