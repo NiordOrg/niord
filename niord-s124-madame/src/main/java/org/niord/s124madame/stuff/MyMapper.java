@@ -84,7 +84,7 @@ public class MyMapper {
 
     String country = "DK";
 
-    String lang="en";
+    String lang = "en";
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -227,11 +227,20 @@ public class MyMapper {
         /************ warningInformation: WarningInformationType ************/
         WarningInformationType wit = s124ObjectFactory.createWarningInformationType();
 
+        StringBuilder sb = new StringBuilder();
+
+        for (MessagePartDesc mpd : messagePart.getDescs()) {
+            sb.append("lan: ").append(mpd.getLang()).append("\n");
+            sb.append("sub: ").append(mpd.getSubject()).append("\n");
+            sb.append("det: ").append(mpd.getDetails()).append("\n");
+        }
+
         MessagePartDesc mpd = messagePart.getDesc("en");
 
         InformationType it = s124ObjectFactory.createInformationType();
         it.setLanguage("en");
-        it.setText(htmlToPlainText(mpd.getDetails()));
+        // htmlToPlainText(mpd.getDetails())
+        it.setText(sb.toString());
         part.setWarningInformation(wit);
 
         /********************************* Spatial Attributes *********************************/
