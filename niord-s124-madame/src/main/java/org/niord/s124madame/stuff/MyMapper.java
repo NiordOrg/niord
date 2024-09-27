@@ -47,6 +47,7 @@ import _int.iho.s124._1.Dataset.Members;
 import _int.iho.s124._1.DateEndType;
 import _int.iho.s124._1.DateStartType;
 import _int.iho.s124._1.FixedDateRangeType;
+import _int.iho.s124._1.InformationType;
 import _int.iho.s124._1.MessageSeriesIdentifierType;
 import _int.iho.s124._1.NAVWARNPart;
 import _int.iho.s124._1.NAVWARNPart.Geometry;
@@ -228,9 +229,9 @@ public class MyMapper {
 
         MessagePartDesc mpd = messagePart.getDesc("en");
 
-        // wit.setLanguage( "en"); //TODO fix
-        // wit.setText(asPlainText(partDesc.getDetails()));
-
+        InformationType it = s124ObjectFactory.createInformationType();
+        it.setLanguage("en");
+        it.setText(htmlToPlainText(mpd.getDetails()));
         part.setWarningInformation(wit);
 
         /********************************* Spatial Attributes *********************************/
