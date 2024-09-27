@@ -241,6 +241,8 @@ public class MyMapper {
         it.setLanguage("en");
         // htmlToPlainText(mpd.getDetails())
         it.setText(sb.toString());
+
+        wit.setInformation(it);
         part.setWarningInformation(wit);
 
         /********************************* Spatial Attributes *********************************/
