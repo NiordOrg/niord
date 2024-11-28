@@ -319,7 +319,7 @@ public class GeometryS125Converter {
     protected PosList coordinatesToGmlPosList(Coordinate[] coordinates) {
         // Translate the coordinates to a simple list of doubles (Y, X)
         List<Double> coords = Optional.ofNullable(coordinates).map(Arrays::asList).orElse(Collections.emptyList()).stream()
-                .map(c -> Arrays.asList(c.getX(), c.getY())).flatMap(List::stream).toList();
+                .map(c -> Arrays.asList(c.getY(), c.getX())).flatMap(List::stream).toList();
 
         // Then create the list and return
         PosList posList = new PosListImpl();
