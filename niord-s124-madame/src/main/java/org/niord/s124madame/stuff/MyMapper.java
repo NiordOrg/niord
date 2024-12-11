@@ -209,7 +209,7 @@ public class MyMapper {
         part.setId(toMrn(message) + "." + messagePart.getIndexNo());
 
         // From AbstractFeatureType
-        part.setBoundedBy(S125DatasetBuilder.generateBoundingShape(messagePart));
+        part.setBoundedBy(S124DatasetBuilder.generateBoundingShape(messagePart));
 
         /********************************* Complex Attributes *********************************/
 

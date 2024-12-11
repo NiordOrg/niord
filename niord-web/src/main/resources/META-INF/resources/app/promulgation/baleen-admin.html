@@ -1,4 +1,3 @@
-
 <div class="form-group">
     <label class="col-sm-4">Settings</label>
     <div class="col-sm-8">
@@ -6,7 +5,38 @@
         <button id="settingsBtn" class="btn btn-default btn-sm"
                 onclick="updateSettings()">Update Settings...</button>
 
+        <button id="promulgateActive" class="btn btn-default btn-sm"
+                onclick="openPromulgateDialog()">Promulgate All Active Warnings...</button>
+
         <script type="application/javascript">
+            // Opens the modal dialog for Promulgate All Active Warnings
+            function openPromulgateDialog() {
+                var scope = angular.element($("#promulgateActive")).scope();
+
+                scope.openDialog({
+                    templateUrl: 'baleen-promulgate.html', // New template for the promulgate modal
+                    controller: function ($scope, $uibModalInstance, $http) {
+                        $scope.promulgate = function () {
+                            var restUrl = '/rest/promulgation/baleen-settings/promulgateAll';
+                            $http.post(restUrl)
+                                .success(function (response) {
+                                    console.log("Promulgation of all active warnings was successful.");
+                                    $scope.$close('saved');
+                                })
+                                .error(function (error) {
+                                    console.log("Error during promulgation of all active warnings: ", error);
+                                    $scope.$close('error');
+                                });
+                        };
+
+                        $scope.close = function () {
+                            $uibModalInstance.dismiss('aborted');
+                        };
+                    },
+                    size: 'md'
+                });
+            }
+
             function updateSettings() {
                 var scope = angular.element($("#settingsBtn")).scope();
 
@@ -17,8 +47,9 @@
                         $scope.editMode = 'edit';
                         $scope.typeId = typeId;
                         $scope.settings = undefined;
-                        
-                        $scope.loadSettings =  function () {
+
+                        // Update the loadSettings function in the modal controller
+                        $scope.loadSettings = function () {
                             $scope.settings = undefined;
 
                             $http.get(restUrl + encodeURIComponent(typeId))
@@ -26,21 +57,23 @@
                                     $scope.settings = settings;
                                     $scope.editMode = 'edit';
                                     if (!$scope.settings) {
-                                        scope.addSettings();
+                                        $scope.addSettings(); // Changed from scope.addSettings
                                     }
                                 })
-                                .error(scope.addSettings)
+                                .error(function(error) {
+                                    $scope.addSettings(); // Changed from scope.addSettings
+                                });
                         };
 
-                        scope.close = function () {
+                        $scope.close = function () {
                             $scope.$close('saved');
                         };
 
-                        scope.addSettings = function () {
+                        $scope.addSettings = function () {
                             $scope.settings = {
                                 promulgationType: { typeId: typeId },
-                                accessToken : undefined,
-                                accessTokenSecret : undefined
+                                accessToken: undefined,
+                                accessTokenSecret: undefined
                             };
                             $scope.editMode = 'add';
                         };
@@ -48,10 +81,10 @@
                         $scope.saveSettings = function () {
                             if ($scope.editMode === 'add') {
                                 $http.post(restUrl, $scope.settings)
-                                    .success(scope.close);
+                                    .success($scope.close);
                             } else {
                                 $http.put(restUrl + encodeURIComponent(typeId), $scope.settings)
-                                    .success(scope.close);
+                                    .success($scope.close);
                             }
                         };
                         $scope.loadSettings();
@@ -67,20 +100,16 @@
     </div>
 </div>
 
+<!-- Existing baleen-settings.html for updating settings -->
 <script type="text/ng-template" id="baleen-settings.html">
     <div class="modal-header">
         <h4 class="modal-title">Baleen Settings</h4>
     </div>
     <div class="modal-body">
-
         <div class="container-fluid">
-
             <form class="form-horizontal" name="settingsForm" id="settingsForm">
-
                 <div class="row">
                     <div class="form-controls col-sm-12">
-
-
                         <div class="form-group">
                             <label class="col-sm-4">Server</label>
                             <div class="col-sm-8">
@@ -88,7 +117,6 @@
                                        ng-model="settings.accessToken"/>
                             </div>
                         </div>
-
                         <div class="form-group">
                             <label class="col-sm-4">Access Token</label>
                             <div class="col-sm-8">
@@ -98,14 +126,26 @@
                         </div>
                     </div>
                 </div>
-
             </form>
-
         </div>
     </div>
     <div class="modal-footer">
         <button class="btn btn-default" ng-click="$dismiss('aborted')">Close</button>
         <button class="btn btn-primary" ng-click="saveSettings()"
                 ng-disabled="settingsForm.$pristine || settingsForm.$invalid">Save Settings</button>
+    </div>
+</script>
+
+<!-- New baleen-promulgate.html for the promulgate action -->
+<script type="text/ng-template" id="baleen-promulgate.html">
+    <div class="modal-header">
+        <h4 class="modal-title">Promulgate All Active Warnings</h4>
+    </div>
+    <div class="modal-body">
+        <p>Are you sure you want to promulgate all active warnings?</p>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-default" ng-click="close()">Close</button>
+        <button class="btn btn-primary" ng-click="promulgate()">Promulgate</button>
     </div>
 </script>

@@ -35,7 +35,7 @@ import _int.iho.s124.s100.gml.profiles._5_0.impl.BoundingShapeTypeImpl;
 import _int.iho.s124.s100.gml.profiles._5_0.impl.EnvelopeTypeImpl;
 import _int.iho.s124.s100.gml.profiles._5_0.impl.PosImpl;
 
-public class S125DatasetBuilder {
+public class S124DatasetBuilder {
 
     /**
      * For easy generation of the bounding shapes for the dataset or individual features, we are using this function.
@@ -48,7 +48,7 @@ public class S125DatasetBuilder {
         // Calculate the bounding by envelope
         final Envelope envelope = new Envelope();
         FeatureCollection fc = p.getGeometry();
-        if (fc != null & fc.getFeatures() != null) {
+        if (fc != null && fc.getFeatures() != null) {
             for (Feature f : fc.getFeatures()) {
                 enclosingEnvelopeFromGeometry(envelope, f.getGeometry());
             }
@@ -84,7 +84,7 @@ public class S125DatasetBuilder {
         for (Message m : messages) {
             for (MessagePart p : m.getParts()) {
                 FeatureCollection fc = p.getGeometry();
-                if (fc != null & fc.getFeatures() != null) {
+                if (fc != null && fc.getFeatures() != null) {
                     for (Feature f : fc.getFeatures()) {
                         enclosingEnvelopeFromGeometry(envelope, f.getGeometry());
                     }

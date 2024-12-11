@@ -38,7 +38,6 @@ import jakarta.ws.rs.Produces;
 @Path("/promulgation/baleen-settings")
 @ApplicationScoped
 @RolesAllowed(Roles.SYSADMIN)
-@SuppressWarnings("unused")
 @Transactional
 public class BaleenSettingsRestService {
 
@@ -51,12 +50,10 @@ public class BaleenSettingsRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public BaleenSettingsVo getSettings(
-            @PathParam("typeId") String typeId) {
+    public BaleenSettingsVo getSettings(@PathParam("typeId") String typeId) {
         BaleenSettings settings = baleenPromulgationService.getSettings(typeId);
         return settings == null ? null : settings.toVo();
     }
-
 
     /** Creates new settings */
     @POST
@@ -65,12 +62,17 @@ public class BaleenSettingsRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public BaleenSettingsVo createSettings(
-            BaleenSettingsVo settings) throws Exception {
-
+    public BaleenSettingsVo createSettings(BaleenSettingsVo settings) throws Exception {
         return baleenPromulgationService.createSettings(new BaleenSettings(settings)).toVo();
     }
 
+    /** Promulgate All active messages */
+    @POST
+    @Path("/promulgateAll")
+    public void promulgateAll() throws Exception {
+        baleenPromulgationService.promulgateAll();
+        System.out.println("Promulgating all");
+    }
 
     /** Updates the credential for the given promulgation type */
     @PUT
@@ -79,9 +81,7 @@ public class BaleenSettingsRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
-    public BaleenSettingsVo updateSettings(
-            @PathParam("typeId") String typeId,
-            BaleenSettingsVo settings) throws Exception {
+    public BaleenSettingsVo updateSettings(@PathParam("typeId") String typeId, BaleenSettingsVo settings) throws Exception {
 
         return baleenPromulgationService.updateSettings(new BaleenSettings(settings)).toVo();
     }
