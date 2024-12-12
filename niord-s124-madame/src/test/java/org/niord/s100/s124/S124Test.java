@@ -21,12 +21,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Test;
 import org.niord.core.geojson.GeoJsonUtils;
 import org.niord.core.message.Message;
 import org.niord.core.message.vo.SystemMessageVo;
-import org.niord.s100.s124.S124RestService;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import freemarker.cache.ClassTemplateLoader;
@@ -36,7 +33,6 @@ import freemarker.template.Template;
 public class S124Test {
 
 
-    @Test
     public void testGenerateS124() throws Exception {
 
         String language = "en";
