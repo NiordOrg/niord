@@ -28,8 +28,8 @@ import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import java.util.List;
 import java.util.Objects;
@@ -85,6 +85,7 @@ public class NavtexPromulgationRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
+    @Transactional
     public List<NavtexTransmitterVo> getTransmitters(
             @PathParam("typeId") String typeId,
             @QueryParam("lang") @DefaultValue("en") String lang) {
@@ -124,6 +125,7 @@ public class NavtexPromulgationRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
+    @Transactional
     public NavtexTransmitterVo updateTransmitter(
             @PathParam("typeId") String typeId,
             @PathParam("name") String name,
