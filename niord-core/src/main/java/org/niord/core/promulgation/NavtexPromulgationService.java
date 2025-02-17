@@ -344,6 +344,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
 
     /** Returns the transmitter with the given name, or null if not found **/
+    @Transactional
     public NavtexTransmitter findTransmitterByName(String typeId, String name) {
         try {
             return em.createNamedQuery("NavtexTransmitter.findByName", NavtexTransmitter.class)
@@ -371,6 +372,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
      * @return all NAVTEX transmitters matching the given areas.
      */
     @SuppressWarnings("all")
+    @Transactional
     public List<NavtexTransmitter> findTransmittersByAreas(String typeId, List<Area> areas, boolean onlyActive) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
 
@@ -409,6 +411,7 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
 
     /** Returns all transmitters associated with the given NAVTEX promulgation type */
+    @Transactional
     public List<NavtexTransmitter> getTransmitters(String typeId) {
         return em.createNamedQuery("NavtexTransmitter.findByType", NavtexTransmitter.class)
                 .setParameter("typeId", typeId)
