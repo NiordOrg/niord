@@ -16,7 +16,13 @@
 
 package org.niord.core.promulgation;
 
-import io.quarkus.arc.Lock;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang.StringUtils;
 import org.niord.core.area.Area;
 import org.niord.core.db.CriteriaHelper;
@@ -35,12 +41,16 @@ import org.niord.core.util.TimeUtils;
 import org.niord.model.DataFilter;
 import org.niord.model.message.Status;
 
+import io.quarkus.arc.Lock;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.persistence.criteria.*;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import jakarta.transaction.Transactional;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Manages NAVTEX-via-mailing-lists promulgations
@@ -469,5 +479,5 @@ public class NavtexPromulgationService extends BasePromulgationService {
         return em.createQuery("SELECT m FROM NavtexMessagePromulgation m JOIN m.transmitters t WHERE t = :transmitter", NavtexMessagePromulgation.class)
                  .setParameter("transmitter", transmitter)
                  .getResultList();
-
+    }
 }
