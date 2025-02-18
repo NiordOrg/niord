@@ -452,10 +452,22 @@ public class NavtexPromulgationService extends BasePromulgationService {
 
         NavtexTransmitter original = findTransmitterByName(typeId, name);
         if (original != null) {
+            // Manually remove the transmitter from any references in NavtexMessagePromulgation
+            List<NavtexMessagePromulgation> messages = findMessagesByTransmitter(original);
+            for (NavtexMessagePromulgation message : messages) {
+                message.getTransmitters().remove(original);
+            }
+
+            // Now, remove the transmitter
             remove(original);
             return true;
         }
         return false;
     }
+
+    private List<NavtexMessagePromulgation> findMessagesByTransmitter(NavtexTransmitter transmitter) {
+        return em.createQuery("SELECT m FROM NavtexMessagePromulgation m JOIN m.transmitters t WHERE t = :transmitter", NavtexMessagePromulgation.class)
+                 .setParameter("transmitter", transmitter)
+                 .getResultList();
 
 }
