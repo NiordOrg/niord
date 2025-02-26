@@ -57,7 +57,7 @@ import jakarta.ws.rs.core.Response;
  */
 @ApplicationScoped
 @Transactional
-@Path("/S-124-MaDaMe")
+@Path("/S-124")
 public class S124RestService {
 
     @Inject
