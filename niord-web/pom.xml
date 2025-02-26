@@ -75,6 +75,13 @@
             <version>1.0.0</version> 
         </dependency>
 -->
+        <!-- WEBJARS support -->
+        <dependency>
+          <groupId>org.webjars.npm</groupId>
+          <artifactId>keycloak-js</artifactId>
+          <version>25.0.4</version>
+        </dependency>
+
     </dependencies>
 
 

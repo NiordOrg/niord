@@ -25,7 +25,6 @@ angular.module('niord.auth')
     .factory('authHttpInterceptor', ['$rootScope', '$q', 'AuthService',
         function($rootScope, $q, AuthService) {
             return {
-
                 'request': function(config) {
                     var deferred = $q.defer();
                     config.headers = config.headers || {};
@@ -35,12 +34,14 @@ angular.module('niord.auth')
                     }
 
                     if (AuthService.keycloak.token) {
-                        AuthService.keycloak.updateToken(60).success(function() {
-                            config.headers.Authorization = 'Bearer ' + AuthService.keycloak.token;
-                            deferred.resolve(config);
-                        }).error(function() {
-                            deferred.reject('Failed to refresh token');
-                        });
+                        AuthService.keycloak.updateToken(60)
+                            .then(function() {
+                                config.headers.Authorization = 'Bearer ' + AuthService.keycloak.token;
+                                deferred.resolve(config);
+                            })
+                            .catch(function() {
+                                deferred.reject('Failed to refresh token');
+                            });
                     } else {
                         // Not authenticated - leave it to the server to fail
                         deferred.resolve(config);
@@ -140,71 +141,70 @@ function bootstrapKeycloak(angularAppName, onLoad) {
     var keycloak = new Keycloak('/conf/keycloak.json');
     auth.loggedIn = false;
 
-    var initProps = {};
+    var initProps = {
+        checkLoginIframe: false
+    };
     if (onLoad) {
         initProps.onLoad = onLoad;
-        initProps.checkLoginIframe = false;
     }
 
-    keycloak.init(
-        initProps
-    ).success(function (authenticated) {
+    keycloak.init(initProps)
+        .then(function (authenticated) {
+            auth.loggedIn = authenticated;
+            auth.keycloak = keycloak;
 
-        auth.loggedIn = authenticated;
-        auth.keycloak = keycloak;
-
-        // Returns whether the current user has any roles defined for the given domain
-        auth.hasRolesFor = function (domainId) {
-            if (!keycloak.resourceAccess) {
-                return false;
-            }
-            var access = keycloak.resourceAccess[domainId];
-            return !!access && access.roles.length > 0;
-        };
-        
-        
-        // Performs a log-in and sets the return url to the given value
-        auth.login = function (returnUrl) {
-            var loginOpts = {};
-            if (returnUrl) {
-                loginOpts.redirectUri = returnUrl;
-            }
-            keycloak.login(loginOpts);
-        };
+            // Returns whether the current user has any roles defined for the given domain
+            auth.hasRolesFor = function (domainId) {
+                if (!keycloak.resourceAccess) {
+                    return false;
+                }
+                var access = keycloak.resourceAccess[domainId];
+                return !!access && access.roles.length > 0;
+            };
+            
+            
+            // Performs a log-in and sets the return url to the given value
+            auth.login = function (returnUrl) {
+                var loginOpts = {};
+                if (returnUrl) {
+                    loginOpts.redirectUri = returnUrl;
+                }
+                keycloak.login(loginOpts);
+            };
 
 
-        // Logs out Keycloak
-        auth.logout = function () {
-            keycloak.logout();
-            auth.loggedIn = false;
-        };
+            // Logs out Keycloak
+            auth.logout = function () {
+                keycloak.logout();
+                auth.loggedIn = false;
+            };
 
-        /** Returns the users full name, if defined, and otherwise the preferred username **/
-        auth.userName = function () {
-            if (keycloak.idTokenParsed) {
-                return keycloak.idTokenParsed.name
-                    || keycloak.idTokenParsed.preferred_username;
-            }
-            return undefined;
-        };
+            /** Returns the users full name, if defined, and otherwise the preferred username **/
+            auth.userName = function () {
+                if (keycloak.idTokenParsed) {
+                    return keycloak.idTokenParsed.name
+                        || keycloak.idTokenParsed.preferred_username;
+                }
+                return undefined;
+            };
 
-        /** Returns the preferred username **/
-        auth.preferredUsername = function () {
-            if (keycloak.idTokenParsed) {
-                return keycloak.idTokenParsed.preferred_username;
-            }
-            return undefined;
-        };
+            /** Returns the preferred username **/
+            auth.preferredUsername = function () {
+                if (keycloak.idTokenParsed) {
+                    return keycloak.idTokenParsed.preferred_username;
+                }
+                return undefined;
+            };
 
-        // Register the Auth factory
-        app.factory('AuthService', function() {
-            return auth;
+            // Register the Auth factory
+            app.factory('AuthService', function() {
+                return auth;
+            });
+
+            angular.bootstrap(document, [angularAppName]);
+
+        })
+        .catch(function () {
+            window.location.reload();
         });
-
-        angular.bootstrap(document, [ angularAppName ]);
-
-    }).error(function () {
-        window.location.reload();
-    });
-
 }

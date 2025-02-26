@@ -16,8 +16,12 @@
 
 package org.niord.core.promulgation;
 
-import jakarta.annotation.security.PermitAll;
-import jakarta.annotation.security.RolesAllowed;
+import static org.niord.core.promulgation.NavtexPromulgationService.NAVTEX_LINE_LENGTH;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -27,15 +31,22 @@ import org.niord.core.user.Roles;
 import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.*;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import static org.niord.core.promulgation.NavtexPromulgationService.NAVTEX_LINE_LENGTH;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
 
 /**
  * REST interface to managing NAVTEX transmitters
@@ -43,7 +54,6 @@ import static org.niord.core.promulgation.NavtexPromulgationService.NAVTEX_LINE_
 @Path("/promulgation/navtex")
 @ApplicationScoped
 @RolesAllowed(Roles.SYSADMIN)
-@SuppressWarnings("unused")
 public class NavtexPromulgationRestService {
 
     @Inject
@@ -85,6 +95,7 @@ public class NavtexPromulgationRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
+    @Transactional
     public List<NavtexTransmitterVo> getTransmitters(
             @PathParam("typeId") String typeId,
             @QueryParam("lang") @DefaultValue("en") String lang) {
@@ -103,6 +114,7 @@ public class NavtexPromulgationRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
+    @Transactional
     public NavtexTransmitterVo createTransmitter(
             @PathParam("typeId") String typeId,
             NavtexTransmitterVo transmitter) throws Exception {
@@ -124,6 +136,7 @@ public class NavtexPromulgationRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
+    @Transactional
     public NavtexTransmitterVo updateTransmitter(
             @PathParam("typeId") String typeId,
             @PathParam("name") String name,

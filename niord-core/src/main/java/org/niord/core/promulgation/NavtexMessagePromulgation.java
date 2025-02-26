@@ -16,8 +16,14 @@
 
 package org.niord.core.promulgation;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.niord.core.promulgation.vo.NavtexMessagePromulgationVo;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
@@ -26,17 +32,12 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToMany;
 import jakarta.validation.constraints.NotNull;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Defines the message promulgation entity associated with NAVTEX mailing list promulgations
  */
 @Entity
 @DiscriminatorValue(NavtexMessagePromulgation.SERVICE_ID)
-@SuppressWarnings("unused")
 public class NavtexMessagePromulgation
         extends BaseMessagePromulgation<NavtexMessagePromulgationVo>
         implements IMailPromulgation {
@@ -56,7 +57,7 @@ public class NavtexMessagePromulgation
     @Enumerated(EnumType.STRING)
     NavtexPriority priority = NavtexPriority.ROUTINE;
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.REMOVE)
     List<NavtexTransmitter> transmitters = new ArrayList<>();
 
     String preamble;
@@ -67,7 +68,6 @@ public class NavtexMessagePromulgation
 
     /** Constructor **/
     public NavtexMessagePromulgation() {
-        super();
     }
 
 
