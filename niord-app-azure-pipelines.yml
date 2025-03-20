@@ -28,7 +28,23 @@ stages:
           inputs:
             targetType: 'inline'
             script: 'git clone -b baleen-new https://github.com/dma-dk/baleen.git'
-        
+       
+        - task: Maven@3
+          displayName: 'Build Baleen'
+          retryCountOnTaskFailure: 3
+          inputs:
+            mavenPomFile: 'support/xml-bindings/java/pom.xml'
+            mavenOptions: '-Xmx3072m'
+            javaHomeOption: 'JDKVersion'
+            jdkVersionOption: '1.21'
+            jdkArchitectureOption: 'x64'
+            mavenVersionOption: 'Path'
+            mavenDirectory: '$(build.sourcesdirectory)/maven/apache-maven-$(maven-version)'
+            mavenSetM2Home: true
+            publishJUnitResults: true
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            goals: 'clean install'   
+                    
         - task: Maven@3
           displayName: 'Build Baleen'
           retryCountOnTaskFailure: 3
