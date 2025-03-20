@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
@@ -42,36 +43,36 @@ import org.niord.model.message.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import _int.iho.s124._1.Dataset;
-import _int.iho.s124._1.Dataset.Members;
-import _int.iho.s124._1.DateEndType;
-import _int.iho.s124._1.DateStartType;
-import _int.iho.s124._1.FixedDateRangeType;
-import _int.iho.s124._1.InformationType;
-import _int.iho.s124._1.MessageSeriesIdentifierType;
-import _int.iho.s124._1.NAVWARNPart;
-import _int.iho.s124._1.NAVWARNPart.Geometry;
-import _int.iho.s124._1.NAVWARNPreamble;
-import _int.iho.s124._1.NAVWARNTitleType;
-import _int.iho.s124._1.NavwarnTypeGeneralType;
-import _int.iho.s124._1.References;
-import _int.iho.s124._1.WarningInformationType;
-import _int.iho.s124._1.WarningTypeLabel;
-import _int.iho.s124._1.WarningTypeType;
-import _int.iho.s124._1.impl.DatasetImpl;
-import _int.iho.s124.s100.gml.base._5_0.CurveProperty;
-import _int.iho.s124.s100.gml.base._5_0.DataSetIdentificationType;
-import _int.iho.s124.s100.gml.base._5_0.PointProperty;
-import _int.iho.s124.s100.gml.base._5_0.S100SpatialAttributeType;
-import _int.iho.s124.s100.gml.base._5_0.SurfaceProperty;
-import _int.iho.s124.s100.gml.base._5_0.impl.DataSetIdentificationTypeImpl;
-import _int.iho.s124.s100.gml.profiles._5_0.BoundingShapeType;
-import _int.iho.s124.s100.gml.profiles._5_0.EnvelopeType;
-import _int.iho.s124.s100.gml.profiles._5_0.Pos;
-import _int.iho.s124.s100.gml.profiles._5_0.ReferenceType;
-import _int.iho.s124.s100.gml.profiles._5_0.impl.BoundingShapeTypeImpl;
-import _int.iho.s124.s100.gml.profiles._5_0.impl.EnvelopeTypeImpl;
-import _int.iho.s124.s100.gml.profiles._5_0.impl.PosImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.CurveProperty;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.DataSetIdentificationType;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.PointProperty;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.S100SpatialAttributeType;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.SurfaceProperty;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.impl.DataSetIdentificationTypeImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.BoundingShapeType;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.EnvelopeType;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.Pos;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.ReferenceType;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.BoundingShapeTypeImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.EnvelopeTypeImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.PosImpl;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.Dataset;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.Dataset.Members;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.DateEndType;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.DateStartType;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.FixedDateRangeType;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.InformationType;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.MessageSeriesIdentifierType;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.NAVWARNPart;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.NAVWARNPart.Geometry;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.NAVWARNPreamble;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.NAVWARNTitleType;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.NavwarnTypeGeneralType;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.References;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.WarningInformationType;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.WarningTypeLabel;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.WarningTypeType;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.impl.DatasetImpl;
 
 /**
  *
@@ -79,8 +80,8 @@ import _int.iho.s124.s100.gml.profiles._5_0.impl.PosImpl;
 public class S124Mapper {
 
     private static final net.opengis.gml._3.ObjectFactory gmlObjectFactory = new net.opengis.gml._3.ObjectFactory();
-    private static final _int.iho.s124.s100.gml.base._5_0.ObjectFactory s100ObjectFactory = new _int.iho.s124.s100.gml.base._5_0.ObjectFactory();
-    private static final _int.iho.s124._1.ObjectFactory s124ObjectFactory = new _int.iho.s124._1.ObjectFactory();
+    private static final dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.ObjectFactory s100ObjectFactory = new dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.ObjectFactory();
+    private static final dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.ObjectFactory s124ObjectFactory = new dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.ObjectFactory();
 
     String country = "DK";
 
@@ -92,7 +93,7 @@ public class S124Mapper {
 
     String productionAgency = "Danish Maritime Authorities";
 
-    _int.iho.s124.s100.gml.profiles._5_0.ObjectFactory profileFactory = new _int.iho.s124.s100.gml.profiles._5_0.ObjectFactory();
+    dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.ObjectFactory profileFactory = new dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.ObjectFactory();
 
     /**
      * For easy generation of the bounding shapes for the Dataset or individual features, we are using this function.
@@ -316,7 +317,7 @@ public class S124Mapper {
 
         /************ cancellationDate: dateTime 0..1] ************/
         if (msg.getPublishDateTo() != null) {
-            p.setCancellationDate(toOtherLocalDateTime(msg.getPublishDateTo()));
+            p.setCancellationDate(toOtherOffsetDateTime(msg.getPublishDateTo()));
         }
 
         /************ intService: Boolean ************/
@@ -330,7 +331,7 @@ public class S124Mapper {
         p.setNavwarnTypeGeneral(ngt);
 
         /************ publicationTime: dateTime ************/
-        p.setPublicationTime(toOtherLocalDateTime(msg.getPublishDateFrom()));
+        p.setPublicationTime(toOtherOffsetDateTime(msg.getPublishDateFrom()));
         return p;
     }
 
@@ -440,10 +441,13 @@ public class S124Mapper {
         return "urn:mrn:iho:" + msg.getMainType().name().toLowerCase() + ":dk:" + internalId.toLowerCase();
     }
 
+    private static OffsetDateTime toOtherOffsetDateTime(Date date) {
+        Instant instant = date.toInstant();
+        return OffsetDateTime.ofInstant(instant, ZoneId.systemDefault());
+    }
     private static LocalDateTime toOtherLocalDateTime(Date date) {
         Instant instant = date.toInstant();
         return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
-
     }
 }
 

@@ -31,36 +31,36 @@ import org.locationtech.jts.geom.Polygonal;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.geom.Puntal;
 
-import _int.iho.s124.s100.gml.base._5_0.CurveProperty;
-import _int.iho.s124.s100.gml.base._5_0.CurveType;
-import _int.iho.s124.s100.gml.base._5_0.PointProperty;
-import _int.iho.s124.s100.gml.base._5_0.PointType;
-import _int.iho.s124.s100.gml.base._5_0.S100SpatialAttributeType;
-import _int.iho.s124.s100.gml.base._5_0.SurfaceProperty;
-import _int.iho.s124.s100.gml.base._5_0.SurfaceType;
-import _int.iho.s124.s100.gml.base._5_0.impl.CurvePropertyImpl;
-import _int.iho.s124.s100.gml.base._5_0.impl.CurveTypeImpl;
-import _int.iho.s124.s100.gml.base._5_0.impl.PointPropertyImpl;
-import _int.iho.s124.s100.gml.base._5_0.impl.PointTypeImpl;
-import _int.iho.s124.s100.gml.base._5_0.impl.SurfacePropertyImpl;
-import _int.iho.s124.s100.gml.base._5_0.impl.SurfaceTypeImpl;
-import _int.iho.s124.s100.gml.profiles._5_0.AbstractRingPropertyType;
-import _int.iho.s124.s100.gml.profiles._5_0.LineStringSegmentType;
-import _int.iho.s124.s100.gml.profiles._5_0.LinearRingType;
-import _int.iho.s124.s100.gml.profiles._5_0.ObjectFactory;
-import _int.iho.s124.s100.gml.profiles._5_0.Patches;
-import _int.iho.s124.s100.gml.profiles._5_0.PolygonPatchType;
-import _int.iho.s124.s100.gml.profiles._5_0.Pos;
-import _int.iho.s124.s100.gml.profiles._5_0.PosList;
-import _int.iho.s124.s100.gml.profiles._5_0.Segments;
-import _int.iho.s124.s100.gml.profiles._5_0.impl.AbstractRingPropertyTypeImpl;
-import _int.iho.s124.s100.gml.profiles._5_0.impl.LineStringSegmentTypeImpl;
-import _int.iho.s124.s100.gml.profiles._5_0.impl.LinearRingTypeImpl;
-import _int.iho.s124.s100.gml.profiles._5_0.impl.PatchesImpl;
-import _int.iho.s124.s100.gml.profiles._5_0.impl.PolygonPatchTypeImpl;
-import _int.iho.s124.s100.gml.profiles._5_0.impl.PosImpl;
-import _int.iho.s124.s100.gml.profiles._5_0.impl.PosListImpl;
-import _int.iho.s124.s100.gml.profiles._5_0.impl.SegmentsImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.CurveProperty;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.CurveType;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.PointProperty;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.PointType;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.S100SpatialAttributeType;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.SurfaceProperty;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.SurfaceType;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.impl.CurvePropertyImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.impl.CurveTypeImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.impl.PointPropertyImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.impl.PointTypeImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.impl.SurfacePropertyImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.impl.SurfaceTypeImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.AbstractRingPropertyType;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.LineStringSegmentType;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.LinearRingType;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.ObjectFactory;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.Patches;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.PolygonPatchType;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.Pos;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.PosList;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.Segments;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.AbstractRingPropertyTypeImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.LineStringSegmentTypeImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.LinearRingTypeImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.PatchesImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.PolygonPatchTypeImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.PosImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.PosListImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.SegmentsImpl;
 import jakarta.xml.bind.JAXBElement;
 
 /**
@@ -300,7 +300,7 @@ class GeometryS124Converter {
     protected Coordinate[] gmlPosListToCoordinates(PosList posList) {
         final List<Coordinate> result = new ArrayList<>();
         for (int i = 0; i < posList.getValue().length; i = i + 2) {
-            result.add(new Coordinate(posList.getValue()[i], posList.getValue()[i + 1]));
+            result.add(new Coordinate(posList.getValue()[i + 1], posList.getValue()[i]));
         }
         return result.toArray(new Coordinate[] {});
     }

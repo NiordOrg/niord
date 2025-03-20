@@ -25,7 +25,7 @@ import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.model.message.MainType;
 import org.niord.model.message.ReferenceVo;
 
-import _int.iho.s124._1.Dataset;
+import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.Dataset;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 

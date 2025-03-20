@@ -28,12 +28,12 @@ import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessagePart;
 
-import _int.iho.s124.s100.gml.profiles._5_0.BoundingShapeType;
-import _int.iho.s124.s100.gml.profiles._5_0.EnvelopeType;
-import _int.iho.s124.s100.gml.profiles._5_0.Pos;
-import _int.iho.s124.s100.gml.profiles._5_0.impl.BoundingShapeTypeImpl;
-import _int.iho.s124.s100.gml.profiles._5_0.impl.EnvelopeTypeImpl;
-import _int.iho.s124.s100.gml.profiles._5_0.impl.PosImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.BoundingShapeType;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.EnvelopeType;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.Pos;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.BoundingShapeTypeImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.EnvelopeTypeImpl;
+import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.PosImpl;
 
 class S124DatasetBuilder {
 

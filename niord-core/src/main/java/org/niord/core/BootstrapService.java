@@ -32,7 +32,6 @@ import jakarta.transaction.Transactional;
  * present, that may be used for bootstrapping and setting up the system.
  */
 @ApplicationScoped
-@SuppressWarnings("unused")
 public class BootstrapService extends BaseService {
 
     @Inject

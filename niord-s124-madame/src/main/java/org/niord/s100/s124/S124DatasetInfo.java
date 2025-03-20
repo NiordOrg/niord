@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 
 import org.niord.core.message.Message;
 
-import dma.dk.baleen.s124.utils.GIRegistryInfo;
+import dk.baleen.s100.xmlbindings.s124.v1_0_0.utils.GIRegistryInfo;
 
 /**
  * The S-124 Dataset Info Class.
