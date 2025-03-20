@@ -1,5 +1,5 @@
 variables:
-  maven-version: "3.8.6"
+  maven-version: "3.9.9"
 
 stages:
   - stage: Build_niord
