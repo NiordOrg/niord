@@ -24,7 +24,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,13 +41,8 @@ import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.impl.PointPropertyImpl;
 import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.impl.SurfacePropertyImpl;
 import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.AbstractFeatureType;
 import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.AbstractGMLType;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.Dataset;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.NAVWARNAreaAffected;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.NAVWARNPart;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.S100TruncatedDate;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.TextPlacement;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.impl.DatasetImpl;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.impl.S100TruncatedDateImpl;
+import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.Dataset;
+import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.impl.DatasetImpl;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.JAXBIntrospector;
@@ -185,7 +179,7 @@ class S124Utils {
         }
 
         // Otherwise combine all member data
-        return Stream.of(members.getNAVWARNPreamblesAndReferencesAndNAVWARNParts()).flatMap(Collection::stream).filter(AbstractGMLType.class::isInstance)
+        return Stream.of(members.getNavwarnPartsAndNavwarnAreaAffectedsAndTextPlacements()).flatMap(Collection::stream).filter(AbstractGMLType.class::isInstance)
                 .map(AbstractGMLType.class::cast).toList();
     }
 
@@ -212,12 +206,7 @@ class S124Utils {
 
         // Add all the member entries iteratively
         for (T member : memberEntries) {
-            switch (member) {
-            case NAVWARNAreaAffected spatialUncertainty -> members.getNAVWARNPreamblesAndReferencesAndNAVWARNParts().add(member);
-            case NAVWARNPart atoNFixingMethod -> members.getNAVWARNPreamblesAndReferencesAndNAVWARNParts().add(member);
-            case TextPlacement positioningInformation -> members.getNAVWARNPreamblesAndReferencesAndNAVWARNParts().add(member);
-            case null, default -> members.getNAVWARNPreamblesAndReferencesAndNAVWARNParts().add(member);
-            }
+            members.getNavwarnPartsAndNavwarnAreaAffectedsAndTextPlacements().add(member);
         }
 
         // Now add the updated members back
@@ -414,49 +403,49 @@ class S124Utils {
         return null;
     }
 
-    /**
-     * A helper function that translates the provided S100TruncatedDate objects into Java LocalDate objects.
-     *
-     * @param s100TruncatedDate
-     *            the S100TruncatedDate object to be translated
-     * @return the constructed LocalDate object
-     */
-    static LocalDate s100TruncatedDateToLocalDate(S100TruncatedDate s100TruncatedDate) {
-        // Sanity Check
-        if (s100TruncatedDate == null) {
-            return null;
-        }
-
-        // First try to get the date object
-        if (s100TruncatedDate.getDate() != null) {
-            return s100TruncatedDate.getDate();
-        }
-        // Otherwise try to reconstruct the date from the fields
-        else if (s100TruncatedDate.getGYear() != null && s100TruncatedDate.getGMonth() != null && s100TruncatedDate.getGDay() != null) {
-            return LocalDate.of(s100TruncatedDate.getGYear().getYear(), s100TruncatedDate.getGMonth().getMonth(), s100TruncatedDate.getGDay().getDay());
-        }
-
-        // Otherwise always return null
-        return null;
-    }
-
-    /**
-     * A helper function that translates the provided LocalDate objects into Java S100TruncatedDate objects.
-     *
-     * @param localDate
-     *            the LocalDate object to be translated
-     * @return the constructed S100TruncatedDate object
-     */
-    static S100TruncatedDate localDateToS100TruncatedDate(LocalDate localDate) {
-        // Sanity Check
-        if (localDate == null) {
-            return null;
-        }
-
-        // Always use the local date field which is easier
-        final S100TruncatedDate s100TruncatedDate = new S100TruncatedDateImpl();
-        s100TruncatedDate.setDate(localDate);
-        return s100TruncatedDate;
-    }
+//    /**
+//     * A helper function that translates the provided S100TruncatedDate objects into Java LocalDate objects.
+//     *
+//     * @param s100TruncatedDate
+//     *            the S100TruncatedDate object to be translated
+//     * @return the constructed LocalDate object
+//     */
+//    static LocalDate s100TruncatedDateToLocalDate(S100TruncatedDate s100TruncatedDate) {
+//        // Sanity Check
+//        if (s100TruncatedDate == null) {
+//            return null;
+//        }
+//
+//        // First try to get the date object
+//        if (s100TruncatedDate.getDate() != null) {
+//            return s100TruncatedDate.getDate();
+//        }
+//        // Otherwise try to reconstruct the date from the fields
+//        else if (s100TruncatedDate.getGYear() != null && s100TruncatedDate.getGMonth() != null && s100TruncatedDate.getGDay() != null) {
+//            return LocalDate.of(s100TruncatedDate.getGYear().getYear(), s100TruncatedDate.getGMonth().getMonth(), s100TruncatedDate.getGDay().getDay());
+//        }
+//
+//        // Otherwise always return null
+//        return null;
+//    }
+//
+//    /**
+//     * A helper function that translates the provided LocalDate objects into Java S100TruncatedDate objects.
+//     *
+//     * @param localDate
+//     *            the LocalDate object to be translated
+//     * @return the constructed S100TruncatedDate object
+//     */
+//    static S100TruncatedDate localDateToS100TruncatedDate(LocalDate localDate) {
+//        // Sanity Check
+//        if (localDate == null) {
+//            return null;
+//        }
+//
+//        // Always use the local date field which is easier
+//        final S100TruncatedDate s100TruncatedDate = new S100TruncatedDateImpl();
+//        s100TruncatedDate.setDate(localDate);
+//        return s100TruncatedDate;
+//    }
 
 }

@@ -56,23 +56,8 @@ import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.ReferenceType;
 import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.BoundingShapeTypeImpl;
 import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.EnvelopeTypeImpl;
 import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.PosImpl;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.Dataset;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.Dataset.Members;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.DateEndType;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.DateStartType;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.FixedDateRangeType;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.InformationType;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.MessageSeriesIdentifierType;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.NAVWARNPart;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.NAVWARNPart.Geometry;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.NAVWARNPreamble;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.NAVWARNTitleType;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.NavwarnTypeGeneralType;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.References;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.WarningInformationType;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.WarningTypeLabel;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.WarningTypeType;
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.impl.DatasetImpl;
+import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.*;
+import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.impl.DatasetImpl;
 
 /**
  *
@@ -81,7 +66,7 @@ public class S124Mapper {
 
     private static final net.opengis.gml._3.ObjectFactory gmlObjectFactory = new net.opengis.gml._3.ObjectFactory();
     private static final dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.ObjectFactory s100ObjectFactory = new dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.ObjectFactory();
-    private static final dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.ObjectFactory s124ObjectFactory = new dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.ObjectFactory();
+    private static final dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.ObjectFactory s124ObjectFactory = new dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.ObjectFactory();
 
     String country = "DK";
 
@@ -168,19 +153,19 @@ public class S124Mapper {
         datasetIdentificationType.setDatasetAbstract(dataset.getAbstractText());
         ds.setDatasetIdentificationInformation(datasetIdentificationType);
 
-        Members members = s124ObjectFactory.createDatasetMembers();
+        Dataset.Members members = s124ObjectFactory.createDatasetMembers();
         ds.setMembers(members);
 
-        NAVWARNPreamble preamble = toDataModelNAVWARNPreamble(message);
-        members.getNAVWARNPreamblesAndReferencesAndNAVWARNParts().add(preamble);
+        NavwarnPreamble preamble = toDataModelNAVWARNPreamble(message);
+        members.getNavwarnPartsAndNavwarnAreaAffectedsAndTextPlacements().add(preamble);
 
-        List<NAVWARNPart> parts = new ArrayList<>();
+        List<NavwarnPart> parts = new ArrayList<>();
         for (MessagePart p : message.getParts()) {
             parts.add(toDataModelNAVWARNPart(message, p));
         }
 
         parts.forEach(p -> {
-            members.getNAVWARNPreamblesAndReferencesAndNAVWARNParts().add(p);
+            members.getNavwarnPartsAndNavwarnAreaAffectedsAndTextPlacements().add(p);
             ReferenceType rt = profileFactory.createReferenceType();
             rt.setHref("#" + preamble.getId());
             // Reres124ObjectFactory.createFeatureReferenceType();
@@ -203,8 +188,8 @@ public class S124Mapper {
         return de.getLang().equals("en");
     }
 
-    private NAVWARNPart toDataModelNAVWARNPart(Message message, MessagePart messagePart) {
-        NAVWARNPart part = s124ObjectFactory.createNAVWARNPart();
+    private NavwarnPart toDataModelNAVWARNPart(Message message, MessagePart messagePart) {
+        NavwarnPart part = s124ObjectFactory.createNavwarnPart();
 
         // From AbstractGMLType
         part.setId(toMrn(message) + "." + messagePart.getIndexNo());
@@ -254,7 +239,7 @@ public class S124Mapper {
             for (Feature f : fc.getFeatures()) {
                 List<S100SpatialAttributeType> l = new GeometryS124Converter().geometryToS124PointCurveSurfaceGeometry(f.getGeometry());
                 for (S100SpatialAttributeType s : l) {
-                    Geometry geo = s124ObjectFactory.createNAVWARNPartGeometry();
+                    NavwarnPart.Geometry geo = s124ObjectFactory.createNavwarnPartGeometry();
                     switch (s) {
                     case SurfaceProperty sp -> geo.setSurfaceProperty(sp);
                     case PointProperty sp -> geo.setPointProperty(sp);
@@ -275,8 +260,8 @@ public class S124Mapper {
         return part;
     }
 
-    private NAVWARNPreamble toDataModelNAVWARNPreamble(Message msg) {
-        NAVWARNPreamble p = s124ObjectFactory.createNAVWARNPreamble();
+    private NavwarnPreamble toDataModelNAVWARNPreamble(Message msg) {
+        NavwarnPreamble p = s124ObjectFactory.createNavwarnPreamble();
 
         // From AbstractGMLType
         p.setId(toMessageId(msg));
@@ -307,10 +292,10 @@ public class S124Mapper {
         /************ NAVWARNtitle: NAVWARNtitle [O..*] ************/
         MessageDesc md = msg.getDesc(lang);
         if (md != null && !StringUtils.isBlank(md.getTitle())) {
-            NAVWARNTitleType titleType = s124ObjectFactory.createNAVWARNTitleType();
+            NavwarnTitleType titleType = s124ObjectFactory.createNavwarnTitleType();
             titleType.setLanguage(lang(md.getLang()));
             titleType.setText(md.getTitle());
-            p.setNAVWARNTitle(titleType);
+            p.getNavwarnTitles().add(titleType);
         }
 
         /********************************* Simple Attributes *********************************/
@@ -325,10 +310,10 @@ public class S124Mapper {
         p.setIntService(false);
 
         /************ navwarnTypeGeneral: navwarnTypeGeneral ************/
-        NavwarnTypeGeneralType ngt = s124ObjectFactory.createNavwarnTypeGeneralType();
-        ngt.setCode("AAA");
-        ngt.setValue("BBB");
-        p.setNavwarnTypeGeneral(ngt);
+//        NavwarnTypeGeneralType ngt = s124ObjectFactory.createNavwarnTypeGeneralType();
+//        ngt.setCode("AAA");
+//        ngt.setValue("BBB");
+//        p.setNavwarnTypeGeneral(ngt);
 
         /************ publicationTime: dateTime ************/
         p.setPublicationTime(toOtherOffsetDateTime(msg.getPublishDateFrom()));
@@ -368,7 +353,7 @@ public class S124Mapper {
         MessageSeriesIdentifierType messageSeriesIdentifer = s124ObjectFactory.createMessageSeriesIdentifierType();
 
         int refYear = LocalDate.ofInstant(message.getPublishDateFrom().toInstant(), ZoneId.systemDefault()).getYear();
-        messageSeriesIdentifer.setYear(BigInteger.valueOf(refYear));
+        messageSeriesIdentifer.setYear(refYear);
         messageSeriesIdentifer.setCountryName(country);
         messageSeriesIdentifer.setAgencyResponsibleForProduction(productionAgency);
 
@@ -376,7 +361,7 @@ public class S124Mapper {
         messageSeriesIdentifer.setNameOfSeries(message.getMessageSeries().getSeriesId());
 
         messageSeriesIdentifer.setWarningIdentifier(toMrn(message));
-        messageSeriesIdentifer.setWarningNumber(BigInteger.valueOf(message.getNumber()));
+        messageSeriesIdentifer.setWarningNumber(message.getNumber());
         messageSeriesIdentifer.setWarningType(toComplexTypeWarningTypeType(message.getType()));
 
         return messageSeriesIdentifer;

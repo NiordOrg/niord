@@ -23,7 +23,7 @@ import org.niord.core.message.vo.SystemMessageVo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import dk.dma.baleen.s100.xmlbindings.s124.v1_0_0.Dataset;
+import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.Dataset;
 
 public class S124NewTest {
 
