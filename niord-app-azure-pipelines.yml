@@ -65,7 +65,7 @@ stages:
           displayName: Clone niord-dk repo
           inputs:
             targetType: 'inline'
-            script: 'git clone -b madame https://github.com/NiordOrg/niord-dk.git'
+            script: 'git clone -b madame-pics https://github.com/NiordOrg/niord-dk.git'
         
         - task: Maven@3
           displayName: 'Build niord-dk'
