@@ -24,7 +24,7 @@
 
         <dependency>
             <groupId>dma.dk.baleen.s100.xml-bindings</groupId>
-            <artifactId>s124-2_0_0-xml-bindings</artifactId>
+            <artifactId>s124-2_0_1-xml-bindings</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
 
