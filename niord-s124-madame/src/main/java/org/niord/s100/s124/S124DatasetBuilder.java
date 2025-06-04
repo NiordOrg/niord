@@ -55,9 +55,10 @@ class S124DatasetBuilder {
         }
 
         Pos lowerCorner = new PosImpl();
-        lowerCorner.setValue(new Double[] { envelope.getMinX(), envelope.getMaxY() });
+        // Envelope uses X,Y (lon,lat) but GML expects lat,lon order
+        lowerCorner.setValue(new Double[] { envelope.getMinY(), envelope.getMinX() });
         Pos upperCorner = new PosImpl();
-        upperCorner.setValue(new Double[] { envelope.getMaxX(), envelope.getMaxY() });
+        upperCorner.setValue(new Double[] { envelope.getMaxY(), envelope.getMaxX() });
 
         // And create the bounding by envelope
         BoundingShapeType boundingShapeType = new BoundingShapeTypeImpl();
@@ -93,9 +94,10 @@ class S124DatasetBuilder {
         }
 
         Pos lowerCorner = new PosImpl();
-        lowerCorner.setValue(new Double[] { envelope.getMinX(), envelope.getMaxY() });
+        // Envelope uses X,Y (lon,lat) but GML expects lat,lon order
+        lowerCorner.setValue(new Double[] { envelope.getMinY(), envelope.getMinX() });
         Pos upperCorner = new PosImpl();
-        upperCorner.setValue(new Double[] { envelope.getMaxX(), envelope.getMaxY() });
+        upperCorner.setValue(new Double[] { envelope.getMaxY(), envelope.getMaxX() });
 
         // And create the bounding by envelope
         BoundingShapeType boundingShapeType = new BoundingShapeTypeImpl();

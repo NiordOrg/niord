@@ -22,6 +22,8 @@ import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
@@ -34,6 +36,13 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 
 import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.S100SpatialAttributeType;
 import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.impl.CurvePropertyImpl;
@@ -372,6 +381,25 @@ class S124Utils {
         return null;
     }
 
+    static String prettyPrint(String input) {
+        try {
+            Source xmlInput = new StreamSource(new StringReader(input));
+            StringWriter stringWriter = new StringWriter();
+            StreamResult xmlOutput = new StreamResult(stringWriter);
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
+            transformer.setOutputProperty(OutputKeys.METHOD, "xml");
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+            transformer.transform(xmlInput, xmlOutput);
+            return stringWriter.toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * In many cases the AidsToNavigationField does not itself have a geometries field but this belongs to a superclass.
      * Therefore, it is difficult to detect that purely with reflections so a manual iterative way is employed
@@ -402,50 +430,5 @@ class S124Utils {
         // If nothing found return null
         return null;
     }
-
-//    /**
-//     * A helper function that translates the provided S100TruncatedDate objects into Java LocalDate objects.
-//     *
-//     * @param s100TruncatedDate
-//     *            the S100TruncatedDate object to be translated
-//     * @return the constructed LocalDate object
-//     */
-//    static LocalDate s100TruncatedDateToLocalDate(S100TruncatedDate s100TruncatedDate) {
-//        // Sanity Check
-//        if (s100TruncatedDate == null) {
-//            return null;
-//        }
-//
-//        // First try to get the date object
-//        if (s100TruncatedDate.getDate() != null) {
-//            return s100TruncatedDate.getDate();
-//        }
-//        // Otherwise try to reconstruct the date from the fields
-//        else if (s100TruncatedDate.getGYear() != null && s100TruncatedDate.getGMonth() != null && s100TruncatedDate.getGDay() != null) {
-//            return LocalDate.of(s100TruncatedDate.getGYear().getYear(), s100TruncatedDate.getGMonth().getMonth(), s100TruncatedDate.getGDay().getDay());
-//        }
-//
-//        // Otherwise always return null
-//        return null;
-//    }
-//
-//    /**
-//     * A helper function that translates the provided LocalDate objects into Java S100TruncatedDate objects.
-//     *
-//     * @param localDate
-//     *            the LocalDate object to be translated
-//     * @return the constructed S100TruncatedDate object
-//     */
-//    static S100TruncatedDate localDateToS100TruncatedDate(LocalDate localDate) {
-//        // Sanity Check
-//        if (localDate == null) {
-//            return null;
-//        }
-//
-//        // Always use the local date field which is easier
-//        final S100TruncatedDate s100TruncatedDate = new S100TruncatedDateImpl();
-//        s100TruncatedDate.setDate(localDate);
-//        return s100TruncatedDate;
-//    }
 
 }

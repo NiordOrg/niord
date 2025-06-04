@@ -65,7 +65,7 @@ public class S124Test {
 
         fmTemplate.process(data, result);
 
-        String pp = S124RestService.prettyPrint(result.toString());
+        String pp = result.toString();// S124RestService.prettyPrint(result.toString());
         pp = pp.replaceAll("(?m)^[ \t]*\r?\n", "");
         System.out.printf(pp);
     }

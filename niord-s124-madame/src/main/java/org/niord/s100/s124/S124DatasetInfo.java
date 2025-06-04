@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 
 import org.niord.core.message.Message;
 
-import dk.baleen.s100.xmlbindings.s124.v1_0_0.utils.GIRegistryInfo;
 
 /**
  * The S-124 Dataset Info Class.
@@ -57,9 +56,9 @@ class S124DatasetInfo {
         this.datasetId = datasetId;
         this.agency = agency;
         this.encodingSpecification = "S100 Part 10b";
-        this.encodingSpecificationEdition = "1.0";
-        this.productionIdentifier = GIRegistryInfo.getProductSpecification().getProductIdentifier();
-        this.productionEdition = GIRegistryInfo.getProductSpecification().getVersion();
+        this.encodingSpecificationEdition = "2.0.0";
+        this.productionIdentifier = "S-124";
+        this.productionEdition = "2.0.0";
         this.fileIdentifier = String.format("S-124_%s_%s", this.agency, this.datasetId);
         this.title = "Niord S-124 Dataset";
         this.language = "en";

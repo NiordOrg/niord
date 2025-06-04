@@ -16,16 +16,7 @@
 package org.niord.s100.s124;
 
 import java.io.InputStream;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
-
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.io.IOUtils;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -91,9 +82,6 @@ public class S124RestService {
         try {
             String result = s124Service.generateGML(messageId, language);
 
-            // Pretty print the result
-            result = prettyPrint(result);
-
             log.debug("Generated GML for message " + messageId + " in " + (System.currentTimeMillis() - t0) + " ms");
             return Response.ok(result)
                     .type("application/gml+xml;charset=UTF-8")
@@ -114,25 +102,6 @@ public class S124RestService {
         }
     }
 
-
-    static String prettyPrint(String input) {
-        try {
-            Source xmlInput = new StreamSource(new StringReader(input));
-            StringWriter stringWriter = new StringWriter();
-            StreamResult xmlOutput = new StreamResult(stringWriter);
-            TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            Transformer transformer = transformerFactory.newTransformer();
-            transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
-            transformer.setOutputProperty(OutputKeys.METHOD, "xml");
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
-            transformer.transform(xmlInput, xmlOutput);
-            return stringWriter.toString();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     /**
      * {@inheritDoc}

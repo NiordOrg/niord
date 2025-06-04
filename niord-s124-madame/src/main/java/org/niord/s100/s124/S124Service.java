@@ -15,16 +15,12 @@
  */
 package org.niord.s100.s124;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.niord.core.NiordApp;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
-import org.niord.core.message.vo.SystemMessageVo;
 import org.niord.model.message.MainType;
-import org.niord.model.message.ReferenceVo;
-
 import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.Dataset;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -65,10 +61,15 @@ public class S124Service {
 
         Dataset dataset = S124Mapper.map(di, message);
 
+        // Convert to XML
         String result = S124Utils.marshalS124(dataset);
+
+        // Pretty print it
+        result = S124Utils.prettyPrint(result);
 
         return result;
     }
+
 
     /**
      * Generates S-124 compliant GML for the message
@@ -87,53 +88,52 @@ public class S124Service {
         return generateGML(message, language);
     }
 
-    /**
-     * Returns resolved message references
-     *
-     * @param message
-     *            the message to return resolved message references for
-     * @return the resolved message references
-     */
-    List<MessageReferenceVo> referencedMessages(SystemMessageVo message, String language) {
-        List<MessageReferenceVo> result = new ArrayList<>();
-        if (message.getReferences() != null) {
-            for (ReferenceVo ref : message.getReferences()) {
-                try {
-                    Message refMsg = messageService.resolveMessage(ref.getMessageId());
-                    if (refMsg != null && refMsg.getMainType() == MainType.NW && refMsg.getNumber() != null) {
-                        SystemMessageVo msg = refMsg.toVo(SystemMessageVo.class, Message.MESSAGE_DETAILS_FILTER);
-                        msg.sort(language);
-                        result.add(new MessageReferenceVo(msg, ref));
-                    }
-                } catch (Exception ignored) {}
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Utility class used for message references, including the referenced message
-     */
-    @SuppressWarnings("unused")
-    public static class MessageReferenceVo extends ReferenceVo {
-
-        SystemMessageVo msg;
-
-        public MessageReferenceVo() {}
-
-        public MessageReferenceVo(SystemMessageVo msg, ReferenceVo reference) {
-            this.msg = msg;
-            setMessageId(reference.getMessageId());
-            setType(reference.getType());
-            setDescs(reference.getDescs());
-        }
-
-        public SystemMessageVo getMsg() {
-            return msg;
-        }
-
-        public void setMsg(SystemMessageVo msg) {
-            this.msg = msg;
-        }
-    }
+//    /**
+//     * Returns resolved message references
+//     *
+//     * @param message
+//     *            the message to return resolved message references for
+//     * @return the resolved message references
+//     */
+//    List<MessageReferenceVo> referencedMessages(SystemMessageVo message, String language) {
+//        List<MessageReferenceVo> result = new ArrayList<>();
+//        if (message.getReferences() != null) {
+//            for (ReferenceVo ref : message.getReferences()) {
+//                try {
+//                    Message refMsg = messageService.resolveMessage(ref.getMessageId());
+//                    if (refMsg != null && refMsg.getMainType() == MainType.NW && refMsg.getNumber() != null) {
+//                        SystemMessageVo msg = refMsg.toVo(SystemMessageVo.class, Message.MESSAGE_DETAILS_FILTER);
+//                        msg.sort(language);
+//                        result.add(new MessageReferenceVo(msg, ref));
+//                    }
+//                } catch (Exception ignored) {}
+//            }
+//        }
+//        return result;
+//    }
+//
+//    /**
+//     * Utility class used for message references, including the referenced message
+//     */
+//    public static class MessageReferenceVo extends ReferenceVo {
+//
+//        SystemMessageVo msg;
+//
+//        public MessageReferenceVo() {}
+//
+//        public MessageReferenceVo(SystemMessageVo msg, ReferenceVo reference) {
+//            this.msg = msg;
+//            setMessageId(reference.getMessageId());
+//            setType(reference.getType());
+//            setDescs(reference.getDescs());
+//        }
+//
+//        public SystemMessageVo getMsg() {
+//            return msg;
+//        }
+//
+//        public void setMsg(SystemMessageVo msg) {
+//            this.msg = msg;
+//        }
+//    }
 }

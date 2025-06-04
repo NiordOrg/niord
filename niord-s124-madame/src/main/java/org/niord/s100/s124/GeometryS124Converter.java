@@ -300,6 +300,7 @@ class GeometryS124Converter {
     protected Coordinate[] gmlPosListToCoordinates(PosList posList) {
         final List<Coordinate> result = new ArrayList<>();
         for (int i = 0; i < posList.getValue().length; i = i + 2) {
+            // GML uses lat,lon order, but JTS Coordinate uses lon,lat
             result.add(new Coordinate(posList.getValue()[i + 1], posList.getValue()[i]));
         }
         return result.toArray(new Coordinate[] {});
@@ -313,7 +314,8 @@ class GeometryS124Converter {
      * @return the respective position list
      */
     protected PosList coordinatesToGmlPosList(Coordinate[] coordinates) {
-        // Translate the coordinates to a simple list of doubles (Y, X)
+        // Translate the coordinates to a simple list of doubles (lat, lon)
+        // JTS Coordinate stores as (lon, lat), but GML expects (lat, lon)
         List<Double> coords = Optional.ofNullable(coordinates).map(Arrays::asList).orElse(Collections.emptyList()).stream()
                 .map(c -> Arrays.asList(c.getY(), c.getX())).flatMap(List::stream).toList();
 
