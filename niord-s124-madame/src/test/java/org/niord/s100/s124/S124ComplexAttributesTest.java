@@ -34,18 +34,18 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessagePart;
 import org.niord.core.message.MessageTag;
 
-import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.AffectedChartPublicationsType;
-import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.Dataset;
-import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.GeneralAreaType;
-import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.LocalityType;
-import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.MessageSeriesIdentifierType;
-import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.NavwarnPart;
-import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.NavwarnPreamble;
-import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.NavwarnTypeGeneralLabel;
-import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.NavwarnTypeGeneralType;
-import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.RestrictionLabel;
-import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.WarningTypeLabel;
-import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.WarningTypeType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.AffectedChartPublicationsType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.Dataset;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.GeneralAreaType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.LocalityType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.MessageSeriesIdentifierType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnPart;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnPreamble;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnTypeGeneralLabel;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnTypeGeneralType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.RestrictionLabel;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.WarningTypeLabel;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.WarningTypeType;
 
 /**
  * Tests for S-124 complex attributes mapping

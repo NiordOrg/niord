@@ -14,6 +14,13 @@
     <packaging>jar</packaging>
     <name>Niord-Base S-124 Library</name>
 
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+    
     <dependencies>
 
         <dependency>
@@ -22,10 +29,11 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- https://github.com/NiordOrg/niord-s124-xml-bindings -->
         <dependency>
-            <groupId>dma.dk.baleen.s100.xml-bindings</groupId>
+            <groupId>com.github.NiordOrg.niord-s124-xml-bindings</groupId>
             <artifactId>s124-2_0_1-xml-bindings</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>v0.0.5</version>
         </dependency>
 
     </dependencies>

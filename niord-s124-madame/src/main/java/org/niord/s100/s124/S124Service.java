@@ -21,7 +21,7 @@ import org.niord.core.NiordApp;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessageService;
 import org.niord.model.message.MainType;
-import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.Dataset;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.Dataset;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 

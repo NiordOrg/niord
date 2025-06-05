@@ -29,6 +29,10 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
+import org.niord.core.area.Area;
+import org.niord.core.area.AreaDesc;
+import org.niord.core.category.Category;
+import org.niord.core.chart.Chart;
 import org.niord.core.geojson.Feature;
 import org.niord.core.geojson.FeatureCollection;
 import org.niord.core.geojson.GeoJsonUtils;
@@ -37,32 +41,49 @@ import org.niord.core.message.Message;
 import org.niord.core.message.MessageDesc;
 import org.niord.core.message.MessagePart;
 import org.niord.core.message.MessagePartDesc;
-import org.niord.core.message.Reference;
 import org.niord.core.message.MessageTag;
+import org.niord.core.message.Reference;
 import org.niord.model.message.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.niord.core.area.Area;
-import org.niord.core.area.AreaDesc;
-import org.niord.core.chart.Chart;
-import org.niord.core.category.Category;
 
-import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.CurveProperty;
-import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.DataSetIdentificationType;
-import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.DatasetPurposeType;
-import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.PointProperty;
-import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.S100SpatialAttributeType;
-import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.SurfaceProperty;
-import dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.impl.DataSetIdentificationTypeImpl;
-import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.BoundingShapeType;
-import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.EnvelopeType;
-import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.Pos;
-import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.ReferenceType;
-import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.BoundingShapeTypeImpl;
-import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.EnvelopeTypeImpl;
-import dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.impl.PosImpl;
-import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.*;
-import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.impl.DatasetImpl;
+import dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.CurveProperty;
+import dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.DataSetIdentificationType;
+import dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.DatasetPurposeType;
+import dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.PointProperty;
+import dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.S100SpatialAttributeType;
+import dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.SurfaceProperty;
+import dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.impl.DataSetIdentificationTypeImpl;
+import dk.dma.niord.s100.xmlbindings.s100.gml.profiles._5_0.BoundingShapeType;
+import dk.dma.niord.s100.xmlbindings.s100.gml.profiles._5_0.EnvelopeType;
+import dk.dma.niord.s100.xmlbindings.s100.gml.profiles._5_0.Pos;
+import dk.dma.niord.s100.xmlbindings.s100.gml.profiles._5_0.ReferenceType;
+import dk.dma.niord.s100.xmlbindings.s100.gml.profiles._5_0.impl.BoundingShapeTypeImpl;
+import dk.dma.niord.s100.xmlbindings.s100.gml.profiles._5_0.impl.EnvelopeTypeImpl;
+import dk.dma.niord.s100.xmlbindings.s100.gml.profiles._5_0.impl.PosImpl;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.AffectedChartPublicationsType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.ChartAffectedType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.Dataset;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.DateEndType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.DateStartType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.FixedDateRangeType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.GeneralAreaType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.InformationType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.LocalityType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.LocationNameType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.MessageSeriesIdentifierType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnPart;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnPreamble;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnTitleType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnTypeGeneralLabel;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.NavwarnTypeGeneralType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.References;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.RestrictionLabel;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.RestrictionType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.WarningInformationType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.WarningTypeLabel;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.WarningTypeType;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.impl.DatasetImpl;
 
 /**
  * Maps from a Niord {@link Message} to a S-124 message
@@ -70,8 +91,8 @@ import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.impl.DatasetImpl;
 class S124Mapper {
 
     private static final net.opengis.gml._3.ObjectFactory gmlObjectFactory = new net.opengis.gml._3.ObjectFactory();
-    private static final dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.ObjectFactory s100ObjectFactory = new dk.dma.baleen.s100.xmlbindings.s100.gml.base._5_0.ObjectFactory();
-    private static final dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.ObjectFactory s124ObjectFactory = new dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.ObjectFactory();
+    private static final dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.ObjectFactory s100ObjectFactory = new dk.dma.niord.s100.xmlbindings.s100.gml.base._5_0.ObjectFactory();
+    private static final dk.dma.niord.s100.xmlbindings.s124.v2_0_0.ObjectFactory s124ObjectFactory = new dk.dma.niord.s100.xmlbindings.s124.v2_0_0.ObjectFactory();
 
     String country = "DK";
 
@@ -91,7 +112,7 @@ class S124Mapper {
 
     String productionAgency = "Danish Maritime Authority";
 
-    dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.ObjectFactory profileFactory = new dk.dma.baleen.s100.xmlbindings.s100.gml.profiles._5_0.ObjectFactory();
+    dk.dma.niord.s100.xmlbindings.s100.gml.profiles._5_0.ObjectFactory profileFactory = new dk.dma.niord.s100.xmlbindings.s100.gml.profiles._5_0.ObjectFactory();
 
     /**
      * For easy generation of the bounding shapes for the Dataset or individual features, we are using this function.

@@ -15,7 +15,7 @@
  */
 package org.niord.s100.s124;
 
-import dk.dma.baleen.s100.xmlbindings.s124.v2_0_0.*;
+import dk.dma.niord.s100.xmlbindings.s124.v2_0_0.*;
 import org.junit.Test;
 import org.niord.core.message.Message;
 import org.niord.core.message.MessagePart;
