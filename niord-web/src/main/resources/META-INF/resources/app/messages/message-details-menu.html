@@ -27,6 +27,12 @@
                 <span translate>menu.action.print</span>
             </a>
         </li>
+        <li>
+            <a href ng-click="generateS124()">
+                <span class="glyphicon glyphicon-download-alt"></span>&nbsp;
+                <span translate>menu.action.generate_s124</span>
+            </a>
+        </li>
         <li ng-if="isLoggedIn" role="separator" class="divider"></li>
         <li ng-if="isLoggedIn">
             <a href ng-click="addToTagDialog()">

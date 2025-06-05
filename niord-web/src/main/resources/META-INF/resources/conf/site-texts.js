@@ -73,6 +73,7 @@ angular.module('niord.conf')
             'menu.filter.clear' : 'Clear Filter',
             'menu.action' : 'Action',
             'menu.action.print' : 'Print...',
+            'menu.action.generate_s124' : 'Generate S-124',
             'menu.action.select.all' : 'Select all',
             'menu.action.select.none' : 'Clear selection',
             'menu.action.tags' : 'Tags...',

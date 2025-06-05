@@ -683,4 +683,29 @@ angular.module('niord.messages')
                     });
             }
 
+        }])
+
+
+    /*******************************************************************
+     * Controller that handles S-124 generation dialog
+     *******************************************************************/
+    .controller('GenerateS124DialogCtrl', ['$scope', '$http', 'messageId',
+        function ($scope, $http, messageId) {
+            'use strict';
+
+            $scope.messageId = messageId;
+            $scope.loading = true;
+            $scope.error = null;
+            $scope.s124Document = null;
+
+            // Call the S-124 REST service to generate the document
+            $http.get('/rest/S-124/messages/' + messageId)
+                .then(function(response) {
+                    $scope.loading = false;
+                    $scope.s124Document = response.data;
+                })
+                .catch(function(error) {
+                    $scope.loading = false;
+                    $scope.error = error.data ? error.data.message || error.data : 'Unknown error occurred';
+                });
         }]);

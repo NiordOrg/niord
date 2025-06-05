@@ -1,0 +1,33 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" ng-click="$dismiss()">&times;</button>
+    <h4 class="modal-title">
+        <span class="glyphicon glyphicon-download-alt"></span>&nbsp;
+        <span translate>menu.action.generate_s124</span>
+    </h4>
+</div>
+
+<div class="modal-body" style="height: 500px;">
+    <div ng-if="loading" class="text-center" style="padding-top: 100px;">
+        <span class="glyphicon glyphicon-cog fa-spin" style="font-size: 2em; color: #5bc0de;"></span>
+        <br><br>
+        Generating S-124 document...
+    </div>
+    
+    <div ng-if="error" class="alert alert-danger">
+        <span class="glyphicon glyphicon-exclamation-sign"></span>&nbsp;
+        Error generating S-124 document: {{error}}
+    </div>
+    
+    <div ng-if="s124Document && !loading" style="height: 100%;">
+        <textarea class="form-control" 
+                  readonly 
+                  style="height: 100%; font-family: monospace; font-size: 12px; resize: none;"
+                  ng-model="s124Document"></textarea>
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-default" ng-click="$dismiss()">
+        <span translate>term.close</span>
+    </button>
+</div>

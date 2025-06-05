@@ -963,6 +963,12 @@ angular.module('niord.messages')
                     };
 
 
+                    /** Opens the S-124 generation dialog */
+                    scope.generateS124 = function () {
+                        MessageService.generateS124Dialog(scope.messageId);
+                    };
+
+
                     /** Returns if the user can edit the current message */
                     scope.canEdit = function () {
                         // NB: 'user' can enter the Editor page, even if the cannot actually edit a message

@@ -549,6 +549,19 @@ angular.module('niord.messages')
             },
 
 
+            /** Opens the S-124 generation dialog */
+            generateS124Dialog: function (messageId) {
+                return $uibModal.open({
+                    controller: "GenerateS124DialogCtrl",
+                    templateUrl: "/app/messages/generate-s124-dialog.html",
+                    size: 'lg',
+                    resolve: {
+                        messageId: function () { return messageId; }
+                    }
+                });
+            },
+
+
             /** Compares two messages **/
             compareMessagesDialog: function (messageId1, messageId2) {
                 return $uibModal.open({

@@ -64,8 +64,8 @@ public class S124Service {
         // Convert to XML
         String result = S124Utils.marshalS124(dataset);
 
-        // Pretty print it
-        result = S124Utils.prettyPrint(result);
+        // Pretty print is not needed since JAXB already formats the output
+        // result = S124Utils.prettyPrint(result);
 
         return result;
     }
