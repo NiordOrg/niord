@@ -56,7 +56,7 @@ class S124DatasetInfo {
         this.datasetId = datasetId;
         this.agency = agency;
         this.encodingSpecification = "S100 Part 10b";
-        this.encodingSpecificationEdition = "2.0.0";
+        this.encodingSpecificationEdition = "1.0";
         this.productionIdentifier = "S-124";
         this.productionEdition = "2.0.0";
         this.fileIdentifier = String.format("S-124_%s_%s", this.agency, this.datasetId);
