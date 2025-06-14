@@ -1568,7 +1568,7 @@ public class MessageService extends BaseService {
      * @throws Exception if the message cannot be cancelled
      */
     @Transactional
-    private Message createAndPublishCancellationMessage(String originalMessageId) throws Exception {
+    Message createAndPublishCancellationMessage(String originalMessageId) throws Exception {
         Message original = findByUid(originalMessageId);
         // Note: message existence and MainType validation already done in updateStatus()
         
