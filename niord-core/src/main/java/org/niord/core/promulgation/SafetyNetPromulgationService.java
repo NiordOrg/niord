@@ -106,6 +106,11 @@ public class SafetyNetPromulgationService
      * @param message the message to check
      */
     private void checkSafetyNetPromulgation(Message message, PromulgationType type) {
+        // Skip cancellation warning messages - only S-124 should process these
+        if (message != null && message.getType() == org.niord.model.message.Type.CANCELLATION_WARNING) {
+            return;
+        }
+        
         SafetyNetMessagePromulgation safetynet = message.promulgation(SafetyNetMessagePromulgation.class, type.getTypeId());
         if (safetynet != null && safetynet.getArea() != null) {
             // Replace the area with the persisted entities

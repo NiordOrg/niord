@@ -202,6 +202,11 @@ public class NavtexPromulgationService extends BasePromulgationService {
      * @param message the message to check
      */
     private NavtexMessagePromulgation checkNavtexPromulgation(Message message, PromulgationType type) {
+        // Skip cancellation warning messages - only S-124 should process these
+        if (message != null && message.getType() == org.niord.model.message.Type.CANCELLATION_WARNING) {
+            return null;
+        }
+        
         NavtexMessagePromulgation navtex = message.promulgation(NavtexMessagePromulgation.class, type.getTypeId());
         if (navtex != null) {
             // Replace the list of transmitters with the persisted entities

@@ -81,9 +81,11 @@ import org.niord.model.message.AreaVo;
 import org.niord.model.message.CategoryVo;
 import org.niord.model.message.ChartVo;
 import org.niord.model.message.MainType;
+import org.niord.model.message.MessagePartType;
 import org.niord.model.message.MessageVo;
 import org.niord.model.message.ReferenceType;
 import org.niord.model.message.Status;
+import org.niord.model.message.Type;
 import org.niord.model.search.PagedSearchParamsVo.SortOrder;
 import org.niord.model.search.PagedSearchResultVo;
 import org.slf4j.Logger;
@@ -694,6 +696,13 @@ public class MessageService extends BaseService {
         
         // Broadcast the status change to any listener
         sendStatusUpdate(message, prevStatus);
+        
+        // Handle CANCELLED status specially for Navigation Warnings - create cancellation message
+        if (status == Status.CANCELLED && message.getMainType() == MainType.NW) {
+            // Original message has been properly processed with CANCELLED status
+            // Now create cancellation message as a side effect
+            createAndPublishCancellationMessage(uid);
+        }
         
         return message;
     }
@@ -1535,5 +1544,86 @@ public class MessageService extends BaseService {
      */
     public void updateMessageFromTempRepoFolder(SystemMessageVo message) throws IOException {
         repositoryService.updateRepoFolderFromTempEditFolder(message);
+    }
+
+
+    /***************************************/
+    /** Cancellation Methods              **/
+    /***************************************/
+
+    /**
+     * Checks if a message is a cancellation warning
+     * @param message the message to check
+     * @return true if the message is a cancellation warning
+     */
+    public boolean isCancellationMessage(Message message) {
+        return message != null && message.getType() == Type.CANCELLATION_WARNING;
+    }
+
+    /**
+     * Creates and publishes a cancellation message for the given original message.
+     * This method is called internally when a Navigation Warning is being cancelled.
+     * @param originalMessageId the UID of the message to cancel
+     * @return the created cancellation message
+     * @throws Exception if the message cannot be cancelled
+     */
+    @Transactional
+    private Message createAndPublishCancellationMessage(String originalMessageId) throws Exception {
+        Message original = findByUid(originalMessageId);
+        // Note: message existence and MainType validation already done in updateStatus()
+        
+        // Create cancellation message
+        Message cancellation = new Message();
+        cancellation.setMainType(MainType.NW);                // Always NW for warnings
+        cancellation.setType(Type.CANCELLATION_WARNING);      // New enum value
+        cancellation.setMessageSeries(original.getMessageSeries()); // Same series
+        
+        // Copy relevant context from original
+        cancellation.setAreas(new ArrayList<>(original.getAreas()));
+        cancellation.setCategories(new ArrayList<>(original.getCategories()));
+        cancellation.setCharts(new ArrayList<>(original.getCharts()));
+        
+        // Add automatic reference to original
+        Reference ref = new Reference();
+        ref.setType(ReferenceType.CANCELLATION);
+        ref.setMessageId(originalMessageId);
+        cancellation.addReference(ref);
+        
+        // Add standard cancellation content
+        addCancellationContent(cancellation, original);
+        
+        // Create and immediately publish
+        // This automatically assigns next number in series
+        cancellation = createMessage(cancellation);
+        cancellation = updateStatus(cancellation.getUid(), Status.PUBLISHED);
+        
+        // Immediately expire the cancellation message so it doesn't clutter active warning lists
+        cancellation = updateStatus(cancellation.getUid(), Status.EXPIRED);
+        
+        log.info("Created cancellation message {} for original message {}", 
+                 cancellation.getShortId(), original.getShortId());
+        
+        return cancellation;
+    }
+
+    /**
+     * Adds standard cancellation content to a cancellation message
+     * @param cancellation the cancellation message to add content to
+     * @param original the original message being cancelled
+     */
+    private void addCancellationContent(Message cancellation, Message original) {
+        MessagePart part = new MessagePart();
+        part.setType(MessagePartType.DETAILS);
+        
+        // Add descriptions in all available languages
+        for (String lang : original.computeLanguages()) {
+            MessagePartDesc desc = new MessagePartDesc();
+            desc.setLang(lang);
+            desc.setSubject("Cancellation of " + (original.getShortId() != null ? original.getShortId() : original.getUid()));
+            desc.setDetails("This message cancels the previously issued navigational warning.");
+            part.addDesc(desc);
+        }
+        
+        cancellation.addPart(part);
     }
 }

@@ -22,6 +22,7 @@ import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.niord.core.message.MessageService;
 import org.niord.core.model.BaseEntity;
 import org.niord.model.message.Status;
 import org.slf4j.Logger;
@@ -55,6 +56,9 @@ public class MailingListMessageListener implements Runnable {
 
     @Inject
     MailingListExecutionService mailingListExecutionService;
+
+    @Inject
+    MessageService messageService;
 
     @Inject
     ConnectionFactory connectionFactory;
@@ -117,6 +121,13 @@ public class MailingListMessageListener implements Runnable {
     public void checkStatusChangeMailingListExecution(String messageUid, Status status) {
 
         long t0 = System.currentTimeMillis();
+
+        // Don't send emails for cancellation warning messages
+        org.niord.core.message.Message message = messageService.findByUid(messageUid);
+        if (message != null && messageService.isCancellationMessage(message)) {
+            log.debug("Skipping mailing list execution for cancellation warning message: " + messageUid);
+            return;
+        }
 
         List<Integer> triggerIds = mailingListService.findStatusChangeTriggers(status).stream()
                 .map(BaseEntity::getId)

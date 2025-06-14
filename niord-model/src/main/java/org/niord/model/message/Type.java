@@ -30,7 +30,8 @@ public enum Type {
     COASTAL_WARNING(MainType.NW),
     SUBAREA_WARNING(MainType.NW),
     NAVAREA_WARNING(MainType.NW),
-    LOCAL_WARNING(MainType.NW);
+    LOCAL_WARNING(MainType.NW),
+    CANCELLATION_WARNING(MainType.NW);
 
     MainType mainType;
 
