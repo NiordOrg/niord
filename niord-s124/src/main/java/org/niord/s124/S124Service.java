@@ -95,7 +95,7 @@ public class S124Service {
 
         data.put("references", referencedMessages(msg, language));
 
-        Configuration cfg = new Configuration(Configuration.getVersion());
+        Configuration cfg = new Configuration(Configuration.VERSION_2_3_31);
         cfg.setTemplateLoader(new ClassTemplateLoader(getClass(), "/templates/gml"));
 
         StringWriter result = new StringWriter();
