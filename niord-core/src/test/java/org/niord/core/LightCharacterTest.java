@@ -74,7 +74,7 @@ public class LightCharacterTest  {
 
     @Test
     public void parseLightCharacterFormatting() throws Exception {
-        Configuration cfg = new Configuration(Configuration.getVersion());
+        Configuration cfg = new Configuration(Configuration.VERSION_2_3_31);
         cfg.setLocalizedLookup(true);
         cfg.setClassForTemplateLoading(LightCharacterTest.class, "/templates/aton/");
         cfg.setDefaultEncoding("UTF-8");

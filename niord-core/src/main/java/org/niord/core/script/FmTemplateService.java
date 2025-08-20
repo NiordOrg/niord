@@ -172,7 +172,7 @@ public class FmTemplateService extends BaseService {
 
         // Create the Freemarker template loader and configuration
         FmTemplateLoader templateLoader = new FmTemplateLoader(resourceService, true);
-        Configuration cfg = new Configuration(Configuration.getVersion());
+        Configuration cfg = new Configuration(Configuration.VERSION_2_3_31);
         cfg.setLocalizedLookup(true);
         cfg.setTemplateLoader(templateLoader);
         cfg.setObjectWrapper(new NiordAppObjectWrapper(cfg.getIncompatibleImprovements()));
