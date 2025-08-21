@@ -57,6 +57,39 @@ angular.module('niord.auth')
                         console.error('Forbidden');
                     } else if (response.status === 404) {
                         console.error('Not found');
+                    } else if (response.status === 500) {
+                        console.group('Server Error (500) Details:');
+                        console.error('URL:', response.config?.url || 'Unknown');
+                        console.error('Method:', response.config?.method || 'Unknown');
+                        console.error('Status:', response.status, response.statusText);
+                        
+                        if (response.data) {
+                            console.error('Response Data:', response.data);
+                            if (response.data.errorMessage) {
+                                console.error('Error Message:', response.data.errorMessage);
+                            }
+                            if (response.data.stackTrace) {
+                                console.error('Stack Trace:', response.data.stackTrace);
+                            }
+                        }
+                        
+                        if (response.config?.data) {
+                            try {
+                                const requestData = typeof response.config.data === 'string' 
+                                    ? JSON.parse(response.config.data) 
+                                    : response.config.data;
+                                console.error('Request Data:', requestData);
+                            } catch (e) {
+                                console.error('Request Data (raw):', response.config.data);
+                            }
+                        }
+                        
+                        if (response.headers && typeof response.headers === 'function') {
+                            console.error('Response Headers:', response.headers());
+                        }
+                        
+                        console.error('Full Response Object:', response);
+                        console.groupEnd();
                     } else if (response.status) {
                         if (response.data && response.data.errorMessage) {
                             console.error(response.data.errorMessage);
