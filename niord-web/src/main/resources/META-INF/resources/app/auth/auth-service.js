@@ -52,7 +52,7 @@ angular.module('niord.auth')
                 'responseError': function(response) {
                     // Log detailed error info for all HTTP errors
                     if (response.status) {
-                        var requestData = '';
+                        var requestData = 'No request data (GET request)';
                         if (response.config?.data) {
                             try {
                                 requestData = typeof response.config.data === 'string' 
@@ -63,8 +63,43 @@ angular.module('niord.auth')
                             }
                         }
                         
-                        var errorMessage = response.data?.errorMessage || 'No error message provided';
-                        var responseData = response.data ? JSON.stringify(response.data, null, 2) : 'No response data';
+                        var requestHeaders = '';
+                        if (response.config?.headers) {
+                            try {
+                                requestHeaders = JSON.stringify(response.config.headers, null, 2);
+                            } catch (e) {
+                                requestHeaders = String(response.config.headers);
+                            }
+                        }
+                        
+                        var responseHeaders = '';
+                        if (response.headers) {
+                            try {
+                                if (typeof response.headers === 'function') {
+                                    responseHeaders = JSON.stringify(response.headers(), null, 2);
+                                } else {
+                                    responseHeaders = JSON.stringify(response.headers, null, 2);
+                                }
+                            } catch (e) {
+                                responseHeaders = String(response.headers);
+                            }
+                        }
+                        
+                        var errorMessage = response.data?.errorMessage || 'No structured error message';
+                        var responseData = 'No response data';
+                        if (response.data) {
+                            if (typeof response.data === 'string') {
+                                responseData = response.data.length > 500 
+                                    ? response.data.substring(0, 500) + '... (truncated)'
+                                    : response.data;
+                            } else {
+                                try {
+                                    responseData = JSON.stringify(response.data, null, 2);
+                                } catch (e) {
+                                    responseData = String(response.data);
+                                }
+                            }
+                        }
                         
                         console.error(
                             'HTTP ERROR ' + response.status + ' DETAILS:\n' +
@@ -74,7 +109,9 @@ angular.module('niord.auth')
                             'Method: ' + (response.config?.method || 'Unknown') + '\n' +
                             'Status: ' + response.status + ' ' + (response.statusText || '') + '\n' +
                             'Error: ' + errorMessage + '\n\n' +
+                            'Request Headers:\n' + requestHeaders + '\n\n' +
                             'Request Data:\n' + requestData + '\n\n' +
+                            'Response Headers:\n' + responseHeaders + '\n\n' +
                             'Response Data:\n' + responseData + '\n' +
                             '========================'
                         );
