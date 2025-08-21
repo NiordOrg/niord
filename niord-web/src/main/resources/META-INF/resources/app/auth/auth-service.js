@@ -50,14 +50,8 @@ angular.module('niord.auth')
                 },
 
                 'responseError': function(response) {
-                    if (response.status === 401) {
-                        console.error('session timeout?');
-                        AuthService.logout();
-                    } else if (response.status === 403) {
-                        console.error('Forbidden');
-                    } else if (response.status === 404) {
-                        console.error('Not found');
-                    } else if (response.status === 500) {
+                    // Log detailed error info for all HTTP errors
+                    if (response.status) {
                         var requestData = '';
                         if (response.config?.data) {
                             try {
@@ -73,7 +67,7 @@ angular.module('niord.auth')
                         var responseData = response.data ? JSON.stringify(response.data, null, 2) : 'No response data';
                         
                         console.error(
-                            'SERVER ERROR 500 DETAILS:\n' +
+                            'HTTP ERROR ' + response.status + ' DETAILS:\n' +
                             '========================\n' +
                             'Time: ' + new Date().toISOString() + '\n' +
                             'URL: ' + (response.config?.url || 'Unknown') + '\n' +
@@ -84,6 +78,15 @@ angular.module('niord.auth')
                             'Response Data:\n' + responseData + '\n' +
                             '========================'
                         );
+                    }
+                    
+                    if (response.status === 401) {
+                        console.error('session timeout?');
+                        AuthService.logout();
+                    } else if (response.status === 403) {
+                        console.error('Forbidden');
+                    } else if (response.status === 404) {
+                        console.error('Not found');
                     } else if (response.status) {
                         if (response.data && response.data.errorMessage) {
                             console.error(response.data.errorMessage);
