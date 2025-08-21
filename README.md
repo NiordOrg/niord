@@ -2,10 +2,6 @@
 # Niord
 The niord repository contains the common code-base for the NW + NM T&P editing and publishing system.
 
-# Important Notice
-The following concerns Niord 2.0 which is currently under development.
-The latest stable release is tagged with 1.0.1 in this repository.
-
 ## Development Setup
 
 To get started with developing Niord you need to check out the developer guide at 
@@ -20,7 +16,7 @@ custom versions.
 For an example, please refer to [niord-dk](https://github.com/NiordOrg/niord-dk) - a Danish implementation of Niord.
 
 ## Public API
-A swagger definition of the public portion of the Rest API is published at https://niord.e-navigation.net/rest/swagger.json.
+A swagger definition of the public portion of the Rest API is published at https://niord.dma.dk/swagger/swagger-ui.html/.
 
 The swagger definition is generated from the jersey annotated methods in [ApiRestService.java](https://github.com/NiordOrg/niord/blob/master/niord-web/src/main/java/org/niord/web/api/ApiRestService.java) and [S124RestService.java](https://github.com/NiordOrg/niord/blob/master/niord-s124/src/main/java/org/niord/s124/S124RestService.java).
 

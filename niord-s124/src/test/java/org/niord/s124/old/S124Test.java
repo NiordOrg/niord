@@ -59,7 +59,7 @@ public class S124Test {
 
         System.out.println("Message loaded: " + message.getId());
 
-        Configuration cfg = new Configuration(Configuration.getVersion());
+        Configuration cfg = new Configuration(Configuration.VERSION_2_3_31);
         cfg.setTemplateLoader(new ClassTemplateLoader(getClass(), "/templates/gml"));
 
         StringWriter result = new StringWriter();

@@ -164,12 +164,12 @@ public class MailService extends BaseService {
                     Mail mail = scheduledMail.toMail(app.getBaseUri(), HtmlMail.StyleHandling.INLINE_STYLES, false);
 
                     // If undefined, set reply-to to the first to-recipient
-                    if (mail.getReplyTo().isEmpty()) {
-                        mail.getRecipients().stream()
-                                .filter(r -> r.getType() == Message.RecipientType.TO)
-                                .limit(1)
-                                .forEach(r -> mail.replyTo(r.getAddress()));
-                    }
+//                    if (mail.getReplyTo().isEmpty()) {
+//                        mail.getRecipients().stream()
+//                                .filter(r -> r.getType() == Message.RecipientType.TO)
+//                                .limit(1)
+//                                .forEach(r -> mail.replyTo(r.getAddress()));
+//                    }
 
                     // Send the mail
                     sendMail(mail);

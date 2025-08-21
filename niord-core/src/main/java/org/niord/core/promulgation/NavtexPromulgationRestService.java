@@ -16,8 +16,12 @@
 
 package org.niord.core.promulgation;
 
-import jakarta.annotation.security.PermitAll;
-import jakarta.annotation.security.RolesAllowed;
+import static org.niord.core.promulgation.NavtexPromulgationService.NAVTEX_LINE_LENGTH;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.annotations.GZIP;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -27,9 +31,12 @@ import org.niord.core.user.Roles;
 import org.niord.core.util.TextUtils;
 import org.niord.model.DataFilter;
 
+import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+
 import jakarta.ws.rs.*;
 import java.util.List;
 import java.util.Objects;
@@ -43,7 +50,6 @@ import static org.niord.core.promulgation.NavtexPromulgationService.NAVTEX_LINE_
 @Path("/promulgation/navtex")
 @ApplicationScoped
 @RolesAllowed(Roles.SYSADMIN)
-@SuppressWarnings("unused")
 public class NavtexPromulgationRestService {
 
     @Inject
@@ -104,6 +110,7 @@ public class NavtexPromulgationRestService {
     @Produces("application/json;charset=UTF-8")
     @GZIP
     @NoCache
+    @Transactional
     public NavtexTransmitterVo createTransmitter(
             @PathParam("typeId") String typeId,
             NavtexTransmitterVo transmitter) throws Exception {

@@ -45,7 +45,7 @@ public class ScriptResourceTest {
         StringTemplateLoader templateLoader = new StringTemplateLoader();
         templates.forEach(t -> templateLoader.putTemplate(t.getPath(), t.getContent()));
 
-        Configuration cfg = new Configuration(Configuration.getVersion());
+        Configuration cfg = new Configuration(Configuration.VERSION_2_3_31);
         cfg.setTemplateLoader(templateLoader);
 
         StringWriter result = new StringWriter();
